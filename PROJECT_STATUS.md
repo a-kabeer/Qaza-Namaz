@@ -1,15 +1,15 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 3 — UI/UX Contract
+Task 3 — Final Stitch UI/UX Rebuild
 
 ## Overall Progress
-Task 1 and Task 2 are complete and runtime-verified. Task 3 UI/UX implementation is now committed to `main`; local Android/device verification of the new UI remains pending.
+Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 has been reset and rebuilt from the newly supplied Stitch ZIP. The ZIP was audited before implementation. The previous Flutter presentation layer was removed and replaced with a new Stitch-derived UI layer. Local Flutter analyze/test and physical-device verification are still pending.
 
 ## Task Status
 - Task 1: 🟢 COMPLETE & VERIFIED — Qaza ledger business workflow and tests are complete.
 - Task 2: 🟢 COMPLETE & VERIFIED — Firebase Authentication, Google Sign-In, Firestore persistence, user-scoped rules, and Android runtime verification completed.
-- Task 3: 🟡 IMPLEMENTED — Stitch-derived UI/UX has been integrated into the Flutter app; final local analyze/test/device verification is pending.
+- Task 3: 🟡 PARTIAL — final Stitch ZIP audited; previous UI removed; new onboarding/auth shell, dashboard, Qaza workflows, calculator, history, settings, progress, and reusable state foundations added. Local/device verification pending and some ZIP-defined screens remain UI-only or simplified pending later dedicated tasks.
 - Task 4: 🔴 NOT STARTED
 - Task 5: 🔴 NOT STARTED
 - Task 6: 🔴 NOT STARTED
@@ -23,37 +23,47 @@ Task 1 and Task 2 are complete and runtime-verified. Task 3 UI/UX implementation
 - Task 14: 🟡 PARTIALLY COMPLETE — core unit/widget tests exist; full QA not started
 - Task 15: 🔴 NOT STARTED
 
-## Task 3 Implemented
-- Added a Material 3 design system based on the supplied Stitch `Serene Sanctuary` specification.
-- Added coordinated Light, Dark, and System Default theme modes.
-- System Default follows the Android device appearance through Flutter `ThemeMode.system`.
-- Added a four-destination application shell: Dashboard, Calculator, Logs, and Settings.
-- Replaced the Task 2 placeholder HomePage with the new responsive mobile workspace.
-- Added dashboard progress overview using real Qaza repository data rather than Stitch sample counters.
-- Added six independent prayer cards: Fajr, Zuhr, Asr, Maghrib, Isha, and Witr. Witr remains explicitly separate from Isha.
-- Added oldest-pending completion and +5 batch-add interactions through the existing QazaService/repository infrastructure.
-- Added complete-full-day and batch-add dashboard actions using existing domain logic.
-- Added completed-record history/ledger UI using the existing QazaService history workflow.
-- Added Calculator UI based on the supplied Stitch design without inventing or modifying the future fiqh calculation business logic.
-- Added Settings UI with Light/Dark/System theme selection and existing sign-out integration.
-- Preserved Firebase Authentication, Google Sign-In, Firestore, repository contracts, domain entities, and Qaza business logic architecture.
-- Removed the temporary Firestore verification screen after Task 2 runtime verification.
+## Task 3 ZIP Audit
+The newly attached Stitch export was inspected completely before implementation, including its master design prompt, all generated screen folders/code.html files, screen images, and both Serene Sanctuary DESIGN.md references.
 
-## Design Source
-The implementation is based on the user-provided Stitch export `stitch_islamic_prayer_tracker_ui_ux.zip`, including its Dashboard, Calculator, History/Ledger, Settings/Theme, Light Mode, and `Serene Sanctuary` design-system references.
+The ZIP defines the final visual/navigation direction for this implementation. It contains onboarding/authentication, Dashboard, Add Qaza, Gregorian/Hijri calendar states, completion, Namaz-wise multi-selection, Calculator, Progress, History states, Settings, Account, Data & Cloud, Export/Import, and reusable application states.
+
+Audit findings that were treated as design/source constraints rather than silently redesigned:
+- Authentication supports Sign In/Create Account with Google, Phone, WhatsApp, and Email.
+- Six prayers are independent; Witr is independent from Isha.
+- Add Qaza is date/date-range based.
+- Completion distinguishes original Qaza date from completion date/time.
+- Namaz-wise supports multi-date selection.
+- Calculator is a planning/estimation surface rather than the primary Qaza-record workflow.
+- English/Urdu RTL and theme states are part of the design.
+- The ZIP contains some duplicated/overlapping design variants and some technical/security wording that is not appropriate to claim without corresponding implementation. The Flutter rebuild therefore uses the canonical workflow direction while avoiding unsupported security guarantees.
+
+## Task 3 Implementation
+- Removed the previous Dashboard, Calculator, History, Settings, and Home UI files from the Flutter presentation layer.
+- Replaced the previous authentication presentation with a Stitch-derived Welcome → Authentication → First-Time Setup flow while preserving the existing Firebase/Auth repository integration.
+- Added final Stitch-derived onboarding/auth UI in `lib/features/ui/onboarding_ui.dart`.
+- Added the new application presentation shell and Qaza workflows in `lib/features/ui/final_ui.dart`.
+- Preserved existing Firebase Authentication, Google Sign-In, Firestore, repository contracts, domain entities, and QazaService architecture.
+- Connected Dashboard progress, prayer progress, Add Qaza, oldest-pending completion, and Namaz-wise multi-record completion to the existing QazaService/repository where supported.
+- Removed editable +/- counter UI from the previous presentation.
+- Kept Witr as an independent prayer throughout the new UI.
+- Kept Original Qaza Date and Completion Date/Time distinct.
+- Added four-destination navigation: Dashboard, Calculator, Logs, Settings.
 
 ## Verification
-- Task 2 Firebase runtime verification: 🟢 VERIFIED by user on physical Android device, including Firebase/Firestore testing.
-- Task 3 repository-side implementation: 🟢 COMMITTED.
-- Task 3 `flutter analyze`: NOT VERIFIED after the new UI changes.
-- Task 3 `flutter test`: NOT VERIFIED after the new UI changes.
-- Task 3 physical Android UI verification: NOT VERIFIED after the new UI changes.
+- Task 2 Firebase runtime verification: 🟢 VERIFIED by user on physical Android device in the earlier Task 2 work.
+- Task 3 ZIP audit: 🟢 COMPLETED before implementation.
+- Task 3 previous UI reset: 🟢 COMPLETED in GitHub; old Dashboard/Calculator/History/Settings/Home presentation files removed.
+- Task 3 repository implementation: 🟢 COMMITTED to `main`.
+- Task 3 `flutter analyze`: NOT VERIFIED in this environment after the final rebuild.
+- Task 3 `flutter test`: NOT VERIFIED in this environment after the final rebuild.
+- Task 3 physical Android UI verification: NOT VERIFIED after the final rebuild.
 
 ## Important Scope Boundary
-Task 3 is a UI/UX task. Authentication/Firebase/login behavior was not redesigned. The Calculator screen is intentionally a UI workflow only; its actual fiqh calculation engine belongs to the dedicated business-logic task.
+This Task 3 rebuild is based on the supplied Stitch ZIP as the UI/UX source of truth. Existing backend/domain functionality was preserved rather than replaced. Authentication methods other than the already-connected Google flow are represented in the UI but are not falsely implemented as working providers. Hijri/calendar calculation, offline-first synchronization, export/import implementation, notifications, and other dedicated business/infrastructure tasks remain subject to their later tasks.
 
 ## Last Updated
-2026-09-13 — Stitch UI/UX export integrated into the Flutter application and theme/navigation/dashboard/history/calculator/settings surfaces added. Final local verification remains pending.
+2026-09-13 — Final Stitch ZIP audited and previous Flutter UI reset/replaced. Verification remains pending.
 
 ## Next Action
-Pull the latest `main` branch locally, run `flutter pub get`, `flutter analyze`, and `flutter test`. Then run the Android app on the physical device and verify Dashboard, six prayer cards, Logs, Calculator, Settings, Light/Dark/System themes, navigation, loading/empty states, and existing Google Sign-In/session behavior. Report any compile or runtime issue before marking Task 3 verified.
+Pull the latest `main` locally, run `flutter pub get`, `flutter analyze`, and `flutter test`. Fix any compile/test issues. Then run the app on the physical Android device and compare the implemented screens against the attached Stitch ZIP, especially onboarding/authentication, Dashboard, Add Qaza, completion, Namaz-wise, Calculator, Logs, Settings, theme, and navigation. Only after actual verification should Task 3 be marked COMPLETE.
