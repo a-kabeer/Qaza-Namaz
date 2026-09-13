@@ -1,110 +1,51 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/prayer_types.dart';
+import '../../core/theme/app_theme.dart';
 import '../../domain/repositories/qaza_repository.dart';
-import '../../domain/services/qaza_service.dart';
+import '../calculator/calculator_page.dart';
+import '../dashboard/dashboard_page.dart';
+import '../history/history_page.dart';
+import '../settings/settings_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({
-    required this.userId,
-    required this.repository,
-    required this.onSignOut,
-    super.key,
-  });
-
+  const HomePage({required this.userId, required this.repository, required this.onSignOut, required this.themeMode, required this.onThemeModeChanged, super.key});
   final String userId;
   final QazaRepository repository;
   final Future<void> Function() onSignOut;
-
+  final AppThemeMode themeMode;
+  final ValueChanged<AppThemeMode> onThemeModeChanged;
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  late final QazaService _service;
-
-  int _pending = 0;
-  bool _loading = true;
-  bool _signingOut = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _service = QazaService(widget.repository);
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final progress = await _service.overallProgress(widget.userId);
-      if (!mounted) return;
-      setState(() {
-        _pending = progress.pending;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _signOut() async {
-    if (_signingOut) return;
-    setState(() => _signingOut = true);
-    try {
-      await widget.onSignOut();
-    } finally {
-      if (mounted) setState(() => _signingOut = false);
-    }
-  }
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      DashboardPage(userId: widget.userId, repository: widget.repository),
+      const CalculatorPage(),
+      HistoryPage(userId: widget.userId, repository: widget.repository),
+      SettingsPage(themeMode: widget.themeMode, onThemeModeChanged: widget.onThemeModeChanged, onSignOut: widget.onSignOut),
+    ];
+    const labels = ['Dashboard', 'Calculator', 'Logs', 'Settings'];
+    const icons = [Icons.dashboard_rounded, Icons.calculate_rounded, Icons.auto_stories_rounded, Icons.settings_rounded];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Qaza Namaz'),
+        titleSpacing: 16,
+        title: Row(children: [Icon(Icons.mosque_rounded, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 10), Text(labels[_index], style: Theme.of(context).textTheme.titleLarge)]),
         actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: _signingOut ? null : _signOut,
-            icon: _signingOut
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout),
-          ),
+          IconButton(tooltip: 'Sync status', onPressed: () {}, icon: Icon(Icons.cloud_done_rounded, color: Theme.of(context).colorScheme.tertiary)),
+          IconButton(tooltip: 'Account', onPressed: () => setState(() => _index = 3), icon: const Icon(Icons.account_circle_outlined)),
+          const SizedBox(width: 4),
         ],
       ),
-      body: Center(
-        child: _loading
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Qaza Namaz',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Pending Qaza: $_pending'),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Your records are now loaded through your signed-in account.\n'
-                    'The complete Google Stitch interface will be added in Task 3.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final prayer in allPrayerTypes)
-                        Chip(label: Text(prayer.label)),
-                    ],
-                  ),
-                ],
-              ),
+      body: SafeArea(child: IndexedStack(index: _index, children: pages)),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (value) => setState(() => _index = value),
+        destinations: [for (var i = 0; i < labels.length; i++) NavigationDestination(icon: Icon(icons[i]), selectedIcon: Icon(icons[i]), label: labels[i])],
       ),
     );
   }
