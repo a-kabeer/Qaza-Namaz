@@ -3,6 +3,8 @@ import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 
+export '../entities/qaza_progress.dart';
+
 class QazaService {
   QazaService(this.repository);
 
