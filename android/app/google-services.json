@@ -12,7 +12,20 @@
           "package_name": "com.example.qaza_namaz_task1_flutter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "895430705174-fq6fqr3dcbgbu19cittl0elooa369ugf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.qaza_namaz_task1_flutter",
+            "certificate_hash": "3ab6c8b508a68579254d31983716f5d2babd418d"
+          }
+        },
+        {
+          "client_id": "895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDdmlEdsgAu2iuSZvEvZtFUjvRwP7zAZZ8"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -31,7 +49,12 @@
           "package_name": "com.qaza_namaz.com"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDdmlEdsgAu2iuSZvEvZtFUjvRwP7zAZZ8"
@@ -39,7 +62,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
