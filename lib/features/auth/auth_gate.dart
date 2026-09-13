@@ -72,10 +72,10 @@ class _SignInPageState extends State<_SignInPage> {
       setState(() {
         _errorMessage = 'Google Sign-In failed. Please try again.';
       });
-    } finally {
-      if (!mounted) return;
-      setState(() => _signingIn = false);
     }
+
+    if (!mounted) return;
+    setState(() => _signingIn = false);
   }
 
   @override
