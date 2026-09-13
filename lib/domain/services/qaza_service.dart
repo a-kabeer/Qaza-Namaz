@@ -13,23 +13,49 @@ class QazaService {
     required PrayerType prayerType,
     required DateTime originalDate,
   }) async {
+    final date = _dateOnly(originalDate);
     final now = DateTime.now();
-    final id = '${userId}_${prayerType.name}_${_dateKey(originalDate)}';
 
     await repository.addRecord(
       QazaRecord(
-        id: id,
+        id: '${userId}_${prayerType.name}_${_dateKey(date)}',
         userId: userId,
         prayerType: prayerType,
-        originalDate: DateTime(
-          originalDate.year,
-          originalDate.month,
-          originalDate.day,
-        ),
+        originalDate: date,
         createdAt: now,
         updatedAt: now,
       ),
     );
+  }
+
+  Future<void> recordQazaForDates({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+  }) async {
+    final normalizedDates = dates.map(_dateOnly).toSet();
+    final selectedPrayers = prayerTypes.toSet();
+    if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
+
+    final now = DateTime.now();
+    final records = <QazaRecord>[];
+
+    for (final date in normalizedDates) {
+      for (final prayerType in selectedPrayers) {
+        records.add(
+          QazaRecord(
+            id: '${userId}_${prayerType.name}_${_dateKey(date)}',
+            userId: userId,
+            prayerType: prayerType,
+            originalDate: date,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+    }
+
+    await repository.addRecords(records);
   }
 
   Future<QazaRecord?> oldestPending({
@@ -41,7 +67,6 @@ class QazaService {
       prayerType: prayerType,
       status: QazaStatus.pending,
     );
-
     return records.isEmpty ? null : records.first;
   }
 
@@ -69,10 +94,15 @@ class QazaService {
     required List<String> recordIds,
     DateTime? completedAt,
   }) async {
+    if (recordIds.isEmpty) return 0;
+
+    final selectedIds = recordIds.toSet();
     final records = await repository.getRecords(userId: userId);
     final validPendingIds = records
-        .where((r) => recordIds.contains(r.id) && r.status == QazaStatus.pending)
-        .map((r) => r.id)
+        .where((record) =>
+            selectedIds.contains(record.id) &&
+            record.status == QazaStatus.pending)
+        .map((record) => record.id)
         .toList();
 
     if (validPendingIds.isEmpty) return 0;
@@ -82,7 +112,6 @@ class QazaService {
       recordIds: validPendingIds,
       completedAt: completedAt ?? DateTime.now(),
     );
-
     return validPendingIds.length;
   }
 
@@ -112,19 +141,22 @@ class QazaService {
     );
     records.sort(
       (a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-          .compareTo(b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+          .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
     );
     return records;
   }
 
   QazaProgress _progress(List<QazaRecord> records) {
     final completed =
-        records.where((r) => r.status == QazaStatus.completed).length;
+        records.where((record) => record.status == QazaStatus.completed).length;
+    final pending = records.length - completed;
     return QazaProgress(
-      pending: records.length - completed,
+      pending: pending < 0 ? 0 : pending,
       completed: completed,
     );
   }
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
   String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-'
