@@ -19,6 +19,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> revealPrayerLedger(WidgetTester tester) async {
+    await tester.scrollUntilVisible(
+      find.text('Prayer ledger'),
+      400,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     final repository = InMemoryQazaRepository();
     await pumpWorkspace(tester, repository);
@@ -28,6 +37,8 @@ void main() {
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Add Qaza'), findsOneWidget);
+
+    await revealPrayerLedger(tester);
     expect(find.text('Prayer ledger'), findsOneWidget);
   });
 
