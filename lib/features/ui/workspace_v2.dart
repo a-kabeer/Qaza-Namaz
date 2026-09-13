@@ -138,11 +138,25 @@ class _DashboardState extends State<_Dashboard> {
                   Text(total == 0 ? 'No records yet' : '${(progress * 100).round()}% completed'),
                 ]))),
                 const SizedBox(height: 18),
-                Row(children: [
-                  Expanded(child: FilledButton.icon(onPressed: () => _open(QazaAddFlowV2Screen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza')),
-                  const SizedBox(width: 10),
-                  Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(CompleteQazaV2Screen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete')),
-                ]),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _open(QazaAddFlowV2Screen(service: widget.service, userId: widget.userId)),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Add Qaza'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: pending == 0 ? null : () => _open(CompleteQazaV2Screen(service: widget.service, userId: widget.userId)),
+                        icon: const Icon(Icons.check_circle_outline_rounded),
+                        label: const Text('Complete'),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 Row(children: [Expanded(child: Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: () => _open(NamazWiseV2Screen(service: widget.service, userId: widget.userId)), child: const Text('View all'))]),
                 const SizedBox(height: 4),
