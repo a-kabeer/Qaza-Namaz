@@ -34,7 +34,10 @@ void main() {
         qazaRepository: InMemoryQazaRepository(),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 750));
+
+    // Advance past the splash timer and allow the timer callback to rebuild.
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
 
     expect(find.text('Qaza Namaz'), findsOneWidget);
     expect(find.text('Track your missed prayers with clarity and consistency.'), findsOneWidget);
