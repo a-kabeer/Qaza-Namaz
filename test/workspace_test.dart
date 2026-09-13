@@ -7,6 +7,9 @@ import 'package:qaza_namaz/features/ui/workspace_v2.dart';
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
       MaterialApp(
         home: WorkspaceShellV2(
@@ -20,11 +23,8 @@ void main() {
   }
 
   Future<void> revealPrayerLedger(WidgetTester tester) async {
-    await tester.scrollUntilVisible(
-      find.text('Prayer ledger'),
-      400,
-      scrollable: find.byType(Scrollable),
-    );
+    final scrollable = find.byType(Scrollable).first;
+    await tester.drag(scrollable, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
 
@@ -86,17 +86,11 @@ void main() {
     await tester.tap(find.text('Logs'));
     await tester.pumpAndSettle();
     expect(find.text('Logs & Progress'), findsOneWidget);
-    final emptyHistory = find.text('No completed Qaza yet.', skipOffstage: false);
-    expect(emptyHistory, findsOneWidget);
-    await tester.scrollUntilVisible(emptyHistory, 300, scrollable: find.byType(Scrollable));
-    await tester.pumpAndSettle();
+    expect(find.text('No completed Qaza yet.'), findsOneWidget);
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
     expect(find.text('Account'), findsOneWidget);
-    final fiqh = find.text('Prayer & Fiqh Rules', skipOffstage: false);
-    expect(fiqh, findsOneWidget);
-    await tester.scrollUntilVisible(fiqh, 300, scrollable: find.byType(Scrollable));
-    await tester.pumpAndSettle();
+    expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
 }
