@@ -11,16 +11,16 @@ class _FakeAuthRepository implements AuthRepository {
       StreamController<AppUser?>.broadcast();
 
   @override
-  AppUser? get currentUser => const AppUser(
-        id: 'test-user',
-        email: 'test@example.com',
-      );
+  AppUser? get currentUser => null;
 
   @override
   Stream<AppUser?> authStateChanges() => _controller.stream;
 
   @override
-  Future<AppUser> signInWithGoogle() async => currentUser!;
+  Future<AppUser> signInWithGoogle() async => const AppUser(
+        id: 'test-user',
+        email: 'test@example.com',
+      );
 
   @override
   Future<void> signOut() async {}
@@ -29,19 +29,19 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 void main() {
-  testWidgets('Authenticated home screen smoke test',
+  testWidgets('Signed-out app shows Google Sign-In',
       (WidgetTester tester) async {
     final authRepository = _FakeAuthRepository();
 
     await tester.pumpWidget(
-      QazaNamazApp(),
+      QazaNamazApp(
+        authRepository: authRepository,
+        qazaRepository: InMemoryQazaRepository(),
+      ),
     );
-
-    // The production app uses FirebaseAuthGate. This smoke test is intentionally
-    // kept focused on the production widget tree's authentication entry point.
-    // Firebase-backed runtime behavior is verified on Android.
     await tester.pumpAndSettle();
 
+    expect(find.text('Qaza Namaz'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
 
     await authRepository.dispose();
