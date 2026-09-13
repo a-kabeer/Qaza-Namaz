@@ -100,7 +100,13 @@ void main() {
     }
 
     final witr = find.text('Witr');
-    await tester.ensureVisible(witr);
+    await tester.scrollUntilVisible(
+      witr,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(witr).dy, lessThan(600));
     await tester.tap(witr);
     await tester.pumpAndSettle();
 
