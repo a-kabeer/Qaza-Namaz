@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'features/home/home_page.dart';
+import 'features/auth/auth_gate.dart';
 
 class QazaNamazApp extends StatelessWidget {
-  const QazaNamazApp({super.key});
+  QazaNamazApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class QazaNamazApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
       ),
-      home: const HomePage(),
+      home: FirebaseAuthGate(),
     );
   }
 }
