@@ -25,12 +25,12 @@ void main() {
     expect(find.text('Hijri'), findsOneWidget);
     expect(find.text('Single Date'), findsOneWidget);
     expect(find.text('Date Range'), findsOneWidget);
-    expect(find.byType(FilledButton), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 
   testWidgets('Qaza add flow advances to date selection for Gregorian mode', (tester) async {
     await pumpFlow(tester);
-    final continueButton = find.byType(FilledButton);
+    final continueButton = find.text('Continue');
     expect(continueButton, findsOneWidget);
     await tester.tap(continueButton);
     await tester.pumpAndSettle();
@@ -45,8 +45,10 @@ void main() {
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FilledButton));
-    await tester.pumpAndSettle();
+    final continueButton = find.text('Continue');
+    expect(continueButton, findsOneWidget);
+    await tester.tap(continueButton);
+    await tester.pump();
 
     expect(
       find.text('Hijri calendar selection is reserved for the calendar engine task.'),
