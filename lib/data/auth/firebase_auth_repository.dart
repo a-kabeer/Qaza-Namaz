@@ -9,11 +9,10 @@ class FirebaseAuthRepository implements AuthRepository {
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
   })  : _auth = auth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+        _googleSignIn = googleSignIn ?? GoogleSignIn();
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
-  bool _googleSignInInitialized = false;
 
   @override
   AppUser? get currentUser => _mapUser(_auth.currentUser);
@@ -24,10 +23,13 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser> signInWithGoogle() async {
-    await _initializeGoogleSignIn();
+    final googleUser = await _googleSignIn.signIn();
 
-    final googleUser = await _googleSignIn.authenticate();
-    final googleAuth = googleUser.authentication;
+    if (googleUser == null) {
+      throw StateError('Google Sign-In did not return an account.');
+    }
+
+    final googleAuth = await googleUser.authentication;
     final idToken = googleAuth.idToken;
 
     if (idToken == null || idToken.isEmpty) {
@@ -48,15 +50,7 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     await _auth.signOut();
-    if (_googleSignInInitialized) {
-      await _googleSignIn.signOut();
-    }
-  }
-
-  Future<void> _initializeGoogleSignIn() async {
-    if (_googleSignInInitialized) return;
-    await _googleSignIn.initialize();
-    _googleSignInInitialized = true;
+    await _googleSignIn.signOut();
   }
 
   AppUser? _mapUser(User? user) {
