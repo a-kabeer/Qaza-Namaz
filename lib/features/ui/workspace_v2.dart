@@ -5,6 +5,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
 import '../qaza/qaza_add_flow_v2.dart';
+import '../qaza/qaza_completion_flow_v2.dart';
 import 'final_ui.dart';
 
 class WorkspaceShellV2 extends StatefulWidget {
@@ -138,19 +139,19 @@ class _DashboardState extends State<_Dashboard> {
                 ]))),
                 const SizedBox(height: 18),
                 Row(children: [
-                  Expanded(child: FilledButton.icon(onPressed: () => _open(QazaAddFlowV2Screen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza'))),
+                  Expanded(child: FilledButton.icon(onPressed: () => _open(QazaAddFlowV2Screen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza')),
                   const SizedBox(width: 10),
-                  Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(CompleteQazaScreen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete'))),
+                  Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(CompleteQazaV2Screen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete')),
                 ]),
                 const SizedBox(height: 20),
-                Row(children: [Expanded(child: Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: () => _open(NamazWiseScreen(service: widget.service, userId: widget.userId)), child: const Text('View all'))]),
+                Row(children: [Expanded(child: Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: () => _open(NamazWiseV2Screen(service: widget.service, userId: widget.userId)), child: const Text('View all'))]),
                 const SizedBox(height: 4),
                 for (final prayer in PrayerType.values)
                   Card(
                     margin: const EdgeInsets.only(bottom: 10),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: () => _open(PendingDatesScreen(service: widget.service, userId: widget.userId, prayer: prayer)),
+                      onTap: () => _open(PendingDatesV2Screen(service: widget.service, userId: widget.userId, prayer: prayer)),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         child: Row(children: [
