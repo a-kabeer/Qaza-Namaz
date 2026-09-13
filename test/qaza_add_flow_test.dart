@@ -25,14 +25,17 @@ void main() {
     expect(find.text('Hijri'), findsOneWidget);
     expect(find.text('Single Date'), findsOneWidget);
     expect(find.text('Date Range'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.byType(FilledButton), findsOneWidget);
   });
 
   testWidgets('Qaza add flow advances to date selection for Gregorian mode', (tester) async {
     await pumpFlow(tester);
-    await tester.tap(find.text('Continue').last);
+    final continueButton = find.byType(FilledButton);
+    expect(continueButton, findsOneWidget);
+    await tester.tap(continueButton);
     await tester.pumpAndSettle();
 
+    expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
     expect(find.text('Choose a date'), findsOneWidget);
     expect(find.text('Next: Choose missed prayers'), findsOneWidget);
   });
@@ -41,7 +44,8 @@ void main() {
     await pumpFlow(tester);
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue').last);
+
+    await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
     expect(
