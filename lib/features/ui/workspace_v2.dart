@@ -93,9 +93,10 @@ class _DashboardState extends State<_Dashboard> {
           }
           final records = snapshot.data ?? const <QazaRecord>[];
           final pending = records.where((r) => r.status == QazaStatus.pending).length;
-          final completed = records.length - pending;
+          final completed = records.where((r) => r.status == QazaStatus.completed).length;
           final total = records.length;
           final progress = total == 0 ? 0.0 : completed / total;
+
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
@@ -108,9 +109,21 @@ class _DashboardState extends State<_Dashboard> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(_todayLabel(), style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
-                    Text('Continue your prayer journey', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
-                    Text(total == 0 ? 'Start by recording the dates and prayers you need to make up.' : 'Every completed prayer brings your ledger closer to zero.', style: TextStyle(color: scheme.onPrimaryContainer.withOpacity(.86), height: 1.4)),
+                    Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Continue your prayer journey', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        Text(total == 0 ? 'Start by recording the dates and prayers you need to make up.' : 'Every completed prayer brings your ledger closer to zero.', style: TextStyle(color: scheme.onPrimaryContainer.withOpacity(.86), height: 1.4)),
+                      ])),
+                      const SizedBox(width: 14),
+                      _ProgressRing(progress: progress),
+                    ]),
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      _Pill(label: '$pending pending'),
+                      const SizedBox(width: 8),
+                      _Pill(label: '$completed fulfilled'),
+                    ]),
                   ]),
                 ),
                 const SizedBox(height: 16),
@@ -130,27 +143,44 @@ class _DashboardState extends State<_Dashboard> {
                   Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(CompleteQazaScreen(service: widget.service, userId: widget.userId)), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete'))),
                 ]),
                 const SizedBox(height: 20),
-                Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 10),
+                Row(children: [Expanded(child: Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: () => _open(NamazWiseScreen(service: widget.service, userId: widget.userId)), child: const Text('View all'))]),
+                const SizedBox(height: 4),
                 for (final prayer in PrayerType.values)
                   Card(
                     margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
                       onTap: () => _open(PendingDatesScreen(service: widget.service, userId: widget.userId, prayer: prayer)),
-                      leading: CircleAvatar(child: Icon(_icon(prayer))),
-                      title: Text(prayer.label),
-                      subtitle: Text('${records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length} pending'),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(children: [
+                          CircleAvatar(child: Icon(_icon(prayer))),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(prayer.label, style: Theme.of(context).textTheme.titleMedium), Text(_summary(records, prayer), style: Theme.of(context).textTheme.bodySmall)])),
+                          Text('${_pending(records, prayer)}', style: Theme.of(context).textTheme.headlineSmall),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right_rounded),
+                        ]),
+                      ),
                     ),
                   ),
                 if (records.isEmpty)
-                  const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(children: [Icon(Icons.lightbulb_outline_rounded), SizedBox(width: 12), Expanded(child: Text('Your dashboard is ready. Add your first missed-prayer record to begin.'))]))),
+                  const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.lightbulb_outline_rounded), SizedBox(width: 12), Expanded(child: Text('Your dashboard is ready. Add your first missed-prayer record to begin your ledger.'))]))),
               ],
             ),
           );
         },
       ),
     );
+  }
+
+  int _pending(List<QazaRecord> records, PrayerType prayer) => records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length;
+
+  String _summary(List<QazaRecord> records, PrayerType prayer) {
+    final pending = _pending(records, prayer);
+    final completed = records.where((r) => r.prayerType == prayer && r.status == QazaStatus.completed).length;
+    if (pending == 0 && completed == 0) return 'No records yet';
+    return pending == 0 ? '$completed completed' : '$pending pending • $completed completed';
   }
 
   String _todayLabel() {
@@ -168,6 +198,36 @@ class _DashboardState extends State<_Dashboard> {
         PrayerType.isha => Icons.dark_mode_outlined,
         PrayerType.witr => Icons.brightness_3_outlined,
       };
+}
+
+class _ProgressRing extends StatelessWidget {
+  const _ProgressRing({required this.progress});
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(alignment: Alignment.center, children: [
+        CircularProgressIndicator(value: progress, strokeWidth: 6, backgroundColor: scheme.onPrimaryContainer.withOpacity(.18), color: scheme.secondary),
+        Text('${(progress * 100).round()}%', style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(.12), borderRadius: BorderRadius.circular(99)),
+        child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+      );
 }
 
 class _Metric extends StatelessWidget {
