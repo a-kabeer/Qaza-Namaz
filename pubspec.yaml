@@ -1,5 +1,5 @@
 name: qaza_namaz
-description: Qaza Namaz ledger - Task 2
+description: Qaza Namaz ledger with Firebase Authentication and Cloud Firestore persistence.
 publish_to: "none"
 version: 0.2.0+2
 
