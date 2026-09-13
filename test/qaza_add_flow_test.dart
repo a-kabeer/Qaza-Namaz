@@ -27,11 +27,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> revealHeader(WidgetTester tester) async {
-    await tester.ensureVisible(find.text('Step 1 of 3 • Range Setup'));
-    await tester.pumpAndSettle();
-  }
-
   testWidgets('Qaza add flow starts with method and selection choices', (tester) async {
     await pumpFlow(tester);
     expect(find.text('Add Qaza'), findsWidgets);
@@ -68,7 +63,11 @@ void main() {
       find.text('Hijri calendar selection is reserved for the calendar engine task.'),
       findsOneWidget,
     );
-    await revealHeader(tester);
-    expect(find.text('Step 1 of 3 • Range Setup'), findsOneWidget);
+
+    // The gated Hijri action must keep the flow on the method-selection step.
+    expect(find.text('Gregorian'), findsOneWidget);
+    expect(find.text('Hijri'), findsOneWidget);
+    expect(find.text('Single Date'), findsOneWidget);
+    expect(find.text('Date Range'), findsOneWidget);
   });
 }
