@@ -9,7 +9,7 @@ import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../ui/onboarding_ui.dart';
-import '../ui/workspace_ui.dart';
+import '../ui/workspace_v2.dart';
 import 'authentication_screen.dart';
 
 class AuthGate extends StatefulWidget {
@@ -88,7 +88,7 @@ class _AuthGateState extends State<AuthGate> {
             },
           );
         }
-        return WorkspaceShell(
+        return WorkspaceShellV2(
           userId: user.id,
           repository: widget.qazaRepository,
           onSignOut: widget.authRepository.signOut,
