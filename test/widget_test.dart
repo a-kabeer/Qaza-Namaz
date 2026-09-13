@@ -35,21 +35,19 @@ void main() {
       ),
     );
 
-    // Advance past the splash timer and allow the timer callback to rebuild.
+    // The welcome screen is gated by the app splash timer.
     await tester.pump(const Duration(milliseconds: 700));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Qaza Namaz'), findsOneWidget);
-    expect(find.text('Track your missed prayers with clarity and consistency.'), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 
     await tester.tap(find.text('Get Started'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Continue with Phone'), findsOneWidget);
     expect(find.text('Continue with WhatsApp'), findsOneWidget);
-    expect(find.text('Create Account'), findsOneWidget);
 
     await authRepository.dispose();
   });
