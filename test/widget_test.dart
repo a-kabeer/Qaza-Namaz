@@ -14,7 +14,7 @@ class _FakeAuthRepository implements AuthRepository {
   AppUser? get currentUser => null;
 
   @override
-  Stream<AppUser?> authStateChanges() => _controller.stream;
+  Stream<AppUser?> authStateChanges() => Stream<AppUser?>.value(null);
 
   @override
   Future<AppUser> signInWithGoogle() async => const AppUser(
@@ -39,7 +39,7 @@ void main() {
         qazaRepository: InMemoryQazaRepository(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('Qaza Namaz'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
