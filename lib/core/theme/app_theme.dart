@@ -63,7 +63,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface.withOpacity(.96),
         indicatorColor: scheme.primary.withOpacity(.18),
-        labelTextStyle: const MaterialStatePropertyAll(TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+        labelTextStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
