@@ -40,7 +40,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     const SizedBox(height: 8),
     const Text('Enter your number to continue. This is the planned verification UI; provider logic is separate.'),
     const SizedBox(height: 24),
-    DropdownButtonFormField<String>(initialValue: '+92', decoration: const InputDecoration(labelText: 'Country code'), items: const [DropdownMenuItem(value: '+92', child: Text('+92'))], onChanged: (_) {}),
+    DropdownButtonFormField<String>(value: '+92', decoration: const InputDecoration(labelText: 'Country code'), items: const [DropdownMenuItem(value: '+92', child: Text('+92'))], onChanged: (_) {}),
     const SizedBox(height: 12),
     TextField(controller: phone, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone number', prefixIcon: Icon(Icons.phone_iphone_rounded))),
     if (error != null) ...[const SizedBox(height: 10), Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error))],
