@@ -18,6 +18,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> revealContinue(WidgetTester tester) async {
+    await tester.scrollUntilVisible(
+      find.text('Continue'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('Qaza add flow starts with method and selection choices', (tester) async {
     await pumpFlow(tester);
     expect(find.text('Add Qaza'), findsWidgets);
@@ -25,14 +34,15 @@ void main() {
     expect(find.text('Hijri'), findsOneWidget);
     expect(find.text('Single Date'), findsOneWidget);
     expect(find.text('Date Range'), findsOneWidget);
+
+    await revealContinue(tester);
     expect(find.text('Continue'), findsOneWidget);
   });
 
   testWidgets('Qaza add flow advances to date selection for Gregorian mode', (tester) async {
     await pumpFlow(tester);
-    final continueButton = find.text('Continue');
-    expect(continueButton, findsOneWidget);
-    await tester.tap(continueButton);
+    await revealContinue(tester);
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
@@ -45,9 +55,8 @@ void main() {
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
 
-    final continueButton = find.text('Continue');
-    expect(continueButton, findsOneWidget);
-    await tester.tap(continueButton);
+    await revealContinue(tester);
+    await tester.tap(find.text('Continue'));
     await tester.pump();
 
     expect(
