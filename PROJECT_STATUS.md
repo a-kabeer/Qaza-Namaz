@@ -1,10 +1,10 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 3C — Add Qaza Date/Range + Missed Prayer Selection Flow
+Task 3D — Complete Qaza + Namaz-wise Multi-Selection Flow
 
 ## Overall Progress
-Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is being rebuilt incrementally from the supplied Stitch ZIP. Task 3A and Task 3B implementations are in place with fresh verification still pending. Task 3C implementation and cleanup are in place; local/device verification remains pending.
+Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is being rebuilt incrementally from the supplied Stitch ZIP. Task 3A, Task 3B, and Task 3C implementations are in place with fresh verification still pending. Task 3D implementation is now added; local/device verification remains pending.
 
 ## Task Status
 - Task 1: 🟢 COMPLETE & VERIFIED — Qaza ledger business workflow and tests are complete.
@@ -13,6 +13,7 @@ Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is bei
 - Task 3A: 🟡 IMPLEMENTED — Authentication & Onboarding implementation added; local/device verification pending.
 - Task 3B: 🟡 IMPLEMENTED — Dashboard, global navigation, live ledger overview, and system states added; local/device verification pending.
 - Task 3C: 🟡 IMPLEMENTED — Add Qaza setup, single-date/range selection, missed-prayer selection, duplicate-safe review, confirmation, and record creation flow added; local/device verification pending.
+- Task 3D: 🟡 IMPLEMENTED — Complete Qaza oldest-first flow plus Namaz-wise prayer/date multi-selection flow added; local/device verification pending.
 - Task 4: 🔴 NOT STARTED
 - Task 5: 🔴 NOT STARTED
 - Task 6: 🔴 NOT STARTED
@@ -27,13 +28,15 @@ Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is bei
 - Task 15: 🔴 NOT STARTED
 
 ## Task 3 ZIP Audit
-The supplied Stitch export was inspected before implementation, including the Add Qaza setup, Gregorian calendar, Hijri calendar, missed-prayer selection, and range-confirmation screens. The Stitch Add Qaza family defines a staged workflow around method, dates, review, supports Single Date and Date Range, includes Gregorian/Hijri presentation, Select All/Clear prayer controls, and a final review showing individual historical record counts. fileciteturn293file0L1-L14 fileciteturn293file1L16-L30
+The supplied Stitch export was inspected before implementation, including the Add Qaza setup, Gregorian calendar, Hijri calendar, missed-prayer selection, and range-confirmation screens. The Stitch workflow also uses individual prayer ledger entries, completion actions, recent ledger history, and six independent prayer categories. Its demo counters/actions are treated as visual/interaction reference, not real data. fileciteturn293file0L1-L14 fileciteturn409file1L35-L84
 
 Audit constraints preserved:
 - Individual prayer/date records remain the canonical ledger objects.
 - Witr remains an independent prayer category and is never merged with Isha.
 - Existing records must not be duplicated.
 - Future dates are not recordable.
+- Completion changes only selected pending records and records a separate completion timestamp.
+- Oldest pending record is completed first for the one-at-a-time completion flow.
 - The supplied Stitch demo content is treated as visual/interaction reference, not real data.
 - The Hijri selection engine itself remains deferred to the dedicated calendar task; Task 3C does not invent a Hijri conversion implementation.
 
@@ -50,8 +53,19 @@ Audit constraints preserved:
 - Added a final confirmation dialog and creation success state.
 - Uses the existing `QazaService.recordQazaForDates()` and therefore preserves the established stable record IDs and repository duplicate protection.
 - Updated `lib/features/ui/workspace_v2.dart` and `AuthGate` so the authenticated Dashboard Add Qaza action opens the refined Task 3C flow.
-- Updated `test/qaza_add_flow_test.dart` to target the active V2 flow and use robust button finders rather than brittle text-only selection.
-- Removed the obsolete duplicate `lib/features/qaza/qaza_add_flow.dart`, obsolete `lib/features/ui/workspace_ui.dart`, and redundant `test/task3c_qaza_flow_test.dart` so the active flow has a single source of truth and obsolete code cannot break the test suite.
+- Updated `test/qaza_add_flow_test.dart` to target the active V2 flow and use robust finders for test viewport behavior.
+- Removed obsolete duplicate Add Qaza/workspace implementations and redundant tests so the active flow has a single source of truth.
+
+## Task 3D Implementation
+- Added `lib/features/qaza/qaza_completion_flow_v2.dart` as the active completion workflow implementation.
+- Added `CompleteQazaV2Screen` with prayer selection and oldest-pending-first completion.
+- Completion reads the actual individual pending record, preserves its original missed date, and writes a separate completion timestamp.
+- Added a clear empty state when the selected prayer has no pending records.
+- Added `NamazWiseV2Screen` covering all six prayer categories, including independent Witr.
+- Added `PendingDatesV2Screen` with oldest-first date ordering, individual checkbox selection, Select all/Clear all, and multi-record completion for the selected prayer only.
+- Multi-selection is validated through `QazaService.completeSelected()` so only records that are still pending can be completed.
+- Reconnected Dashboard Complete, Prayer ledger View all, and individual prayer cards to the Task 3D V2 screens.
+- Added `test/task3d_completion_flow_test.dart` covering oldest-first presentation, completion metadata preservation, all six prayer options, Witr independence, and multi-select completion.
 
 ## Verification
 - Task 2 Firebase runtime verification: 🟢 VERIFIED by user on physical Android device in earlier Task 2 work.
@@ -59,19 +73,20 @@ Audit constraints preserved:
 - Task 3A implementation: 🟢 COMPLETED; fresh full local/device verification still pending.
 - Task 3B implementation: 🟢 COMPLETED; fresh full local/device verification still pending.
 - Task 3C implementation: 🟢 COMPLETED; cleanup pushed after user-reported test failures.
-- User-reported local `flutter test` on commit `5174092` exposed an obsolete-file compile error (`sunny_snowing_rounded`) and brittle Add Qaza test finders; those obsolete files/tests were removed and the active test was updated.
-- Task 3C local `flutter analyze`: NOT VERIFIED after cleanup.
-- Task 3C local `flutter test`: NOT VERIFIED after cleanup.
-- Task 3C physical Android UI verification: NOT VERIFIED.
+- Task 3D implementation: 🟢 COMPLETED; local/device verification pending.
+- Latest user-reported `flutter test` reached `+22 -1`; the remaining failure was a test viewport assertion in the Hijri-gate test, after which the test was simplified and stabilized.
+- Task 3C/3D local `flutter analyze`: NOT VERIFIED after the latest implementation.
+- Task 3C/3D local `flutter test`: NOT VERIFIED after the latest implementation.
+- Task 3 physical Android UI verification: NOT VERIFIED.
 
 ## Important Scope Boundary
 This Task 3 rebuild uses the supplied Stitch ZIP as the UI/UX source of truth. Existing backend/domain functionality is preserved rather than replaced. Authentication methods beyond Google, OTP providers, email authentication, offline sync, Hijri/calendar calculation, export/import, notifications, and other dedicated infrastructure/business tasks remain separate until actually implemented.
 
 ## Global Task
-Recorded for later work: centralize app-wide theme and reusable UI components so Light/Dark/System switching changes the entire app globally from the shared theme, with repeated controls, cards, dialogs, states, prayer cards, typography, spacing, and other shared UI elements moved into reusable components. This task is deferred until after the current Task 3C verification.
+Recorded for later work: centralize app-wide theme and reusable UI components so Light/Dark/System switching changes the entire app globally from the shared theme, with repeated controls, cards, dialogs, states, prayer cards, typography, spacing, and other shared UI elements moved into reusable components. This task is deferred until after the current Task 3D verification.
 
 ## Last Updated
-2026-09-13 — Task 3C obsolete-code/test cleanup pushed; verification intentionally remains pending.
+2026-09-14 — Task 3D completion and Namaz-wise implementation pushed; verification intentionally remains pending.
 
 ## Next Action
-Pull the latest `main`, run `flutter pub get`, `flutter analyze`, and `flutter test`, then run on the physical Android device and verify Dashboard → Add Qaza → Single Date and Date Range → Missed Prayers → Review → Create Records, including duplicate handling and Witr independence.
+Pull the latest `main`, run `flutter pub get`, `flutter analyze`, and `flutter test`, then run on the physical Android device and verify Dashboard → Complete and Dashboard → Prayer ledger → prayer → Pending dates → multi-select → Complete, including oldest-first behavior, completion timestamps, Witr independence, and empty states.
