@@ -1,14 +1,14 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 1 — Product Workflow
+Task 2 — Google Authentication + Cloud Persistence
 
 ## Overall Progress
-1 / 15 tasks implemented; Task 1 implementation complete, verification pending local Flutter test execution.
+Task 1 verified; Task 2 foundation implemented and awaiting local Firebase project configuration and runtime verification.
 
 ## Task Status
-- Task 1: 🟡 PARTIALLY COMPLETE — implementation completed; local test execution not verifiable from GitHub
-- Task 2: 🔴 NOT STARTED
+- Task 1: 🟢 COMPLETE & VERIFIED — local `flutter test` passed with 12/12 tests.
+- Task 2: 🟡 PARTIALLY COMPLETE — Firebase dependencies, Google authentication repository, Firestore Qaza repository, and user-scoped Firestore rules implemented; Firebase project configuration and device/runtime verification remain.
 - Task 3: 🔴 NOT STARTED
 - Task 4: 🔴 NOT STARTED
 - Task 5: 🔴 NOT STARTED
@@ -23,40 +23,37 @@ Task 1 — Product Workflow
 - Task 14: 🟡 PARTIALLY COMPLETE — core unit tests exist; full QA not started
 - Task 15: 🔴 NOT STARTED
 
-## Completed Work
-- Exactly six independent prayer types: Fajr, Zuhr, Asr, Maghrib, Isha, Witr.
-- Individual Qaza records with original date, status, completion timestamp, creation timestamp, and update timestamp.
-- Date-only normalization for original Qaza dates.
-- Single-date Qaza recording.
-- Multi-date + multi-prayer Qaza recording for date/range workflows.
-- Duplicate-safe Qaza creation using stable user/prayer/date record IDs plus repository duplicate protection.
-- Oldest-pending completion workflow.
-- Prayer-wise bulk completion workflow.
-- Idempotent completion behavior for already-completed records.
-- Pending/completed/total progress derived from individual records.
-- Completed history ordered newest-first by actual completion timestamp.
-- Expanded unit coverage for the core Task 1 business rules.
-- Corrected the history sorting bug found during the baseline audit.
+## Task 2 Implemented
+- Added `firebase_core`, `firebase_auth`, `cloud_firestore`, and official `google_sign_in` dependencies.
+- Added a domain-level `AppUser` entity.
+- Added an `AuthRepository` contract independent of Firebase implementation details.
+- Added `FirebaseAuthRepository` for Google Sign-In through Firebase Authentication.
+- Added `FirestoreQazaRepository` implementing the existing Qaza repository contract.
+- Firestore records are user-scoped at `users/{uid}/qazaRecords/{recordId}`.
+- Existing deterministic Qaza record IDs are preserved for duplicate protection and synchronization.
+- Firestore completion operations remain idempotent and preserve the existing domain workflow.
+- Added `firestore.rules` enforcing authenticated user ownership by Firebase UID.
+- Android Cloud Firestore offline persistence is supported by the Firebase SDK and will be used by the app as the cloud repository is integrated.
 
-## Remaining Work
-- Run `flutter pub get` and `flutter test` locally and verify all tests pass.
-- Integrate Google Stitch frontend in Task 3.
-- Implement Gregorian/Hijri calendar in Task 8.
-- Replace in-memory repository with Firebase/Firestore in Task 2/4.
-- Add authentication and cloud persistence.
-- Add offline/local persistence and synchronization.
-- Add production QA, security rules, export/import, settings, notifications, and release configuration.
+## Task 2 Remaining
+- Create/select the Firebase project.
+- Install/configure Firebase CLI and FlutterFire CLI locally.
+- Run `flutterfire configure` for the Android app and generate `lib/firebase_options.dart`.
+- Enable Google as a Firebase Authentication provider.
+- Create the Cloud Firestore database.
+- Deploy `firestore.rules`.
+- Wire Firebase initialization into `main.dart` after the generated Firebase configuration exists.
+- Replace the placeholder in-memory repository in the application composition root with the authenticated Firestore repository.
+- Connect the authentication state to the application navigation/UI in later UX work.
+- Run `flutter pub get`, `flutter test`, and Android runtime sign-in/Firestore tests locally.
 
-## Known Bugs
-- No known Task 1 domain bug remains from the repository audit.
-- Full runtime behavior is NOT VERIFIED until Flutter tests are executed.
-
-## Blockers
-- GitHub inspection cannot execute Flutter tests in this environment.
-- Task 1 must not be marked fully complete until `flutter test` is run successfully.
+## Known Limitations / Verification
+- Firebase project configuration is NOT VERIFIED from GitHub because it is environment/project-specific and must be generated locally with FlutterFire CLI.
+- Google Sign-In cannot be runtime-verified until Firebase is configured and the Android app's signing configuration/SHA-1 is registered as required by Firebase.
+- The repository currently still uses the in-memory repository in the placeholder HomePage composition; replacing that composition is intentionally gated on Firebase configuration.
 
 ## Last Verified
-2026-09-13 — repository audit and source review; implementation changes committed to `main`.
+2026-09-13 — Task 1 local test result reported by user: `00:03 +12: All tests passed!`; Task 2 source implementation audited and committed to `main`.
 
-## Next Recommended Step
-Run the Flutter test suite locally. If all tests pass, mark Task 1 COMPLETE and begin Task 2 — Google Authentication + Cloud Firestore.
+## Next Action
+Configure Firebase locally with `flutterfire configure`, then wire Firebase initialization and the Firestore/auth repositories into the app and run the full test suite plus Android Google Sign-In/Firestore verification.
