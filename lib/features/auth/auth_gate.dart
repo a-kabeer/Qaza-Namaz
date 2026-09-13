@@ -35,7 +35,7 @@ class _AuthGateState extends State<AuthGate> {
     return StreamBuilder<AppUser?>(stream:widget.authRepository.authStateChanges(),initialData:widget.authRepository.currentUser,builder:(context,snapshot){
       if(snapshot.connectionState==ConnectionState.waiting&&!snapshot.hasData)return const SplashScreen();
       final user=snapshot.data;
-      if(user==null){return showWelcome?WelcomeScreen(onGetStarted:()=>setState(()=>showWelcome=false)):FinalAuthPage(onGoogleSignIn:widget.authRepository.signInWithGoogle);}
+      if(user==null)return showWelcome?WelcomeScreen(onGetStarted:()=>setState(()=>showWelcome=false)):FinalAuthPage(onGoogleSignIn:() async { await widget.authRepository.signInWithGoogle(); });
       if(!setupRequested){setupRequested=true;WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)setState(()=>showSetup=true);});}
       if(showSetup)return FirstTimeSetupScreen(onDone:()=>setState(()=>showSetup=false));
       return FinalAppShell(userId:user.id,repository:widget.qazaRepository,onSignOut:widget.authRepository.signOut,themeMode:widget.themeMode,onThemeModeChanged:widget.onThemeModeChanged);
