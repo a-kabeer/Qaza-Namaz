@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 
+import 'data/auth/firebase_auth_repository.dart';
+import 'data/repositories/firestore_qaza_repository.dart';
+import 'domain/repositories/auth_repository.dart';
+import 'domain/repositories/qaza_repository.dart';
 import 'features/auth/auth_gate.dart';
 
 class QazaNamazApp extends StatelessWidget {
-  QazaNamazApp({super.key});
+  QazaNamazApp({
+    AuthRepository? authRepository,
+    QazaRepository? qazaRepository,
+    super.key,
+  })  : authRepository = authRepository ?? FirebaseAuthRepository(),
+        qazaRepository = qazaRepository ?? FirestoreQazaRepository();
+
+  final AuthRepository authRepository;
+  final QazaRepository qazaRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +26,10 @@ class QazaNamazApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
       ),
-      home: FirebaseAuthGate(),
+      home: AuthGate(
+        authRepository: authRepository,
+        qazaRepository: qazaRepository,
+      ),
     );
   }
 }
