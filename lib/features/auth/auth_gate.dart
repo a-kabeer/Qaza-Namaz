@@ -12,33 +12,91 @@ import '../ui/final_ui.dart';
 import '../ui/onboarding_ui.dart';
 
 class AuthGate extends StatefulWidget {
-  AuthGate({required this.themeMode, required this.onThemeModeChanged, AuthRepository? authRepository, QazaRepository? qazaRepository, super.key})
-      : authRepository = authRepository ?? FirebaseAuthRepository(),
+  AuthGate({
+    required this.themeMode,
+    required this.onThemeModeChanged,
+    AuthRepository? authRepository,
+    QazaRepository? qazaRepository,
+    super.key,
+  })  : authRepository = authRepository ?? FirebaseAuthRepository(),
         qazaRepository = qazaRepository ?? FirestoreQazaRepository();
+
   final AuthRepository authRepository;
   final QazaRepository qazaRepository;
   final AppThemeMode themeMode;
   final ValueChanged<AppThemeMode> onThemeModeChanged;
-  @override State<AuthGate> createState() => _AuthGateState();
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
 }
 
 class _AuthGateState extends State<AuthGate> {
   bool showWelcome = true;
   bool showSetup = false;
   bool setupRequested = false;
-  Timer? splashTimer;
   bool splash = true;
-  @override void initState(){super.initState();splashTimer=Timer(const Duration(milliseconds:700),(){if(mounted)setState(()=>splash=false);});}
-  @override void dispose(){splashTimer?.cancel();super.dispose();}
-  @override Widget build(BuildContext context){
-    if(splash)return const SplashScreen();
-    return StreamBuilder<AppUser?>(stream:widget.authRepository.authStateChanges(),initialData:widget.authRepository.currentUser,builder:(context,snapshot){
-      if(snapshot.connectionState==ConnectionState.waiting&&!snapshot.hasData)return const SplashScreen();
-      final user=snapshot.data;
-      if(user==null)return showWelcome?WelcomeScreen(onGetStarted:()=>setState(()=>showWelcome=false)):FinalAuthPage(onGoogleSignIn:() async { await widget.authRepository.signInWithGoogle(); });
-      if(!setupRequested){setupRequested=true;WidgetsBinding.instance.addPostFrameCallback((_){if(mounted)setState(()=>showSetup=true);});}
-      if(showSetup)return FirstTimeSetupScreen(onDone:()=>setState(()=>showSetup=false));
-      return FinalAppShell(userId:user.id,repository:widget.qazaRepository,onSignOut:widget.authRepository.signOut,themeMode:widget.themeMode,onThemeModeChanged:widget.onThemeModeChanged);
+  Timer? splashTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    splashTimer = Timer(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => splash = false);
     });
+  }
+
+  @override
+  void dispose() {
+    splashTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (splash) return const SplashScreen();
+
+    return StreamBuilder<AppUser?>(
+      stream: widget.authRepository.authStateChanges(),
+      initialData: widget.authRepository.currentUser,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const SplashScreen();
+        }
+
+        final user = snapshot.data;
+        if (user == null) {
+          return showWelcome
+              ? WelcomeScreen(
+                  onGetStarted: () => setState(() => showWelcome = false),
+                )
+              : FinalAuthPage(
+                  onGoogleSignIn: () async {
+                    await widget.authRepository.signInWithGoogle();
+                  },
+                );
+        }
+
+        if (!setupRequested) {
+          setupRequested = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => showSetup = true);
+          });
+        }
+
+        if (showSetup) {
+          return FirstTimeSetupScreen(
+            onDone: () => setState(() => showSetup = false),
+          );
+        }
+
+        return FinalAppShell(
+          userId: user.id,
+          repository: widget.qazaRepository,
+          onSignOut: widget.authRepository.signOut,
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
+        );
+      },
+    );
   }
 }
