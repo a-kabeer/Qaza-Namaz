@@ -7,6 +7,7 @@ import '../../domain/services/qaza_service.dart';
 import '../qaza/qaza_add_flow_v2.dart';
 import '../qaza/qaza_completion_flow_v2.dart';
 import 'final_ui.dart';
+import 'history_progress_v2.dart';
 
 class WorkspaceShellV2 extends StatefulWidget {
   const WorkspaceShellV2({required this.userId, required this.repository, required this.onSignOut, super.key});
@@ -28,7 +29,7 @@ class _WorkspaceShellV2State extends State<WorkspaceShellV2> {
     final pages = <Widget>[
       _Dashboard(service: service, userId: widget.userId),
       const CalculatorScreen(),
-      HistoryScreen(service: service, userId: widget.userId),
+      HistoryProgressV2Screen(service: service, userId: widget.userId),
       SettingsScreen(onSignOut: widget.onSignOut),
     ];
     return Scaffold(
