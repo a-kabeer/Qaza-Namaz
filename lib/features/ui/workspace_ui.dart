@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/services/qaza_service.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/services/qaza_service.dart';
 import 'final_ui.dart';
 
 class WorkspaceShell extends StatefulWidget {
@@ -94,7 +93,11 @@ class _DashboardWorkspaceState extends State<DashboardWorkspace> {
 
   Future<void> _refresh() async {
     setState(_load);
-    await _recordsFuture;
+    try {
+      await _recordsFuture;
+    } catch (_) {
+      // The visible FutureBuilder owns the error presentation.
+    }
   }
 
   @override
@@ -415,7 +418,7 @@ class _PrayerLedgerCard extends StatelessWidget {
       case PrayerType.zuhr:
         return Icons.wb_sunny_rounded;
       case PrayerType.asr:
-        return Icons.sunny_snowing_rounded;
+        return Icons.wb_sunny_outlined;
       case PrayerType.maghrib:
         return Icons.nights_stay_outlined;
       case PrayerType.isha:
