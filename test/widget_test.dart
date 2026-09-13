@@ -96,7 +96,10 @@ void main() {
 
   testWidgets('Forgot Password screen opens', (WidgetTester tester) async {
     await _openAuth(tester);
-    await tester.tap(find.text('Forgot password?'));
+
+    final forgotPassword = find.text('Forgot password?');
+    await tester.ensureVisible(forgotPassword);
+    await tester.tap(forgotPassword);
     await tester.pumpAndSettle();
 
     expect(find.text('Forgot Password'), findsAtLeastNWidgets(1));
