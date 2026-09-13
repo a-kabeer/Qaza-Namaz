@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/features/ui/workspace_ui.dart';
+import 'package:qaza_namaz/features/ui/workspace_v2.dart';
 
 void main() {
-  testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
-    final repository = InMemoryQazaRepository();
-
+  Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: WorkspaceShell(
+        home: WorkspaceShellV2(
           userId: 'test-user',
           repository: repository,
           onSignOut: () async {},
@@ -19,6 +17,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await pumpWorkspace(tester, repository);
 
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Calculator'), findsOneWidget);
@@ -53,16 +56,7 @@ void main() {
       ),
     ]);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: WorkspaceShell(
-          userId: 'test-user',
-          repository: repository,
-          onSignOut: () async {},
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpWorkspace(tester, repository);
 
     expect(find.text('1 pending'), findsWidgets);
     expect(find.text('Completed'), findsOneWidget);
@@ -72,17 +66,7 @@ void main() {
 
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     final repository = InMemoryQazaRepository();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: WorkspaceShell(
-          userId: 'test-user',
-          repository: repository,
-          onSignOut: () async {},
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await pumpWorkspace(tester, repository);
 
     await tester.tap(find.text('Calculator'));
     await tester.pumpAndSettle();
