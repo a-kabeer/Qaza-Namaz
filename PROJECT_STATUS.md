@@ -4,7 +4,7 @@
 Task 3D — Complete Qaza + Namaz-wise Multi-Selection Flow
 
 ## Overall Progress
-Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is being rebuilt incrementally from the supplied Stitch ZIP. Task 3A, Task 3B, and Task 3C implementations are in place with fresh verification still pending. Task 3D implementation is now added; local/device verification remains pending.
+Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is being rebuilt incrementally from the supplied Stitch ZIP. Task 3A, Task 3B, and Task 3C implementations are in place with fresh verification still pending. Task 3D implementation has been corrected and deepened with additional test coverage; local/device verification remains pending.
 
 ## Task Status
 - Task 1: 🟢 COMPLETE & VERIFIED — Qaza ledger business workflow and tests are complete.
@@ -13,7 +13,7 @@ Task 1 and Task 2 remain complete and previously runtime-verified. Task 3 is bei
 - Task 3A: 🟡 IMPLEMENTED — Authentication & Onboarding implementation added; local/device verification pending.
 - Task 3B: 🟡 IMPLEMENTED — Dashboard, global navigation, live ledger overview, and system states added; local/device verification pending.
 - Task 3C: 🟡 IMPLEMENTED — Add Qaza setup, single-date/range selection, missed-prayer selection, duplicate-safe review, confirmation, and record creation flow added; local/device verification pending.
-- Task 3D: 🟡 IMPLEMENTED — Complete Qaza oldest-first flow plus Namaz-wise prayer/date multi-selection flow added; local/device verification pending.
+- Task 3D: 🟡 IMPLEMENTED — Complete oldest pending Qaza, Namaz-wise prayer selection, pending-date multi-select completion, timestamp/original-date preservation, and Witr independence implemented; local/device verification pending.
 - Task 4: 🔴 NOT STARTED
 - Task 5: 🔴 NOT STARTED
 - Task 6: 🔴 NOT STARTED
@@ -65,7 +65,8 @@ Audit constraints preserved:
 - Added `PendingDatesV2Screen` with oldest-first date ordering, individual checkbox selection, Select all/Clear all, and multi-record completion for the selected prayer only.
 - Multi-selection is validated through `QazaService.completeSelected()` so only records that are still pending can be completed.
 - Reconnected Dashboard Complete, Prayer ledger View all, and individual prayer cards to the Task 3D V2 screens.
-- Added `test/task3d_completion_flow_test.dart` covering oldest-first presentation, completion metadata preservation, all six prayer options, Witr independence, and multi-select completion.
+- Corrected the dashboard button layout syntax that caused compilation errors in the user-reported local run.
+- Hardened `test/task3d_completion_flow_test.dart` against viewport/hit-test issues and added coverage for Witr/Isha independence.
 
 ## Verification
 - Task 2 Firebase runtime verification: 🟢 VERIFIED by user on physical Android device in earlier Task 2 work.
@@ -73,11 +74,11 @@ Audit constraints preserved:
 - Task 3A implementation: 🟢 COMPLETED; fresh full local/device verification still pending.
 - Task 3B implementation: 🟢 COMPLETED; fresh full local/device verification still pending.
 - Task 3C implementation: 🟢 COMPLETED; cleanup pushed after user-reported test failures.
-- Task 3D implementation: 🟢 COMPLETED; local/device verification pending.
-- Latest user-reported `flutter test` reached `+22 -1`; the remaining failure was a test viewport assertion in the Hijri-gate test, after which the test was simplified and stabilized.
-- Task 3C/3D local `flutter analyze`: NOT VERIFIED after the latest implementation.
-- Task 3C/3D local `flutter test`: NOT VERIFIED after the latest implementation.
-- Task 3 physical Android UI verification: NOT VERIFIED.
+- Task 3D implementation: 🟢 COMPLETED; source reviewed for compile issue and test coverage deepened after user-reported failures.
+- User-reported local `flutter test` on commit `05d248f` exposed malformed multiline dashboard button expressions in `workspace_v2.dart` and a viewport-sensitive Witr test interaction. These have been corrected on `main`.
+- Task 3D local `flutter analyze`: NOT VERIFIED after latest correction.
+- Task 3D local `flutter test`: NOT VERIFIED after latest correction.
+- Task 3D physical Android UI verification: NOT VERIFIED.
 
 ## Important Scope Boundary
 This Task 3 rebuild uses the supplied Stitch ZIP as the UI/UX source of truth. Existing backend/domain functionality is preserved rather than replaced. Authentication methods beyond Google, OTP providers, email authentication, offline sync, Hijri/calendar calculation, export/import, notifications, and other dedicated infrastructure/business tasks remain separate until actually implemented.
@@ -86,7 +87,7 @@ This Task 3 rebuild uses the supplied Stitch ZIP as the UI/UX source of truth. E
 Recorded for later work: centralize app-wide theme and reusable UI components so Light/Dark/System switching changes the entire app globally from the shared theme, with repeated controls, cards, dialogs, states, prayer cards, typography, spacing, and other shared UI elements moved into reusable components. This task is deferred until after the current Task 3D verification.
 
 ## Last Updated
-2026-09-14 — Task 3D completion and Namaz-wise implementation pushed; verification intentionally remains pending.
+2026-09-14 — Task 3D compile/test issues corrected and coverage expanded; verification intentionally remains pending.
 
 ## Next Action
-Pull the latest `main`, run `flutter pub get`, `flutter analyze`, and `flutter test`, then run on the physical Android device and verify Dashboard → Complete and Dashboard → Prayer ledger → prayer → Pending dates → multi-select → Complete, including oldest-first behavior, completion timestamps, Witr independence, and empty states.
+Pull the latest `main`, run `flutter pub get`, `flutter analyze`, and `flutter test`, then run on the physical Android device and verify Dashboard → Complete → oldest pending completion, Dashboard → Prayer ledger → prayer → pending dates → multi-select → complete, original-date preservation, completion timestamp recording, empty states, and Witr independence from Isha.
