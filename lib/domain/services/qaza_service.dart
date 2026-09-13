@@ -200,7 +200,7 @@ class QazaService {
     );
     records.sort(
       (a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-          .compareTo(b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+          .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
     );
     return records;
   }
