@@ -4,6 +4,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
+import '../qaza/qaza_add_flow.dart';
 import 'final_ui.dart';
 
 class WorkspaceShell extends StatefulWidget {
@@ -200,7 +201,7 @@ class _DashboardWorkspaceState extends State<DashboardWorkspace> {
                       child: FilledButton.icon(
                         onPressed: () => _open(
                           context,
-                          AddQazaScreen(service: widget.service, userId: widget.userId),
+                          QazaAddFlowScreen(service: widget.service, userId: widget.userId),
                         ),
                         icon: const Icon(Icons.add_rounded),
                         label: const Text('Add Qaza'),
