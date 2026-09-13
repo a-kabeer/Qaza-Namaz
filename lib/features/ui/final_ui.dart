@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_progress.dart';
+import '../../core/theme/app_theme.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
@@ -108,8 +108,8 @@ class FinalAppShell extends StatefulWidget {
   final QazaRepository repository;
   final String userId;
   final Future<void> Function() onSignOut;
-  final Object themeMode;
-  final ValueChanged<Object> onThemeModeChanged;
+  final AppThemeMode themeMode;
+  final ValueChanged<AppThemeMode> onThemeModeChanged;
 
   @override
   State<FinalAppShell> createState() => _FinalAppShellState();
@@ -449,18 +449,18 @@ class CalculatorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const PageScaffold(
+    return PageScaffold(
       title: 'Calculator',
       child: ListView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         children: [
-          Text('Qaza estimate calculator'),
-          SizedBox(height: 12),
-          Text('Use this screen for planning and estimation. It does not replace individual Qaza records.'),
-          SizedBox(height: 20),
-          TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Years of missed prayers')),
-          SizedBox(height: 12),
-          FilledButton(onPressed: null, child: Text('Calculate')),
+          const Text('Qaza estimate calculator'),
+          const SizedBox(height: 12),
+          const Text('Use this screen for planning and estimation. It does not replace individual Qaza records.'),
+          const SizedBox(height: 20),
+          const TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Years of missed prayers')),
+          const SizedBox(height: 12),
+          const FilledButton(onPressed: null, child: Text('Calculate')),
         ],
       ),
     );
@@ -556,11 +556,11 @@ class AccountScreen extends StatelessWidget {
 class FiqhScreen extends StatelessWidget {
   const FiqhScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PageScaffold(
+  Widget build(BuildContext context) => PageScaffold(
     title: 'Prayer & Fiqh Rules',
     child: ListView(
-      padding: EdgeInsets.all(16),
-      children: [
+      padding: const EdgeInsets.all(16),
+      children: const [
         ListTile(title: Text('Calculation Method'), subtitle: Text('Choose the method applicable to your circumstances.')),
         ListTile(title: Text('Baligh / Puberty'), subtitle: Text('Used by the planning calculator.')),
         ListTile(title: Text('Witr'), subtitle: Text('Witr remains an independent prayer category.')),
@@ -572,11 +572,11 @@ class FiqhScreen extends StatelessWidget {
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PageScaffold(
+  Widget build(BuildContext context) => PageScaffold(
     title: 'Notifications',
     child: ListView(
-      padding: EdgeInsets.all(16),
-      children: [SwitchListTile(value: false, onChanged: null, title: Text('Daily reminder'), subtitle: Text('Notification support will be implemented in the notifications task.'))],
+      padding: const EdgeInsets.all(16),
+      children: const [SwitchListTile(value: false, onChanged: null, title: Text('Daily reminder'), subtitle: Text('Notification support will be implemented in the notifications task.'))],
     ),
   );
 }
@@ -584,11 +584,11 @@ class NotificationsScreen extends StatelessWidget {
 class DataCloudScreen extends StatelessWidget {
   const DataCloudScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PageScaffold(
+  Widget build(BuildContext context) => PageScaffold(
     title: 'Data & Cloud',
     child: ListView(
-      padding: EdgeInsets.all(16),
-      children: [
+      padding: const EdgeInsets.all(16),
+      children: const [
         Card(child: ListTile(leading: Icon(Icons.cloud_done_outlined), title: Text('Cloud Sync'), subtitle: Text('Sync status will be provided by the sync task.'))),
         SizedBox(height: 10),
         Card(child: ListTile(title: Text('Export / Import'), subtitle: Text('Data export and import will be connected by the data task.'))),
@@ -600,17 +600,20 @@ class DataCloudScreen extends StatelessWidget {
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PageScaffold(title: 'Progress', child: Center(child: Text('Detailed progress will use live Qaza records.')));
+  Widget build(BuildContext context) => PageScaffold(
+    title: 'Progress',
+    child: const Center(child: Text('Detailed progress will use live Qaza records.')),
+  );
 }
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PageScaffold(
+  Widget build(BuildContext context) => PageScaffold(
     title: 'About',
     child: ListView(
-      padding: EdgeInsets.all(16),
-      children: [ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')), ListTile(title: Text('Version'), subtitle: Text('0.2.0'))],
+      padding: const EdgeInsets.all(16),
+      children: const [ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')), ListTile(title: Text('Version'), subtitle: Text('0.2.0'))],
     ),
   );
 }
@@ -622,8 +625,6 @@ class PageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text(title)), body: child);
 }
-
-String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
 String _formatDate(DateTime? date) {
   if (date == null) return '—';
