@@ -4,15 +4,19 @@ import '../../data/auth/firebase_auth_repository.dart';
 import '../../data/repositories/firestore_qaza_repository.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/qaza_repository.dart';
 import '../home/home_page.dart';
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({
-    required this.authRepository,
+  AuthGate({
+    AuthRepository? authRepository,
+    QazaRepository? qazaRepository,
     super.key,
-  });
+  })  : authRepository = authRepository ?? FirebaseAuthRepository(),
+        qazaRepository = qazaRepository ?? FirestoreQazaRepository();
 
   final AuthRepository authRepository;
+  final QazaRepository qazaRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +38,7 @@ class AuthGate extends StatelessWidget {
 
         return HomePage(
           userId: user.id,
-          repository: FirestoreQazaRepository(),
+          repository: qazaRepository,
           onSignOut: authRepository.signOut,
         );
       },
@@ -63,7 +67,7 @@ class _SignInPageState extends State<_SignInPage> {
 
     try {
       await widget.authRepository.signInWithGoogle();
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Google Sign-In failed. Please try again.';
@@ -106,7 +110,9 @@ class _SignInPageState extends State<_SignInPage> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.login),
-                    label: Text(_signingIn ? 'Signing in...' : 'Continue with Google'),
+                    label: Text(
+                      _signingIn ? 'Signing in...' : 'Continue with Google',
+                    ),
                   ),
                 ),
                 if (_errorMessage != null) ...[
@@ -114,7 +120,9 @@ class _SignInPageState extends State<_SignInPage> {
                   Text(
                     _errorMessage!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ],
               ],
@@ -123,16 +131,5 @@ class _SignInPageState extends State<_SignInPage> {
         ),
       ),
     );
-  }
-}
-
-class FirebaseAuthGate extends StatelessWidget {
-  FirebaseAuthGate({super.key}) : authRepository = FirebaseAuthRepository();
-
-  final AuthRepository authRepository;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuthGate(authRepository: authRepository);
   }
 }
