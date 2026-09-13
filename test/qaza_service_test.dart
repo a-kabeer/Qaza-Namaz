@@ -20,22 +20,67 @@ void main() {
     });
 
     test('does not create duplicate qaza for same user/prayer/date', () async {
-      final date = DateTime(2024, 1, 1);
-
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.fajr,
-        originalDate: date,
+        originalDate: DateTime(2024, 1, 1, 23, 45),
       );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.fajr,
-        originalDate: date,
+        originalDate: DateTime(2024, 1, 1),
       );
 
       final progress = await service.overallProgress('u1');
       expect(progress.total, 1);
       expect(progress.pending, 1);
+    });
+
+    test('normalizes original Qaza date to date-only', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2024, 1, 1, 23, 59),
+      );
+
+      final records = await service.repository.getRecords(userId: 'u1');
+      expect(records.single.originalDate, DateTime(2024, 1, 1));
+    });
+
+    test('records every selected prayer for every selected date', () async {
+      await service.recordQazaForDates(
+        userId: 'u1',
+        dates: [DateTime(2024, 1, 1), DateTime(2024, 1, 2)],
+        prayerTypes: [PrayerType.fajr, PrayerType.isha, PrayerType.witr],
+      );
+
+      final progress = await service.overallProgress('u1');
+      expect(progress.total, 6);
+
+      final witr = await service.prayerProgress('u1', PrayerType.witr);
+      expect(witr.progress.total, 2);
+    });
+
+    test('bulk date recording remains duplicate-safe', () async {
+      final dates = [
+        DateTime(2024, 1, 1),
+        DateTime(2024, 1, 1, 12),
+        DateTime(2024, 1, 2),
+      ];
+
+      await service.recordQazaForDates(
+        userId: 'u1',
+        dates: dates,
+        prayerTypes: [PrayerType.fajr, PrayerType.witr],
+      );
+      await service.recordQazaForDates(
+        userId: 'u1',
+        dates: dates,
+        prayerTypes: [PrayerType.fajr, PrayerType.witr],
+      );
+
+      final progress = await service.overallProgress('u1');
+      expect(progress.total, 4);
     });
 
     test('oldest pending record is completed first', () async {
@@ -50,21 +95,34 @@ void main() {
         originalDate: DateTime(2024, 1, 1),
       );
 
-      final completed = await service.completeOldestPending(
-        userId: 'u1',
-        prayerType: PrayerType.fajr,
-        completedAt: DateTime(2026, 9, 13, 10),
+      final completedAt = DateTime(2026, 9, 13, 10);
+      expect(
+        await service.completeOldestPending(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          completedAt: completedAt,
+        ),
+        isTrue,
       );
-
-      expect(completed, isTrue);
 
       final records = await service.repository.getRecords(userId: 'u1');
-      final oldest = records.firstWhere(
-        (r) => r.originalDate.day == 1,
-      );
+      final oldest = records.firstWhere((r) => r.originalDate.day == 1);
+      final newer = records.firstWhere((r) => r.originalDate.day == 3);
       expect(oldest.status, QazaStatus.completed);
       expect(oldest.originalDate, DateTime(2024, 1, 1));
-      expect(oldest.completedAt, DateTime(2026, 9, 13, 10));
+      expect(oldest.completedAt, completedAt);
+      expect(newer.status, QazaStatus.pending);
+    });
+
+    test('returns false when no pending Qaza exists', () async {
+      expect(
+        await service.completeOldestPending(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          completedAt: DateTime(2026, 9, 13),
+        ),
+        isFalse,
+      );
     });
 
     test('bulk completion changes only selected pending records', () async {
@@ -78,27 +136,85 @@ void main() {
 
       final records = await service.repository.getRecords(userId: 'u1');
       final selected = records.take(3).map((r) => r.id).toList();
+      final completedAt = DateTime(2026, 9, 13, 11);
 
       final count = await service.completeSelected(
         userId: 'u1',
         recordIds: selected,
-        completedAt: DateTime(2026, 9, 13),
+        completedAt: completedAt,
       );
 
       expect(count, 3);
-
-      final progress = await service.prayerProgress(
-        'u1',
-        PrayerType.fajr,
-      );
+      final progress = await service.prayerProgress('u1', PrayerType.fajr);
       expect(progress.progress.pending, 2);
       expect(progress.progress.completed, 3);
     });
 
-    test('completed count never becomes negative', () async {
+    test('bulk completion is idempotent for completed records', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2024, 1, 1),
+      );
+      final record = (await service.repository.getRecords(userId: 'u1')).single;
+
+      expect(
+        await service.completeSelected(
+          userId: 'u1',
+          recordIds: [record.id],
+          completedAt: DateTime(2026, 9, 13),
+        ),
+        1,
+      );
+      expect(
+        await service.completeSelected(
+          userId: 'u1',
+          recordIds: [record.id],
+          completedAt: DateTime(2026, 9, 14),
+        ),
+        0,
+      );
+    });
+
+    test('empty selection completes nothing', () async {
+      expect(
+        await service.completeSelected(userId: 'u1', recordIds: []),
+        0,
+      );
+    });
+
+    test('history is newest-first by completion timestamp', () async {
+      for (var day = 1; day <= 3; day++) {
+        await service.recordQaza(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2024, 1, day),
+        );
+      }
+
+      final records = await service.repository.getRecords(userId: 'u1');
+      await service.completeSelected(
+        userId: 'u1',
+        recordIds: [records[0].id],
+        completedAt: DateTime(2026, 9, 13, 9),
+      );
+      await service.completeSelected(
+        userId: 'u1',
+        recordIds: [records[1].id],
+        completedAt: DateTime(2026, 9, 13, 11),
+      );
+
+      final history = await service.history('u1');
+      expect(history.length, 2);
+      expect(history[0].completedAt, DateTime(2026, 9, 13, 11));
+      expect(history[1].completedAt, DateTime(2026, 9, 13, 9));
+    });
+
+    test('progress never reports negative pending values', () async {
       final progress = await service.overallProgress('u1');
       expect(progress.pending, 0);
       expect(progress.completed, 0);
+      expect(progress.total, 0);
       expect(progress.percentage, 0);
     });
   });
