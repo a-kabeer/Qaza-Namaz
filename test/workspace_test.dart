@@ -85,11 +85,18 @@ void main() {
 
     await tester.tap(find.text('Logs'));
     await tester.pumpAndSettle();
-    expect(find.text('No Qaza history yet.'), findsOneWidget);
+    expect(find.text('Logs & Progress'), findsOneWidget);
+    final emptyHistory = find.text('No completed Qaza yet.', skipOffstage: false);
+    expect(emptyHistory, findsOneWidget);
+    await tester.scrollUntilVisible(emptyHistory, 300, scrollable: find.byType(Scrollable));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
     expect(find.text('Account'), findsOneWidget);
-    expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
+    final fiqh = find.text('Prayer & Fiqh Rules', skipOffstage: false);
+    expect(fiqh, findsOneWidget);
+    await tester.scrollUntilVisible(fiqh, 300, scrollable: find.byType(Scrollable));
+    await tester.pumpAndSettle();
   });
 }
