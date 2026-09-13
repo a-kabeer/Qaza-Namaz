@@ -1,42 +1,82 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/prayer_types.dart';
-import '../../data/repositories/in_memory_qaza_repository.dart';
+import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.userId,
+    required this.repository,
+    required this.onSignOut,
+    super.key,
+  });
+
+  final String userId;
+  final QazaRepository repository;
+  final Future<void> Function() onSignOut;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final _service = QazaService(InMemoryQazaRepository());
-  static const _userId = 'demo-user';
+  late final QazaService _service;
 
   int _pending = 0;
   bool _loading = true;
+  bool _signingOut = false;
 
   @override
   void initState() {
     super.initState();
+    _service = QazaService(widget.repository);
     _load();
   }
 
   Future<void> _load() async {
-    final progress = await _service.overallProgress(_userId);
-    if (!mounted) return;
-    setState(() {
-      _pending = progress.pending;
-      _loading = false;
-    });
+    try {
+      final progress = await _service.overallProgress(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _pending = progress.pending;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    if (_signingOut) return;
+    setState(() => _signingOut = true);
+    try {
+      await widget.onSignOut();
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Qaza Namaz')),
+      appBar: AppBar(
+        title: const Text('Qaza Namaz'),
+        actions: [
+          IconButton(
+            tooltip: 'Sign out',
+            onPressed: _signingOut ? null : _signOut,
+            icon: _signingOut
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.logout),
+          ),
+        ],
+      ),
       body: Center(
         child: _loading
             ? const CircularProgressIndicator()
@@ -44,15 +84,15 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Task 1 Core Workflow',
+                    'Qaza Namaz',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 12),
                   Text('Pending Qaza: $_pending'),
                   const SizedBox(height: 24),
                   const Text(
-                    'Frontend is intentionally minimal.\n'
-                    'Replace this screen with the Google Stitch UI.',
+                    'Your records are now loaded through your signed-in account.\n'
+                    'The complete Google Stitch interface will be added in Task 3.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
