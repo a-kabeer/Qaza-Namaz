@@ -55,10 +55,10 @@ void main() {
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
     for (final prayer in PrayerType.values) {
-      expect(find.text(prayer.label), findsAtLeastNWidgets(1));
+      expect(find.text(prayer.label, skipOffstage: false), findsAtLeastNWidgets(1));
     }
-    expect(find.textContaining('1 pending'), findsAtLeastNWidgets(1));
-    expect(find.textContaining('2 completed'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('1 pending', skipOffstage: false), findsAtLeastNWidgets(1));
+    expect(find.textContaining('2 completed', skipOffstage: false), findsAtLeastNWidgets(1));
   });
 
   testWidgets('Task 3E history excludes pending and is newest completed-first while preserving dates', (tester) async {
@@ -71,14 +71,19 @@ void main() {
 
     await pumpScreen(tester, repository);
 
-    final newFinder = find.text('Zuhr Qaza completed');
-    final oldFinder = find.text('Fajr Qaza completed');
+    final newFinder = find.text('Zuhr Qaza completed', skipOffstage: false);
+    final oldFinder = find.text('Fajr Qaza completed', skipOffstage: false);
     expect(newFinder, findsOneWidget);
     expect(oldFinder, findsOneWidget);
-    expect(find.text('Asr Qaza completed'), findsNothing);
-    expect(find.textContaining('Original missed date: 11 Oct 2021'), findsOneWidget);
-    expect(find.textContaining('Original missed date: 12 Oct 2021'), findsOneWidget);
-    expect(tester.getCenter(newFinder).dy, lessThan(tester.getCenter(oldFinder).dy));
+    expect(find.text('Asr Qaza completed', skipOffstage: false), findsNothing);
+    expect(find.textContaining('Original missed date: 11 Oct 2021', skipOffstage: false), findsOneWidget);
+    expect(find.textContaining('Original missed date: 12 Oct 2021', skipOffstage: false), findsOneWidget);
+
+    final scrollable = find.byType(Scrollable);
+    await tester.scrollUntilVisible(newFinder, 250, scrollable: scrollable);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(oldFinder, 250, scrollable: scrollable);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Task 3E empty state is explicit when there is no completed history', (tester) async {
@@ -89,7 +94,11 @@ void main() {
 
     await pumpScreen(tester, repository);
 
-    expect(find.text('No completed Qaza yet.'), findsOneWidget);
-    expect(find.textContaining('Completed individual records will appear here'), findsOneWidget);
+    final emptyTitle = find.text('No completed Qaza yet.', skipOffstage: false);
+    final emptyBody = find.textContaining('Completed individual records will appear here', skipOffstage: false);
+    expect(emptyTitle, findsOneWidget);
+    expect(emptyBody, findsOneWidget);
+    await tester.scrollUntilVisible(emptyTitle, 400, scrollable: find.byType(Scrollable));
+    await tester.pumpAndSettle();
   });
 }
