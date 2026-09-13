@@ -1,0 +1,163 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_repository.dart';
+
+class FirestoreQazaRepository implements QazaRepository {
+  FirestoreQazaRepository({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+
+  CollectionReference<Map<String, dynamic>> _recordsCollection(
+    String userId,
+  ) {
+    return _firestore.collection('users').doc(userId).collection('qazaRecords');
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecords({
+    required String userId,
+    PrayerType? prayerType,
+    QazaStatus? status,
+  }) async {
+    Query<Map<String, dynamic>> query = _recordsCollection(userId);
+
+    if (prayerType != null) {
+      query = query.where('prayerType', isEqualTo: prayerType.name);
+    }
+    if (status != null) {
+      query = query.where('status', isEqualTo: status.name);
+    }
+
+    final snapshot = await query.get();
+    final records = snapshot.docs
+        .map((document) => _fromDocument(document))
+        .toList();
+
+    records.sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    return records;
+  }
+
+  @override
+  Future<void> addRecord(QazaRecord record) async {
+    final reference = _recordsCollection(record.userId).doc(record.id);
+
+    await _firestore.runTransaction((transaction) async {
+      final existing = await transaction.get(reference);
+      if (existing.exists) return;
+      transaction.set(reference, _toMap(record));
+    });
+  }
+
+  @override
+  Future<void> addRecords(List<QazaRecord> records) async {
+    for (final record in records) {
+      await addRecord(record);
+    }
+  }
+
+  @override
+  Future<void> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    await completeRecords(
+      userId: userId,
+      recordIds: [recordId],
+      completedAt: completedAt,
+    );
+  }
+
+  @override
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    if (recordIds.isEmpty) return;
+
+    final uniqueIds = recordIds.toSet();
+    for (final recordId in uniqueIds) {
+      final reference = _recordsCollection(userId).doc(recordId);
+
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(reference);
+        if (!snapshot.exists) return;
+
+        final record = _fromDocument(snapshot);
+        if (record.userId != userId || record.status == QazaStatus.completed) {
+          return;
+        }
+
+        transaction.update(reference, {
+          'status': QazaStatus.completed.name,
+          'completedAt': Timestamp.fromDate(completedAt),
+          'updatedAt': Timestamp.fromDate(completedAt),
+        });
+      });
+    }
+  }
+
+  Map<String, dynamic> _toMap(QazaRecord record) {
+    return {
+      'userId': record.userId,
+      'prayerType': record.prayerType.name,
+      'originalDate': Timestamp.fromDate(record.originalDate),
+      'status': record.status.name,
+      'completedAt': record.completedAt == null
+          ? null
+          : Timestamp.fromDate(record.completedAt!),
+      'createdAt': Timestamp.fromDate(record.createdAt),
+      'updatedAt': Timestamp.fromDate(record.updatedAt),
+    };
+  }
+
+  QazaRecord _fromDocument(
+    DocumentSnapshot<Map<String, dynamic>> document,
+  ) {
+    final data = document.data();
+    if (data == null) {
+      throw StateError('Qaza record ${document.id} has no data.');
+    }
+
+    final prayerName = data['prayerType'] as String?;
+    final statusName = data['status'] as String?;
+    final prayerType = PrayerType.values.firstWhere(
+      (value) => value.name == prayerName,
+      orElse: () => throw StateError(
+        'Unknown prayer type "$prayerName" in Qaza record ${document.id}.',
+      ),
+    );
+    final status = QazaStatus.values.firstWhere(
+      (value) => value.name == statusName,
+      orElse: () => throw StateError(
+        'Unknown Qaza status "$statusName" in record ${document.id}.',
+      ),
+    );
+
+    return QazaRecord(
+      id: document.id,
+      userId: data['userId'] as String? ?? '',
+      prayerType: prayerType,
+      originalDate: _timestamp(data['originalDate'], 'originalDate'),
+      status: status,
+      completedAt: _nullableTimestamp(data['completedAt']),
+      createdAt: _timestamp(data['createdAt'], 'createdAt'),
+      updatedAt: _timestamp(data['updatedAt'], 'updatedAt'),
+    );
+  }
+
+  DateTime _timestamp(Object? value, String fieldName) {
+    if (value is Timestamp) return value.toDate();
+    throw StateError('Missing or invalid $fieldName in Firestore Qaza record.');
+  }
+
+  DateTime? _nullableTimestamp(Object? value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    throw StateError('Invalid completedAt in Firestore Qaza record.');
+  }
+}
