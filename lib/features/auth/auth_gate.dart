@@ -8,8 +8,8 @@ import '../../data/repositories/firestore_qaza_repository.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/qaza_repository.dart';
-import '../ui/final_ui.dart';
 import '../ui/onboarding_ui.dart';
+import '../ui/workspace_ui.dart';
 import 'authentication_screen.dart';
 
 class AuthGate extends StatefulWidget {
@@ -42,7 +42,10 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   @override
-  void dispose() { splashTimer?.cancel(); super.dispose(); }
+  void dispose() {
+    splashTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,29 +54,45 @@ class _AuthGateState extends State<AuthGate> {
       stream: widget.authRepository.authStateChanges(),
       initialData: widget.authRepository.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) return const SplashScreen();
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const SplashScreen();
+        }
         final user = snapshot.data;
         if (user == null) {
-          if (showWelcome) return WelcomeScreen(onGetStarted: () => setState(() => showWelcome = false));
+          if (showWelcome) {
+            return WelcomeScreen(onGetStarted: () => setState(() => showWelcome = false));
+          }
           return AuthenticationScreen(onGoogleSignIn: widget.authRepository.signInWithGoogle);
         }
         if (!setupRequested) {
           setupRequested = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) setState(() => showSetup = true); });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => showSetup = true);
+          });
         }
         if (showSetup) {
           return FirstTimeSetupScreen(
             onDone: () => setState(() => showSetup = false),
             onThemeModeChanged: (mode) {
               switch (mode) {
-                case ThemeMode.system: widget.onThemeModeChanged(AppThemeMode.system); break;
-                case ThemeMode.light: widget.onThemeModeChanged(AppThemeMode.light); break;
-                case ThemeMode.dark: widget.onThemeModeChanged(AppThemeMode.dark); break;
+                case ThemeMode.system:
+                  widget.onThemeModeChanged(AppThemeMode.system);
+                  break;
+                case ThemeMode.light:
+                  widget.onThemeModeChanged(AppThemeMode.light);
+                  break;
+                case ThemeMode.dark:
+                  widget.onThemeModeChanged(AppThemeMode.dark);
+                  break;
               }
             },
           );
         }
-        return FinalAppShell(userId: user.id, repository: widget.qazaRepository, onSignOut: widget.authRepository.signOut, themeMode: widget.themeMode, onThemeModeChanged: widget.onThemeModeChanged);
+        return WorkspaceShell(
+          userId: user.id,
+          repository: widget.qazaRepository,
+          onSignOut: widget.authRepository.signOut,
+        );
       },
     );
   }
