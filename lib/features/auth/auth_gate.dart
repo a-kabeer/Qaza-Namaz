@@ -12,13 +12,8 @@ import '../ui/final_ui.dart';
 import '../ui/onboarding_ui.dart';
 
 class AuthGate extends StatefulWidget {
-  AuthGate({
-    required this.themeMode,
-    required this.onThemeModeChanged,
-    AuthRepository? authRepository,
-    QazaRepository? qazaRepository,
-    super.key,
-  })  : authRepository = authRepository ?? FirebaseAuthRepository(),
+  AuthGate({required this.themeMode, required this.onThemeModeChanged, AuthRepository? authRepository, QazaRepository? qazaRepository, super.key})
+      : authRepository = authRepository ?? FirebaseAuthRepository(),
         qazaRepository = qazaRepository ?? FirestoreQazaRepository();
 
   final AuthRepository authRepository;
@@ -65,15 +60,10 @@ class _AuthGateState extends State<AuthGate> {
 
         final user = snapshot.data;
         if (user == null) {
-          return showWelcome
-              ? WelcomeScreen(
-                  onGetStarted: () => setState(() => showWelcome = false),
-                )
-              : FinalAuthPage(
-                  onGoogleSignIn: () async {
-                    await widget.authRepository.signInWithGoogle();
-                  },
-                );
+          if (showWelcome) {
+            return WelcomeScreen(onGetStarted: () => setState(() => showWelcome = false));
+          }
+          return FinalAuthPage(onGoogleSignIn: widget.authRepository.signInWithGoogle);
         }
 
         if (!setupRequested) {
@@ -84,9 +74,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (showSetup) {
-          return FirstTimeSetupScreen(
-            onDone: () => setState(() => showSetup = false),
-          );
+          return FirstTimeSetupScreen(onDone: () => setState(() => showSetup = false));
         }
 
         return FinalAppShell(
