@@ -10,6 +10,61 @@ class QazaService {
 
   final QazaRepository repository;
 
+  Future<List<QazaRecord>> getRecords({
+    required String userId,
+    PrayerType? prayerType,
+    QazaStatus? status,
+  }) {
+    return repository.getRecords(
+      userId: userId,
+      prayerType: prayerType,
+      status: status,
+    );
+  }
+
+  Future<List<QazaRecord>> getPendingForUser({required String userId}) {
+    return getRecords(userId: userId, status: QazaStatus.pending);
+  }
+
+  Future<List<QazaRecord>> getPendingForPrayer({
+    required String userId,
+    required PrayerType prayerType,
+  }) {
+    return getRecords(
+      userId: userId,
+      prayerType: prayerType,
+      status: QazaStatus.pending,
+    );
+  }
+
+  Future<void> addRecords(List<QazaRecord> records) {
+    return repository.addRecords(records);
+  }
+
+  Future<void> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) {
+    return repository.completeRecord(
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+    );
+  }
+
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) {
+    return repository.completeRecords(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
+
   Future<void> recordQaza({
     required String userId,
     required PrayerType prayerType,
@@ -64,11 +119,11 @@ class QazaService {
     required String userId,
     required PrayerType prayerType,
   }) async {
-    final records = await repository.getRecords(
+    final records = await getPendingForPrayer(
       userId: userId,
       prayerType: prayerType,
-      status: QazaStatus.pending,
     );
+    records.sort((a, b) => a.originalDate.compareTo(b.originalDate));
     return records.isEmpty ? null : records.first;
   }
 
@@ -83,7 +138,7 @@ class QazaService {
     );
     if (record == null) return false;
 
-    await repository.completeRecord(
+    await completeRecord(
       userId: userId,
       recordId: record.id,
       completedAt: completedAt ?? DateTime.now(),
@@ -99,17 +154,19 @@ class QazaService {
     if (recordIds.isEmpty) return 0;
 
     final selectedIds = recordIds.toSet();
-    final records = await repository.getRecords(userId: userId);
+    final records = await getRecords(userId: userId);
     final validPendingIds = records
-        .where((record) =>
-            selectedIds.contains(record.id) &&
-            record.status == QazaStatus.pending)
+        .where(
+          (record) =>
+              selectedIds.contains(record.id) &&
+              record.status == QazaStatus.pending,
+        )
         .map((record) => record.id)
         .toList();
 
     if (validPendingIds.isEmpty) return 0;
 
-    await repository.completeRecords(
+    await completeRecords(
       userId: userId,
       recordIds: validPendingIds,
       completedAt: completedAt ?? DateTime.now(),
@@ -118,7 +175,7 @@ class QazaService {
   }
 
   Future<QazaProgress> overallProgress(String userId) async {
-    final records = await repository.getRecords(userId: userId);
+    final records = await getRecords(userId: userId);
     return _progress(records);
   }
 
@@ -126,7 +183,7 @@ class QazaService {
     String userId,
     PrayerType prayerType,
   ) async {
-    final records = await repository.getRecords(
+    final records = await getRecords(
       userId: userId,
       prayerType: prayerType,
     );
@@ -137,20 +194,21 @@ class QazaService {
   }
 
   Future<List<QazaRecord>> history(String userId) async {
-    final records = await repository.getRecords(
+    final records = await getRecords(
       userId: userId,
       status: QazaStatus.completed,
     );
     records.sort(
       (a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-          .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+          .compareTo(b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
     );
     return records;
   }
 
   QazaProgress _progress(List<QazaRecord> records) {
-    final completed =
-        records.where((record) => record.status == QazaStatus.completed).length;
+    final completed = records
+        .where((record) => record.status == QazaStatus.completed)
+        .length;
     final pending = records.length - completed;
     return QazaProgress(
       pending: pending < 0 ? 0 : pending,
