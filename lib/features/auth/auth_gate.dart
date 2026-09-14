@@ -90,7 +90,10 @@ class _AuthGateState extends State<AuthGate> {
         }
         return WorkspaceShellV2(
           userId: user.id,
+          user: user,
           repository: widget.qazaRepository,
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
           onSignOut: widget.authRepository.signOut,
         );
       },

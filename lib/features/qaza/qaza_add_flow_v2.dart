@@ -356,7 +356,7 @@ class _ProgressHeader extends StatelessWidget {
             if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? scheme.primary : Theme.of(context).dividerColor)),
             CircleAvatar(
               radius: 14,
-              backgroundColor: i <= step ? scheme.primary : scheme.surfaceVariant,
+              backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
               child: Text('${i + 1}', style: TextStyle(color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(width: 6),

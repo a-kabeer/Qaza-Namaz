@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
 
 class CompleteQazaV2Screen extends StatefulWidget {

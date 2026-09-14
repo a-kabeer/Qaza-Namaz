@@ -1,20 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:qaza_namaz/core/theme/app_theme.dart';
 
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/app_user.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/services/qaza_service.dart';
 import '../qaza/qaza_add_flow_v2.dart';
 import '../qaza/qaza_completion_flow_v2.dart';
+import 'components.dart';
 import 'final_ui.dart';
 import 'history_progress_v2.dart';
 
 class WorkspaceShellV2 extends StatefulWidget {
-  const WorkspaceShellV2({required this.userId, required this.repository, required this.onSignOut, super.key});
+  const WorkspaceShellV2({
+    required this.userId,
+    required this.repository,
+    required this.onSignOut,
+    this.user,
+    this.themeMode = AppThemeMode.system,
+    this.onThemeModeChanged,
+    super.key,
+  });
 
   final String userId;
   final QazaRepository repository;
   final Future<void> Function() onSignOut;
+  final AppUser? user;
+  final AppThemeMode themeMode;
+  final ValueChanged<AppThemeMode>? onThemeModeChanged;
 
   @override
   State<WorkspaceShellV2> createState() => _WorkspaceShellV2State();
@@ -30,7 +44,12 @@ class _WorkspaceShellV2State extends State<WorkspaceShellV2> {
       _Dashboard(service: service, userId: widget.userId),
       const CalculatorScreen(),
       HistoryProgressV2Screen(service: service, userId: widget.userId),
-      SettingsScreen(onSignOut: widget.onSignOut),
+      SettingsScreen(
+        onSignOut: widget.onSignOut,
+        user: widget.user,
+        themeMode: widget.themeMode,
+        onThemeModeChanged: widget.onThemeModeChanged,
+      ),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -89,9 +108,14 @@ class _DashboardState extends State<_Dashboard> {
       body: FutureBuilder<List<QazaRecord>>(
         future: future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingState(padding: 0);
+          }
           if (snapshot.hasError) {
-            return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.cloud_off_rounded, size: 42), const SizedBox(height: 12), const Text('We could not load your Qaza ledger.'), const SizedBox(height: 12), FilledButton(onPressed: _refresh, child: const Text('Try again'))]));
+            return ErrorState(
+              message: 'We could not load your Qaza ledger.',
+              onRetry: _refresh,
+            );
           }
           final records = snapshot.data ?? const <QazaRecord>[];
           final pending = records.where((r) => r.status == QazaStatus.pending).length;
@@ -122,9 +146,9 @@ class _DashboardState extends State<_Dashboard> {
                     ]),
                     const SizedBox(height: 16),
                     Row(children: [
-                      _Pill(label: '$pending pending'),
+                      StatusChip('$pending pending'),
                       const SizedBox(width: 8),
-                      _Pill(label: '$completed fulfilled'),
+                      StatusChip('$completed fulfilled'),
                     ]),
                   ]),
                 ),
@@ -232,18 +256,6 @@ class _ProgressRing extends StatelessWidget {
       ]),
     );
   }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(.12), borderRadius: BorderRadius.circular(99)),
-        child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-      );
 }
 
 class _Metric extends StatelessWidget {
