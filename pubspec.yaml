@@ -13,6 +13,11 @@ dependencies:
   firebase_auth: ^5.7.0
   firebase_core: ^3.0.0
   google_sign_in: ^6.2.2
+  # Hijri (Islamic/Umm al-Qura) Gregorian <-> Hijri date conversion.
+  # Pure-Dart, no native code. Supported lookup range: 1356-1500 AH
+  # (14 Mar 1937 - 16 Nov 2077 CE), which fully covers the app's
+  # selectable firstDate (1950) through today.
+  hijri: ^3.0.1
 
 dev_dependencies:
   flutter_test:

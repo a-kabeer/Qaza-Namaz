@@ -47,27 +47,26 @@ void main() {
 
     expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
     expect(find.text('Choose a date'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Next: Choose missed prayers'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
     expect(find.text('Next: Choose missed prayers'), findsOneWidget);
   });
 
-  testWidgets('Hijri selection stays explicitly gated to the calendar engine task', (tester) async {
+  testWidgets('Hijri mode advances into the calendar picker in the Hijri view', (tester) async {
     await pumpFlow(tester);
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
 
     await revealContinue(tester);
     await tester.tap(find.text('Continue'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(
-      find.text('Hijri calendar selection is reserved for the calendar engine task.'),
-      findsOneWidget,
-    );
-
-    // The gated Hijri action must keep the flow on the method-selection step.
-    expect(find.text('Gregorian'), findsOneWidget);
-    expect(find.text('Hijri'), findsOneWidget);
-    expect(find.text('Single Date'), findsOneWidget);
-    expect(find.text('Date Range'), findsOneWidget);
+    // Task 3G: Hijri is fully supported — the picker renders the Hijri view.
+    expect(find.text('Hijri calendar (Umm al-Qura)'), findsOneWidget);
+    expect(find.byKey(const Key('qaza_calendar_picker')), findsOneWidget);
   });
 }
