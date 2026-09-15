@@ -23,6 +23,22 @@ class CalendarSelectionState {
   DateTime? get startDate => selectedDates.isEmpty ? null : selectedDates.first;
   DateTime? get endDate => selectedDates.length > 1 ? selectedDates.last : null;
 
+  /// Expands a selected range into the individual canonical Gregorian dates
+  /// that the Qaza service persists as independent records.
+  List<DateTime> get datesForStorage {
+    if (selectionMode != DateSelectionMode.range || selectedDates.length != 2) {
+      return selectedDates;
+    }
+
+    final start = selectedDates.first;
+    final end = selectedDates.last;
+    final dates = <DateTime>[];
+    for (var date = start; !date.isAfter(end); date = DateTime(date.year, date.month, date.day + 1)) {
+      dates.add(date);
+    }
+    return dates;
+  }
+
   CalendarSelectionState copyWith({
     CalendarMode? calendarMode,
     DateSelectionMode? selectionMode,
@@ -37,11 +53,9 @@ class CalendarSelectionState {
 }
 
 final calendarControllerProvider =
-    NotifierProvider.autoDispose<CalendarController, CalendarSelectionState>(
-  CalendarController.new,
-);
+    NotifierProvider<CalendarController, CalendarSelectionState>(CalendarController.new);
 
-class CalendarController extends AutoDisposeNotifier<CalendarSelectionState> {
+class CalendarController extends Notifier<CalendarSelectionState> {
   @override
   CalendarSelectionState build() => const CalendarSelectionState();
 
