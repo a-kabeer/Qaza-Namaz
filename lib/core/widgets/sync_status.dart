@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../data/sync/sync_state.dart';
+import '../../data/sync/sync_state.dart' as sync_models;
 import '../../core/utils/date_formatters.dart';
 
 class SyncStatus extends ConsumerWidget {
@@ -15,36 +15,11 @@ class SyncStatus extends ConsumerWidget {
     final state = ref.watch(syncStateProvider).valueOrNull ?? offline.currentState;
     final scheme = Theme.of(context).colorScheme;
     final (icon, color, label, showRetry) = switch (state.status) {
-      SyncStatus.synced => (
-          Icons.cloud_done_outlined,
-          scheme.primary,
-          _syncedLabel(state),
-          false,
-        ),
-      SyncStatus.syncing => (
-          Icons.cloud_sync_outlined,
-          scheme.primary,
-          'Syncing your ledger…',
-          false,
-        ),
-      SyncStatus.offline => (
-          Icons.cloud_off_outlined,
-          scheme.onSurfaceVariant,
-          'Offline — records are saved on this device and will sync automatically',
-          false,
-        ),
-      SyncStatus.pendingSync => (
-          Icons.cloud_upload_outlined,
-          scheme.tertiary,
-          '${state.pendingCount} pending ${state.pendingCount == 1 ? 'change' : 'changes'} to sync',
-          true,
-        ),
-      SyncStatus.syncError => (
-          Icons.sync_problem_outlined,
-          scheme.error,
-          state.detail ?? 'Sync problem — your data is safe on this device',
-          true,
-        ),
+      sync_models.SyncStatus.synced => (Icons.cloud_done_outlined, scheme.primary, _syncedLabel(state), false),
+      sync_models.SyncStatus.syncing => (Icons.cloud_sync_outlined, scheme.primary, 'Syncing your ledger…', false),
+      sync_models.SyncStatus.offline => (Icons.cloud_off_outlined, scheme.onSurfaceVariant, 'Offline — records are saved on this device and will sync automatically', false),
+      sync_models.SyncStatus.pendingSync => (Icons.cloud_upload_outlined, scheme.tertiary, '${state.pendingCount} pending ${state.pendingCount == 1 ? 'change' : 'changes'} to sync', true),
+      sync_models.SyncStatus.syncError => (Icons.sync_problem_outlined, scheme.error, state.detail ?? 'Sync problem — your data is safe on this device', true),
     };
 
     return Card(
@@ -69,7 +44,7 @@ class SyncStatus extends ConsumerWidget {
     );
   }
 
-  String _syncedLabel(SyncState state) {
+  String _syncedLabel(sync_models.SyncState state) {
     final last = state.lastSyncAt;
     if (last == null) return 'All changes saved to the cloud';
     return 'Synced • ${last.day} ${DateFormatters.gregorianMonthName(last.month)}, ${DateFormatters.formatClockTime(last)}';
