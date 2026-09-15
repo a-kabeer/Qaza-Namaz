@@ -13,6 +13,7 @@ import '../../domain/entities/app_user.dart';
 import '../../data/sync/sync_state.dart';
 import '../sync/sync_status_bar.dart';
 import 'components.dart';
+import 'qaza_data_management_screen.dart';
 
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key});
@@ -43,7 +44,6 @@ class CalculatorScreen extends StatelessWidget {
   }
 }
 
-/// Subtitle for the Account row: the signed-in name, email or sign-in method.
 String _accountSubtitle(AppUser? account) {
   if (account == null || account.email.isEmpty) return 'Google sign-in';
   final name = account.displayName;
@@ -140,7 +140,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-SettingsSection(
+          SettingsSection(
             title: 'General',
             child: Column(
               children: [
@@ -187,9 +187,6 @@ SettingsSection(
   }
 }
 
-/// The signed-in account, read from the session providers. Signing out goes
-/// through the auth repository, so the whole app reacts to the session change
-/// and the screen simply closes.
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
@@ -217,6 +214,7 @@ class AccountScreen extends ConsumerWidget {
     );
   }
 }
+
 class FiqhScreen extends StatelessWidget {
   const FiqhScreen({super.key});
 
@@ -268,11 +266,6 @@ class NotificationsScreen extends StatelessWidget {
       );
 }
 
-/// Data & Cloud: the real state of the offline-first sync layer.
-///
-/// Reports how many local changes are still queued, when the backend last
-/// confirmed this account, and lets the user retry a failed sync. When no
-/// offline layer is active the sync rows stay explicit placeholders.
 class DataCloudScreen extends ConsumerWidget {
   const DataCloudScreen({super.key});
 
@@ -324,12 +317,25 @@ class DataCloudScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          const Card(
-            child: ListTile(
-              title: Text('Export / Import'),
-              subtitle: Text(
-                'Data export and import will be connected by the data task.',
-              ),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.import_export_rounded),
+                  title: const Text('Export & Import'),
+                  subtitle: const Text(
+                    'User-controlled JSON backup and safe restore. No cloud '
+                    'data is deleted by these actions.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const QazaDataManagementScreen(),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
