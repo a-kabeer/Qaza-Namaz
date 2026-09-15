@@ -131,8 +131,8 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
             child: SegmentedButton<DateSelectionMode>(
               segments: const [
                 ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
-                ButtonSegment(value: DateSelectionMode.range, icon: Icons.date_range_rounded, label: const Text('Range')),
-                ButtonSegment(value: DateSelectionMode.multiple, icon: Icons.library_add_check_rounded, label: const Text('Multiple')),
+                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
+                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
               ],
               selected: {dateMode},
               onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
