@@ -12,11 +12,11 @@ Global reusable UI component layer — implementation complete; CI validation is
 ## Global Reusable UI — 2026-09-15
 - Added focused reusable components under `lib/core/widgets/`: `app_scaffold.dart`, `app_button.dart`, `app_card.dart`, `section_header.dart`, `metric_tile.dart`, `prayer_card.dart`, `date_display.dart`, `state_widgets.dart`, `confirmation_dialog.dart`, and `sync_status.dart`.
 - Centralized shared spacing/radius tokens with `AppSpacing` and `AppRadius`, and centralized app date/date-time display helpers in `date_display.dart` on top of the existing `DateFormatters` utility.
-- `components.dart` is now a compatibility barrel instead of the primary implementation file. `legacy_components.dart` retains only compatibility wrappers/shared settings/progress pieces that are still used by existing screens/tests.
-- Dashboard now directly uses `AppScaffold`, `AppButton`, `AppCard`, `SectionHeader`, `MetricTile`, `PrayerCard`, `SyncStatus`, and shared progress/status widgets.
-- Settings and Data & Cloud now directly use `AppScaffold`, `AppCard`, `SyncStatus`, and centralized date formatting.
-- Sync status rendering is centralized in `core/widgets/sync_status.dart`; `features/sync/sync_status_bar.dart` remains only as a compatibility wrapper for existing callers/tests.
-- Existing loading/error/empty state behavior and confirmation behavior are preserved through reusable shared components.
+- `components.dart` is now a compatibility barrel; `legacy_components.dart` contains only compatibility/shared settings/progress wrappers that existing callers/tests still need.
+- Dashboard now directly uses `AppScaffold`, `AppButton`, `AppCard`, `SectionHeader`, `MetricTile`, `PrayerCard`, `SyncStatus`, and global progress/status widgets.
+- Settings/Data & Cloud now directly use `AppScaffold`, `AppCard`, `SyncStatus`, and centralized date formatting.
+- `features/sync/sync_status_bar.dart` is now only a compatibility wrapper around the shared `SyncStatus` component.
+- `NamazWiseScreen` continues to use the compatibility `PrayerTile`, which delegates to the shared `PrayerCard`; existing loading/error/empty and confirmation behavior is preserved through the shared layer.
 - No business logic, Riverpod providers, services, repositories, Firestore rules, or data models were changed.
 - No one-off feature UI was promoted merely for structural symmetry; focused components were created only where reuse/configurability was meaningful.
 
@@ -50,7 +50,8 @@ The app uses the maintained `hijri: ^3.0.1` package for Hijri/Umm al-Qura conver
 
 ## Validation — CURRENT RUN PENDING
 - Previous refactor baseline `1e34a8c345071eb88ad9c7fafd164352a93fc57e` passed `flutter pub get`, `flutter analyze`, and `flutter test` on CI run `34987120636`.
-- The reusable-component changes are on the current `main` tip and require a fresh CI result before being marked verified.
+- Fresh CI run `34991158495` reached `flutter analyze` but failed on three source issues introduced by this component split: missing date helper import, missing `PrayerTile` compatibility symbol, and `SyncStatus` name collision with the sync model enum.
+- Those analyzer root causes were corrected on subsequent commits; a new CI run is required to verify `flutter analyze` and `flutter test` for the corrected head.
 - No current `flutter analyze` or `flutter test` result is claimed as PASS yet.
 
 ## Remaining Issues / Technical Debt
