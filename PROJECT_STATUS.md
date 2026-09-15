@@ -1,7 +1,7 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 7 — Qaza Business Logic
+Task 8 — Gregorian + Hijri Calendar
 
 ## Overall Progress
 7 / 15 major tasks formally audited and verified
@@ -15,7 +15,7 @@ Task 7 — Qaza Business Logic
 - Task 5 — ✅ COMPLETE — Offline-First Architecture
 - Task 6 — ✅ COMPLETE — Authentication Lifecycle
 - Task 7 — ✅ COMPLETE — Qaza Business Logic
-- Task 8 — NOT STARTED — Gregorian + Hijri Calendar
+- Task 8 — 🟡 IN VERIFICATION — Gregorian + Hijri Calendar
 - Task 9 — NOT STARTED — Reminders / Notifications (optional)
 - Task 10 — NOT STARTED — Multi-Device Synchronization
 - Task 11 — NOT STARTED — Security + Privacy
@@ -138,27 +138,43 @@ GitHub Actions run `35020052643` on commit `5df12143ed28d7ccfa570648761f2fbba111
 - Android release APK — ✅
 - All workflow cleanup/post steps — ✅
 
-The full GitHub CI matrix passed for the final Task 7 implementation commit.
+The full GitHub CI matrix passed for the final Task 7 implementation commit. Task 7 status was then recorded as complete in the follow-up project-status commit.
+
+### Task 8 — Implementation / Audit
+
+Gregorian + Hijri calendar audit is in progress against the existing Riverpod calendar controller, calendar picker, and `hijri` package integration.
+
+- Added independent known Umm al-Qura reference-date validation around Hijri month/year boundaries.
+- Added explicit calendar-date serialization/deserialization coverage using the canonical `YYYY-MM-DD` representation, verifying that timezone information cannot shift the restored civil date.
+- Added Gregorian leap-day rendering coverage.
+- Added Gregorian December → January navigation coverage.
+- Added Hijri Ramadan → Shawwal navigation coverage.
+- Added inclusive range coverage across a Gregorian year boundary.
+- Added `docs/GREGORIAN_HIJRI_CALENDAR.md`.
+
+## Task 8 Validation — PENDING FINAL CI
+
+Targeted regression coverage is committed on the Task 8 branch. The task will be marked complete only after the complete GitHub CI matrix is green on the final status-update commit.
 
 ## Known Bugs
 
-No known blocking production defect remains from the Task 7 business-logic audit. The identified timezone-sensitive Qaza-date persistence issue has been hardened with legacy compatibility.
+No known blocking production defect has been identified in the current Task 8 audit so far.
 
 ## Blockers
 
-None identified for Task 7.
+None identified for Task 8.
 
 ## Remaining Work
 
-Tasks 8–15 remain for their own dedicated audits/implementation verification.
+Tasks 8–15 remain for their own dedicated audits/implementation verification. Task 8 is currently in verification.
 
 ## Last Verified
 
-Task 7 implementation verified on `5df12143ed28d7ccfa570648761f2fbba111f324` by GitHub Actions run `35020052643` on 2026-09-16.
+Task 7 verified on `5df12143ed28d7ccfa570648761f2fbba111f324` by GitHub Actions run `35020052643` on 2026-09-16.
 
 ## Next Recommended Step
 
-Proceed to Task 8 — Gregorian + Hijri Calendar.
+Complete Task 8 verification, then proceed to Task 9 — Reminders / Notifications (optional).
 
 ## Task Completion Standard
 
