@@ -57,19 +57,20 @@ void main() {
       );
 
       await repo.setActiveUser('u1');
-      await connectivity.add(false);
+      connectivity.add(false);
+      await Future<void>.delayed(Duration.zero);
       final item = record();
       await repo.addRecord(item);
 
       expect((await repo.getRecords(userId: 'u1')).single.id, item.id);
-      expect((await remote.getRecords(userId: 'u1')), isEmpty);
+      expect(await remote.getRecords(userId: 'u1'), isEmpty);
       expect((await local.load()).outboxByUser['u1'], hasLength(1));
       expect(repo.currentState.status, SyncStatus.offline);
 
-      await connectivity.add(true);
+      connectivity.add(true);
       await repo.syncNow();
 
-      expect((await remote.getRecords(userId: 'u1')), hasLength(1));
+      expect(await remote.getRecords(userId: 'u1'), hasLength(1));
       expect((await local.load()).outboxByUser['u1'], isEmpty);
       expect(repo.currentState.status, SyncStatus.synced);
 
@@ -83,10 +84,10 @@ void main() {
       final repo = createRepository(remote: remote, local: local);
 
       await repo.setActiveUser('u1');
-      await repo.addRecord(record());
-
       remote.failWrites = true;
+      await repo.addRecord(record());
       await repo.syncNow();
+
       final failed = (await local.load()).outboxByUser['u1']!;
       expect(failed, hasLength(1));
       expect(failed.single.attempts, 1);
@@ -94,7 +95,7 @@ void main() {
 
       remote.failWrites = false;
       await repo.syncNow();
-      expect((await remote.getRecords(userId: 'u1')), hasLength(1));
+      expect(await remote.getRecords(userId: 'u1'), hasLength(1));
       expect((await local.load()).outboxByUser['u1'], isEmpty);
 
       repo.dispose();
@@ -113,6 +114,7 @@ void main() {
       expect(await repo.getRecords(userId: 'u2'), isEmpty);
       expect(await repo.getRecords(userId: 'u1'), isEmpty);
       await repo.addRecord(record(userId: 'u2'));
+      await repo.syncNow();
 
       await repo.setActiveUser('u1');
       expect((await repo.getRecords(userId: 'u1')).single.userId, 'u1');
@@ -123,7 +125,7 @@ void main() {
       expect(snapshot.recordsByUser['u1'], hasLength(1));
       expect(snapshot.recordsByUser['u2'], hasLength(1));
       expect(snapshot.outboxByUser['u1'], isEmpty);
-      expect(snapshot.outboxByUser['u2'], hasLength(1));
+      expect(snapshot.outboxByUser['u2'], isEmpty);
 
       repo.dispose();
     });
@@ -138,38 +140,44 @@ void main() {
       await repo.setActiveUser('u1');
       expect((await repo.getRecords(userId: 'u1')).single.status, QazaStatus.pending);
 
+      final completedAt = baseDate.add(const Duration(hours: 4));
       await remote.completeRecord(
         userId: 'u1',
         recordId: original.id,
-        completedAt: baseDate.add(const Duration(hours: 4)),
+        completedAt: completedAt,
       );
       await repo.syncNow();
 
       final merged = (await repo.getRecords(userId: 'u1')).single;
       expect(merged.status, QazaStatus.completed);
-      expect(merged.completedAt, baseDate.add(const Duration(hours: 4)));
+      expect(merged.completedAt, completedAt);
 
       repo.dispose();
     });
 
-    test('requeues a local completion when remote still reports pending', () async {
+    test('requeues a local completion when its persisted outbox is missing', () async {
       final local = InMemoryQazaLocalStore();
       final remote = InMemoryQazaRepository();
-      final repo = createRepository(remote: remote, local: local);
       final original = record();
       await remote.addRecord(original);
 
-      await repo.setActiveUser('u1');
-      await repo.completeRecord(
-        userId: 'u1',
-        recordId: original.id,
-        completedAt: baseDate.add(const Duration(hours: 2)),
-      );
-      // The completion is normally flushed in the background; force the remote
-      // back to the pending state by creating a fresh remote copy before pull.
-      final pendingRemote = await remote.getRecords(userId: 'u1');
-      expect(pendingRemote.single.status, QazaStatus.completed);
+      final completedAt = baseDate.add(const Duration(hours: 2));
+      await local.saveRecords('u1', [
+        record(status: QazaStatus.completed, completedAt: completedAt),
+      ]);
+      await local.saveOutbox('u1', []);
 
+      final repo = createRepository(remote: remote, local: local);
+      await repo.setActiveUser('u1');
+
+      final queued = (await local.load()).outboxByUser['u1']!;
+      expect(queued, hasLength(1));
+      expect(queued.single.type, SyncOpType.complete);
+      expect(queued.single.targetRecordId, original.id);
+
+      await repo.syncNow();
+      expect((await remote.getRecords(userId: 'u1')).single.status, QazaStatus.completed);
+      expect((await local.load()).outboxByUser['u1'], isEmpty);
       repo.dispose();
     });
 
@@ -184,13 +192,13 @@ void main() {
 
       final restored = createRepository(remote: remote, local: local);
       await restored.setActiveUser('u1');
-      expect((await restored.getRecords(userId: 'u1')), hasLength(1));
+      expect(await restored.getRecords(userId: 'u1'), hasLength(1));
       expect((await local.load()).outboxByUser['u1'], hasLength(1));
 
       remote.failWrites = false;
       await restored.syncNow();
       expect((await local.load()).outboxByUser['u1'], isEmpty);
-      expect((await remote.getRecords(userId: 'u1')), hasLength(1));
+      expect(await remote.getRecords(userId: 'u1'), hasLength(1));
       restored.dispose();
     });
   });
