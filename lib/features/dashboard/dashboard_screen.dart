@@ -4,13 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/metric_tile.dart';
+import '../../core/widgets/prayer_card.dart';
+import '../../core/widgets/section_header.dart';
+import '../../core/widgets/sync_status.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/completion_screen.dart';
 import '../qaza/namaz_wise_screen.dart';
 import '../qaza/pending_dates_screen.dart';
-import '../sync/sync_status_bar.dart';
-import '../../core/widgets/components.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -32,27 +37,26 @@ class DashboardScreen extends ConsumerWidget {
     final completed = progress.completed;
     final total = pending + completed;
     final ratio = total == 0 ? 0.0 : completed / total;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(children: [Icon(Icons.mosque_rounded), SizedBox(width: 10), Text('Qaza Namaz')]),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh ledger',
-            onPressed: ledger.isLoading ? null : () => ref.read(qazaRecordsProvider.notifier).refresh(),
-            icon: const Icon(Icons.sync_rounded),
-          ),
-        ],
-      ),
+
+    return AppScaffold(
+      title: 'Qaza Namaz',
+      actions: [
+        IconButton(
+          tooltip: 'Refresh ledger',
+          onPressed: ledger.isLoading ? null : () => ref.read(qazaRecordsProvider.notifier).refresh(),
+          icon: const Icon(Icons.sync_rounded),
+        ),
+      ],
       body: RefreshIndicator(
         onRefresh: () => ref.read(qazaRecordsProvider.notifier).refresh(),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
-            const SyncStatusBar(),
-            Container(
+            const SyncStatus(),
+            AppCard(
+              color: scheme.primaryContainer,
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -66,36 +70,67 @@ class DashboardScreen extends ConsumerWidget {
                           children: [
                             Text('Continue your prayer journey', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
                             const SizedBox(height: 8),
-                            Text(total == 0 ? 'Start by recording the dates and prayers you need to make up.' : 'Every completed prayer brings your ledger closer to zero.', style: TextStyle(color: scheme.onPrimaryContainer.withOpacity(.86), height: 1.4)),
+                            Text(total == 0 ? 'Start by recording the dates and prayers you need to make up.' : 'Every completed prayer brings your ledger closer to zero.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .86), height: 1.4)),
                           ],
                         ),
                       ),
                       const SizedBox(width: 14),
-                      ProgressRing(progress: ratio),
+                      _ProgressRing(progress: ratio),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(children: [StatusChip('$pending pending'), const SizedBox(width: 8), StatusChip('$completed fulfilled')]),
+                  Row(children: [
+                    _StatusChip('$pending pending'),
+                    const SizedBox(width: 8),
+                    _StatusChip('$completed fulfilled'),
+                  ]),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            ProgressOverviewCard(progress: progress, header: Row(children: [Expanded(child: Text('Ledger overview', style: theme.textTheme.titleMedium)), Text('$pending pending')])),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(child: FilledButton.icon(onPressed: () => _open(context, ref, const AddQazaScreen()), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza'))),
-                const SizedBox(width: 10),
-                Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(context, ref, const CompleteQazaScreen()), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete'))),
-              ],
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SectionHeader(
+                    title: 'Ledger overview',
+                    trailing: Text('$pending pending'),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    Expanded(child: MetricTile(label: 'Pending', value: '$pending')),
+                    Expanded(child: MetricTile(label: 'Completed', value: '$completed')),
+                    Expanded(child: MetricTile(label: 'Total', value: '$total')),
+                  ]),
+                  const SizedBox(height: 16),
+                  ClipRRect(borderRadius: BorderRadius.circular(AppRadius.pill), child: LinearProgressIndicator(value: ratio, minHeight: 10)),
+                  const SizedBox(height: 8),
+                  Text(total == 0 ? 'No records yet' : '${(ratio * 100).round()}% completed'),
+                ],
+              ),
             ),
+            const SizedBox(height: 18),
+            Row(children: [
+              Expanded(child: AppButton(onPressed: () => _open(context, ref, const AddQazaScreen()), icon: Icons.add_rounded, label: 'Add Qaza')),
+              const SizedBox(width: 10),
+              Expanded(child: AppButton(onPressed: pending == 0 ? null : () => _open(context, ref, const CompleteQazaScreen()), icon: Icons.check_circle_outline_rounded, label: 'Complete', secondary: true)),
+            ]),
             const SizedBox(height: 20),
-            Row(children: [Expanded(child: Text('Prayer ledger', style: theme.textTheme.titleLarge)), TextButton(onPressed: () => _open(context, ref, const NamazWiseScreen()), child: const Text('View all'))]),
+            SectionHeader(
+              title: 'Prayer ledger',
+              trailing: TextButton(onPressed: () => _open(context, ref, const NamazWiseScreen()), child: const Text('View all')),
+            ),
             const SizedBox(height: 4),
             for (final prayer in PrayerType.values)
-              PrayerTile(prayer: prayer, subtitle: _summary(records, prayer), trailing: Text('${_pendingFor(records, prayer)}', style: theme.textTheme.headlineSmall), onTap: () => _open(context, ref, PendingDatesScreen(prayer: prayer))),
+              PrayerCard(prayer: prayer, subtitle: _summary(records, prayer), trailing: Text('${_pendingFor(records, prayer)}', style: theme.textTheme.headlineSmall), onTap: () => _open(context, ref, PendingDatesScreen(prayer: prayer))),
             if (records.isEmpty)
-              const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.lightbulb_outline_rounded), SizedBox(width: 12), Expanded(child: Text('Your dashboard is ready. Add your first missed-prayer record to begin your ledger.'))]))),
+              const AppCard(
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.lightbulb_outline_rounded),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('Your dashboard is ready. Add your first missed-prayer record to begin your ledger.')),
+                ]),
+              ),
           ],
         ),
       ),
@@ -115,4 +150,35 @@ class DashboardScreen extends ConsumerWidget {
     final now = DateTime.now();
     return 'Today • ${DateFormatters.weekdayShortNames[now.weekday - 1]}, ${now.day} ${DateFormatters.gregorianMonthName(now.month)} ${now.year}';
   }
+}
+
+class _ProgressRing extends StatelessWidget {
+  const _ProgressRing({required this.progress});
+  final double progress;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 72,
+        height: 72,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CircularProgressIndicator(value: progress, strokeWidth: 6, backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: .18)),
+            Text('${(progress * 100).round()}%', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      );
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip(this.label);
+  final String label;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+      );
 }
