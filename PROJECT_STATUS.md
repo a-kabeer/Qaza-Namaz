@@ -1,7 +1,7 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Global reusable UI component layer — implementation complete; CI validation is pending on the current commit.
+Global reusable UI component layer — implementation complete; CI validation is pending on the latest corrective commit.
 
 ## Completion Status
 - Task 1: COMPLETE & VERIFIED — Qaza ledger business workflow and tests.
@@ -50,8 +50,10 @@ The app uses the maintained `hijri: ^3.0.1` package for Hijri/Umm al-Qura conver
 
 ## Validation — CURRENT RUN PENDING
 - Previous refactor baseline `1e34a8c345071eb88ad9c7fafd164352a93fc57e` passed `flutter pub get`, `flutter analyze`, and `flutter test` on CI run `34987120636`.
-- Fresh CI run `34991158495` reported three analyzer errors on its checked-out tree; the underlying source issues were corrected in the current `main` contents and rechecked from the repository files.
-- A new CI run is required for the corrected current head; no current `flutter analyze` or `flutter test` result is claimed as PASS yet.
+- CI run `34991833977` validated `flutter pub get` and `flutter analyze` successfully on commit `d820fc1baabb115733db9b612b909135775b8250`.
+- The same run executed the full test suite and reached 66 passing tests, but one existing account-identity assertion failed because the refactored compatibility `AccountSection` omitted the user's email from its visible identity block.
+- That regression was corrected in commit `0509caaea9df1ba46a6d9d3889711d4f4490bc08` by restoring the email display; fresh CI validation is required for that corrective head.
+- No current `flutter analyze` or `flutter test` result is claimed as PASS yet.
 
 ## Remaining Issues / Technical Debt
 - Final current-commit CI validation must complete before this task can be marked fully verified.
