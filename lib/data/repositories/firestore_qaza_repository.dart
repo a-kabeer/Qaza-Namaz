@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/prayer_types.dart';
+import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 
@@ -116,7 +117,9 @@ class FirestoreQazaRepository implements QazaRepository {
     return {
       'userId': record.userId,
       'prayerType': record.prayerType.name,
-      'originalDate': Timestamp.fromDate(record.originalDate),
+      // originalDate is a calendar date, so persist it as a date key rather
+      // than a Timestamp (an instant that can shift across timezones).
+      'originalDate': QazaDate.key(record.originalDate),
       'status': record.status.name,
       'completedAt': record.completedAt == null
           ? null
@@ -153,12 +156,23 @@ class FirestoreQazaRepository implements QazaRepository {
       id: document.id,
       userId: data['userId'] as String? ?? '',
       prayerType: prayerType,
-      originalDate: _timestamp(data['originalDate'], 'originalDate'),
+      originalDate: _originalDate(data['originalDate'], document.id),
       status: status,
       completedAt: _nullableTimestamp(data['completedAt']),
       createdAt: _timestamp(data['createdAt'], 'createdAt'),
       updatedAt: _timestamp(data['updatedAt'], 'updatedAt'),
     );
+  }
+
+  DateTime _originalDate(Object? value, String recordId) {
+    if (value is String) return QazaDate.parseKey(value);
+
+    // Legacy records stored originalDate as a Timestamp. The deterministic
+    // record ID already contains YYYY-MM-DD, so use it to avoid timezone
+    // shifts when reading those records on another device.
+    if (value is Timestamp) return QazaDate.fromRecordId(recordId);
+
+    throw StateError('Missing or invalid originalDate in Firestore Qaza record.');
   }
 
   DateTime _timestamp(Object? value, String fieldName) {

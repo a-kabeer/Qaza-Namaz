@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/utils/qaza_date.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -31,6 +32,43 @@ void main() {
       await service.recordQaza(userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2024, 1, 1, 23, 59));
       final records = await service.repository.getRecords(userId: 'u1');
       expect(records.single.originalDate, DateTime(2024, 1, 1));
+    });
+
+    test('treats UTC and local DateTime values as calendar dates', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime.utc(2024, 1, 1, 23, 59),
+      );
+      final record = (await service.repository.getRecords(userId: 'u1')).single;
+      expect(record.originalDate, DateTime(2024, 1, 1));
+      expect(record.id, 'u1_fajr_2024-01-01');
+    });
+
+    test('recordQazaForDates includes both range boundaries across month and leap day', () async {
+      await service.recordQazaForDates(
+        userId: 'u1',
+        dates: [
+          DateTime(2024, 2, 28, 23, 59),
+          DateTime(2024, 2, 29, 12),
+          DateTime(2024, 3, 1),
+        ],
+        prayerTypes: [PrayerType.fajr],
+      );
+      final records = await service.repository.getRecords(userId: 'u1');
+      expect(records.map((record) => record.originalDate).toSet(), {
+        DateTime(2024, 2, 28),
+        DateTime(2024, 2, 29),
+        DateTime(2024, 3, 1),
+      });
+      expect(records, hasLength(3));
+    });
+
+    test('QazaDate keys and parses dates without timezone offsets', () {
+      final utcValue = DateTime.utc(2024, 12, 31, 23, 59);
+      expect(QazaDate.key(utcValue), '2024-12-31');
+      expect(QazaDate.parseKey('2024-12-31'), DateTime(2024, 12, 31));
+      expect(QazaDate.fromRecordId('u1_fajr_2024-12-31'), DateTime(2024, 12, 31));
     });
 
     test('records every selected prayer for every selected date', () async {

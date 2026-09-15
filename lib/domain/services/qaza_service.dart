@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
@@ -70,12 +71,12 @@ class QazaService {
     required PrayerType prayerType,
     required DateTime originalDate,
   }) async {
-    final date = _dateOnly(originalDate);
+    final date = QazaDate.normalize(originalDate);
     final now = DateTime.now();
 
     await repository.addRecord(
       QazaRecord(
-        id: '${userId}_${prayerType.name}_${_dateKey(date)}',
+        id: '${userId}_${prayerType.name}_${QazaDate.key(date)}',
         userId: userId,
         prayerType: prayerType,
         originalDate: date,
@@ -90,7 +91,7 @@ class QazaService {
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayerTypes,
   }) async {
-    final normalizedDates = dates.map(_dateOnly).toSet();
+    final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
 
@@ -101,7 +102,7 @@ class QazaService {
       for (final prayerType in selectedPrayers) {
         records.add(
           QazaRecord(
-            id: '${userId}_${prayerType.name}_${_dateKey(date)}',
+            id: '${userId}_${prayerType.name}_${QazaDate.key(date)}',
             userId: userId,
             prayerType: prayerType,
             originalDate: date,
@@ -236,11 +237,4 @@ class QazaService {
   }
 
   QazaProgress _progress(List<QazaRecord> records) => progressOf(records);
-
-  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
-
-  String _dateKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
 }
