@@ -1,7 +1,7 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 6 — Authentication Lifecycle
+Task 7 — Qaza Business Logic
 
 ## Overall Progress
 6 / 15 major tasks formally audited and verified
@@ -14,7 +14,7 @@ Task 6 — Authentication Lifecycle
 - Task 4 — ✅ COMPLETE — Database Architecture
 - Task 5 — ✅ COMPLETE — Offline-First Architecture
 - Task 6 — ✅ COMPLETE — Authentication Lifecycle
-- Task 7 — NOT STARTED — Qaza Business Logic
+- Task 7 — 🟡 IN VERIFICATION — Qaza Business Logic
 - Task 8 — NOT STARTED — Gregorian + Hijri Calendar
 - Task 9 — NOT STARTED — Reminders / Notifications (optional)
 - Task 10 — NOT STARTED — Multi-Device Synchronization
@@ -114,17 +114,34 @@ GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ed
 
 This full GitHub CI matrix passed after the final Task 6 implementation/test fix. Task 6 therefore meets the project completion standard.
 
+### Task 7 — Implementation / Audit
+
+Qaza business logic audit completed against the existing service/repository architecture.
+
+- Verified exactly six prayer types: Fajr, Zuhr, Asr, Maghrib, Isha, and Witr.
+- Verified date-only normalization, deterministic IDs, duplicate-safe creation, pending/completed semantics, oldest-pending-first completion, idempotent completion, and derived progress calculations.
+- Explicitly audited date-range inclusivity and boundary transitions. Range expansion remains inclusive of both selected endpoints and uses calendar-date components rather than elapsed-time arithmetic.
+- Real cross-device timezone weakness fixed: Firestore `originalDate` is now stored as timezone-neutral `YYYY-MM-DD` instead of a `Timestamp`.
+- Legacy Firestore records are supported by recovering the original calendar date from the deterministic record ID when their old `originalDate` is still a timestamp.
+- Added shared `QazaDate` normalization, key generation, parsing, validation, and legacy-ID recovery.
+- Added regression coverage for UTC/local date handling, month boundaries, leap day, inclusive date sets, and deterministic date keys.
+- Added `docs/QAZA_BUSINESS_LOGIC.md`.
+
+## Task 7 Validation — PENDING FINAL CI
+
+Implementation and targeted regression coverage are committed on the Task 7 branch. The task will be marked complete only after the full GitHub CI matrix is green, including the final status-update commit.
+
 ## Known Bugs
 
-No Task 6 blocking production defects were identified from the audit.
+No known blocking production defect remains from the Task 7 business-logic audit. The identified timezone-sensitive Qaza-date persistence issue has been hardened with legacy compatibility.
 
 ## Blockers
 
-None identified for Task 6.
+None identified for Task 7.
 
 ## Remaining Work
 
-Tasks 7–15 remain for their own dedicated audits/implementation verification. Task 7 is the next recommended work item.
+Tasks 8–15 remain for their own dedicated audits/implementation verification.
 
 ## Last Verified
 
@@ -132,7 +149,7 @@ Task 6 verified on `3602b7d58b850b27fabce604eaf7448e62ede7dd` by GitHub Actions 
 
 ## Next Recommended Step
 
-Proceed to Task 7 — Qaza Business Logic.
+Complete Task 7 CI verification, then proceed to Task 8 — Gregorian + Hijri Calendar.
 
 ## Task Completion Standard
 
