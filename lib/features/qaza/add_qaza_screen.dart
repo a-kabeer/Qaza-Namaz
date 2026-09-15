@@ -11,7 +11,6 @@ import '../../core/widgets/components.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
   const AddQazaScreen({super.key});
-
   @override
   ConsumerState<AddQazaScreen> createState() => _AddQazaScreenState();
 }
@@ -26,12 +25,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int step = 0;
 
   int get totalCombinations => dates.length * prayers.length;
-
   int get existingCombinations {
     final keys = existing.map((r) => '${r.prayerType.name}_${_dateKey(r.originalDate)}').toSet();
     return dates.expand((d) => prayers.map((p) => '${p.name}_${_dateKey(d)}')).where(keys.contains).length;
   }
-
   int get newCombinations => totalCombinations - existingCombinations;
   String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   QazaService get service => ref.read(qazaServiceProvider);
@@ -46,12 +43,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       if (mounted) setState(() => checking = false);
     }
   }
-
   Future<void> _openDateStep() async {
     await _checkExisting();
     if (mounted) setState(() => step = 1);
   }
-
   Future<void> _continueFromDates() async {
     if (dates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose at least one date.')));
@@ -60,7 +55,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     await _checkExisting();
     if (mounted) setState(() => step = 2);
   }
-
   Future<void> _confirmAndSave() async {
     if (prayers.isEmpty || newCombinations <= 0 || saving) return;
     setState(() => saving = true);
@@ -132,7 +126,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               segments: const [
                 ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
                 ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
-                ButtonSegment(value: DateSelectionMode.multiple, icon: Icons.library_add_check_rounded, label: Text('Multiple')),
+                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
               ],
               selected: {dateMode},
               onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
@@ -141,12 +135,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           const SizedBox(height: 18),
           const _InfoBox(text: 'Each date + prayer combination becomes one independent Qaza record. Witr remains separate from Isha. Records always store Gregorian originalDate.'),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            key: const Key('qaza_continue_button'),
-            onPressed: checking ? null : _openDateStep,
-            icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded),
-            label: Text(checking ? 'Loading ledger...' : 'Continue'),
-          ),
+          FilledButton.icon(key: const Key('qaza_continue_button'), onPressed: checking ? null : _openDateStep, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Loading ledger...' : 'Continue')),
         ],
       );
 
