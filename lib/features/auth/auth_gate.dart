@@ -5,9 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
-import '../../core/theme/app_theme.dart';
-import '../ui/onboarding_ui.dart';
-import '../ui/workspace_shell.dart';
+import '../onboarding/onboarding_screens.dart';
+import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
 
 class AuthGate extends ConsumerStatefulWidget {
@@ -44,7 +43,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   Future<void> _finishSetup() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_setupCompleteKey, true);
-    if (mounted) setState(() { setupComplete = true; showSetup = false; });
+    if (mounted) setState(() {
+      setupComplete = true;
+      showSetup = false;
+    });
   }
 
   @override
@@ -66,9 +68,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           onGetStarted: () => setState(() => showWelcome = false),
         );
       }
-      return AuthenticationScreen(
-        onGoogleSignIn: ref.read(authRepositoryProvider).signInWithGoogle,
-      );
+      return const AuthenticationScreen();
     }
 
     if (!setupComplete && !setupRequested) {
@@ -78,16 +78,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       });
     }
     if (showSetup) {
-      return FirstTimeSetupScreen(
-        onDone: _finishSetup,
-        onThemeModeChanged: (mode) => ref
-            .read(themeModeProvider.notifier)
-            .set(switch (mode) {
-          ThemeMode.light => AppThemeMode.light,
-          ThemeMode.dark => AppThemeMode.dark,
-          ThemeMode.system => AppThemeMode.system,
-        }),
-      );
+      return FirstTimeSetupScreen(onDone: _finishSetup);
     }
 
     return const WorkspaceShell();
