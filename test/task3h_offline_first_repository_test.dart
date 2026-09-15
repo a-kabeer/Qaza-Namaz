@@ -139,6 +139,7 @@ void main() {
       final original = record();
       await remote.addRecord(original);
       await repo.setActiveUser('u1');
+      await repo.syncNow();
       expect((await repo.getRecords(userId: 'u1')).single.status, QazaStatus.pending);
 
       final completedAt = baseDate.add(const Duration(hours: 4));
@@ -158,7 +159,7 @@ void main() {
 
     test('requeues a local completion when its persisted outbox is missing', () async {
       final local = InMemoryQazaLocalStore();
-      final remote = InMemoryQazaRepository();
+      final remote = _FailingRepository()..failWrites = true;
       final original = record();
       await remote.addRecord(original);
 
@@ -170,12 +171,14 @@ void main() {
 
       final repo = createRepository(remote: remote, local: local);
       await repo.setActiveUser('u1');
+      await repo.syncNow();
 
       final queued = (await local.load()).outboxByUser['u1']!;
       expect(queued, hasLength(1));
       expect(queued.single.type, SyncOpType.complete);
       expect(queued.single.targetRecordId, original.id);
 
+      remote.failWrites = false;
       await repo.syncNow();
       expect((await remote.getRecords(userId: 'u1')).single.status, QazaStatus.completed);
       expect((await local.load()).outboxByUser['u1'], isEmpty);
