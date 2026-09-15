@@ -159,19 +159,30 @@ void main() {
 
     test('requeues a local completion when its persisted outbox is missing', () async {
       final local = InMemoryQazaLocalStore();
-      final remote = _FailingRepository()..failWrites = true;
+      final remote = _FailingRepository();
+      final connectivity = StreamController<bool>();
       final original = record();
       await remote.addRecord(original);
-
       final completedAt = baseDate.add(const Duration(hours: 2));
       await local.saveRecords('u1', [
         record(status: QazaStatus.completed, completedAt: completedAt),
       ]);
       await local.saveOutbox('u1', []);
 
-      final repo = createRepository(remote: remote, local: local);
+      final repo = createRepository(
+        remote: remote,
+        local: local,
+        connectivity: connectivity.stream,
+      );
+      connectivity.add(false);
+      await Future<void>.delayed(Duration.zero);
       await repo.setActiveUser('u1');
-      await repo.syncNow();
+      expect((await local.load()).outboxByUser['u1'], isEmpty);
+
+      remote.failWrites = true;
+      connectivity.add(true);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
 
       final queued = (await local.load()).outboxByUser['u1']!;
       expect(queued, hasLength(1));
@@ -182,6 +193,8 @@ void main() {
       await repo.syncNow();
       expect((await remote.getRecords(userId: 'u1')).single.status, QazaStatus.completed);
       expect((await local.load()).outboxByUser['u1'], isEmpty);
+
+      await connectivity.close();
       repo.dispose();
     });
 
