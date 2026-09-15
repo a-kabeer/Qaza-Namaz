@@ -71,7 +71,7 @@ Derived counters are not exported as the ledger source of truth.
 - `RECEIVE_BOOT_COMPLETED`, package-replacement and quick-boot receiver declarations allow the plugin to restore scheduled notifications after restart/update.
 
 ## Validation
-The repository has dedicated tests for Tasks 3A–3I behavior plus Task 3J notification settings/scheduling logic. GitHub Actions is configured to run `flutter clean`, `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`, and `flutter build apk --release` on the final CI path. Physical-device confirmation of Android notification delivery and file-picker UX remains environment-dependent and is not claimed as automated validation.
+The repository has dedicated tests for Tasks 3A–3I behavior plus Task 3J notification settings/scheduling logic. GitHub Actions is configured to run `flutter clean`, `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`, and `flutter build apk --release` on the final CI path. This final CI run is triggered from the current main commit. Physical-device confirmation of Android notification delivery and file-picker UX remains environment-dependent and is not claimed as automated validation.
 
 ## Remaining Issues / Technical Debt
 - Physical-device verification of Android notification permission, reboot rescheduling, and export/import picker behavior remains environment-dependent.
