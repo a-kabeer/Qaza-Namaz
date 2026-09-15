@@ -1,44 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
+import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/ui/history_progress_v2.dart';
 
-QazaRecord record({
-  required String id,
-  required PrayerType prayer,
-  required DateTime originalDate,
-  QazaStatus status = QazaStatus.pending,
-  DateTime? completedAt,
-}) {
+QazaRecord record({required String id, required PrayerType prayer, required DateTime originalDate, QazaStatus status = QazaStatus.pending, DateTime? completedAt}) {
   final created = DateTime(2026, 9, 1, 10);
-  return QazaRecord(
-    id: id,
-    userId: 'test-user',
-    prayerType: prayer,
-    originalDate: originalDate,
-    status: status,
-    completedAt: completedAt,
-    createdAt: created,
-    updatedAt: completedAt ?? created,
-  );
+  return QazaRecord(id: id, userId: 'test-user', prayerType: prayer, originalDate: originalDate, status: status, completedAt: completedAt, createdAt: created, updatedAt: completedAt ?? created);
 }
 
 Future<void> pumpScreen(WidgetTester tester, InMemoryQazaRepository repository) async {
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
-  await tester.pumpWidget(
-    MaterialApp(
-      home: HistoryProgressV2Screen(
-        userId: 'test-user',
-        service: QazaService(repository),
-      ),
-    ),
-  );
+  await tester.pumpWidget(ProviderScope(
+    overrides: [
+      qazaRepositoryProvider.overrideWithValue(repository),
+      authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
+    ],
+    child: const MaterialApp(home: HistoryProgressV2Screen()),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -50,18 +36,12 @@ void main() {
       record(id: 'fajr_completed', prayer: PrayerType.fajr, originalDate: DateTime(2026, 8, 19), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 2, 8)),
       record(id: 'witr_completed', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 18), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 3, 9)),
     ]);
-
     await pumpScreen(tester, repository);
-
     expect(find.text('Your progress'), findsOneWidget);
     expect(find.text('Pending'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
-
-    for (final prayer in PrayerType.values) {
-      expect(find.text(prayer.label), findsOneWidget);
-    }
-
+    for (final prayer in PrayerType.values) expect(find.text(prayer.label), findsOneWidget);
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
     expect(find.text('0 pending • 1 completed'), findsOneWidget);
   });
@@ -73,9 +53,7 @@ void main() {
       record(id: 'new_completed', prayer: PrayerType.zuhr, originalDate: DateTime(2021, 10, 11), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 3, 13, 15)),
       record(id: 'pending', prayer: PrayerType.asr, originalDate: DateTime(2021, 10, 10)),
     ]);
-
     await pumpScreen(tester, repository);
-
     final newFinder = find.text('Zuhr Qaza completed');
     final oldFinder = find.text('Fajr Qaza completed');
     expect(newFinder, findsOneWidget);
@@ -88,12 +66,8 @@ void main() {
 
   testWidgets('Task 3E empty state is explicit when there is no completed history', (tester) async {
     final repository = InMemoryQazaRepository();
-    await repository.addRecords([
-      record(id: 'pending_only', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 1)),
-    ]);
-
+    await repository.addRecords([record(id: 'pending_only', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 1))]);
     await pumpScreen(tester, repository);
-
     expect(find.text('No completed Qaza yet.'), findsOneWidget);
     expect(find.textContaining('Completed individual records will appear here'), findsOneWidget);
   });
