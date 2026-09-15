@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_record.dart';
 
 class PendingDatesScreen extends ConsumerStatefulWidget {
@@ -49,9 +52,9 @@ class _PendingDatesScreenState extends ConsumerState<PendingDatesScreen> {
     final ledger = ref.watch(qazaRecordsProvider);
     final visible = records;
     final allSelected = visible.isNotEmpty && selected.length == visible.length;
-    return PageScaffold(
+    return AppScaffold(
       title: '${widget.prayer.label} Qaza',
-      child: SafeArea(
+      body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
@@ -78,13 +81,13 @@ class _PendingDatesScreenState extends ConsumerState<PendingDatesScreen> {
                       value: selected.contains(record.id),
                       onChanged: working ? null : (value) => setState(() { if (value == true) selected.add(record.id); else selected.remove(record.id); }),
                       secondary: const Icon(Icons.event_note_outlined),
-                      title: Text(formatDate(record.originalDate)),
+                      title: Text(formatAppDate(record.originalDate)),
                       subtitle: const Text('Pending Qaza record'),
                       controlAffinity: ListTileControlAffinity.trailing,
                     ),
                   ),
                 const SizedBox(height: 12),
-                PrimaryButton(label: working ? 'Completing...' : 'Complete ${selected.length} selected', icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded, onPressed: selected.isEmpty || working ? null : _completeSelected),
+                AppButton(label: working ? 'Completing...' : 'Complete ${selected.length} selected', icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded, onPressed: selected.isEmpty || working ? null : _completeSelected, expand: true),
               ],
             ],
           ),

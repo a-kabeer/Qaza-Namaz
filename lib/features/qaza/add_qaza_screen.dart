@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/widgets/components.dart';
+import '../../core/widgets/prayer_card.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';

@@ -8,9 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/utils/date_formatters.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../core/widgets/progress_overview_card.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../core/widgets/components.dart';
 import '../sync/sync_status_bar.dart';
 
 class HistoryProgressScreen extends ConsumerWidget {
@@ -25,7 +29,7 @@ class HistoryProgressScreen extends ConsumerWidget {
     final prayerProgress = ref.watch(prayerProgressProvider);
     Future<void> refresh() => ref.read(qazaRecordsProvider.notifier).refresh();
 
-    return PageScaffold(
+    return AppScaffold(
       title: 'Logs & Progress',
       actions: [
         IconButton(
@@ -34,7 +38,7 @@ class HistoryProgressScreen extends ConsumerWidget {
           icon: const Icon(Icons.sync_rounded),
         ),
       ],
-      child: RefreshIndicator(
+      body: RefreshIndicator(
         onRefresh: refresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -78,12 +82,12 @@ class _PrayerProgressTile extends StatelessWidget {
     final total = item.progress.pending + item.progress.completed;
     final ratio = total == 0 ? 0.0 : item.progress.completed / total;
     return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(child: Icon(item.prayerType.icon)),
         title: Text(item.prayerType.label),
         subtitle: Text('${item.progress.pending} pending • ${item.progress.completed} completed'),
-        trailing: SizedBox(width: 82, child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${(ratio * 100).round()}%'), const SizedBox(height: AppSpacing.xs), LinearProgressIndicator(value: ratio)])),
+        trailing: SizedBox(width: 82, child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${(ratio * 100).round()}%'), const SizedBox(height: 4), LinearProgressIndicator(value: ratio)])),
       ),
     );
   }
@@ -95,11 +99,11 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        margin: const EdgeInsets.only(bottom: 8),
         child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.check_rounded)),
           title: Text('${record.prayerType.label} Qaza completed'),
-          subtitle: Text('Original missed date: ${formatDate(record.originalDate)}\nCompleted: ${formatDateTime(record.completedAt)}'),
+          subtitle: Text('Original missed date: ${formatAppDate(record.originalDate)}\nCompleted: ${formatAppDateTime(record.completedAt)}'),
           isThreeLine: true,
         ),
       );

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../notifications/notification_controller.dart';
 
 class NotificationsScreen extends ConsumerWidget {
@@ -10,9 +11,9 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(notificationSettingsProvider);
-    return PageScaffold(
+    return AppScaffold(
       title: 'Notifications',
-      child: settings.when(
+      body: settings.when(
         loading: () => const LoadingState(message: 'Loading notification settings…'),
         error: (error, stack) => ErrorState(
           message: 'Notification settings could not be loaded: $error',

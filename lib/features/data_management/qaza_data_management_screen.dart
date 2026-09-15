@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../data/data_transfer/qaza_data_transfer_service.dart';
 import '../sync/sync_status_bar.dart';
 
@@ -70,10 +71,10 @@ class _QazaDataManagementScreenState extends ConsumerState<QazaDataManagementScr
   }
 
   @override
-  Widget build(BuildContext context) => PageScaffold(
+  Widget build(BuildContext context) => AppScaffold(
         title: 'Export & Import',
         onBack: () => Navigator.maybePop(context),
-        child: ListView(
+        body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             const SyncStatusBar(),

@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../core/widgets/prayer_card.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'namaz_wise_screen.dart';
 
@@ -38,10 +42,10 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
   Widget build(BuildContext context) {
     final ledger = ref.watch(qazaRecordsProvider);
     final record = oldest;
-    return PageScaffold(
+    return AppScaffold(
       title: 'Complete Qaza',
       onBack: () => Navigator.pop(context),
-      child: SafeArea(
+      body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
@@ -56,9 +60,7 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 value: prayer,
                 decoration: const InputDecoration(labelText: 'Prayer', prefixIcon: Icon(Icons.mosque_outlined)),
                 items: [for (final item in PrayerType.values) DropdownMenuItem(value: item, child: Text(item.label))],
-                onChanged: working || ledger.isLoading ? null : (value) {
-                  if (value != null) setState(() => prayer = value);
-                },
+                onChanged: working || ledger.isLoading ? null : (value) { if (value != null) setState(() => prayer = value); },
               ),
               const SizedBox(height: 16),
               Card(
@@ -69,11 +71,7 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                     error: (_, __) => ErrorState(message: 'We could not load your Qaza ledger.', onRetry: _refresh),
                     data: (_) {
                       if (record == null) {
-                        return const EmptyState(
-                          icon: Icons.check_circle_outline_rounded,
-                          title: 'No pending Qaza for this prayer.',
-                          message: 'Choose another prayer or add a Qaza record first.',
-                        );
+                        return const EmptyState(icon: Icons.check_circle_outline_rounded, title: 'No pending Qaza for this prayer.', message: 'Choose another prayer or add a Qaza record first.');
                       }
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +87,7 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                           const SizedBox(height: 18),
                           const Text('Original missed date'),
                           const SizedBox(height: 4),
-                          Text(formatDate(record.originalDate), style: Theme.of(context).textTheme.headlineSmall),
+                          Text(formatAppDate(record.originalDate), style: Theme.of(context).textTheme.headlineSmall),
                           const SizedBox(height: 8),
                           const Text('Completion timestamp will be recorded separately.'),
                         ],
@@ -99,17 +97,9 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              PrimaryButton(
-                label: working ? 'Completing...' : 'Complete oldest pending',
-                icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
-                onPressed: oldest == null || ledger.isLoading || working ? null : _complete,
-              ),
+              AppButton(label: working ? 'Completing...' : 'Complete oldest pending', icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded, onPressed: oldest == null || ledger.isLoading || working ? null : _complete, expand: true),
               const SizedBox(height: 12),
-              SecondaryButton(
-                label: 'Open Namaz-wise completion',
-                icon: Icons.format_list_bulleted_rounded,
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen())),
-              ),
+              AppButton(label: 'Open Namaz-wise completion', icon: Icons.format_list_bulleted_rounded, secondary: true, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen())), expand: true),
             ],
           ),
         ),

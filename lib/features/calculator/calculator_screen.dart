@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_scaffold.dart';
 
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => PageScaffold(
+  Widget build(BuildContext context) => AppScaffold(
         title: 'Calculator',
-        child: ListView(
+        body: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
             Text('Qaza estimate calculator'),
