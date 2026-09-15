@@ -103,7 +103,7 @@ Authentication lifecycle audit completed without replacing the existing Firebase
 
 ## Task 6 Validation — VERIFIED
 
-GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ed?` completed successfully:
+GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ede7dd` completed successfully:
 
 - Analyze — ✅
 - Tests (Windows) — ✅
@@ -138,7 +138,7 @@ GitHub Actions run `35020052643` on commit `5df12143ed28d7ccfa570648761f2fbba111
 - Android release APK — ✅
 - All workflow cleanup/post steps — ✅
 
-The full GitHub CI matrix passed for the final Task 7 implementation commit. This status update is the final completion record; it must itself pass the full CI matrix before Task 7 is considered complete.
+The full GitHub CI matrix passed for the final Task 7 implementation commit.
 
 ## Known Bugs
 
