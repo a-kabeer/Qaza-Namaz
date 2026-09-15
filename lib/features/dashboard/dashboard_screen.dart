@@ -7,6 +7,7 @@ import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/legacy_components.dart';
 import '../../core/widgets/metric_tile.dart';
 import '../../core/widgets/prayer_card.dart';
 import '../../core/widgets/section_header.dart';
@@ -75,14 +76,14 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 14),
-                      _ProgressRing(progress: ratio),
+                      ProgressRing(progress: ratio),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Row(children: [
-                    _StatusChip('$pending pending'),
+                    StatusChip('$pending pending'),
                     const SizedBox(width: 8),
-                    _StatusChip('$completed fulfilled'),
+                    StatusChip('$completed fulfilled'),
                   ]),
                 ],
               ),
@@ -150,35 +151,4 @@ class DashboardScreen extends ConsumerWidget {
     final now = DateTime.now();
     return 'Today • ${DateFormatters.weekdayShortNames[now.weekday - 1]}, ${now.day} ${DateFormatters.gregorianMonthName(now.month)} ${now.year}';
   }
-}
-
-class _ProgressRing extends StatelessWidget {
-  const _ProgressRing({required this.progress});
-  final double progress;
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 72,
-        height: 72,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CircularProgressIndicator(value: progress, strokeWidth: 6, backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: .18)),
-            Text('${(progress * 100).round()}%', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      );
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip(this.label);
-  final String label;
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-      );
 }
