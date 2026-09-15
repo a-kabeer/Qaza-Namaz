@@ -1,0 +1,56 @@
+﻿== OFFLINE API ==
+35:/// Cache data is namespaced by Firebase UID; [setActiveUser] swaps the active
+61:final StreamController<SyncState> _stateController =
+62:StreamController<SyncState>.broadcast();
+63:SyncState _state = const SyncState();
+64:Future<void>? _syncFuture;
+67:Stream<SyncState> get syncState => _stateController.stream;
+71:SyncState get currentState => _state;
+84:Future<void> setActiveUser(String? userId) async {
+106:_emit(_state = const SyncState());
+115:Future<void> _ensureLoaded() async {
+133:Future<List<QazaRecord>> getRecords({
+154:Future<void> addRecord(QazaRecord record) async {
+182:Future<void> addRecords(List<QazaRecord> records) async {
+212:Future<void> completeRecord({
+225:Future<void> completeRecords({
+265:Future<void> syncNow() async {
+273:Future<void> _syncInBackground() async {
+288:Future<void> _runSync() async {
+293:_state = SyncState(
+302:_state = SyncState(
+315:_state = SyncState(
+325:_state = SyncState(
+335:Future<void> _flushOutbox(String userId) async {
+390:Future<void> _pullRemote(String userId) async {
+491:Future<void> _persistRecords() async {
+497:Future<void> _persistOutbox() async {
+505:void _emit(SyncState state) {
+515:SyncState(
+529:_state = SyncState(
+546:void dispose() {
+== REF OfflineFirstQazaRepository ==
+lib\data\repositories\offline_first_qaza_repository.dart:37
+lib\data\repositories\offline_first_qaza_repository.dart:38
+lib\features\sync\sync_status_bar.dart:20
+lib\features\sync\sync_status_bar.dart:21
+== REF SyncStatusBar ==
+lib\features\sync\sync_status_bar.dart:13
+lib\features\sync\sync_status_bar.dart:14
+== REF InMemoryQazaLocalStore ==
+lib\data\local\in_memory_qaza_local_store.dart:6
+== REF DataCloudScreen ==
+lib\features\ui\final_ui.dart:164
+lib\features\ui\final_ui.dart:249
+lib\features\ui\final_ui.dart:250
+== REF QazaService( ==
+lib\domain\services\qaza_service.dart:9
+lib\features\ui\workspace_v2.dart:38
+test\qaza_add_flow_test.dart:14
+test\qaza_service_test.dart:13
+test\task3d_completion_flow_test.dart:35
+test\task3d_completion_flow_test.dart:47
+test\task3d_completion_flow_test.dart:129
+test\task3d_completion_flow_test.dart:175
+test\task3e_history_progress_test.dart:38
+test\task3g_add_flow_calendar_test.dart:43

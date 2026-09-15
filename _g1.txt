@@ -1,0 +1,27 @@
+﻿7: class CompleteQazaV2Screen extends StatefulWidget {
+17: class _CompleteQazaV2ScreenState extends State<CompleteQazaV2Screen> {
+26: _load();
+29: Future<void> _load() async {
+32: oldest = await widget.service.oldestPending(
+33: userId: widget.userId,
+41: Future<void> _complete() async {
+46: await widget.service.completeRecord(
+47: userId: widget.userId,
+55: await _load();
+64: _load();
+80: onRefresh: _load,
+150: builder: (_) => NamazWiseV2Screen(service: widget.service, userId: widget.userId),
+175: class NamazWiseV2Screen extends StatelessWidget {
+238: class PendingDatesV2Screen extends StatefulWidget {
+249: class _PendingDatesV2ScreenState extends State<PendingDatesV2Screen> {
+258: _load();
+261: Future<void> _load() async {
+264: final result = await widget.service.getPendingForPrayer(
+265: userId: widget.userId,
+276: Future<void> _completeSelected() async {
+281: final count = await widget.service.completeSelected(
+282: userId: widget.userId,
+291: await _load();
+316: onRefresh: _load,
+378: class _EmptyCompletionState extends StatelessWidget {
+396: class _EmptyPendingDates extends StatelessWidget {

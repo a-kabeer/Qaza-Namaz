@@ -193,28 +193,49 @@ class QazaService {
     );
   }
 
+  /// Completed records, newest completion first.
+  ///
+  /// Shared with the derived history provider so ordering is defined once.
+  static List<QazaRecord> completedNewestFirst(
+    Iterable<QazaRecord> records,
+  ) {
+    final completed = records
+        .where((record) => record.status == QazaStatus.completed)
+        .toList();
+    completed.sort(
+      (a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+          .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+    );
+    return completed;
+  }
+
   Future<List<QazaRecord>> history(String userId) async {
     final records = await getRecords(
       userId: userId,
       status: QazaStatus.completed,
     );
-    records.sort(
-      (a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-          .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
-    );
-    return records;
+    return completedNewestFirst(records);
   }
 
-  QazaProgress _progress(List<QazaRecord> records) {
-    final completed = records
-        .where((record) => record.status == QazaStatus.completed)
-        .length;
-    final pending = records.length - completed;
+  /// Pure progress math over records already in memory.
+  ///
+  /// Shared by the asynchronous ledger queries and by the derived state
+  /// providers, so "what counts as progress" is defined exactly once.
+  static QazaProgress progressOf(Iterable<QazaRecord> records) {
+    var completed = 0;
+    var total = 0;
+    for (final record in records) {
+      total++;
+      if (record.status == QazaStatus.completed) completed++;
+    }
+    final pending = total - completed;
     return QazaProgress(
       pending: pending < 0 ? 0 : pending,
       completed: completed,
     );
   }
+
+  QazaProgress _progress(List<QazaRecord> records) => progressOf(records);
 
   DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 

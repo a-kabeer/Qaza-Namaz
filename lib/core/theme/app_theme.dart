@@ -148,3 +148,12 @@ class AppTheme {
 }
 
 enum AppThemeMode { system, light, dark }
+
+extension AppThemeModeX on AppThemeMode {
+  /// Maps the app's theme choice onto Flutter's [ThemeMode].
+  ThemeMode get materialMode => switch (this) {
+        AppThemeMode.system => ThemeMode.system,
+        AppThemeMode.light => ThemeMode.light,
+        AppThemeMode.dark => ThemeMode.dark,
+      };
+}

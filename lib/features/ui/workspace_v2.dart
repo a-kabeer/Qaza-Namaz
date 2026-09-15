@@ -1,267 +1,318 @@
-import 'package:flutter/material.dart';
-import 'package:qaza_namaz/core/theme/app_theme.dart';
+// The signed-in application shell.
+//
+// Dashboard, Calculator, Logs and Settings each read the state they need from
+// providers (see lib/app/providers.dart); the shell only owns which tab is
+// visible. Tabs are mounted on first visit and kept alive afterwards, so their
+// state is preserved without paying to build all four at startup.
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/app_user.dart';
+import '../../domain/calendar/calendar_labels.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/repositories/qaza_repository.dart';
-import '../../domain/services/qaza_service.dart';
 import '../qaza/qaza_add_flow_v2.dart';
 import '../qaza/qaza_completion_flow_v2.dart';
+import '../sync/sync_status_bar.dart';
 import 'components.dart';
 import 'final_ui.dart';
 import 'history_progress_v2.dart';
 
-class WorkspaceShellV2 extends StatefulWidget {
-  const WorkspaceShellV2({
-    required this.userId,
-    required this.repository,
-    required this.onSignOut,
-    this.user,
-    this.themeMode = AppThemeMode.system,
-    this.onThemeModeChanged,
-    super.key,
-  });
-
-  final String userId;
-  final QazaRepository repository;
-  final Future<void> Function() onSignOut;
-  final AppUser? user;
-  final AppThemeMode themeMode;
-  final ValueChanged<AppThemeMode>? onThemeModeChanged;
+class WorkspaceShellV2 extends ConsumerStatefulWidget {
+  const WorkspaceShellV2({super.key});
 
   @override
-  State<WorkspaceShellV2> createState() => _WorkspaceShellV2State();
+  ConsumerState<WorkspaceShellV2> createState() => _WorkspaceShellV2State();
 }
 
-class _WorkspaceShellV2State extends State<WorkspaceShellV2> {
-  late final QazaService service = QazaService(widget.repository);
+class _WorkspaceShellV2State extends ConsumerState<WorkspaceShellV2> {
+  static const List<Widget> _pages = [
+    _Dashboard(),
+    CalculatorScreen(),
+    HistoryProgressV2Screen(),
+    SettingsScreen(),
+  ];
+
   int index = 0;
+
+  /// Tabs mounted so far. Mounting on demand keeps startup cheap while still
+  /// preserving the state of every tab the user has visited.
+  final Set<int> _mounted = {0};
 
   @override
   Widget build(BuildContext context) {
-    final pages = <Widget>[
-      _Dashboard(service: service, userId: widget.userId),
-      const CalculatorScreen(),
-      HistoryProgressV2Screen(service: service, userId: widget.userId),
-      SettingsScreen(
-        onSignOut: widget.onSignOut,
-        user: widget.user,
-        themeMode: widget.themeMode,
-        onThemeModeChanged: widget.onThemeModeChanged,
-      ),
-    ];
     return Scaffold(
-      body: IndexedStack(index: index, children: pages),
+      body: IndexedStack(
+        index: index,
+        children: [
+          for (var i = 0; i < _pages.length; i++)
+            if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (value) => setState(() => index = value),
+        onDestinationSelected: (value) => setState(() {
+          index = value;
+          _mounted.add(value);
+        }),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.mosque_outlined), selectedIcon: Icon(Icons.mosque_rounded), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.calculate_outlined), selectedIcon: Icon(Icons.calculate_rounded), label: 'Calculator'),
-          NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history_rounded), label: 'Logs'),
-          NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune_rounded), label: 'Settings'),
+          NavigationDestination(
+            icon: Icon(Icons.mosque_outlined),
+            selectedIcon: Icon(Icons.mosque_rounded),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calculate_outlined),
+            selectedIcon: Icon(Icons.calculate_rounded),
+            label: 'Calculator',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history_rounded),
+            label: 'Logs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.tune_outlined),
+            selectedIcon: Icon(Icons.tune_rounded),
+            label: 'Settings',
+          ),
         ],
       ),
     );
   }
 }
+/// Ledger overview driven entirely by the shared records provider, so the
+/// Dashboard never issues its own read and always reflects the latest writes.
+class _Dashboard extends ConsumerWidget {
+  const _Dashboard();
 
-class _Dashboard extends StatefulWidget {
-  const _Dashboard({required this.service, required this.userId});
-  final QazaService service;
-  final String userId;
-
-  @override
-  State<_Dashboard> createState() => _DashboardState();
-}
-
-class _DashboardState extends State<_Dashboard> {
-  late Future<List<QazaRecord>> future;
-
-  @override
-  void initState() {
-    super.initState();
-    _reload();
-  }
-
-  void _reload() => future = widget.service.getRecords(userId: widget.userId);
-
-  Future<void> _refresh() async {
-    setState(_reload);
-    await future;
-  }
-
-  Future<void> _open(Widget page) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-    if (mounted) setState(_reload);
+  /// Opens a flow and refreshes the ledger when that flow wrote to it.
+  ///
+  /// The notifier is captured before the await, so the refresh never depends
+  /// on this widget still being mounted.
+  static Future<void> _open(
+    BuildContext context,
+    WidgetRef ref,
+    Widget page,
+  ) async {
+    final ledger = ref.read(qazaRecordsProvider.notifier);
+    final changed = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+    if (changed != null && changed > 0) await ledger.refresh();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final ledger = ref.watch(qazaRecordsProvider);
+    final records = ref.watch(loadedRecordsProvider);
+    final progress = ref.watch(overallProgressProvider);
+    final pending = progress.pending;
+    final completed = progress.completed;
+    final total = pending + completed;
+    final ratio = total == 0 ? 0.0 : completed / total;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Row(children: [Icon(Icons.mosque_rounded), SizedBox(width: 10), Text('Qaza Namaz')]),
-        actions: [IconButton(tooltip: 'Refresh ledger', onPressed: _refresh, icon: const Icon(Icons.sync_rounded))],
+        title: const Row(
+          children: [
+            Icon(Icons.mosque_rounded),
+            SizedBox(width: 10),
+            Text('Qaza Namaz'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh ledger',
+            onPressed: ledger.isLoading
+                ? null
+                : () => ref.read(qazaRecordsProvider.notifier).refresh(),
+            icon: const Icon(Icons.sync_rounded),
+          ),
+        ],
       ),
-      body: FutureBuilder<List<QazaRecord>>(
-        future: future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingState(padding: 0);
-          }
-          if (snapshot.hasError) {
-            return ErrorState(
-              message: 'We could not load your Qaza ledger.',
-              onRetry: _refresh,
-            );
-          }
-          final records = snapshot.data ?? const <QazaRecord>[];
-          final pending = records.where((r) => r.status == QazaStatus.pending).length;
-          final completed = records.where((r) => r.status == QazaStatus.completed).length;
-          final total = records.length;
-          final progress = total == 0 ? 0.0 : completed / total;
-
-          return RefreshIndicator(
-            onRefresh: _refresh,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_todayLabel(), style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Continue your prayer journey', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 8),
-                        Text(total == 0 ? 'Start by recording the dates and prayers you need to make up.' : 'Every completed prayer brings your ledger closer to zero.', style: TextStyle(color: scheme.onPrimaryContainer.withOpacity(.86), height: 1.4)),
-                      ])),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(qazaRecordsProvider.notifier).refresh(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          children: [
+            const SyncStatusBar(),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _todayLabel(),
+                    style: TextStyle(
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Continue your prayer journey',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: scheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              total == 0
+                                  ? 'Start by recording the dates and prayers '
+                                      'you need to make up.'
+                                  : 'Every completed prayer brings your '
+                                      'ledger closer to zero.',
+                              style: TextStyle(
+                                color:
+                                    scheme.onPrimaryContainer.withOpacity(.86),
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(width: 14),
-                      _ProgressRing(progress: progress),
-                    ]),
-                    const SizedBox(height: 16),
-                    Row(children: [
+                      ProgressRing(progress: ratio),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
                       StatusChip('$pending pending'),
                       const SizedBox(width: 8),
                       StatusChip('$completed fulfilled'),
-                    ]),
-                  ]),
-                ),
-                const SizedBox(height: 16),
-                Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [Expanded(child: Text('Ledger overview', style: Theme.of(context).textTheme.titleMedium)), Text('$pending pending')]),
-                  const SizedBox(height: 16),
-                  Row(children: [Expanded(child: _Metric('Pending', '$pending')), Expanded(child: _Metric('Completed', '$completed')), Expanded(child: _Metric('Total', '$total'))]),
-                  const SizedBox(height: 16),
-                  ClipRRect(borderRadius: BorderRadius.circular(99), child: LinearProgressIndicator(value: progress, minHeight: 8)),
-                  const SizedBox(height: 8),
-                  Text(total == 0 ? 'No records yet' : '${(progress * 100).round()}% completed'),
-                ]))),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _open(QazaAddFlowV2Screen(service: widget.service, userId: widget.userId)),
-                        icon: const Icon(Icons.add_rounded),
-                        label: const Text('Add Qaza'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: pending == 0 ? null : () => _open(CompleteQazaV2Screen(service: widget.service, userId: widget.userId)),
-                        icon: const Icon(Icons.check_circle_outline_rounded),
-                        label: const Text('Complete'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(children: [Expanded(child: Text('Prayer ledger', style: Theme.of(context).textTheme.titleLarge)), TextButton(onPressed: () => _open(NamazWiseV2Screen(service: widget.service, userId: widget.userId)), child: const Text('View all'))]),
-                const SizedBox(height: 4),
-                for (final prayer in PrayerType.values)
-                  Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => _open(PendingDatesV2Screen(service: widget.service, userId: widget.userId, prayer: prayer)),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        child: Row(children: [
-                          CircleAvatar(child: Icon(_icon(prayer))),
-                          const SizedBox(width: 12),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(prayer.label, style: Theme.of(context).textTheme.titleMedium), Text(_summary(records, prayer), style: Theme.of(context).textTheme.bodySmall)])),
-                          Text('${_pending(records, prayer)}', style: Theme.of(context).textTheme.headlineSmall),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right_rounded),
-                        ]),
-                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+const SizedBox(height: 16),
+            ProgressOverviewCard(
+              progress: progress,
+              header: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ledger overview',
+                      style: theme.textTheme.titleMedium,
                     ),
                   ),
-                if (records.isEmpty)
-                  const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.lightbulb_outline_rounded), SizedBox(width: 12), Expanded(child: Text('Your dashboard is ready. Add your first missed-prayer record to begin your ledger.'))]))),
+                  Text('$pending pending'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () =>
+                        _open(context, ref, const QazaAddFlowV2Screen()),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Add Qaza'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: pending == 0
+                        ? null
+                        : () =>
+                            _open(context, ref, const CompleteQazaV2Screen()),
+                    icon: const Icon(Icons.check_circle_outline_rounded),
+                    label: const Text('Complete'),
+                  ),
+                ),
               ],
             ),
-          );
-        },
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Prayer ledger',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      _open(context, ref, const NamazWiseV2Screen()),
+                  child: const Text('View all'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            for (final prayer in PrayerType.values)
+              PrayerTile(
+                prayer: prayer,
+                subtitle: _summary(records, prayer),
+                trailing: Text(
+                  '${_pending(records, prayer)}',
+                  style: theme.textTheme.headlineSmall,
+                ),
+                onTap: () =>
+                    _open(context, ref, PendingDatesV2Screen(prayer: prayer)),
+              ),
+            if (records.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.lightbulb_outline_rounded),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Your dashboard is ready. Add your first '
+                          'missed-prayer record to begin your ledger.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  int _pending(List<QazaRecord> records, PrayerType prayer) => records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length;
+  int _pending(List<QazaRecord> records, PrayerType prayer) => records
+      .where((r) => r.prayerType == prayer && r.status == QazaStatus.pending)
+      .length;
 
   String _summary(List<QazaRecord> records, PrayerType prayer) {
     final pending = _pending(records, prayer);
-    final completed = records.where((r) => r.prayerType == prayer && r.status == QazaStatus.completed).length;
+    final completed = records
+        .where((r) => r.prayerType == prayer && r.status == QazaStatus.completed)
+        .length;
     if (pending == 0 && completed == 0) return 'No records yet';
-    return pending == 0 ? '$completed completed' : '$pending pending • $completed completed';
+    return pending == 0
+        ? '$completed completed'
+        : '$pending pending • $completed completed';
   }
 
   String _todayLabel() {
     final now = DateTime.now();
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return 'Today • ${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
+    return 'Today • ${CalendarLabels.weekdayShortNames[now.weekday - 1]}, '
+        '${now.day} ${CalendarLabels.gregorianMonthName(now.month)} ${now.year}';
   }
-
-  IconData _icon(PrayerType p) => switch (p) {
-        PrayerType.fajr => Icons.wb_twilight_rounded,
-        PrayerType.zuhr => Icons.wb_sunny_rounded,
-        PrayerType.asr => Icons.wb_sunny_outlined,
-        PrayerType.maghrib => Icons.nights_stay_outlined,
-        PrayerType.isha => Icons.dark_mode_outlined,
-        PrayerType.witr => Icons.brightness_3_outlined,
-      };
-}
-
-class _ProgressRing extends StatelessWidget {
-  const _ProgressRing({required this.progress});
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 72,
-      height: 72,
-      child: Stack(alignment: Alignment.center, children: [
-        CircularProgressIndicator(value: progress, strokeWidth: 6, backgroundColor: scheme.onPrimaryContainer.withOpacity(.18), color: scheme.secondary),
-        Text('${(progress * 100).round()}%', style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-      ]),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric(this.label, this.value);
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, style: Theme.of(context).textTheme.headlineSmall), const SizedBox(height: 2), Text(label, style: Theme.of(context).textTheme.bodySmall)]);
 }

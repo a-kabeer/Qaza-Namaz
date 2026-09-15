@@ -1,0 +1,194 @@
+﻿    }
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+    );
+  }
+}
+
+/// A small round icon button with a tooltip.
+class IconActionButton extends StatelessWidget {
+  const IconActionButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    this.onPressed,
+    this.color,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      color: color,
+    );
+  }
+}
+
+/// A compact status pill (pending / fulfilled / etc).
+class StatusChip extends StatelessWidget {
+  const StatusChip(this.label, {this.color, super.key});
+
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color ?? scheme.onPrimaryContainer.withOpacity(.12),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+    );
+  }
+}
+
+/// A label/value metric used in overview rows and cards.
+class Metric extends StatelessWidget {
+  const Metric(this.label, this.value, {super.key});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value, style: theme.textTheme.headlineSmall),
+        const SizedBox(height: 2),
+        Text(label, style: theme.textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+/// A centered spinner used while data loads.
+class LoadingState extends StatelessWidget {
+  const LoadingState({super.key, this.padding = 64, this.message});
+
+  final double padding;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(padding),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            if (message != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(message!, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A centered error message with an optional retry action.
+class ErrorState extends StatelessWidget {
+  const ErrorState({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.title = 'Something went wrong',
+    this.icon = Icons.error_outline_rounded,
+  });
+
+  final String message;
+  final VoidCallback? onRetry;
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: scheme.errorContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, color: scheme.onErrorContainer),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              SecondaryButton(
+                label: 'Retry',
+                icon: Icons.refresh_rounded,
+                onPressed: onRetry,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A centered empty-state message with an optional trailing [child].
+class EmptyState extends StatelessWidget {
+  const EmptyState({
+    super.key,
+    required this.title,
+    this.message,
+    this.icon = Icons.inbox_outlined,
+    this.child,
+  });
+
+  final String title;
+  final String? message;
+  final IconData icon;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: scheme.primary.withOpacity(.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, color: scheme.primary),
+            ),
+            const SizedBox(height: AppSpacing.lg),

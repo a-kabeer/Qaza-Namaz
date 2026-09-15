@@ -61,4 +61,23 @@ class CalendarLabels {
   /// Month-header label for a Hijri month, e.g. `Rabi' Al-Thani 1448 AH`.
   static String hijriMonthHeader(HijriDate firstOfMonth) =>
       '${hijriMonths[firstOfMonth.month - 1]} ${firstOfMonth.year} AH';
+
+  /// Three-letter weekday names, Monday first so the index matches
+  /// [DateTime.weekday] - 1.
+  static const List<String> weekdayShortNames = [
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+  ];
+
+  /// Formats a Gregorian date as `05 Sep 2026` (zero-padded day), the display
+  /// form used by the ledger, history and confirmations.
+  static String formatGregorianDatePadded(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')} '
+      '${gregorianMonths[date.month - 1]} ${date.year}';
+
+  /// Formats a time of day as `3:45 PM`.
+  static String formatClockTime(DateTime value) {
+    final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
+    final minute = value.minute.toString().padLeft(2, '0');
+    return '$hour:$minute ${value.hour < 12 ? 'AM' : 'PM'}';
+  }
 }

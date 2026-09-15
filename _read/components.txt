@@ -9,10 +9,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../core/constants/prayer_types.dart';
-import '../../domain/calendar/calendar_labels.dart';
 import '../../domain/entities/app_user.dart';
-import '../../domain/entities/qaza_progress.dart';
 
 /// Shared spacing tokens used across screens.
 class AppSpacing {
@@ -179,6 +176,27 @@ class StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(99),
       ),
       child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+    );
+  }
+}
+
+/// A label/value metric used in overview rows and cards.
+class Metric extends StatelessWidget {
+  const Metric(this.label, this.value, {super.key});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value, style: theme.textTheme.headlineSmall),
+        const SizedBox(height: 2),
+        Text(label, style: theme.textTheme.bodySmall),
+      ],
     );
   }
 }
@@ -558,227 +576,23 @@ class AccountSection extends StatelessWidget {
 // Date display
 // ---------------------------------------------------------------------------
 
+const List<String> _months = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 /// Formats a date as `05 Sep 2026`. Returns '—' for null values.
-///
-/// Delegates to [CalendarLabels] so the app has exactly one Gregorian date
-/// formatter instead of a copy per screen.
-String formatDate(DateTime? date) =>
-    date == null ? '—' : CalendarLabels.formatGregorianDatePadded(date);
+String formatDate(DateTime? date) {
+  if (date == null) return '—';
+  return '${date.day.toString().padLeft(2, '0')} ${_months[date.month - 1]} ${date.year}';
+}
 
 /// Formats a date and time as `05 Sep 2026 3:45 PM`. Returns '—' for null.
-String formatDateTime(DateTime? value) => value == null
-    ? '—'
-    : '${CalendarLabels.formatGregorianDatePadded(value)} '
-        '${CalendarLabels.formatClockTime(value)}';
-
-// ---------------------------------------------------------------------------
-// Prayer visuals
-// ---------------------------------------------------------------------------
-
-/// Icons and descriptors per prayer, shared so the dashboard, logs and the add
-/// flow never re-declare the same mapping.
-extension PrayerTypeVisuals on PrayerType {
-  /// Icon shown wherever a prayer is listed.
-  IconData get icon => switch (this) {
-        PrayerType.fajr => Icons.wb_twilight_rounded,
-        PrayerType.zuhr => Icons.wb_sunny_rounded,
-        PrayerType.asr => Icons.wb_sunny_outlined,
-        PrayerType.maghrib => Icons.nights_stay_outlined,
-        PrayerType.isha => Icons.dark_mode_outlined,
-        PrayerType.witr => Icons.brightness_3_outlined,
-      };
-
-  /// Secondary line describing the prayer and its rak'ah count.
-  String get rakats => switch (this) {
-        PrayerType.fajr => 'Fajr • 2 Rakat Fard',
-        PrayerType.zuhr => 'Zuhr • 4 Rakat Fard',
-        PrayerType.asr => 'Asr • 4 Rakat Fard',
-        PrayerType.maghrib => 'Maghrib • 3 Rakat Fard',
-        PrayerType.isha => 'Isha • 4 Rakat Fard',
-        PrayerType.witr => 'Witr • 3 Rakat Wajib • Independent',
-      };
-}
-
-// ---------------------------------------------------------------------------
-// Metric tile
-// ---------------------------------------------------------------------------
-
-/// A labelled figure used by the dashboard and the logs overview.
-class MetricTile extends StatelessWidget {
-  const MetricTile({super.key, required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 2),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ],
-      );
-}
-
-/// A circular completion indicator with the percentage in the middle.
-class ProgressRing extends StatelessWidget {
-  const ProgressRing({
-    super.key,
-    required this.progress,
-    this.size = 72,
-    this.strokeWidth = 6,
-  });
-
-  final double progress;
-  final double size;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CircularProgressIndicator(
-            value: progress,
-            strokeWidth: strokeWidth,
-            backgroundColor: scheme.onPrimaryContainer.withOpacity(.18),
-            color: scheme.secondary,
-          ),
-          Text(
-            '${(progress * 100).round()}%',
-            style: TextStyle(
-              color: scheme.onPrimaryContainer,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Pending/completed/total summary with a completion bar.
-///
-/// Shared by the Dashboard ledger overview and the Logs & Progress screen so
-/// the progress maths and its presentation are defined exactly once. Callers
-/// supply their own [header] row to keep their existing headings.
-class ProgressOverviewCard extends StatelessWidget {
-  const ProgressOverviewCard({super.key, required this.progress, this.header});
-
-  final QazaProgress progress;
-
-  /// Optional heading row, e.g. `Ledger overview` with a pending count.
-  final Widget? header;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final total = progress.pending + progress.completed;
-    final ratio = total == 0 ? 0.0 : progress.completed / total;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (header != null) ...[
-              header!,
-              const SizedBox(height: AppSpacing.lg),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: MetricTile(
-                    label: 'Pending',
-                    value: '${progress.pending}',
-                  ),
-                ),
-                Expanded(
-                  child: MetricTile(
-                    label: 'Completed',
-                    value: '${progress.completed}',
-                  ),
-                ),
-                Expanded(child: MetricTile(label: 'Total', value: '$total')),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(value: ratio, minHeight: 10),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              total == 0 ? 'No records yet' : '${(ratio * 100).round()}% completed',
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A single prayer row.
-///
-/// Used by the Dashboard ledger, the Namaz-wise completion list and anywhere
-/// else a prayer needs an icon, its label and an optional trailing figure, so
-/// the row layout is never re-declared per screen.
-class PrayerTile extends StatelessWidget {
-  const PrayerTile({
-    super.key,
-    required this.prayer,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
-
-  final PrayerType prayer;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(child: Icon(prayer.icon)),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(prayer.label, style: theme.textTheme.titleMedium),
-                    if (subtitle != null)
-                      Text(subtitle!, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!,
-              const SizedBox(width: AppSpacing.xs),
-              const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+String formatDateTime(DateTime? value) {
+  if (value == null) return '—';
+  final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
+  final minute = value.minute.toString().padLeft(2, '0');
+  return '${formatDate(value)} $hour:$minute ${value.hour >= 12 ? 'PM' : 'AM'}';
 }
 
 

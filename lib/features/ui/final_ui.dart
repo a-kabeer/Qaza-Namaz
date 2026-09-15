@@ -1,17 +1,22 @@
 // Settings, Account and companion screens.
 //
-// These screens are shared by WorkspaceShellV2. The dashboard/namaz flows live
-// in workspace_v2.dart and the *_v2.dart flow files; legacy stand-alone
-// screens were removed when the shared component library was introduced.
+// Every screen reads its state from providers (theme mode, signed-in account,
+// sync layer), so nothing is threaded through widget constructors and a change
+// made here is visible app-wide immediately.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/app_user.dart';
+import '../../data/sync/sync_state.dart';
+import '../sync/sync_status_bar.dart';
 import 'components.dart';
 
 class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return PageScaffold(
@@ -21,9 +26,15 @@ class CalculatorScreen extends StatelessWidget {
         children: const [
           Text('Qaza estimate calculator'),
           SizedBox(height: 12),
-          Text('Use this screen for planning and estimation. It does not replace individual Qaza records.'),
+          Text(
+            'Use this screen for planning and estimation. It does not replace '
+            'individual Qaza records.',
+          ),
           SizedBox(height: 20),
-          TextField(keyboardType: TextInputType.number, decoration: InputDecoration(labelText: 'Years of missed prayers')),
+          TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: 'Years of missed prayers'),
+          ),
           SizedBox(height: 12),
           FilledButton(onPressed: null, child: Text('Calculate')),
         ],
@@ -32,36 +43,28 @@ class CalculatorScreen extends StatelessWidget {
   }
 }
 
-class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({
-    super.key,
-    required this.onSignOut,
-    this.user,
-    this.themeMode = AppThemeMode.system,
-    this.onThemeModeChanged,
-  });
-
-  final Future<void> Function() onSignOut;
-  final AppUser? user;
-  final AppThemeMode themeMode;
-  final ValueChanged<AppThemeMode>? onThemeModeChanged;
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+/// Subtitle for the Account row: the signed-in name, email or sign-in method.
+String _accountSubtitle(AppUser? account) {
+  if (account == null || account.email.isEmpty) return 'Google sign-in';
+  final name = account.displayName;
+  if (name == null || name.isEmpty) return account.email;
+  return name;
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  String get _accountSubtitle {
-    final account = widget.user;
-    if (account == null || account.email.isEmpty) return 'Google sign-in';
-    final name = account.displayName;
-    if (name == null || name.isEmpty) return account.email;
-    return name;
-  }
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final account = ref.watch(currentUserProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    void open(Widget screen) => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => screen),
+        );
+
     return PageScaffold(
       title: 'Settings',
       child: ListView(
@@ -76,15 +79,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: SegmentedButton<AppThemeMode>(
                 key: const Key('settings_theme_mode'),
                 segments: const [
-                  ButtonSegment(value: AppThemeMode.system, icon: Icon(Icons.brightness_6_outlined), label: Text('System')),
-                  ButtonSegment(value: AppThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Light')),
-                  ButtonSegment(value: AppThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Dark')),
+                  ButtonSegment(
+                    value: AppThemeMode.system,
+                    icon: Icon(Icons.brightness_6_outlined),
+                    label: Text('System'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemeMode.light,
+                    icon: Icon(Icons.light_mode_outlined),
+                    label: Text('Light'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemeMode.dark,
+                    icon: Icon(Icons.dark_mode_outlined),
+                    label: Text('Dark'),
+                  ),
                 ],
-                selected: {widget.themeMode},
+                selected: {themeMode},
                 onSelectionChanged: (value) {
                   final selected = value.first;
-                  if (selected == widget.themeMode) return;
-                  widget.onThemeModeChanged?.call(selected);
+                  if (selected == themeMode) return;
+                  ref.read(themeModeProvider.notifier).set(selected);
                 },
               ),
             ),
@@ -100,15 +115,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   SegmentedButton<bool>(
                     segments: const [
-                      ButtonSegment(value: false, icon: Icon(Icons.language_outlined), label: Text('English')),
-                      ButtonSegment(value: true, label: Text('اردو (Soon)'), enabled: false),
+                      ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.language_outlined),
+                        label: Text('English'),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text('اردو (Soon)'),
+                        enabled: false,
+                      ),
                     ],
                     selected: const {false},
                     onSelectionChanged: (_) {},
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Urdu translation is not available yet. English is used across the app.',
+                    'Urdu translation is not available yet. English is used '
+                    'across the app.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -116,63 +140,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          SettingsSection(
+SettingsSection(
             title: 'General',
             child: Column(
               children: [
                 SettingsNavRow(
                   icon: Icons.account_circle_outlined,
                   title: 'Account',
-                  subtitle: _accountSubtitle,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AccountScreen(
-                        user: widget.user ?? const AppUser(id: 'unknown', email: ''),
-                        onSignOut: widget.onSignOut,
-                      ),
-                    ),
-                  ),
+                  subtitle: _accountSubtitle(account),
+                  onTap: () => open(const AccountScreen()),
                 ),
                 const Divider(indent: 16, endIndent: 16),
                 SettingsNavRow(
                   icon: Icons.menu_book_outlined,
                   title: 'Prayer & Fiqh Rules',
                   subtitle: 'Calculation method, Baligh, Witr',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FiqhScreen()),
-                  ),
+                  onTap: () => open(const FiqhScreen()),
                 ),
                 const Divider(indent: 16, endIndent: 16),
                 SettingsNavRow(
                   icon: Icons.notifications_none,
                   title: 'Notifications',
                   subtitle: 'Reminders are not implemented yet',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                  ),
+                  onTap: () => open(const NotificationsScreen()),
                 ),
                 const Divider(indent: 16, endIndent: 16),
                 SettingsNavRow(
                   icon: Icons.cloud_outlined,
                   title: 'Data & Cloud',
                   subtitle: 'Sync, export and import status',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DataCloudScreen()),
-                  ),
+                  onTap: () => open(const DataCloudScreen()),
                 ),
                 const Divider(indent: 16, endIndent: 16),
                 SettingsNavRow(
                   icon: Icons.info_outline,
                   title: 'About',
                   subtitle: 'Qaza Namaz • version 0.2.0',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
-                  ),
+                  onTap: () => open(const AboutScreen()),
                 ),
               ],
             ),
@@ -183,14 +187,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class AccountScreen extends StatelessWidget {
-  const AccountScreen({super.key, required this.user, required this.onSignOut});
-
-  final AppUser user;
-  final Future<void> Function() onSignOut;
+/// The signed-in account, read from the session providers. Signing out goes
+/// through the auth repository, so the whole app reacts to the session change
+/// and the screen simply closes.
+class AccountScreen extends ConsumerWidget {
+  const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user =
+        ref.watch(currentUserProvider) ?? const AppUser(id: '', email: '');
+
     return PageScaffold(
       title: 'Account',
       onBack: () => Navigator.maybePop(context),
@@ -201,7 +208,7 @@ class AccountScreen extends StatelessWidget {
           AccountSection(
             user: user,
             onSignOut: () async {
-              await onSignOut();
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) Navigator.maybePop(context);
             },
           ),
@@ -210,70 +217,159 @@ class AccountScreen extends StatelessWidget {
     );
   }
 }
-
 class FiqhScreen extends StatelessWidget {
   const FiqhScreen({super.key});
+
   @override
   Widget build(BuildContext context) => PageScaffold(
-    title: 'Prayer & Fiqh Rules',
-    child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        ListTile(title: Text('Calculation Method'), subtitle: Text('Choose the method applicable to your circumstances.')),
-        ListTile(title: Text('Baligh / Puberty'), subtitle: Text('Used by the planning calculator.')),
-        ListTile(title: Text('Witr'), subtitle: Text('Witr remains an independent prayer category.')),
-      ],
-    ),
-  );
+        title: 'Prayer & Fiqh Rules',
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: const [
+            ListTile(
+              title: Text('Calculation Method'),
+              subtitle: Text(
+                'Choose the method applicable to your circumstances.',
+              ),
+            ),
+            ListTile(
+              title: Text('Baligh / Puberty'),
+              subtitle: Text('Used by the planning calculator.'),
+            ),
+            ListTile(
+              title: Text('Witr'),
+              subtitle: Text('Witr remains an independent prayer category.'),
+            ),
+          ],
+        ),
+      );
 }
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
+
   @override
   Widget build(BuildContext context) => PageScaffold(
-    title: 'Notifications',
-    child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        SwitchListTile(
-          value: false,
-          onChanged: null,
-          title: Text('Daily reminder'),
-          subtitle: Text('Notification support will be implemented in the notifications task.'),
+        title: 'Notifications',
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: const [
+            SwitchListTile(
+              value: false,
+              onChanged: null,
+              title: Text('Daily reminder'),
+              subtitle: Text(
+                'Notification support will be implemented in the notifications '
+                'task.',
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 }
 
-class DataCloudScreen extends StatelessWidget {
+/// Data & Cloud: the real state of the offline-first sync layer.
+///
+/// Reports how many local changes are still queued, when the backend last
+/// confirmed this account, and lets the user retry a failed sync. When no
+/// offline layer is active the sync rows stay explicit placeholders.
+class DataCloudScreen extends ConsumerWidget {
   const DataCloudScreen({super.key});
+
   @override
-  Widget build(BuildContext context) => PageScaffold(
-    title: 'Data & Cloud',
-    child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        Card(child: ListTile(leading: Icon(Icons.cloud_done_outlined), title: Text('Cloud Sync'), subtitle: Text('Sync status will be provided by the sync task.'))),
-        SizedBox(height: 10),
-        Card(child: ListTile(title: Text('Export / Import'), subtitle: Text('Data export and import will be connected by the data task.'))),
-      ],
-    ),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final offline = ref.watch(offlineRepositoryProvider);
+    final state =
+        ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
+
+    return PageScaffold(
+      title: 'Data & Cloud',
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SyncStatusBar(),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.cloud_done_outlined),
+                  title: const Text('Cloud Sync'),
+                  subtitle: Text(_syncSubtitle(state)),
+                  trailing: offline == null
+                      ? null
+                      : IconButton(
+                          key: const Key('data_cloud_sync_now'),
+                          tooltip: 'Sync now',
+                          onPressed: offline.syncNow,
+                          icon: const Icon(Icons.sync_rounded),
+                        ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.cloud_upload_outlined),
+                  title: const Text('Pending changes'),
+                  subtitle: Text(
+                    '${state?.pendingCount ?? 0} local '
+                    '${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} '
+                    'waiting to be confirmed by the cloud.',
+                  ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: const Text('Last synced'),
+                  subtitle: Text(formatDateTime(state?.lastSyncAt)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Card(
+            child: ListTile(
+              title: Text('Export / Import'),
+              subtitle: Text(
+                'Data export and import will be connected by the data task.',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _syncSubtitle(SyncState? state) {
+    if (state == null) {
+      return 'Offline storage is not active in this build.';
+    }
+    return switch (state.status) {
+      SyncStatus.synced => 'All your Qaza records are saved in the cloud.',
+      SyncStatus.syncing => 'Syncing your ledger…',
+      SyncStatus.offline =>
+        'Offline — records are saved on this device and sync automatically.',
+      SyncStatus.pendingSync =>
+        '${state.pendingCount} ${state.pendingCount == 1 ? 'change' : 'changes'} '
+            'waiting to sync.',
+      SyncStatus.syncError =>
+        state.detail ?? 'Sync problem — your data is safe on this device.',
+    };
+  }
 }
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
+
   @override
   Widget build(BuildContext context) => PageScaffold(
-    title: 'About',
-    child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')),
-        ListTile(title: Text('Version'), subtitle: Text('0.2.0')),
-      ],
-    ),
-  );
+        title: 'About',
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: const [
+            ListTile(
+              title: Text('Qaza Namaz'),
+              subtitle: Text('Islamic Prayer Qaza Tracker'),
+            ),
+            ListTile(title: Text('Version'), subtitle: Text('0.2.0')),
+          ],
+        ),
+      );
 }
-
