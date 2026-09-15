@@ -24,24 +24,14 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
   bool saving = false;
   int step = 0;
 
-  List<DateTime> get dates {
-    final state = ref.read(calendarControllerProvider);
-    final selected = state.selectedDates;
-    if (selected.length != 2 || state.selectionMode != DateSelectionMode.range) return selected.toList();
-    final result = <DateTime>[];
-    var cursor = selected.first;
-    while (!cursor.isAfter(selected.last)) {
-      result.add(cursor);
-      cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
-    }
-    return result;
-  }
-
+  List<DateTime> get dates => ref.read(calendarControllerProvider).selectedDates.toList();
   int get totalCombinations => dates.length * prayers.length;
+
   int get existingCombinations {
     final keys = existing.map((r) => '${r.prayerType.name}_${_dateKey(r.originalDate)}').toSet();
     return dates.expand((d) => prayers.map((p) => '${p.name}_${_dateKey(d)}')).where(keys.contains).length;
   }
+
   int get newCombinations => totalCombinations - existingCombinations;
   String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   QazaService get service => ref.read(qazaServiceProvider);
@@ -94,11 +84,22 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Add Qaza'), leading: IconButton(tooltip: step == 0 ? 'Close' : 'Back', onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--), icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded))),
-        body: SafeArea(child: Column(children: [
-          _ProgressHeader(step: step),
-          Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()}),
-        ])),
+        appBar: AppBar(
+          title: const Text('Add Qaza'),
+          leading: IconButton(
+            tooltip: step == 0 ? 'Close' : 'Back',
+            onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--),
+            icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _ProgressHeader(step: step),
+              Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()}),
+            ],
+          ),
+        ),
       );
 
   Widget _modeStep() => ListView(
@@ -111,24 +112,32 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
           const SizedBox(height: 8),
           const Text('Choose the calendar and date selection method.'),
           const SizedBox(height: 22),
-          _ChoiceCard(title: 'Calendar', icon: Icons.calendar_month_rounded, child: SegmentedButton<CalendarMode>(
-            segments: const [
-              ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')),
-              ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri')),
-            ],
-            selected: {ref.watch(calendarControllerProvider).calendarMode},
-            onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setCalendarMode(value.first),
-          )),
+          _ChoiceCard(
+            title: 'Calendar',
+            icon: Icons.calendar_month_rounded,
+            child: SegmentedButton<CalendarMode>(
+              segments: const [
+                ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')),
+                ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri')),
+              ],
+              selected: {ref.watch(calendarControllerProvider).calendarMode},
+              onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setCalendarMode(value.first),
+            ),
+          ),
           const SizedBox(height: 14),
-          _ChoiceCard(title: 'Date selection', icon: Icons.date_range_rounded, child: SegmentedButton<DateSelectionMode>(
-            segments: const [
-              ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
-              ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
-              ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
-            ],
-            selected: {dateMode},
-            onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
-          )),
+          _ChoiceCard(
+            title: 'Date selection',
+            icon: Icons.date_range_rounded,
+            child: SegmentedButton<DateSelectionMode>(
+              segments: const [
+                ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
+                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
+                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
+              ],
+              selected: {dateMode},
+              onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
+            ),
+          ),
           const SizedBox(height: 18),
           const _InfoBox(text: 'Each date + prayer combination becomes one independent Qaza record. Witr remains separate from Isha. Records always store Gregorian originalDate.'),
           const SizedBox(height: 24),
@@ -194,7 +203,36 @@ class _ProgressHeader extends StatelessWidget {
   const _ProgressHeader({required this.step});
   final int step;
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 8), child: Row(children: [for (var i = 0; i < 3; i++) ...[if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor)), CircleAvatar(radius: 14, backgroundColor: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest, child: Text('${i + 1}', style: TextStyle(color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700))), const SizedBox(width: 6), Text(const ['Method', 'Dates', 'Review'][i], style: Theme.of(context).textTheme.labelMedium)]]);
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+        child: Row(
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor,
+                  ),
+                ),
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(const ['Method', 'Dates', 'Review'][i], style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ],
+        ),
+      );
 }
 
 class _ChoiceCard extends StatelessWidget {
