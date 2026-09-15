@@ -17,7 +17,7 @@ class QazaDate {
   }
 
   static DateTime parseKey(String value) {
-    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})\$').firstMatch(value);
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value);
     if (match == null) {
       throw FormatException('Invalid Qaza date key: $value');
     }
@@ -37,7 +37,7 @@ class QazaDate {
   /// This is also the migration-safe source for legacy Firestore records whose
   /// originalDate was stored as a timezone-sensitive Timestamp.
   static DateTime fromRecordId(String recordId) {
-    final match = RegExp(r'(\d{4}-\d{2}-\d{2})\$').firstMatch(recordId);
+    final match = RegExp(r'(\d{4}-\d{2}-\d{2})$').firstMatch(recordId);
     if (match == null) {
       throw FormatException('Qaza record ID does not contain a date: $recordId');
     }
