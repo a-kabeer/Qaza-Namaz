@@ -148,4 +148,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('calendar_day_2024-02-29')), findsOneWidget);
   });
+
+  testWidgets('future Gregorian dates are disabled at the today boundary', (tester) async {
+    await tester.pumpWidget(
+      scope(
+        const MaterialApp(home: Scaffold(body: CalendarPicker())),
+        calendarToday: DateTime(2027, 1, 15),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final todayCell = tester.widget<InkWell>(
+      find.byKey(const Key('calendar_day_2027-01-15')),
+    );
+    final futureCell = tester.widget<InkWell>(
+      find.byKey(const Key('calendar_day_2027-01-16')),
+    );
+
+    expect(todayCell.onTap, isNotNull);
+    expect(futureCell.onTap, isNull);
+  });
+
+  testWidgets('Gregorian minimum supported date blocks previous navigation', (tester) async {
+    await tester.pumpWidget(
+      scope(
+        const MaterialApp(home: Scaffold(body: CalendarPicker())),
+        calendarToday: DateTime(1950, 1, 15),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('January 1950'), findsOneWidget);
+    final previous = tester.widget<IconButton>(
+      find.byKey(const Key('calendar_prev_month')),
+    );
+    expect(previous.onPressed, isNull);
+  });
 }
