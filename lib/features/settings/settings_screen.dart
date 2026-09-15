@@ -6,7 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/date_display.dart';
-import '../../core/widgets/legacy_components.dart';
+import '../../core/widgets/settings_components.dart';
 import '../../core/widgets/sync_status.dart';
 import '../../data/sync/sync_state.dart' as sync_models;
 import '../../domain/entities/app_user.dart';
@@ -44,21 +44,9 @@ class SettingsScreen extends ConsumerWidget {
               child: SegmentedButton<AppThemeMode>(
                 key: const Key('settings_theme_mode'),
                 segments: const [
-                  ButtonSegment(
-                    value: AppThemeMode.system,
-                    icon: Icon(Icons.brightness_6_outlined),
-                    label: Text('System'),
-                  ),
-                  ButtonSegment(
-                    value: AppThemeMode.light,
-                    icon: Icon(Icons.light_mode_outlined),
-                    label: Text('Light'),
-                  ),
-                  ButtonSegment(
-                    value: AppThemeMode.dark,
-                    icon: Icon(Icons.dark_mode_outlined),
-                    label: Text('Dark'),
-                  ),
+                  ButtonSegment(value: AppThemeMode.system, icon: Icon(Icons.brightness_6_outlined), label: Text('System')),
+                  ButtonSegment(value: AppThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Light')),
+                  ButtonSegment(value: AppThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Dark')),
                 ],
                 selected: {themeMode},
                 onSelectionChanged: (value) {
@@ -81,25 +69,14 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   SegmentedButton<bool>(
                     segments: const [
-                      ButtonSegment(
-                        value: false,
-                        icon: Icon(Icons.language_outlined),
-                        label: Text('English'),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        label: Text('اردو (Soon)'),
-                        enabled: false,
-                      ),
+                      ButtonSegment(value: false, icon: Icon(Icons.language_outlined), label: Text('English')),
+                      ButtonSegment(value: true, label: Text('اردو (Soon)'), enabled: false),
                     ],
                     selected: const {false},
                     onSelectionChanged: (_) {},
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Urdu translation is not available yet. English is used across the app.',
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  Text('Urdu translation is not available yet. English is used across the app.', style: theme.textTheme.bodySmall),
                 ],
               ),
             ),
@@ -109,40 +86,15 @@ class SettingsScreen extends ConsumerWidget {
             title: 'General',
             child: Column(
               children: [
-                SettingsNavRow(
-                  icon: Icons.account_circle_outlined,
-                  title: 'Account',
-                  subtitle: _accountSubtitle(account),
-                  onTap: () => open(const AccountScreen()),
-                ),
+                SettingsNavRow(icon: Icons.account_circle_outlined, title: 'Account', subtitle: _accountSubtitle(account), onTap: () => open(const AccountScreen())),
                 const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.menu_book_outlined,
-                  title: 'Prayer & Fiqh Rules',
-                  subtitle: 'Calculation method, Baligh, Witr',
-                  onTap: () => open(const FiqhScreen()),
-                ),
+                SettingsNavRow(icon: Icons.menu_book_outlined, title: 'Prayer & Fiqh Rules', subtitle: 'Calculation method, Baligh, Witr', onTap: () => open(const FiqhScreen())),
                 const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.notifications_none,
-                  title: 'Notifications',
-                  subtitle: 'Daily reminder and schedule',
-                  onTap: () => open(const NotificationsScreen()),
-                ),
+                SettingsNavRow(icon: Icons.notifications_none, title: 'Notifications', subtitle: 'Daily reminder and schedule', onTap: () => open(const NotificationsScreen())),
                 const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.cloud_outlined,
-                  title: 'Data & Cloud',
-                  subtitle: 'Sync, export and import status',
-                  onTap: () => open(const DataCloudScreen()),
-                ),
+                SettingsNavRow(icon: Icons.cloud_outlined, title: 'Data & Cloud', subtitle: 'Sync, export and import status', onTap: () => open(const DataCloudScreen())),
                 const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.info_outline,
-                  title: 'About',
-                  subtitle: 'Qaza Namaz • version 0.2.0',
-                  onTap: () => open(const AboutScreen()),
-                ),
+                SettingsNavRow(icon: Icons.info_outline, title: 'About', subtitle: 'Qaza Namaz • version 0.2.0', onTap: () => open(const AboutScreen())),
               ],
             ),
           ),
@@ -167,20 +119,9 @@ class FiqhScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
-            ListTile(
-              title: Text('Calculation Method'),
-              subtitle: Text(
-                'Choose the method applicable to your circumstances.',
-              ),
-            ),
-            ListTile(
-              title: Text('Baligh / Puberty'),
-              subtitle: Text('Used by the planning calculator.'),
-            ),
-            ListTile(
-              title: Text('Witr'),
-              subtitle: Text('Witr remains an independent prayer category.'),
-            ),
+            ListTile(title: Text('Calculation Method'), subtitle: Text('Choose the method applicable to your circumstances.')),
+            ListTile(title: Text('Baligh / Puberty'), subtitle: Text('Used by the planning calculator.')),
+            ListTile(title: Text('Witr'), subtitle: Text('Witr remains an independent prayer category.')),
           ],
         ),
       );
@@ -208,29 +149,16 @@ class DataCloudScreen extends ConsumerWidget {
                   leading: const Icon(Icons.cloud_done_outlined),
                   title: const Text('Cloud Sync'),
                   subtitle: Text(_syncSubtitle(state)),
-                  trailing: offline == null
-                      ? null
-                      : IconButton(
-                          key: const Key('data_cloud_sync_now'),
-                          tooltip: 'Sync now',
-                          onPressed: offline.syncNow,
-                          icon: const Icon(Icons.sync_rounded),
-                        ),
+                  trailing: offline == null ? null : IconButton(key: const Key('data_cloud_sync_now'), tooltip: 'Sync now', onPressed: offline.syncNow, icon: const Icon(Icons.sync_rounded)),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
                   leading: const Icon(Icons.cloud_upload_outlined),
                   title: const Text('Pending changes'),
-                  subtitle: Text(
-                    '${state?.pendingCount ?? 0} local ${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} waiting to be confirmed by the cloud.',
-                  ),
+                  subtitle: Text('${state?.pendingCount ?? 0} local ${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} waiting to be confirmed by the cloud.'),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.schedule_outlined),
-                  title: const Text('Last synced'),
-                  subtitle: Text(formatAppDateTime(state?.lastSyncAt)),
-                ),
+                ListTile(leading: const Icon(Icons.schedule_outlined), title: const Text('Last synced'), subtitle: Text(formatAppDateTime(state?.lastSyncAt))),
               ],
             ),
           ),
@@ -240,16 +168,9 @@ class DataCloudScreen extends ConsumerWidget {
             child: ListTile(
               leading: const Icon(Icons.import_export_rounded),
               title: const Text('Export & Import'),
-              subtitle: const Text(
-                'User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.',
-              ),
+              subtitle: const Text('User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.'),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const QazaDataManagementScreen(),
-                ),
-              ),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QazaDataManagementScreen())),
             ),
           ),
         ],
@@ -258,19 +179,13 @@ class DataCloudScreen extends ConsumerWidget {
   }
 
   String _syncSubtitle(sync_models.SyncState? state) {
-    if (state == null) {
-      return 'Offline storage is not active in this build.';
-    }
+    if (state == null) return 'Offline storage is not active in this build.';
     return switch (state.status) {
-      sync_models.SyncStatus.synced =>
-        'All your Qaza records are saved in the cloud.',
+      sync_models.SyncStatus.synced => 'All your Qaza records are saved in the cloud.',
       sync_models.SyncStatus.syncing => 'Syncing your ledger…',
-      sync_models.SyncStatus.offline =>
-        'Offline — records are saved on this device and sync automatically.',
-      sync_models.SyncStatus.pendingSync =>
-        '${state.pendingCount} ${state.pendingCount == 1 ? 'change' : 'changes'} waiting to sync.',
-      sync_models.SyncStatus.syncError =>
-        state.detail ?? 'Sync problem — your data is safe on this device.',
+      sync_models.SyncStatus.offline => 'Offline — records are saved on this device and sync automatically.',
+      sync_models.SyncStatus.pendingSync => '${state.pendingCount} ${state.pendingCount == 1 ? 'change' : 'changes'} waiting to sync.',
+      sync_models.SyncStatus.syncError => state.detail ?? 'Sync problem — your data is safe on this device.',
     };
   }
 }
@@ -284,14 +199,8 @@ class AboutScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
-            ListTile(
-              title: Text('Qaza Namaz'),
-              subtitle: Text('Islamic Prayer Qaza Tracker'),
-            ),
-            ListTile(
-              title: Text('Version'),
-              subtitle: Text('0.2.0'),
-            ),
+            ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')),
+            ListTile(title: Text('Version'), subtitle: Text('0.2.0')),
           ],
         ),
       );
