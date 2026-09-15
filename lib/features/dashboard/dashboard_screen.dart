@@ -5,8 +5,10 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../qaza/qaza_add_flow.dart';
-import '../qaza/qaza_completion_flow.dart';
+import '../qaza/add_qaza_screen.dart';
+import '../qaza/completion_screen.dart';
+import '../qaza/namaz_wise_screen.dart';
+import '../qaza/pending_dates_screen.dart';
 import '../sync/sync_status_bar.dart';
 import '../../core/widgets/components.dart';
 
@@ -82,7 +84,7 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 18),
             Row(
               children: [
-                Expanded(child: FilledButton.icon(onPressed: () => _open(context, ref, const QazaAddFlowScreen()), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza'))),
+                Expanded(child: FilledButton.icon(onPressed: () => _open(context, ref, const AddQazaScreen()), icon: const Icon(Icons.add_rounded), label: const Text('Add Qaza'))),
                 const SizedBox(width: 10),
                 Expanded(child: OutlinedButton.icon(onPressed: pending == 0 ? null : () => _open(context, ref, const CompleteQazaScreen()), icon: const Icon(Icons.check_circle_outline_rounded), label: const Text('Complete'))),
               ],
