@@ -25,6 +25,10 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
       child: child,
     );
 
+Future<void> _scrollToContinue(WidgetTester tester) async {
+  await tester.scrollUntilVisible(find.byKey(const Key('qaza_continue_button')), 300, scrollable: find.byType(Scrollable).first);
+}
+
 void main() {
   test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
     final hijri = HijriCalendar.fromDate(_today);
@@ -54,6 +58,7 @@ void main() {
     controller.select(DateTime(2026, 9, 10));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
     controller.setSelectionMode(DateSelectionMode.single);
+    controller.select(DateTime(2026, 9, 12));
     controller.select(DateTime(2026, 9, 15));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
   });
@@ -95,6 +100,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
+    await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
@@ -115,6 +121,7 @@ void main() {
     await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
+    await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
