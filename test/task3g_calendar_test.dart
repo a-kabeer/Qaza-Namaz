@@ -6,7 +6,6 @@ import 'package:hijri/hijri_calendar.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
-import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
@@ -19,7 +18,7 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
         calendarTodayProvider.overrideWithValue(_today),
         if (repository != null) ...[
           qazaRepositoryProvider.overrideWithValue(repository),
-          authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'u1', email: 'u1@example.com'))),
+          activeUserIdProvider.overrideWithValue('u1'),
         ],
       ],
       child: child,
