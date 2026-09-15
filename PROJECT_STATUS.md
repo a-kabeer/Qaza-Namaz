@@ -41,7 +41,7 @@ The refactor retains only packages with a direct requirement in the current arch
 - Local cache is account-namespaced and loaded only for the active Firebase UID.
 
 ## Validation
-Latest GitHub Actions validation before the final cleanup pass confirmed successful `flutter pub get`, Flutter analysis, Linux tests, and Android release APK build. Windows validation previously failed during an unnecessary Windows UI-automation configuration step; the CI workflow has now been simplified to enable Windows desktop only, after which the full test stage can execute normally.
+GitHub Actions has confirmed successful Flutter dependency resolution, analysis, Linux tests, and Android release APK build. Windows validation previously failed during an unnecessary Windows UI-automation configuration step; the CI workflow has now been simplified to enable Windows desktop only, after which the full test stage can execute normally.
 
 ## Remaining Technical Debt
 - Physical-device regression verification of the complete Task 3H offline/online lifecycle remains environment-dependent.
