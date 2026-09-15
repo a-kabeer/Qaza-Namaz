@@ -7,8 +7,10 @@
 // separate from Isha, and future-date blocking inside the flow.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/calendar/calendar_engine.dart';
@@ -37,11 +39,14 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
-      MaterialApp(
-        home: QazaAddFlowV2Screen(
-          userId: 'u1',
-          service: QazaService(repository),
-          engine: engine,
+      ProviderScope(
+        overrides: [
+          requiredUserIdProvider.overrideWithValue('u1'),
+          qazaServiceProvider.overrideWithValue(QazaService(repository)),
+          calendarEngineProvider.overrideWithValue(engine),
+        ],
+        child: const MaterialApp(
+          home: QazaAddFlowV2Screen(),
         ),
       ),
     );
@@ -97,8 +102,6 @@ void main() {
     await tester.tap(dayKey(DateTime(2026, 9, 10)));
     await tester.pumpAndSettle();
 
-    // The flow re-pumps the picker with the selection; the summary shows both
-    // calendar views using real engine conversion.
     expect(find.text('10 Sep 2026'), findsOneWidget);
     expect(
       find.text(
@@ -129,14 +132,11 @@ void main() {
     await continueToDates(tester);
 
     expect(find.text('Hijri calendar (Umm al-Qura)'), findsOneWidget);
-    // Real Umm al-Qura conversion: 14 Sep 2026 is 3 Rabi' Al-Thani 1448.
     expect(find.text("Rabi' Al-Thani 1448 AH"), findsOneWidget);
 
-    // 13 Sep 2026 lies inside the displayed Hijri month (2 Rabi' Al-Thani).
     await tester.tap(dayKey(DateTime(2026, 9, 13)));
     await tester.pumpAndSettle();
 
-    // The summary shows the selected Hijri date and its Gregorian twin.
     expect(find.text("2 Rabi' Al-Thani 1448 AH"), findsOneWidget);
     expect(find.text('13 Sep 2026'), findsOneWidget);
 
@@ -146,7 +146,6 @@ void main() {
     final records = await repository.getRecords(userId: 'u1');
     expect(records, hasLength(1));
     expect(records.single.prayerType, PrayerType.maghrib);
-    // Canonical Gregorian originalDate — not a Hijri display string.
     expect(records.single.originalDate, DateTime(2026, 9, 13));
     expect(
       CalendarLabels.formatGregorianDate(records.single.originalDate),
@@ -164,7 +163,6 @@ void main() {
 
     await tester.tap(dayKey(DateTime(2026, 9, 10)));
     await tester.pumpAndSettle();
-    // Half-picked range asks for the end date.
     expect(find.text('Tap a later date to finish the range'), findsOneWidget);
 
     await tester.tap(dayKey(DateTime(2026, 9, 13)));
@@ -177,7 +175,6 @@ void main() {
     await pickPrayersAndSave(tester, const ['Isha', 'Witr']);
 
     final records = await repository.getRecords(userId: 'u1');
-    // 4 days x 2 prayers.
     expect(records, hasLength(8));
 
     final expectedDays =
@@ -189,7 +186,6 @@ void main() {
       expect(forType.every((r) => r.status == QazaStatus.pending), isTrue);
     }
 
-    // No duplicate prayer/date combinations exist in the ledger.
     final combos = records
         .map((r) => '${r.prayerType.name}_${engine.dateKey(r.originalDate)}')
         .toSet();
@@ -201,7 +197,6 @@ void main() {
     await pumpFlow(tester);
     await continueToDates(tester);
 
-    // Tomorrow's cell renders but is not tappable.
     final tomorrow = dayKey(DateTime(2026, 9, 15));
     expect(tomorrow, findsOneWidget);
     expect(
@@ -211,8 +206,6 @@ void main() {
     await tester.tap(tomorrow, warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    // No selection was recorded, the prompt remains and the continue button
-    // is disabled.
     expect(find.byKey(const Key('calendar_selection_prompt')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Next: Choose missed prayers'),
@@ -228,7 +221,6 @@ void main() {
     );
     expect(nextButton.onPressed, isNull);
 
-    // Reopening the ledger shows nothing was saved.
     final records = await repository.getRecords(userId: 'u1');
     expect(records, isEmpty);
   });
