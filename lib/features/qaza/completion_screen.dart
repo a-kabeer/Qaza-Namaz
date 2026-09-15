@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/components.dart';
 import '../../domain/entities/qaza_record.dart';
+import 'namaz_wise_screen.dart';
 
 class CompleteQazaScreen extends ConsumerStatefulWidget {
   const CompleteQazaScreen({super.key});
@@ -55,7 +56,9 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 value: prayer,
                 decoration: const InputDecoration(labelText: 'Prayer', prefixIcon: Icon(Icons.mosque_outlined)),
                 items: [for (final item in PrayerType.values) DropdownMenuItem(value: item, child: Text(item.label))],
-                onChanged: working || ledger.isLoading ? null : (value) { if (value != null) setState(() => prayer = value); },
+                onChanged: working || ledger.isLoading ? null : (value) {
+                  if (value != null) setState(() => prayer = value);
+                },
               ),
               const SizedBox(height: 16),
               Card(
@@ -65,11 +68,24 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                     loading: () => const LoadingState(message: 'Loading your ledger…', padding: 24),
                     error: (_, __) => ErrorState(message: 'We could not load your Qaza ledger.', onRetry: _refresh),
                     data: (_) {
-                      if (record == null) return const EmptyState(icon: Icons.check_circle_outline_rounded, title: 'No pending Qaza for this prayer.', message: 'Choose another prayer or add a Qaza record first.');
+                      if (record == null) {
+                        return const EmptyState(
+                          icon: Icons.check_circle_outline_rounded,
+                          title: 'No pending Qaza for this prayer.',
+                          message: 'Choose another prayer or add a Qaza record first.',
+                        );
+                      }
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [CircleAvatar(child: Icon(prayer.icon)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${prayer.label} Qaza', style: Theme.of(context).textTheme.titleLarge), Text('Oldest pending record', style: Theme.of(context).textTheme.bodySmall)]))]),
+                          Row(children: [
+                            CircleAvatar(child: Icon(prayer.icon)),
+                            const SizedBox(width: 12),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('${prayer.label} Qaza', style: Theme.of(context).textTheme.titleLarge),
+                              Text('Oldest pending record', style: Theme.of(context).textTheme.bodySmall),
+                            ])),
+                          ]),
                           const SizedBox(height: 18),
                           const Text('Original missed date'),
                           const SizedBox(height: 4),
@@ -83,9 +99,17 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              PrimaryButton(label: working ? 'Completing...' : 'Complete oldest pending', icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded, onPressed: oldest == null || ledger.isLoading || working ? null : _complete),
+              PrimaryButton(
+                label: working ? 'Completing...' : 'Complete oldest pending',
+                icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
+                onPressed: oldest == null || ledger.isLoading || working ? null : _complete,
+              ),
               const SizedBox(height: 12),
-              SecondaryButton(label: 'Open Namaz-wise completion', icon: Icons.format_list_bulleted_rounded, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen()))),
+              SecondaryButton(
+                label: 'Open Namaz-wise completion',
+                icon: Icons.format_list_bulleted_rounded,
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen())),
+              ),
             ],
           ),
         ),
