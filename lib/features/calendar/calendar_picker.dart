@@ -44,9 +44,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   }
 
   DateTime get _today => ref.read(calendarTodayProvider);
-
   DateTime _firstGregorianOfHijri() => HijriCalendar().hijriToGregorian(_hijriYear, _hijriMonth, 1);
-
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _isQazaDate(DateTime date) => widget.qazaDates.any((qaza) => _sameDay(qaza, date));
 
@@ -69,9 +67,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final state = ref.read(calendarControllerProvider);
     if (state.calendarMode == CalendarMode.gregorian) {
       final next = DateTime(_gregorianAnchor.year, _gregorianAnchor.month + delta, 1);
-      final min = DateTime(1950, 1, 1);
-      final max = DateTime(_today.year, _today.month, 1);
-      if (next.isBefore(min) || next.isAfter(max)) return;
+      if (next.isBefore(DateTime(1950, 1, 1)) || next.isAfter(DateTime(_today.year, _today.month, 1))) return;
       setState(() => _gregorianAnchor = next);
       return;
     }
@@ -138,7 +134,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           state.selectionMode == DateSelectionMode.single
               ? 'Select one date.'
               : state.selectionMode == DateSelectionMode.range
-                  ? selected.length < 2 ? 'Select a start date, then a later end date.' : '${selected.length} dates in range.'
+                  ? selected.length < 2 ? 'Select a start date, then a later end date.' : 'Range selected: ${selected.length == 2 ? '2 dates' : '${selected.length} dates'}.'
                   : '${selected.length} date${selected.length == 1 ? '' : 's'} selected.',
           key: const Key('calendar_selection_prompt'),
           textAlign: TextAlign.center,
@@ -164,16 +160,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
 }
 
 class _DayGrid extends StatelessWidget {
-  const _DayGrid({
-    required this.anchor,
-    required this.hijriMode,
-    required this.today,
-    required this.selectedDates,
-    required this.onDayTap,
-    required this.isHijriLabel,
-    required this.gregorianLabel,
-    required this.isQazaDate,
-  });
+  const _DayGrid({required this.anchor, required this.hijriMode, required this.today, required this.selectedDates, required this.onDayTap, required this.isHijriLabel, required this.gregorianLabel, required this.isQazaDate});
 
   final DateTime anchor;
   final bool hijriMode;
@@ -190,9 +177,9 @@ class _DayGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthStart = DateTime(anchor.year, anchor.month, 1);
+    final monthStart = anchor;
     final hijri = hijriMode ? HijriCalendar.fromDate(monthStart) : null;
-    final daysInMonth = hijriMode ? hijri!.getDaysInMonth(hijri.hYear, hijri.hMonth) : DateTime(anchor.year, anchor.month + 1, 0).day;
+    final daysInMonth = hijriMode ? hijri!.getDaysInMonth(hijri.hYear, hijri.hMonth) : DateTime(monthStart.year, monthStart.month + 1, 0).day;
     final leading = monthStart.weekday - 1;
     final totalCells = ((leading + daysInMonth + 6) ~/ 7) * 7;
     const size = 44.0;
@@ -212,20 +199,13 @@ class _DayGrid extends StatelessWidget {
         SizedBox(
           width: size * 7,
           height: (totalCells ~/ 7) * size,
-          child: Column(
-            children: [
-              for (var row = 0; row < totalCells ~/ 7; row++)
-                SizedBox(
-                  height: size,
-                  child: Row(
-                    children: [
-                      for (var column = 0; column < 7; column++)
-                        SizedBox(width: size, child: _cell(context, row * 7 + column, leading, daysInMonth, hijri)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+          child: Column(children: [
+            for (var row = 0; row < totalCells ~/ 7; row++)
+              SizedBox(height: size, child: Row(children: [
+                for (var column = 0; column < 7; column++)
+                  SizedBox(width: size, child: _cell(context, row * 7 + column, leading, daysInMonth, hijri)),
+              ])),
+          ]),
         ),
       ],
     );
@@ -253,28 +233,25 @@ class _DayGrid extends StatelessWidget {
         key: Key('calendar_day_$keyDate'),
         onTap: enabled ? () => onDayTap(normalized) : null,
         borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? scheme.primary : inRange ? scheme.primaryContainer : _sameDay(normalized, today) ? scheme.secondaryContainer : null),
-              alignment: Alignment.center,
-              child: Text('$number', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: selected ? scheme.onPrimary : null, fontWeight: _sameDay(normalized, today) || selected ? FontWeight.w700 : null)),
-            ),
-            if (qaza)
-              Positioned(
-                bottom: 2,
-                child: Container(
-                  key: Key('calendar_qaza_indicator_$keyDate'),
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.tertiary),
-                ),
+        child: Stack(alignment: Alignment.center, children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? scheme.primary : inRange ? scheme.primaryContainer : _sameDay(normalized, today) ? scheme.secondaryContainer : null),
+            alignment: Alignment.center,
+            child: Text('$number', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: selected ? scheme.onPrimary : null, fontWeight: _sameDay(normalized, today) || selected ? FontWeight.w700 : null)),
+          ),
+          if (qaza)
+            Positioned(
+              bottom: 2,
+              child: Container(
+                key: Key('calendar_qaza_indicator_$keyDate'),
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.tertiary),
               ),
-          ],
-        ),
+            ),
+        ]),
       ),
     );
   }

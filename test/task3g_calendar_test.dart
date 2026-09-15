@@ -42,19 +42,19 @@ void main() {
     final container = ProviderContainer(overrides: [calendarTodayProvider.overrideWithValue(_today)]);
     addTearDown(container.dispose);
     final controller = container.read(calendarControllerProvider.notifier);
-
     controller.select(DateTime(2026, 9, 10));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 10)]);
-
     controller.setSelectionMode(DateSelectionMode.range);
     controller.select(DateTime(2026, 9, 10));
     controller.select(DateTime(2026, 9, 13));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 10), DateTime(2026, 9, 13)]);
-
     controller.setSelectionMode(DateSelectionMode.multiple);
     controller.select(DateTime(2026, 9, 12));
     controller.select(DateTime(2026, 9, 10));
     controller.select(DateTime(2026, 9, 10));
+    expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
+    controller.setSelectionMode(DateSelectionMode.single);
+    controller.select(DateTime(2026, 9, 15));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
   });
 
@@ -85,12 +85,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('calendar_qaza_indicator_2026-09-10')), findsOneWidget);
     final tomorrow = find.byKey(const Key('calendar_day_2026-09-15'));
-    expect(tomorrow, findsOneWidget);
     final ink = tester.widget<InkWell>(find.descendant(of: tomorrow, matching: find.byType(InkWell)));
     expect(ink.onTap, isNull);
   });
 
-  testWidgets('calendar stores canonical Gregorian originalDate in the existing Qaza flow', (tester) async {
+  testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
     await tester.pumpAndSettle();
@@ -99,7 +98,6 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maghrib'));
@@ -110,5 +108,28 @@ void main() {
     final records = await repository.getRecords(userId: 'u1');
     expect(records.single.originalDate, DateTime(2026, 9, 13));
     expect(records.single.prayerType, PrayerType.maghrib);
+  });
+
+  testWidgets('range flow persists every day in the selected range', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Range'));
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next: Choose missed prayers'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fajr'));
+    await tester.tap(find.text('Review & Create Records'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    final records = await repository.getRecords(userId: 'u1');
+    expect(records, hasLength(4));
+    expect(records.map((r) => r.originalDate).toSet(), {DateTime(2026, 9, 10), DateTime(2026, 9, 11), DateTime(2026, 9, 12), DateTime(2026, 9, 13)});
   });
 }
