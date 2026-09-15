@@ -1,10 +1,10 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Task 5 — Offline-First Architecture
+Task 6 — Authentication Lifecycle
 
 ## Overall Progress
-4 / 15 major tasks formally audited and verified
+5 / 15 major tasks formally audited and verified
 
 ## Task Status
 
@@ -12,8 +12,8 @@ Task 5 — Offline-First Architecture
 - Task 2 — ✅ COMPLETE — Google Authentication + Cloud Persistence
 - Task 3 — ✅ COMPLETE — UI/UX Contract
 - Task 4 — ✅ COMPLETE — Database Architecture
-- Task 5 — 🟡 NEXT — Offline-First Architecture audit
-- Task 6 — NOT STARTED — Authentication Lifecycle
+- Task 5 — ✅ COMPLETE — Offline-First Architecture
+- Task 6 — 🟡 NEXT — Authentication Lifecycle
 - Task 7 — NOT STARTED — Qaza Business Logic
 - Task 8 — NOT STARTED — Gregorian + Hijri Calendar
 - Task 9 — NOT STARTED — Reminders / Notifications (optional)
@@ -62,24 +62,54 @@ GitHub Actions run `35000811993` on commit `f0827be5b6c2f1cf172811661ff942d9337e
 
 The same run confirmed the Task 4 tests and the existing Task 3 regression suite pass together. The repository's current test workflow completed successfully after the Task 4 fix.
 
+### Task 5
+Dedicated offline-first architecture audit completed without replacing the existing local-first repository, local store, outbox, or synchronization engine.
+
+- Verified local reads/writes remain usable without internet.
+- Verified local → Firestore synchronization, persisted outbox recovery, retries, duplicate-safe replay, and connectivity-triggered synchronization.
+- Verified Firestore → local synchronization, remote-only record merge, forward-only completion merge, and preservation of local-only records.
+- Verified multi-device changes and deterministic conflict resolution.
+- Real weakness fixed: Firestore now applies an earlier completion timestamp when a second device completes the same record earlier, matching the local merge policy and allowing devices to converge.
+- Added targeted bidirectional, multi-device, conflict-resolution, and convergence tests.
+- Added `docs/OFFLINE_FIRST_ARCHITECTURE.md`.
+- No repository/database architecture rewrite was introduced.
+
+## Task 5 Validation — VERIFIED
+
+GitHub Actions run `35002473963` on commit `1296ebcc6718a6647d2b2c0f33d506d8efa2e1d5` completed successfully:
+
+- Analyze — ✅
+- Tests (Windows) — ✅
+- Tests (Linux) — ✅
+- Android debug APK — ✅
+- Android release APK — ✅
+
+The complete repository CI matrix passed with the Task 5 implementation and documentation.
+
 ## Known Bugs
 
-No Task 4 blocking bugs remain based on the verified CI run.
+No Task 5 blocking bugs remain based on the verified CI run.
 
-Analyzer reports only non-fatal info-level diagnostics outside the Task 4 scope.
+Analyzer reports only non-fatal info-level diagnostics outside the Task 5 scope.
 
 ## Blockers
 
-None identified for Task 4.
+None identified for Task 5.
 
 ## Remaining Work
 
-Tasks 5–15 remain for their own dedicated audits/implementation verification. Some functionality for later tasks already exists in the repository, but those tasks are not marked complete here until they receive their required task-specific audit and validation.
+Tasks 6–15 remain for their own dedicated audits/implementation verification. Some functionality for later tasks already exists in the repository, but those tasks are not marked complete here until they receive their required task-specific audit and validation.
 
 ## Last Verified
 
-Task 4 verified on `f0827be5b6c2f1cf172811661ff942d9337edf20` by GitHub Actions run `35000811993` on 2026-09-15.
+Task 5 verified on `1296ebcc6718a6647d2b2c0f33d506d8efa2e1d5` by GitHub Actions run `35002473963` on 2026-09-15.
 
 ## Next Recommended Step
 
-Task 5 — perform the dedicated Offline-First Architecture audit, preserving the existing local-first repository and synchronization engine unless the audit identifies a real weakness.
+Task 6 — perform the dedicated Authentication Lifecycle audit and verification, preserving the existing authentication architecture unless the audit identifies a real weakness.
+
+## Task Completion Standard
+
+Every task follows:
+
+**Audit/Implement agreed scope → Fix real issues → Test completely → Update PROJECT_STATUS.md → Commit → Open/update PR → Run the full GitHub CI matrix → Mark ✅ COMPLETE only after all required CI checks are green.**
