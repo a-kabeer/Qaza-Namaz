@@ -6,6 +6,7 @@ import 'package:qaza_namaz/data/local/in_memory_qaza_local_store.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 
