@@ -6,7 +6,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/date_display.dart';
-import '../../core/widgets/section_header.dart';
 import '../../core/widgets/sync_status.dart';
 import '../../core/widgets/legacy_components.dart';
 import '../../data/sync/sync_state.dart';
