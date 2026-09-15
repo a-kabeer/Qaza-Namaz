@@ -17,8 +17,10 @@ dependencies:
   shared_preferences: ^2.2.3
   connectivity_plus: ^6.0.5
   flutter_riverpod: ^2.5.1
-  # Native Android-compatible JSON file open/save dialogs for Task 3I.
   file_picker: ^10.3.10
+  flutter_local_notifications: ^18.0.1
+  flutter_timezone: ^3.0.1
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:
