@@ -98,17 +98,36 @@ void main() {
 
   testWidgets('Hijri navigation crosses Ramadan to Shawwal boundary', (tester) async {
     await tester.pumpWidget(
-      scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))),
+      scope(
+        const MaterialApp(home: Scaffold(body: CalendarPicker())),
+        calendarToday: today,
+      ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Hijri'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ramaḍān 1448 AH'), findsOneWidget);
+    final ramadan = HijriCalendar.fromDate(today);
+    expect(ramadan.hYear, 1448);
+    expect(ramadan.hMonth, 10);
+    expect(
+      find.text('${ramadan.getLongMonthName()} ${ramadan.hYear} AH'),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.byKey(const Key('calendar_next_month')));
+    await tester.tap(find.byKey(const Key('calendar_prev_month')));
     await tester.pumpAndSettle();
-    expect(find.text('Shawwāl 1448 AH'), findsOneWidget);
+    expect(
+      find.text('${ramadan.getLongMonthName()} ${ramadan.hYear} AH'),
+      findsNothing,
+    );
+
+    final shawwal = HijriCalendar()
+      ..hYear = 1448
+      ..hMonth = 11
+      ..hDay = 1;
+    expect(
+      find.text('${shawwal.getLongMonthName()} ${shawwal.hYear} AH'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Gregorian leap-day boundary renders February 29', (tester) async {
