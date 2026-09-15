@@ -85,7 +85,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('calendar_qaza_indicator_2026-09-10')), findsOneWidget);
     final tomorrow = find.byKey(const Key('calendar_day_2026-09-15'));
-    final ink = tester.widget<InkWell>(find.descendant(of: tomorrow, matching: find.byType(InkWell)));
+    final ink = tester.widget<InkWell>(tomorrow);
     expect(ink.onTap, isNull);
   });
 
@@ -95,7 +95,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.tap(find.text('Next: Choose missed prayers'));
@@ -115,7 +115,7 @@ void main() {
     await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
     await tester.pumpAndSettle();
