@@ -4,7 +4,7 @@
 Task 6 — Authentication Lifecycle
 
 ## Overall Progress
-5 / 15 major tasks formally audited and verified
+6 / 15 major tasks formally audited and verified
 
 ## Task Status
 
@@ -13,7 +13,7 @@ Task 6 — Authentication Lifecycle
 - Task 3 — ✅ COMPLETE — UI/UX Contract
 - Task 4 — ✅ COMPLETE — Database Architecture
 - Task 5 — ✅ COMPLETE — Offline-First Architecture
-- Task 6 — 🟡 IN VERIFICATION — Authentication Lifecycle
+- Task 6 — ✅ COMPLETE — Authentication Lifecycle
 - Task 7 — NOT STARTED — Qaza Business Logic
 - Task 8 — NOT STARTED — Gregorian + Hijri Calendar
 - Task 9 — NOT STARTED — Reminders / Notifications (optional)
@@ -99,35 +99,40 @@ Authentication lifecycle audit completed without replacing the existing Firebase
 - Added `docs/AUTHENTICATION_LIFECYCLE.md`.
 - Added Task 6 regression coverage for signed-out authentication entry, account-specific setup isolation, and the Firestore UID ownership rule.
 - No Firebase/Google authentication architecture rewrite was introduced.
-- CI-discovered test race fixed: Task 6 widget tests now explicitly advance past AuthGate's 700 ms splash timer before exercising authentication lifecycle transitions.
+- CI-discovered widget-test timing/viewport issues were fixed without weakening production authentication behavior: the test harness now settles AuthGate's asynchronous lifecycle transition and scrolls the setup screen before tapping the action button.
 
-## Task 6 Validation — PENDING FINAL CI
+## Task 6 Validation — VERIFIED
 
-Test stabilization commit: `186fc7daed8d3546efc2fe7583c7a509f543dd6e`.
+GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ede7dd` completed successfully:
 
-The previous full CI run exposed two Task 6 widget-test failures caused by the test harness asserting before the intentional 700 ms AuthGate splash transition completed. The test helper was corrected and the Task 6 branch now requires a fresh full GitHub CI run for final verification.
+- Analyze — ✅
+- Tests (Windows) — ✅
+- Tests (Linux) — ✅
+- Android debug APK — ✅
+- Android release APK — ✅
+- All workflow cleanup/post steps — ✅
 
-Task 6 remains in verification until Analyze, Windows tests, Linux tests, Android debug APK, Android release APK, and all required workflow steps complete successfully on the final status-update commit.
+This full GitHub CI matrix passed after the final Task 6 implementation/test fix. Task 6 therefore meets the project completion standard.
 
 ## Known Bugs
 
-No Task 6 blocking production defects are currently identified from the audit. Final completion remains gated by the full GitHub CI matrix.
+No Task 6 blocking production defects were identified from the audit.
 
 ## Blockers
 
-None identified for Task 6. Final CI verification is pending.
+None identified for Task 6.
 
 ## Remaining Work
 
-Tasks 6–15 remain for their own dedicated audits/implementation verification. Task 6 is implemented but not yet marked complete until its final GitHub CI verification passes.
+Tasks 7–15 remain for their own dedicated audits/implementation verification. Task 7 is the next recommended work item.
 
 ## Last Verified
 
-Task 5 verified on `88d1b238f1542c53e13eff7341d08224d42dd3df` by GitHub Actions run `35003433723` on 2026-09-15.
+Task 6 verified on `3602b7d58b850b27fabce604eaf7448e62ede7dd` by GitHub Actions run `35012895549` on 2026-09-15.
 
 ## Next Recommended Step
 
-Complete the Task 6 GitHub CI gate. Once green, update this file to mark Task 6 ✅ COMPLETE and proceed to Task 7 — Qaza Business Logic.
+Proceed to Task 7 — Qaza Business Logic.
 
 ## Task Completion Standard
 
