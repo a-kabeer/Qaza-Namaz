@@ -99,16 +99,19 @@ Authentication lifecycle audit completed without replacing the existing Firebase
 - Added `docs/AUTHENTICATION_LIFECYCLE.md`.
 - Added Task 6 regression coverage for signed-out authentication entry, account-specific setup isolation, and the Firestore UID ownership rule.
 - No Firebase/Google authentication architecture rewrite was introduced.
+- CI-discovered test race fixed: Task 6 widget tests now explicitly advance past AuthGate's 700 ms splash timer before exercising authentication lifecycle transitions.
 
 ## Task 6 Validation — PENDING FINAL CI
 
-Latest implementation commit: `477c5bf3c1e552b0dadbd392cb550ec607be6de2`.
+Test stabilization commit: `186fc7daed8d3546efc2fe7583c7a509f543dd6e`.
 
-GitHub Actions full CI matrix has been triggered for Task 6 PR #2. Task 6 remains in verification until Analyze, Windows tests, Linux tests, Android debug APK, Android release APK, and all required workflow steps complete successfully on the final status-update commit.
+The previous full CI run exposed two Task 6 widget-test failures caused by the test harness asserting before the intentional 700 ms AuthGate splash transition completed. The test helper was corrected and the Task 6 branch now requires a fresh full GitHub CI run for final verification.
+
+Task 6 remains in verification until Analyze, Windows tests, Linux tests, Android debug APK, Android release APK, and all required workflow steps complete successfully on the final status-update commit.
 
 ## Known Bugs
 
-No Task 6 blocking defects are currently identified from the audit. Final completion remains gated by the full GitHub CI matrix.
+No Task 6 blocking production defects are currently identified from the audit. Final completion remains gated by the full GitHub CI matrix.
 
 ## Blockers
 
