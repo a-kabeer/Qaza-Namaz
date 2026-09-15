@@ -23,7 +23,7 @@ void main() {
 
   testWidgets('Qaza add flow exposes Gregorian/Hijri and single/range/multiple choices', (tester) async {
     await pumpFlow(tester);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.byKey(const Key('qaza_flow_heading')), findsOneWidget);
     expect(find.text('Gregorian'), findsOneWidget);
     expect(find.text('Hijri'), findsOneWidget);
     expect(find.text('Single'), findsOneWidget);
@@ -33,7 +33,7 @@ void main() {
 
   testWidgets('Qaza add flow advances to the package-backed calendar', (tester) async {
     await pumpFlow(tester);
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
     expect(find.byKey(const Key('qaza_calendar_picker')), findsOneWidget);
