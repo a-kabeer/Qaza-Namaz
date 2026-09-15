@@ -1,33 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/calendar/calendar_engine.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/services/qaza_service.dart';
 import '../calendar/calendar_picker_v2.dart';
 
-class QazaAddFlowV2Screen extends StatefulWidget {
-  const QazaAddFlowV2Screen({
-    required this.service,
-    required this.userId,
-    this.engine,
-    super.key,
-  });
-
-  final QazaService service;
-  final String userId;
-
-  /// Shared calendar engine; defaults to the production Umm al-Qura engine.
-  /// Injectable for deterministic widget tests.
-  final CalendarEngine? engine;
-
+class QazaAddFlowV2Screen extends ConsumerStatefulWidget {
+  const QazaAddFlowV2Screen({super.key});
   @override
-  State<QazaAddFlowV2Screen> createState() => _QazaAddFlowV2ScreenState();
+  ConsumerState<QazaAddFlowV2Screen> createState() => _QazaAddFlowV2ScreenState();
 }
 
-class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
-  late final CalendarEngine engine = widget.engine ?? CalendarEngine();
-
+class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
+  CalendarEngine get engine => ref.read(calendarEngineProvider);
   DateSelectionMode dateMode = DateSelectionMode.single;
   CalendarMode calendarMode = CalendarMode.gregorian;
   DateTime? startDate;
@@ -41,31 +28,22 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
   List<DateTime> get dates {
     if (startDate == null) return const [];
     final start = engine.normalize(startDate!);
-    if (dateMode == DateSelectionMode.single || endDate == null) {
-      return [start];
-    }
+    if (dateMode == DateSelectionMode.single || endDate == null) return [start];
     return engine.expandRange(start, endDate!);
   }
 
   int get totalCombinations => dates.length * prayers.length;
-
   int get existingCombinations {
-    final keys = existing
-        .map((r) => '${r.prayerType.name}_${engine.dateKey(r.originalDate)}')
-        .toSet();
-    return dates
-        .expand((d) => prayers.map((p) => '${p.name}_${engine.dateKey(d)}'))
-        .where(keys.contains)
-        .length;
+    final keys = existing.map((r) => '${r.prayerType.name}_${engine.dateKey(r.originalDate)}').toSet();
+    return dates.expand((d) => prayers.map((p) => '${p.name}_${engine.dateKey(d)}')).where(keys.contains).length;
   }
-
   int get newCombinations => totalCombinations - existingCombinations;
 
   Future<void> _checkExisting() async {
     if (checking) return;
     setState(() => checking = true);
     try {
-      existing = await widget.service.getRecords(userId: widget.userId);
+      existing = await ref.read(qazaServiceProvider).getRecords(userId: ref.read(requiredUserIdProvider));
     } catch (_) {
       existing = const [];
     } finally {
@@ -73,11 +51,7 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
     }
   }
 
-  void _continueFromMode() {
-    // Both Gregorian and Hijri modes are fully supported by the calendar
-    // engine; the picker (next step) renders the active calendar view.
-    setState(() => step = 1);
-  }
+  void _continueFromMode() => setState(() => step = 1);
 
   Future<void> _continueFromDates() async {
     if (dates.isEmpty) {
@@ -89,7 +63,6 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
   }
 
   void _onCalendarSelection(CalendarSelection selection) {
-    if (!mounted) return;
     setState(() {
       startDate = engine.normalize(selection.startDate);
       endDate = selection.endDate == null ? null : engine.normalize(selection.endDate!);
@@ -101,11 +74,11 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
     if (prayers.isEmpty || newCombinations <= 0 || saving) return;
     setState(() => saving = true);
     try {
-      await widget.service.recordQazaForDates(
-        userId: widget.userId,
-        dates: dates,
-        prayerTypes: prayers,
-      );
+      await ref.read(qazaServiceProvider).recordQazaForDates(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: prayers,
+          );
       if (!mounted) return;
       final created = newCombinations;
       await showDialog<void>(
@@ -123,32 +96,24 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Qaza'),
-        leading: IconButton(
-          tooltip: step == 0 ? 'Close' : 'Back',
-          onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--),
-          icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Add Qaza'),
+          leading: IconButton(
+            tooltip: step == 0 ? 'Close' : 'Back',
+            onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--),
+            icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _ProgressHeader(step: step),
-            Expanded(
-              child: switch (step) {
-                0 => _modeStep(),
-                1 => _dateStep(),
-                _ => _prayerStep(),
-              },
-            ),
-          ],
+        body: SafeArea(
+          child: Column(
+            children: [
+              _ProgressHeader(step: step),
+              Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()}),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
 
   Widget _modeStep() => ListView(
         key: const ValueKey('qaza_step_list_0'),
@@ -160,43 +125,13 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
           const SizedBox(height: 8),
           const Text('Choose how you want to identify the missed-prayer dates.'),
           const SizedBox(height: 22),
-          _ChoiceCard(
-            title: 'Calendar',
-            icon: Icons.calendar_month_rounded,
-            child: SegmentedButton<CalendarMode>(
-              segments: const [
-                ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')),
-                ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri')),
-              ],
-              selected: {calendarMode},
-              onSelectionChanged: (v) => setState(() => calendarMode = v.first),
-            ),
-          ),
+          _ChoiceCard(title: 'Calendar', icon: Icons.calendar_month_rounded, child: SegmentedButton<CalendarMode>(segments: const [ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')), ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri'))], selected: {calendarMode}, onSelectionChanged: (v) => setState(() => calendarMode = v.first))),
           const SizedBox(height: 14),
-          _ChoiceCard(
-            title: 'Date selection',
-            icon: Icons.date_range_rounded,
-            child: SegmentedButton<DateSelectionMode>(
-              segments: const [
-                ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single Date')),
-                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Date Range')),
-              ],
-              selected: {dateMode},
-              onSelectionChanged: (v) => setState(() {
-                dateMode = v.first;
-                if (dateMode == DateSelectionMode.single) endDate = null;
-                existing = const [];
-              }),
-            ),
-          ),
+          _ChoiceCard(title: 'Date selection', icon: Icons.date_range_rounded, child: SegmentedButton<DateSelectionMode>(segments: const [ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single Date')), ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Date Range'))], selected: {dateMode}, onSelectionChanged: (v) => setState(() { dateMode = v.first; if (dateMode == DateSelectionMode.single) endDate = null; existing = const []; }))),
           const SizedBox(height: 18),
           const _InfoBox(text: 'Each date + prayer combination becomes one independent Qaza record. Witr remains separate from Isha. Dates are stored in the Gregorian calendar; Hijri mode converts the view (Umm al-Qura).'),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _continueFromMode,
-            icon: const Icon(Icons.arrow_forward_rounded),
-            label: const Text('Continue'),
-          ),
+          FilledButton.icon(onPressed: _continueFromMode, icon: const Icon(Icons.arrow_forward_rounded), label: const Text('Continue')),
         ],
       );
 
@@ -210,21 +145,9 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
           const SizedBox(height: 8),
           const Text('Only today and earlier dates can be recorded. Future dates are locked by the picker.'),
           const SizedBox(height: 16),
-          CalendarPicker(
-            key: const Key('qaza_calendar_picker'),
-            engine: engine,
-            mode: calendarMode,
-            selectionMode: dateMode,
-            startDate: startDate,
-            endDate: endDate,
-            onSelectionChanged: _onCalendarSelection,
-          ),
+          CalendarPicker(key: const Key('qaza_calendar_picker'), engine: engine, mode: calendarMode, selectionMode: dateMode, startDate: startDate, endDate: endDate, onSelectionChanged: _onCalendarSelection),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: checking || dates.isEmpty ? null : _continueFromDates,
-            icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded),
-            label: Text(checking ? 'Checking ledger...' : 'Next: Choose missed prayers'),
-          ),
+          FilledButton.icon(onPressed: checking || dates.isEmpty ? null : _continueFromDates, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Checking ledger...' : 'Next: Choose missed prayers')),
         ],
       );
 
@@ -240,95 +163,28 @@ class _QazaAddFlowV2ScreenState extends State<QazaAddFlowV2Screen> {
         const SizedBox(height: 8),
         Text('${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select every prayer that was missed.'),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => prayers.addAll(PrayerType.values)), icon: Icon(all ? Icons.done_all_rounded : Icons.select_all_rounded), label: const Text('Select All'))),
-            const SizedBox(width: 10),
-            Expanded(child: OutlinedButton.icon(onPressed: prayers.isEmpty ? null : () => setState(prayers.clear), icon: const Icon(Icons.clear_all_rounded), label: const Text('Clear'))),
-          ],
-        ),
+        Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => prayers.addAll(PrayerType.values)), icon: Icon(all ? Icons.done_all_rounded : Icons.select_all_rounded), label: const Text('Select All'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: prayers.isEmpty ? null : () => setState(prayers.clear), icon: const Icon(Icons.clear_all_rounded), label: const Text('Clear')))]),
         const SizedBox(height: 12),
         for (final prayer in PrayerType.values)
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: CheckboxListTile(
-              value: prayers.contains(prayer),
-              onChanged: saving ? null : (v) => setState(() => v == true ? prayers.add(prayer) : prayers.remove(prayer)),
-              secondary: CircleAvatar(child: Icon(_icon(prayer))),
-              title: Text(prayer.label),
-              subtitle: Text(_subtitle(prayer)),
-              controlAffinity: ListTileControlAffinity.trailing,
-            ),
-          ),
+          Card(margin: const EdgeInsets.only(bottom: 8), child: CheckboxListTile(value: prayers.contains(prayer), onChanged: saving ? null : (v) => setState(() => v == true ? prayers.add(prayer) : prayers.remove(prayer)), secondary: CircleAvatar(child: Icon(prayer.icon)), title: Text(prayer.label), subtitle: Text(prayer.rakats), controlAffinity: ListTileControlAffinity.trailing)),
         const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _SummaryRow(label: 'Days', value: '${dates.length}'),
-                _SummaryRow(label: 'Prayers per day', value: '${prayers.length}'),
-                _SummaryRow(label: 'Existing combinations', value: '$existingCombinations'),
-                _SummaryRow(label: 'New records', value: '$newCombinations', emphasis: true),
-              ],
-            ),
-          ),
-        ),
+        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [_SummaryRow(label: 'Days', value: '${dates.length}'), _SummaryRow(label: 'Prayers per day', value: '${prayers.length}'), _SummaryRow(label: 'Existing combinations', value: '$existingCombinations'), _SummaryRow(label: 'New records', value: '$newCombinations', emphasis: true)]))),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: prayers.isEmpty || newCombinations <= 0 || saving ? null : _confirmAndSave,
-          icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.verified_rounded),
-          label: Text(saving ? 'Creating Records...' : 'Review & Create Records'),
-        ),
-        if (prayers.isNotEmpty && newCombinations <= 0)
-          const Padding(padding: EdgeInsets.only(top: 10), child: Text('All selected prayer/date combinations are already in your ledger.')),
+        FilledButton.icon(onPressed: prayers.isEmpty || newCombinations <= 0 || saving ? null : _confirmAndSave, icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.verified_rounded), label: Text(saving ? 'Creating Records...' : 'Review & Create Records')),
+        if (prayers.isNotEmpty && newCombinations <= 0) const Padding(padding: EdgeInsets.only(top: 10), child: Text('All selected prayer/date combinations are already in your ledger.')),
       ],
     );
   }
-
-  IconData _icon(PrayerType p) => switch (p) {
-        PrayerType.fajr => Icons.wb_twilight_rounded,
-        PrayerType.zuhr => Icons.wb_sunny_rounded,
-        PrayerType.asr => Icons.wb_sunny_outlined,
-        PrayerType.maghrib => Icons.nights_stay_outlined,
-        PrayerType.isha => Icons.dark_mode_outlined,
-        PrayerType.witr => Icons.brightness_3_outlined,
-      };
-  String _subtitle(PrayerType p) => switch (p) {
-        PrayerType.fajr => 'Fajr • 2 Rakat Fard',
-        PrayerType.zuhr => 'Zuhr • 4 Rakat Fard',
-        PrayerType.asr => 'Asr • 4 Rakat Fard',
-        PrayerType.maghrib => 'Maghrib • 3 Rakat Fard',
-        PrayerType.isha => 'Isha • 4 Rakat Fard',
-        PrayerType.witr => 'Witr • 3 Rakat Wajib • Independent',
-      };
 }
 
 class _ProgressHeader extends StatelessWidget {
   const _ProgressHeader({required this.step});
   final int step;
-
   @override
   Widget build(BuildContext context) {
     const labels = ['Method', 'Dates', 'Review'];
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Row(
-        children: [
-          for (var i = 0; i < labels.length; i++) ...[
-            if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? scheme.primary : Theme.of(context).dividerColor)),
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
-              child: Text('${i + 1}', style: TextStyle(color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(width: 6),
-            Text(labels[i], style: Theme.of(context).textTheme.labelMedium),
-          ],
-        ],
-      ),
-    );
+    return Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 8), child: Row(children: [for (var i = 0; i < labels.length; i++) ...[if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? scheme.primary : Theme.of(context).dividerColor)), CircleAvatar(radius: 14, backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest, child: Text('${i + 1}', style: TextStyle(color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700))), const SizedBox(width: 6), Text(labels[i], style: Theme.of(context).textTheme.labelMedium)]]));
   }
 }
 
@@ -337,40 +193,15 @@ class _ChoiceCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
-
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [Icon(icon), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]),
-            const SizedBox(height: 14),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]), const SizedBox(height: 14), child])));
 }
 
 class _InfoBox extends StatelessWidget {
   const _InfoBox({required this.text});
   final String text;
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.45),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]),
-    );
-  }
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.45), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]));
 }
 
 class _SummaryRow extends StatelessWidget {
@@ -378,12 +209,6 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final bool emphasis;
-
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)]),
-    );
-  }
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)]));
 }
