@@ -95,6 +95,11 @@ void main() {
     await _pumpAuthEvent(tester, firstUser, auth);
     expect(find.text('First-Time Setup'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.text('Start Tracking'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Start Tracking'));
     await tester.pump();
     expect(find.text('Qaza Namaz'), findsWidgets);
