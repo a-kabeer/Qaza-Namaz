@@ -91,7 +91,7 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
       };
 
   OfflineCacheSnapshot _decode(String? raw) {
-    if (raw == null || raw.isEmpty) return const OfflineCacheSnapshot();
+    if (raw == null || raw.isEmpty) return _emptySnapshot();
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       final schemaVersion = (decoded['schemaVersion'] as num?)?.toInt() ??
@@ -141,7 +141,13 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
       // interpreting partial data as valid records; Firestore remains the
       // canonical source after the account reconnects.
       debugPrint('Qaza offline cache was unreadable and has been reset: $error');
-      return const OfflineCacheSnapshot();
+      return _emptySnapshot();
     }
   }
+
+  OfflineCacheSnapshot _emptySnapshot() => OfflineCacheSnapshot(
+        recordsByUser: <String, List<QazaRecord>>{},
+        outboxByUser: <String, List<PendingSyncOp>>{},
+        lastSyncByUser: <String, DateTime>{},
+      );
 }
