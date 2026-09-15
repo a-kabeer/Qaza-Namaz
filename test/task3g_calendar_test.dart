@@ -26,7 +26,12 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isNotEmpty) return;
-  await tester.scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
+  final listView = find.byType(ListView).last;
+  for (var i = 0; i < 4 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(listView, const Offset(0, -500));
+    await tester.pumpAndSettle();
+  }
+  expect(finder, findsOneWidget);
 }
 
 Future<void> _scrollToContinue(WidgetTester tester) async {
@@ -112,6 +117,7 @@ void main() {
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.pumpAndSettle();
     await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
