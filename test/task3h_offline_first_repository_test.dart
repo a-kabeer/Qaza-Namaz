@@ -62,6 +62,41 @@ void main() {
       final restored = createRepository(remote: remote, local: local); await restored.setActiveUser('u1'); expect(await restored.getRecords(userId: 'u1'), hasLength(1)); expect((await local.load()).outboxByUser['u1'], hasLength(1));
       remote.failWrites = false; await restored.syncNow(); expect((await local.load()).outboxByUser['u1'], isEmpty); expect(await remote.getRecords(userId: 'u1'), hasLength(1)); restored.dispose();
     });
+    test('syncs remote-only changes to both devices and converges on earliest completion', () async {
+      final remote = InMemoryQazaRepository();
+      final localA = InMemoryQazaLocalStore();
+      final localB = InMemoryQazaLocalStore();
+      final deviceA = createRepository(remote: remote, local: localA);
+      final deviceB = createRepository(remote: remote, local: localB);
+      final original = record();
+
+      await remote.addRecord(original);
+      await deviceA.setActiveUser('u1');
+      await deviceB.setActiveUser('u1');
+      await deviceA.syncNow();
+      await deviceB.syncNow();
+      expect((await deviceA.getRecords(userId: 'u1')).single.id, original.id);
+      expect((await deviceB.getRecords(userId: 'u1')).single.id, original.id);
+
+      final later = baseDate.add(const Duration(hours: 10));
+      final earlier = baseDate.add(const Duration(hours: 6));
+      await deviceA.completeRecord(userId: 'u1', recordId: original.id, completedAt: later);
+      await deviceA.syncNow();
+      expect((await remote.getRecords(userId: 'u1')).single.completedAt, later);
+
+      await deviceB.completeRecord(userId: 'u1', recordId: original.id, completedAt: earlier);
+      await deviceB.syncNow();
+      expect((await remote.getRecords(userId: 'u1')).single.completedAt, earlier);
+      expect((await deviceB.getRecords(userId: 'u1')).single.completedAt, earlier);
+
+      await deviceA.syncNow();
+      expect((await deviceA.getRecords(userId: 'u1')).single.completedAt, earlier);
+      expect((await localA.load()).outboxByUser['u1'], isEmpty);
+      expect((await localB.load()).outboxByUser['u1'], isEmpty);
+
+      deviceA.dispose();
+      deviceB.dispose();
+    });
   });
 }
 
