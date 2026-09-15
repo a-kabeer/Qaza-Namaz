@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/widgets/components.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/services/qaza_service.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';
-import '../../core/widgets/components.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
   const AddQazaScreen({super.key});
@@ -31,14 +30,12 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
   int get newCombinations => totalCombinations - existingCombinations;
   String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  QazaService get service => ref.read(qazaServiceProvider);
-  String get userId => ref.read(requiredUserIdProvider);
 
   Future<void> _checkExisting() async {
     if (checking) return;
     setState(() => checking = true);
     try {
-      existing = await service.getRecords(userId: userId);
+      existing = await ref.read(qazaRecordsProvider.future);
     } finally {
       if (mounted) setState(() => checking = false);
     }
@@ -59,7 +56,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     if (prayers.isEmpty || newCombinations <= 0 || saving) return;
     setState(() => saving = true);
     try {
-      await service.recordQazaForDates(userId: userId, dates: dates, prayerTypes: prayers);
+      await ref.read(qazaServiceProvider).recordQazaForDates(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: prayers,
+          );
       if (!mounted) return;
       final created = newCombinations;
       await showDialog<void>(
