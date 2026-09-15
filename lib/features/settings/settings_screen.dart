@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/components.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../core/widgets/section_header.dart';
+import '../../core/widgets/sync_status.dart';
+import '../../core/widgets/legacy_components.dart';
 import '../../data/sync/sync_state.dart';
 import '../../domain/entities/app_user.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import '../sync/sync_status_bar.dart';
 import 'account_screen.dart';
 import 'notifications_screen.dart';
 
@@ -22,9 +26,9 @@ class SettingsScreen extends ConsumerWidget {
 
     void open(Widget screen) => Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
 
-    return PageScaffold(
+    return AppScaffold(
       title: 'Settings',
-      child: ListView(
+      body: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
@@ -104,9 +108,9 @@ class FiqhScreen extends StatelessWidget {
   const FiqhScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => PageScaffold(
+  Widget build(BuildContext context) => AppScaffold(
         title: 'Prayer & Fiqh Rules',
-        child: ListView(
+        body: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
             ListTile(title: Text('Calculation Method'), subtitle: Text('Choose the method applicable to your circumstances.')),
@@ -124,25 +128,27 @@ class DataCloudScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offline = ref.watch(offlineRepositoryProvider);
     final state = ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
-    return PageScaffold(
+    return AppScaffold(
       title: 'Data & Cloud',
-      child: ListView(
+      body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const SyncStatusBar(),
-          Card(
+          const SyncStatus(),
+          AppCard(
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
                 ListTile(leading: const Icon(Icons.cloud_done_outlined), title: const Text('Cloud Sync'), subtitle: Text(_syncSubtitle(state)), trailing: offline == null ? null : IconButton(key: const Key('data_cloud_sync_now'), tooltip: 'Sync now', onPressed: offline.syncNow, icon: const Icon(Icons.sync_rounded))),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(leading: const Icon(Icons.cloud_upload_outlined), title: const Text('Pending changes'), subtitle: Text('${state?.pendingCount ?? 0} local ${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} waiting to be confirmed by the cloud.')),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(leading: const Icon(Icons.schedule_outlined), title: const Text('Last synced'), subtitle: Text(formatDateTime(state?.lastSyncAt))),
+                ListTile(leading: const Icon(Icons.schedule_outlined), title: const Text('Last synced'), subtitle: Text(formatAppDateTime(state?.lastSyncAt))),
               ],
             ),
           ),
           const SizedBox(height: 10),
-          Card(
+          AppCard(
+            padding: EdgeInsets.zero,
             child: ListTile(
               leading: const Icon(Icons.import_export_rounded),
               title: const Text('Export & Import'),
@@ -172,9 +178,9 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => PageScaffold(
+  Widget build(BuildContext context) => AppScaffold(
         title: 'About',
-        child: ListView(
+        body: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
             ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')),
