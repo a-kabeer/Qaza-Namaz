@@ -59,12 +59,18 @@ Future<void> _pumpAuthEvent(
   StreamController<AppUser?> auth,
 ) async {
   auth.add(user);
-  // AuthGate performs setup-state loading from SharedPreferences in a
-  // post-frame callback, so advance through that callback and its async
-  // completion before asserting the resulting screen.
   await tester.pump();
-  await tester.pump();
-  await tester.pump();
+}
+
+Future<void> _pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  int maxFrames = 20,
+}) async {
+  for (var frame = 0; frame < maxFrames && finder.evaluate().isEmpty; frame++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  expect(finder, findsOneWidget);
 }
 
 void main() {
@@ -95,7 +101,7 @@ void main() {
     const secondUser = AppUser(id: 'user-b', email: 'b@example.com');
 
     await _pumpAuthEvent(tester, firstUser, auth);
-    expect(find.text('First-Time Setup'), findsOneWidget);
+    await _pumpUntilFound(tester, find.text('First-Time Setup'));
 
     await tester.tap(find.text('Start Tracking'));
     await tester.pump();
@@ -103,8 +109,7 @@ void main() {
 
     await _pumpAuthEvent(tester, null, auth);
     await _pumpAuthEvent(tester, secondUser, auth);
-
-    expect(find.text('First-Time Setup'), findsOneWidget);
+    await _pumpUntilFound(tester, find.text('First-Time Setup'));
   });
 
   test('Firestore rules enforce authenticated UID ownership for users data', () async {
