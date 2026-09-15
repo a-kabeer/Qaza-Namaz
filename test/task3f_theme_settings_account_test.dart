@@ -25,22 +25,33 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 void main() {
-  test('Light and dark themes derive from the Stitch palette', () {
+  test('Themes use the centralized Stitch design tokens', () {
     final light = AppTheme.light();
     expect(light.brightness, Brightness.light);
     expect(light.colorScheme.primary, AppTheme.interactive);
     expect(light.colorScheme.secondary, AppTheme.amber);
     expect(light.colorScheme.tertiary, AppTheme.mint);
     expect(light.colorScheme.surface, AppTheme.lightBase);
+    expect(light.colorScheme.surfaceContainerLowest, AppTheme.white);
     expect(light.colorScheme.surfaceContainerLow, AppTheme.lightSurfaceLow);
-    expect(light.colorScheme.surfaceContainer, AppTheme.lightSurface);
+    expect(light.colorScheme.outlineVariant, AppTheme.lightBorder);
+    expect(light.textTheme.headlineMedium?.fontFamily, 'Noto Serif');
+    expect(light.textTheme.bodyMedium?.fontFamily, 'Manrope');
     final dark = AppTheme.dark();
     expect(dark.brightness, Brightness.dark);
     expect(dark.colorScheme.primary, AppTheme.darkPrimary);
+    expect(dark.colorScheme.secondary, AppTheme.amber);
+    expect(dark.colorScheme.tertiary, AppTheme.mint);
     expect(dark.colorScheme.surface, AppTheme.darkBase);
     expect(dark.colorScheme.surfaceContainerLow, AppTheme.darkSurfaceLow);
     expect(dark.colorScheme.surfaceContainerHigh, AppTheme.darkSurfaceHigh);
     expect(dark.scaffoldBackgroundColor, AppTheme.darkBase);
+  });
+
+  test('Theme modes map exactly to Flutter ThemeMode', () {
+    expect(AppThemeMode.system.materialMode, ThemeMode.system);
+    expect(AppThemeMode.light.materialMode, ThemeMode.light);
+    expect(AppThemeMode.dark.materialMode, ThemeMode.dark);
   });
 
   Brightness? lastBrightness;
