@@ -59,6 +59,10 @@ Future<void> _pumpAuthEvent(
   StreamController<AppUser?> auth,
 ) async {
   auth.add(user);
+  // AuthGate performs setup-state loading from SharedPreferences in a
+  // post-frame callback, so advance through that callback and its async
+  // completion before asserting the resulting screen.
+  await tester.pump();
   await tester.pump();
   await tester.pump();
 }
