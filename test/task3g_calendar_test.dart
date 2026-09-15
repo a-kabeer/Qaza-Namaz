@@ -27,7 +27,7 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isNotEmpty) return;
   final listView = find.byType(ListView).last;
-  for (var i = 0; i < 4 && finder.evaluate().isEmpty; i++) {
+  for (var i = 0; i < 5 && finder.evaluate().isEmpty; i++) {
     await tester.drag(listView, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
@@ -40,6 +40,10 @@ Future<void> _scrollToContinue(WidgetTester tester) async {
 
 Future<void> _scrollToNextPrayers(WidgetTester tester) async {
   await _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
+}
+
+Future<void> _scrollToReview(WidgetTester tester) async {
+  await _scrollToFinder(tester, find.text('Review & Create Records'));
 }
 
 void main() {
@@ -122,6 +126,7 @@ void main() {
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maghrib'));
+    await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
@@ -147,6 +152,7 @@ void main() {
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Fajr'));
+    await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
