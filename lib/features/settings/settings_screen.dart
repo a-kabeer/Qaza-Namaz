@@ -5,8 +5,8 @@ import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/components.dart';
 import '../../data/sync/sync_state.dart';
+import '../../domain/entities/app_user.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import '../notifications/notification_controller.dart';
 import '../sync/sync_status_bar.dart';
 import 'account_screen.dart';
 import 'notifications_screen.dart';
@@ -93,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _accountSubtitle(dynamic account) {
+  String _accountSubtitle(AppUser? account) {
     if (account == null || account.email.isEmpty) return 'Google sign-in';
     final name = account.displayName;
     return name == null || name.isEmpty ? account.email : name;
