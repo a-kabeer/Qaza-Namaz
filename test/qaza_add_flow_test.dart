@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
-import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/features/qaza/qaza_add_flow_v2.dart';
 
 void main() {
@@ -13,7 +12,7 @@ void main() {
       ProviderScope(
         overrides: [
           qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
-          authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
+          activeUserIdProvider.overrideWithValue('test-user'),
         ],
         child: const MaterialApp(home: QazaAddFlowV2Screen()),
       ),
