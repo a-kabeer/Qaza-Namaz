@@ -21,6 +21,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> scrollToContinue(WidgetTester tester) async {
+    await tester.scrollUntilVisible(find.byKey(const Key('qaza_continue_button')), 300, scrollable: find.byType(Scrollable).first);
+  }
+
   testWidgets('Qaza add flow exposes Gregorian/Hijri and single/range/multiple choices', (tester) async {
     await pumpFlow(tester);
     expect(find.byKey(const Key('qaza_flow_heading')), findsOneWidget);
@@ -33,6 +37,7 @@ void main() {
 
   testWidgets('Qaza add flow advances to the package-backed calendar', (tester) async {
     await pumpFlow(tester);
+    await scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
