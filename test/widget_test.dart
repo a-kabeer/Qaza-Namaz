@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app.dart';
@@ -51,6 +50,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Authentication'), findsOneWidget);
     expect(find.textContaining('Google Sign-In is the connected authentication method'), findsOneWidget);
-    expect(find.text('Close'), findsOneWidget);
+    expect(find.byType(CloseButton), findsOneWidget);
   });
 }
