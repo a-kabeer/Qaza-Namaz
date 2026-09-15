@@ -9,7 +9,7 @@ import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
-import 'package:qaza_namaz/features/qaza/qaza_add_flow.dart';
+import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 
 final _today = DateTime(2026, 9, 14);
 
@@ -105,7 +105,7 @@ void main() {
 
   testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowScreen()), repository: repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
@@ -131,7 +131,7 @@ void main() {
 
   testWidgets('range flow persists every day in the selected range', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowScreen()), repository: repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
     await _scrollToContinue(tester);
