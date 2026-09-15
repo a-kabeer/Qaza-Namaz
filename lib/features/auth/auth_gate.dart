@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
@@ -14,7 +15,7 @@ import 'authentication_screen.dart';
 ///
 /// The session itself lives in [authStateProvider], and the offline cache
 /// namespace is kept in step by [qazaRepositoryProvider], so this widget only
-/// decides *what* to show.
+/// decides what to show.
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
@@ -23,9 +24,12 @@ class AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<AuthGate> {
+  static const _setupCompleteKey = 'qaza_first_time_setup_complete';
+
   bool showWelcome = true;
   bool showSetup = false;
   bool setupRequested = false;
+  bool setupComplete = false;
   bool splash = true;
   Timer? splashTimer;
 
@@ -35,6 +39,18 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     splashTimer = Timer(const Duration(milliseconds: 700), () {
       if (mounted) setState(() => splash = false);
     });
+    _loadSetupState();
+  }
+
+  Future<void> _loadSetupState() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => setupComplete = prefs.getBool(_setupCompleteKey) ?? false);
+  }
+
+  Future<void> _finishSetup() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_setupCompleteKey, true);
+    if (mounted) setState(() { setupComplete = true; showSetup = false; });
   }
 
   @override
@@ -61,15 +77,15 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    if (!setupRequested) {
+    if (!setupComplete && !setupRequested) {
       setupRequested = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => showSetup = true);
+        if (mounted && !setupComplete) setState(() => showSetup = true);
       });
     }
     if (showSetup) {
       return FirstTimeSetupScreen(
-        onDone: () => setState(() => showSetup = false),
+        onDone: _finishSetup,
         onThemeModeChanged: (mode) => ref
             .read(themeModeProvider.notifier)
             .set(switch (mode) {
