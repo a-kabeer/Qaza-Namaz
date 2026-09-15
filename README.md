@@ -1,9 +1,12 @@
-# Qaza Namaz
+# Qaza Namaz — Flutter Project
 
-Flutter Android app for tracking missed prayers (Qaza Namaz) with Firebase Authentication, Firestore persistence, offline-first local caching, Gregorian/Hijri calendar support, and Riverpod-managed application state.
+This repository contains the Qaza Namaz Android app and its domain workflow.
 
-## Current status
-Task 3H and the Architecture Refactor, Cleanup & Performance Optimization pass are complete on `main`. Task 3G is intentionally frozen and preserved.
+## Current architecture
+Riverpod composition root, QazaService over repositories, offline-first local cache with durable sync outbox, centralized Gregorian/Hijri calendar, and shared UI components.
+
+## Status
+Task 3H and the Architecture Refactor / Cleanup / Performance Optimization pass are complete on `main`. Task 3G is intentionally frozen and preserved.
 
 ## Validation
-GitHub Actions validates dependency resolution, Flutter analysis, tests, and Android release APK builds. Physical-device verification remains environment-dependent.
+GitHub Actions validates Flutter dependency resolution, analysis, tests, and Android release APK builds. Physical-device verification remains environment-dependent.
