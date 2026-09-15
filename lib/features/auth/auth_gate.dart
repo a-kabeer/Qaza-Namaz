@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
-import '../onboarding/onboarding_screens.dart';
+import '../onboarding/first_time_setup_screen.dart';
+import '../onboarding/splash_screen.dart';
+import '../onboarding/welcome_screen.dart';
 import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
 
@@ -77,9 +79,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         if (mounted && !setupComplete) setState(() => showSetup = true);
       });
     }
-    if (showSetup) {
-      return FirstTimeSetupScreen(onDone: _finishSetup);
-    }
+    if (showSetup) return FirstTimeSetupScreen(onDone: _finishSetup);
 
     return const WorkspaceShell();
   }
