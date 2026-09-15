@@ -61,7 +61,17 @@ class InMemoryQazaRepository implements QazaRepository {
     for (final id in recordIds) {
       final record = _records[id];
       if (record == null || record.userId != userId) continue;
-      if (record.status == QazaStatus.completed) continue;
+
+      if (record.status == QazaStatus.completed) {
+        if (record.completedAt == null ||
+            completedAt.isBefore(record.completedAt!)) {
+          _records[id] = record.copyWith(
+            completedAt: completedAt,
+            updatedAt: completedAt,
+          );
+        }
+        continue;
+      }
 
       _records[id] = record.copyWith(
         status: QazaStatus.completed,
