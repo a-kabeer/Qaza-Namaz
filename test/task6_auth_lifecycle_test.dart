@@ -46,7 +46,6 @@ Future<void> _pumpGate(
       child: const MaterialApp(home: AuthGate()),
     ),
   );
-  // Seed the same initial state Firebase Auth provides: signed out.
   auth.add(null);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 800));
@@ -59,9 +58,9 @@ Future<void> _pumpAuthEvent(
   StreamController<AppUser?> auth,
 ) async {
   auth.add(user);
-  // An authenticated transition causes AuthGate to schedule setup-state
-  // loading in a post-frame callback and then rebuild asynchronously after
-  // SharedPreferences completes. Settle all resulting frames before asserting.
+  await tester.pump();
+  await tester.pump();
+  await tester.pump();
   await tester.pumpAndSettle(const Duration(milliseconds: 50));
 }
 
@@ -95,12 +94,15 @@ void main() {
     await _pumpAuthEvent(tester, firstUser, auth);
     expect(find.text('First-Time Setup'), findsOneWidget);
 
+    final startTracking = find.text('Start Tracking');
     await tester.scrollUntilVisible(
-      find.text('Start Tracking'),
-      300,
-      scrollable: find.byType(Scrollable).first,
+      startTracking,
+      600,
+      scrollable: find.byType(ListView).first,
     );
-    await tester.tap(find.text('Start Tracking'));
+    await tester.pumpAndSettle();
+    expect(startTracking, findsOneWidget);
+    await tester.tap(startTracking);
     await tester.pump();
     expect(find.text('Qaza Namaz'), findsWidgets);
 
