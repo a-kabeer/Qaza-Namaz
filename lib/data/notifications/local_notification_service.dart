@@ -29,7 +29,7 @@ class LocalNotificationService implements NotificationScheduler {
 
     tz_data.initializeTimeZones();
     final timezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezone.name));
+    tz.setLocalLocation(tz.getLocation(timezone));
 
     const android = AndroidInitializationSettings('@drawable/ic_stat_qaza');
     const settings = InitializationSettings(
@@ -101,6 +101,8 @@ class LocalNotificationService implements NotificationScheduler {
       details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
