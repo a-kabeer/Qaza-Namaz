@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/qaza_progress.dart';
 import 'app_card.dart';
@@ -102,7 +101,7 @@ class AccountSection extends StatelessWidget {
     final name = user.displayName == null || user.displayName!.isEmpty ? user.email : user.displayName!;
     final hasPhoto = user.photoUrl != null && user.photoUrl!.isNotEmpty;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      AppCard(child: Row(children: [CircleAvatar(radius: 28, backgroundColor: scheme.primaryContainer, foregroundImage: hasPhoto ? NetworkImage(user.photoUrl!) : null, child: Icon(Icons.person_rounded, color: scheme.onPrimaryContainer)), const SizedBox(width: 16), Expanded(child: Text(name, style: Theme.of(context).textTheme.titleMedium))])),
+      AppCard(child: Row(children: [CircleAvatar(radius: 28, backgroundColor: scheme.primaryContainer, foregroundImage: hasPhoto ? NetworkImage(user.photoUrl!) : null, child: Icon(Icons.person_rounded, color: scheme.onPrimaryContainer)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 2), Text(user.email.isEmpty ? 'Signed in with Google' : user.email)]))])),
       const SizedBox(height: 16),
       AppCard(padding: EdgeInsets.zero, child: const Column(children: [ListTile(leading: Icon(Icons.password_rounded), title: Text('Sign-in method'), subtitle: Text('Google authentication')), ListTile(leading: Icon(Icons.verified_user_rounded), title: Text('Account status'), subtitle: Text('Signed in'))])),
       const SizedBox(height: 16),
