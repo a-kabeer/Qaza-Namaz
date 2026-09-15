@@ -46,7 +46,10 @@ Future<void> _pumpGate(
       child: const MaterialApp(home: AuthGate()),
     ),
   );
-  await tester.pump(const Duration(milliseconds: 700));
+  // AuthGate intentionally shows SplashScreen for 700 ms. Advance beyond that
+  // timer and settle all auth/setup microtasks before emitting lifecycle events.
+  await tester.pump(const Duration(milliseconds: 800));
+  await tester.pumpAndSettle();
 }
 
 void main() {
