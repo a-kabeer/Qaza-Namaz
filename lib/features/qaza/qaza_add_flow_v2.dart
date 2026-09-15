@@ -11,15 +11,10 @@ import '../ui/components.dart';
 
 class QazaAddFlowV2Screen extends ConsumerStatefulWidget {
   const QazaAddFlowV2Screen({this.service, this.userId, this.engine, super.key});
-
-  // Kept only for the frozen Task 3G integration test; production navigation
-  // uses the Riverpod providers below.
   final QazaService? service;
   final String? userId;
   final CalendarEngine? engine;
-
-  @override
-  ConsumerState<QazaAddFlowV2Screen> createState() => _QazaAddFlowV2ScreenState();
+  @override ConsumerState<QazaAddFlowV2Screen> createState() => _QazaAddFlowV2ScreenState();
 }
 
 class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
@@ -52,30 +47,18 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
   Future<void> _checkExisting() async {
     if (checking) return;
     setState(() => checking = true);
-    try {
-      existing = await service.getRecords(userId: userId);
-    } catch (_) {
-      existing = const [];
-    } finally {
-      if (mounted) setState(() => checking = false);
-    }
+    try { existing = await service.getRecords(userId: userId); } catch (_) { existing = const []; }
+    finally { if (mounted) setState(() => checking = false); }
   }
 
   Future<void> _continueFromDates() async {
-    if (dates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose at least one date.')));
-      return;
-    }
+    if (dates.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose at least one date.'))); return; }
     await _checkExisting();
     if (mounted) setState(() => step = 2);
   }
 
   void _onCalendarSelection(CalendarSelection selection) {
-    setState(() {
-      startDate = calendarEngine.normalize(selection.startDate);
-      endDate = selection.endDate == null ? null : calendarEngine.normalize(selection.endDate!);
-      existing = const [];
-    });
+    setState(() { startDate = calendarEngine.normalize(selection.startDate); endDate = selection.endDate == null ? null : calendarEngine.normalize(selection.endDate!); existing = const []; });
   }
 
   Future<void> _confirmAndSave() async {
@@ -87,13 +70,10 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
       final created = newCombinations;
       await showDialog<void>(context: context, builder: (context) => AlertDialog(title: const Text('Qaza records created'), content: Text('$created independent Qaza record${created == 1 ? '' : 's'} were added to your ledger.'), actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))]));
       if (mounted) Navigator.pop(context, created);
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
+    } finally { if (mounted) setState(() => saving = false); }
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
+  @override Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Add Qaza'), leading: IconButton(tooltip: step == 0 ? 'Close' : 'Back', onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--), icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded))),
     body: SafeArea(child: Column(children: [_ProgressHeader(step: step), Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()})])),
   );
@@ -117,8 +97,7 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
     return ListView(key: const ValueKey('qaza_step_list_2'), padding: const EdgeInsets.fromLTRB(20, 12, 20, 28), children: [
       Text('Step 3 of 3 • Ledger Entry', style: Theme.of(context).textTheme.labelLarge), const SizedBox(height: 6), Text('Missed Prayers', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 8), Text('${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select every prayer that was missed.'), const SizedBox(height: 16),
       Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => prayers.addAll(PrayerType.values)), icon: Icon(all ? Icons.done_all_rounded : Icons.select_all_rounded), label: const Text('Select All'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: prayers.isEmpty ? null : () => setState(prayers.clear), icon: const Icon(Icons.clear_all_rounded), label: const Text('Clear')))]), const SizedBox(height: 12),
-      for (final prayer in PrayerType.values)
-        Card(margin: const EdgeInsets.only(bottom: 8), child: CheckboxListTile(value: prayers.contains(prayer), onChanged: saving ? null : (v) => setState(() => v == true ? prayers.add(prayer) : prayers.remove(prayer)), secondary: CircleAvatar(child: Icon(prayer.icon)), title: Text(prayer.label), subtitle: Text(prayer.rakats), controlAffinity: ListTileControlAffinity.trailing)),
+      for (final prayer in PrayerType.values) Card(margin: const EdgeInsets.only(bottom: 8), child: CheckboxListTile(value: prayers.contains(prayer), onChanged: saving ? null : (v) => setState(() => v == true ? prayers.add(prayer) : prayers.remove(prayer)), secondary: CircleAvatar(child: Icon(prayer.icon)), title: Text(prayer.label), subtitle: Text(prayer.rakats), controlAffinity: ListTileControlAffinity.trailing)),
       const SizedBox(height: 8), Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [_SummaryRow(label: 'Days', value: '${dates.length}'), _SummaryRow(label: 'Prayers per day', value: '${prayers.length}'), _SummaryRow(label: 'Existing combinations', value: '$existingCombinations'), _SummaryRow(label: 'New records', value: '$newCombinations', emphasis: true)]))), const SizedBox(height: 16),
       FilledButton.icon(onPressed: prayers.isEmpty || newCombinations <= 0 || saving ? null : _confirmAndSave, icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.verified_rounded), label: Text(saving ? 'Creating Records...' : 'Review & Create Records')),
       if (prayers.isNotEmpty && newCombinations <= 0) const Padding(padding: EdgeInsets.only(top: 10), child: Text('All selected prayer/date combinations are already in your ledger.')),
@@ -136,7 +115,7 @@ class _ChoiceCard extends StatelessWidget {
 }
 class _InfoBox extends StatelessWidget {
   const _InfoBox({required this.text}); final String text;
-  @override Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .45), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]));
+  @override Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.45), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]));
 }
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.label, required this.value, this.emphasis = false}); final String label; final String value; final bool emphasis;
