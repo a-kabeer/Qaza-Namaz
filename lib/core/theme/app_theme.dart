@@ -103,7 +103,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceContainerLow,
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -123,7 +123,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(shape: buttonShape)),
       textButtonTheme: TextButtonThemeData(style: ButtonStyle(shape: buttonShape)),
       iconButtonTheme: IconButtonThemeData(style: ButtonStyle(shape: buttonShape)),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         backgroundColor: surfaceContainerHigh,
         titleTextStyle: textTheme.titleLarge,
