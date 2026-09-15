@@ -13,7 +13,6 @@ import '../sync/sync_status_bar.dart';
 
 class QazaDataManagementScreen extends ConsumerStatefulWidget {
   const QazaDataManagementScreen({super.key});
-
   @override
   ConsumerState<QazaDataManagementScreen> createState() => _QazaDataManagementScreenState();
 }

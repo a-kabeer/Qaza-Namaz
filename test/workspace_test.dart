@@ -6,7 +6,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/features/ui/workspace_shell.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {

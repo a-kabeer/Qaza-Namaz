@@ -11,7 +11,7 @@ import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
-import 'package:qaza_namaz/features/ui/final_ui.dart';
+import 'package:qaza_namaz/features/settings/settings_screens.dart';
 
 const _testUser = AppUser(id: 'uid-abc', email: 'kabeer@example.com', displayName: 'Abdul Kabeer');
 
