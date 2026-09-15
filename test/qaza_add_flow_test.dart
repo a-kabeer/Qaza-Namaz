@@ -1,29 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
-import 'package:qaza_namaz/domain/services/qaza_service.dart';
+import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/features/qaza/qaza_add_flow_v2.dart';
 
 void main() {
   Future<void> pumpFlow(WidgetTester tester) async {
-    final repository = InMemoryQazaRepository();
     await tester.pumpWidget(
-      MaterialApp(
-        home: QazaAddFlowV2Screen(
-          userId: 'test-user',
-          service: QazaService(repository),
-        ),
+      ProviderScope(
+        overrides: [
+          qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
+          authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
+        ],
+        child: const MaterialApp(home: QazaAddFlowV2Screen()),
       ),
     );
     await tester.pumpAndSettle();
   }
 
   Future<void> revealContinue(WidgetTester tester) async {
-    await tester.scrollUntilVisible(
-      find.text('Continue'),
-      300,
-      scrollable: find.byType(Scrollable),
-    );
+    await tester.scrollUntilVisible(find.text('Continue'), 300, scrollable: find.byType(Scrollable));
     await tester.pumpAndSettle();
   }
 
@@ -34,7 +32,6 @@ void main() {
     expect(find.text('Hijri'), findsOneWidget);
     expect(find.text('Single Date'), findsOneWidget);
     expect(find.text('Date Range'), findsOneWidget);
-
     await revealContinue(tester);
     expect(find.text('Continue'), findsOneWidget);
   });
@@ -44,15 +41,9 @@ void main() {
     await revealContinue(tester);
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-
     expect(find.text('Step 2 of 3 • Date Selection'), findsOneWidget);
     expect(find.text('Choose a date'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('Next: Choose missed prayers'),
-      300,
-      scrollable: find.byType(Scrollable),
-    );
+    await tester.scrollUntilVisible(find.text('Next: Choose missed prayers'), 300, scrollable: find.byType(Scrollable));
     expect(find.text('Next: Choose missed prayers'), findsOneWidget);
   });
 
@@ -60,12 +51,9 @@ void main() {
     await pumpFlow(tester);
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
-
     await revealContinue(tester);
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-
-    // Task 3G: Hijri is fully supported — the picker renders the Hijri view.
     expect(find.text('Hijri calendar (Umm al-Qura)'), findsOneWidget);
     expect(find.byKey(const Key('qaza_calendar_picker')), findsOneWidget);
   });
