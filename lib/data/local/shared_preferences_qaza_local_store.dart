@@ -15,12 +15,15 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
   SharedPreferencesQazaLocalStore({
     SharedPreferences? preferences,
     this.storageKey = defaultStorageKey,
-  });
+  }) : _preferencesFuture =
+            preferences == null ? null : Future.value(preferences);
 
+  static const int currentSchemaVersion = 1;
   static const String defaultStorageKey = 'qaza_offline_cache_v1';
 
-  /// Storage key is versioned so a future schema change can migrate instead
-  /// of silently reinterpreting old bytes.
+  /// The payload carries an explicit schema version. A missing version is
+  /// treated as the original v1 shape for backward compatibility, while every
+  /// subsequent write emits the explicit version marker.
   final String storageKey;
 
   Future<SharedPreferences>? _preferencesFuture;
@@ -72,6 +75,7 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
   }
 
   Map<String, dynamic> _encode(OfflineCacheSnapshot cache) => {
+        'schemaVersion': currentSchemaVersion,
         'recordsByUser': {
           for (final entry in cache.recordsByUser.entries)
             entry.key: entry.value.map((r) => r.toJson()).toList(),
@@ -90,15 +94,25 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
     if (raw == null || raw.isEmpty) return const OfflineCacheSnapshot();
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final schemaVersion = (decoded['schemaVersion'] as num?)?.toInt() ??
+          currentSchemaVersion;
+      if (schemaVersion != currentSchemaVersion) {
+        throw StateError(
+          'Unsupported Qaza offline cache schema version $schemaVersion. '
+          'Expected $currentSchemaVersion.',
+        );
+      }
       return OfflineCacheSnapshot(
         recordsByUser: {
           for (final entry
               in (decoded['recordsByUser'] as Map<String, dynamic>? ?? {})
                   .entries)
             entry.key: (entry.value as List<dynamic>)
-                .map((item) => QazaRecord.fromJson(
-                      (item as Map<String, dynamic>),
-                    ))
+                .map(
+                  (item) => QazaRecord.fromJson(
+                    item as Map<String, dynamic>,
+                  ),
+                )
                 .toList(),
         },
         outboxByUser: {
@@ -106,8 +120,11 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
               in (decoded['outboxByUser'] as Map<String, dynamic>? ?? {})
                   .entries)
             entry.key: (entry.value as List<dynamic>)
-                .map((item) =>
-                    PendingSyncOp.fromJson(item as Map<String, dynamic>))
+                .map(
+                  (item) => PendingSyncOp.fromJson(
+                    item as Map<String, dynamic>,
+                  ),
+                )
                 .toList(),
         },
         lastSyncByUser: {
@@ -117,10 +134,12 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
             entry.key: DateTime.parse(entry.value as String),
         },
       );
+    } on StateError {
+      rethrow;
     } catch (error) {
-      // A corrupt cache document must never brick the app. The affected
-      // document is discarded (it cannot be parsed at all), which is reported
-      // loudly in logs. Individual records remain canonical in Firestore.
+      // A malformed cache cannot be migrated safely. Reset it rather than
+      // interpreting partial data as valid records; Firestore remains the
+      // canonical source after the account reconnects.
       debugPrint('Qaza offline cache was unreadable and has been reset: $error');
       return const OfflineCacheSnapshot();
     }
