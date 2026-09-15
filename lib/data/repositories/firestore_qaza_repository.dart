@@ -88,7 +88,18 @@ class FirestoreQazaRepository implements QazaRepository {
         if (!snapshot.exists) return;
 
         final record = _fromDocument(snapshot);
-        if (record.userId != userId || record.status == QazaStatus.completed) {
+        if (record.userId != userId) return;
+
+        if (record.status == QazaStatus.completed) {
+          final existingCompletedAt = record.completedAt;
+          if (existingCompletedAt == null ||
+              completedAt.isBefore(existingCompletedAt)) {
+            transaction.update(reference, {
+              'status': QazaStatus.completed.name,
+              'completedAt': Timestamp.fromDate(completedAt),
+              'updatedAt': Timestamp.fromDate(completedAt),
+            });
+          }
           return;
         }
 
