@@ -37,6 +37,10 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.qaza_namaz_task1_flutter"
