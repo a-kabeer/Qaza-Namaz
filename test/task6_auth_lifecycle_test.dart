@@ -98,7 +98,7 @@ void main() {
     await tester.scrollUntilVisible(
       startTracking,
       600,
-      scrollable: find.byType(ListView).first,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
     expect(startTracking, findsOneWidget);
