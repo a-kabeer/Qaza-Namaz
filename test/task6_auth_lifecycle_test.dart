@@ -46,13 +46,18 @@ Future<void> _pumpGate(
       child: const MaterialApp(home: AuthGate()),
     ),
   );
-  // AuthGate intentionally shows SplashScreen for 700 ms.
+  // Seed the same initial state Firebase Auth provides: signed out.
+  auth.add(null);
+  await tester.pump();
   await tester.pump(const Duration(milliseconds: 800));
   await tester.pump();
 }
 
-Future<void> _pumpAuthEvent(WidgetTester tester, AppUser? user,
-    StreamController<AppUser?> auth) async {
+Future<void> _pumpAuthEvent(
+  WidgetTester tester,
+  AppUser? user,
+  StreamController<AppUser?> auth,
+) async {
   auth.add(user);
   await tester.pump();
   await tester.pump();
