@@ -240,6 +240,7 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
           const SizedBox(height: 16),
           CalendarPicker(
             key: const Key('qaza_calendar_picker'),
+            engine: calendarEngine,
             mode: calendarMode,
             selectionMode: dateMode,
             startDate: startDate,
@@ -289,7 +290,9 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
             const SizedBox(width: 10),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: prayers.isEmpty ? null : () => setState(prayers.clear),
+                onPressed: prayers.isEmpty
+                    ? null
+                    : () => setState(prayers.clear),
                 icon: const Icon(Icons.clear_all_rounded),
                 label: const Text('Clear'),
               ),
