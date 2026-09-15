@@ -5,8 +5,6 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 
-/// A validated import preview. It contains no independent ledger model: all
-/// records remain the existing [QazaRecord] entity.
 class QazaImportAnalysis {
   const QazaImportAnalysis({
     required this.userId,
@@ -51,9 +49,6 @@ class QazaDataTransferException implements Exception {
   String toString() => message;
 }
 
-/// Data-integrity service for export/import. File handling stays at the Flutter
-/// edge; this service only validates, previews and applies ledger data through
-/// the existing repository abstraction.
 class QazaDataTransferService {
   QazaDataTransferService(this._repository);
 
@@ -79,9 +74,6 @@ class QazaDataTransferService {
     return const JsonEncoder.withIndent('  ').convert(document);
   }
 
-  /// Parses and fully validates an import before anything is written.
-  /// Exported ownership is kept in the file for provenance, but trusted writes
-  /// are always remapped to the currently authenticated account.
   Future<QazaImportAnalysis> analyzeImport({
     required String jsonText,
     required String userId,
@@ -91,46 +83,11 @@ class QazaDataTransferService {
     }
 
     final imported = _parseAndValidate(jsonText, userId);
-    final existing = await _repository.getRecords(userId: userId);
-    final byKey = {
-      for (final record in existing) _combinationKey(record): record,
-    };
-
-    final newRecords = <QazaRecord>[];
-    final pendingCompletions = <QazaRecord>[];
-    var alreadyPresent = 0;
-
-    for (final record in imported) {
-      final key = _combinationKey(record);
-      final existingRecord = byKey[key];
-      if (existingRecord == null) {
-        newRecords.add(record);
-        byKey[key] = record;
-        continue;
-      }
-
-      alreadyPresent++;
-      // Existing data is never blindly overwritten. The only forward merge
-      // allowed is pending -> completed using a valid imported completion.
-      if (existingRecord.status == QazaStatus.pending &&
-          record.status == QazaStatus.completed) {
-        pendingCompletions.add(record);
-      }
-    }
-
-    return QazaImportAnalysis(
-      userId: userId,
-      records: List<QazaRecord>.unmodifiable(imported),
-      newRecords: List<QazaRecord>.unmodifiable(newRecords),
-      pendingCompletions: List<QazaRecord>.unmodifiable(pendingCompletions),
-      alreadyPresentCount: alreadyPresent,
-    );
+    return _buildAnalysis(imported, userId);
   }
 
-  /// Re-checks the ledger before applying, so a stale preview cannot overwrite
-  /// a record that changed while the confirmation dialog was open.
   Future<QazaImportResult> applyImport(QazaImportAnalysis analysis) async {
-    final fresh = await _rebuildAnalysis(analysis);
+    final fresh = await _buildAnalysis(analysis.records, analysis.userId);
 
     if (fresh.newRecords.isNotEmpty) {
       await _repository.addRecords(fresh.newRecords);
@@ -154,24 +111,27 @@ class QazaDataTransferService {
     );
   }
 
-  Future<QazaImportAnalysis> _rebuildAnalysis(
-    QazaImportAnalysis analysis,
+  Future<QazaImportAnalysis> _buildAnalysis(
+    List<QazaRecord> imported,
+    String userId,
   ) async {
-    final existing = await _repository.getRecords(userId: analysis.userId);
+    final existing = await _repository.getRecords(userId: userId);
     final byKey = {
       for (final record in existing) _combinationKey(record): record,
     };
+
     final newRecords = <QazaRecord>[];
     final pendingCompletions = <QazaRecord>[];
     var alreadyPresent = 0;
 
-    for (final record in analysis.records) {
+    for (final record in imported) {
       final existingRecord = byKey[_combinationKey(record)];
       if (existingRecord == null) {
         newRecords.add(record);
         byKey[_combinationKey(record)] = record;
         continue;
       }
+
       alreadyPresent++;
       if (existingRecord.status == QazaStatus.pending &&
           record.status == QazaStatus.completed) {
@@ -180,8 +140,8 @@ class QazaDataTransferService {
     }
 
     return QazaImportAnalysis(
-      userId: analysis.userId,
-      records: analysis.records,
+      userId: userId,
+      records: List<QazaRecord>.unmodifiable(imported),
       newRecords: List<QazaRecord>.unmodifiable(newRecords),
       pendingCompletions: List<QazaRecord>.unmodifiable(pendingCompletions),
       alreadyPresentCount: alreadyPresent,
@@ -227,6 +187,7 @@ class QazaDataTransferService {
       if (raw is! Map<String, dynamic>) {
         throw QazaDataTransferException('Record ${index + 1} is not an object.');
       }
+
       final record = _decodeRecord(raw, userId, index + 1);
       if (!ids.add(record.id)) {
         throw QazaDataTransferException(
@@ -260,15 +221,11 @@ class QazaDataTransferService {
       return value;
     }
 
-    final originalId = requiredString('id');
-    final exportedUserId = requiredString('userId');
+    requiredString('id');
+    requiredString('userId');
     final prayerName = requiredString('prayerType');
     final statusName = requiredString('status');
-    final originalDate = _parseRequiredDate(
-      raw['originalDate'],
-      'originalDate',
-      position,
-    );
+    final originalDate = _parseRequiredDate(raw['originalDate'], 'originalDate', position);
     final createdAt = _parseRequiredDate(raw['createdAt'], 'createdAt', position);
     final updatedAt = _parseRequiredDate(raw['updatedAt'], 'updatedAt', position);
 
@@ -316,11 +273,6 @@ class QazaDataTransferService {
     if (originalDate.year < 1900 || originalDate.year > 2200) {
       throw QazaDataTransferException(
         'Record $position has an out-of-range originalDate.',
-      );
-    }
-    if (originalId.isEmpty || exportedUserId.isEmpty) {
-      throw QazaDataTransferException(
-        'Record $position has invalid ownership metadata.',
       );
     }
 

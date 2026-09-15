@@ -7,10 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
+import '../../data/data_transfer/qaza_data_transfer_service.dart';
 import '../sync/sync_status_bar.dart';
 import 'components.dart';
 
-/// User-controlled export/import UI for the existing Qaza ledger.
 class QazaDataManagementScreen extends ConsumerStatefulWidget {
   const QazaDataManagementScreen({super.key});
 
@@ -46,11 +46,9 @@ class _QazaDataManagementScreenState
       );
 
       if (!mounted) return;
-      if (savedPath == null || savedPath.isEmpty) {
-        _showMessage('Export canceled. Your data was not changed.');
-      } else {
-        _showMessage('Export saved successfully.');
-      }
+      _showMessage(savedPath == null || savedPath.isEmpty
+          ? 'Export canceled. Your data was not changed.'
+          : 'Export saved successfully.');
     } catch (error) {
       if (mounted) _showMessage('Export failed: $error');
     } finally {
@@ -85,10 +83,11 @@ class _QazaDataManagementScreenState
       }
 
       final jsonText = String.fromCharCodes(bytes);
-      final analysis = await ref.read(qazaDataTransferServiceProvider).analyzeImport(
-            jsonText: jsonText,
-            userId: userId,
-          );
+      final analysis =
+          await ref.read(qazaDataTransferServiceProvider).analyzeImport(
+                jsonText: jsonText,
+                userId: userId,
+              );
 
       if (!mounted) return;
       final confirmed = await _confirmImport(analysis);
