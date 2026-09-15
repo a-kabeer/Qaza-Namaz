@@ -3,15 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../data/sync/sync_state.dart';
-import '../../domain/calendar/calendar_labels.dart';
+import '../../core/utils/date_formatters.dart';
 
-/// Compact, low-noise sync indicator shared by the Dashboard, Logs and the
-/// Data & Cloud console.
-///
-/// Reads its state from [syncStateProvider] and renders nothing when the active
-/// repository has no offline layer (the in-memory doubles used in tests), so
-/// those screens are unaffected. Never blocks interaction: the whole bar is
-/// informational with an optional retry action.
 class SyncStatusBar extends ConsumerWidget {
   const SyncStatusBar({super.key});
 
@@ -19,11 +12,7 @@ class SyncStatusBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offline = ref.watch(offlineRepositoryProvider);
     if (offline == null) return const SizedBox.shrink();
-
-    // `currentState` seeds the first frame so the bar never flashes empty
-    // before the stream's first event.
-    final state =
-        ref.watch(syncStateProvider).valueOrNull ?? offline.currentState;
+    final state = ref.watch(syncStateProvider).valueOrNull ?? offline.currentState;
     return _SyncBarView(state: state, onRetry: offline.syncNow);
   }
 }
@@ -38,38 +27,11 @@ class _SyncBarView extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final (icon, color, label, showRetry) = switch (state.status) {
-      SyncStatus.synced => (
-          Icons.cloud_done_outlined,
-          scheme.primary,
-          _syncedLabel(),
-          false,
-        ),
-      SyncStatus.syncing => (
-          Icons.cloud_sync_outlined,
-          scheme.primary,
-          'Syncing your ledger…',
-          false,
-        ),
-      SyncStatus.offline => (
-          Icons.cloud_off_outlined,
-          scheme.onSurfaceVariant,
-          'Offline — records are saved on this device and will sync '
-              'automatically',
-          false,
-        ),
-      SyncStatus.pendingSync => (
-          Icons.cloud_upload_outlined,
-          scheme.tertiary,
-          '${state.pendingCount} pending '
-              '${state.pendingCount == 1 ? 'change' : 'changes'} to sync',
-          true,
-        ),
-      SyncStatus.syncError => (
-          Icons.sync_problem_outlined,
-          scheme.error,
-          state.detail ?? 'Sync problem — your data is safe on this device',
-          true,
-        ),
+      SyncStatus.synced => (Icons.cloud_done_outlined, scheme.primary, _syncedLabel(), false),
+      SyncStatus.syncing => (Icons.cloud_sync_outlined, scheme.primary, 'Syncing your ledger…', false),
+      SyncStatus.offline => (Icons.cloud_off_outlined, scheme.onSurfaceVariant, 'Offline — records are saved on this device and will sync automatically', false),
+      SyncStatus.pendingSync => (Icons.cloud_upload_outlined, scheme.tertiary, '${state.pendingCount} pending ${state.pendingCount == 1 ? 'change' : 'changes'} to sync', true),
+      SyncStatus.syncError => (Icons.sync_problem_outlined, scheme.error, state.detail ?? 'Sync problem — your data is safe on this device', true),
     };
 
     return Card(
@@ -81,12 +43,7 @@ class _SyncBarView extends StatelessWidget {
           children: [
             Icon(icon, size: 20, color: color),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
+            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
             if (showRetry)
               TextButton(
                 key: const Key('sync_retry_button'),
@@ -102,7 +59,6 @@ class _SyncBarView extends StatelessWidget {
   String _syncedLabel() {
     final last = state.lastSyncAt;
     if (last == null) return 'All changes saved to the cloud';
-    return 'Synced • ${last.day} ${CalendarLabels.gregorianMonthName(last.month)}, '
-        '${CalendarLabels.formatClockTime(last)}';
+    return 'Synced • ${last.day} ${DateFormatters.gregorianMonthName(last.month)}, ${DateFormatters.formatClockTime(last)}';
   }
 }

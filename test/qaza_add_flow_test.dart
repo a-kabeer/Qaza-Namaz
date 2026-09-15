@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
-import 'package:qaza_namaz/features/qaza/qaza_add_flow_v2.dart';
+import 'package:qaza_namaz/features/qaza/qaza_add_flow.dart';
 
 void main() {
   Future<void> pumpFlow(WidgetTester tester) async {
@@ -14,7 +14,7 @@ void main() {
           qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
           activeUserIdProvider.overrideWithValue('test-user'),
         ],
-        child: const MaterialApp(home: QazaAddFlowV2Screen()),
+        child: const MaterialApp(home: QazaAddFlowScreen()),
       ),
     );
     await tester.pumpAndSettle();

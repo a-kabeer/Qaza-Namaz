@@ -9,7 +9,7 @@ import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
-import 'package:qaza_namaz/features/qaza/qaza_add_flow_v2.dart';
+import 'package:qaza_namaz/features/qaza/qaza_add_flow.dart';
 
 final _today = DateTime(2026, 9, 14);
 
@@ -31,11 +31,6 @@ Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
     await tester.drag(listView, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
-  expect(finder, findsOneWidget);
-}
-
-Future<void> _scrollToContinue(WidgetTester tester) async {
-  await _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
 }
 
 Future<void> _scrollToNextPrayers(WidgetTester tester) async {
@@ -113,16 +108,14 @@ void main() {
 
   testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
-    await _scrollToContinue(tester);
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
-    await tester.pumpAndSettle();
-    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maghrib'));
@@ -138,17 +131,16 @@ void main() {
 
   testWidgets('range flow persists every day in the selected range', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowV2Screen()), repository: repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
-    await _scrollToContinue(tester);
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.pumpAndSettle();
-    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Fajr'));

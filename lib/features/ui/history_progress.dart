@@ -12,10 +12,10 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../sync/sync_status_bar.dart';
-import 'components.dart';
+import '../../core/widgets/components.dart';
 
-class HistoryProgressV2Screen extends ConsumerWidget {
-  const HistoryProgressV2Screen({super.key});
+class HistoryProgressScreen extends ConsumerWidget {
+  const HistoryProgressScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -95,6 +95,7 @@ class HistoryProgressV2Screen extends ConsumerWidget {
     );
   }
 }
+
 /// Per-prayer progress bar. The prayer icon comes from the shared
 /// [PrayerTypeVisuals] extension instead of a local switch.
 class _PrayerProgressTile extends StatelessWidget {

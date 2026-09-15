@@ -6,7 +6,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/features/ui/workspace_v2.dart';
+import 'package:qaza_namaz/features/ui/workspace_shell.dart';
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
@@ -19,7 +19,7 @@ void main() {
           qazaRepositoryProvider.overrideWithValue(repository),
           authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
         ],
-        child: const MaterialApp(home: WorkspaceShellV2()),
+        child: const MaterialApp(home: WorkspaceShell()),
       ),
     );
     await tester.pumpAndSettle();

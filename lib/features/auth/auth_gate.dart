@@ -7,15 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../ui/onboarding_ui.dart';
-import '../ui/workspace_v2.dart';
+import '../ui/workspace_shell.dart';
 import 'authentication_screen.dart';
 
-/// Resolves the current session and renders the matching surface: splash,
-/// onboarding, sign-in, first-time setup, or the workspace.
-///
-/// The session itself lives in [authStateProvider], and the offline cache
-/// namespace is kept in step by [qazaRepositoryProvider], so this widget only
-/// decides what to show.
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
@@ -96,6 +90,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return const WorkspaceShellV2();
+    return const WorkspaceShell();
   }
 }

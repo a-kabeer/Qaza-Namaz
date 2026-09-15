@@ -7,7 +7,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/features/qaza/qaza_completion_flow_v2.dart';
+import 'package:qaza_namaz/features/qaza/qaza_completion_flow.dart';
 
 QazaRecord record({required String id, required PrayerType prayer, required DateTime originalDate, QazaStatus status = QazaStatus.pending, DateTime? completedAt}) {
   final now = DateTime(2026, 9, 14, 10);
@@ -23,12 +23,12 @@ Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
     );
 
 Future<void> pumpComplete(WidgetTester tester, InMemoryQazaRepository repository) async {
-  await tester.pumpWidget(scoped(const CompleteQazaV2Screen(), repository));
+  await tester.pumpWidget(scoped(const CompleteQazaScreen(), repository));
   await tester.pumpAndSettle();
 }
 
 Future<void> pumpNamazWise(WidgetTester tester, InMemoryQazaRepository repository) async {
-  await tester.pumpWidget(scoped(const NamazWiseV2Screen(), repository));
+  await tester.pumpWidget(scoped(const NamazWiseScreen(), repository));
   await tester.pumpAndSettle();
 }
 
@@ -75,7 +75,7 @@ void main() {
   testWidgets('Namaz-wise flow supports multi-select completion for one prayer', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'witr_1', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 20)), record(id: 'witr_2', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 21))]);
-    await tester.pumpWidget(scoped(const PendingDatesV2Screen(prayer: PrayerType.witr), repository));
+    await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
     await tester.pumpAndSettle();
     final boxes = find.byType(CheckboxListTile);
     expect(boxes, findsNWidgets(2));
@@ -97,7 +97,7 @@ void main() {
   testWidgets('Completing Witr does not modify Isha records', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'witr_1', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 20)), record(id: 'isha_1', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 19))]);
-    await tester.pumpWidget(scoped(const PendingDatesV2Screen(prayer: PrayerType.witr), repository));
+    await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
     await tester.pumpAndSettle();
     final checkbox = find.byType(CheckboxListTile).first;
     await tester.ensureVisible(checkbox);

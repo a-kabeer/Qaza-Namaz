@@ -4,14 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
-import '../ui/components.dart';
+import '../../core/widgets/components.dart';
 
-class CompleteQazaV2Screen extends ConsumerStatefulWidget {
-  const CompleteQazaV2Screen({super.key});
-  @override ConsumerState<CompleteQazaV2Screen> createState() => _CompleteQazaV2ScreenState();
+class CompleteQazaScreen extends ConsumerStatefulWidget {
+  const CompleteQazaScreen({super.key});
+  @override
+  ConsumerState<CompleteQazaScreen> createState() => _CompleteQazaScreenState();
 }
 
-class _CompleteQazaV2ScreenState extends ConsumerState<CompleteQazaV2Screen> {
+class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
   PrayerType prayer = PrayerType.fajr;
   bool working = false;
   List<QazaRecord> get pending => ref.watch(pendingForPrayerProvider(prayer));
@@ -66,31 +67,31 @@ class _CompleteQazaV2ScreenState extends ConsumerState<CompleteQazaV2Screen> {
         const SizedBox(height: 18),
         FilledButton.icon(onPressed: oldest == null || ledger.isLoading || working ? null : _complete, icon: Icon(working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded), label: Text(working ? 'Completing...' : 'Complete oldest pending')),
         const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseV2Screen())), icon: const Icon(Icons.format_list_bulleted_rounded), label: const Text('Open Namaz-wise completion')),
+        OutlinedButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen())), icon: const Icon(Icons.format_list_bulleted_rounded), label: const Text('Open Namaz-wise completion')),
       ]))),
     );
   }
 }
 
-class NamazWiseV2Screen extends ConsumerWidget {
-  const NamazWiseV2Screen({super.key});
+class NamazWiseScreen extends ConsumerWidget {
+  const NamazWiseScreen({super.key});
   @override Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     appBar: AppBar(title: const Text('Namaz-wise')),
     body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 28), children: [
       Text('Choose a prayer', style: Theme.of(context).textTheme.headlineSmall), const SizedBox(height: 8),
       const Text('Select one prayer to review its pending dates and complete multiple records together.'), const SizedBox(height: 18),
-      for (final prayer in PrayerType.values) PrayerTile(prayer: prayer, subtitle: prayer.rakats, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PendingDatesV2Screen(prayer: prayer)))),
+      for (final prayer in PrayerType.values) PrayerTile(prayer: prayer, subtitle: prayer.rakats, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PendingDatesScreen(prayer: prayer)))),
     ])),
   );
 }
 
-class PendingDatesV2Screen extends ConsumerStatefulWidget {
-  const PendingDatesV2Screen({required this.prayer, super.key});
+class PendingDatesScreen extends ConsumerStatefulWidget {
+  const PendingDatesScreen({required this.prayer, super.key});
   final PrayerType prayer;
-  @override ConsumerState<PendingDatesV2Screen> createState() => _PendingDatesV2ScreenState();
+  @override ConsumerState<PendingDatesScreen> createState() => _PendingDatesScreenState();
 }
 
-class _PendingDatesV2ScreenState extends ConsumerState<PendingDatesV2Screen> {
+class _PendingDatesScreenState extends ConsumerState<PendingDatesScreen> {
   final Set<String> selected = {};
   bool working = false;
   List<QazaRecord> get records => ref.watch(pendingForPrayerProvider(widget.prayer));

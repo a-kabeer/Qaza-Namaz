@@ -13,7 +13,7 @@ import '../../domain/entities/app_user.dart';
 import '../../data/sync/sync_state.dart';
 import '../notifications/notification_controller.dart';
 import '../sync/sync_status_bar.dart';
-import 'components.dart';
+import '../../core/widgets/components.dart';
 import 'qaza_data_management_screen.dart';
 
 class CalculatorScreen extends StatelessWidget {
@@ -193,9 +193,7 @@ class AccountScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user =
-        ref.watch(currentUserProvider) ?? const AppUser(id: '', email: '');
-
+    final user = ref.watch(currentUserProvider) ?? const AppUser(id: '', email: '');
     return PageScaffold(
       title: 'Account',
       onBack: () => Navigator.maybePop(context),
@@ -225,20 +223,9 @@ class FiqhScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
-            ListTile(
-              title: Text('Calculation Method'),
-              subtitle: Text(
-                'Choose the method applicable to your circumstances.',
-              ),
-            ),
-            ListTile(
-              title: Text('Baligh / Puberty'),
-              subtitle: Text('Used by the planning calculator.'),
-            ),
-            ListTile(
-              title: Text('Witr'),
-              subtitle: Text('Witr remains an independent prayer category.'),
-            ),
+            ListTile(title: Text('Calculation Method'), subtitle: Text('Choose the method applicable to your circumstances.')),
+            ListTile(title: Text('Baligh / Puberty'), subtitle: Text('Used by the planning calculator.')),
+            ListTile(title: Text('Witr'), subtitle: Text('Witr remains an independent prayer category.')),
           ],
         ),
       );
@@ -254,10 +241,7 @@ class NotificationsScreen extends ConsumerWidget {
       title: 'Notifications',
       child: settings.when(
         loading: () => const LoadingState(message: 'Loading notification settings…'),
-        error: (error, stack) => ErrorState(
-          message: 'Notification settings could not be loaded: $error',
-          onRetry: () => ref.invalidate(notificationSettingsProvider),
-        ),
+        error: (error, stack) => ErrorState(message: 'Notification settings could not be loaded: $error', onRetry: () => ref.invalidate(notificationSettingsProvider)),
         data: (value) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -266,21 +250,11 @@ class NotificationsScreen extends ConsumerWidget {
                 key: const Key('daily_notification_switch'),
                 value: value.enabled,
                 title: const Text('Daily reminder'),
-                subtitle: Text(
-                  value.enabled
-                      ? 'Reminder scheduled for ${value.formattedTime}.'
-                      : 'Turn on a daily reminder to continue your Qaza routine.',
-                ),
+                subtitle: Text(value.enabled ? 'Reminder scheduled for ${value.formattedTime}.' : 'Turn on a daily reminder to continue your Qaza routine.'),
                 onChanged: (enabled) async {
-                  final ok = await ref
-                      .read(notificationSettingsProvider.notifier)
-                      .setEnabled(enabled);
+                  final ok = await ref.read(notificationSettingsProvider.notifier).setEnabled(enabled);
                   if (!enabled || ok || !context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Notification permission was not granted.'),
-                    ),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification permission was not granted.')));
                 },
               ),
             ),
@@ -292,27 +266,14 @@ class NotificationsScreen extends ConsumerWidget {
                 subtitle: Text(value.formattedTime),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () async {
-                  final picked = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay(hour: value.hour, minute: value.minute),
-                  );
+                  final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: value.hour, minute: value.minute));
                   if (picked == null || !context.mounted) return;
-                  await ref
-                      .read(notificationSettingsProvider.notifier)
-                      .setTime(picked.hour, picked.minute);
+                  await ref.read(notificationSettingsProvider.notifier).setTime(picked.hour, picked.minute);
                 },
               ),
             ),
             const SizedBox(height: 12),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'The reminder is stored on this device. Turning it off cancels '
-                  'the scheduled notification. No cloud notification service is used.',
-                ),
-              ),
-            ),
+            const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('The reminder is stored on this device. Turning it off cancels the scheduled notification. No cloud notification service is used.'))),
           ],
         ),
       ),
@@ -326,9 +287,7 @@ class DataCloudScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final offline = ref.watch(offlineRepositoryProvider);
-    final state =
-        ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
-
+    final state = ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
     return PageScaffold(
       title: 'Data & Cloud',
       child: ListView(
@@ -338,35 +297,11 @@ class DataCloudScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud_done_outlined),
-                  title: const Text('Cloud Sync'),
-                  subtitle: Text(_syncSubtitle(state)),
-                  trailing: offline == null
-                      ? null
-                      : IconButton(
-                          key: const Key('data_cloud_sync_now'),
-                          tooltip: 'Sync now',
-                          onPressed: offline.syncNow,
-                          icon: const Icon(Icons.sync_rounded),
-                        ),
-                ),
+                ListTile(leading: const Icon(Icons.cloud_done_outlined), title: const Text('Cloud Sync'), subtitle: Text(_syncSubtitle(state)), trailing: offline == null ? null : IconButton(key: const Key('data_cloud_sync_now'), tooltip: 'Sync now', onPressed: offline.syncNow, icon: const Icon(Icons.sync_rounded))),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.cloud_upload_outlined),
-                  title: const Text('Pending changes'),
-                  subtitle: Text(
-                    '${state?.pendingCount ?? 0} local '
-                    '${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} '
-                    'waiting to be confirmed by the cloud.',
-                  ),
-                ),
+                ListTile(leading: const Icon(Icons.cloud_upload_outlined), title: const Text('Pending changes'), subtitle: Text('${state?.pendingCount ?? 0} local ${(state?.pendingCount ?? 0) == 1 ? 'change' : 'changes'} waiting to be confirmed by the cloud.')),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.schedule_outlined),
-                  title: const Text('Last synced'),
-                  subtitle: Text(formatDateTime(state?.lastSyncAt)),
-                ),
+                ListTile(leading: const Icon(Icons.schedule_outlined), title: const Text('Last synced'), subtitle: Text(formatDateTime(state?.lastSyncAt))),
               ],
             ),
           ),
@@ -377,17 +312,9 @@ class DataCloudScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.import_export_rounded),
                   title: const Text('Export & Import'),
-                  subtitle: const Text(
-                    'User-controlled JSON backup and safe restore. No cloud '
-                    'data is deleted by these actions.',
-                  ),
+                  subtitle: const Text('User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.'),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const QazaDataManagementScreen(),
-                    ),
-                  ),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QazaDataManagementScreen())),
                 ),
               ],
             ),
@@ -398,19 +325,13 @@ class DataCloudScreen extends ConsumerWidget {
   }
 
   String _syncSubtitle(SyncState? state) {
-    if (state == null) {
-      return 'Offline storage is not active in this build.';
-    }
+    if (state == null) return 'Offline storage is not active in this build.';
     return switch (state.status) {
       SyncStatus.synced => 'All your Qaza records are saved in the cloud.',
       SyncStatus.syncing => 'Syncing your ledger…',
-      SyncStatus.offline =>
-        'Offline — records are saved on this device and sync automatically.',
-      SyncStatus.pendingSync =>
-        '${state.pendingCount} ${state.pendingCount == 1 ? 'change' : 'changes'} '
-            'waiting to sync.',
-      SyncStatus.syncError =>
-        state.detail ?? 'Sync problem — your data is safe on this device.',
+      SyncStatus.offline => 'Offline — records are saved on this device and sync automatically.',
+      SyncStatus.pendingSync => '${state.pendingCount} ${state.pendingCount == 1 ? 'change' : 'changes'} waiting to sync.',
+      SyncStatus.syncError => state.detail ?? 'Sync problem — your data is safe on this device.',
     };
   }
 }
@@ -424,10 +345,7 @@ class AboutScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: const [
-            ListTile(
-              title: Text('Qaza Namaz'),
-              subtitle: Text('Islamic Prayer Qaza Tracker'),
-            ),
+            ListTile(title: Text('Qaza Namaz'), subtitle: Text('Islamic Prayer Qaza Tracker')),
             ListTile(title: Text('Version'), subtitle: Text('0.2.0')),
           ],
         ),

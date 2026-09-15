@@ -7,16 +7,16 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_service.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';
-import '../ui/components.dart';
+import '../../core/widgets/components.dart';
 
-class QazaAddFlowV2Screen extends ConsumerStatefulWidget {
-  const QazaAddFlowV2Screen({super.key});
+class QazaAddFlowScreen extends ConsumerStatefulWidget {
+  const QazaAddFlowScreen({super.key});
 
   @override
-  ConsumerState<QazaAddFlowV2Screen> createState() => _QazaAddFlowV2ScreenState();
+  ConsumerState<QazaAddFlowScreen> createState() => _QazaAddFlowScreenState();
 }
 
-class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
+class _QazaAddFlowScreenState extends ConsumerState<QazaAddFlowScreen> {
   DateSelectionMode get dateMode => ref.watch(calendarControllerProvider).selectionMode;
   List<DateTime> get dates => ref.read(calendarControllerProvider).datesForStorage.toList();
   Set<PrayerType> prayers = <PrayerType>{};

@@ -1,5 +1,3 @@
-// Task 3F — centralized theme, shared UI, Settings & Account tests.
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,11 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
+import 'package:qaza_namaz/core/widgets/components.dart';
 import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
-import 'package:qaza_namaz/features/ui/components.dart';
 import 'package:qaza_namaz/features/ui/final_ui.dart';
 
 const _testUser = AppUser(id: 'uid-abc', email: 'kabeer@example.com', displayName: 'Abdul Kabeer');
@@ -51,15 +49,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(ProviderScope(
       overrides: [authStateProvider.overrideWith((ref) => Stream.value(_testUser))],
-      child: MaterialApp(
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: mode,
-        home: Builder(builder: (context) {
-          lastBrightness = Theme.of(context).brightness;
-          return const SettingsScreen();
-        }),
-      ),
+      child: MaterialApp(theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: mode, home: Builder(builder: (context) { lastBrightness = Theme.of(context).brightness; return const SettingsScreen(); })),
     ));
     await tester.pumpAndSettle();
   }
@@ -81,10 +71,7 @@ void main() {
       overrides: [authStateProvider.overrideWith((ref) => Stream.value(_testUser))],
       child: Consumer(builder: (context, ref, _) {
         final mode = ref.watch(themeModeProvider).materialMode;
-        return MaterialApp(
-          theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: mode,
-          home: Builder(builder: (context) { lastBrightness = Theme.of(context).brightness; return const SettingsScreen(); }),
-        );
+        return MaterialApp(theme: AppTheme.light(), darkTheme: AppTheme.dark(), themeMode: mode, home: Builder(builder: (context) { lastBrightness = Theme.of(context).brightness; return const SettingsScreen(); }));
       }),
     ));
     await tester.pumpAndSettle();
