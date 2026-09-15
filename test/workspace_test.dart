@@ -3,34 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
+import 'support/in_memory_qaza_repository.dart';
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          qazaRepositoryProvider.overrideWithValue(repository),
-          authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
-        ],
-        child: const MaterialApp(home: WorkspaceShell()),
-      ),
-    );
+    await tester.pumpWidget(ProviderScope(
+      overrides: [qazaRepositoryProvider.overrideWithValue(repository), authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com')))],
+      child: const MaterialApp(home: WorkspaceShell()),
+    ));
     await tester.pumpAndSettle();
   }
-
   Future<void> revealPrayerLedger(WidgetTester tester) async {
     final scrollable = find.byType(Scrollable).first;
     await tester.drag(scrollable, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
-
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     expect(find.text('Dashboard'), findsOneWidget);
@@ -41,7 +34,6 @@ void main() {
     await revealPrayerLedger(tester);
     expect(find.text('Prayer ledger'), findsOneWidget);
   });
-
   testWidgets('Dashboard derives live totals from individual records', (tester) async {
     final repository = InMemoryQazaRepository();
     final now = DateTime(2026, 9, 13);
@@ -55,7 +47,6 @@ void main() {
     expect(find.text('2'), findsWidgets);
     expect(find.text('50% completed'), findsOneWidget);
   });
-
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator'));

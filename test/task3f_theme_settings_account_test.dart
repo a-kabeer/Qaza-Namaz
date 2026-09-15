@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,11 +5,11 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/core/widgets/components.dart';
-import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/settings/settings_screens.dart';
+import 'package:qaza_namaz/test/support/in_memory_qaza_repository.dart';
 
 const _testUser = AppUser(id: 'uid-abc', email: 'kabeer@example.com', displayName: 'Abdul Kabeer');
 

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
-import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
+import 'support/in_memory_qaza_repository.dart';
 
 void main() {
   Future<void> pumpFlow(WidgetTester tester) async {

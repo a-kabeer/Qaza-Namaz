@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/app.dart';
 import 'package:qaza_namaz/app/providers.dart';
-import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
+import 'package:qaza_namaz/test/support/in_memory_qaza_repository.dart';
 
 class _FakeAuthRepository implements AuthRepository {
   @override
@@ -21,15 +21,7 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 Future<void> _openAuth(WidgetTester tester) async {
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
-        qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
-      ],
-      child: const QazaNamazApp(),
-    ),
-  );
+  await tester.pumpWidget(ProviderScope(overrides: [authRepositoryProvider.overrideWithValue(_FakeAuthRepository()), qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository())], child: const QazaNamazApp()));
   await tester.pump(const Duration(milliseconds: 700));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Get Started'));
