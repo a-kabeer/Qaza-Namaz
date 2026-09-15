@@ -7,7 +7,7 @@ import 'package:qaza_namaz/app/app.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
-import 'package:qaza_namaz/test/support/in_memory_qaza_repository.dart';
+import 'support/in_memory_qaza_repository.dart';
 
 class _FakeAuthRepository implements AuthRepository {
   @override
