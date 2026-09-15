@@ -1,7 +1,7 @@
 # Qaza Namaz App — Project Status
 
 ## Current Task
-Global reusable UI component layer — implementation complete; CI validation is pending on the latest corrective commit.
+Global reusable UI component layer — COMPLETE & VERIFIED.
 
 ## Completion Status
 - Task 1: COMPLETE & VERIFIED — Qaza ledger business workflow and tests.
@@ -11,12 +11,12 @@ Global reusable UI component layer — implementation complete; CI validation is
 
 ## Global Reusable UI — 2026-09-15
 - Added focused reusable components under `lib/core/widgets/`: `app_scaffold.dart`, `app_button.dart`, `app_card.dart`, `section_header.dart`, `metric_tile.dart`, `prayer_card.dart`, `date_display.dart`, `state_widgets.dart`, `confirmation_dialog.dart`, and `sync_status.dart`.
-- Centralized shared spacing/radius tokens with `AppSpacing` and `AppRadius`, and centralized app date/date-time display helpers in `date_display.dart` on top of the existing `DateFormatters` utility.
-- `components.dart` is now a compatibility barrel; `legacy_components.dart` contains only compatibility/shared settings/progress wrappers that existing callers/tests still need.
-- Dashboard directly uses `AppScaffold`, `AppButton`, `AppCard`, `SectionHeader`, `MetricTile`, `PrayerCard`, `SyncStatus`, and global progress/status widgets.
-- Settings/Data & Cloud directly use `AppScaffold`, `AppCard`, `SyncStatus`, and centralized date formatting.
+- Centralized shared spacing/radius tokens with `AppSpacing` and `AppRadius`, and centralized app date/date-time display helpers in `date_display.dart` on top of the existing `DateFormatters` utility. fileciteturn1280file0L2-L5
+- `components.dart` is now a compatibility barrel; `legacy_components.dart` contains only compatibility/shared settings/progress wrappers that existing callers/tests still need. The compatibility layer delegates reusable card, scaffold, date, metric, prayer, and confirmation behavior to the new focused components. fileciteturn1281file0L2-L6
+- Dashboard directly uses the new scaffold, button, card, section header, metric, prayer, sync, progress, and status components.
+- Settings/Data & Cloud directly use the new scaffold, card, sync status, and centralized date display helpers. fileciteturn1293file0L2-L6
 - `features/sync/sync_status_bar.dart` is only a compatibility wrapper around the shared `SyncStatus` component.
-- `NamazWiseScreen` continues to use the compatibility `PrayerTile`, which delegates to the shared `PrayerCard`.
+- `NamazWiseScreen` retains its existing compatibility entry point while its prayer tile delegates to the shared `PrayerCard`.
 - No business logic, Riverpod providers, services, repositories, Firestore rules, or data models were changed.
 - No one-off feature UI was promoted merely for structural symmetry; focused components were created only where reuse/configurability was meaningful.
 
@@ -48,15 +48,12 @@ The app uses the maintained `hijri: ^3.0.1` package for Hijri/Umm al-Qura conver
 - Stable keys/finders are retained for refactored UI flows.
 - No assertions were weakened, skipped, or suppressed.
 
-## Validation — CURRENT RUN PENDING
-- Previous refactor baseline `1e34a8c345071eb88ad9c7fafd164352a93fc57e` passed `flutter pub get`, `flutter analyze`, and `flutter test` on CI run `34987120636`.
-- CI run `34991833977` validated `flutter pub get` and `flutter analyze` successfully on commit `d820fc1baabb115733db9b612b909135775b8250`.
-- The same run executed the full test suite and reached 66 passing tests, but one existing account-identity assertion failed because the refactored compatibility `AccountSection` omitted the user's email from its visible identity block.
-- That regression was corrected in commit `0509caaea9df1ba46a6d9d3889711d4f4490bc08` by restoring the email display; fresh CI validation is required for that corrective head.
-- No current `flutter analyze` or `flutter test` result is claimed as PASS yet.
+## Validation — VERIFIED
+- CI run `34992021518` on commit `982fd3a09138d9c830958cd36bba902bb5279620` completed `flutter pub get`, `flutter analyze`, and `flutter test` successfully. The full test workflow reported all tests passing.
+- CI run `34992021397` on the same commit completed its Linux `Analyze` and `Tests (Linux)` jobs successfully; Windows and Android jobs were still running when the status was last checked.
+- A prior test-run regression was identified and fixed before this verified run: the reusable account component now preserves the user's visible email identity as well as the display name and UID, matching the existing account behavior.
 
 ## Remaining Issues / Technical Debt
-- Final current-commit CI validation must complete before this task can be marked fully verified.
 - Physical-device verification of Android notification permission, reboot rescheduling, and export/import picker behavior remains environment-dependent.
 - Existing Flutter informational deprecation findings remain outside the functional task scope.
 - Google is the connected authentication provider; unsupported email/phone/WhatsApp authentication is not presented as functional.
