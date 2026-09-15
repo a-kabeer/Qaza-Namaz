@@ -24,6 +24,14 @@ The application depends on `hijri: ^3.0.1` for Hijri/Umm al-Qura conversion and 
 ## Validation
 Dedicated Task 3G tests cover package conversion/round-trip, Gregorian leap day, Riverpod single/range/multiple selection, Gregorian/Hijri views, month navigation, future-date blocking, Qaza indicators, and canonical Gregorian persistence through the existing Qaza flow. The full repository CI additionally runs `flutter pub get`, `flutter analyze`, `flutter test`, and Android debug/release APK builds.
 
+## Test Suite Audit — 2026-09-15
+- Audited all 11 files under `test/`; retained 67 tests protecting current production behavior.
+- Updated: `test/qaza_add_flow_test.dart` and `test/task3g_calendar_test.dart` for the current Riverpod active-user dependency, stable widget keys, and viewport-safe action interaction.
+- Merged: none; the potentially overlapping Qaza add-flow and calendar tests protect different UI/selection layers.
+- Removed: none; no obsolete, debug, temporary, duplicate, or deleted-code tests were found.
+- Added: none; the existing suite already covers the important current production behaviors requested by the audit.
+- Verified: `flutter analyze` passed; `flutter test` passed with 67 tests in CI run `34983281314`.
+
 ## Remaining Issues / Technical Debt
 - Physical-device verification of Android notification permission, reboot rescheduling, and export/import picker behavior remains environment-dependent.
 - Existing Flutter informational deprecation findings remain outside the functional task scope.
