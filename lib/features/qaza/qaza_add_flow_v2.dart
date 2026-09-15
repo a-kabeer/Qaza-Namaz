@@ -18,13 +18,13 @@ class QazaAddFlowV2Screen extends ConsumerStatefulWidget {
 
 class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
   DateSelectionMode get dateMode => ref.watch(calendarControllerProvider).selectionMode;
+  List<DateTime> get dates => ref.read(calendarControllerProvider).datesForStorage.toList();
   Set<PrayerType> prayers = <PrayerType>{};
   List<QazaRecord> existing = const [];
   bool checking = false;
   bool saving = false;
   int step = 0;
 
-  List<DateTime> get dates => ref.read(calendarControllerProvider).selectedDates.toList();
   int get totalCombinations => dates.length * prayers.length;
 
   int get existingCombinations {
@@ -108,7 +108,7 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
         children: [
           Text('Step 1 of 3 • Range Setup', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
-          Text('Add Qaza', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           const Text('Choose the calendar and date selection method.'),
           const SizedBox(height: 22),
@@ -131,8 +131,8 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
             child: SegmentedButton<DateSelectionMode>(
               segments: const [
                 ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
-                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
-                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
+                ButtonSegment(value: DateSelectionMode.range, icon: Icons.date_range_rounded, label: const Text('Range')),
+                ButtonSegment(value: DateSelectionMode.multiple, icon: Icons.library_add_check_rounded, label: const Text('Multiple')),
               ],
               selected: {dateMode},
               onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
@@ -141,7 +141,12 @@ class _QazaAddFlowV2ScreenState extends ConsumerState<QazaAddFlowV2Screen> {
           const SizedBox(height: 18),
           const _InfoBox(text: 'Each date + prayer combination becomes one independent Qaza record. Witr remains separate from Isha. Records always store Gregorian originalDate.'),
           const SizedBox(height: 24),
-          FilledButton.icon(onPressed: checking ? null : _openDateStep, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Loading ledger...' : 'Continue')),
+          FilledButton.icon(
+            key: const Key('qaza_continue_button'),
+            onPressed: checking ? null : _openDateStep,
+            icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded),
+            label: Text(checking ? 'Loading ledger...' : 'Continue'),
+          ),
         ],
       );
 
@@ -218,14 +223,7 @@ class _ProgressHeader extends StatelessWidget {
               CircleAvatar(
                 radius: 14,
                 backgroundColor: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Text(
-                  '${i + 1}',
-                  style: TextStyle(
-                    color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: Text('${i + 1}', style: TextStyle(color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(width: 6),
               Text(const ['Method', 'Dates', 'Review'][i], style: Theme.of(context).textTheme.labelMedium),
