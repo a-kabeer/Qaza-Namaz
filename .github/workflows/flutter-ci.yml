@@ -22,6 +22,8 @@ jobs:
           flutter-version: '3.27.0'
           channel: stable
           cache: true
+      - name: Flutter clean
+        run: flutter clean
       - name: pub get
         run: flutter pub get
       - name: Analyze
@@ -39,6 +41,8 @@ jobs:
           flutter-version: '3.27.0'
           channel: stable
           cache: true
+      - name: Flutter clean
+        run: flutter clean
       - name: pub get
         run: flutter pub get
       - name: Run tests
@@ -58,13 +62,15 @@ jobs:
           cache: true
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
+      - name: Flutter clean
+        run: flutter clean
       - name: pub get
         run: flutter pub get
       - name: Run tests
         run: flutter test --reporter expanded
 
-  build_android_release:
-    name: Android release APK
+  build_android:
+    name: Android debug and release APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -75,11 +81,20 @@ jobs:
           flutter-version: '3.27.0'
           channel: stable
           cache: true
+      - name: Flutter clean
+        run: flutter clean
       - name: pub get
         run: flutter pub get
+      - name: Build debug APK
+        run: flutter build apk --debug
       - name: Build release APK
         run: flutter build apk --release
-      - name: Upload APK
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
