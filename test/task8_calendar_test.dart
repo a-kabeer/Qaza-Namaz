@@ -105,25 +105,31 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final ramadan = HijriCalendar.fromDate(today);
-    expect(ramadan.hYear, 1448);
-    expect(ramadan.hMonth, 10);
+    await tester.tap(find.text('Hijri'));
+    await tester.pumpAndSettle();
+
+    final shawwal = HijriCalendar.fromDate(today);
+    expect(shawwal.hYear, 1448);
+    expect(shawwal.hMonth, 10);
     expect(
-      find.text('${ramadan.getLongMonthName()} ${ramadan.hYear} AH'),
+      find.text('${shawwal.getLongMonthName()} ${shawwal.hYear} AH'),
       findsOneWidget,
     );
 
     await tester.tap(find.byKey(const Key('calendar_prev_month')));
     await tester.pumpAndSettle();
+
+    final ramadan = HijriCalendar()
+      ..hYear = 1448
+      ..hMonth = 9
+      ..hDay = 1;
     expect(
       find.text('${ramadan.getLongMonthName()} ${ramadan.hYear} AH'),
-      findsNothing,
+      findsOneWidget,
     );
 
-    final shawwal = HijriCalendar()
-      ..hYear = 1448
-      ..hMonth = 11
-      ..hDay = 1;
+    await tester.tap(find.byKey(const Key('calendar_next_month')));
+    await tester.pumpAndSettle();
     expect(
       find.text('${shawwal.getLongMonthName()} ${shawwal.hYear} AH'),
       findsOneWidget,
