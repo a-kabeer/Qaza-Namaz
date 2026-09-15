@@ -12,7 +12,7 @@ Task 3A–3J — COMPLETE TASK 3, RIVERPOD-FIRST.
 - Task 3D: COMPLETE — oldest-first completion, prayer-wise views, multi-select/select-all/clear-all, real completion timestamps, double-completion protection, and independent Witr handling.
 - Task 3E: COMPLETE — centralized history/progress providers, newest completion ordering, original-vs-completion dates, and shared loading/error/empty/refresh handling.
 - Task 3F: COMPLETE — system/light/dark theme provider, shared Stitch design system/components, Firebase account display, and provider-driven sign-out/settings UI.
-- Task 3G: FROZEN / PRESERVED — Gregorian + Hijri Umm al-Qura calendar implementation remains unchanged by Tasks 3H–3J.
+- Task 3G: COMPLETE — Gregorian + Hijri Umm al-Qura calendar engine, reusable single/range calendar picker, alternate-calendar summaries, future/minimum-date protection, calendar boundary handling, canonical Gregorian storage, and Add Qaza integration. Calendar dependencies are consumed through the Riverpod composition root rather than constructor-threaded services/user IDs.
 - Task 3H: COMPLETE — offline-first local persistence, UID-isolated cache, durable outbox, connectivity-triggered sync, retry behavior, deterministic merge rules, and sync status reporting.
 - Task 3I: COMPLETE — versioned JSON export/import, full pre-import validation, duplicate protection, deterministic conflict handling, current-account ownership remapping, preview/confirmation UI, and Android-compatible file handling.
 - Task 3J: IMPLEMENTED — Android local daily reminders, permission handling, persisted reminder settings, single stable schedule, inexact scheduling, reboot/package-replacement rescheduling, and dedicated tests.
@@ -23,7 +23,10 @@ Task 3A–3J — COMPLETE TASK 3, RIVERPOD-FIRST.
 ## Current Architecture
 `UI → Riverpod providers/notifiers → Domain/Data services → QazaRepository → OfflineFirstQazaRepository → local cache + Firestore synchronization`.
 
-The Qaza ledger remains based on the single `QazaRecord` entity. Export/import uses transfer-specific analysis/result DTOs but never replaces the ledger model. Notifications use a small scheduler abstraction behind a Riverpod-driven settings notifier.
+The Qaza ledger remains based on the single `QazaRecord` entity. Export/import uses transfer-specific analysis/result DTOs but never replaces the ledger model. Notifications use a small scheduler abstraction behind a Riverpod-driven settings notifier. Calendar conversion and the Add Qaza flow use the shared `calendarEngineProvider`.
+
+## Task 3G Calendar Boundary
+Task 3G is no longer frozen. Its calendar engine, picker, tests, and Add Qaza integration are available for maintenance and improvement. The Gregorian date remains canonical for Qaza records; Hijri is a derived display/selection view using the configured Umm al-Qura adapter.
 
 ## Task 3H Data Integrity Boundary
 Task 3H remains the source of truth for offline/online persistence. Task 3I and normal Qaza writes use the existing repository boundary and therefore remain local-first with durable cloud synchronization.
@@ -71,7 +74,7 @@ Derived counters are not exported as the ledger source of truth.
 - `RECEIVE_BOOT_COMPLETED`, package-replacement and quick-boot receiver declarations allow the plugin to restore scheduled notifications after restart/update.
 
 ## Validation
-The repository has dedicated tests for Tasks 3A–3I behavior plus Task 3J notification settings/scheduling logic. GitHub Actions is configured to run `flutter clean`, `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`, and `flutter build apk --release` on the final CI path. This final CI run is triggered from the current main commit. Physical-device confirmation of Android notification delivery and file-picker UX remains environment-dependent and is not claimed as automated validation.
+The repository has dedicated tests for Tasks 3A–3I behavior plus Task 3J notification settings/scheduling logic. GitHub Actions is configured to run `flutter clean`, `flutter pub get`, `flutter analyze`, `flutter test`, `flutter build apk --debug`, and `flutter build apk --release` on the final CI path. Physical-device confirmation of Android notification delivery and file-picker UX remains environment-dependent and is not claimed as automated validation.
 
 ## Remaining Issues / Technical Debt
 - Physical-device verification of Android notification permission, reboot rescheduling, and export/import picker behavior remains environment-dependent.
@@ -80,7 +83,7 @@ The repository has dedicated tests for Tasks 3A–3I behavior plus Task 3J notif
 - Urdu localization and other separately scoped features remain intentionally unimplemented.
 
 ## Scope Boundary
-Task 3G calendar engine, calendar picker, and Task 3G tests are frozen and were not redesigned or replaced during Tasks 3H–3J.
+Task 3G is part of the completed Task 3 scope and may be modified when a real calendar defect, compatibility issue, or UX improvement is identified. Changes must preserve canonical Gregorian storage, Umm al-Qura conversion, future-date protection, and range integrity.
 
 ## Last Updated
 2026-09-15
