@@ -24,8 +24,17 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
       child: child,
     );
 
+Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isNotEmpty) return;
+  await tester.scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
+}
+
 Future<void> _scrollToContinue(WidgetTester tester) async {
-  await tester.scrollUntilVisible(find.byKey(const Key('qaza_continue_button')), 300, scrollable: find.byType(Scrollable).first);
+  await _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
+}
+
+Future<void> _scrollToNextPrayers(WidgetTester tester) async {
+  await _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
 }
 
 void main() {
@@ -103,6 +112,7 @@ void main() {
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maghrib'));
@@ -127,6 +137,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.pumpAndSettle();
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Fajr'));
