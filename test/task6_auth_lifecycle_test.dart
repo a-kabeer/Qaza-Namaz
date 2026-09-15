@@ -46,10 +46,17 @@ Future<void> _pumpGate(
       child: const MaterialApp(home: AuthGate()),
     ),
   );
-  // AuthGate intentionally shows SplashScreen for 700 ms. Advance beyond that
-  // timer and settle all auth/setup microtasks before emitting lifecycle events.
+  // The splash has a deliberate 700 ms delay. Advance the test clock directly;
+  // do not use pumpAndSettle because AuthGate may contain persistent animations.
   await tester.pump(const Duration(milliseconds: 800));
-  await tester.pumpAndSettle();
+  await tester.pump();
+}
+
+Future<void> _pumpLifecycle(WidgetTester tester) async {
+  // Allow stream delivery, provider rebuilds, and transition work without
+  // waiting for persistent animations to settle.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 void main() {
@@ -63,7 +70,7 @@ void main() {
 
     await _pumpGate(tester, auth);
     auth.add(null);
-    await tester.pumpAndSettle();
+    await _pumpLifecycle(tester);
 
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
@@ -79,17 +86,17 @@ void main() {
     const secondUser = AppUser(id: 'user-b', email: 'b@example.com');
 
     auth.add(firstUser);
-    await tester.pumpAndSettle();
+    await _pumpLifecycle(tester);
     expect(find.text('First-Time Setup'), findsOneWidget);
 
     await tester.tap(find.text('Start Tracking'));
-    await tester.pumpAndSettle();
+    await _pumpLifecycle(tester);
     expect(find.text('Qaza Namaz'), findsWidgets);
 
     auth.add(null);
-    await tester.pumpAndSettle();
+    await _pumpLifecycle(tester);
     auth.add(secondUser);
-    await tester.pumpAndSettle();
+    await _pumpLifecycle(tester);
 
     expect(find.text('First-Time Setup'), findsOneWidget);
   });
