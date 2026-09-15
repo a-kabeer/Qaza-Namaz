@@ -46,17 +46,16 @@ Future<void> _pumpGate(
       child: const MaterialApp(home: AuthGate()),
     ),
   );
-  // The splash has a deliberate 700 ms delay. Advance the test clock directly;
-  // do not use pumpAndSettle because AuthGate may contain persistent animations.
+  // AuthGate intentionally shows SplashScreen for 700 ms.
   await tester.pump(const Duration(milliseconds: 800));
   await tester.pump();
 }
 
-Future<void> _pumpLifecycle(WidgetTester tester) async {
-  // Allow stream delivery, provider rebuilds, and transition work without
-  // waiting for persistent animations to settle.
+Future<void> _pumpAuthEvent(WidgetTester tester, AppUser? user,
+    StreamController<AppUser?> auth) async {
+  auth.add(user);
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump();
 }
 
 void main() {
@@ -69,9 +68,8 @@ void main() {
     addTearDown(auth.close);
 
     await _pumpGate(tester, auth);
-    auth.add(null);
-    await _pumpLifecycle(tester);
-
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
@@ -81,22 +79,21 @@ void main() {
     addTearDown(auth.close);
 
     await _pumpGate(tester, auth);
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
 
     const firstUser = AppUser(id: 'user-a', email: 'a@example.com');
     const secondUser = AppUser(id: 'user-b', email: 'b@example.com');
 
-    auth.add(firstUser);
-    await _pumpLifecycle(tester);
+    await _pumpAuthEvent(tester, firstUser, auth);
     expect(find.text('First-Time Setup'), findsOneWidget);
 
     await tester.tap(find.text('Start Tracking'));
-    await _pumpLifecycle(tester);
+    await tester.pump();
     expect(find.text('Qaza Namaz'), findsWidgets);
 
-    auth.add(null);
-    await _pumpLifecycle(tester);
-    auth.add(secondUser);
-    await _pumpLifecycle(tester);
+    await _pumpAuthEvent(tester, null, auth);
+    await _pumpAuthEvent(tester, secondUser, auth);
 
     expect(find.text('First-Time Setup'), findsOneWidget);
   });
