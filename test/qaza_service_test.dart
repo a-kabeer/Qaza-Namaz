@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/data/repositories/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
+import 'package:qaza_namaz/test/support/in_memory_qaza_repository.dart';
 
 void main() {
   group('QazaService', () {
