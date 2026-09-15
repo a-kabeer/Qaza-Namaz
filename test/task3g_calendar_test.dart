@@ -26,20 +26,17 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isNotEmpty) return;
-  final listView = find.byType(ListView).last;
-  for (var i = 0; i < 5 && finder.evaluate().isEmpty; i++) {
-    await tester.drag(listView, const Offset(0, -500));
+  final listViews = find.byType(ListView);
+  final scrollable = listViews.evaluate().isEmpty ? find.byType(Scrollable).first : listViews.last;
+  for (var i = 0; i < 6 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(scrollable, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
 }
 
-Future<void> _scrollToNextPrayers(WidgetTester tester) async {
-  await _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
-}
-
-Future<void> _scrollToReview(WidgetTester tester) async {
-  await _scrollToFinder(tester, find.text('Review & Create Records'));
-}
+Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
+Future<void> _scrollToNextPrayers(WidgetTester tester) => _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
+Future<void> _scrollToReview(WidgetTester tester) => _scrollToFinder(tester, find.text('Review & Create Records'));
 
 void main() {
   test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
@@ -112,13 +109,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
-    await _scrollToNextPrayers(tester);
+    await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.pumpAndSettle();
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Maghrib'));
+    await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
@@ -134,16 +134,18 @@ void main() {
     await tester.pumpWidget(_scope(const MaterialApp(home: QazaAddFlowScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
-    await _scrollToNextPrayers(tester);
+    await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.pumpAndSettle();
+    await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Fajr'));
+    await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
