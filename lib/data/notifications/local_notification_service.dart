@@ -6,8 +6,10 @@ import 'package:timezone/timezone.dart' as tz;
 abstract interface class NotificationScheduler {
   Future<void> initialize();
   Future<bool> requestPermission();
+  Future<bool> isPermissionGranted();
   Future<void> scheduleDaily({required int hour, required int minute});
   Future<void> cancelDaily();
+  Future<void> showTestNotification();
 }
 
 class LocalNotificationService implements NotificationScheduler {
@@ -15,6 +17,7 @@ class LocalNotificationService implements NotificationScheduler {
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   static const int _notificationId = 3001;
+  static const int _testNotificationId = 3002;
   static const String _channelId = 'qaza_daily_reminder';
   static const String _channelName = 'Qaza daily reminder';
   static const String _channelDescription =
@@ -57,6 +60,15 @@ class LocalNotificationService implements NotificationScheduler {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     final granted = await android?.requestNotificationsPermission();
+    return granted ?? true;
+  }
+
+  @override
+  Future<bool> isPermissionGranted() async {
+    await initialize();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    final granted = await android?.areNotificationsEnabled();
     return granted ?? true;
   }
 
@@ -110,5 +122,27 @@ class LocalNotificationService implements NotificationScheduler {
   Future<void> cancelDaily() async {
     await initialize();
     await _plugin.cancel(_notificationId);
+  }
+
+  @override
+  Future<void> showTestNotification() async {
+    await initialize();
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+        icon: '@drawable/ic_stat_qaza',
+      ),
+      iOS: DarwinNotificationDetails(),
+    );
+    await _plugin.show(
+      _testNotificationId,
+      'Qaza Namaz',
+      'Test notification received successfully.',
+      details,
+    );
   }
 }
