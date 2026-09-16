@@ -22,7 +22,7 @@ Each part follows:
 - [ ] Final — Full CI + status verification
 
 ## Current State
-All implementation parts are complete. Final full CI is pending on this integration checkpoint.
+All implementation parts are complete. Final full CI is now running on the integration branch.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -50,7 +50,7 @@ All implementation parts are complete. Final full CI is pending on this integrat
 | Part 4 | `73802e8b` | Not run | COMPLETE |
 | Part 5 | `9ee1ebec`, `c56e576b` | Not run | COMPLETE |
 | Part 6 | `67455a88` | Not run | COMPLETE |
-| Final | pending | Full CI required | IN PROGRESS |
+| Final | `pending` | Full CI running | IN PROGRESS |
 
 ## Notes
 The existing calendar architecture was consolidated rather than replaced. Selection remains centralized, date-only, unique, chronologically ordered, future-safe, and range expansion remains inclusive.
