@@ -10,6 +10,7 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 enum _BalighInputMode { age, exactDate }
+enum _PrayerStartInputMode { age, exactDate }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
   int _step = 0;
@@ -17,6 +18,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   _BalighInputMode _balighInputMode = _BalighInputMode.age;
   int _balighAge = 12;
   DateTime? _balighDate;
+  _PrayerStartInputMode _prayerStartInputMode = _PrayerStartInputMode.age;
+  int _prayerStartAge = 18;
+  DateTime? _prayerStartDate;
 
   static const steps = <String>['About You', 'Prayer History', 'Result'];
 
@@ -44,6 +48,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   DateTime? get _effectiveBalighDate =>
       _balighInputMode == _BalighInputMode.exactDate ? _balighDate : _estimatedBalighDate;
 
+  DateTime? get _estimatedPrayerStartDate {
+    final dob = _dob;
+    if (dob == null || _prayerStartInputMode != _PrayerStartInputMode.age) return null;
+    return DateTime(dob.year + _prayerStartAge, dob.month, dob.day);
+  }
+
+  DateTime? get _effectivePrayerStartDate => _prayerStartInputMode == _PrayerStartInputMode.exactDate
+      ? _prayerStartDate
+      : _estimatedPrayerStartDate;
+
   String? get _dobError {
     if (_dob == null) return 'Select your date of birth.';
     if (_dob!.isAfter(_today)) return 'Date of birth cannot be in the future.';
@@ -59,10 +73,36 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     return null;
   }
 
+  String? get _prayerStartError {
+    final dob = _dob;
+    final baligh = _effectiveBalighDate;
+    final start = _effectivePrayerStartDate;
+    if (dob == null || baligh == null || start == null) return null;
+    if (start.isBefore(baligh)) return 'Prayer start cannot be before the Baligh date.';
+    if (start.isAfter(_today)) return 'Prayer start cannot be in the future.';
+    if (start.isBefore(dob)) return 'Prayer start cannot be before your date of birth.';
+    return null;
+  }
+
   bool get _step1Valid => _dobError == null && _balighError == null && _effectiveBalighDate != null;
+  bool get _step2Valid =>
+      _step1Valid && _effectivePrayerStartDate != null && _prayerStartError == null;
+
+  int _calendarYearsBetween(DateTime start, DateTime end) {
+    var years = end.year - start.year;
+    final anniversary = DateTime(end.year, start.month, start.day);
+    if (anniversary.isAfter(end)) years--;
+    return years;
+  }
+
+  int _calendarDaysBetween(DateTime start, DateTime end) => end.difference(start).inDays;
 
   void _next() {
     if (_step == 0 && !_step1Valid) {
+      setState(() {});
+      return;
+    }
+    if (_step == 1 && !_step2Valid) {
       setState(() {});
       return;
     }
@@ -88,9 +128,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final dob = _dob;
     if (dob == null) return;
     final current = _balighDate;
-    final initial = current != null && !current.isBefore(dob) && !current.isAfter(_today)
-        ? current
-        : (dob.isAfter(_today) ? _today : dob);
+    final initial = current != null && !current.isBefore(dob) && !current.isAfter(_today) ? current : dob;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -99,6 +137,21 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       helpText: 'Select exact Baligh date',
     );
     if (date != null) setState(() => _balighDate = DateTime(date.year, date.month, date.day));
+  }
+
+  Future<void> _pickPrayerStartDate() async {
+    final baligh = _effectiveBalighDate;
+    if (baligh == null || baligh.isAfter(_today)) return;
+    final current = _prayerStartDate;
+    final initial = current != null && !current.isBefore(baligh) && !current.isAfter(_today) ? current : baligh;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: baligh,
+      lastDate: _today,
+      helpText: 'Select exact prayer start date',
+    );
+    if (date != null) setState(() => _prayerStartDate = DateTime(date.year, date.month, date.day));
   }
 
   @override
@@ -116,7 +169,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
               _StepActions(
                 step: _step,
-                canContinue: _step != 0 || _step1Valid,
+                canContinue: _step == 0 ? _step1Valid : _step == 1 ? _step2Valid : true,
                 onBack: _step == 0 ? null : _back,
                 onContinue: _next,
               ),
@@ -125,21 +178,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         ),
       );
 
-  Widget _stepContent() {
-    return switch (_step) {
-      0 => _aboutYouStep(),
-      1 => _placeholderStep(
-          step: 1,
-          title: 'Prayer History',
-          description: 'Tell us when regular prayer started so we can calculate the Qaza period.',
-        ),
-      _ => _placeholderStep(
-          step: 2,
-          title: 'Result',
-          description: 'Your calculated Qaza estimate will appear here.',
-        ),
-    };
-  }
+  Widget _stepContent() => switch (_step) {
+        0 => _aboutYouStep(),
+        1 => _prayerHistoryStep(),
+        _ => _placeholderStep(
+            step: 2,
+            title: 'Result',
+            description: 'Your calculated Qaza estimate will appear here.',
+          ),
+      };
 
   Widget _aboutYouStep() {
     final effectiveBalighDate = _effectiveBalighDate;
@@ -199,9 +246,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   onSelectionChanged: (value) {
                     setState(() {
                       _balighInputMode = value.first;
-                      if (_balighInputMode == _BalighInputMode.age) {
-                        _balighDate = null;
-                      }
+                      if (_balighInputMode == _BalighInputMode.age) _balighDate = null;
                     });
                   },
                 ),
@@ -212,8 +257,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     initialValue: _balighAge,
                     decoration: const InputDecoration(labelText: 'Baligh age (years)'),
                     items: [
-                      for (var age = 9; age <= 18; age++)
-                        DropdownMenuItem(value: age, child: Text('$age years')),
+                      for (var value = 9; value <= 18; value++)
+                        DropdownMenuItem(value: value, child: Text('$value years')),
                     ],
                     onChanged: (value) {
                       if (value != null) setState(() => _balighAge = value);
@@ -237,28 +282,121 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   ),
                 if (effectiveBalighDate != null) ...[
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.onSecondaryContainer),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _balighInputMode == _BalighInputMode.age
-                                ? 'Estimated Baligh date: ${_formatDate(effectiveBalighDate)}'
-                                : 'Exact Baligh date: ${_formatDate(effectiveBalighDate)}',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
-                          ),
-                        ),
-                      ],
-                    ),
+                  _DateInfoBox(
+                    text: _balighInputMode == _BalighInputMode.age
+                        ? 'Estimated Baligh date: ${_formatDate(effectiveBalighDate)}'
+                        : 'Exact Baligh date: ${_formatDate(effectiveBalighDate)}',
                   ),
                 ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _prayerHistoryStep() {
+    final baligh = _effectiveBalighDate;
+    final prayerStart = _effectivePrayerStartDate;
+    final years = baligh != null && prayerStart != null && !prayerStart.isBefore(baligh)
+        ? _calendarYearsBetween(baligh, prayerStart)
+        : null;
+    final days = baligh != null && prayerStart != null && !prayerStart.isBefore(baligh)
+        ? _calendarDaysBetween(baligh, prayerStart)
+        : null;
+
+    return ListView(
+      key: const ValueKey('calculator_step_1'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      children: [
+        Text('Step 2 of 3', style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 6),
+        Text('Prayer History', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 8),
+        const Text('Tell us when regular prayer started so we can calculate the Qaza period.'),
+        const SizedBox(height: 20),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Regular prayer start', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 10),
+                SegmentedButton<_PrayerStartInputMode>(
+                  key: const Key('calculator_prayer_start_mode'),
+                  segments: const [
+                    ButtonSegment(value: _PrayerStartInputMode.age, label: Text('Age'), icon: Icon(Icons.numbers_rounded)),
+                    ButtonSegment(value: _PrayerStartInputMode.exactDate, label: Text('Exact date'), icon: Icon(Icons.event_rounded)),
+                  ],
+                  selected: {_prayerStartInputMode},
+                  onSelectionChanged: (value) {
+                    setState(() {
+                      _prayerStartInputMode = value.first;
+                      if (_prayerStartInputMode == _PrayerStartInputMode.age) _prayerStartDate = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 14),
+                if (_prayerStartInputMode == _PrayerStartInputMode.age)
+                  DropdownButtonFormField<int>(
+                    key: const Key('calculator_prayer_start_age'),
+                    initialValue: _prayerStartAge,
+                    decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'),
+                    items: [
+                      for (var value = 12; value <= 60; value++)
+                        DropdownMenuItem(value: value, child: Text('$value years')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _prayerStartAge = value);
+                    },
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      OutlinedButton.icon(
+                        key: const Key('calculator_prayer_start_date_picker'),
+                        onPressed: baligh == null ? null : _pickPrayerStartDate,
+                        icon: const Icon(Icons.event_rounded),
+                        label: Text(_prayerStartDate == null ? 'Select exact date' : _formatDate(_prayerStartDate!)),
+                      ),
+                    ],
+                  ),
+                if (prayerStart != null) ...[
+                  const SizedBox(height: 12),
+                  _DateInfoBox(
+                    text: _prayerStartInputMode == _PrayerStartInputMode.age
+                        ? 'Estimated prayer-start date: ${_formatDate(prayerStart)}'
+                        : 'Exact prayer-start date: ${_formatDate(prayerStart)}',
+                  ),
+                ],
+                if (_prayerStartError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_prayerStartError!, key: const Key('calculator_prayer_start_error'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Card(
+          key: const Key('calculator_qaza_period_summary'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Qaza period', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 10),
+                if (baligh != null) _InfoRow(label: 'Baligh date', value: _formatDate(baligh)),
+                if (prayerStart != null) _InfoRow(label: 'Prayer-start date', value: _formatDate(prayerStart)),
+                if (years != null && days != null) ...[
+                  const SizedBox(height: 8),
+                  _InfoRow(label: 'Calendar period', value: '$years years • $days days'),
+                ] else
+                  Text('Complete valid dates to calculate the Qaza period.'),
               ],
             ),
           ),
@@ -296,12 +434,40 @@ class _InfoRow extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(child: Text(label)),
-          Text(value, style: Theme.of(context).textTheme.titleSmall),
-        ],
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Expanded(child: Text(label)),
+            Text(value, style: Theme.of(context).textTheme.titleSmall),
+          ],
+        ),
       );
+}
+
+class _DateInfoBox extends StatelessWidget {
+  const _DateInfoBox({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: colors.onSecondaryContainer),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: TextStyle(color: colors.onSecondaryContainer))),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProgressIndicator extends StatelessWidget {
@@ -312,19 +478,13 @@ class _ProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
           for (var index = 0; index < 3; index++) ...[
             if (index > 0)
-              Expanded(
-                child: Container(
-                  height: 2,
-                  color: index <= step ? colors.primary : colors.outlineVariant,
-                ),
-              ),
+              Expanded(child: Container(height: 2, color: index <= step ? colors.primary : colors.outlineVariant)),
             Semantics(
               label: 'Step ${index + 1}: ${_CalculatorScreenState.steps[index]}',
               selected: index == step,
