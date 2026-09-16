@@ -6,6 +6,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_history_page.dart';
+import '../../domain/entities/qaza_ledger_summary.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'qaza_local_store.dart';
 
@@ -22,23 +24,19 @@ class SqliteQazaLocalStore implements QazaLocalStore {
   Future<Database> _db() async {
     if (_database != null) return _database!;
     final databasesPath = await getDatabasesPath();
-    _database = await openDatabase(
-      p.join(databasesPath, databaseName),
-      version: _version,
-      onCreate: (db, _) async {
-        await db.execute('CREATE TABLE qaza_meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
-        await db.execute('''CREATE TABLE qaza_records (
-          id TEXT PRIMARY KEY, user_id TEXT NOT NULL, prayer_type TEXT NOT NULL,
-          original_date TEXT NOT NULL, status TEXT NOT NULL, completed_at TEXT,
-          created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''');
-        await db.execute('CREATE INDEX idx_qaza_user_date ON qaza_records(user_id, original_date DESC, id DESC)');
-        await db.execute('CREATE INDEX idx_qaza_user_prayer ON qaza_records(user_id, prayer_type, original_date DESC, id DESC)');
-        await db.execute('CREATE INDEX idx_qaza_user_status ON qaza_records(user_id, status, original_date DESC, id DESC)');
-        await db.execute('CREATE TABLE qaza_outbox (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, payload TEXT NOT NULL)');
-        await db.execute('CREATE INDEX idx_qaza_outbox_user ON qaza_outbox(user_id)');
-        await db.execute('CREATE TABLE qaza_sync_meta (user_id TEXT PRIMARY KEY, last_sync TEXT)');
-      },
-    );
+    _database = await openDatabase(p.join(databasesPath, databaseName), version: _version, onCreate: (db, _) async {
+      await db.execute('CREATE TABLE qaza_meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
+      await db.execute('''CREATE TABLE qaza_records (
+        id TEXT PRIMARY KEY, user_id TEXT NOT NULL, prayer_type TEXT NOT NULL,
+        original_date TEXT NOT NULL, status TEXT NOT NULL, completed_at TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''');
+      await db.execute('CREATE INDEX idx_qaza_user_date ON qaza_records(user_id, original_date DESC, id DESC)');
+      await db.execute('CREATE INDEX idx_qaza_user_prayer ON qaza_records(user_id, prayer_type, original_date DESC, id DESC)');
+      await db.execute('CREATE INDEX idx_qaza_user_status ON qaza_records(user_id, status, original_date DESC, id DESC)');
+      await db.execute('CREATE TABLE qaza_outbox (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, payload TEXT NOT NULL)');
+      await db.execute('CREATE INDEX idx_qaza_outbox_user ON qaza_outbox(user_id)');
+      await db.execute('CREATE TABLE qaza_sync_meta (user_id TEXT PRIMARY KEY, last_sync TEXT)');
+    });
     await _migrateLegacyIfNeeded(_database!);
     return _database!;
   }
@@ -46,19 +44,16 @@ class SqliteQazaLocalStore implements QazaLocalStore {
   Future<void> _migrateLegacyIfNeeded(Database db) async {
     final marker = await db.query('qaza_meta', where: 'name = ?', whereArgs: [_migrationName], limit: 1);
     if (marker.isNotEmpty) return;
-
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_legacyKey);
     if (raw == null || raw.isEmpty) {
       await db.insert('qaza_meta', {'name': _migrationName, 'value': 'empty'}, conflictAlgorithm: ConflictAlgorithm.replace);
       return;
     }
-
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final users = decoded['recordsByUser'] as Map<String, dynamic>? ?? {};
     final outbox = decoded['outboxByUser'] as Map<String, dynamic>? ?? {};
     final sync = decoded['lastSyncByUser'] as Map<String, dynamic>? ?? {};
-
     await db.transaction((txn) async {
       for (final entry in users.entries) {
         for (final item in entry.value as List<dynamic>) {
@@ -128,6 +123,33 @@ class SqliteQazaLocalStore implements QazaLocalStore {
   }
 
   @override
+  Future<QazaLedgerSummary> getSummary(String userId) async {
+    final db = await _db();
+    final statusRows = await db.rawQuery('SELECT status, COUNT(*) AS count FROM qaza_records WHERE user_id = ? GROUP BY status', [userId]);
+    var pending = 0;
+    var completed = 0;
+    for (final row in statusRows) {
+      final count = (row['count'] as num).toInt();
+      if (row['status'] == QazaStatus.pending.name) pending = count;
+      if (row['status'] == QazaStatus.completed.name) completed = count;
+    }
+    final byPrayerRows = await db.rawQuery('SELECT prayer_type, status, COUNT(*) AS count FROM qaza_records WHERE user_id = ? GROUP BY prayer_type, status', [userId]);
+    final pendingByPrayer = <PrayerType, int>{};
+    final completedByPrayer = <PrayerType, int>{};
+    for (final row in byPrayerRows) {
+      final prayer = PrayerType.values.firstWhere((v) => v.name == row['prayer_type']);
+      final count = (row['count'] as num).toInt();
+      if (row['status'] == QazaStatus.pending.name) pendingByPrayer[prayer] = count;
+      if (row['status'] == QazaStatus.completed.name) completedByPrayer[prayer] = count;
+    }
+    final byPrayer = <PrayerType, QazaProgress>{
+      for (final prayer in PrayerType.values)
+        prayer: QazaProgress(pending: pendingByPrayer[prayer] ?? 0, completed: completedByPrayer[prayer] ?? 0),
+    };
+    return QazaLedgerSummary(total: pending + completed, pending: pending, completed: completed, byPrayer: byPrayer);
+  }
+
+  @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     final db = await _db();
     await db.transaction((txn) async {
@@ -160,16 +182,7 @@ class SqliteQazaLocalStore implements QazaLocalStore {
   }
 
   @override
-  Future<QazaHistoryPage> getHistoryPage({
-    required String userId,
-    PrayerType? prayerType,
-    QazaStatus? status,
-    DateTime? originalDateFrom,
-    DateTime? originalDateTo,
-    String? cursor,
-    int limit = 25,
-    bool ascending = false,
-  }) async {
+  Future<QazaHistoryPage> getHistoryPage({required String userId, PrayerType? prayerType, QazaStatus? status, DateTime? originalDateFrom, DateTime? originalDateTo, String? cursor, int limit = 25, bool ascending = false}) async {
     if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
     final db = await _db();
     final where = <String>['user_id = ?'];
