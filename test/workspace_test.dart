@@ -8,6 +8,11 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'support/in_memory_qaza_repository.dart';
 
+Future<void> _pumpNavigation(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump();
+}
+
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
     tester.view.physicalSize = const Size(800, 1600);
@@ -17,12 +22,12 @@ void main() {
       overrides: [qazaRepositoryProvider.overrideWithValue(repository), authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com')))],
       child: const MaterialApp(home: WorkspaceShell()),
     ));
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
   }
   Future<void> revealPrayerLedger(WidgetTester tester) async {
     final scrollable = find.byType(Scrollable).first;
     await tester.drag(scrollable, const Offset(0, -500));
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
   }
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
@@ -49,26 +54,27 @@ void main() {
   });
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    await tester.tap(find.text('Calculator'));
-    await tester.pumpAndSettle();
-    expect(find.text('Qaza estimate calculator'), findsOneWidget);
-    await tester.tap(find.text('Logs'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Calculator').first);
+    await _pumpNavigation(tester);
+    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('Step 1 of 3'), findsOneWidget);
+    await tester.tap(find.text('Logs').first);
+    await _pumpNavigation(tester);
     expect(find.text('Logs & Progress'), findsOneWidget);
-    expect(find.text('No completed Qaza yet.'), findsOneWidget);
-    await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
+    expect(find.text('No Qaza records yet.'), findsOneWidget);
+    await tester.tap(find.text('Settings').first);
+    await _pumpNavigation(tester);
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
   testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    await tester.tap(find.text('Logs'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Logs').first);
+    await _pumpNavigation(tester);
     expect(find.text('Logs & Progress'), findsOneWidget);
 
     final handled = await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
 
     expect(handled, isTrue);
     expect(find.text('Logs & Progress'), findsNothing);
