@@ -79,6 +79,12 @@ class AppTheme {
       bodyLarge: base.bodyLarge?.copyWith(color: scheme.onSurface),
       bodyMedium: base.bodyMedium?.copyWith(color: scheme.onSurface),
       bodySmall: base.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+      // Explicitly theme label styles as well. Typography.material2021().black
+      // otherwise leaves these labels black, which is unreadable on dark
+      // surfaces (notably the Calculator/Add Qaza step indicators).
+      labelLarge: base.labelLarge?.copyWith(color: scheme.primary),
+      labelMedium: base.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+      labelSmall: base.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
     );
 
     // Stitch avoids overly rounded, playful controls; keep interactive
