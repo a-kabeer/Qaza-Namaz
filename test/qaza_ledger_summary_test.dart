@@ -5,9 +5,9 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'support/in_memory_qaza_repository.dart';
 
-QazaRecord _record(String id, PrayerType prayer, QazaStatus status) => QazaRecord(
+QazaRecord _record(String id, PrayerType prayer, QazaStatus status, {String userId = 'u1'}) => QazaRecord(
       id: id,
-      userId: 'u1',
+      userId: userId,
       prayerType: prayer,
       originalDate: DateTime(2026, 9, 1),
       status: status,
@@ -43,9 +43,7 @@ void main() {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
       _record('u1-fajr', PrayerType.fajr, QazaStatus.pending),
-    ]);
-    await repository.addRecords([
-      _record('u2-isha', PrayerType.isha, QazaStatus.completed).copyWith(userId: 'u2'),
+      _record('u2-isha', PrayerType.isha, QazaStatus.completed, userId: 'u2'),
     ]);
 
     final u1 = await repository.getSummary('u1');
