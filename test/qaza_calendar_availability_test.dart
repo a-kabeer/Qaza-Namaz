@@ -22,7 +22,7 @@ QazaRecord _record(PrayerType prayer, int day) {
   );
 }
 
-Widget _calendar(List<QazaRecord> records, {DateSelectionMode mode = DateSelectionMode.single}) {
+Widget _calendar(List<QazaRecord> records) {
   const availability = QazaAvailabilityService();
   return ProviderScope(
     overrides: [calendarTodayProvider.overrideWithValue(_today)],
@@ -78,12 +78,14 @@ void main() {
       for (final prayer in PrayerType.values) _record(prayer, 10),
     ];
 
-    await tester.pumpWidget(_calendar(records, mode: DateSelectionMode.multiple));
+    await tester.pumpWidget(_calendar(records));
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(CalendarPicker)),
     );
+    container.read(calendarControllerProvider.notifier).setSelectionMode(DateSelectionMode.multiple);
+    await tester.pumpAndSettle();
     expect(container.read(calendarControllerProvider).selectedDates, isEmpty);
 
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
