@@ -29,46 +29,101 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     return dates.expand((d) => prayers.map((p) => '${p.name}_${_dateKey(d)}')).where(keys.contains).length;
   }
   int get newCombinations => totalCombinations - existingCombinations;
-
   String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: step,
-        children: [
-          _methodStep(),
-          _dateStep(),
-          _prayerStep(),
-        ],
-      ),
-    );
+  Future<void> _checkExisting() async {
+    if (checking) return;
+    setState(() => checking = true);
+    try {
+      existing = await ref.read(qazaRecordsProvider.future);
+    } finally {
+      if (mounted) setState(() => checking = false);
+    }
   }
+  Future<void> _openDateStep() async {
+    await _checkExisting();
+    if (mounted) setState(() => step = 1);
+  }
+  Future<void> _continueFromDates() async {
+    if (dates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose at least one date.')));
+      return;
+    }
+    await _checkExisting();
+    if (mounted) setState(() => step = 2);
+  }
+  Future<void> _confirmAndSave() async {
+    if (prayers.isEmpty || newCombinations <= 0 || saving) return;
+    setState(() => saving = true);
+    try {
+      await ref.read(qazaServiceProvider).recordQazaForDates(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: prayers,
+          );
+      if (!mounted) return;
+      final created = newCombinations;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Qaza records created'),
+          content: Text('$created independent Qaza record${created == 1 ? '' : 's'} were added to your ledger.'),
+          actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))],
+        ),
+      );
+      if (mounted) Navigator.pop(context, created);
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Add Qaza'),
+          leading: IconButton(
+            tooltip: step == 0 ? 'Close' : 'Back',
+            onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--),
+            icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _ProgressHeader(step: step),
+              Expanded(child: switch (step) {0 => _methodStep(), 1 => _dateStep(), _ => _prayerStep()}),
+            ],
+          ),
+        ),
+      );
 
   Widget _methodStep() => ListView(
         key: const ValueKey('qaza_step_list_0'),
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Step 1 of 3 • Method'),
+          Text('Step 1 of 3 • Method', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
-          Text('Add Qaza', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           const Text('Choose how you want to select your missed dates.'),
-          const SizedBox(height: 16),
-          SegmentedButton<DateSelectionMode>(
-            segments: const [
-              ButtonSegment(value: DateSelectionMode.single, label: Text('Single')),
-              ButtonSegment(value: DateSelectionMode.range, label: Text('Range')),
-              ButtonSegment(value: DateSelectionMode.multiple, label: Text('Multiple')),
-            ],
-            selected: {dateMode},
-            onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
+          const SizedBox(height: 22),
+          _ChoiceCard(
+            title: 'Date selection',
+            icon: Icons.date_range_rounded,
+            child: SegmentedButton<DateSelectionMode>(
+              segments: const [
+                ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
+                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
+                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
+              ],
+              selected: {dateMode},
+              onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
+            ),
           ),
-          const SizedBox(height: 16),
-          Card(child: Padding(padding: const EdgeInsets.all(16), child: Text('Gregorian calendar is used for all selections and storage. Hijri is shown as secondary date information.', style: Theme.of(context).textTheme.bodyMedium))),
-          const SizedBox(height: 16),
-          FilledButton(onPressed: () => setState(() => step = 1), child: const Text('Continue to dates')),
+          const SizedBox(height: 18),
+          const _InfoBox(text: 'The Gregorian calendar is used for all selections and storage. Hijri dates are shown as secondary information. Each date + prayer combination becomes one independent Qaza record.'),
+          const SizedBox(height: 24),
+          FilledButton.icon(key: const Key('qaza_continue_button'), onPressed: checking ? null : _openDateStep, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Loading ledger...' : 'Continue')),
         ],
       );
 
@@ -90,10 +145,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         FilledButton.icon(onPressed: checking || dates.isEmpty ? null : _continueFromDates, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Checking ledger...' : 'Next: Choose missed prayers')),
       ],
     );
-  }
-
-  Future<void> _continueFromDates() async {
-    setState(() => step = 2);
   }
 
   Widget _prayerStep() {
@@ -130,11 +181,46 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 }
 
+class _ProgressHeader extends StatelessWidget {
+  const _ProgressHeader({required this.step});
+  final int step;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+        child: Row(
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor)),
+              CircleAvatar(radius: 14, backgroundColor: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest, child: Text('${i + 1}', style: TextStyle(color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700))),
+              const SizedBox(width: 6),
+              Text(const ['Method', 'Dates', 'Review'][i], style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ],
+        ),
+      );
+}
+
+class _ChoiceCard extends StatelessWidget {
+  const _ChoiceCard({required this.title, required this.icon, required this.child});
+  final String title;
+  final IconData icon;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]), const SizedBox(height: 14), child])));
+}
+
+class _InfoBox extends StatelessWidget {
+  const _InfoBox({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.45), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]));
+}
+
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.label, required this.value, this.emphasis = false});
   final String label;
   final String value;
   final bool emphasis;
   @override
-  Widget build(BuildContext context) => Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)]);
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)]));
 }
