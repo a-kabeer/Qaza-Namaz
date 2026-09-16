@@ -58,22 +58,19 @@ void main() {
     expect(records.singleWhere((r) => r.id == 'fajr_next').status, QazaStatus.pending);
   });
 
-  testWidgets('completion button is disabled while the current completion is running', (tester) async {
+  testWidgets('button becomes unavailable after the final pending record is completed', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecord(record(id: 'fajr_old', originalDate: DateTime(2026, 9, 2)));
 
     await tester.pumpWidget(scoped(const CompleteQazaScreen(), repository));
     await tester.pumpAndSettle();
-
     final button = find.byKey(const Key('complete_oldest_pending'));
-    expect(button, findsOneWidget);
+
     await tester.tap(button);
-    await tester.pump();
-
-    expect(find.text('Completing...'), findsOneWidget);
-    expect(tester.widget<AppButton>(button).onPressed, isNull);
-
     await tester.pumpAndSettle();
+
+    expect(find.text('No pending Qaza for this prayer.'), findsOneWidget);
+    expect(tester.widget<AppButton>(button).onPressed, isNull);
   });
 
   test('repeated completion of the same record is idempotent', () async {
