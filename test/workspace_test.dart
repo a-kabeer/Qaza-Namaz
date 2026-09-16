@@ -51,14 +51,15 @@ void main() {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator'));
     await tester.pumpAndSettle();
-    expect(find.text('Qaza estimate calculator'), findsOneWidget);
+    expect(find.text('Calculator'), findsOneWidget);
+    expect(find.byKey(const Key('calculator_continue')), findsOneWidget);
     await tester.tap(find.text('Logs'));
     await tester.pumpAndSettle();
     expect(find.text('Logs & Progress'), findsOneWidget);
     expect(find.text('No completed Qaza yet.'), findsOneWidget);
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Account'), findsNWidgets(2));
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
 }
