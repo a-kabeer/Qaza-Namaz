@@ -15,7 +15,9 @@ class PaginatedOfflineFirstQazaRepository extends OfflineFirstQazaRepository {
 
   @override
   Future<QazaLedgerSummary> getSummary(String userId) {
-    if (userId != activeUserId) return Future.value(const QazaLedgerSummary());
+    if (userId != activeUserId) {
+      return Future.value(const QazaLedgerSummary(total: 0, pending: 0, completed: 0, byPrayer: {}));
+    }
     return _historyStore.getSummary(userId);
   }
 
