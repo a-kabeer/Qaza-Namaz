@@ -2,23 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
+Future<void> settleCalculator(WidgetTester tester, [Duration duration = const Duration(milliseconds: 600)]) async {
+  await tester.pump(duration);
+  await tester.pump();
+}
+
 void main() {
   Future<void> pumpCalculator(WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: CalculatorScreen()),
     );
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
   }
 
   Future<void> chooseDay(WidgetTester tester, String day) async {
     final matches = find.text(day);
     expect(matches, findsWidgets);
     await tester.tap(matches.last);
-    await tester.pumpAndSettle();
+    await settleCalculator(tester, const Duration(milliseconds: 250));
     final ok = find.text('OK');
     if (ok.evaluate().isNotEmpty) {
       await tester.tap(ok);
-      await tester.pumpAndSettle();
+      await settleCalculator(tester);
     }
   }
 
@@ -41,7 +46,7 @@ void main() {
     await pumpCalculator(tester);
 
     await tester.tap(find.byKey(const Key('calculator_dob_picker')));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester, const Duration(milliseconds: 250));
     await chooseDay(tester, '15');
 
     expect(find.text('Current age'), findsOneWidget);
@@ -56,11 +61,11 @@ void main() {
     await pumpCalculator(tester);
 
     await tester.tap(find.byKey(const Key('calculator_dob_picker')));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester, const Duration(milliseconds: 250));
     await chooseDay(tester, '15');
 
     await tester.tap(find.text('Exact date'));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
 
     expect(find.byKey(const Key('calculator_baligh_date_picker')), findsOneWidget);
     expect(find.text('Select exact date'), findsOneWidget);
@@ -71,14 +76,14 @@ void main() {
     await pumpCalculator(tester);
 
     await tester.tap(find.byKey(const Key('calculator_dob_picker')));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester, const Duration(milliseconds: 250));
     await chooseDay(tester, '15');
     await tester.tap(find.byKey(const Key('calculator_continue')));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
 
     expect(find.text('Prayer History'), findsOneWidget);
     await tester.tap(find.byKey(const Key('calculator_back')));
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
 
     expect(find.text('About You'), findsOneWidget);
     expect(find.textContaining('Estimated Baligh date:'), findsOneWidget);
