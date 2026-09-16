@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'support/in_memory_qaza_repository.dart';
 
@@ -41,7 +42,9 @@ void main() {
     final records = await repository.getRecords(userId: 'u1');
     expect(records, hasLength(4));
     expect(
-      records.map((record) => '${record.originalDate.toIso8601String()}_${record.prayerType.name}').toSet(),
+      records
+          .map((record) => '${record.originalDate.toIso8601String()}_${record.prayerType.name}')
+          .toSet(),
       hasLength(4),
     );
   });
@@ -74,10 +77,10 @@ void main() {
     final repository = InMemoryQazaRepository();
     final service = QazaService(repository);
     final prayed = {
-      const _prayerKey(
+      QazaPrayerKey(
         userId: 'u1',
         date: DateTime(2024, 1, 1),
-        prayer: PrayerType.fajr,
+        prayerType: PrayerType.fajr,
       ),
     };
 
@@ -92,12 +95,4 @@ void main() {
     expect(records, hasLength(1));
     expect(records.single.prayerType, PrayerType.asr);
   });
-}
-
-class _prayerKey extends QazaPrayerKey {
-  const _prayerKey({
-    required super.userId,
-    required super.date,
-    required PrayerType prayer,
-  }) : super(prayerType: prayer);
 }
