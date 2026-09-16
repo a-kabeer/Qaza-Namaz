@@ -35,25 +35,37 @@ abstract interface class QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
 
-  /// Returns only records matching the requested dates and optional filters.
-  /// Implementations backed by a database should answer this with an indexed
-  /// query instead of loading the complete ledger.
-  Future<List<QazaRecord>> getRecordsForDates({
-    required String userId,
-    required Iterable<DateTime> dates,
-    PrayerType? prayerType,
-    QazaStatus? status,
-  }) async {
-    final wanted = dates
-        .map((date) => DateTime(date.year, date.month, date.day))
-        .toSet();
+  /// Incremental outbox operations. Database-backed stores should implement
+  /// these without loading the complete queue.
+  Future<int> getPendingSyncCount(String userId) async => (await load()).outboxByUser[userId]?.length ?? 0;
+  Future<PendingSyncOp?> getNextPendingSyncOp(String userId) async {
+    final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[];
+    return ops.isEmpty ? null : ops.first;
+  }
+  Future<bool> hasPendingCompletion(String userId, String recordId) async {
+    final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[];
+    return ops.any((op) => op.type == SyncOpType.complete && op.targetRecordId == recordId);
+  }
+  Future<void> deletePendingSyncOp(String userId, String opId) async {
+    final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[])
+      ..removeWhere((op) => op.id == opId);
+    await saveOutbox(userId, ops);
+  }
+  Future<void> updatePendingSyncOp(String userId, PendingSyncOp op) async {
+    final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[]);
+    final index = ops.indexWhere((item) => item.id == op.id);
+    if (index >= 0) ops[index] = op;
+    else ops.add(op);
+    await saveOutbox(userId, ops);
+  }
+
+  Future<List<QazaRecord>> getRecordsForDates({required String userId, required Iterable<DateTime> dates, PrayerType? prayerType, QazaStatus? status}) async {
+    final wanted = dates.map((date) => DateTime(date.year, date.month, date.day)).toSet();
     if (wanted.isEmpty) return const [];
     final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
     return records.where((record) {
       final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
-      return wanted.contains(date) &&
-          (prayerType == null || record.prayerType == prayerType) &&
-          (status == null || record.status == status);
+      return wanted.contains(date) && (prayerType == null || record.prayerType == prayerType) && (status == null || record.status == status);
     }).toList(growable: false);
   }
 
