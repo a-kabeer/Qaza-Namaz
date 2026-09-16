@@ -103,13 +103,23 @@ void main() {
   });
 
   test('enabling with pending Qaza requests permission and schedules one daily reminder', () async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_notification_permission_requested': false,
+    });
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
     await container.read(notificationSettingsProvider.future);
 
-    expect(await notifier.setEnabled(true), isTrue);
+    scheduler.permissionGranted = false;
+    expect(await notifier.setEnabled(true), isFalse);
     expect(scheduler.permissionCalls, 1);
+    expect(scheduler.scheduleCalls, 0);
+
+    scheduler.permissionGranted = true;
+    await notifier.refreshPermissionStatus();
+    expect(await notifier.setEnabled(true), isTrue);
+    expect(scheduler.permissionCalls, 2);
     expect(scheduler.scheduleCalls, 1);
     expect(scheduler.lastHour, 20);
     expect(scheduler.lastMinute, 0);
