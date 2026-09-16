@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/widgets/app_scaffold.dart';
+import 'calculator_persistence.dart';
 import 'calculator_tracker.dart';
 import 'qaza_calculation.dart';
 
@@ -28,13 +29,110 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   bool _includeWitr = false;
   bool _addingToTracker = false;
   bool _keptAsEstimate = false;
+  bool _restoring = true;
   QazaCalculation? _calculation;
+  Future<void> _saveQueue = Future<void>.value();
 
   static const steps = <String>['About You', 'Prayer History', 'Result'];
+  static const _persistence = CalculatorPersistence();
 
   DateTime get _today {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
+  }
+
+  String? _currentUserId() {
+    try {
+      return ProviderScope.containerOf(context, listen: false).read(activeUserIdProvider);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreState());
+  }
+
+  Future<void> _restoreState() async {
+    try {
+      final snapshot = await _persistence.load(userId: _currentUserId());
+      if (!mounted || snapshot == null) return;
+
+      final dob = snapshot.dob == null ? null : _dateOnly(snapshot.dob!);
+      final balighMode = _parseBalighMode(snapshot.balighMode);
+      final prayerMode = _parsePrayerStartMode(snapshot.prayerStartMode);
+      final balighDate = snapshot.balighDate == null ? null : _dateOnly(snapshot.balighDate!);
+      final prayerStartDate = snapshot.prayerStartDate == null ? null : _dateOnly(snapshot.prayerStartDate!);
+
+      QazaCalculation? calculation;
+      final effectiveBaligh = balighMode == _BalighInputMode.exactDate
+          ? balighDate
+          : dob == null
+              ? null
+              : DateTime(dob.year + snapshot.balighAge, dob.month, dob.day);
+      final effectivePrayerStart = prayerMode == _PrayerStartInputMode.exactDate
+          ? prayerStartDate
+          : dob == null
+              ? null
+              : DateTime(dob.year + snapshot.prayerStartAge, dob.month, dob.day);
+
+      if (snapshot.hasCalculation && effectiveBaligh != null && effectivePrayerStart != null) {
+        try {
+          calculation = calculateQaza(
+            startDate: effectiveBaligh,
+            endDate: effectivePrayerStart,
+            includeWitr: snapshot.includeWitr,
+          );
+        } on ArgumentError {
+          calculation = null;
+        }
+      }
+
+      setState(() {
+        _step = calculation != null ? snapshot.step.clamp(0, 2) : snapshot.step.clamp(0, 1);
+        _dob = dob;
+        _balighInputMode = balighMode;
+        _balighAge = snapshot.balighAge;
+        _balighDate = balighDate;
+        _prayerStartInputMode = prayerMode;
+        _prayerStartAge = snapshot.prayerStartAge;
+        _prayerStartDate = prayerStartDate;
+        _includeWitr = snapshot.includeWitr;
+        _calculation = calculation;
+        _keptAsEstimate = snapshot.keptAsEstimate && calculation != null;
+      });
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
+  }
+
+  _BalighInputMode _parseBalighMode(String value) =>
+      value == _BalighInputMode.exactDate.name ? _BalighInputMode.exactDate : _BalighInputMode.age;
+
+  _PrayerStartInputMode _parsePrayerStartMode(String value) =>
+      value == _PrayerStartInputMode.exactDate.name ? _PrayerStartInputMode.exactDate : _PrayerStartInputMode.age;
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  void _queuePersistence() {
+    if (_restoring) return;
+    final snapshot = CalculatorSnapshot(
+      step: _step,
+      dob: _dob,
+      balighMode: _balighInputMode.name,
+      balighAge: _balighAge,
+      balighDate: _balighDate,
+      prayerStartMode: _prayerStartInputMode.name,
+      prayerStartAge: _prayerStartAge,
+      prayerStartDate: _prayerStartDate,
+      includeWitr: _includeWitr,
+      hasCalculation: _calculation != null,
+      keptAsEstimate: _keptAsEstimate,
+    );
+    final userId = _currentUserId();
+    _saveQueue = _saveQueue.then((_) => _persistence.save(snapshot, userId: userId));
   }
 
   int? get _currentAge {
@@ -97,8 +195,13 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   bool get _step2Valid => _step1Valid && _effectivePrayerStartDate != null && _prayerStartError == null;
 
   void _next() {
-    if (_step == 0 && !_step1Valid) {
-      setState(() {});
+    if (_step == 0) {
+      if (!_step1Valid) {
+        setState(() {});
+        return;
+      }
+      setState(() => _step = 1);
+      _queuePersistence();
       return;
     }
     if (_step == 1) {
@@ -107,13 +210,13 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         return;
       }
       _calculate();
-      return;
     }
-    if (_step < steps.length - 1) setState(() => _step++);
   }
 
   void _back() {
-    if (_step > 0) setState(() => _step--);
+    if (_step == 0) return;
+    setState(() => _step--);
+    _queuePersistence();
   }
 
   void _editStep(int targetStep) {
@@ -123,6 +226,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _calculation = null;
       _keptAsEstimate = false;
     });
+    _queuePersistence();
   }
 
   void _calculate() {
@@ -132,15 +236,20 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       setState(() {});
       return;
     }
-    setState(() {
-      _calculation = calculateQaza(
-        startDate: start,
-        endDate: end,
-        includeWitr: _includeWitr,
-      );
-      _keptAsEstimate = false;
-      _step = 2;
-    });
+    try {
+      setState(() {
+        _calculation = calculateQaza(
+          startDate: start,
+          endDate: end,
+          includeWitr: _includeWitr,
+        );
+        _keptAsEstimate = false;
+        _step = 2;
+      });
+      _queuePersistence();
+    } on ArgumentError {
+      setState(() {});
+    }
   }
 
   Future<void> _addToTracker() async {
@@ -185,11 +294,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         ),
       );
       if (mounted) setState(() => _keptAsEstimate = false);
+      _queuePersistence();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not add the estimate: $error')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add the estimate: $error')));
     } finally {
       if (mounted) setState(() => _addingToTracker = false);
     }
@@ -197,6 +305,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   void _keepAsEstimate() {
     setState(() => _keptAsEstimate = true);
+    _queuePersistence();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Estimate kept without adding records to the tracker.')),
     );
@@ -212,10 +321,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
     if (date != null) {
       setState(() {
-        _dob = DateTime(date.year, date.month, date.day);
+        _dob = _dateOnly(date);
         _calculation = null;
         _keptAsEstimate = false;
       });
+      _queuePersistence();
     }
   }
 
@@ -233,10 +343,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
     if (date != null) {
       setState(() {
-        _balighDate = DateTime(date.year, date.month, date.day);
+        _balighDate = _dateOnly(date);
         _calculation = null;
         _keptAsEstimate = false;
       });
+      _queuePersistence();
     }
   }
 
@@ -254,10 +365,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     );
     if (date != null) {
       setState(() {
-        _prayerStartDate = DateTime(date.year, date.month, date.day);
+        _prayerStartDate = _dateOnly(date);
         _calculation = null;
         _keptAsEstimate = false;
       });
+      _queuePersistence();
     }
   }
 
@@ -268,6 +380,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           child: Column(
             children: [
               _ProgressIndicator(step: _step),
+              if (_restoring) const LinearProgressIndicator(minHeight: 2),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 180),
@@ -276,8 +389,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ),
               _StepActions(
                 step: _step,
-                canContinue: _step == 0 ? _step1Valid : _step == 1 ? _step2Valid : _calculation != null && !_addingToTracker,
-                onBack: _step == 2 ? null : _back,
+                canContinue: !_restoring && (_step == 0 ? _step1Valid : _step == 1 ? _step2Valid : _calculation != null && !_addingToTracker),
+                onBack: _step == 0 ? null : _back,
                 onContinue: _step == 2 ? _addToTracker : _next,
               ),
             ],
@@ -348,6 +461,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       _calculation = null;
                       _keptAsEstimate = false;
                     });
+                    _queuePersistence();
                   },
                 ),
                 const SizedBox(height: 14),
@@ -358,7 +472,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     decoration: const InputDecoration(labelText: 'Baligh age (years)'),
                     items: [for (var value = 9; value <= 18; value++) DropdownMenuItem(value: value, child: Text('$value years'))],
                     onChanged: (value) {
-                      if (value != null) setState(() { _balighAge = value; _calculation = null; _keptAsEstimate = false; });
+                      if (value != null) {
+                        setState(() { _balighAge = value; _calculation = null; _keptAsEstimate = false; });
+                        _queuePersistence();
+                      }
                     },
                   )
                 else
@@ -422,6 +539,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       _calculation = null;
                       _keptAsEstimate = false;
                     });
+                    _queuePersistence();
                   },
                 ),
                 const SizedBox(height: 14),
@@ -432,7 +550,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'),
                     items: [for (var value = 12; value <= 60; value++) DropdownMenuItem(value: value, child: Text('$value years'))],
                     onChanged: (value) {
-                      if (value != null) setState(() { _prayerStartAge = value; _calculation = null; _keptAsEstimate = false; });
+                      if (value != null) {
+                        setState(() { _prayerStartAge = value; _calculation = null; _keptAsEstimate = false; });
+                        _queuePersistence();
+                      }
                     },
                   )
                 else
@@ -505,22 +626,13 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         const SizedBox(height: 8),
         _SourceChip(exact: _balighInputMode == _BalighInputMode.exactDate || _prayerStartInputMode == _PrayerStartInputMode.exactDate),
         const SizedBox(height: 10),
+        if (_keptAsEstimate) const Align(alignment: Alignment.centerLeft, child: Chip(label: Text('Kept as estimate'))),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            OutlinedButton.icon(
-              key: const Key('calculator_edit_about'),
-              onPressed: _addingToTracker ? null : () => _editStep(0),
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Edit About You'),
-            ),
-            OutlinedButton.icon(
-              key: const Key('calculator_edit_prayer_history'),
-              onPressed: _addingToTracker ? null : () => _editStep(1),
-              icon: const Icon(Icons.edit_calendar_outlined),
-              label: const Text('Edit Prayer History'),
-            ),
+            OutlinedButton.icon(key: const Key('calculator_edit_about'), onPressed: _addingToTracker ? null : () => _editStep(0), icon: const Icon(Icons.edit_outlined), label: const Text('Edit About You')),
+            OutlinedButton.icon(key: const Key('calculator_edit_prayer_history'), onPressed: _addingToTracker ? null : () => _editStep(1), icon: const Icon(Icons.edit_calendar_outlined), label: const Text('Edit Prayer History')),
           ],
         ),
         const SizedBox(height: 14),
@@ -557,12 +669,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   onChanged: (value) {
                     setState(() {
                       _includeWitr = value;
-                      _calculation = calculateQaza(
-                        startDate: result.startDate,
-                        endDate: result.endDate,
-                        includeWitr: value,
-                      );
+                      _calculation = calculateQaza(startDate: result.startDate, endDate: result.endDate, includeWitr: value);
+                      _keptAsEstimate = false;
                     });
+                    _queuePersistence();
                   },
                 ),
                 if (result.includeWitr) _InfoRow(label: 'Witr', value: _formatNumber(result.witrCount)),
@@ -570,10 +680,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             ),
           ),
         ),
-        if (_keptAsEstimate) ...[
-          const SizedBox(height: 10),
-          _DateInfoBox(text: 'Estimate kept without adding records to the tracker.'),
-        ],
+        const SizedBox(height: 12),
+        OutlinedButton(key: const Key('calculator_keep_estimate'), onPressed: _addingToTracker ? null : _keepAsEstimate, child: const Text('Keep as Estimate')),
       ],
     );
   }
