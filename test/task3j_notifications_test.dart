@@ -266,14 +266,33 @@ void main() {
     expect(scheduler.scheduleCalls, 0);
   });
 
-  test('test notification requires permission and delegates to scheduler', () async {
+  test('test notification requires permission and delegates without changing daily schedule', () async {
     final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    await notifier.setEnabled(true);
+    final dailyScheduleCallsBeforeTest = scheduler.scheduleCalls;
+
+    await notifier.sendTestNotification();
+
+    expect(scheduler.testCalls, 1);
+    expect(scheduler.scheduleCalls, dailyScheduleCallsBeforeTest);
+    expect(scheduler.cancelCalls, greaterThanOrEqualTo(0));
+  });
+
+  test('test notification is rejected when permission is unavailable', () async {
+    final scheduler = _FakeScheduler()..permissionGrantedForStatus = false;
     final container = createContainer(scheduler);
     final notifier = container.read(notificationSettingsProvider.notifier);
     await container.read(notificationSettingsProvider.future);
 
-    await notifier.sendTestNotification();
-    expect(scheduler.testCalls, 1);
+    expect(
+      () => notifier.sendTestNotification(),
+      throwsA(isA<StateError>()),
+    );
+    expect(scheduler.testCalls, 0);
   });
 
   test('settings survive controller recreation', () async {
