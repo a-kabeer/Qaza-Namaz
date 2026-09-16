@@ -33,7 +33,7 @@ void main() {
       'Data & Storage',
       'About',
     ]) {
-      expect(find.text(section), findsOneWidget);
+      expect(find.text(section), section == 'Account' ? findsNWidgets(2) : findsOneWidget);
     }
 
     expect(find.byKey(const Key('settings_theme_mode')), findsOneWidget);
