@@ -1,35 +1,58 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app/providers.dart';
 import '../../data/notifications/local_notification_service.dart';
+import '../../domain/entities/qaza_record.dart';
+
+const _defaultReminderHour = 20;
+const _defaultReminderMinute = 0;
+
+enum NotificationPermissionStatus {
+  notRequested,
+  granted,
+  denied,
+  unavailable,
+}
 
 class NotificationSettingsState {
   const NotificationSettingsState({
     required this.enabled,
     required this.hour,
     required this.minute,
+    required this.permissionStatus,
+    required this.hasPendingQaza,
   });
 
   final bool enabled;
   final int hour;
   final int minute;
+  final NotificationPermissionStatus permissionStatus;
+  final bool hasPendingQaza;
+
+  bool get canSendNotifications =>
+      permissionStatus == NotificationPermissionStatus.granted;
 
   NotificationSettingsState copyWith({
     bool? enabled,
     int? hour,
     int? minute,
+    NotificationPermissionStatus? permissionStatus,
+    bool? hasPendingQaza,
   }) {
     return NotificationSettingsState(
       enabled: enabled ?? this.enabled,
       hour: hour ?? this.hour,
       minute: minute ?? this.minute,
+      permissionStatus: permissionStatus ?? this.permissionStatus,
+      hasPendingQaza: hasPendingQaza ?? this.hasPendingQaza,
     );
   }
 
   String get formattedTime {
     final displayHour = hour % 12 == 0 ? 12 : hour % 12;
     final suffix = hour >= 12 ? 'PM' : 'AM';
-    return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $suffix';
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
   }
 }
 
@@ -38,43 +61,100 @@ class NotificationSettingsNotifier
   static const _enabledKey = 'qaza_daily_notification_enabled';
   static const _hourKey = 'qaza_daily_notification_hour';
   static const _minuteKey = 'qaza_daily_notification_minute';
+  static const _permissionRequestedKey =
+      'qaza_notification_permission_requested';
 
-  NotificationScheduler get _scheduler => ref.read(notificationSchedulerProvider);
+  NotificationScheduler get _scheduler =>
+      ref.read(notificationSchedulerProvider);
 
   @override
   Future<NotificationSettingsState> build() async {
     await _scheduler.initialize();
     final prefs = await SharedPreferences.getInstance();
+    final requested = prefs.getBool(_permissionRequestedKey) ?? false;
+    final permissionGranted = await _scheduler.isPermissionGranted();
+    final records = await ref.read(qazaRecordsProvider.future);
+    final hasPendingQaza = records.any(
+      (record) => record.status == QazaStatus.pending,
+    );
+
+    final permissionStatus = permissionGranted
+        ? NotificationPermissionStatus.granted
+        : requested
+            ? NotificationPermissionStatus.denied
+            : NotificationPermissionStatus.notRequested;
+
     return NotificationSettingsState(
       enabled: prefs.getBool(_enabledKey) ?? false,
-      hour: prefs.getInt(_hourKey) ?? 20,
-      minute: prefs.getInt(_minuteKey) ?? 0,
+      hour: prefs.getInt(_hourKey) ?? _defaultReminderHour,
+      minute: prefs.getInt(_minuteKey) ?? _defaultReminderMinute,
+      permissionStatus: permissionStatus,
+      hasPendingQaza: hasPendingQaza,
     );
+  }
+
+  Future<void> refreshPermissionStatus() async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    try {
+      final granted = await _scheduler.isPermissionGranted();
+      final prefs = await SharedPreferences.getInstance();
+      final requested = prefs.getBool(_permissionRequestedKey) ?? false;
+      final permissionStatus = granted
+          ? NotificationPermissionStatus.granted
+          : requested
+              ? NotificationPermissionStatus.denied
+              : NotificationPermissionStatus.notRequested;
+      final next = current.copyWith(permissionStatus: permissionStatus);
+      state = AsyncData(next);
+      await _reconcile(next);
+    } catch (error, stack) {
+      state = AsyncError(error, stack);
+    }
   }
 
   Future<bool> setEnabled(bool enabled) async {
     final current = state.valueOrNull;
     if (current == null) return false;
-    if (current.enabled == enabled) return enabled;
-
-    state = AsyncData(current.copyWith(enabled: enabled));
-    try {
-      if (enabled) {
-        final granted = await _scheduler.requestPermission();
-        if (!granted) {
-          state = AsyncData(current.copyWith(enabled: false));
-          await _persist(current.copyWith(enabled: false));
-          return false;
-        }
-        await _scheduler.scheduleDaily(hour: current.hour, minute: current.minute);
-      } else {
+    if (!enabled) {
+      try {
         await _scheduler.cancelDaily();
+        final next = current.copyWith(enabled: false);
+        await _persist(next, permissionRequested: null);
+        state = AsyncData(next);
+        return true;
+      } catch (error, stack) {
+        state = AsyncError(error, stack);
+        return false;
+      }
+    }
+
+    if (current.enabled && current.canSendNotifications) {
+      return true;
+    }
+
+    try {
+      final granted = current.canSendNotifications ||
+          await _scheduler.requestPermission();
+      await _persistPermissionRequested();
+      if (!granted) {
+        final next = current.copyWith(
+          enabled: false,
+          permissionStatus: NotificationPermissionStatus.denied,
+        );
+        await _persist(next, permissionRequested: true);
+        state = AsyncData(next);
+        return false;
       }
 
-      final next = current.copyWith(enabled: enabled);
-      await _persist(next);
+      final next = current.copyWith(
+        enabled: true,
+        permissionStatus: NotificationPermissionStatus.granted,
+      );
+      await _persist(next, permissionRequested: true);
       state = AsyncData(next);
-      return enabled;
+      await _reconcile(next);
+      return true;
     } catch (error, stack) {
       state = AsyncError(error, stack);
       return false;
@@ -89,22 +169,74 @@ class NotificationSettingsNotifier
     }
 
     final next = current.copyWith(hour: hour, minute: minute);
-    state = AsyncData(next);
     try {
-      if (next.enabled) {
-        await _scheduler.scheduleDaily(hour: hour, minute: minute);
-      }
-      await _persist(next);
+      await _persist(next, permissionRequested: null);
+      state = AsyncData(next);
+      await _reconcile(next);
     } catch (error, stack) {
       state = AsyncError(error, stack);
     }
   }
 
-  Future<void> _persist(NotificationSettingsState value) async {
+  Future<void> sendTestNotification() async {
+    final current = state.valueOrNull;
+    if (current == null) throw StateError('Notification settings are not loaded.');
+    if (!current.canSendNotifications) {
+      throw StateError('Notification permission is required first.');
+    }
+    await _scheduler.showTestNotification();
+  }
+
+  void _listenToQazaChanges(AsyncValue<List<QazaRecord>> next) {
+    final records = next.valueOrNull;
+    if (records == null) return;
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final updated = current.copyWith(
+      hasPendingQaza: records.any(
+        (record) => record.status == QazaStatus.pending,
+      ),
+    );
+    state = AsyncData(updated);
+    _reconcile(updated);
+  }
+
+  Future<void> _reconcile(NotificationSettingsState value) async {
+    if (!value.enabled || !value.canSendNotifications || !value.hasPendingQaza) {
+      await _scheduler.cancelDaily();
+      return;
+    }
+    await _scheduler.scheduleDaily(hour: value.hour, minute: value.minute);
+  }
+
+  Future<void> _persistPermissionRequested() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_permissionRequestedKey, true);
+  }
+
+  Future<void> _persist(
+    NotificationSettingsState value, {
+    required bool? permissionRequested,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey, value.enabled);
     await prefs.setInt(_hourKey, value.hour);
     await prefs.setInt(_minuteKey, value.minute);
+    if (permissionRequested != null) {
+      await prefs.setBool(_permissionRequestedKey, permissionRequested);
+    }
+  }
+
+  @override
+  void onAddListener(void Function() listener) {
+    super.onAddListener(listener);
+    if (hasListeners) {
+      ref.listen<AsyncValue<List<QazaRecord>>>(
+        qazaRecordsProvider,
+        (_, next) => _listenToQazaChanges(next),
+        fireImmediately: true,
+      );
+    }
   }
 }
 
@@ -112,7 +244,7 @@ final notificationSchedulerProvider = Provider<NotificationScheduler>(
   (ref) => LocalNotificationService(),
 );
 
-final notificationSettingsProvider =
-    AsyncNotifierProvider<NotificationSettingsNotifier, NotificationSettingsState>(
+final notificationSettingsProvider = AsyncNotifierProvider<
+    NotificationSettingsNotifier, NotificationSettingsState>(
   NotificationSettingsNotifier.new,
 );
