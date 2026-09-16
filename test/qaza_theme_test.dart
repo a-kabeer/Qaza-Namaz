@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 
 void main() {
@@ -10,9 +9,6 @@ void main() {
     testWidgets('${brightness.name} theme keeps Qaza step content readable', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            calendarTodayProvider.overrideWithValue(DateTime(2027, 3, 9)),
-          ],
           child: MaterialApp(
             theme: ThemeData(brightness: brightness),
             home: const AddQazaScreen(),
