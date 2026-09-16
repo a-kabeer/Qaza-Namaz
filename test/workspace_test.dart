@@ -64,7 +64,7 @@ void main() {
     expect(find.text('No completed Qaza yet.'), findsOneWidget);
     await tester.tap(find.text('Settings').first);
     await _pumpNavigation(tester);
-    expect(find.text('Account'), findsNWidgets(2));
+    expect(find.text('Account'), findsOneWidget);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
 }
