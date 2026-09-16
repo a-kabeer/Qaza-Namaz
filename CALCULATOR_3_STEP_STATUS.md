@@ -26,7 +26,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 10 — Local Persistence & Restore
 - [x] Part 11 — Theme & Responsive UX
 - [x] Part 12 — Regression Tests & Cleanup
-- [ ] Final — Full CI + status verification
+- [ ] Final — Full CI + status verification (in progress)
 
 ## UX Principles
 - One Calculator screen; no separate page for each question.
@@ -270,7 +270,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 10 | c928d820d4e5d27acf71c99dd574f5e99101b963 + 8389f552ac3da8ef55409ecea65ed9fdf7744686 | Focused persistence tests added; integration CI deferred | COMPLETE |
 | Part 11 | e869a00eea4738f78c690fc90822f7a9cb5b67f9 + b46404f8135b4f78ba350e99393ca30a4a52a229 | Focused responsive/theme tests added; integration CI deferred | COMPLETE |
 | Part 12 | 9d6c3d4597e67541d81197caefb5a41dfb898e3e | Final regression tests added; integration CI deferred | COMPLETE |
-| Final | — | Full CI required | NOT STARTED |
+| Final | — | Full CI + status verification | IN PROGRESS |
 
 ## Notes
 Do not rewrite the calculation engine or data architecture before auditing the existing implementation. Make the smallest professional changes needed to achieve the three-step UX.
