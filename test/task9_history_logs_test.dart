@@ -72,9 +72,9 @@ void main() {
 
     final picker = find.byType(DateRangePickerDialog);
     expect(picker, findsOneWidget);
-    await tester.tap(find.descendant(of: picker, matching: find.text('3')).last);
+    await tester.tap(find.descendant(of: picker, matching: find.text('3')).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.descendant(of: picker, matching: find.text('5')).last);
+    await tester.tap(find.descendant(of: picker, matching: find.text('5')).first);
     await tester.pumpAndSettle();
 
     expect(find.text('Fajr Qaza'), findsOneWidget);
