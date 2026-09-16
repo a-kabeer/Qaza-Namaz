@@ -82,10 +82,12 @@ void main() {
   ProviderContainer createContainer(
     _FakeScheduler scheduler, {
     List<QazaRecord> records = const <QazaRecord>[],
+    String userId = 'test-user',
   }) {
     final container = ProviderContainer(
       overrides: [
         notificationSchedulerProvider.overrideWithValue(scheduler),
+        activeUserIdProvider.overrideWithValue(userId),
         qazaRecordsProvider.overrideWith(
           () => _FakeQazaRecordsNotifier(records),
         ),
@@ -126,6 +128,7 @@ void main() {
     final deniedContainer = createContainer(
       deniedScheduler,
       records: [_pendingRecord()],
+      userId: 'denied-user',
     );
     final deniedNotifier = deniedContainer.read(notificationSettingsProvider.notifier);
     await deniedContainer.read(notificationSettingsProvider.future);
@@ -200,7 +203,10 @@ void main() {
     expect(scheduler.scheduleCalls, 2);
     expect(scheduler.lastHour, 7);
     expect(scheduler.lastMinute, 45);
-    expect((await container.read(notificationSettingsProvider.future)).formattedTime, '7:45 AM');
+    expect(
+      (await container.read(notificationSettingsProvider.future)).formattedTime,
+      '7:45 AM',
+    );
   });
 
   test('changing time while disabled persists without scheduling', () async {
@@ -274,12 +280,10 @@ void main() {
 
     await notifier.setEnabled(true);
     final dailyScheduleCallsBeforeTest = scheduler.scheduleCalls;
-
     await notifier.sendTestNotification();
 
     expect(scheduler.testCalls, 1);
     expect(scheduler.scheduleCalls, dailyScheduleCallsBeforeTest);
-    expect(scheduler.cancelCalls, greaterThanOrEqualTo(0));
   });
 
   test('test notification is rejected when permission is unavailable', () async {
@@ -288,25 +292,47 @@ void main() {
     final notifier = container.read(notificationSettingsProvider.notifier);
     await container.read(notificationSettingsProvider.future);
 
-    expect(
-      () => notifier.sendTestNotification(),
-      throwsA(isA<StateError>()),
-    );
+    expect(() => notifier.sendTestNotification(), throwsA(isA<StateError>()));
     expect(scheduler.testCalls, 0);
   });
 
-  test('settings survive controller recreation', () async {
+  test('settings restore enabled state and selected time for the same account', () async {
     final firstScheduler = _FakeScheduler();
-    final first = createContainer(firstScheduler, records: [_pendingRecord()]);
+    final first = createContainer(
+      firstScheduler,
+      records: [_pendingRecord()],
+      userId: 'restore-user',
+    );
     await first.read(notificationSettingsProvider.future);
     await first.read(notificationSettingsProvider.notifier).setTime(6, 30);
+    await first.read(notificationSettingsProvider.notifier).setEnabled(true);
     first.dispose();
 
     final secondScheduler = _FakeScheduler();
-    final second = createContainer(secondScheduler, records: [_pendingRecord()]);
+    final second = createContainer(
+      secondScheduler,
+      records: [_pendingRecord()],
+      userId: 'restore-user',
+    );
     final restored = await second.read(notificationSettingsProvider.future);
-    expect(restored.enabled, isFalse);
+    expect(restored.enabled, isTrue);
     expect(restored.hour, 6);
     expect(restored.minute, 30);
+  });
+
+  test('notification settings are isolated between accounts', () async {
+    final firstScheduler = _FakeScheduler();
+    final first = createContainer(firstScheduler, userId: 'user-a');
+    await first.read(notificationSettingsProvider.future);
+    await first.read(notificationSettingsProvider.notifier).setTime(6, 30);
+    await first.read(notificationSettingsProvider.notifier).setEnabled(true);
+    first.dispose();
+
+    final secondScheduler = _FakeScheduler();
+    final second = createContainer(secondScheduler, userId: 'user-b');
+    final state = await second.read(notificationSettingsProvider.future);
+    expect(state.enabled, isFalse);
+    expect(state.hour, 20);
+    expect(state.minute, 0);
   });
 }
