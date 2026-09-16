@@ -12,22 +12,24 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: Consumer(
-              builder: (context, ref, child) => Column(
-                children: [
-                  SegmentedButton<DateSelectionMode>(
-                    segments: const [
-                      ButtonSegment(value: DateSelectionMode.single, label: Text('Single')),
-                      ButtonSegment(value: DateSelectionMode.range, label: Text('Range')),
-                      ButtonSegment(value: DateSelectionMode.multiple, label: Text('Multiple')),
-                    ],
-                    selected: {ref.watch(calendarControllerProvider).selectionMode},
-                    onSelectionChanged: (value) => ref
-                        .read(calendarControllerProvider.notifier)
-                        .setSelectionMode(value.first),
-                  ),
-                  const CalendarPicker(),
-                ],
+            body: SingleChildScrollView(
+              child: Consumer(
+                builder: (context, ref, child) => Column(
+                  children: [
+                    SegmentedButton<DateSelectionMode>(
+                      segments: const [
+                        ButtonSegment(value: DateSelectionMode.single, label: Text('Single')),
+                        ButtonSegment(value: DateSelectionMode.range, label: Text('Range')),
+                        ButtonSegment(value: DateSelectionMode.multiple, label: Text('Multiple')),
+                      ],
+                      selected: {ref.watch(calendarControllerProvider).selectionMode},
+                      onSelectionChanged: (value) => ref
+                          .read(calendarControllerProvider.notifier)
+                          .setSelectionMode(value.first),
+                    ),
+                    const CalendarPicker(),
+                  ],
+                ),
               ),
             ),
           ),
