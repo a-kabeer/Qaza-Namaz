@@ -70,19 +70,23 @@ void main() {
     await tester.tap(find.byKey(const Key('history_date_filter')));
     await tester.pumpAndSettle();
 
-    final picker = find.byType(DateRangePickerDialog);
-    expect(picker, findsOneWidget);
+    expect(find.byType(DateRangePickerDialog), findsOneWidget);
     await tester.tap(find.bySemanticsLabel(RegExp(r'Thursday, September 3, 2026')));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel(RegExp(r'Saturday, September 5, 2026')));
     await tester.pumpAndSettle();
 
-    final done = find.text('OK');
-    if (done.evaluate().isNotEmpty) {
-      await tester.tap(done.last);
+    final apply = find.byWidgetPredicate((widget) {
+      if (widget is! Text) return false;
+      final value = widget.data?.toUpperCase();
+      return value == 'SAVE' || value == 'OK' || value == 'DONE';
+    });
+    if (apply.evaluate().isNotEmpty) {
+      await tester.tap(apply.last);
       await tester.pumpAndSettle();
     }
 
+    expect(find.byType(DateRangePickerDialog), findsNothing);
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.text('Zuhr Qaza'), findsNothing);
     expect(find.text('03 Sep 2026 – 05 Sep 2026'), findsOneWidget);
