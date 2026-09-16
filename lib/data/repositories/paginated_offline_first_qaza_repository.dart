@@ -2,11 +2,9 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_history_page.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../local/qaza_local_store.dart';
-import '../sync/sync_state.dart';
+import '../local/sqlite_qaza_local_store.dart';
 import 'offline_first_qaza_repository.dart';
 
-/// Offline-first repository variant whose history browser uses the local
-/// database query directly instead of slicing the in-memory ledger.
 class PaginatedOfflineFirstQazaRepository extends OfflineFirstQazaRepository {
   PaginatedOfflineFirstQazaRepository({
     required QazaRepository remote,
@@ -14,12 +12,7 @@ class PaginatedOfflineFirstQazaRepository extends OfflineFirstQazaRepository {
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
   })  : _historyStore = localStore,
-        super(
-          remote: remote,
-          localStore: localStore,
-          connectivityChanges: connectivityChanges,
-          now: now,
-        );
+        super(remote: remote, localStore: localStore, connectivityChanges: connectivityChanges, now: now);
 
   final QazaLocalStore _historyStore;
 
@@ -34,9 +27,7 @@ class PaginatedOfflineFirstQazaRepository extends OfflineFirstQazaRepository {
     int limit = 25,
     bool ascending = false,
   }) {
-    if (userId != activeUserId) {
-      return Future.value(const QazaHistoryPage(records: []));
-    }
+    if (userId != activeUserId) return Future.value(const QazaHistoryPage(records: []));
     return _historyStore.getHistoryPage(
       userId: userId,
       prayerType: prayerType,
@@ -49,12 +40,10 @@ class PaginatedOfflineFirstQazaRepository extends OfflineFirstQazaRepository {
     );
   }
 
-  @override
-  Future<void> dispose() async {
-    await super.dispose();
-    final store = _historyStore;
-    if (store is SqliteQazaLocalStore) {
-      await store.close();
+  Future<void> close() async {
+    dispose();
+    if (_historyStore is SqliteQazaLocalStore) {
+      await (_historyStore as SqliteQazaLocalStore).close();
     }
   }
 }
