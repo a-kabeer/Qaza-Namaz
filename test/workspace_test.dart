@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -7,6 +6,11 @@ import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'support/in_memory_qaza_repository.dart';
+
+Future<void> _pumpNavigation(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump();
+}
 
 void main() {
   Future<void> pumpWorkspace(WidgetTester tester, InMemoryQazaRepository repository) async {
@@ -17,12 +21,12 @@ void main() {
       overrides: [qazaRepositoryProvider.overrideWithValue(repository), authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com')))],
       child: const MaterialApp(home: WorkspaceShell()),
     ));
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
   }
   Future<void> revealPrayerLedger(WidgetTester tester) async {
     final scrollable = find.byType(Scrollable).first;
     await tester.drag(scrollable, const Offset(0, -500));
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
   }
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
@@ -50,14 +54,14 @@ void main() {
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator').first);
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
     expect(find.text('Qaza estimate calculator'), findsOneWidget);
     await tester.tap(find.text('Logs').first);
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
     expect(find.text('Logs & Progress'), findsOneWidget);
     expect(find.text('No completed Qaza yet.'), findsOneWidget);
     await tester.tap(find.text('Settings').first);
-    await tester.pumpAndSettle();
+    await _pumpNavigation(tester);
     expect(find.text('Account'), findsNWidgets(2));
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
