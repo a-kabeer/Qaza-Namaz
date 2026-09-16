@@ -47,7 +47,7 @@ void main() {
       expect(inactiveStepNumber.style?.color, scheme.onSurfaceVariant);
       expect(contrastRatio(scheme.onSurfaceVariant, scheme.surfaceContainerHighest), greaterThanOrEqualTo(3.0));
 
-      final choiceIcon = tester.widget<Icon>(find.byIcon(Icons.calendar_month_rounded));
+      final choiceIcon = tester.widget<Icon>(find.byIcon(Icons.date_range_rounded).first);
       expect(choiceIcon.color, scheme.onSurfaceVariant);
       expect(contrastRatio(scheme.onSurfaceVariant, background), greaterThanOrEqualTo(3.0));
     });
