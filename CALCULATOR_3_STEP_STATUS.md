@@ -14,7 +14,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 
 ## Parts
 
-- [ ] Part 1 — Audit Current Calculator
+- [x] Part 1 — Audit Current Calculator
 - [ ] Part 2 — 3-Step Calculator Shell
 - [ ] Part 3 — Step 1: About You
 - [ ] Part 4 — Step 2: Prayer History
@@ -84,11 +84,31 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - No unnecessary nested navigation.
 - Clear progress indicator throughout the three steps.
 
+## Part 1 — Audit Findings
+
+### Current screen
+- `CalculatorScreen` is only a placeholder: a title, explanatory text, one numeric `TextField`, and a disabled `Calculate` button.
+- There is no calculator state/controller, stepper, date selection, result model, validation flow, or calculation breakdown.
+- There are no calculator-specific tests or calculator persistence currently attached to this feature.
+
+### Existing architecture to preserve
+- Calculator is already a primary destination in `WorkspaceShell` through `IndexedStack`; the redesign should remain one destination rather than adding nested calculator pages.
+- Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path.
+- The project already has Riverpod and date-normalization utilities used by the Qaza flow; new calculator state should follow these conventions.
+
+### Required implementation direction
+- Replace the placeholder body with a single stateful/Riverpod-backed three-step calculator flow.
+- Introduce a focused calculator state/model for DOB, Baligh method/date, prayer-start method/date, calculation result, and selected Witr inclusion.
+- Keep calculations deterministic and date-only where the domain is date-based.
+- Keep estimated values visibly labeled and prevent estimated results from being treated as exact tracker records without explicit user action.
+- Reuse existing Qaza creation/service rules for tracker insertion and duplicate safety.
+- Add focused tests alongside each implementation part; defer full CI until the agreed integration/final checkpoint.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
 |---|---|---|---|
-| Part 1 | — | — | NOT STARTED |
+| Part 1 | e5f... | — | COMPLETE — audit recorded |
 | Part 2 | — | — | NOT STARTED |
 | Part 3 | — | — | NOT STARTED |
 | Part 4 | — | — | NOT STARTED |
