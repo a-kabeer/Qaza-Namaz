@@ -17,7 +17,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 1 — Audit Current Calculator
 - [x] Part 2 — 3-Step Calculator Shell
 - [x] Part 3 — Step 1: About You
-- [ ] Part 4 — Step 2: Prayer History
+- [x] Part 4 — Step 2: Prayer History
 - [ ] Part 5 — Step 3: Result & Breakdown
 - [ ] Part 6 — Estimated vs Exact Dates
 - [ ] Part 7 — Add to Qaza Tracker
@@ -132,6 +132,20 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Tests
 - Added `test/task_calculator_part3_test.dart` covering initial state, DOB-driven age/estimated date, exact-date mode, and Back/forward state preservation.
 
+## Part 4 — Step 2: Prayer History
+
+### Implemented
+- Added Regular prayer start input mode: age-based or exact date.
+- Default regular-prayer start age is 18 years.
+- Added age selector and exact start-date picker constrained to Baligh date through today.
+- Added automatic estimated prayer-start date for age-based input.
+- Added clear Baligh date, prayer-start date, and calendar-period summary.
+- Calculate/continue remains disabled until the prayer-start information is valid and not before Baligh or in the future.
+- Preserved the existing three-step navigation and Step 1 values when moving Back.
+
+### Tests
+- Added `test/task_calculator_part4_test.dart` covering access to Prayer History and the required start-date/period-summary controls.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
@@ -139,7 +153,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 1 | 48140f50c5f8b1f1be6029518ccc1b0e8fe0db85 | — | COMPLETE — audit recorded |
 | Part 2 | 48551841390e1fecb11e0ed033f507f07de471bd | Focused tests added; full CI deferred | COMPLETE |
 | Part 3 | 43672fbea3ce86f3978fc827fc8b2434a0f5c004 | Focused tests added; full CI deferred | COMPLETE |
-| Part 4 | — | — | NOT STARTED |
+| Part 4 | a172c33a0b480da7e580b43c135454333ebf0efd | Focused tests added; full CI deferred | COMPLETE |
 | Part 5 | — | — | NOT STARTED |
 | Part 6 | — | — | NOT STARTED |
 | Part 7 | — | — | NOT STARTED |
