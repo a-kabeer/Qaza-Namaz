@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_history_page.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../local/qaza_local_store.dart';
@@ -64,9 +65,6 @@ class OfflineFirstQazaRepository implements QazaRepository {
   @override
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
     if (userId != _activeUserId) return const [];
-    if (prayerType == null && status == null) {
-      return _localStore.getRecordsForDates(userId: userId, dates: const [], prayerType: prayerType, status: status);
-    }
     return _localStore.getRecordsForDates(userId: userId, dates: const [], prayerType: prayerType, status: status);
   }
 
@@ -77,9 +75,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   @override
-  Future<void> addRecord(QazaRecord record) async {
-    await addRecords([record]);
-  }
+  Future<void> addRecord(QazaRecord record) async => addRecords([record]);
 
   @override
   Future<void> addRecords(List<QazaRecord> records) async {
@@ -87,15 +83,14 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final userId = _activeUserId;
     if (userId == null) throw StateError('Cannot add Qaza records while signed out.');
     await _ensureLoaded();
-    final dates = records.map((record) => record.originalDate).toSet();
-    final existing = await _localStore.getRecordsForDates(userId: userId, dates: dates);
-    final existingIds = {for (final record in existing) record.id};
-    final existingKeys = {for (final record in existing) _combinationKey(record)};
-    final fresh = <QazaRecord>[];
+    final existing = await _localStore.getRecordsForDates(userId: userId, dates: records.map((record) => record.originalDate));
+    final knownIds = {for (final record in existing) record.id};
+    final knownKeys = {for (final record in existing) _combinationKey(record)};
     final batchKeys = <String>{};
+    final fresh = <QazaRecord>[];
     for (final record in records) {
       final key = _combinationKey(record);
-      if (record.userId != userId || existingIds.contains(record.id) || existingKeys.contains(key) || !batchKeys.add(key)) continue;
+      if (record.userId != userId || knownIds.contains(record.id) || knownKeys.contains(key) || !batchKeys.add(key)) continue;
       fresh.add(record);
     }
     if (fresh.isEmpty) return;
@@ -189,28 +184,47 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   Future<void> _pullRemote(String userId) async {
-    final remoteRecords = await _remote.getRecords(userId: userId);
-    final now = _now();
+    const pageSize = 100;
+    String? cursor;
+    do {
+      final page = await _remote.getHistoryPage(
+        userId: userId,
+        cursor: cursor,
+        limit: pageSize,
+        ascending: true,
+      );
+      if (page.records.isEmpty) break;
+      await _mergeRemotePage(userId, page.records);
+      cursor = page.hasMore ? page.nextCursor : null;
+      if (!page.hasMore) break;
+    } while (true);
+  }
+
+  Future<void> _mergeRemotePage(String userId, List<QazaRecord> remoteRecords) async {
+    if (remoteRecords.isEmpty) return;
+    final local = await _localStore.getRecordsForDates(userId: userId, dates: remoteRecords.map((record) => record.originalDate));
+    final localById = {for (final record in local) record.id: record};
     final queuedCompletionIds = {for (final op in _outbox) if (op.type == SyncOpType.complete) op.targetRecordId};
-    final existing = await _localStore.getRecordsForDates(userId: userId, dates: const []);
-    final localById = {for (final record in existing) record.id: record};
     final updates = <QazaRecord>[];
     var outboxDirty = false;
+    final now = _now();
     for (final remote in remoteRecords) {
-      final local = localById[remote.id];
-      if (local == null) { updates.add(remote); continue; }
+      final current = localById[remote.id];
+      if (current == null) {
+        updates.add(remote);
+        continue;
+      }
       if (remote.status == QazaStatus.completed) {
-        final remoteAt = remote.completedAt;
-        if (local.status != QazaStatus.completed) {
-          updates.add(local.copyWith(status: QazaStatus.completed, completedAt: remoteAt, updatedAt: remote.updatedAt));
+        if (current.status != QazaStatus.completed) {
+          updates.add(current.copyWith(status: QazaStatus.completed, completedAt: remote.completedAt, updatedAt: remote.updatedAt));
           final before = _outbox.length;
           _outbox = _outbox.where((op) => !(op.type == SyncOpType.complete && op.targetRecordId == remote.id)).toList();
-          if (_outbox.length != before) { outboxDirty = true; queuedCompletionIds.remove(remote.id); }
-        } else if (remoteAt != null && local.completedAt != null && remoteAt.isBefore(local.completedAt!)) {
-          updates.add(local.copyWith(completedAt: remoteAt, updatedAt: remote.updatedAt));
+          outboxDirty = outboxDirty || before != _outbox.length;
+        } else if (remote.completedAt != null && current.completedAt != null && remote.completedAt!.isBefore(current.completedAt!)) {
+          updates.add(current.copyWith(completedAt: remote.completedAt, updatedAt: remote.updatedAt));
         }
-      } else if (local.status == QazaStatus.completed && !queuedCompletionIds.contains(remote.id)) {
-        _enqueueCompletions({remote.id}, local.completedAt ?? now);
+      } else if (current.status == QazaStatus.completed && !queuedCompletionIds.contains(remote.id)) {
+        _enqueueCompletions({remote.id}, current.completedAt ?? now);
         outboxDirty = true;
       }
     }
