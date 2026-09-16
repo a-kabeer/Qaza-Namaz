@@ -4,16 +4,14 @@ plugins {
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader("UTF-8") { reader ->
-        localProperties.load(reader)
-    }
+    localProperties.load(localPropertiesFile.newReader("UTF-8"))
 }
 
 def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
@@ -29,6 +27,7 @@ if (flutterVersionName == null) {
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
     compileSdk = flutter.compileSdkVersion
+    // Firebase plugins used by the project require NDK 27 in CI.
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -53,8 +52,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release artifact.
-            // Signing with debug keys is retained so `flutter run --release` remains usable.
+            // TODO: Add your own release signing config.
             signingConfig = signingConfigs.debug
         }
     }
