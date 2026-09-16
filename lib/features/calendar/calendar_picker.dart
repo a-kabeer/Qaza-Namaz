@@ -8,10 +8,10 @@ class CalendarPicker extends ConsumerStatefulWidget {
   const CalendarPicker({
     super.key,
     this.qazaDates = const <DateTime>{},
-    this.unavailableDates = const <DateTime>{},
+    this.isDateUnavailable,
   });
   final Set<DateTime> qazaDates;
-  final Set<DateTime> unavailableDates;
+  final bool Function(DateTime date)? isDateUnavailable;
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
 }
@@ -29,7 +29,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   DateTime get _today => ref.read(calendarTodayProvider);
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _isQazaDate(DateTime date) => widget.qazaDates.any((qaza) => _sameDay(qaza, date));
-  bool _isUnavailableDate(DateTime date) => widget.unavailableDates.any((value) => _sameDay(value, date));
+  bool _isUnavailableDate(DateTime date) => widget.isDateUnavailable?.call(date) ?? false;
   String _hijriLabel(DateTime date) {
     final h = HijriCalendar.fromDate(date);
     return '${h.hDay} ${h.getLongMonthName()} ${h.hYear} AH';
