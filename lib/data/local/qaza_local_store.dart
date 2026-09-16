@@ -34,12 +34,32 @@ abstract interface class QazaLocalStore {
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
+
   Future<DateTime?> getLastSync(String userId) async => (await load()).lastSyncByUser[userId];
   Future<int> getPendingSyncCount(String userId) async => (await load()).outboxByUser[userId]?.length ?? 0;
-  Future<PendingSyncOp?> getNextPendingSyncOp(String userId) async { final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[]; return ops.isEmpty ? null : ops.first; }
-  Future<bool> hasPendingCompletion(String userId, String recordId) async { final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[]; return ops.any((op) => op.type == SyncOpType.complete && op.targetRecordId == recordId); }
-  Future<void> deletePendingSyncOp(String userId, String opId) async { final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[])..removeWhere((op) => op.id == opId); await saveOutbox(userId, ops); }
-  Future<void> updatePendingSyncOp(String userId, PendingSyncOp op) async { final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[]); final index = ops.indexWhere((item) => item.id == op.id); if (index >= 0) ops[index] = op; else ops.add(op); await saveOutbox(userId, ops); }
+  Future<PendingSyncOp?> getNextPendingSyncOp(String userId) async {
+    final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[];
+    return ops.isEmpty ? null : ops.first;
+  }
+  Future<bool> hasPendingCompletion(String userId, String recordId) async {
+    final ops = (await load()).outboxByUser[userId] ?? const <PendingSyncOp>[];
+    return ops.any((op) => op.type == SyncOpType.complete && op.targetRecordId == recordId);
+  }
+  Future<void> deletePendingSyncOp(String userId, String opId) async {
+    final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[])..removeWhere((op) => op.id == opId);
+    await saveOutbox(userId, ops);
+  }
+  Future<void> updatePendingSyncOp(String userId, PendingSyncOp op) async {
+    final ops = List<PendingSyncOp>.of((await load()).outboxByUser[userId] ?? const <PendingSyncOp>[]);
+    final index = ops.indexWhere((item) => item.id == op.id);
+    if (index >= 0) ops[index] = op; else ops.add(op);
+    await saveOutbox(userId, ops);
+  }
+
+  Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
+    final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
+    return records.where((record) => (prayerType == null || record.prayerType == prayerType) && (status == null || record.status == status)).toList(growable: false);
+  }
 
   Future<List<QazaRecord>> getRecordsByIds({required String userId, required Iterable<String> recordIds}) async {
     final ids = recordIds.toSet();
@@ -52,10 +72,41 @@ abstract interface class QazaLocalStore {
     final wanted = dates.map((date) => DateTime(date.year, date.month, date.day)).toSet();
     if (wanted.isEmpty) return const [];
     final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
-    return records.where((record) { final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day); return wanted.contains(date) && (prayerType == null || record.prayerType == prayerType) && (status == null || record.status == status); }).toList(growable: false);
+    return records.where((record) {
+      final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
+      return wanted.contains(date) && (prayerType == null || record.prayerType == prayerType) && (status == null || record.status == status);
+    }).toList(growable: false);
   }
 
-  Future<QazaLedgerSummary> getSummary(String userId) async { final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[]; final byPrayer = <PrayerType, QazaProgress>{}; for (final prayer in PrayerType.values) { final prayerRecords = records.where((r) => r.prayerType == prayer); byPrayer[prayer] = QazaProgress(pending: prayerRecords.where((r) => r.status == QazaStatus.pending).length, completed: prayerRecords.where((r) => r.status == QazaStatus.completed).length); } final pending = records.where((r) => r.status == QazaStatus.pending).length; final completed = records.where((r) => r.status == QazaStatus.completed).length; return QazaLedgerSummary(total: records.length, pending: pending, completed: completed, byPrayer: byPrayer); }
+  Future<QazaLedgerSummary> getSummary(String userId) async {
+    final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
+    final byPrayer = <PrayerType, QazaProgress>{};
+    for (final prayer in PrayerType.values) {
+      final prayerRecords = records.where((r) => r.prayerType == prayer);
+      byPrayer[prayer] = QazaProgress(pending: prayerRecords.where((r) => r.status == QazaStatus.pending).length, completed: prayerRecords.where((r) => r.status == QazaStatus.completed).length);
+    }
+    final pending = records.where((r) => r.status == QazaStatus.pending).length;
+    final completed = records.where((r) => r.status == QazaStatus.completed).length;
+    return QazaLedgerSummary(total: records.length, pending: pending, completed: completed, byPrayer: byPrayer);
+  }
 
-  Future<QazaHistoryPage> getHistoryPage({required String userId, PrayerType? prayerType, QazaStatus? status, DateTime? originalDateFrom, DateTime? originalDateTo, String? cursor, int limit = 25, bool ascending = false}) async { if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero'); final snapshot = await load(); var records = List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const []); records = records.where((r) { final date = DateTime(r.originalDate.year, r.originalDate.month, r.originalDate.day); return (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status) && (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo)); }).toList()..sort((a, b) { final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate); return byDate != 0 ? byDate : a.id.compareTo(b.id); }); var start = 0; if (cursor != null) { final index = records.indexWhere((r) => r.id == cursor); if (index >= 0) start = index + 1; } if (start >= records.length) return const QazaHistoryPage(records: []); final end = (start + limit).clamp(0, records.length); final page = records.sublist(start, end); return QazaHistoryPage(records: List.unmodifiable(page), nextCursor: end < records.length ? page.last.id : null); }
+  Future<QazaHistoryPage> getHistoryPage({required String userId, PrayerType? prayerType, QazaStatus? status, DateTime? originalDateFrom, DateTime? originalDateTo, String? cursor, int limit = 25, bool ascending = false}) async {
+    if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
+    final snapshot = await load();
+    var records = List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const []);
+    records = records.where((r) {
+      final date = DateTime(r.originalDate.year, r.originalDate.month, r.originalDate.day);
+      return (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status) && (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo));
+    }).toList()
+      ..sort((a, b) {
+        final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate);
+        return byDate != 0 ? byDate : a.id.compareTo(b.id);
+      });
+    var start = 0;
+    if (cursor != null) { final index = records.indexWhere((r) => r.id == cursor); if (index >= 0) start = index + 1; }
+    if (start >= records.length) return const QazaHistoryPage(records: []);
+    final end = (start + limit).clamp(0, records.length);
+    final page = records.sublist(start, end);
+    return QazaHistoryPage(records: List.unmodifiable(page), nextCursor: end < records.length ? page.last.id : null);
+  }
 }
