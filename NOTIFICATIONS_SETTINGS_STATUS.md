@@ -33,7 +33,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 5 | Disable workflow | ✅ |
 | 6 | Pending-Qaza scheduling rule | ✅ |
 | 7 | Reminder time workflow | ✅ |
-| 8 | Test notification | ☐ |
+| 8 | Test notification | ✅ |
 | 9 | Persistence & restore | ☐ |
 | 10 | Runtime reconciliation | ☐ |
 | 11 | Theme & responsive UX | ☐ |
@@ -118,9 +118,9 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - The daily schedule remains a single notification ID; reconciliation replaces the existing daily schedule rather than creating additional reminders.
 
 ### Verification coverage
-- Focused notification tests now simulate ledger changes after enabling and verify both transitions: no pending → scheduled and pending → no pending/cancelled.
+- Focused notification tests simulate ledger changes after enabling and verify both transitions: no pending → scheduled and pending → no pending/cancelled.
 - The controller's derived `NotificationScheduleStatus` is asserted as `scheduled` and `noPendingQaza` during those transitions.
-- The Settings screen also exposes the operational state as `No pending Qaza. No reminder is scheduled.` when the preference remains ON without pending work.
+- The Settings screen exposes `No pending Qaza. No reminder is scheduled.` when the preference remains ON without pending work.
 
 ## Part 7 — Reminder Time Workflow ✅
 
@@ -131,6 +131,15 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - When the reminder is disabled, changing the saved time does not schedule a notification; the new time is preserved for the next enable.
 - Invalid hour/minute values are rejected before persistence or scheduling.
 - Focused coverage verifies rescheduling, disabled-state persistence, default formatting, and invalid-time validation.
+
+## Part 8 — Test Notification ✅
+
+- A dedicated one-shot Test Notification action is available on the same Settings screen.
+- Test notifications are blocked until notification permission is granted.
+- The test action delegates to the local notification service without enabling or changing the daily reminder preference.
+- The test notification uses a separate notification ID from the recurring daily reminder, so sending a test cannot replace or duplicate the daily schedule.
+- The UI reports a clear success or failure SnackBar after the test action.
+- Focused tests verify the test action fires successfully, does not change recurring schedule calls, and is rejected when permission is unavailable.
 
 ## Completion Criteria
 The task must not be marked complete until:
