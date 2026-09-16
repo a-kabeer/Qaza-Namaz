@@ -118,6 +118,7 @@ void main() {
 
     expect(find.text('About You'), findsOneWidget);
     await _reachResult(tester);
+    expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(find.text('Result'), findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_prayer_history')), findsOneWidget);
