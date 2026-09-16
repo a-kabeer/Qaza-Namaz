@@ -38,14 +38,11 @@ class NotificationSettingsState {
   final NotificationPermissionStatus permissionStatus;
   final bool hasPendingQaza;
 
-  bool get canSendNotifications =>
-      permissionStatus == NotificationPermissionStatus.granted;
+  bool get canSendNotifications => permissionStatus == NotificationPermissionStatus.granted;
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
-    if (!canSendNotifications) {
-      return NotificationScheduleStatus.permissionRequired;
-    }
+    if (!canSendNotifications) return NotificationScheduleStatus.permissionRequired;
     if (!hasPendingQaza) return NotificationScheduleStatus.noPendingQaza;
     return NotificationScheduleStatus.scheduled;
   }
@@ -73,16 +70,18 @@ class NotificationSettingsState {
   }
 }
 
-class NotificationSettingsNotifier
-    extends AsyncNotifier<NotificationSettingsState> {
+class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsState> {
   static const _enabledKey = 'qaza_daily_notification_enabled';
   static const _hourKey = 'qaza_daily_notification_hour';
   static const _minuteKey = 'qaza_daily_notification_minute';
-  static const _permissionRequestedKey =
-      'qaza_notification_permission_requested';
+  static const _permissionRequestedKey = 'qaza_notification_permission_requested';
 
-  NotificationScheduler get _scheduler =>
-      ref.read(notificationSchedulerProvider);
+  NotificationScheduler get _scheduler => ref.read(notificationSchedulerProvider);
+
+  String _scopedKey(String baseKey) {
+    final userId = ref.read(activeUserIdProvider);
+    return '$baseKey:${userId ?? 'anonymous'}';
+  }
 
   @override
   Future<NotificationSettingsState> build() async {
@@ -97,9 +96,7 @@ class NotificationSettingsNotifier
     final requested = prefs.getBool(_permissionRequestedKey) ?? false;
     final permissionGranted = await _scheduler.isPermissionGranted();
     final records = await ref.read(qazaRecordsProvider.future);
-    final hasPendingQaza = records.any(
-      (record) => record.status == QazaStatus.pending,
-    );
+    final hasPendingQaza = records.any((record) => record.status == QazaStatus.pending);
 
     final permissionStatus = permissionGranted
         ? NotificationPermissionStatus.granted
@@ -108,9 +105,9 @@ class NotificationSettingsNotifier
             : NotificationPermissionStatus.notRequested;
 
     return NotificationSettingsState(
-      enabled: prefs.getBool(_enabledKey) ?? false,
-      hour: prefs.getInt(_hourKey) ?? _defaultReminderHour,
-      minute: prefs.getInt(_minuteKey) ?? _defaultReminderMinute,
+      enabled: prefs.getBool(_scopedKey(_enabledKey)) ?? false,
+      hour: prefs.getInt(_scopedKey(_hourKey)) ?? _defaultReminderHour,
+      minute: prefs.getInt(_scopedKey(_minuteKey)) ?? _defaultReminderMinute,
       permissionStatus: permissionStatus,
       hasPendingQaza: hasPendingQaza,
     );
@@ -159,8 +156,7 @@ class NotificationSettingsNotifier
     }
 
     try {
-      final granted = current.canSendNotifications ||
-          await _scheduler.requestPermission();
+      final granted = current.canSendNotifications || await _scheduler.requestPermission();
       if (!granted) {
         final next = current.copyWith(
           enabled: false,
@@ -204,9 +200,7 @@ class NotificationSettingsNotifier
 
   Future<void> sendTestNotification() async {
     final current = state.valueOrNull;
-    if (current == null) {
-      throw StateError('Notification settings are not loaded.');
-    }
+    if (current == null) throw StateError('Notification settings are not loaded.');
     if (!current.canSendNotifications) {
       throw StateError('Notification permission is required first.');
     }
@@ -219,9 +213,7 @@ class NotificationSettingsNotifier
     if (records == null || current == null) return;
 
     final updated = current.copyWith(
-      hasPendingQaza: records.any(
-        (record) => record.status == QazaStatus.pending,
-      ),
+      hasPendingQaza: records.any((record) => record.status == QazaStatus.pending),
     );
     state = AsyncData(updated);
     _reconcile(updated);
@@ -235,10 +227,7 @@ class NotificationSettingsNotifier
         await _scheduler.cancelDaily();
         return;
       case NotificationScheduleStatus.scheduled:
-        await _scheduler.scheduleDaily(
-          hour: value.hour,
-          minute: value.minute,
-        );
+        await _scheduler.scheduleDaily(hour: value.hour, minute: value.minute);
     }
   }
 
@@ -247,9 +236,9 @@ class NotificationSettingsNotifier
     required bool? permissionRequested,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_enabledKey, value.enabled);
-    await prefs.setInt(_hourKey, value.hour);
-    await prefs.setInt(_minuteKey, value.minute);
+    await prefs.setBool(_scopedKey(_enabledKey), value.enabled);
+    await prefs.setInt(_scopedKey(_hourKey), value.hour);
+    await prefs.setInt(_scopedKey(_minuteKey), value.minute);
     if (permissionRequested != null) {
       await prefs.setBool(_permissionRequestedKey, permissionRequested);
     }
@@ -260,7 +249,6 @@ final notificationSchedulerProvider = Provider<NotificationScheduler>(
   (ref) => LocalNotificationService(),
 );
 
-final notificationSettingsProvider = AsyncNotifierProvider<
-    NotificationSettingsNotifier, NotificationSettingsState>(
+final notificationSettingsProvider = AsyncNotifierProvider<NotificationSettingsNotifier, NotificationSettingsState>(
   NotificationSettingsNotifier.new,
 );
