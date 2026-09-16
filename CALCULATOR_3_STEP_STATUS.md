@@ -22,8 +22,8 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 6 — Estimated vs Exact Dates
 - [x] Part 7 — Add to Qaza Tracker
 - [x] Part 8 — Edit & Recalculate Flow
-- [ ] Part 9 — Validation & Edge Cases
-- [ ] Part 10 — Local Persistence & Restore
+- [x] Part 9 — Validation & Edge Cases
+- [x] Part 10 — Local Persistence & Restore
 - [ ] Part 11 — Theme & Responsive UX
 - [ ] Part 12 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
@@ -77,6 +77,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Persistence
 - Latest calculator inputs/result restore locally.
 - Reopening Calculator shows previous result with Edit/Recalculate actions.
+- Calculator persistence is namespaced by user ID when available.
 
 ### UI/UX
 - Light, Dark, and System themes readable.
@@ -95,6 +96,13 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - Calculator is already a primary `WorkspaceShell` destination; the redesign remains one destination rather than adding nested calculator pages.
 - Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path.
 - The existing prayer model contains the six supported prayer types and labels; the calculator should reuse these domain constants rather than create a second prayer list.
+
+### Required implementation direction
+- Use a single stateful three-step calculator flow.
+- Keep calculation state focused on DOB, Baligh method/date, prayer-start method/date, result, and Witr inclusion.
+- Keep calculations deterministic and date-only where the domain is date-based.
+- Keep estimated values visibly labeled.
+- Reuse existing Qaza creation/service rules for tracker insertion and duplicate safety.
 
 ## Part 2 — 3-Step Calculator Shell
 
@@ -191,6 +199,33 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Tests
 - Updated `test/calculator_shell_test.dart` to exercise valid three-step navigation under the current validation rules and both Result edit actions.
 
+## Part 9 — Validation & Edge Cases
+
+### Implemented
+- Hardened calculator calculation against reversed periods with an explicit `ArgumentError`.
+- Preserved date-only normalization before validation/calculation.
+- Covered future DOB/Baligh/prayer-start and ordering constraints.
+- Preserved zero-day periods with zero prayer totals.
+
+### Tests
+- Added `test/task_calculator_part9_test.dart` for future dates, ordering, normalization, zero-day periods, and reversed calculations.
+
+## Part 10 — Local Persistence & Restore
+
+### Implemented
+- Added `CalculatorSnapshot` with explicit schema versioning for calculator inputs and current flow state.
+- Added `CalculatorPersistence` backed by existing `shared_preferences` dependency.
+- Saved DOB, Baligh mode/age/date, prayer-start mode/age/date, Witr inclusion, current step, calculation presence, and Keep-as-Estimate state.
+- Persistence is namespaced by Firebase UID when available, with an isolated anonymous key for non-authenticated/test usage.
+- Restore reconstructs the calculation deterministically from persisted effective dates instead of storing duplicated result counters.
+- Restored results return directly to the saved Result step when the saved calculation remains valid.
+- Persistence writes are serialized through a small in-screen save queue to avoid stale asynchronous writes winning the race.
+- Added a brief restore progress indicator and disabled actions until restoration finishes.
+- Malformed stored data fails safely without corrupting the active calculator state.
+
+### Tests
+- Added `test/task_calculator_part10_test.dart` covering round-trip persistence, UID isolation, missing values, and malformed stored data.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
@@ -203,8 +238,8 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 6 | 59a9329d61a7b7132f9931f2d0a05fb28a643058 | Focused tests added; full CI deferred | COMPLETE |
 | Part 7 | 8e90edc09347cc47a7bd7b82601e13b89a9738d7 | Focused tests added; full CI deferred | COMPLETE |
 | Part 8 | 799938a3a124bc855349dac4395ac7ada94cb83f + cefc4f5884e35638c348aa3dc2710987424779e4 | Focused tests added; full CI deferred | COMPLETE |
-| Part 9 | — | — | NOT STARTED |
-| Part 10 | — | — | NOT STARTED |
+| Part 9 | 202dd20bf6ec6562d066b9c7bd638312d66c6847 | Focused tests added; full CI deferred | COMPLETE |
+| Part 10 | c928d820d4e5d27acf71c99dd574f5e99101b963 + 8389f552ac3da8ef55409ecea65ed9fdf7744686 | Focused persistence tests added; integration CI deferred | COMPLETE |
 | Part 11 | — | — | NOT STARTED |
 | Part 12 | — | — | NOT STARTED |
 | Final | — | Full CI required | NOT STARTED |
