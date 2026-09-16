@@ -5,18 +5,14 @@ final calendarTodayProvider = Provider<DateTime>((ref) {
   return DateTime(now.year, now.month, now.day);
 });
 
-enum CalendarMode { gregorian, hijri }
-
 enum DateSelectionMode { single, range, multiple }
 
 class CalendarSelectionState {
   const CalendarSelectionState({
-    this.calendarMode = CalendarMode.gregorian,
     this.selectionMode = DateSelectionMode.single,
     this.selectedDates = const <DateTime>[],
   });
 
-  final CalendarMode calendarMode;
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
 
@@ -33,19 +29,19 @@ class CalendarSelectionState {
     final start = selectedDates.first;
     final end = selectedDates.last;
     final dates = <DateTime>[];
-    for (var date = start; !date.isAfter(end); date = DateTime(date.year, date.month, date.day + 1)) {
+    for (var date = start;
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)) {
       dates.add(date);
     }
     return dates;
   }
 
   CalendarSelectionState copyWith({
-    CalendarMode? calendarMode,
     DateSelectionMode? selectionMode,
     List<DateTime>? selectedDates,
   }) {
     return CalendarSelectionState(
-      calendarMode: calendarMode ?? this.calendarMode,
       selectionMode: selectionMode ?? this.selectionMode,
       selectedDates: List.unmodifiable(selectedDates ?? this.selectedDates),
     );
@@ -58,10 +54,6 @@ final calendarControllerProvider =
 class CalendarController extends Notifier<CalendarSelectionState> {
   @override
   CalendarSelectionState build() => const CalendarSelectionState();
-
-  void setCalendarMode(CalendarMode mode) {
-    state = state.copyWith(calendarMode: mode, selectedDates: const []);
-  }
 
   void setSelectionMode(DateSelectionMode mode) {
     state = state.copyWith(selectionMode: mode, selectedDates: const []);
