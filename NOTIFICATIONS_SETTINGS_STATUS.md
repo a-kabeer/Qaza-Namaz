@@ -29,7 +29,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 1 | Audit & baseline | ✅ |
 | 2 | Notification state model | ✅ |
 | 3 | Production Notifications UI | ✅ |
-| 4 | Enable workflow | ☐ |
+| 4 | Enable workflow | ✅ |
 | 5 | Disable workflow | ☐ |
 | 6 | Pending-Qaza scheduling rule | ☐ |
 | 7 | Reminder time workflow | ☐ |
@@ -68,7 +68,7 @@ The first full CI run showed one notification test expectation mismatch: the fak
 ## Part 2 — Notification State Model ✅
 
 ### State model implemented
-- `NotificationPermissionStatus` now explicitly represents `notRequested`, `granted`, `denied`, `unavailable`, and `restricted` states.
+- `NotificationPermissionStatus` explicitly represents `notRequested`, `granted`, `denied`, and `unavailable` states at runtime.
 - `NotificationScheduleStatus` separates the user's reminder preference from the derived operational state: `disabled`, `permissionRequired`, `noPendingQaza`, or `scheduled`.
 - Scheduling decisions are derived from enablement + permission + pending-Qaza state instead of treating `enabled` as proof that a reminder is actually scheduled.
 - The selected reminder time remains part of the persisted configuration and is independent from whether the reminder is currently active.
@@ -76,23 +76,28 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - Re-enabling an already-enabled reminder reconciles the actual schedule instead of silently skipping reconciliation.
 
 ### Part 2 verification coverage
-- Tests now cover the default state and derived schedule state.
+- Tests cover the default state and derived schedule state.
 - Tests cover the permission-request path with a distinct initial permission-status simulation.
 - Tests cover disabled, scheduled, no-pending, and denied/permission-required state transitions.
 
 ## Part 3 — Production Notifications UI ✅
 
-### UI implemented
-- Kept the workflow on one Notifications Settings screen with no extra sub-pages.
-- Added a clear Daily Qaza reminder switch with concise state-aware supporting text.
-- Reminder time uses the native Material time picker and is disabled while the reminder is OFF.
-- Added an inline permission-status card with distinct copy for allowed, not requested, blocked, and unavailable states.
-- Added a direct permission action for not-requested/blocked states without introducing another settings page.
-- Added a clear derived Reminder status card showing Off, Permission required, No pending Qaza, or Scheduled states.
-- Added an inline Send test notification action, disabled when notification permission is unavailable.
-- Added lifecycle refresh on app resume so the screen reflects permission changes made outside the app.
-- Added basic busy-state protection to prevent duplicate taps while permission, scheduling, time selection, or test delivery is processing.
-- Kept Material/theme-based styling with responsive `ListView` layout and no hardcoded custom colors.
+- Notifications is a single Settings screen with no unnecessary sub-pages.
+- The daily reminder switch, reminder time, permission state, derived reminder status, and test action are visible in one compact flow.
+- Reminder time is disabled while the reminder is OFF.
+- Permission actions are available for not-requested and denied states.
+- UI copy is concise and explains when the recurring reminder is actually scheduled.
+- Controls are guarded against duplicate taps while an asynchronous notification operation is running.
+- Existing Material theme colors are used instead of custom hardcoded notification colors.
+
+## Part 4 — Enable Workflow ✅
+
+- Enabling checks the current OS notification permission before allowing the reminder to remain enabled.
+- When permission is not already granted, the app requests notification permission and only proceeds when granted.
+- Denied permission leaves the reminder disabled and exposes an actionable blocked state in Settings.
+- Successful enable persists the user's preference and reconciles scheduling using the selected time and pending-Qaza state.
+- Enabling with no pending Qaza keeps the preference enabled but does not create a recurring notification.
+- Re-enabling an already enabled reminder still reconciles the actual schedule instead of creating duplicates.
 
 ## Completion Criteria
 The task must not be marked complete until:
