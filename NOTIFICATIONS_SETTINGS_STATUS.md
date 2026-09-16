@@ -9,13 +9,6 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 ## Overall Status
 **In progress**
 
-## Current checkpoint
-- Notification UX and controller/service integration implemented.
-- PR #14 opened against `main`.
-- First full CI run failed only on a permission-state test expectation; implementation/analyze passed.
-- Permission-state test has been corrected to simulate a genuinely not-requested state before requesting permission.
-- Next verification: focused notification tests, then final full CI and supported Android runtime/manual verification.
-
 ## Scope
 - One Settings → Notifications screen; no unnecessary sub-pages.
 - Daily Qaza Reminder switch.
@@ -34,19 +27,43 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | Part | Area | Status |
 |---|---|---|
 | 1 | Audit & baseline | ✅ |
-| 2 | Notification state model | ✅ |
-| 3 | Production Notifications UI | ✅ |
-| 4 | Enable workflow | ✅ |
-| 5 | Disable workflow | ✅ |
-| 6 | Pending-Qaza scheduling rule | ✅ |
-| 7 | Reminder time workflow | ✅ |
-| 8 | Test notification | ✅ |
-| 9 | Persistence & restore | ✅ |
-| 10 | Runtime reconciliation | ✅ |
-| 11 | Theme & responsive UX | ✅ |
-| 12 | Notification tests | 🔄 Fix + rerun |
+| 2 | Notification state model | ☐ |
+| 3 | Production Notifications UI | ☐ |
+| 4 | Enable workflow | ☐ |
+| 5 | Disable workflow | ☐ |
+| 6 | Pending-Qaza scheduling rule | ☐ |
+| 7 | Reminder time workflow | ☐ |
+| 8 | Test notification | ☐ |
+| 9 | Persistence & restore | ☐ |
+| 10 | Runtime reconciliation | ☐ |
+| 11 | Theme & responsive UX | ☐ |
+| 12 | Notification tests | ☐ |
 | 13 | Integration & regression | ☐ |
 | 14 | Final verification & completion | ☐ |
+
+## Part 1 — Audit & Baseline ✅
+
+### Existing implementation audited
+- `NotificationsScreen` was a minimal two-card workflow with a daily switch, time picker, and static explanation.
+- Reminder time remained tappable even when the reminder was OFF.
+- No visible notification permission/status state was exposed to the user.
+- No test-notification action was exposed.
+- The existing scheduler already used a single recurring notification ID and cancelled before rescheduling, providing a good base for one-reminder behavior.
+- Permission handling was Android-focused through `requestNotificationsPermission()` and did not expose a separate status/reconciliation model.
+- Existing notification settings were persisted locally with SharedPreferences but were not UID-scoped.
+- Existing scheduler had no pending-Qaza gate, so it could schedule even when the ledger was empty.
+- Existing focused notification tests covered the original enable/disable/time/persistence behavior and were extended for the new workflow.
+
+### Audit decisions
+- Preserve the current local-notification architecture and extend it rather than replacing it.
+- Keep Notifications as one Settings screen with inline permission/status, reminder control, time selection, and test action.
+- Derive pending-Qaza state from the existing `qazaRecordsProvider` so scheduling remains tied to the real ledger.
+- Reconcile OS permission and scheduled state when settings are loaded/resumed instead of trusting only persisted preferences.
+- Keep the selected time when the reminder is disabled.
+- Treat scheduling as a single daily reminder; test notification uses a separate one-shot notification ID.
+
+### Baseline issue carried into implementation
+The first full CI run showed one notification test expectation mismatch: the fake scheduler reported permission as granted during initial status loading, so the controller correctly skipped requesting permission. The test was updated to model the permission state expected by the enable-flow assertion.
 
 ## Completion Criteria
 The task must not be marked complete until:
