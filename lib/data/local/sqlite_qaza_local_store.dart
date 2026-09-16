@@ -9,16 +9,11 @@ import '../../domain/entities/qaza_history_page.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'qaza_local_store.dart';
 
-/// SQLite-backed local persistence with indexed, bounded history queries.
-///
-/// Existing SharedPreferences JSON is imported once on first open. The legacy
-/// payload is never modified by this migration, allowing recovery if a future
-/// release needs to retry the import.
 class SqliteQazaLocalStore implements QazaLocalStore {
   SqliteQazaLocalStore({this.databaseName = 'qaza_namaz.sqlite'});
 
   static const _version = 1;
-  static const _migrationKey = 'qaza_sqlite_migration_v1_complete';
+  static const _migrationName = 'shared_preferences_v1';
   static const _legacyKey = 'qaza_offline_cache_v1';
 
   final String databaseName;
@@ -31,18 +26,11 @@ class SqliteQazaLocalStore implements QazaLocalStore {
       p.join(databasesPath, databaseName),
       version: _version,
       onCreate: (db, _) async {
-        await db.execute('''
-          CREATE TABLE qaza_records (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            prayer_type TEXT NOT NULL,
-            original_date TEXT NOT NULL,
-            status TEXT NOT NULL,
-            completed_at TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-          )
-        ''');
+        await db.execute('CREATE TABLE qaza_meta (name TEXT PRIMARY KEY, value TEXT NOT NULL)');
+        await db.execute('''CREATE TABLE qaza_records (
+          id TEXT PRIMARY KEY, user_id TEXT NOT NULL, prayer_type TEXT NOT NULL,
+          original_date TEXT NOT NULL, status TEXT NOT NULL, completed_at TEXT,
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''');
         await db.execute('CREATE INDEX idx_qaza_user_date ON qaza_records(user_id, original_date DESC, id DESC)');
         await db.execute('CREATE INDEX idx_qaza_user_prayer ON qaza_records(user_id, prayer_type, original_date DESC, id DESC)');
         await db.execute('CREATE INDEX idx_qaza_user_status ON qaza_records(user_id, status, original_date DESC, id DESC)');
@@ -56,11 +44,13 @@ class SqliteQazaLocalStore implements QazaLocalStore {
   }
 
   Future<void> _migrateLegacyIfNeeded(Database db) async {
+    final marker = await db.query('qaza_meta', where: 'name = ?', whereArgs: [_migrationName], limit: 1);
+    if (marker.isNotEmpty) return;
+
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_migrationKey) == true) return;
     final raw = prefs.getString(_legacyKey);
     if (raw == null || raw.isEmpty) {
-      await prefs.setBool(_migrationKey, true);
+      await db.insert('qaza_meta', {'name': _migrationName, 'value': 'empty'}, conflictAlgorithm: ConflictAlgorithm.replace);
       return;
     }
 
@@ -71,31 +61,22 @@ class SqliteQazaLocalStore implements QazaLocalStore {
 
     await db.transaction((txn) async {
       for (final entry in users.entries) {
-        final records = entry.value as List<dynamic>;
-        for (final item in records) {
+        for (final item in entry.value as List<dynamic>) {
           final record = QazaRecord.fromJson(item as Map<String, dynamic>);
           await txn.insert('qaza_records', _recordValues(record), conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       }
       for (final entry in outbox.entries) {
-        for (final item in (entry.value as List<dynamic>)) {
+        for (final item in entry.value as List<dynamic>) {
           final op = PendingSyncOp.fromJson(item as Map<String, dynamic>);
-          await txn.insert('qaza_outbox', {
-            'id': op.id,
-            'user_id': op.userId,
-            'payload': jsonEncode(op.toJson()),
-          }, conflictAlgorithm: ConflictAlgorithm.ignore);
+          await txn.insert('qaza_outbox', {'id': op.id, 'user_id': op.userId, 'payload': jsonEncode(op.toJson())}, conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       }
       for (final entry in sync.entries) {
-        await txn.insert('qaza_sync_meta', {
-          'user_id': entry.key,
-          'last_sync': entry.value as String,
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('qaza_sync_meta', {'user_id': entry.key, 'last_sync': entry.value as String}, conflictAlgorithm: ConflictAlgorithm.replace);
       }
+      await txn.insert('qaza_meta', {'name': _migrationName, 'value': 'complete'}, conflictAlgorithm: ConflictAlgorithm.replace);
     });
-
-    await prefs.setBool(_migrationKey, true);
   }
 
   Map<String, Object?> _recordValues(QazaRecord r) => {
@@ -198,7 +179,7 @@ class SqliteQazaLocalStore implements QazaLocalStore {
     if (originalDateFrom != null) { where.add('original_date >= ?'); args.add(_dateKey(originalDateFrom)); }
     if (originalDateTo != null) { where.add('original_date <= ?'); args.add(_dateKey(originalDateTo)); }
     if (cursor != null) {
-      final cursorRow = await db.query('qaza_records', columns: ['original_date', 'id'], where: 'id = ? AND user_id = ?', whereArgs: [cursor, userId], limit: 1);
+      final cursorRow = await db.query('qaza_records', columns: ['original_date', 'id'], where: 'id = ? AND user_id = ?', whereArgs: [cursor, userId], limit: '1');
       if (cursorRow.isNotEmpty) {
         final date = cursorRow.first['original_date']! as String;
         final id = cursorRow.first['id']! as String;
@@ -207,7 +188,7 @@ class SqliteQazaLocalStore implements QazaLocalStore {
       }
     }
     final order = ascending ? 'original_date ASC, id ASC' : 'original_date DESC, id DESC';
-    final rows = await db.query('qaza_records', where: where.join(' AND '), whereArgs: args, orderBy: order, limit: limit + 1);
+    final rows = await db.query('qaza_records', where: where.join(' AND '), whereArgs: args, orderBy: order, limit: '${limit + 1}');
     final hasMore = rows.length > limit;
     final pageRows = hasMore ? rows.take(limit).toList() : rows;
     final records = pageRows.map(_recordFromRow).toList(growable: false);
