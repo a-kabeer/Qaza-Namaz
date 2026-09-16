@@ -51,10 +51,15 @@ class _FakeScheduler implements NotificationScheduler {
 
 class _FakeQazaRecordsNotifier extends QazaRecordsNotifier {
   _FakeQazaRecordsNotifier(this.records);
-  final List<QazaRecord> records;
+  List<QazaRecord> records;
 
   @override
   Future<List<QazaRecord>> build() async => records;
+
+  void setRecords(List<QazaRecord> next) {
+    records = next;
+    state = AsyncData(next);
+  }
 }
 
 QazaRecord _pendingRecord() {
@@ -153,6 +158,36 @@ void main() {
     expect(await notifier.setEnabled(true), isTrue);
     expect(scheduler.scheduleCalls, 0);
     expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
+  });
+
+  test('pending-Qaza changes schedule and cancel the daily reminder', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    await notifier.setEnabled(true);
+    final recordsNotifier =
+        container.read(qazaRecordsProvider.notifier) as _FakeQazaRecordsNotifier;
+
+    recordsNotifier.setRecords([_pendingRecord()]);
+    await Future<void>.delayed(Duration.zero);
+    expect(scheduler.scheduleCalls, 1);
+    expect(container.read(notificationSettingsProvider).requireValue.hasPendingQaza, isTrue);
+    expect(
+      container.read(notificationSettingsProvider).requireValue.scheduleStatus,
+      NotificationScheduleStatus.scheduled,
+    );
+
+    final cancelCallsBeforeRemoval = scheduler.cancelCalls;
+    recordsNotifier.setRecords(const <QazaRecord>[]);
+    await Future<void>.delayed(Duration.zero);
+    expect(scheduler.cancelCalls, greaterThan(cancelCallsBeforeRemoval));
+    expect(container.read(notificationSettingsProvider).requireValue.hasPendingQaza, isFalse);
+    expect(
+      container.read(notificationSettingsProvider).requireValue.scheduleStatus,
+      NotificationScheduleStatus.noPendingQaza,
+    );
   });
 
   test('changing reminder time reschedules with the selected time when pending exists', () async {
