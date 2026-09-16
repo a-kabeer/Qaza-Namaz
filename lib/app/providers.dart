@@ -14,6 +14,7 @@ import '../data/repositories/paginated_offline_first_qaza_repository.dart';
 import '../data/sync/sync_state.dart';
 import '../domain/entities/app_user.dart';
 import '../domain/entities/qaza_ledger_summary.dart';
+import '../domain/entities/qaza_progress.dart';
 import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
@@ -69,9 +70,7 @@ class QazaRecordsNotifier extends AsyncNotifier<List<QazaRecord>> {
     final completedAt = DateTime.now();
     await ref.read(qazaServiceProvider).completeRecord(userId: userId, recordId: target.id, completedAt: completedAt);
     final latest = state.valueOrNull;
-    if (latest != null) {
-      state = AsyncData([for (final record in latest) if (record.id == target.id) record.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt) else record]);
-    }
+    if (latest != null) state = AsyncData([for (final record in latest) if (record.id == target.id) record.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt) else record]);
     return true;
   }
 }
