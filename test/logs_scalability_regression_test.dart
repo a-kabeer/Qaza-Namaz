@@ -17,13 +17,19 @@ QazaRecord _record(int index) => QazaRecord(
     );
 
 void main() {
-  test('large ledger returns only the requested page', () async {
+  test('large ledger returns bounded, non-overlapping pages', () async {
     final repository = InMemoryQazaRepository();
-    await repository.addRecords([for (var i = 0; i < 2000; i++) _record(i)]);
+    await repository.addRecords([
+      for (var i = 0; i < 2000; i++) _record(i),
+    ]);
 
-    final first = await repository.getHistoryPage(userId: 'u1', limit: 25);
+    final first = await repository.getHistoryPage(
+      userId: 'u1',
+      limit: 25,
+    );
     expect(first.records, hasLength(25));
     expect(first.hasMore, isTrue);
+    expect(first.nextCursor, isNotNull);
 
     final second = await repository.getHistoryPage(
       userId: 'u1',
@@ -31,12 +37,19 @@ void main() {
       cursor: first.nextCursor,
     );
     expect(second.records, hasLength(25));
-    expect(second.records.map((r) => r.id).toSet().intersection(first.records.map((r) => r.id).toSet()), isEmpty);
+    expect(
+      second.records.map((r) => r.id).toSet().intersection(
+            first.records.map((r) => r.id).toSet(),
+          ),
+      isEmpty,
+    );
   });
 
-  test('filtered large ledger remains bounded', () async {
+  test('filtered large ledger remains bounded and correctly filtered', () async {
     final repository = InMemoryQazaRepository();
-    await repository.addRecords([for (var i = 0; i < 2000; i++) _record(i)]);
+    await repository.addRecords([
+      for (var i = 0; i < 2000; i++) _record(i),
+    ]);
 
     final page = await repository.getHistoryPage(
       userId: 'u1',
@@ -46,7 +59,13 @@ void main() {
     );
 
     expect(page.records.length, lessThanOrEqualTo(25));
-    expect(page.records.every((r) => r.prayerType == PrayerType.fajr), isTrue);
-    expect(page.records.every((r) => r.status == QazaStatus.pending), isTrue);
+    expect(
+      page.records.every(
+        (record) =>
+            record.prayerType == PrayerType.fajr &&
+            record.status == QazaStatus.pending,
+      ),
+      isTrue,
+    );
   });
 }
