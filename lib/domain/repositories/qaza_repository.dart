@@ -7,23 +7,18 @@ import '../entities/qaza_record.dart';
 abstract interface class QazaRepository {
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status});
 
-  /// Reads only records belonging to the requested dates. Database-backed
-  /// implementations should override this with an indexed query.
-  Future<List<QazaRecord>> getRecordsForDates({
-    required String userId,
-    required Iterable<DateTime> dates,
-    PrayerType? prayerType,
-    QazaStatus? status,
-  }) async {
-    final wanted = dates
-        .map((date) => DateTime(date.year, date.month, date.day))
-        .toSet();
+  Future<List<QazaRecord>> getRecordsByIds({required String userId, required Iterable<String> recordIds}) async {
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final records = await getRecords(userId: userId);
+    return records.where((record) => ids.contains(record.id)).toList(growable: false);
+  }
+
+  Future<List<QazaRecord>> getRecordsForDates({required String userId, required Iterable<DateTime> dates, PrayerType? prayerType, QazaStatus? status}) async {
+    final wanted = dates.map((date) => DateTime(date.year, date.month, date.day)).toSet();
     if (wanted.isEmpty) return const <QazaRecord>[];
     final records = await getRecords(userId: userId, prayerType: prayerType, status: status);
-    return records.where((record) {
-      final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
-      return wanted.contains(date);
-    }).toList(growable: false);
+    return records.where((record) => wanted.contains(DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day))).toList(growable: false);
   }
 
   Future<QazaLedgerSummary> getSummary(String userId) async {
@@ -31,10 +26,7 @@ abstract interface class QazaRepository {
     final byPrayer = <PrayerType, QazaProgress>{};
     for (final prayer in PrayerType.values) {
       final prayerRecords = records.where((r) => r.prayerType == prayer);
-      byPrayer[prayer] = QazaProgress(
-        pending: prayerRecords.where((r) => r.status == QazaStatus.pending).length,
-        completed: prayerRecords.where((r) => r.status == QazaStatus.completed).length,
-      );
+      byPrayer[prayer] = QazaProgress(pending: prayerRecords.where((r) => r.status == QazaStatus.pending).length, completed: prayerRecords.where((r) => r.status == QazaStatus.completed).length);
     }
     final pending = records.where((r) => r.status == QazaStatus.pending).length;
     final completed = records.where((r) => r.status == QazaStatus.completed).length;
@@ -48,15 +40,9 @@ abstract interface class QazaRepository {
       final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
       return (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo));
     }).toList()
-      ..sort((a, b) {
-        final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate);
-        return byDate != 0 ? byDate : a.id.compareTo(b.id);
-      });
+      ..sort((a, b) { final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate); return byDate != 0 ? byDate : a.id.compareTo(b.id); });
     var start = 0;
-    if (cursor != null) {
-      final index = filtered.indexWhere((record) => record.id == cursor);
-      if (index >= 0) start = index + 1;
-    }
+    if (cursor != null) { final index = filtered.indexWhere((record) => record.id == cursor); if (index >= 0) start = index + 1; }
     if (start >= filtered.length) return const QazaHistoryPage(records: []);
     final end = (start + limit).clamp(0, filtered.length);
     final page = filtered.sublist(start, end);
