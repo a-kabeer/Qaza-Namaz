@@ -39,13 +39,13 @@ void main() {
         expect(contrastRatio(color!, background), greaterThanOrEqualTo(3.0));
       }
 
-      final activeStep = find.byKey(const Key('qaza_progress_step_1'));
-      final activeStepNumber = tester.widget<Text>(find.descendant(of: activeStep, matching: find.byType(Text)));
+      final activeStep = tester.widget<CircleAvatar>(find.byKey(const Key('qaza_progress_step_1')));
+      final activeStepNumber = activeStep.child! as Text;
       expect(activeStepNumber.style?.color, scheme.onPrimary);
       expect(contrastRatio(scheme.onPrimary, scheme.primary), greaterThanOrEqualTo(3.0));
 
-      final inactiveStep = find.byKey(const Key('qaza_progress_step_2'));
-      final inactiveStepNumber = tester.widget<Text>(find.descendant(of: inactiveStep, matching: find.byType(Text)));
+      final inactiveStep = tester.widget<CircleAvatar>(find.byKey(const Key('qaza_progress_step_2')));
+      final inactiveStepNumber = inactiveStep.child! as Text;
       expect(inactiveStepNumber.style?.color, scheme.onSurfaceVariant);
       expect(contrastRatio(scheme.onSurfaceVariant, scheme.surfaceContainerHighest), greaterThanOrEqualTo(3.0));
 
