@@ -1,14 +1,11 @@
 import '../../core/constants/prayer_types.dart';
 import '../entities/qaza_history_page.dart';
 import '../entities/qaza_ledger_summary.dart';
+import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 
 abstract interface class QazaRepository {
-  Future<List<QazaRecord>> getRecords({
-    required String userId,
-    PrayerType? prayerType,
-    QazaStatus? status,
-  });
+  Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status});
 
   Future<QazaLedgerSummary> getSummary(String userId) async {
     final records = await getRecords(userId: userId);
@@ -25,27 +22,12 @@ abstract interface class QazaRepository {
     return QazaLedgerSummary(total: records.length, pending: pending, completed: completed, byPrayer: byPrayer);
   }
 
-  /// Returns a bounded history page.
-  ///
-  /// Native data sources should override this method so only [limit] records
-  /// are read rather than the complete ledger.
-  Future<QazaHistoryPage> getHistoryPage({
-    required String userId,
-    PrayerType? prayerType,
-    QazaStatus? status,
-    DateTime? originalDateFrom,
-    DateTime? originalDateTo,
-    String? cursor,
-    int limit = 25,
-    bool ascending = false,
-  }) async {
+  Future<QazaHistoryPage> getHistoryPage({required String userId, PrayerType? prayerType, QazaStatus? status, DateTime? originalDateFrom, DateTime? originalDateTo, String? cursor, int limit = 25, bool ascending = false}) async {
     if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
     final records = await getRecords(userId: userId, prayerType: prayerType, status: status);
     final filtered = records.where((record) {
       final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
-      if (originalDateFrom != null && date.isBefore(originalDateFrom)) return false;
-      if (originalDateTo != null && date.isAfter(originalDateTo)) return false;
-      return true;
+      return (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo));
     }).toList()
       ..sort((a, b) {
         final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate);
