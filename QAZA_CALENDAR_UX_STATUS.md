@@ -17,12 +17,12 @@ Each part follows:
 - [x] Part 2 — Shared Selection State
 - [x] Part 3 — Single / Range / Multiple UX
 - [x] Part 4 — Qaza Flow Integration
-- [ ] Part 5 — Theme & Responsive UX
+- [x] Part 5 — Theme & Responsive UX
 - [ ] Part 6 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
 
 ## Current State
-Part 4 complete. Add Qaza now uses the unified Gregorian calendar and the three shared selection modes; the obsolete calendar-mode choice was removed while existing Qaza persistence and prayer-record logic remain unchanged.
+Part 5 complete. Calendar surfaces use the existing theme system, remain readable in light/dark themes, and keep the unified selection UI responsive without introducing custom colors.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -48,7 +48,7 @@ Part 4 complete. Add Qaza now uses the unified Gregorian calendar and the three 
 | Part 2 | `dd74cd84`, `9a9a51fb` | Not run | COMPLETE |
 | Part 3 | `8d8010c8`, `1962c8a0` | Not run | COMPLETE |
 | Part 4 | `73802e8b` | Not run | COMPLETE |
-| Part 5 | — | — | NOT STARTED |
+| Part 5 | `9ee1ebec`, `c56e576b` | Not run | COMPLETE |
 | Part 6 | — | — | NOT STARTED |
 | Final | — | — | NOT STARTED |
 
