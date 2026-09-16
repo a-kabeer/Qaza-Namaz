@@ -3,13 +3,16 @@ import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
+import 'qaza_availability_service.dart';
 
 export '../entities/qaza_progress.dart';
 
 class QazaService {
-  QazaService(this.repository);
+  QazaService(this.repository, {QazaAvailabilityService? availability})
+      : availability = availability ?? const QazaAvailabilityService();
 
   final QazaRepository repository;
+  final QazaAvailabilityService availability;
 
   Future<List<QazaRecord>> getRecords({
     required String userId,
@@ -35,6 +38,22 @@ class QazaService {
       userId: userId,
       prayerType: prayerType,
       status: QazaStatus.pending,
+    );
+  }
+
+  Future<QazaAvailabilityAnalysis> analyzeAvailability({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+  }) async {
+    final existing = await getRecords(userId: userId);
+    return availability.analyze(
+      userId: userId,
+      dates: dates,
+      prayerTypes: prayerTypes,
+      existingRecords: existing,
+      prayedKeys: prayedKeys,
     );
   }
 
@@ -71,47 +90,50 @@ class QazaService {
     required PrayerType prayerType,
     required DateTime originalDate,
   }) async {
-    final date = QazaDate.normalize(originalDate);
-    final now = DateTime.now();
-
-    await repository.addRecord(
-      QazaRecord(
-        id: '${userId}_${prayerType.name}_${QazaDate.key(date)}',
-        userId: userId,
-        prayerType: prayerType,
-        originalDate: date,
-        createdAt: now,
-        updatedAt: now,
-      ),
+    await recordQazaForDates(
+      userId: userId,
+      dates: [originalDate],
+      prayerTypes: [prayerType],
     );
   }
 
+  /// Adds only combinations that are still eligible at save time.
+  ///
+  /// Existing pending and completed Qaza records are preserved. Re-checking
+  /// the ledger immediately before insertion protects against stale UI state
+  /// and repeated calculator/calendar submissions.
   Future<void> recordQazaForDates({
     required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayerTypes,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
   }) async {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
 
-    final now = DateTime.now();
-    final records = <QazaRecord>[];
+    final existing = await getRecords(userId: userId);
+    final analysis = availability.analyze(
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+      existingRecords: existing,
+      prayedKeys: prayedKeys,
+    );
+    if (analysis.newCandidates.isEmpty) return;
 
-    for (final date in normalizedDates) {
-      for (final prayerType in selectedPrayers) {
-        records.add(
-          QazaRecord(
-            id: '${userId}_${prayerType.name}_${QazaDate.key(date)}',
-            userId: userId,
-            prayerType: prayerType,
-            originalDate: date,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-      }
-    }
+    final now = DateTime.now();
+    final records = [
+      for (final candidate in analysis.newCandidates)
+        QazaRecord(
+          id: candidate.value,
+          userId: userId,
+          prayerType: candidate.prayerType,
+          originalDate: candidate.date,
+          createdAt: now,
+          updatedAt: now,
+        ),
+    ];
 
     await repository.addRecords(records);
   }
