@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/widgets/sync_status.dart';
-import 'package:qaza_namaz/data/sync/sync_state.dart';
+import 'package:qaza_namaz/data/sync/sync_state.dart' as sync_models;
 
 void main() {
   test('maps pending and offline states to user-facing Saved', () {
-    for (final status in [SyncStatus.pendingSync, SyncStatus.offline]) {
+    for (final status in [sync_models.SyncStatus.pendingSync, sync_models.SyncStatus.offline]) {
       final presentation = syncStatusPresentation(
-        SyncState(status: status, pendingCount: 2),
+        sync_models.SyncState(status: status, pendingCount: 2),
       );
       expect(presentation.label, 'Saved');
       expect(presentation.detail, contains('saved on this device'));
@@ -17,7 +17,7 @@ void main() {
 
   test('maps syncing to a simple user-facing state', () {
     final presentation = syncStatusPresentation(
-      const SyncState(status: SyncStatus.syncing, pendingCount: 1),
+      const sync_models.SyncState(status: sync_models.SyncStatus.syncing, pendingCount: 1),
     );
     expect(presentation.label, 'Syncing');
     expect(presentation.detail, isNull);
@@ -26,8 +26,8 @@ void main() {
 
   test('maps synced without exposing backend details', () {
     final presentation = syncStatusPresentation(
-      SyncState(
-        status: SyncStatus.synced,
+      sync_models.SyncState(
+        status: sync_models.SyncStatus.synced,
         lastSyncAt: DateTime(2026, 9, 16, 12, 5),
       ),
     );
@@ -38,8 +38,8 @@ void main() {
 
   test('maps sync failures to generic Sync Error and hides technical detail', () {
     final presentation = syncStatusPresentation(
-      const SyncState(
-        status: SyncStatus.syncError,
+      const sync_models.SyncState(
+        status: sync_models.SyncStatus.syncError,
         detail: 'FirebaseException: permission-denied at /users/test-user',
       ),
     );
