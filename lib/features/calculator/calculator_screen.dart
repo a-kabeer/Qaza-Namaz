@@ -222,14 +222,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Future<void> _goToStep(int targetStep) async {
     if (targetStep < 0 || targetStep > 2 || targetStep == _step || _addingToTracker || _restoring) return;
 
-    // Backward navigation is always allowed and preserves all current input.
     if (targetStep < _step) {
       setState(() => _step = targetStep);
       _queuePersistence();
       return;
     }
 
-    // Forward navigation reuses the same validation as the Continue/Calculate actions.
     if (targetStep >= 1 && _step == 0) {
       if (!_step1Valid) {
         setState(() {});
@@ -300,11 +298,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     if (mounted) setState(() => _checkingTracker = true);
     try {
       final service = ProviderScope.containerOf(context, listen: false).read(qazaServiceProvider);
-      final existing = await service.getRecords(userId: userId);
-      final analysis = analyzeTrackerCandidates(
+      final analysis = await service.analyzeAvailability(
         userId: userId,
-        calculation: calculation,
-        existingRecords: existing,
+        dates: trackerDates(calculation),
+        prayerTypes: trackerPrayerTypes(includeWitr: calculation.includeWitr),
       );
       if (!mounted || !identical(_calculation, calculation)) return;
       setState(() => _availabilityAnalysis = analysis);
@@ -329,11 +326,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     setState(() => _addingToTracker = true);
     try {
       final service = ProviderScope.containerOf(context, listen: false).read(qazaServiceProvider);
-      final existing = await service.getRecords(userId: userId);
-      final before = analyzeTrackerCandidates(
+      final dates = trackerDates(calculation);
+      final prayerTypes = trackerPrayerTypes(includeWitr: calculation.includeWitr);
+      final before = await service.analyzeAvailability(
         userId: userId,
-        calculation: calculation,
-        existingRecords: existing,
+        dates: dates,
+        prayerTypes: prayerTypes,
       );
       if (before.newCount == 0) {
         if (mounted) {
@@ -360,19 +358,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       );
       if (confirmed != true || !mounted) return;
 
-      await service.recordQazaForDates(
+      final created = await service.recordQazaForDates(
         userId: userId,
-        dates: trackerDates(calculation),
-        prayerTypes: trackerPrayerTypes(includeWitr: calculation.includeWitr),
+        dates: dates,
+        prayerTypes: prayerTypes,
       );
-
-      final after = await service.getRecords(userId: userId);
-      final afterAnalysis = analyzeTrackerCandidates(
+      final afterAnalysis = await service.analyzeAvailability(
         userId: userId,
-        calculation: calculation,
-        existingRecords: after,
+        dates: dates,
+        prayerTypes: prayerTypes,
       );
-      final created = (before.newCount - afterAnalysis.newCount).clamp(0, before.newCount).toInt();
 
       if (!mounted) return;
       setState(() => _availabilityAnalysis = afterAnalysis);
