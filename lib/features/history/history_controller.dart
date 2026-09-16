@@ -15,6 +15,7 @@ class HistoryState {
     this.isLoadingMore = false,
     this.isRefreshing = false,
     this.loadMoreError,
+    this.refreshError,
   });
 
   final List<QazaRecord> records;
@@ -24,6 +25,7 @@ class HistoryState {
   final bool isLoadingMore;
   final bool isRefreshing;
   final Object? loadMoreError;
+  final Object? refreshError;
 
   HistoryState copyWith({
     List<QazaRecord>? records,
@@ -33,6 +35,7 @@ class HistoryState {
     bool? isLoadingMore,
     bool? isRefreshing,
     Object? loadMoreError = _keep,
+    Object? refreshError = _keep,
   }) {
     return HistoryState(
       records: records ?? this.records,
@@ -42,6 +45,7 @@ class HistoryState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       loadMoreError: identical(loadMoreError, _keep) ? this.loadMoreError : loadMoreError,
+      refreshError: identical(refreshError, _keep) ? this.refreshError : refreshError,
     );
   }
 }
@@ -64,12 +68,18 @@ class HistoryController extends AsyncNotifier<HistoryState> {
 
   Future<void> refresh() async {
     final current = state.valueOrNull;
-    if (current != null) {
-      state = AsyncData(current.copyWith(isRefreshing: true, loadMoreError: null));
+    if (current == null) {
+      state = await AsyncValue.guard(() => _loadPage(const HistoryQuery()));
+      return;
     }
-    final query = current?.query ?? const HistoryQuery();
-    final refreshed = await AsyncValue.guard(() => _loadPage(query));
-    state = refreshed;
+
+    state = AsyncData(current.copyWith(isRefreshing: true, refreshError: null));
+    try {
+      final refreshed = await _loadPage(current.query);
+      state = AsyncData(refreshed.copyWith(isRefreshing: false));
+    } catch (error) {
+      state = AsyncData(current.copyWith(isRefreshing: false, refreshError: error));
+    }
   }
 
   Future<void> loadMore() async {
