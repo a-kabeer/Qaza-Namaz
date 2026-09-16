@@ -36,7 +36,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 8 | Test notification | ✅ |
 | 9 | Persistence & restore | ✅ |
 | 10 | Runtime reconciliation | ✅ |
-| 11 | Theme & responsive UX | ☐ |
+| 11 | Theme & responsive UX | ✅ |
 | 12 | Notification tests | ☐ |
 | 13 | Integration & regression | ☐ |
 | 14 | Final verification & completion | ☐ |
@@ -62,105 +62,86 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 - Keep the selected time when the reminder is disabled.
 - Treat scheduling as a single daily reminder; test notification uses a separate one-shot notification ID.
 
-### Baseline issue carried into implementation
-The first full CI run showed one notification test expectation mismatch: the fake scheduler reported permission as granted during initial status loading, so the controller correctly skipped requesting permission. The test was updated to model the permission state expected by the enable-flow assertion.
-
 ## Part 2 — Notification State Model ✅
 
-### State model implemented
-- `NotificationPermissionStatus` represents `notRequested`, `granted`, `denied`, `unavailable`, and `restricted` states at the model level.
-- `NotificationScheduleStatus` separates the user's reminder preference from the derived operational state: `disabled`, `permissionRequired`, `noPendingQaza`, or `scheduled`.
-- Scheduling decisions are derived from enablement + permission + pending-Qaza state instead of treating `enabled` as proof that a reminder is actually scheduled.
-- The selected reminder time remains part of the persisted configuration and is independent from whether the reminder is currently active.
-- Permission status and pending-Qaza state remain runtime-derived, while the user preference and reminder time remain locally persisted.
-- Re-enabling an already-enabled reminder reconciles the actual schedule instead of silently skipping reconciliation.
-
-### Part 2 verification coverage
-- Tests cover the default state and derived schedule state.
-- Tests cover the permission-request path with a distinct initial permission-status simulation.
-- Tests cover disabled, scheduled, no-pending, and denied/permission-required state transitions.
+- `NotificationPermissionStatus` represents `notRequested`, `granted`, `denied`, `unavailable`, and `restricted`.
+- `NotificationScheduleStatus` represents `disabled`, `permissionRequired`, `noPendingQaza`, and `scheduled`.
+- Scheduling is derived from preference + permission + pending-Qaza state.
+- Selected time is independent from the enabled state.
+- Runtime status remains device/ledger-derived while user preferences remain persisted.
 
 ## Part 3 — Production Notifications UI ✅
 
-- Notifications is a single Settings screen with no unnecessary sub-pages.
-- The daily reminder switch, reminder time, permission state, derived reminder status, and test action are visible in one compact flow.
-- Reminder time is disabled while the reminder is OFF.
-- Permission actions are available for not-requested and denied states.
-- UI copy is concise and explains when the recurring reminder is actually scheduled.
-- Controls are guarded against duplicate taps while an asynchronous notification operation is running.
-- Existing Material theme colors are used instead of custom hardcoded notification colors.
-- Restricted permission state is explicitly rendered so the state model remains exhaustive and user-visible.
+- Single Settings screen with switch, time, permission, reminder status, and test action.
+- Reminder time disabled while OFF.
+- Permission actions exposed inline where applicable.
+- Compact Material 3 layout using existing theme colors and asynchronous busy-state guards.
+- Restricted permission state is rendered explicitly.
 
 ## Part 4 — Enable Workflow ✅
 
-- Enabling checks the current OS notification permission before allowing the reminder to remain enabled.
-- When permission is not already granted, the app requests notification permission and only proceeds when granted.
-- Denied permission leaves the reminder disabled and exposes an actionable blocked state in Settings.
-- Successful enable persists the user's preference and reconciles scheduling using the selected time and pending-Qaza state.
-- Enabling with no pending Qaza keeps the preference enabled but does not create a recurring notification.
-- Re-enabling an already enabled reminder still reconciles the actual schedule instead of creating duplicates.
+- Checks OS permission before enabling.
+- Requests permission when needed and keeps the reminder OFF when denied.
+- Persists successful enablement and reconciles the schedule.
+- No schedule is created when there is no pending Qaza.
+- Re-enabling reconciles rather than blindly adding another reminder.
 
 ## Part 5 — Disable Workflow ✅
 
-- Turning the Daily Qaza reminder OFF always cancels the recurring daily notification.
-- The user's selected reminder time is preserved when disabling; it is not reset to the default.
-- The disabled state is persisted so restart does not silently re-enable the reminder.
-- The derived schedule state becomes `disabled`, preventing accidental rescheduling while the preference is OFF.
-- Focused test coverage changes the reminder time before disabling and verifies the exact selected time remains available afterward.
+- Cancels the recurring reminder when switched OFF.
+- Preserves the selected time.
+- Persists the disabled state.
+- Prevents rescheduling while OFF.
 
 ## Part 6 — Pending-Qaza Scheduling Rule ✅
 
-### Scheduling behavior
-- The recurring reminder is scheduled only when the user preference is enabled, notification permission is granted, and at least one `QazaStatus.pending` record exists.
-- When pending Qaza does not exist, the recurring reminder is explicitly cancelled even if the preference remains enabled.
-- When pending Qaza appears after the reminder is enabled, the schedule is created automatically from the existing Qaza records provider.
-- When the last pending Qaza is completed/removed, the recurring reminder is cancelled automatically.
-- The daily schedule remains a single notification ID; reconciliation replaces the existing daily schedule rather than creating additional reminders.
-
-### Verification coverage
-- Focused notification tests simulate ledger changes after enabling and verify both transitions: no pending → scheduled and pending → no pending/cancelled.
-- The controller's derived `NotificationScheduleStatus` is asserted as `scheduled` and `noPendingQaza` during those transitions.
-- The Settings screen exposes `No pending Qaza. No reminder is scheduled.` when the preference remains ON without pending work.
+- Recurring reminder exists only when enabled + permission granted + pending Qaza exists.
+- Pending Qaza appearing causes scheduling.
+- Last pending Qaza disappearing causes cancellation.
+- A single recurring notification ID is used.
 
 ## Part 7 — Reminder Time Workflow ✅
 
-- The Settings UI uses the native Material `showTimePicker` with the current saved time as the initial selection.
-- The default reminder time is 8:00 PM when no saved time exists.
-- Selecting a time automatically persists the hour/minute without requiring a separate Save button.
-- When the reminder is enabled and pending Qaza exists, changing the time reconciles the schedule immediately with the new time.
-- When the reminder is disabled, changing the saved time does not schedule a notification; the new time is preserved for the next enable.
-- Invalid hour/minute values are rejected before persistence or scheduling.
-- Focused coverage verifies rescheduling, disabled-state persistence, default formatting, and invalid-time validation.
+- Native Material `showTimePicker` is used.
+- Default time is 8:00 PM.
+- Selection saves automatically.
+- Enabled + pending changes reschedule immediately.
+- Disabled changes only update the saved preference.
+- Invalid times are rejected.
 
 ## Part 8 — Test Notification ✅
 
-- A dedicated one-shot Test Notification action is available on the same Settings screen.
-- Test notifications are blocked until notification permission is granted.
-- The test action delegates to the local notification service without enabling or changing the daily reminder preference.
-- The test notification uses a separate notification ID from the recurring daily reminder, so sending a test cannot replace or duplicate the daily schedule.
-- The UI reports a clear success or failure SnackBar after the test action.
-- Focused tests verify the test action fires successfully, does not change recurring schedule calls, and is rejected when permission is unavailable.
+- Dedicated one-shot Test Notification action.
+- Requires granted permission.
+- Does not alter the daily reminder preference.
+- Uses a separate notification ID.
+- Clear success/failure feedback is shown.
 
 ## Part 9 — Persistence & Restore ✅
 
-- Daily reminder enabled/disabled state is persisted per active account.
-- Selected reminder hour/minute are persisted per active account and restored together with the preference.
-- Notification permission state remains derived from the device rather than being treated as a user preference.
-- Controller recreation restores the same account's saved configuration without resetting the selected time.
-- A different account receives its own default notification configuration rather than inheriting another account's reminder setting.
-- This prevents notification preferences from leaking across signed-in accounts while keeping the existing SharedPreferences-based architecture.
-- Focused tests verify same-account restoration and cross-account isolation.
+- Reminder enabled/disabled state is persisted per active account.
+- Reminder hour/minute are persisted per active account.
+- Device permission remains OS-derived.
+- Same-account restore returns the saved configuration.
+- Different accounts receive isolated defaults/configuration.
 
 ## Part 10 — Runtime Reconciliation ✅
 
-- Notification initialization and OS permission status are checked whenever the notification settings provider is built.
-- Restored settings are reconciled immediately on startup: enabled + granted permission + pending Qaza schedules the daily reminder; otherwise the existing daily reminder is cancelled.
-- Permission state is checked again when the app resumes, so a user who changes notification permission in system settings is reflected without restarting the app.
-- When permission is revoked while the reminder preference remains enabled, the recurring reminder is cancelled and the UI exposes the `permissionRequired` state instead of claiming the reminder is scheduled.
-- When permission is restored, the next reconciliation schedules the reminder again when pending Qaza exists.
-- Qaza ledger changes continue to trigger reconciliation, so runtime state changes do not depend on reopening Settings.
-- Startup listening avoids duplicate immediate reconciliation while the initial provider state is being assembled.
-- Focused tests cover startup scheduling, startup cancellation with no pending Qaza, and permission revocation at runtime.
+- Permission is checked at initialization and refreshed when the app resumes.
+- Permission changes reconcile the actual recurring schedule.
+- Pending-Qaza ledger changes reconcile scheduling automatically.
+- Revoked permission cancels active scheduling without silently changing the stored preference.
+- Restored permission can reactivate scheduling when pending Qaza exists.
+
+## Part 11 — Theme & Responsive UX ✅
+
+- Notification UI uses Material 3 components and the app's existing theme tokens.
+- No custom hardcoded notification colors are introduced.
+- Enabled, disabled, blocked, unavailable, and operational states use standard themed states.
+- Layout remains a single scrollable screen with compact spacing and standard touch targets.
+- Long status/copy text is allowed to wrap rather than overflow.
+- Time selection and actions remain accessible on narrow displays.
+- Light and dark mode reuse the app theme automatically.
 
 ## Completion Criteria
 The task must not be marked complete until:
