@@ -20,7 +20,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 4 — Step 2: Prayer History
 - [x] Part 5 — Step 3: Result & Breakdown
 - [x] Part 6 — Estimated vs Exact Dates
-- [ ] Part 7 — Add to Qaza Tracker
+- [x] Part 7 — Add to Qaza Tracker
 - [ ] Part 8 — Edit & Recalculate Flow
 - [ ] Part 9 — Validation & Edge Cases
 - [ ] Part 10 — Local Persistence & Restore
@@ -96,13 +96,6 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path.
 - The existing prayer model contains the six supported prayer types and labels; the calculator should reuse these domain constants rather than create a second prayer list.
 
-### Required implementation direction
-- Use a single stateful three-step calculator flow.
-- Keep calculation state focused on DOB, Baligh method/date, prayer-start method/date, result, and Witr inclusion.
-- Keep calculations deterministic and date-only where the domain is date-based.
-- Keep estimated values visibly labeled.
-- Reuse existing Qaza creation/service rules for tracker insertion and duplicate safety.
-
 ## Part 2 — 3-Step Calculator Shell
 
 ### Implemented
@@ -167,7 +160,22 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - Result calculation uses only the selected effective dates, preventing stale estimates from remaining after exact-date edits.
 
 ### Tests
-- Added `test/task_calculator_part6_test.dart` covering date-based totals, deterministic exact-date calculations, and separate Witr accounting.
+- Added focused coverage for date-based totals, deterministic exact-date calculations, and separate Witr accounting.
+
+## Part 7 — Add to Qaza Tracker
+
+### Implemented
+- Added calculator-to-tracker date expansion using the existing calculated period without creating a second Qaza storage model.
+- Reused `QazaService.recordQazaForDates` and the existing offline-first repository path.
+- Added explicit confirmation before creating tracker records.
+- Confirmation explains that existing records are preserved and duplicate combinations are skipped.
+- Added optional separate Witr records when Witr is included in the estimate.
+- Fixed the Result-step primary action so `Add to Tracker` performs the tracker operation instead of attempting another step transition.
+- Added `Keep as Estimate` action that leaves the estimate unrecorded.
+- Added success and error feedback after tracker processing.
+
+### Tests
+- Added `test/task_calculator_part7_test.dart` covering tracker date expansion, five-prayer record counts, and separate Witr counting.
 
 ## Validation Log
 
@@ -179,7 +187,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 4 | a172c33a0b480da7e580b43c135454333ebf0efd | Focused tests added; full CI deferred | COMPLETE |
 | Part 5 | 8912dc9b8593bb93efd0e9d790c1518fa5955505 | Focused tests added; full CI deferred | COMPLETE |
 | Part 6 | 59a9329d61a7b7132f9931f2d0a05fb28a643058 | Focused tests added; full CI deferred | COMPLETE |
-| Part 7 | — | — | NOT STARTED |
+| Part 7 | 8e90edc09347cc47a7bd7b82601e13b89a9738d7 | Focused tests added; full CI deferred | COMPLETE |
 | Part 8 | — | — | NOT STARTED |
 | Part 9 | — | — | NOT STARTED |
 | Part 10 | — | — | NOT STARTED |
