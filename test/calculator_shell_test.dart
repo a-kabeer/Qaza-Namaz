@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
@@ -24,10 +25,10 @@ Future<void> _calculateDefaultResult(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('calculator presents three steps and supports forward/back navigation', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: CalculatorScreen()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
     await settleCalculator(tester);
 
     expect(find.text('About You'), findsOneWidget);
@@ -35,6 +36,7 @@ void main() {
     expect(find.byKey(const Key('calculator_continue')), findsOneWidget);
 
     await _selectDefaultDob(tester);
+    expect(tester.widget<FilledButton>(find.byKey(const Key('calculator_continue'))).onPressed, isNotNull);
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
@@ -61,9 +63,7 @@ void main() {
   });
 
   testWidgets('calculator edit actions return to the relevant step and recalculate', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: CalculatorScreen()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
     await settleCalculator(tester);
 
     await _calculateDefaultResult(tester);
