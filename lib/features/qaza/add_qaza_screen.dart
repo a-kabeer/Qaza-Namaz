@@ -37,7 +37,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         newCount: dates.length * prayerTypes.length,
         candidates: const [],
         newCandidates: const [],
-        unavailableCount: 0,
       );
     }
     return _availability.analyze(
@@ -49,11 +48,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   int get totalCombinations => dates.length * prayers.length;
-
   int get existingCombinations => _analysisFor(prayers).alreadyRecorded;
-
-  int get unavailableCombinations => _analysisFor(prayers).unavailableCount;
-
   int get newCombinations => _analysisFor(prayers).newCount;
 
   Future<void> _checkExisting() async {
