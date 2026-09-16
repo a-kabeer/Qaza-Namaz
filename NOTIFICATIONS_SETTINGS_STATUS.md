@@ -32,7 +32,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 4 | Enable workflow | ✅ |
 | 5 | Disable workflow | ✅ |
 | 6 | Pending-Qaza scheduling rule | ✅ |
-| 7 | Reminder time workflow | ☐ |
+| 7 | Reminder time workflow | ✅ |
 | 8 | Test notification | ☐ |
 | 9 | Persistence & restore | ☐ |
 | 10 | Runtime reconciliation | ☐ |
@@ -121,6 +121,16 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - Focused notification tests now simulate ledger changes after enabling and verify both transitions: no pending → scheduled and pending → no pending/cancelled.
 - The controller's derived `NotificationScheduleStatus` is asserted as `scheduled` and `noPendingQaza` during those transitions.
 - The Settings screen also exposes the operational state as `No pending Qaza. No reminder is scheduled.` when the preference remains ON without pending work.
+
+## Part 7 — Reminder Time Workflow ✅
+
+- The Settings UI uses the native Material `showTimePicker` with the current saved time as the initial selection.
+- The default reminder time is 8:00 PM when no saved time exists.
+- Selecting a time automatically persists the hour/minute without requiring a separate Save button.
+- When the reminder is enabled and pending Qaza exists, changing the time reconciles the schedule immediately with the new time.
+- When the reminder is disabled, changing the saved time does not schedule a notification; the new time is preserved for the next enable.
+- Invalid hour/minute values are rejected before persistence or scheduling.
+- Focused coverage verifies rescheduling, disabled-state persistence, default formatting, and invalid-time validation.
 
 ## Completion Criteria
 The task must not be marked complete until:
