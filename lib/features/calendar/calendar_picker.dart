@@ -5,8 +5,13 @@ import 'package:hijri/hijri_calendar.dart';
 import 'calendar_controller.dart';
 
 class CalendarPicker extends ConsumerStatefulWidget {
-  const CalendarPicker({super.key, this.qazaDates = const <DateTime>{}});
+  const CalendarPicker({
+    super.key,
+    this.qazaDates = const <DateTime>{},
+    this.unavailableDates = const <DateTime>{},
+  });
   final Set<DateTime> qazaDates;
+  final Set<DateTime> unavailableDates;
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
 }
@@ -24,6 +29,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   DateTime get _today => ref.read(calendarTodayProvider);
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _isQazaDate(DateTime date) => widget.qazaDates.any((qaza) => _sameDay(qaza, date));
+  bool _isUnavailableDate(DateTime date) => widget.unavailableDates.any((value) => _sameDay(value, date));
   String _hijriLabel(DateTime date) {
     final h = HijriCalendar.fromDate(date);
     return '${h.hDay} ${h.getLongMonthName()} ${h.hYear} AH';
@@ -77,7 +83,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           child: Text(_prompt(state), key: const Key('calendar_selection_prompt'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
         ),
         const SizedBox(height: 12),
-        _DayGrid(anchor: _monthAnchor, today: _today, selectionMode: state.selectionMode, selectedDates: selected, onDayTap: (date) => ref.read(calendarControllerProvider.notifier).select(date), hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), isQazaDate: _isQazaDate),
+        _DayGrid(anchor: _monthAnchor, today: _today, selectionMode: state.selectionMode, selectedDates: selected, onDayTap: (date) => ref.read(calendarControllerProvider.notifier).select(date), hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), isQazaDate: _isQazaDate, isUnavailableDate: _isUnavailableDate),
         if (selected.isNotEmpty) ...[
           const SizedBox(height: 16),
           _SelectionSummary(state: state, hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), onClear: () => ref.read(calendarControllerProvider.notifier).clear()),
@@ -88,13 +94,13 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
 }
 
 class _DayGrid extends StatelessWidget {
-  const _DayGrid({required this.anchor, required this.today, required this.selectionMode, required this.selectedDates, required this.onDayTap, required this.hijriLabel, required this.gregorianLabel, required this.isQazaDate});
+  const _DayGrid({required this.anchor, required this.today, required this.selectionMode, required this.selectedDates, required this.onDayTap, required this.hijriLabel, required this.gregorianLabel, required this.isQazaDate, required this.isUnavailableDate});
   final DateTime anchor, today;
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
   final ValueChanged<DateTime> onDayTap;
   final String Function(DateTime) hijriLabel, gregorianLabel;
-  final bool Function(DateTime) isQazaDate;
+  final bool Function(DateTime) isQazaDate, isUnavailableDate;
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _selected(DateTime day) => selectedDates.any((date) => _sameDay(date, day));
   bool _inRange(DateTime day) => selectionMode == DateSelectionMode.range && selectedDates.length == 2 && !day.isBefore(selectedDates.first) && !day.isAfter(selectedDates.last);
@@ -119,11 +125,13 @@ class _DayGrid extends StatelessWidget {
     final number = index - leading + 1;
     if (number < 1 || number > daysInMonth) return const SizedBox.shrink();
     final date = DateTime(anchor.year, anchor.month, number);
-    final enabled = !date.isAfter(today) && !date.isBefore(DateTime(1950));
+    final baseEnabled = !date.isAfter(today) && !date.isBefore(DateTime(1950));
+    final unavailable = isUnavailableDate(date);
+    final enabled = baseEnabled && !unavailable;
     final selected = _selected(date), inRange = _inRange(date), endpoint = _rangeEndpoint(date), todayDate = _sameDay(date, today), qaza = isQazaDate(date);
     final scheme = Theme.of(context).colorScheme;
     final dateKey = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return Semantics(label: '${gregorianLabel(date)}, ${hijriLabel(date)}', button: enabled, selected: selected, child: InkWell(key: Key('calendar_day_$dateKey'), onTap: enabled ? () => onDayTap(date) : null, borderRadius: BorderRadius.circular(22), child: Stack(alignment: Alignment.center, children: [
+    return Semantics(label: '${gregorianLabel(date)}, ${hijriLabel(date)}${unavailable ? ', no prayers available' : ''}', button: enabled, selected: selected, child: InkWell(key: Key('calendar_day_$dateKey'), onTap: enabled ? () => onDayTap(date) : null, borderRadius: BorderRadius.circular(22), child: Stack(alignment: Alignment.center, children: [
       Container(width: 34, height: 34, decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? scheme.primary : endpoint || inRange ? scheme.primaryContainer : todayDate ? scheme.secondaryContainer : null), alignment: Alignment.center, child: Text('$number', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: selected ? scheme.onPrimary : null, fontWeight: todayDate || selected || endpoint ? FontWeight.w700 : null))),
       if (qaza) Positioned(bottom: 2, child: Container(key: Key('calendar_qaza_indicator_$dateKey'), width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.tertiary))),
     ])));
