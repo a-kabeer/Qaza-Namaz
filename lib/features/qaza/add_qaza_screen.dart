@@ -77,11 +77,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     if (!mounted) return;
 
     final userId = ref.read(activeUserIdProvider);
-    if (userId != null && !_availability.isDateAvailable(
-      userId: userId,
-      date: dates.first,
-      existingRecords: existing,
-    )) {
+    if (userId != null && !dates.any((date) => _availability.isDateAvailable(
+          userId: userId,
+          date: date,
+          existingRecords: existing,
+        ))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No eligible prayers remain for the selected date(s).')),
       );
@@ -89,6 +89,25 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     }
 
     setState(() => step = 1);
+  }
+
+  Future<void> _goToStep(int target) async {
+    if (target == step || saving) return;
+
+    // Backward navigation is always allowed and keeps all selections intact.
+    if (target < step) {
+      setState(() => step = target);
+      return;
+    }
+
+    // Forward navigation uses the same validation as the Continue buttons.
+    if (target >= 1 && step == 0) {
+      await _continueFromDates();
+      if (!mounted) return;
+    }
+    if (target >= 2 && step == 1) {
+      _continueFromPrayers();
+    }
   }
 
   void _changeDateMode(DateSelectionMode mode) {
@@ -190,7 +209,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _ProgressHeader(step: step),
+              _ProgressHeader(step: step, onStepTap: _goToStep),
               Expanded(
                 child: switch (step) {
                   0 => _dateStep(),
@@ -442,8 +461,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
 }
 
 class _ProgressHeader extends StatelessWidget {
-  const _ProgressHeader({required this.step});
+  const _ProgressHeader({required this.step, required this.onStepTap});
   final int step;
+  final Future<void> Function(int target) onStepTap;
 
   @override
   Widget build(BuildContext context) {
@@ -451,36 +471,66 @@ class _ProgressHeader extends StatelessWidget {
     final scheme = theme.colorScheme;
     const labels = ['Dates', 'Prayers', 'Review'];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
           for (var i = 0; i < 3; i++) ...[
-            if (i > 0)
-              Expanded(
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: '${i < step ? 'Return to' : 'Go to'} ${labels[i]} step',
+                child: InkWell(
+                  key: Key('qaza_step_$i'),
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => onStepTap(i),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
+                              child: i < step
+                                  ? Icon(Icons.check_rounded, size: 16, color: scheme.onPrimary)
+                                  : Text(
+                                      '${i + 1}',
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: i == step ? scheme.onPrimary : scheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          labels[i],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: i == step ? scheme.primary : i < step ? scheme.onSurface : scheme.onSurfaceVariant,
+                            fontWeight: i == step ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (i < 2)
+              SizedBox(
+                width: 18,
                 child: Container(
                   height: 2,
-                  color: i <= step ? scheme.primary : scheme.outlineVariant,
+                  color: i < step ? scheme.primary : scheme.outlineVariant,
                 ),
               ),
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
-              child: Text(
-                '${i + 1}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              labels[i],
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant,
-                fontWeight: i == step ? FontWeight.w700 : null,
-              ),
-            ),
           ],
         ],
       ),
@@ -517,86 +567,4 @@ class _ChoiceCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _InfoBox extends StatelessWidget {
-  const _InfoBox({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: scheme.onPrimaryContainer),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(text, style: TextStyle(color: scheme.onPrimaryContainer)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DateSelectionSummary extends StatelessWidget {
-  const _DateSelectionSummary({required this.dates, required this.mode, this.onClear});
-  final List<DateTime> dates;
-  final DateSelectionMode mode;
-  final VoidCallback? onClear;
-
-  String _formatDate(DateTime date) => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final text = dates.isEmpty
-        ? 'No dates selected'
-        : dates.length == 1
-            ? 'Selected date: ${_formatDate(dates.first)}'
-            : mode == DateSelectionMode.range
-                ? 'Selected range: ${_formatDate(dates.first)} – ${_formatDate(dates.last)} (${dates.length} days)'
-                : 'Selected dates: ${dates.length}';
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        dense: true,
-        leading: const Icon(Icons.event_available_rounded),
-        title: Text(text, style: theme.textTheme.bodyMedium),
-        trailing: onClear == null
-            ? null
-            : IconButton(
-                key: const Key('qaza_clear_dates_button'),
-                tooltip: 'Clear selected dates',
-                onPressed: onClear,
-                icon: const Icon(Icons.clear_rounded),
-              ),
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value, this.emphasis = false});
-  final String label;
-  final String value;
-  final bool emphasis;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(child: Text(label)),
-            Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null),
-          ],
-        ),
-      );
 }
