@@ -177,11 +177,16 @@ void main() {
     await container.read(notificationSettingsProvider.future);
 
     await notifier.setEnabled(true);
+    await notifier.setTime(6, 30);
+    final cancelCallsBeforeDisable = scheduler.cancelCalls;
+
     expect(await notifier.setEnabled(false), isTrue);
     final state = await container.read(notificationSettingsProvider.future);
-    expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
+    expect(scheduler.cancelCalls, greaterThan(cancelCallsBeforeDisable));
     expect(state.enabled, isFalse);
-    expect(state.formattedTime, '8:00 PM');
+    expect(state.hour, 6);
+    expect(state.minute, 30);
+    expect(state.formattedTime, '6:30 AM');
     expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
   });
 
