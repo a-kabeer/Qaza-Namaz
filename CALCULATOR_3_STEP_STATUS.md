@@ -23,10 +23,10 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 7 — Add to Qaza Tracker
 - [x] Part 8 — Edit & Recalculate Flow
 - [x] Part 9 — Validation & Edge Cases
-- [ ] Part 10 — Local Persistence & Restore
-- [ ] Part 11 — Theme & Responsive UX
-- [ ] Part 12 — Regression Tests & Cleanup
-- [ ] Final — Full CI + status verification
+- [x] Part 10 — Local Persistence & Restore
+- [x] Part 11 — Theme & Responsive UX
+- [x] Part 12 — Regression Tests & Cleanup
+- [ ] Final — Full CI + status verification (in progress)
 
 ## UX Principles
 - One Calculator screen; no separate page for each question.
@@ -77,6 +77,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Persistence
 - Latest calculator inputs/result restore locally.
 - Reopening Calculator shows previous result with Edit/Recalculate actions.
+- Calculator persistence is namespaced by user ID when available.
 
 ### UI/UX
 - Light, Dark, and System themes readable.
@@ -187,25 +188,71 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ## Part 8 — Edit & Recalculate Flow
 
 ### Implemented
-- Added direct Result → Step 1 editing for personal information.
-- Added direct Result → Step 2 editing for prayer history.
-- Preserved entered values when editing.
-- Invalidated the previous result after edits so stale calculations cannot remain visible.
-- Recalculation returns to Result with the updated inputs.
+- Added dedicated Result actions for `Edit About You` and `Edit Prayer History`.
+- Editing jumps directly to the relevant step instead of restarting the calculator.
+- Existing DOB, Baligh, and prayer-start inputs remain preserved while editing.
+- Entering an edit step invalidates the previous result so stale totals cannot be reused.
+- The existing `Continue` / `Calculate` actions recalculate from the updated inputs and return to Result.
+- Result editing is disabled while a tracker add operation is in progress.
+- Updated calculator widget regression coverage for both edit targets and the recalculate path.
 
 ### Tests
-- Added focused widget coverage for both edit paths and preserved calculator state.
+- Updated `test/calculator_shell_test.dart` to exercise valid three-step navigation under the current validation rules and both Result edit actions.
 
 ## Part 9 — Validation & Edge Cases
 
 ### Implemented
-- Confirmed and isolated pure date validation rules for DOB, Baligh, and prayer-start ordering/future-date constraints.
-- Hardened `calculateQaza` to reject reversed periods instead of producing invalid totals.
-- Preserved the existing zero-day behavior: equal start/end dates produce zero days, zero prayers, and zero Witr rather than negative values or errors.
-- Validation and calculation continue to normalize DateTime values to date-only components.
+- Hardened calculator calculation against reversed periods with an explicit `ArgumentError`.
+- Preserved date-only normalization before validation/calculation.
+- Covered future DOB/Baligh/prayer-start and ordering constraints.
+- Preserved zero-day periods with zero prayer totals.
 
 ### Tests
-- Added `test/task_calculator_part9_test.dart` covering future dates, ordering constraints, date-only normalization, zero-day periods, and reversed calculation dates.
+- Added `test/task_calculator_part9_test.dart` for future dates, ordering, normalization, zero-day periods, and reversed calculations.
+
+## Part 10 — Local Persistence & Restore
+
+### Implemented
+- Added `CalculatorSnapshot` with explicit schema versioning for calculator inputs and current flow state.
+- Added `CalculatorPersistence` backed by existing `shared_preferences` dependency.
+- Saved DOB, Baligh mode/age/date, prayer-start mode/age/date, Witr inclusion, current step, calculation presence, and Keep-as-Estimate state.
+- Persistence is namespaced by Firebase UID when available, with an isolated anonymous key for non-authenticated/test usage.
+- Restore reconstructs the calculation deterministically from persisted effective dates instead of storing duplicated result counters.
+- Restored results return directly to the saved Result step when the saved calculation remains valid.
+- Persistence writes are serialized through a small in-screen save queue to avoid stale asynchronous writes winning the race.
+- Added a brief restore progress indicator and disabled actions until restoration finishes.
+- Malformed stored data fails safely without corrupting the active calculator state.
+
+### Tests
+- Added `test/task_calculator_part10_test.dart` covering round-trip persistence, UID isolation, missing values, and malformed stored data.
+
+## Part 11 — Theme & Responsive UX
+
+### Implemented
+- Audited calculator surfaces for theme-dependent styling.
+- Preserved app-level `ColorScheme` usage instead of hardcoded calculator colors.
+- Kept progress indicator, information containers, result chips, controls, dividers, and error text readable across theme variants.
+- Added responsive handling for narrow layouts so result/edit actions and metric rows do not require horizontal overflow.
+- Preserved the single-screen three-step workflow at wider layouts without introducing unnecessary navigation or panels.
+
+### Tests
+- Added responsive/theme-focused calculator coverage and retained the existing theme-derived progress regression test.
+
+## Part 12 — Regression Tests & Cleanup
+
+### Audit
+- Rechecked the complete calculator flow after Parts 1–11.
+- No separate calculator navigation, duplicate storage path, or second calculation engine was introduced.
+- Existing offline-first Qaza storage/service architecture remains the integration path.
+- No unnecessary production refactor was identified; cleanup remained focused on regression coverage and consistency.
+
+### Implemented
+- Added consolidated end-to-end calculator regression coverage for calculation totals, five-prayer/Witr separation, tracker-period expansion, validation boundaries, persistence round-trip, and the three-step UI flow.
+- Verified stable widget keys and current action labels across the complete flow.
+
+### Tests
+- Added `test/task_calculator_part12_test.dart` as the final calculator regression suite.
+- Existing focused tests for Parts 2–10 remain in place.
 
 ## Validation Log
 
@@ -218,12 +265,12 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 5 | 8912dc9b8593bb93efd0e9d790c1518fa5955505 | Focused tests added; full CI deferred | COMPLETE |
 | Part 6 | 59a9329d61a7b7132f9931f2d0a05fb28a643058 | Focused tests added; full CI deferred | COMPLETE |
 | Part 7 | 8e90edc09347cc47a7bd7b82601e13b89a9738d7 | Focused tests added; full CI deferred | COMPLETE |
-| Part 8 | cefc4f5884e35638c348aa3dc2710987424779e4 | Focused tests added; full CI deferred | COMPLETE |
-| Part 9 | f91e34f7de5e11cb3e7135e40a4568e16af91b78 + c8d5b6f4a6f777e11022331d168d1771008763c7 + 73e605628e052549a767796fbb334367b047c2c2 | Focused tests added; full CI deferred | COMPLETE |
-| Part 10 | — | — | NOT STARTED |
-| Part 11 | — | — | NOT STARTED |
-| Part 12 | — | — | NOT STARTED |
-| Final | — | Full CI required | NOT STARTED |
+| Part 8 | 799938a3a124bc855349dac4395ac7ada94cb83f + cefc4f5884e35638c348aa3dc2710987424779e4 | Focused tests added; full CI deferred | COMPLETE |
+| Part 9 | 202dd20bf6ec6562d066b9c7bd638312d66c6847 | Focused tests added; full CI deferred | COMPLETE |
+| Part 10 | c928d820d4e5d27acf71c99dd574f5e99101b963 + 8389f552ac3da8ef55409ecea65ed9fdf7744686 | Focused persistence tests added; integration CI deferred | COMPLETE |
+| Part 11 | e869a00eea4738f78c690fc90822f7a9cb5b67f9 + b46404f8135b4f78ba350e99393ca30a4a52a229 | Focused responsive/theme tests added; integration CI deferred | COMPLETE |
+| Part 12 | 9d6c3d4597e67541d81197caefb5a41dfb898e3e | Final regression tests added; integration CI deferred | COMPLETE |
+| Final | — | Full CI + status verification | IN PROGRESS |
 
 ## Notes
 Do not rewrite the calculation engine or data architecture before auditing the existing implementation. Make the smallest professional changes needed to achieve the three-step UX.

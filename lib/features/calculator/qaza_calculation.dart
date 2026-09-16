@@ -36,11 +36,8 @@ QazaCalculation calculateQaza({
   final start = DateTime(startDate.year, startDate.month, startDate.day);
   final end = DateTime(endDate.year, endDate.month, endDate.day);
   if (end.isBefore(start)) {
-    throw ArgumentError('Qaza period end date cannot be before the start date.');
+    throw ArgumentError.value(endDate, 'endDate', 'must be on or after startDate');
   }
-
-  // The end date remains exclusive so this calculation stays aligned with
-  // the tracker date expansion and its existing business rules.
   final totalDays = end.difference(start).inDays;
   final calendarYears = _calendarYearsBetween(start, end);
   final anniversary = DateTime(start.year + calendarYears, start.month, start.day);
