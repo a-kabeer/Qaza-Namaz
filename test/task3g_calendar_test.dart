@@ -26,17 +26,21 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isNotEmpty) return;
-  final listViews = find.byType(ListView);
-  final scrollable = listViews.evaluate().isEmpty ? find.byType(Scrollable).first : listViews.last;
-  for (var i = 0; i < 6 && finder.evaluate().isEmpty; i++) {
-    await tester.drag(scrollable, const Offset(0, -500));
+  final scrollable = find.byType(Scrollable).first;
+  for (var i = 0; i < 8 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(scrollable, const Offset(0, -450));
     await tester.pumpAndSettle();
   }
 }
 
-Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
-Future<void> _scrollToNextPrayers(WidgetTester tester) => _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
-Future<void> _scrollToReview(WidgetTester tester) => _scrollToFinder(tester, find.text('Review & Create Records'));
+Future<void> _scrollToContinue(WidgetTester tester) =>
+    _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
+
+Future<void> _scrollToPrayerContinue(WidgetTester tester) =>
+    _scrollToFinder(tester, find.byKey(const Key('qaza_prayers_continue_button')));
+
+Future<void> _scrollToFinalAdd(WidgetTester tester) =>
+    _scrollToFinder(tester, find.byKey(const Key('qaza_final_add_button')));
 
 void main() {
   test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
@@ -106,18 +110,18 @@ void main() {
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.pumpAndSettle();
     await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.tap(find.text('Maghrib').first);
     await tester.pumpAndSettle();
-    await _scrollToNextPrayers(tester);
-    await tester.tap(find.text('Next: Choose missed prayers'));
+    await _scrollToPrayerContinue(tester);
+    await tester.tap(find.byKey(const Key('qaza_prayers_continue_button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Maghrib'));
-    await tester.pumpAndSettle();
-    await _scrollToReview(tester);
-    await tester.tap(find.text('Review & Create Records'));
+    await _scrollToFinalAdd(tester);
+    await tester.tap(find.byKey(const Key('qaza_final_add_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
@@ -131,20 +135,21 @@ void main() {
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Range'));
-    await _scrollToContinue(tester);
-    await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-10')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.pumpAndSettle();
-    await _scrollToNextPrayers(tester);
-    await tester.tap(find.text('Next: Choose missed prayers'));
+    await _scrollToContinue(tester);
+    await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fajr'));
+    await tester.tap(find.text('Fajr').first);
     await tester.pumpAndSettle();
-    await _scrollToReview(tester);
-    await tester.tap(find.text('Review & Create Records'));
+    await _scrollToPrayerContinue(tester);
+    await tester.tap(find.byKey(const Key('qaza_prayers_continue_button')));
+    await tester.pumpAndSettle();
+    await _scrollToFinalAdd(tester);
+    await tester.tap(find.byKey(const Key('qaza_final_add_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
