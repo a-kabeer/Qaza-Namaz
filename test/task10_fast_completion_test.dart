@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/widgets/app_button.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
@@ -49,7 +50,6 @@ void main() {
     await tester.tap(find.byKey(const Key('complete_oldest_pending')));
     await tester.pump();
 
-    // The second record is visible without a network refresh.
     expect(find.text('10 Sep 2026'), findsOneWidget);
     expect(find.text('Fajr Qaza completed • next oldest is ready.'), findsOneWidget);
 
@@ -71,10 +71,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Completing...'), findsOneWidget);
-    expect(
-      (tester.widget<AppButton>(button)).onPressed,
-      isNull,
-    );
+    expect(tester.widget<AppButton>(button).onPressed, isNull);
 
     await tester.pumpAndSettle();
   });
