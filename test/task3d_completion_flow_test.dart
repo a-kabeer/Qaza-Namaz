@@ -71,7 +71,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Witr Qaza'), findsOneWidget);
     expect(find.text('20 Aug 2026'), findsOneWidget);
-    expect(find.text('Complete 0 selected'), findsOneWidget);
+    expect(find.byKey(const Key('complete_selected_qaza_button')), findsNothing);
   });
 
   testWidgets('Namaz-wise flow supports multi-select completion for one prayer', (tester) async {
@@ -86,14 +86,16 @@ void main() {
     await tester.ensureVisible(boxes.at(1));
     await tester.tap(boxes.at(1));
     await tester.pumpAndSettle();
-    expect(find.text('Complete 2 selected'), findsOneWidget);
-    await tester.ensureVisible(find.text('Complete 2 selected'));
-    await tester.tap(find.text('Complete 2 selected'));
+    expect(find.text('Complete 2 Qaza'), findsOneWidget);
+    final action = find.byKey(const Key('complete_selected_qaza_button'));
+    expect(action, findsOneWidget);
+    await tester.tap(action);
     await tester.pumpAndSettle();
     final records = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.witr);
     expect(records.length, 2);
     expect(records.every((r) => r.status == QazaStatus.completed), isTrue);
     expect(records.every((r) => r.completedAt != null), isTrue);
+    expect(find.byKey(const Key('complete_selected_qaza_button')), findsNothing);
   });
 
   testWidgets('Completing Witr does not modify Isha records', (tester) async {
@@ -105,7 +107,7 @@ void main() {
     await tester.ensureVisible(checkbox);
     await tester.tap(checkbox);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Complete 1 selected'));
+    await tester.tap(find.text('Complete 1 Qaza'));
     await tester.pumpAndSettle();
     final witr = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.witr);
     final isha = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.isha);
