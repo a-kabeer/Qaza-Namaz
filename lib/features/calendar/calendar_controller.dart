@@ -5,50 +5,56 @@ final calendarTodayProvider = Provider<DateTime>((ref) {
   return DateTime(now.year, now.month, now.day);
 });
 
-enum CalendarMode { gregorian, hijri }
-
 enum DateSelectionMode { single, range, multiple }
+
+DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
 
 class CalendarSelectionState {
   const CalendarSelectionState({
-    this.calendarMode = CalendarMode.gregorian,
     this.selectionMode = DateSelectionMode.single,
     this.selectedDates = const <DateTime>[],
   });
 
-  final CalendarMode calendarMode;
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
+
+  int get selectedCount => selectedDates.length;
+  bool get hasSelection => selectedDates.isNotEmpty;
+  bool get isRangeComplete =>
+      selectionMode == DateSelectionMode.range && selectedDates.length == 2;
 
   DateTime? get startDate => selectedDates.isEmpty ? null : selectedDates.first;
   DateTime? get endDate => selectedDates.length > 1 ? selectedDates.last : null;
 
-  /// Expands a selected range into the individual canonical Gregorian dates
-  /// that the Qaza service persists as independent records.
   List<DateTime> get datesForStorage {
-    if (selectionMode != DateSelectionMode.range || selectedDates.length != 2) {
-      return selectedDates;
-    }
+    if (!isRangeComplete) return selectedDates;
 
     final start = selectedDates.first;
     final end = selectedDates.last;
     final dates = <DateTime>[];
-    for (var date = start; !date.isAfter(end); date = DateTime(date.year, date.month, date.day + 1)) {
+    for (var date = start;
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)) {
       dates.add(date);
     }
     return dates;
   }
 
   CalendarSelectionState copyWith({
-    CalendarMode? calendarMode,
     DateSelectionMode? selectionMode,
     List<DateTime>? selectedDates,
   }) {
+    final dates = _canonicalize(selectedDates ?? this.selectedDates);
     return CalendarSelectionState(
-      calendarMode: calendarMode ?? this.calendarMode,
       selectionMode: selectionMode ?? this.selectionMode,
-      selectedDates: List.unmodifiable(selectedDates ?? this.selectedDates),
+      selectedDates: List.unmodifiable(dates),
     );
+  }
+
+  static List<DateTime> _canonicalize(List<DateTime> dates) {
+    final unique = <DateTime>{for (final date in dates) _dateOnly(date)};
+    final result = unique.toList()..sort();
+    return result;
   }
 }
 
@@ -59,16 +65,12 @@ class CalendarController extends Notifier<CalendarSelectionState> {
   @override
   CalendarSelectionState build() => const CalendarSelectionState();
 
-  void setCalendarMode(CalendarMode mode) {
-    state = state.copyWith(calendarMode: mode, selectedDates: const []);
-  }
-
   void setSelectionMode(DateSelectionMode mode) {
     state = state.copyWith(selectionMode: mode, selectedDates: const []);
   }
 
   void select(DateTime value) {
-    final date = DateTime(value.year, value.month, value.day);
+    final date = _dateOnly(value);
     if (date.isAfter(ref.read(calendarTodayProvider))) return;
 
     switch (state.selectionMode) {
@@ -77,11 +79,10 @@ class CalendarController extends Notifier<CalendarSelectionState> {
       case DateSelectionMode.multiple:
         final selected = {...state.selectedDates};
         if (!selected.add(date)) selected.remove(date);
-        final dates = selected.toList()..sort();
-        state = state.copyWith(selectedDates: dates);
+        state = state.copyWith(selectedDates: selected.toList());
       case DateSelectionMode.range:
         final start = state.startDate;
-        if (start == null || state.endDate != null || date.isBefore(start)) {
+        if (start == null || state.isRangeComplete || date.isBefore(start)) {
           state = state.copyWith(selectedDates: [date]);
         } else {
           state = state.copyWith(selectedDates: [start, date]);

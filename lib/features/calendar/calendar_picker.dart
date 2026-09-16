@@ -6,278 +6,155 @@ import 'calendar_controller.dart';
 
 class CalendarPicker extends ConsumerStatefulWidget {
   const CalendarPicker({super.key, this.qazaDates = const <DateTime>{}});
-
   final Set<DateTime> qazaDates;
-
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
 }
 
 class _CalendarPickerState extends ConsumerState<CalendarPicker> {
-  late DateTime _gregorianAnchor;
-  late int _hijriYear;
-  late int _hijriMonth;
+  late DateTime _monthAnchor;
 
   @override
   void initState() {
     super.initState();
-    _setAnchorFromGregorian(ref.read(calendarTodayProvider));
-  }
-
-  void _setAnchorFromGregorian(DateTime date) {
-    final normalized = DateTime(date.year, date.month, date.day);
-    _gregorianAnchor = DateTime(normalized.year, normalized.month, 1);
-    final hijri = HijriCalendar.fromDate(normalized);
-    _hijriYear = hijri.hYear;
-    _hijriMonth = hijri.hMonth;
-  }
-
-  void _reanchorForMode(CalendarMode mode, List<DateTime> selected) {
-    final reference = selected.isEmpty ? ref.read(calendarTodayProvider) : selected.first;
-    if (mode == CalendarMode.gregorian) {
-      _gregorianAnchor = DateTime(reference.year, reference.month, 1);
-    } else {
-      final h = HijriCalendar.fromDate(reference);
-      _hijriYear = h.hYear;
-      _hijriMonth = h.hMonth;
-    }
+    final today = ref.read(calendarTodayProvider);
+    _monthAnchor = DateTime(today.year, today.month, 1);
   }
 
   DateTime get _today => ref.read(calendarTodayProvider);
-  DateTime _firstGregorianOfHijri() => HijriCalendar().hijriToGregorian(_hijriYear, _hijriMonth, 1);
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _isQazaDate(DateTime date) => widget.qazaDates.any((qaza) => _sameDay(qaza, date));
-
-  String _hijriMonthHeader() {
-    final h = HijriCalendar();
-    h.hYear = _hijriYear;
-    h.hMonth = _hijriMonth;
-    h.hDay = 1;
-    return '${h.getLongMonthName()} $_hijriYear AH';
-  }
-
   String _hijriLabel(DateTime date) {
     final h = HijriCalendar.fromDate(date);
     return '${h.hDay} ${h.getLongMonthName()} ${h.hYear} AH';
   }
-
   String _gregorianLabel(BuildContext context, DateTime date) => MaterialLocalizations.of(context).formatMediumDate(date);
 
   void _goMonth(int delta) {
-    final state = ref.read(calendarControllerProvider);
-    if (state.calendarMode == CalendarMode.gregorian) {
-      final next = DateTime(_gregorianAnchor.year, _gregorianAnchor.month + delta, 1);
-      if (next.isBefore(DateTime(1950, 1, 1)) || next.isAfter(DateTime(_today.year, _today.month, 1))) return;
-      setState(() => _gregorianAnchor = next);
-      return;
-    }
+    final next = DateTime(_monthAnchor.year, _monthAnchor.month + delta, 1);
+    final minimum = DateTime(1950, 1, 1);
+    final maximum = DateTime(_today.year, _today.month, 1);
+    if (next.isBefore(minimum) || next.isAfter(maximum)) return;
+    setState(() => _monthAnchor = next);
+  }
 
-    var year = _hijriYear;
-    var month = _hijriMonth + delta;
-    while (month < 1) {
-      month += 12;
-      year--;
+  String _prompt(CalendarSelectionState state) {
+    switch (state.selectionMode) {
+      case DateSelectionMode.single:
+        return state.hasSelection ? 'Date selected. Review the date below or choose another.' : 'Tap one date to select it.';
+      case DateSelectionMode.range:
+        if (!state.hasSelection) return 'Tap a start date, then tap an end date.';
+        if (!state.isRangeComplete) return 'Now tap an end date on or after the start.';
+        return '${state.selectedCount} days selected.';
+      case DateSelectionMode.multiple:
+        return state.hasSelection ? '${state.selectedCount} dates selected. Tap a selected date to remove it.' : 'Tap dates individually to select or deselect them.';
     }
-    while (month > 12) {
-      month -= 12;
-      year++;
-    }
-    final candidate = HijriCalendar().hijriToGregorian(year, month, 1);
-    if (candidate.isBefore(DateTime(1950, 1, 1)) || candidate.isAfter(_today)) return;
-    setState(() {
-      _hijriYear = year;
-      _hijriMonth = month;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarControllerProvider);
+    final theme = Theme.of(context);
     final selected = state.selectedDates;
-    final header = state.calendarMode == CalendarMode.gregorian
-        ? MaterialLocalizations.of(context).formatMonthYear(_gregorianAnchor)
-        : _hijriMonthHeader();
-    final canPrevious = state.calendarMode == CalendarMode.gregorian
-        ? _gregorianAnchor.isAfter(DateTime(1950, 1, 1))
-        : _firstGregorianOfHijri().isAfter(DateTime(1950, 1, 1));
-    final canNext = state.calendarMode == CalendarMode.gregorian
-        ? _gregorianAnchor.isBefore(DateTime(_today.year, _today.month, 1))
-        : _firstGregorianOfHijri().isBefore(_today);
-
+    final minimum = DateTime(1950, 1, 1);
+    final canPrevious = _monthAnchor.isAfter(minimum);
+    final canNext = _monthAnchor.isBefore(DateTime(_today.year, _today.month, 1));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SegmentedButton<CalendarMode>(
-          key: const Key('calendar_mode_selector'),
-          segments: const [
-            ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')),
-            ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri')),
-          ],
-          selected: {state.calendarMode},
-          onSelectionChanged: (value) {
-            final mode = value.first;
-            _reanchorForMode(mode, selected);
-            ref.read(calendarControllerProvider.notifier).setCalendarMode(mode);
-            setState(() {});
-          },
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            IconButton(key: const Key('calendar_prev_month'), tooltip: 'Previous month', onPressed: canPrevious ? () => _goMonth(-1) : null, icon: const Icon(Icons.chevron_left_rounded)),
-            Expanded(child: Text(header, key: const Key('calendar_month_header'), textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium)),
-            IconButton(key: const Key('calendar_next_month'), tooltip: 'Next month', onPressed: canNext ? () => _goMonth(1) : null, icon: const Icon(Icons.chevron_right_rounded)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          state.selectionMode == DateSelectionMode.single
-              ? 'Select one date.'
-              : state.selectionMode == DateSelectionMode.range
-                  ? selected.length < 2 ? 'Select a start date, then a later end date.' : 'Range selected: ${selected.length == 2 ? '2 dates' : '${selected.length} dates'}.'
-                  : '${selected.length} date${selected.length == 1 ? '' : 's'} selected.',
-          key: const Key('calendar_selection_prompt'),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Row(children: [
+          IconButton(key: const Key('calendar_prev_month'), tooltip: 'Previous month', onPressed: canPrevious ? () => _goMonth(-1) : null, icon: const Icon(Icons.chevron_left_rounded)),
+          Expanded(child: Column(children: [
+            Text(MaterialLocalizations.of(context).formatMonthYear(_monthAnchor), key: const Key('calendar_month_header'), textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
+            Text(_hijriLabel(_monthAnchor), key: const Key('calendar_hijri_month_label'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+          ])),
+          IconButton(key: const Key('calendar_next_month'), tooltip: 'Next month', onPressed: canNext ? () => _goMonth(1) : null, icon: const Icon(Icons.chevron_right_rounded)),
+        ]),
         const SizedBox(height: 8),
-        _DayGrid(
-          anchor: state.calendarMode == CalendarMode.gregorian ? _gregorianAnchor : _firstGregorianOfHijri(),
-          hijriMode: state.calendarMode == CalendarMode.hijri,
-          today: _today,
-          selectedDates: selected,
-          onDayTap: (date) => ref.read(calendarControllerProvider.notifier).select(date),
-          isHijriLabel: _hijriLabel,
-          gregorianLabel: (date) => _gregorianLabel(context, date),
-          isQazaDate: _isQazaDate,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+          child: Text(_prompt(state), key: const Key('calendar_selection_prompt'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
         ),
-        const SizedBox(height: 10),
-        if (selected.isNotEmpty)
-          _SelectionSummary(selectedDates: selected, hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date)),
+        const SizedBox(height: 12),
+        _DayGrid(anchor: _monthAnchor, today: _today, selectionMode: state.selectionMode, selectedDates: selected, onDayTap: (date) => ref.read(calendarControllerProvider.notifier).select(date), hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), isQazaDate: _isQazaDate),
+        if (selected.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _SelectionSummary(state: state, hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), onClear: () => ref.read(calendarControllerProvider.notifier).clear()),
+        ],
       ],
     );
   }
 }
 
 class _DayGrid extends StatelessWidget {
-  const _DayGrid({required this.anchor, required this.hijriMode, required this.today, required this.selectedDates, required this.onDayTap, required this.isHijriLabel, required this.gregorianLabel, required this.isQazaDate});
-
-  final DateTime anchor;
-  final bool hijriMode;
-  final DateTime today;
+  const _DayGrid({required this.anchor, required this.today, required this.selectionMode, required this.selectedDates, required this.onDayTap, required this.hijriLabel, required this.gregorianLabel, required this.isQazaDate});
+  final DateTime anchor, today;
+  final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
   final ValueChanged<DateTime> onDayTap;
-  final String Function(DateTime) isHijriLabel;
-  final String Function(DateTime) gregorianLabel;
+  final String Function(DateTime) hijriLabel, gregorianLabel;
   final bool Function(DateTime) isQazaDate;
-
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-  bool _selected(DateTime day) => selectedDates.any((d) => _sameDay(d, day));
-  bool _inRange(DateTime day) => selectedDates.length == 2 && day.isAfter(selectedDates.first) && day.isBefore(selectedDates.last);
+  bool _selected(DateTime day) => selectedDates.any((date) => _sameDay(date, day));
+  bool _inRange(DateTime day) => selectionMode == DateSelectionMode.range && selectedDates.length == 2 && !day.isBefore(selectedDates.first) && !day.isAfter(selectedDates.last);
+  bool _rangeEndpoint(DateTime day) => selectionMode == DateSelectionMode.range && selectedDates.length == 2 && (_sameDay(day, selectedDates.first) || _sameDay(day, selectedDates.last));
 
   @override
   Widget build(BuildContext context) {
-    final monthStart = anchor;
-    final hijri = hijriMode ? HijriCalendar.fromDate(monthStart) : null;
-    final daysInMonth = hijriMode ? hijri!.getDaysInMonth(hijri.hYear, hijri.hMonth) : DateTime(monthStart.year, monthStart.month + 1, 0).day;
-    final leading = monthStart.weekday - 1;
+    final daysInMonth = DateTime(anchor.year, anchor.month + 1, 0).day;
+    final leading = anchor.weekday - 1;
     final totalCells = ((leading + daysInMonth + 6) ~/ 7) * 7;
     const size = 44.0;
-
-    return Column(
-      children: [
-        const Row(children: [
-          Expanded(child: Center(child: Text('Mo'))),
-          Expanded(child: Center(child: Text('Tu'))),
-          Expanded(child: Center(child: Text('We'))),
-          Expanded(child: Center(child: Text('Th'))),
-          Expanded(child: Center(child: Text('Fr'))),
-          Expanded(child: Center(child: Text('Sa'))),
-          Expanded(child: Center(child: Text('Su'))),
-        ]),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: size * 7,
-          height: (totalCells ~/ 7) * size,
-          child: Column(children: [
-            for (var row = 0; row < totalCells ~/ 7; row++)
-              SizedBox(height: size, child: Row(children: [
-                for (var column = 0; column < 7; column++)
-                  SizedBox(width: size, child: _cell(context, row * 7 + column, leading, daysInMonth, hijri)),
-              ])),
-          ]),
-        ),
-      ],
-    );
+    return Column(children: [
+      const Row(children: [Expanded(child: Center(child: Text('Mo'))), Expanded(child: Center(child: Text('Tu'))), Expanded(child: Center(child: Text('We'))), Expanded(child: Center(child: Text('Th'))), Expanded(child: Center(child: Text('Fr'))), Expanded(child: Center(child: Text('Sa'))), Expanded(child: Center(child: Text('Su')))]),
+      const SizedBox(height: 4),
+      SizedBox(width: size * 7, height: (totalCells ~/ 7) * size, child: Column(children: [
+        for (var row = 0; row < totalCells ~/ 7; row++) SizedBox(height: size, child: Row(children: [for (var column = 0; column < 7; column++) SizedBox(width: size, child: _cell(context, row * 7 + column, leading, daysInMonth))])),
+      ])),
+    ]);
   }
 
-  Widget _cell(BuildContext context, int index, int leading, int daysInMonth, HijriCalendar? monthHijri) {
+  Widget _cell(BuildContext context, int index, int leading, int daysInMonth) {
     final number = index - leading + 1;
     if (number < 1 || number > daysInMonth) return const SizedBox.shrink();
-
-    final day = hijriMode
-        ? HijriCalendar().hijriToGregorian(monthHijri!.hYear, monthHijri.hMonth, number)
-        : DateTime(anchor.year, anchor.month, number);
-    final normalized = DateTime(day.year, day.month, day.day);
-    final enabled = !normalized.isAfter(today) && !normalized.isBefore(DateTime(1950));
-    final selected = _selected(normalized);
-    final inRange = _inRange(normalized);
-    final qaza = isQazaDate(normalized);
+    final date = DateTime(anchor.year, anchor.month, number);
+    final enabled = !date.isAfter(today) && !date.isBefore(DateTime(1950));
+    final selected = _selected(date), inRange = _inRange(date), endpoint = _rangeEndpoint(date), todayDate = _sameDay(date, today), qaza = isQazaDate(date);
     final scheme = Theme.of(context).colorScheme;
-    final keyDate = '${normalized.year.toString().padLeft(4, '0')}-${normalized.month.toString().padLeft(2, '0')}-${normalized.day.toString().padLeft(2, '0')}';
-
-    return Semantics(
-      label: hijriMode ? isHijriLabel(normalized) : gregorianLabel(normalized),
-      button: enabled,
-      child: InkWell(
-        key: Key('calendar_day_$keyDate'),
-        onTap: enabled ? () => onDayTap(normalized) : null,
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(alignment: Alignment.center, children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? scheme.primary : inRange ? scheme.primaryContainer : _sameDay(normalized, today) ? scheme.secondaryContainer : null),
-            alignment: Alignment.center,
-            child: Text('$number', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: selected ? scheme.onPrimary : null, fontWeight: _sameDay(normalized, today) || selected ? FontWeight.w700 : null)),
-          ),
-          if (qaza)
-            Positioned(
-              bottom: 2,
-              child: Container(
-                key: Key('calendar_qaza_indicator_$keyDate'),
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.tertiary),
-              ),
-            ),
-        ]),
-      ),
-    );
+    final dateKey = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    return Semantics(label: '${gregorianLabel(date)}, ${hijriLabel(date)}', button: enabled, selected: selected, child: InkWell(key: Key('calendar_day_$dateKey'), onTap: enabled ? () => onDayTap(date) : null, borderRadius: BorderRadius.circular(22), child: Stack(alignment: Alignment.center, children: [
+      Container(width: 34, height: 34, decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? scheme.primary : endpoint || inRange ? scheme.primaryContainer : todayDate ? scheme.secondaryContainer : null), alignment: Alignment.center, child: Text('$number', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: selected ? scheme.onPrimary : null, fontWeight: todayDate || selected || endpoint ? FontWeight.w700 : null))),
+      if (qaza) Positioned(bottom: 2, child: Container(key: Key('calendar_qaza_indicator_$dateKey'), width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.tertiary))),
+    ])));
   }
 }
 
 class _SelectionSummary extends StatelessWidget {
-  const _SelectionSummary({required this.selectedDates, required this.hijriLabel, required this.gregorianLabel});
-  final List<DateTime> selectedDates;
-  final String Function(DateTime) hijriLabel;
-  final String Function(DateTime) gregorianLabel;
+  const _SelectionSummary({required this.state, required this.hijriLabel, required this.gregorianLabel, required this.onClear});
+  final CalendarSelectionState state;
+  final String Function(DateTime) hijriLabel, gregorianLabel;
+  final VoidCallback onClear;
+
+  Widget _dateLine(BuildContext context, DateTime date, String label) {
+    final theme = Theme.of(context);
+    return ListTile(dense: true, contentPadding: EdgeInsets.zero, leading: CircleAvatar(backgroundColor: theme.colorScheme.primaryContainer, foregroundColor: theme.colorScheme.onPrimaryContainer, child: Text('${date.day}', style: theme.textTheme.labelLarge)), title: Text(label), subtitle: Text(hijriLabel(date)));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final gregorian = selectedDates.length == 1
-        ? gregorianLabel(selectedDates.single)
-        : selectedDates.length == 2
-            ? '${gregorianLabel(selectedDates.first)} → ${gregorianLabel(selectedDates.last)}'
-            : '${selectedDates.length} selected dates';
-    final hijri = selectedDates.length == 1
-        ? hijriLabel(selectedDates.single)
-        : selectedDates.length == 2
-            ? '${hijriLabel(selectedDates.first)} → ${hijriLabel(selectedDates.last)}'
-            : 'Hijri dates are derived from the hijri package.';
-    return Card(
-      key: const Key('calendar_selected_summary'),
-      child: Padding(padding: const EdgeInsets.all(12), child: Column(children: [Text(gregorian), const SizedBox(height: 4), Text(hijri, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)])),
-    );
+    final theme = Theme.of(context), dates = state.selectedDates;
+    final title = switch (state.selectionMode) { DateSelectionMode.single => 'Selected date', DateSelectionMode.range => 'Selected range', DateSelectionMode.multiple => '${state.selectedCount} selected dates' };
+    return Card(key: const Key('calendar_selected_summary'), child: Padding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 10), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [Expanded(child: Text(title, style: theme.textTheme.titleSmall)), TextButton(key: const Key('calendar_clear_selection'), onPressed: onClear, child: const Text('Clear'))]),
+      const Divider(height: 12),
+      if (state.selectionMode == DateSelectionMode.multiple) ...dates.map((date) => _dateLine(context, date, gregorianLabel(date)))
+      else if (dates.length == 1) _dateLine(context, dates.single, gregorianLabel(dates.single))
+      else if (dates.length == 2) ...[_dateLine(context, dates.first, 'Start · ${gregorianLabel(dates.first)}'), _dateLine(context, dates.last, 'End · ${gregorianLabel(dates.last)}')],
+      if (state.selectionMode == DateSelectionMode.single && dates.length == 1 || state.selectionMode == DateSelectionMode.range && state.isRangeComplete) _continueHint(context),
+      if (state.selectionMode == DateSelectionMode.multiple) Text('Review the selected dates before continuing.', style: theme.textTheme.bodySmall),
+    ])));
   }
+
+  Widget _continueHint(BuildContext context) => Text('Selection ready to continue.', key: const Key('calendar_continue_ready'), style: Theme.of(context).textTheme.bodySmall);
 }
