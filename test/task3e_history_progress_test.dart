@@ -46,7 +46,7 @@ void main() {
     expect(find.text('0 pending • 1 completed'), findsOneWidget);
   });
 
-  testWidgets('Task 3E history excludes pending and is newest completed-first while preserving dates', (tester) async {
+  testWidgets('Task 3E history sorts by original date and shows pending/completed records', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
       record(id: 'old_completed', prayer: PrayerType.fajr, originalDate: DateTime(2021, 10, 12), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 2, 15, 45)),
@@ -54,21 +54,21 @@ void main() {
       record(id: 'pending', prayer: PrayerType.asr, originalDate: DateTime(2021, 10, 10)),
     ]);
     await pumpScreen(tester, repository);
-    final newFinder = find.text('Zuhr Qaza completed');
-    final oldFinder = find.text('Fajr Qaza completed');
+    final newFinder = find.text('Zuhr Qaza');
+    final oldFinder = find.text('Fajr Qaza');
     expect(newFinder, findsOneWidget);
     expect(oldFinder, findsOneWidget);
-    expect(find.text('Asr Qaza completed'), findsNothing);
-    expect(find.textContaining('Original missed date: 11 Oct 2021'), findsOneWidget);
-    expect(find.textContaining('Original missed date: 12 Oct 2021'), findsOneWidget);
-    expect(tester.getCenter(newFinder).dy, lessThan(tester.getCenter(oldFinder).dy));
+    expect(find.text('Asr Qaza'), findsOneWidget);
+    expect(find.textContaining('Original Qaza date: 11 Oct 2021'), findsOneWidget);
+    expect(find.textContaining('Original Qaza date: 12 Oct 2021'), findsOneWidget);
+    expect(find.textContaining('Status: Pending'), findsOneWidget);
+    expect(tester.getCenter(oldFinder).dy, lessThan(tester.getCenter(newFinder).dy));
   });
 
-  testWidgets('Task 3E empty state is explicit when there is no completed history', (tester) async {
+  testWidgets('Task 3E empty state is explicit when there are no Qaza records', (tester) async {
     final repository = InMemoryQazaRepository();
-    await repository.addRecords([record(id: 'pending_only', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 1))]);
     await pumpScreen(tester, repository);
-    expect(find.text('No completed Qaza yet.'), findsOneWidget);
-    expect(find.textContaining('Completed individual records will appear here'), findsOneWidget);
+    expect(find.text('No Qaza records yet.'), findsOneWidget);
+    expect(find.textContaining('Your Qaza records will appear here'), findsOneWidget);
   });
 }
