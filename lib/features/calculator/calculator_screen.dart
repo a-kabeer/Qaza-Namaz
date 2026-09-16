@@ -116,6 +116,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     if (_step > 0) setState(() => _step--);
   }
 
+  void _editStep(int targetStep) {
+    if (targetStep < 0 || targetStep > 1) return;
+    setState(() {
+      _step = targetStep;
+      _calculation = null;
+      _keptAsEstimate = false;
+    });
+  }
+
   void _calculate() {
     final start = _effectiveBalighDate;
     final end = _effectivePrayerStartDate;
@@ -268,7 +277,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               _StepActions(
                 step: _step,
                 canContinue: _step == 0 ? _step1Valid : _step == 1 ? _step2Valid : _calculation != null && !_addingToTracker,
-                onBack: _step == 0 ? null : _back,
+                onBack: _step == 2 ? null : _back,
                 onContinue: _step == 2 ? _addToTracker : _next,
               ),
             ],
@@ -495,9 +504,26 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         Text('Result', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
         _SourceChip(exact: _balighInputMode == _BalighInputMode.exactDate || _prayerStartInputMode == _PrayerStartInputMode.exactDate),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              key: const Key('calculator_edit_about'),
+              onPressed: _addingToTracker ? null : () => _editStep(0),
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Edit About You'),
+            ),
+            OutlinedButton.icon(
+              key: const Key('calculator_edit_prayer_history'),
+              onPressed: _addingToTracker ? null : () => _editStep(1),
+              icon: const Icon(Icons.edit_calendar_outlined),
+              label: const Text('Edit Prayer History'),
+            ),
+          ],
+        ),
         const SizedBox(height: 14),
-        if (_keptAsEstimate)
-          const Align(alignment: Alignment.centerLeft, child: Chip(label: Text('Kept as estimate'))),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -531,8 +557,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   onChanged: (value) {
                     setState(() {
                       _includeWitr = value;
-                      _calculation = calculateQaza(startDate: result.startDate, endDate: result.endDate, includeWitr: value);
-                      _keptAsEstimate = false;
+                      _calculation = calculateQaza(
+                        startDate: result.startDate,
+                        endDate: result.endDate,
+                        includeWitr: value,
+                      );
                     });
                   },
                 ),
@@ -541,12 +570,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          key: const Key('calculator_keep_estimate'),
-          onPressed: _addingToTracker ? null : _keepAsEstimate,
-          child: const Text('Keep as Estimate'),
-        ),
+        if (_keptAsEstimate) ...[
+          const SizedBox(height: 10),
+          _DateInfoBox(text: 'Estimate kept without adding records to the tracker.'),
+        ],
       ],
     );
   }
