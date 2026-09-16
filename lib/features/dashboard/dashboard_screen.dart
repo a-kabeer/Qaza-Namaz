@@ -81,9 +81,9 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Row(children: [
-                    StatusChip('$pending pending'),
+                    StatusChip('$pending pending', tone: StatusChipTone.pending),
                     const SizedBox(width: 8),
-                    StatusChip('$completed fulfilled'),
+                    StatusChip('$completed fulfilled', tone: StatusChipTone.fulfilled),
                   ]),
                 ],
               ),
