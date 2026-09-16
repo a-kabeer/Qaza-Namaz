@@ -9,6 +9,13 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 ## Overall Status
 **In progress**
 
+## Current checkpoint
+- Notification UX and controller/service integration implemented.
+- PR #14 opened against `main`.
+- First full CI run failed only on a permission-state test expectation; implementation/analyze passed.
+- Permission-state test has been corrected to simulate a genuinely not-requested state before requesting permission.
+- Next verification: focused notification tests, then final full CI and supported Android runtime/manual verification.
+
 ## Scope
 - One Settings → Notifications screen; no unnecessary sub-pages.
 - Daily Qaza Reminder switch.
@@ -26,18 +33,18 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 
 | Part | Area | Status |
 |---|---|---|
-| 1 | Audit & baseline | ☐ |
-| 2 | Notification state model | ☐ |
-| 3 | Production Notifications UI | ☐ |
-| 4 | Enable workflow | ☐ |
-| 5 | Disable workflow | ☐ |
-| 6 | Pending-Qaza scheduling rule | ☐ |
-| 7 | Reminder time workflow | ☐ |
-| 8 | Test notification | ☐ |
-| 9 | Persistence & restore | ☐ |
-| 10 | Runtime reconciliation | ☐ |
-| 11 | Theme & responsive UX | ☐ |
-| 12 | Notification tests | ☐ |
+| 1 | Audit & baseline | ✅ |
+| 2 | Notification state model | ✅ |
+| 3 | Production Notifications UI | ✅ |
+| 4 | Enable workflow | ✅ |
+| 5 | Disable workflow | ✅ |
+| 6 | Pending-Qaza scheduling rule | ✅ |
+| 7 | Reminder time workflow | ✅ |
+| 8 | Test notification | ✅ |
+| 9 | Persistence & restore | ✅ |
+| 10 | Runtime reconciliation | ✅ |
+| 11 | Theme & responsive UX | ✅ |
+| 12 | Notification tests | 🔄 Fix + rerun |
 | 13 | Integration & regression | ☐ |
 | 14 | Final verification & completion | ☐ |
 
