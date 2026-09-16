@@ -254,7 +254,7 @@ class _PrayerProgressTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: CircleAvatar(child: Icon(item.prayerType.icon)),
+        leading: const CircleAvatar(child: Icon(Icons.mosque_rounded)),
         title: Text(item.prayerType.label),
         subtitle: Text('${item.progress.pending} pending • ${item.progress.completed} completed'),
         trailing: SizedBox(
