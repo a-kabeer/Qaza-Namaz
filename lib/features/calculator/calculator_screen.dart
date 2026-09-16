@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/constants/prayer_types.dart';
 import 'calculator_persistence.dart';
 import 'calculator_tracker.dart';
 import 'qaza_calculation.dart';
@@ -384,7 +385,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             ], selected: {_balighInputMode}, onSelectionChanged: (value) { setState(() { _balighInputMode = value.first; if (_balighInputMode == _BalighInputMode.age) _balighDate = null; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); }),
             const SizedBox(height: 14),
             if (_balighInputMode == _BalighInputMode.age)
-              DropdownButtonFormField<int>(key: const Key('calculator_baligh_age'), initialValue: _balighAge, decoration: const InputDecoration(labelText: 'Baligh age (years)'), items: [for (var value = 9; value <= 18; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _balighAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
+              DropdownButtonFormField<int>(key: const Key('calculator_baligh_age'), value: _balighAge, decoration: const InputDecoration(labelText: 'Baligh age (years)'), items: [for (var value = 9; value <= 18; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _balighAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
             else
               OutlinedButton.icon(key: const Key('calculator_baligh_date_picker'), onPressed: _dob == null ? null : _pickBalighDate, icon: const Icon(Icons.event_rounded), label: Text(_balighDate == null ? 'Select exact date' : _formatDate(_balighDate!))),
             if (_balighError != null) ...[const SizedBox(height: 6), Text(_balighError!, key: const Key('calculator_baligh_error'), style: TextStyle(color: Theme.of(context).colorScheme.error))],
@@ -413,7 +414,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           ], selected: {_prayerStartInputMode}, onSelectionChanged: (value) { setState(() { _prayerStartInputMode = value.first; if (_prayerStartInputMode == _PrayerStartInputMode.age) _prayerStartDate = null; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); }),
           const SizedBox(height: 14),
           if (_prayerStartInputMode == _PrayerStartInputMode.age)
-            DropdownButtonFormField<int>(key: const Key('calculator_prayer_start_age'), initialValue: _prayerStartAge, decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'), items: [for (var value = 12; value <= 60; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _prayerStartAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
+            DropdownButtonFormField<int>(key: const Key('calculator_prayer_start_age'), value: _prayerStartAge, decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'), items: [for (var value = 12; value <= 60; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _prayerStartAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
           else
             OutlinedButton.icon(key: const Key('calculator_prayer_start_date_picker'), onPressed: baligh == null ? null : _pickPrayerStartDate, icon: const Icon(Icons.event_rounded), label: Text(_prayerStartDate == null ? 'Select exact date' : _formatDate(_prayerStartDate!))),
           if (prayerStart != null) ...[const SizedBox(height: 12), _DateInfoBox(text: _prayerStartInputMode == _PrayerStartInputMode.age ? 'Estimated prayer-start date: ${_formatDate(prayerStart)}' : 'Exact prayer-start date: ${_formatDate(prayerStart)}')],
@@ -456,7 +457,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         const SizedBox(height: 14),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Prayer breakdown', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 10),
-          for (final prayer in result.prayerBreakdown.keys) _InfoRow(label: prayer.label, value: _formatNumber(result.prayerBreakdown[prayer]!)),
+          for (final prayer in result.prayerBreakdown.keys) _InfoRow(label: _prayerLabel(prayer), value: _formatNumber(result.prayerBreakdown[prayer]!)),
           const Divider(height: 24),
           SwitchListTile.adaptive(key: const Key('calculator_include_witr'), contentPadding: EdgeInsets.zero, title: const Text('Include Witr separately'), subtitle: const Text('Witr is counted independently from the five daily prayers.'), value: _includeWitr, onChanged: (value) { setState(() { _includeWitr = value; _calculation = calculateQaza(startDate: result.startDate, endDate: result.endDate, includeWitr: value); _keptAsEstimate = false; }); _queuePersistence(); }),
           if (result.includeWitr) _InfoRow(label: 'Witr', value: _formatNumber(result.witrCount)),
@@ -465,6 +466,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       ]);
     });
   }
+
+  String _prayerLabel(PrayerType prayer) => switch (prayer) {
+        PrayerType.fajr => 'Fajr',
+        PrayerType.zuhr => 'Zuhr',
+        PrayerType.asr => 'Asr',
+        PrayerType.maghrib => 'Maghrib',
+        PrayerType.isha => 'Isha',
+        PrayerType.witr => 'Witr',
+      };
 
   String _formatDate(DateTime date) => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   String _formatNumber(int value) => value.toString().replaceAllMapped(RegExp(r'(?<!^)(?=(\\d{3})+$)'), (_) => ',');

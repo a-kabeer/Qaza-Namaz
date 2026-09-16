@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
@@ -17,7 +18,7 @@ void main() {
 
     expect(find.text('Prayer History'), findsOneWidget);
     expect(find.text('Regular prayer start'), findsOneWidget);
-    expect(find.text('Estimated prayer-start date:'), findsOneWidget);
+    expect(find.textContaining('Estimated prayer-start date:'), findsOneWidget);
     expect(find.text('Qaza period'), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
