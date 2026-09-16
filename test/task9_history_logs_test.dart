@@ -94,6 +94,29 @@ void main() {
     expect(find.textContaining('Completed: 10 Sep 2026'), findsOneWidget);
   });
 
+  testWidgets('filters the ledger by original Qaza date range', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      record(id: 'inside', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 3)),
+      record(id: 'outside', prayer: PrayerType.zuhr, originalDate: DateTime(2026, 9, 10)),
+    ]);
+
+    await pumpScreen(tester, repository);
+    await tester.tap(find.byKey(const Key('history_date_filter')));
+    await tester.pumpAndSettle();
+
+    final picker = find.byType(DateRangePickerDialog);
+    expect(picker, findsOneWidget);
+    await tester.tap(find.descendant(of: picker, matching: find.text('1')).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: picker, matching: find.text('5')).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fajr Qaza'), findsOneWidget);
+    expect(find.text('Zuhr Qaza'), findsNothing);
+    expect(find.text('01 Sep 2026 – 05 Sep 2026'), findsOneWidget);
+  });
+
   testWidgets('sorts newest original Qaza date first and labels both dates', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
