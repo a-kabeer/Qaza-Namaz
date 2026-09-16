@@ -1,8 +1,8 @@
 // Logs & progress.
 //
-// The history screen remains a derived view over the shared Qaza ledger. UI
-// filters and sorting are intentionally local to this screen so business
-// logic, persistence, and synchronization remain unchanged.
+// Step 1 of the history scalability redesign keeps the existing ledger data
+// source intact while making the screen easier to scan: progress is compact,
+// prayer-level details are collapsible, and the ledger is the primary content.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +28,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   PrayerType? _prayerFilter;
   QazaStatus? _statusFilter;
   DateTimeRange? _originalDateFilter;
+  bool _showPrayerProgress = false;
 
   Future<void> _refresh() async {
     await ref.read(qazaRecordsProvider.notifier).refresh();
@@ -83,7 +84,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
 
   String _dateFilterLabel() {
     final range = _originalDateFilter;
-    if (range == null) return 'Original Qaza date';
+    if (range == null) return 'Date';
     return '${formatAppDate(range.start)} – ${formatAppDate(range.end)}';
   }
 
@@ -96,6 +97,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
     final prayerProgress = ref.watch(prayerProgressProvider);
     final records = _filteredAndSorted(allRecords);
     final hasFilters = _prayerFilter != null || _statusFilter != null || _originalDateFilter != null;
+    final total = progress.pending + progress.completed;
 
     return AppScaffold(
       title: 'Logs & Progress',
@@ -120,57 +122,128 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
             else ...[
               if (ledger.hasError && ledger.hasValue)
                 _InlineError(message: 'We could not refresh the latest history.', onRetry: _refresh),
+
+              // Keep the high-level progress visible without making it compete
+              // with the logs themselves.
               ProgressOverviewCard(
                 progress: progress,
-                header: Text('Your progress', style: theme.textTheme.titleLarge),
+                header: Text('Progress', style: theme.textTheme.titleMedium),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      key: const Key('history_prayer_progress_toggle'),
+                      leading: const Icon(Icons.bar_chart_rounded),
+                      title: const Text('Prayer progress'),
+                      subtitle: Text(
+                        total == 0
+                            ? 'No Qaza records yet'
+                            : '$total total • ${progress.pending} pending • ${progress.completed} completed',
+                      ),
+                      trailing: Icon(_showPrayerProgress
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded),
+                      onTap: () => setState(() => _showPrayerProgress = !_showPrayerProgress),
+                    ),
+                    if (_showPrayerProgress)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Column(
+                          children: [
+                            for (final prayer in PrayerType.values)
+                              _PrayerProgressTile(progress: prayerProgress[prayer]),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 18),
-              Text('Prayer progress', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 10),
-              for (final prayer in PrayerType.values)
-                _PrayerProgressTile(progress: prayerProgress[prayer]),
-              const SizedBox(height: 18),
+
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(child: Text('Qaza ledger', style: theme.textTheme.titleLarge)),
-                  Text('${records.length}', style: theme.textTheme.titleMedium),
+                  Expanded(
+                    child: Text('Qaza logs', style: theme.textTheme.titleLarge),
+                  ),
+                  Text(
+                    '${records.length}',
+                    key: const Key('history_result_count'),
+                    style: theme.textTheme.labelLarge,
+                  ),
                 ],
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Newest original Qaza dates first',
+                style: theme.textTheme.bodySmall,
+              ),
               const SizedBox(height: 10),
+
+              // Temporary filter controls. Step 4 will move them behind a
+              // dedicated filter sheet once repository queries are paginated.
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      DropdownButtonFormField<PrayerType?>(
-                        key: const Key('history_prayer_filter'),
-                        value: _prayerFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Prayer',
-                          prefixIcon: Icon(Icons.mosque_rounded),
-                        ),
-                        items: [
-                          const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
-                          ...PrayerType.values.map(
-                            (prayer) => DropdownMenuItem<PrayerType?>(value: prayer, child: Text(prayer.label)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<PrayerType?>(
+                              key: const Key('history_prayer_filter'),
+                              value: _prayerFilter,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Prayer',
+                                prefixIcon: Icon(Icons.mosque_rounded),
+                              ),
+                              items: [
+                                const DropdownMenuItem<PrayerType?>(
+                                  value: null,
+                                  child: Text('All prayers'),
+                                ),
+                                ...PrayerType.values.map(
+                                  (prayer) => DropdownMenuItem<PrayerType?>(
+                                    value: prayer,
+                                    child: Text(prayer.label),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (value) => setState(() => _prayerFilter = value),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButtonFormField<QazaStatus?>(
+                              key: const Key('history_status_filter'),
+                              value: _statusFilter,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                                prefixIcon: Icon(Icons.filter_alt_rounded),
+                              ),
+                              items: const [
+                                DropdownMenuItem<QazaStatus?>(
+                                  value: null,
+                                  child: Text('All'),
+                                ),
+                                DropdownMenuItem<QazaStatus?>(
+                                  value: QazaStatus.pending,
+                                  child: Text('Pending'),
+                                ),
+                                DropdownMenuItem<QazaStatus?>(
+                                  value: QazaStatus.completed,
+                                  child: Text('Completed'),
+                                ),
+                              ],
+                              onChanged: (value) => setState(() => _statusFilter = value),
+                            ),
                           ),
                         ],
-                        onChanged: (value) => setState(() => _prayerFilter = value),
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<QazaStatus?>(
-                        key: const Key('history_status_filter'),
-                        value: _statusFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Status',
-                          prefixIcon: Icon(Icons.filter_alt_rounded),
-                        ),
-                        items: const [
-                          DropdownMenuItem<QazaStatus?>(value: null, child: Text('All statuses')),
-                          DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
-                          DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
-                        ],
-                        onChanged: (value) => setState(() => _statusFilter = value),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -194,14 +267,25 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Newest original Qaza dates first',
-                          style: theme.textTheme.bodySmall,
+                      if (hasFilters) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            if (_prayerFilter != null)
+                              Chip(label: Text(_prayerFilter!.label)),
+                            if (_statusFilter != null)
+                              Chip(
+                                label: Text(
+                                  _statusFilter == QazaStatus.pending ? 'Pending' : 'Completed',
+                                ),
+                              ),
+                            if (_originalDateFilter != null)
+                              Chip(label: Text(_dateFilterLabel())),
+                          ],
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -251,9 +335,10 @@ class _PrayerProgressTile extends StatelessWidget {
     if (item == null) return const SizedBox.shrink();
     final total = item.progress.pending + item.progress.completed;
     final ratio = total == 0 ? 0.0 : item.progress.completed / total;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        contentPadding: EdgeInsets.zero,
         leading: const CircleAvatar(child: Icon(Icons.mosque_rounded)),
         title: Text(item.prayerType.label),
         subtitle: Text('${item.progress.pending} pending • ${item.progress.completed} completed'),
