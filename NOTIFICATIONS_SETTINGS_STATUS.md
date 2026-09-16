@@ -34,7 +34,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 6 | Pending-Qaza scheduling rule | ✅ |
 | 7 | Reminder time workflow | ✅ |
 | 8 | Test notification | ✅ |
-| 9 | Persistence & restore | ☐ |
+| 9 | Persistence & restore | ✅ |
 | 10 | Runtime reconciliation | ☐ |
 | 11 | Theme & responsive UX | ☐ |
 | 12 | Notification tests | ☐ |
@@ -106,7 +106,7 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - The user's selected reminder time is preserved when disabling; it is not reset to the default.
 - The disabled state is persisted so restart does not silently re-enable the reminder.
 - The derived schedule state becomes `disabled`, preventing accidental rescheduling while the preference is OFF.
-- Focused test coverage now changes the reminder time before disabling and verifies the exact selected time remains available afterward.
+- Focused test coverage changes the reminder time before disabling and verifies the exact selected time remains available afterward.
 
 ## Part 6 — Pending-Qaza Scheduling Rule ✅
 
@@ -140,6 +140,16 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - The test notification uses a separate notification ID from the recurring daily reminder, so sending a test cannot replace or duplicate the daily schedule.
 - The UI reports a clear success or failure SnackBar after the test action.
 - Focused tests verify the test action fires successfully, does not change recurring schedule calls, and is rejected when permission is unavailable.
+
+## Part 9 — Persistence & Restore ✅
+
+- Daily reminder enabled/disabled state is persisted per active account.
+- Selected reminder hour/minute are persisted per active account and restored together with the preference.
+- Notification permission state remains derived from the device rather than being treated as a user preference.
+- Controller recreation restores the same account's saved configuration without resetting the selected time.
+- A different account receives its own default notification configuration rather than inheriting another account's reminder setting.
+- This prevents notification preferences from leaking across signed-in accounts while keeping the existing SharedPreferences-based architecture.
+- Focused tests verify same-account restoration and cross-account isolation.
 
 ## Completion Criteria
 The task must not be marked complete until:
