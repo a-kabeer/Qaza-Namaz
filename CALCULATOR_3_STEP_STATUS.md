@@ -21,7 +21,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 5 — Step 3: Result & Breakdown
 - [x] Part 6 — Estimated vs Exact Dates
 - [x] Part 7 — Add to Qaza Tracker
-- [ ] Part 8 — Edit & Recalculate Flow
+- [x] Part 8 — Edit & Recalculate Flow
 - [ ] Part 9 — Validation & Edge Cases
 - [ ] Part 10 — Local Persistence & Restore
 - [ ] Part 11 — Theme & Responsive UX
@@ -177,6 +177,20 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Tests
 - Added `test/task_calculator_part7_test.dart` covering tracker date expansion, five-prayer record counts, and separate Witr counting.
 
+## Part 8 — Edit & Recalculate Flow
+
+### Implemented
+- Added dedicated Result actions for `Edit About You` and `Edit Prayer History`.
+- Editing jumps directly to the relevant step instead of restarting the calculator.
+- Existing DOB, Baligh, and prayer-start inputs remain preserved while editing.
+- Entering an edit step invalidates the previous result so stale totals cannot be reused.
+- The existing `Continue` / `Calculate` actions recalculate from the updated inputs and return to Result.
+- Result editing is disabled while a tracker add operation is in progress.
+- Updated calculator widget regression coverage for both edit targets and the recalculate path.
+
+### Tests
+- Updated `test/calculator_shell_test.dart` to exercise valid three-step navigation under the current validation rules and both Result edit actions.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
@@ -188,7 +202,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 5 | 8912dc9b8593bb93efd0e9d790c1518fa5955505 | Focused tests added; full CI deferred | COMPLETE |
 | Part 6 | 59a9329d61a7b7132f9931f2d0a05fb28a643058 | Focused tests added; full CI deferred | COMPLETE |
 | Part 7 | 8e90edc09347cc47a7bd7b82601e13b89a9738d7 | Focused tests added; full CI deferred | COMPLETE |
-| Part 8 | — | — | NOT STARTED |
+| Part 8 | 799938a3a124bc855349dac4395ac7ada94cb83f + cefc4f5884e35638c348aa3dc2710987424779e4 | Focused tests added; full CI deferred | COMPLETE |
 | Part 9 | — | — | NOT STARTED |
 | Part 10 | — | — | NOT STARTED |
 | Part 11 | — | — | NOT STARTED |
