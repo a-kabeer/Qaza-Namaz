@@ -84,7 +84,7 @@ final prayerProgressProvider = Provider<Map<PrayerType, PrayerProgress>>((ref) {
 });
 final qazaLedgerSummaryProvider = FutureProvider.autoDispose<QazaLedgerSummary>((ref) {
   final userId = ref.watch(activeUserIdProvider);
-  if (userId == null) return Future.value(const QazaLedgerSummary());
+  if (userId == null) return Future.value(const QazaLedgerSummary(total: 0, pending: 0, completed: 0, byPrayer: {}));
   return ref.watch(qazaRepositoryProvider).getSummary(userId);
 });
 final qazaHistoryProvider = Provider<List<QazaRecord>>((ref) => QazaService.completedNewestFirst(ref.watch(loadedRecordsProvider)));
