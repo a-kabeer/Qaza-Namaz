@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
-import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'support/in_memory_qaza_repository.dart';
 
@@ -60,5 +59,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
+  });
+  testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
+    await pumpWorkspace(tester, InMemoryQazaRepository());
+    await tester.tap(find.text('Logs'));
+    await tester.pumpAndSettle();
+    expect(find.text('Logs & Progress'), findsOneWidget);
+
+    final handled = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(handled, isTrue);
+    expect(find.text('Logs & Progress'), findsNothing);
+    expect(find.text('Add Qaza'), findsOneWidget);
   });
 }
