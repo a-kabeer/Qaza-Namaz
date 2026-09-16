@@ -16,13 +16,13 @@ Each part follows:
 - [x] Part 1 — Unify Gregorian Calendar
 - [x] Part 2 — Shared Selection State
 - [x] Part 3 — Single / Range / Multiple UX
-- [ ] Part 4 — Qaza Flow Integration
+- [x] Part 4 — Qaza Flow Integration
 - [ ] Part 5 — Theme & Responsive UX
 - [ ] Part 6 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
 
 ## Current State
-Part 3 complete. The shared Gregorian calendar now provides professional Single, Range, and Multiple selection summaries with Gregorian + Hijri information, clear actions, range endpoints, and a chronological multiple-date list.
+Part 4 complete. Add Qaza now uses the unified Gregorian calendar and the three shared selection modes; the obsolete calendar-mode choice was removed while existing Qaza persistence and prayer-record logic remain unchanged.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -47,7 +47,7 @@ Part 3 complete. The shared Gregorian calendar now provides professional Single,
 | Part 1 | `137c922c`, `099b3d80` | Not run | COMPLETE |
 | Part 2 | `dd74cd84`, `9a9a51fb` | Not run | COMPLETE |
 | Part 3 | `8d8010c8`, `1962c8a0` | Not run | COMPLETE |
-| Part 4 | — | — | NOT STARTED |
+| Part 4 | `73802e8b` | Not run | COMPLETE |
 | Part 5 | — | — | NOT STARTED |
 | Part 6 | — | — | NOT STARTED |
 | Final | — | — | NOT STARTED |
