@@ -72,14 +72,14 @@ void main() {
 
     final picker = find.byType(DateRangePickerDialog);
     expect(picker, findsOneWidget);
-    await tester.tap(find.descendant(of: picker, matching: find.text('1')).last);
+    await tester.tap(find.descendant(of: picker, matching: find.text('3')).last);
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(of: picker, matching: find.text('5')).last);
     await tester.pumpAndSettle();
 
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.text('Zuhr Qaza'), findsNothing);
-    expect(find.text('01 Sep 2026 – 05 Sep 2026'), findsOneWidget);
+    expect(find.text('03 Sep 2026 – 05 Sep 2026'), findsOneWidget);
   });
 
   testWidgets('sorts newest original Qaza date first and labels both dates', (tester) async {
