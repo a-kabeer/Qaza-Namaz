@@ -31,7 +31,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 3 | Production Notifications UI | ✅ |
 | 4 | Enable workflow | ✅ |
 | 5 | Disable workflow | ✅ |
-| 6 | Pending-Qaza scheduling rule | ☐ |
+| 6 | Pending-Qaza scheduling rule | ✅ |
 | 7 | Reminder time workflow | ☐ |
 | 8 | Test notification | ☐ |
 | 9 | Persistence & restore | ☐ |
@@ -89,6 +89,7 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - UI copy is concise and explains when the recurring reminder is actually scheduled.
 - Controls are guarded against duplicate taps while an asynchronous notification operation is running.
 - Existing Material theme colors are used instead of custom hardcoded notification colors.
+- Restricted permission state is explicitly rendered so the state model remains exhaustive and user-visible.
 
 ## Part 4 — Enable Workflow ✅
 
@@ -106,6 +107,20 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - The disabled state is persisted so restart does not silently re-enable the reminder.
 - The derived schedule state becomes `disabled`, preventing accidental rescheduling while the preference is OFF.
 - Focused test coverage now changes the reminder time before disabling and verifies the exact selected time remains available afterward.
+
+## Part 6 — Pending-Qaza Scheduling Rule ✅
+
+### Scheduling behavior
+- The recurring reminder is scheduled only when the user preference is enabled, notification permission is granted, and at least one `QazaStatus.pending` record exists.
+- When pending Qaza does not exist, the recurring reminder is explicitly cancelled even if the preference remains enabled.
+- When pending Qaza appears after the reminder is enabled, the schedule is created automatically from the existing Qaza records provider.
+- When the last pending Qaza is completed/removed, the recurring reminder is cancelled automatically.
+- The daily schedule remains a single notification ID; reconciliation replaces the existing daily schedule rather than creating additional reminders.
+
+### Verification coverage
+- Focused notification tests now simulate ledger changes after enabling and verify both transitions: no pending → scheduled and pending → no pending/cancelled.
+- The controller's derived `NotificationScheduleStatus` is asserted as `scheduled` and `noPendingQaza` during those transitions.
+- The Settings screen also exposes the operational state as `No pending Qaza. No reminder is scheduled.` when the preference remains ON without pending work.
 
 ## Completion Criteria
 The task must not be marked complete until:
