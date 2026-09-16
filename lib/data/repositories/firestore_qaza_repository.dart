@@ -14,24 +14,17 @@ class FirestoreQazaRepository implements QazaRepository {
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>> _recordsCollection(String userId) {
-    return _firestore.collection('users').doc(userId).collection('qazaRecords');
-  }
+  CollectionReference<Map<String, dynamic>> _recordsCollection(String userId) =>
+      _firestore.collection('users').doc(userId).collection('qazaRecords');
 
   @override
-  Future<List<QazaRecord>> getRecords({
-    required String userId,
-    PrayerType? prayerType,
-    QazaStatus? status,
-  }) async {
+  Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
     Query<Map<String, dynamic>> query = _recordsCollection(userId);
-
     if (prayerType != null) query = query.where('prayerType', isEqualTo: prayerType.name);
     if (status != null) query = query.where('status', isEqualTo: status.name);
-
     final snapshot = await query.get();
-    final records = snapshot.docs.map(_fromDocument).toList();
-    records.sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    final records = snapshot.docs.map(_fromDocument).toList()
+      ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
     return records;
   }
 
@@ -46,20 +39,18 @@ class FirestoreQazaRepository implements QazaRepository {
     int limit = 25,
     bool ascending = false,
   }) async {
-    if (limit <= 0) {
-      throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
-    }
+    if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
 
     Query<Map<String, dynamic>> query = _recordsCollection(userId);
     if (prayerType != null) query = query.where('prayerType', isEqualTo: prayerType.name);
     if (status != null) query = query.where('status', isEqualTo: status.name);
+    if (originalDateFrom != null) {
+      query = query.where('originalDate', isGreaterThanOrEqualTo: QazaDate.key(originalDateFrom));
+    }
+    if (originalDateTo != null) {
+      query = query.where('originalDate', isLessThanOrEqualTo: QazaDate.key(originalDateTo));
+    }
 
-    final from = originalDateFrom == null ? null : QazaDate.key(originalDateFrom);
-    final to = originalDateTo == null ? null : QazaDate.key(originalDateTo);
-    if (from != null) query = query.where('originalDate', isGreaterThanOrEqualTo: from);
-    if (to != null) query = query.where('originalDate', isLessThanOrEqualTo: to);
-
-    final direction = ascending ? QueryDirection.ascending : QueryDirection.descending;
     query = query.orderBy('originalDate', descending: !ascending);
     query = query.orderBy(FieldPath.documentId, descending: !ascending);
 
@@ -69,16 +60,13 @@ class FirestoreQazaRepository implements QazaRepository {
     }
 
     final snapshot = await query.limit(limit + 1).get();
-    final documents = snapshot.docs;
-    final hasMore = documents.length > limit;
-    final pageDocuments = hasMore ? documents.take(limit).toList() : documents;
-    final records = pageDocuments.map(_fromDocument).toList();
+    final hasMore = snapshot.docs.length > limit;
+    final documents = hasMore ? snapshot.docs.take(limit).toList() : snapshot.docs;
+    final records = documents.map(_fromDocument).toList();
 
     return QazaHistoryPage(
       records: List.unmodifiable(records),
-      nextCursor: hasMore && pageDocuments.isNotEmpty
-          ? _encodeCursor(pageDocuments.last)
-          : null,
+      nextCursor: hasMore && documents.isNotEmpty ? _encodeCursor(documents.last) : null,
     );
   }
 
@@ -98,18 +86,11 @@ class FirestoreQazaRepository implements QazaRepository {
   }
 
   @override
-  Future<void> completeRecord({
-    required String userId,
-    required String recordId,
-    required DateTime completedAt,
-  }) => completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
+  Future<void> completeRecord({required String userId, required String recordId, required DateTime completedAt}) =>
+      completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
 
   @override
-  Future<void> completeRecords({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime completedAt,
-  }) async {
+  Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async {
     if (recordIds.isEmpty) return;
     for (final recordId in recordIds.toSet()) {
       final reference = _recordsCollection(userId).doc(recordId);
@@ -190,12 +171,8 @@ class FirestoreQazaRepository implements QazaRepository {
     throw StateError('Invalid completedAt in Firestore Qaza record.');
   }
 
-  String _encodeCursor(QueryDocumentSnapshot<Map<String, dynamic>> document) {
-    return base64UrlEncode(utf8.encode(jsonEncode({
-      'date': document.data()['originalDate'],
-      'id': document.id,
-    })));
-  }
+  String _encodeCursor(QueryDocumentSnapshot<Map<String, dynamic>> document) =>
+      base64UrlEncode(utf8.encode(jsonEncode({'date': document.data()['originalDate'], 'id': document.id})));
 
   _HistoryCursor _decodeCursor(String value) {
     try {
