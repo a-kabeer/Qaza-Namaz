@@ -21,7 +21,7 @@ void main() {
       final scheme = theme.colorScheme;
 
       final stepText = tester.widget<Text>(find.text('Step 1 of 3 • Range Setup'));
-      expect(stepText.style?.color, scheme.onSurface);
+      expect(stepText.style?.color, theme.textTheme.labelLarge?.color);
 
       for (final label in ['Method', 'Dates', 'Review']) {
         final text = tester.widget<Text>(find.text(label));
