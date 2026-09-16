@@ -35,19 +35,41 @@ class ProgressRing extends StatelessWidget {
   }
 }
 
+enum StatusChipTone { pending, fulfilled }
+
 class StatusChip extends StatelessWidget {
-  const StatusChip(this.label, {super.key, this.color});
+  const StatusChip(this.label, {super.key, required this.tone});
 
   final String label;
-  final Color? color;
+  final StatusChipTone tone;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color ?? Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(999),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final (background, foreground) = switch (tone) {
+      StatusChipTone.pending => (
+          scheme.secondaryContainer,
+          scheme.onSecondaryContainer,
         ),
-        child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-      );
+      StatusChipTone.fulfilled => (
+          scheme.tertiaryContainer,
+          scheme.onTertiaryContainer,
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
 }
