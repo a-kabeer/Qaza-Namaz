@@ -105,7 +105,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           const SizedBox(height: 6),
           Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
-          const Text('Choose the calendar and date selection method.'),
+          Text('Choose the calendar and date selection method.', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 22),
           _ChoiceCard(
             title: 'Calendar',
@@ -151,7 +151,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         const SizedBox(height: 6),
         Text(state.selectionMode == DateSelectionMode.single ? 'Choose a date' : state.selectionMode == DateSelectionMode.range ? 'Choose a date range' : 'Choose multiple dates', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
-        const Text('Only today and earlier dates can be recorded.'),
+        Text('Only today and earlier dates can be recorded.', style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 16),
         CalendarPicker(key: const Key('qaza_calendar_picker'), qazaDates: qazaDates),
         const SizedBox(height: 16),
@@ -168,9 +168,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       children: [
         Text('Step 3 of 3 • Ledger Entry', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        const Text('Missed Prayers', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+        Text('Missed Prayers', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
-        Text('${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select every prayer that was missed.'),
+        Text('${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select every prayer that was missed.', style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 16),
         Row(children: [
           Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => prayers.addAll(PrayerType.values)), icon: Icon(all ? Icons.done_all_rounded : Icons.select_all_rounded), label: const Text('Select All'))),
@@ -198,19 +198,45 @@ class _ProgressHeader extends StatelessWidget {
   const _ProgressHeader({required this.step});
   final int step;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-        child: Row(
-          children: [
-            for (var i = 0; i < 3; i++) ...[
-              if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor)),
-              CircleAvatar(radius: 14, backgroundColor: i <= step ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest, child: Text('${i + 1}', style: TextStyle(color: i <= step ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700))),
-              const SizedBox(width: 6),
-              Text(const ['Method', 'Dates', 'Review'][i], style: Theme.of(context).textTheme.labelMedium),
-            ],
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      child: Row(
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            if (i > 0)
+              Expanded(
+                child: Container(
+                  height: 2,
+                  color: i <= step ? scheme.primary : scheme.outlineVariant,
+                ),
+              ),
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
+              child: Text(
+                '${i + 1}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              const ['Method', 'Dates', 'Review'][i],
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant,
+                fontWeight: i == step ? FontWeight.w700 : null,
+              ),
+            ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class _ChoiceCard extends StatelessWidget {
@@ -219,14 +245,47 @@ class _ChoiceCard extends StatelessWidget {
   final IconData icon;
   final Widget child;
   @override
-  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]), const SizedBox(height: 14), child])));
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(icon, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+            ]),
+            const SizedBox(height: 14),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _InfoBox extends StatelessWidget {
   const _InfoBox({required this.text});
   final String text;
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer.withOpacity(.45), borderRadius: BorderRadius.circular(16)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(text))]));
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(children: [
+        Icon(Icons.info_outline_rounded, color: scheme.onPrimaryContainer),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text, style: TextStyle(color: scheme.onPrimaryContainer))),
+      ]),
+    );
+  }
 }
 
 class _SummaryRow extends StatelessWidget {
