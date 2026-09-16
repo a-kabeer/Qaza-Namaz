@@ -132,7 +132,7 @@ void main() {
   });
 
   test('already-prayed has its own status and does not become a duplicate record', () {
-    final key = const QazaPrayerKey(
+    final key = QazaPrayerKey(
       userId: 'u1',
       date: DateTime(2024, 1, 1),
       prayerType: PrayerType.fajr,
