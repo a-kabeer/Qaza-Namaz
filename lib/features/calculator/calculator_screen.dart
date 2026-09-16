@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../domain/services/qaza_availability_service.dart';
 import 'calculator_persistence.dart';
 import 'calculator_tracker.dart';
 import 'qaza_calculation.dart';
@@ -29,13 +30,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   DateTime? _prayerStartDate;
   bool _includeWitr = false;
   bool _addingToTracker = false;
+  bool _checkingTracker = false;
   bool _keptAsEstimate = false;
   bool _restoring = true;
   QazaCalculation? _calculation;
+  QazaAvailabilityAnalysis? _availabilityAnalysis;
   Future<void> _saveQueue = Future<void>.value();
 
   static const steps = <String>['About You', 'Prayer History', 'Result'];
   static const _persistence = CalculatorPersistence();
+  static const _availability = QazaAvailabilityService();
 
   DateTime get _today {
     final now = DateTime.now();
@@ -102,8 +106,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _prayerStartDate = prayerStartDate;
         _includeWitr = snapshot.includeWitr;
         _calculation = calculation;
+        _availabilityAnalysis = null;
         _keptAsEstimate = snapshot.keptAsEstimate && calculation != null;
       });
+      if (calculation != null) _refreshAvailability(calculation);
     } finally {
       if (mounted) setState(() => _restoring = false);
     }
@@ -219,6 +225,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     setState(() {
       _step = targetStep;
       _calculation = null;
+      _availabilityAnalysis = null;
       _keptAsEstimate = false;
     });
     _queuePersistence();
@@ -232,51 +239,124 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       return;
     }
     try {
+      final calculation = calculateQaza(
+        startDate: start,
+        endDate: end,
+        includeWitr: _includeWitr,
+      );
       setState(() {
-        _calculation = calculateQaza(startDate: start, endDate: end, includeWitr: _includeWitr);
+        _calculation = calculation;
+        _availabilityAnalysis = null;
         _keptAsEstimate = false;
         _step = 2;
       });
       _queuePersistence();
+      _refreshAvailability(calculation);
     } on ArgumentError {
       setState(() {});
     }
   }
 
+  Future<void> _refreshAvailability(QazaCalculation calculation) async {
+    final userId = _currentUserId();
+    if (userId == null) {
+      if (mounted && identical(_calculation, calculation)) {
+        setState(() {
+          _checkingTracker = false;
+          _availabilityAnalysis = null;
+        });
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _checkingTracker = true);
+    try {
+      final service = ProviderScope.containerOf(context, listen: false).read(qazaServiceProvider);
+      final existing = await service.getRecords(userId: userId);
+      final analysis = analyzeTrackerCandidates(
+        userId: userId,
+        calculation: calculation,
+        existingRecords: existing,
+      );
+      if (!mounted || !identical(_calculation, calculation)) return;
+      setState(() => _availabilityAnalysis = analysis);
+    } catch (_) {
+      if (mounted && identical(_calculation, calculation)) {
+        setState(() => _availabilityAnalysis = null);
+      }
+    } finally {
+      if (mounted && identical(_calculation, calculation)) {
+        setState(() => _checkingTracker = false);
+      }
+    }
+  }
+
   Future<void> _addToTracker() async {
     final calculation = _calculation;
-    if (calculation == null || _addingToTracker) return;
+    if (calculation == null || _addingToTracker || _checkingTracker) return;
 
-    final recordCount = trackerRecordCount(calculation);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add estimate to tracker?'),
-        content: Text('$recordCount Qaza records will be prepared from the calculated period. Existing records are preserved and matching duplicates are skipped. This calculation is ${calculation.includeWitr ? 'including separate Witr records.' : 'for the five daily prayers.'}'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add to Tracker')),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+    final userId = _currentUserId();
+    if (userId == null) return;
 
     setState(() => _addingToTracker = true);
     try {
-      final container = ProviderScope.containerOf(context, listen: false);
-      final userId = container.read(requiredUserIdProvider);
-      final service = container.read(qazaServiceProvider);
+      final service = ProviderScope.containerOf(context, listen: false).read(qazaServiceProvider);
+      final existing = await service.getRecords(userId: userId);
+      final before = analyzeTrackerCandidates(
+        userId: userId,
+        calculation: calculation,
+        existingRecords: existing,
+      );
+      if (before.newCount == 0) {
+        if (mounted) {
+          setState(() => _availabilityAnalysis = before);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All calculated prayers are already tracked. Nothing new was added.')),
+          );
+        }
+        return;
+      }
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Add new Qaza prayers?'),
+          content: Text(
+            '${_formatNumber(before.newCount)} new Qaza records will be added. ${_formatNumber(before.alreadyRecorded)} calculated prayers are already tracked and will be skipped. Existing records are never overwritten.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add New Prayers')),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+
       await service.recordQazaForDates(
         userId: userId,
         dates: trackerDates(calculation),
         prayerTypes: trackerPrayerTypes(includeWitr: calculation.includeWitr),
       );
+
+      final after = await service.getRecords(userId: userId);
+      final afterAnalysis = analyzeTrackerCandidates(
+        userId: userId,
+        calculation: calculation,
+        existingRecords: after,
+      );
+      final created = (before.newCount - afterAnalysis.newCount).clamp(0, before.newCount).toInt();
+
       if (!mounted) return;
+      setState(() => _availabilityAnalysis = afterAnalysis);
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Estimate added'),
-          content: Text('$recordCount possible records were processed. Existing records were not overwritten.'),
+          title: Text(created == 0 ? 'Already up to date' : 'Qaza added'),
+          content: Text(
+            created == 0
+                ? 'No new records were needed. Existing records were preserved.'
+                : '${_formatNumber(created)} new Qaza records were added. Existing records were preserved.',
+          ),
           actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))],
         ),
       );
@@ -284,7 +364,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _queuePersistence();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add the estimate: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not add the Qaza estimate: $error')),
+      );
     } finally {
       if (mounted) setState(() => _addingToTracker = false);
     }
@@ -293,13 +375,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   void _keepAsEstimate() {
     setState(() => _keptAsEstimate = true);
     _queuePersistence();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Estimate kept without adding records to the tracker.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Estimate kept without adding records to the tracker.')),
+    );
   }
 
   Future<void> _pickDob() async {
     final date = await showDatePicker(context: context, initialDate: _dob ?? DateTime(_today.year - 18, _today.month, _today.day), firstDate: DateTime(1900), lastDate: _today, helpText: 'Select your date of birth');
     if (date != null) {
-      setState(() { _dob = _dateOnly(date); _calculation = null; _keptAsEstimate = false; });
+      setState(() { _dob = _dateOnly(date); _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; });
       _queuePersistence();
     }
   }
@@ -311,7 +395,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final initial = current != null && !current.isBefore(dob) && !current.isAfter(_today) ? current : dob;
     final date = await showDatePicker(context: context, initialDate: initial, firstDate: dob, lastDate: _today, helpText: 'Select exact Baligh date');
     if (date != null) {
-      setState(() { _balighDate = _dateOnly(date); _calculation = null; _keptAsEstimate = false; });
+      setState(() { _balighDate = _dateOnly(date); _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; });
       _queuePersistence();
     }
   }
@@ -323,7 +407,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final initial = current != null && !current.isBefore(baligh) && !current.isAfter(_today) ? current : baligh;
     final date = await showDatePicker(context: context, initialDate: initial, firstDate: baligh, lastDate: _today, helpText: 'Select exact prayer start date');
     if (date != null) {
-      setState(() { _prayerStartDate = _dateOnly(date); _calculation = null; _keptAsEstimate = false; });
+      setState(() { _prayerStartDate = _dateOnly(date); _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; });
       _queuePersistence();
     }
   }
@@ -339,7 +423,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               Expanded(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: _stepContent())),
               _StepActions(
                 step: _step,
-                canContinue: !_restoring && (_step == 0 ? _step1Valid : _step == 1 ? _step2Valid : _calculation != null && !_addingToTracker),
+                canContinue: !_restoring && (_step == 0 ? _step1Valid : _step == 1 ? _step2Valid : _calculation != null && _availabilityAnalysis != null && _availabilityAnalysis!.newCount > 0 && !_addingToTracker && !_checkingTracker),
+                label: _step == 2
+                    ? _availabilityAnalysis == null
+                        ? 'Checking Tracker...'
+                        : _availabilityAnalysis!.newCount > 0
+                            ? 'Add ${_formatNumber(_availabilityAnalysis!.newCount)} New Prayers'
+                            : 'All Already Tracked'
+                    : null,
                 onBack: _step == 0 ? null : _back,
                 onContinue: _step == 2 ? _addToTracker : _next,
               ),
@@ -382,10 +473,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             SegmentedButton<_BalighInputMode>(key: const Key('calculator_baligh_mode'), segments: const [
               ButtonSegment(value: _BalighInputMode.age, label: Text('Age'), icon: Icon(Icons.numbers_rounded)),
               ButtonSegment(value: _BalighInputMode.exactDate, label: Text('Exact date'), icon: Icon(Icons.event_rounded)),
-            ], selected: {_balighInputMode}, onSelectionChanged: (value) { setState(() { _balighInputMode = value.first; if (_balighInputMode == _BalighInputMode.age) _balighDate = null; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); }),
+            ], selected: {_balighInputMode}, onSelectionChanged: (value) { setState(() { _balighInputMode = value.first; if (_balighInputMode == _BalighInputMode.age) _balighDate = null; _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; }); _queuePersistence(); }),
             const SizedBox(height: 14),
             if (_balighInputMode == _BalighInputMode.age)
-              DropdownButtonFormField<int>(key: const Key('calculator_baligh_age'), value: _balighAge, decoration: const InputDecoration(labelText: 'Baligh age (years)'), items: [for (var value = 9; value <= 18; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _balighAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
+              DropdownButtonFormField<int>(key: const Key('calculator_baligh_age'), value: _balighAge, decoration: const InputDecoration(labelText: 'Baligh age (years)'), items: [for (var value = 9; value <= 18; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _balighAge = value; _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; }); _queuePersistence(); } })
             else
               OutlinedButton.icon(key: const Key('calculator_baligh_date_picker'), onPressed: _dob == null ? null : _pickBalighDate, icon: const Icon(Icons.event_rounded), label: Text(_balighDate == null ? 'Select exact date' : _formatDate(_balighDate!))),
             if (_balighError != null) ...[const SizedBox(height: 6), Text(_balighError!, key: const Key('calculator_baligh_error'), style: TextStyle(color: Theme.of(context).colorScheme.error))],
@@ -405,16 +496,19 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       final sidePadding = constraints.maxWidth < 360 ? 16.0 : 20.0;
       return ListView(key: const ValueKey('calculator_step_1'), padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 24), children: [
         Text('Step 2 of 3', style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 6), Text('Prayer History', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8), const Text('Tell us when regular prayer started so we can calculate the Qaza period.'), const SizedBox(height: 20),
+        const SizedBox(height: 6),
+        Text('Prayer History', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 8),
+        const Text('Tell us when regular prayer started so we can calculate the Qaza period.'),
+        const SizedBox(height: 20),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Regular prayer start', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 10),
           SegmentedButton<_PrayerStartInputMode>(key: const Key('calculator_prayer_start_mode'), segments: const [
             ButtonSegment(value: _PrayerStartInputMode.age, label: Text('Age'), icon: Icon(Icons.numbers_rounded)), ButtonSegment(value: _PrayerStartInputMode.exactDate, label: Text('Exact date'), icon: Icon(Icons.event_rounded)),
-          ], selected: {_prayerStartInputMode}, onSelectionChanged: (value) { setState(() { _prayerStartInputMode = value.first; if (_prayerStartInputMode == _PrayerStartInputMode.age) _prayerStartDate = null; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); }),
+          ], selected: {_prayerStartInputMode}, onSelectionChanged: (value) { setState(() { _prayerStartInputMode = value.first; if (_prayerStartInputMode == _PrayerStartInputMode.age) _prayerStartDate = null; _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; }); _queuePersistence(); }),
           const SizedBox(height: 14),
           if (_prayerStartInputMode == _PrayerStartInputMode.age)
-            DropdownButtonFormField<int>(key: const Key('calculator_prayer_start_age'), value: _prayerStartAge, decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'), items: [for (var value = 12; value <= 60; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _prayerStartAge = value; _calculation = null; _keptAsEstimate = false; }); _queuePersistence(); } })
+            DropdownButtonFormField<int>(key: const Key('calculator_prayer_start_age'), value: _prayerStartAge, decoration: const InputDecoration(labelText: 'Regular prayer start age (years)'), items: [for (var value = 12; value <= 60; value++) DropdownMenuItem(value: value, child: Text('$value years'))], onChanged: (value) { if (value != null) { setState(() { _prayerStartAge = value; _calculation = null; _availabilityAnalysis = null; _keptAsEstimate = false; }); _queuePersistence(); } })
           else
             OutlinedButton.icon(key: const Key('calculator_prayer_start_date_picker'), onPressed: baligh == null ? null : _pickPrayerStartDate, icon: const Icon(Icons.event_rounded), label: Text(_prayerStartDate == null ? 'Select exact date' : _formatDate(_prayerStartDate!))),
           if (prayerStart != null) ...[const SizedBox(height: 12), _DateInfoBox(text: _prayerStartInputMode == _PrayerStartInputMode.age ? 'Estimated prayer-start date: ${_formatDate(prayerStart)}' : 'Exact prayer-start date: ${_formatDate(prayerStart)}')],
@@ -436,10 +530,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     return LayoutBuilder(builder: (context, constraints) {
       final compact = constraints.maxWidth < 380;
       final sidePadding = compact ? 16.0 : 20.0;
+      final analysis = _availabilityAnalysis;
       return ListView(key: const ValueKey('calculator_step_2'), padding: EdgeInsets.fromLTRB(sidePadding, 12, sidePadding, 24), children: [
         Text('Step 3 of 3', style: Theme.of(context).textTheme.labelLarge), const SizedBox(height: 6), Text('Result', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 8),
         _SourceChip(exact: _balighInputMode == _BalighInputMode.exactDate || _prayerStartInputMode == _PrayerStartInputMode.exactDate),
-        if (_keptAsEstimate) const Padding(padding: EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerLeft, child: Chip(label: Text('Kept as estimate'))),),
+        if (_keptAsEstimate) const Padding(padding: EdgeInsets.only(top: 10), child: Align(alignment: Alignment.centerLeft, child: Chip(label: Text('Kept as estimate')))),
         const SizedBox(height: 10),
         compact
             ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -452,17 +547,36 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               ]),
         const SizedBox(height: 14),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-          _ResultMetric(label: 'Qaza period', value: '${result.calendarYears} years • ${result.remainingDays} days'), _ResultMetric(label: 'Elapsed days', value: _formatNumber(result.totalDays)), _ResultMetric(label: 'Estimated prayers', value: _formatNumber(result.totalPrayers), prominent: true),
+          _ResultMetric(label: 'Qaza period', value: '${result.calendarYears} years • ${result.remainingDays} days'),
+          _ResultMetric(label: 'Elapsed days', value: _formatNumber(result.totalDays)),
+          _ResultMetric(label: 'Estimated prayers', value: _formatNumber(result.totalPrayers), prominent: true),
+        ]))),
+        const SizedBox(height: 14),
+        Card(key: const Key('calculator_tracker_overlap'), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Icon(Icons.fact_check_outlined, color: Theme.of(context).colorScheme.primary), const SizedBox(width: 10), Text('Tracker check', style: Theme.of(context).textTheme.titleMedium)]),
+          const SizedBox(height: 10),
+          if (_checkingTracker) const LinearProgressIndicator(minHeight: 2),
+          if (analysis == null && !_checkingTracker) const Text('Sign in to compare this calculation with your tracker.'),
+          if (analysis != null) ...[
+            _ResultMetric(label: 'Total calculated', value: _formatNumber(analysis.total)),
+            _ResultMetric(label: 'Already recorded', value: _formatNumber(analysis.alreadyRecorded)),
+            _ResultMetric(label: 'New to add', value: _formatNumber(analysis.newCount), prominent: true),
+            if (analysis.alreadyRecorded > 0)
+              _DateInfoBox(text: '${_formatNumber(analysis.alreadyRecorded)} calculated date + prayer combinations are already in your tracker and will be skipped.'),
+            if (analysis.newCount == 0)
+              _DateInfoBox(text: 'All calculated prayers are already tracked. You do not need to add anything.'),
+          ],
         ]))),
         const SizedBox(height: 14),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Prayer breakdown', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 10),
           for (final prayer in result.prayerBreakdown.keys) _InfoRow(label: _prayerLabel(prayer), value: _formatNumber(result.prayerBreakdown[prayer]!)),
           const Divider(height: 24),
-          SwitchListTile.adaptive(key: const Key('calculator_include_witr'), contentPadding: EdgeInsets.zero, title: const Text('Include Witr separately'), subtitle: const Text('Witr is counted independently from the five daily prayers.'), value: _includeWitr, onChanged: (value) { setState(() { _includeWitr = value; _calculation = calculateQaza(startDate: result.startDate, endDate: result.endDate, includeWitr: value); _keptAsEstimate = false; }); _queuePersistence(); }),
+          SwitchListTile.adaptive(key: const Key('calculator_include_witr'), contentPadding: EdgeInsets.zero, title: const Text('Include Witr separately'), subtitle: const Text('Witr is counted independently from the five daily prayers.'), value: _includeWitr, onChanged: (value) { final calculation = calculateQaza(startDate: result.startDate, endDate: result.endDate, includeWitr: value); setState(() { _includeWitr = value; _calculation = calculation; _availabilityAnalysis = null; _keptAsEstimate = false; }); _queuePersistence(); _refreshAvailability(calculation); }),
           if (result.includeWitr) _InfoRow(label: 'Witr', value: _formatNumber(result.witrCount)),
         ]))),
-        const SizedBox(height: 12), OutlinedButton(key: const Key('calculator_keep_estimate'), onPressed: _addingToTracker ? null : _keepAsEstimate, child: const Text('Keep as Estimate')),
+        const SizedBox(height: 12),
+        OutlinedButton(key: const Key('calculator_keep_estimate'), onPressed: _addingToTracker || _checkingTracker ? null : _keepAsEstimate, child: const Text('Keep as Estimate')),
       ]);
     });
   }
@@ -541,14 +655,15 @@ class _ProgressIndicator extends StatelessWidget {
 }
 
 class _StepActions extends StatelessWidget {
-  const _StepActions({required this.step, required this.canContinue, required this.onBack, required this.onContinue});
+  const _StepActions({required this.step, required this.canContinue, required this.onBack, required this.onContinue, this.label});
   final int step;
   final bool canContinue;
   final VoidCallback? onBack;
   final VoidCallback onContinue;
+  final String? label;
   @override
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), child: Row(children: [
     if (onBack != null) ...[OutlinedButton(key: const Key('calculator_back'), onPressed: onBack, child: const Text('Back')), const SizedBox(width: 12)],
-    Expanded(child: FilledButton(key: Key(step == 0 ? 'calculator_continue' : step == 1 ? 'calculator_calculate' : 'calculator_add_to_tracker'), onPressed: canContinue ? onContinue : null, child: Text(step == 0 ? 'Continue' : step == 1 ? 'Calculate' : 'Add to Tracker'))),
+    Expanded(child: FilledButton(key: Key(step == 0 ? 'calculator_continue' : step == 1 ? 'calculator_calculate' : 'calculator_add_to_tracker'), onPressed: canContinue ? onContinue : null, child: Text(label ?? (step == 0 ? 'Continue' : step == 1 ? 'Calculate' : 'Add to Tracker')))),
   ]));
 }
