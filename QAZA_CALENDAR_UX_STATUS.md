@@ -18,11 +18,11 @@ Each part follows:
 - [x] Part 3 — Single / Range / Multiple UX
 - [x] Part 4 — Qaza Flow Integration
 - [x] Part 5 — Theme & Responsive UX
-- [ ] Part 6 — Regression Tests & Cleanup
+- [x] Part 6 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
 
 ## Current State
-Part 5 complete. Calendar surfaces use the existing theme system, remain readable in light/dark themes, and keep the unified selection UI responsive without introducing custom colors.
+Part 6 complete. Obsolete Hijri navigation regression coverage was removed and the calendar regression suite now validates the unified Gregorian calendar, secondary Hijri display, boundaries, future-date protection, and date serialization.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -49,7 +49,7 @@ Part 5 complete. Calendar surfaces use the existing theme system, remain readabl
 | Part 3 | `8d8010c8`, `1962c8a0` | Not run | COMPLETE |
 | Part 4 | `73802e8b` | Not run | COMPLETE |
 | Part 5 | `9ee1ebec`, `c56e576b` | Not run | COMPLETE |
-| Part 6 | — | — | NOT STARTED |
+| Part 6 | `67455a88` | Not run | COMPLETE |
 | Final | — | — | NOT STARTED |
 
 ## Notes
