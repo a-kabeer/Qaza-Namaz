@@ -30,7 +30,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 2 | Notification state model | ✅ |
 | 3 | Production Notifications UI | ✅ |
 | 4 | Enable workflow | ✅ |
-| 5 | Disable workflow | ☐ |
+| 5 | Disable workflow | ✅ |
 | 6 | Pending-Qaza scheduling rule | ☐ |
 | 7 | Reminder time workflow | ☐ |
 | 8 | Test notification | ☐ |
@@ -68,7 +68,7 @@ The first full CI run showed one notification test expectation mismatch: the fak
 ## Part 2 — Notification State Model ✅
 
 ### State model implemented
-- `NotificationPermissionStatus` explicitly represents `notRequested`, `granted`, `denied`, and `unavailable` states at runtime.
+- `NotificationPermissionStatus` represents `notRequested`, `granted`, `denied`, `unavailable`, and `restricted` states at the model level.
 - `NotificationScheduleStatus` separates the user's reminder preference from the derived operational state: `disabled`, `permissionRequired`, `noPendingQaza`, or `scheduled`.
 - Scheduling decisions are derived from enablement + permission + pending-Qaza state instead of treating `enabled` as proof that a reminder is actually scheduled.
 - The selected reminder time remains part of the persisted configuration and is independent from whether the reminder is currently active.
@@ -98,6 +98,14 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - Successful enable persists the user's preference and reconciles scheduling using the selected time and pending-Qaza state.
 - Enabling with no pending Qaza keeps the preference enabled but does not create a recurring notification.
 - Re-enabling an already enabled reminder still reconciles the actual schedule instead of creating duplicates.
+
+## Part 5 — Disable Workflow ✅
+
+- Turning the Daily Qaza reminder OFF always cancels the recurring daily notification.
+- The user's selected reminder time is preserved when disabling; it is not reset to the default.
+- The disabled state is persisted so restart does not silently re-enable the reminder.
+- The derived schedule state becomes `disabled`, preventing accidental rescheduling while the preference is OFF.
+- Focused test coverage now changes the reminder time before disabling and verifies the exact selected time remains available afterward.
 
 ## Completion Criteria
 The task must not be marked complete until:
