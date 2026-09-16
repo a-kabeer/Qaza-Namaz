@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_history_page.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'history_query.dart';
 
@@ -8,51 +10,52 @@ class HistoryState {
   const HistoryState({
     required this.records,
     required this.query,
+    this.nextCursor,
+    this.hasMore = false,
+    this.isLoadingMore = false,
     this.isRefreshing = false,
   });
 
   final List<QazaRecord> records;
   final HistoryQuery query;
+  final String? nextCursor;
+  final bool hasMore;
+  final bool isLoadingMore;
   final bool isRefreshing;
 
   HistoryState copyWith({
     List<QazaRecord>? records,
     HistoryQuery? query,
+    Object? nextCursor = _keep,
+    bool? hasMore,
+    bool? isLoadingMore,
     bool? isRefreshing,
   }) {
     return HistoryState(
       records: records ?? this.records,
       query: query ?? this.query,
+      nextCursor: identical(nextCursor, _keep) ? this.nextCursor : nextCursor as String?,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
     );
   }
 }
 
+const _keep = Object();
+
 final historyControllerProvider =
     AsyncNotifierProvider<HistoryController, HistoryState>(HistoryController.new);
 
 class HistoryController extends AsyncNotifier<HistoryState> {
+  static const _pageSize = 25;
+
   @override
-  Future<HistoryState> build() async {
-    final records = await ref.read(qazaServiceProvider).getRecords(
-          userId: ref.read(currentUserIdProvider),
-        );
-    return _stateFor(records, const HistoryQuery());
-  }
+  Future<HistoryState> build() => _loadPage(const HistoryQuery());
 
   Future<void> setQuery(HistoryQuery query) async {
-    final current = state.valueOrNull;
-    if (current != null) {
-      state = AsyncData(_stateFor(current.records, query));
-      return;
-    }
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final records = await ref.read(qazaServiceProvider).getRecords(
-            userId: ref.read(currentUserIdProvider),
-          );
-      return _stateFor(records, query);
-    });
+    state = await AsyncValue.guard(() => _loadPage(query));
   }
 
   Future<void> refresh() async {
@@ -60,47 +63,61 @@ class HistoryController extends AsyncNotifier<HistoryState> {
     if (current != null) {
       state = AsyncData(current.copyWith(isRefreshing: true));
     }
-
-    state = await AsyncValue.guard(() async {
-      final records = await ref.read(qazaServiceProvider).getRecords(
-            userId: ref.read(currentUserIdProvider),
-          );
-      final query = current?.query ?? const HistoryQuery();
-      return _stateFor(records, query);
-    });
+    final query = current?.query ?? const HistoryQuery();
+    final refreshed = await AsyncValue.guard(() => _loadPage(query));
+    state = refreshed;
   }
 
-  HistoryState _stateFor(List<QazaRecord> source, HistoryQuery query) {
-    final records = source.where((record) {
-      if (query.prayer != null && record.prayerType != query.prayer) return false;
-      if (query.status != null && record.status != query.status) return false;
-      final range = query.originalDateRange;
-      if (range != null) {
-        final date = DateTime(
-          record.originalDate.year,
-          record.originalDate.month,
-          record.originalDate.day,
-        );
-        if (date.isBefore(range.start) || date.isAfter(range.end)) return false;
-      }
-      return true;
-    }).toList()
-      ..sort((a, b) {
-        final byOriginal = query.sortOrder == HistorySortOrder.newestFirst
-            ? b.originalDate.compareTo(a.originalDate)
-            : a.originalDate.compareTo(b.originalDate);
-        if (byOriginal != 0) return byOriginal;
-        final aCompleted = a.completedAt;
-        final bCompleted = b.completedAt;
-        if (aCompleted == null && bCompleted == null) return a.id.compareTo(b.id);
-        if (aCompleted == null) return 1;
-        if (bCompleted == null) return -1;
-        final byCompleted = query.sortOrder == HistorySortOrder.newestFirst
-            ? bCompleted.compareTo(aCompleted)
-            : aCompleted.compareTo(bCompleted);
-        return byCompleted != 0 ? byCompleted : a.id.compareTo(b.id);
-      });
+  Future<void> loadMore() async {
+    final current = state.valueOrNull;
+    if (current == null || !current.hasMore || current.isLoadingMore) return;
+    final cursor = current.nextCursor;
+    if (cursor == null) return;
 
-    return HistoryState(records: List.unmodifiable(records), query: query);
+    state = AsyncData(current.copyWith(isLoadingMore: true));
+    try {
+      final page = await _fetchPage(current.query, cursor: cursor);
+      final existingIds = current.records.map((record) => record.id).toSet();
+      final appended = [
+        ...current.records,
+        ...page.records.where((record) => existingIds.add(record.id)),
+      ];
+      state = AsyncData(
+        current.copyWith(
+          records: List.unmodifiable(appended),
+          nextCursor: page.nextCursor,
+          hasMore: page.hasMore,
+          isLoadingMore: false,
+        ),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+    }
+  }
+
+  Future<HistoryState> _loadPage(HistoryQuery query) async {
+    final page = await _fetchPage(query);
+    return HistoryState(
+      records: page.records,
+      query: query,
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
+    );
+  }
+
+  Future<QazaHistoryPage> _fetchPage(
+    HistoryQuery query, {
+    String? cursor,
+  }) {
+    return ref.read(qazaRepositoryProvider).getHistoryPage(
+          userId: ref.read(currentUserIdProvider),
+          prayerType: query.prayer,
+          status: query.status,
+          originalDateFrom: query.originalDateRange?.start,
+          originalDateTo: query.originalDateRange?.end,
+          cursor: cursor,
+          limit: _pageSize,
+          ascending: query.sortOrder == HistorySortOrder.oldestFirst,
+        );
   }
 }
