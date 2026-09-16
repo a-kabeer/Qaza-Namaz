@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_history_page.dart';
 import '../../domain/entities/qaza_ledger_summary.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 
 enum SyncOpType { add, complete }
@@ -38,23 +39,21 @@ abstract interface class QazaLocalStore {
     final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
     final byPrayer = <PrayerType, QazaProgress>{};
     for (final prayer in PrayerType.values) {
-      final prayerRecords = records.where((r) => r.prayerType == prayer).toList();
+      final prayerRecords = records.where((r) => r.prayerType == prayer);
       final pending = prayerRecords.where((r) => r.status == QazaStatus.pending).length;
-      final completed = prayerRecords.length - pending;
-      byPrayer[prayer] = QazaProgress(total: prayerRecords.length, pending: pending, completed: completed);
+      final completed = prayerRecords.where((r) => r.status == QazaStatus.completed).length;
+      byPrayer[prayer] = QazaProgress(pending: pending, completed: completed);
     }
     final pending = records.where((r) => r.status == QazaStatus.pending).length;
-    return QazaLedgerSummary(total: records.length, pending: pending, completed: records.length - pending, byPrayer: byPrayer);
+    final completed = records.where((r) => r.status == QazaStatus.completed).length;
+    return QazaLedgerSummary(total: records.length, pending: pending, completed: completed, byPrayer: byPrayer);
   }
 
   Future<QazaHistoryPage> getHistoryPage({required String userId, PrayerType? prayerType, QazaStatus? status, DateTime? originalDateFrom, DateTime? originalDateTo, String? cursor, int limit = 25, bool ascending = false}) async {
     if (limit <= 0) throw ArgumentError.value(limit, 'limit', 'must be greater than zero');
     final snapshot = await load();
     var records = List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const []);
-    records = records.where((r) {
-      final date = DateTime(r.originalDate.year, r.originalDate.month, r.originalDate.day);
-      return (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status) && (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo));
-    }).toList()..sort((a, b) { final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate); return byDate != 0 ? byDate : a.id.compareTo(b.id); });
+    records = records.where((r) { final date = DateTime(r.originalDate.year, r.originalDate.month, r.originalDate.day); return (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status) && (originalDateFrom == null || !date.isBefore(originalDateFrom)) && (originalDateTo == null || !date.isAfter(originalDateTo)); }).toList()..sort((a, b) { final byDate = ascending ? a.originalDate.compareTo(b.originalDate) : b.originalDate.compareTo(a.originalDate); return byDate != 0 ? byDate : a.id.compareTo(b.id); });
     var start = 0;
     if (cursor != null) { final index = records.indexWhere((r) => r.id == cursor); if (index >= 0) start = index + 1; }
     if (start >= records.length) return const QazaHistoryPage(records: []);
