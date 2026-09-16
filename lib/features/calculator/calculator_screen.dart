@@ -91,7 +91,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       }
 
       setState(() {
-        _step = calculation != null ? snapshot.step.clamp(0, 2) : snapshot.step.clamp(0, 1);
+        _step = calculation != null
+            ? snapshot.step.clamp(0, 2).toInt()
+            : snapshot.step.clamp(0, 1).toInt();
         _dob = dob;
         _balighInputMode = balighMode;
         _balighAge = snapshot.balighAge;
@@ -687,7 +689,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   String _formatDate(DateTime date) => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  String _formatNumber(int value) => value.toString().replaceAllMapped(RegExp(r'(?<!^)(?=(\d{3})+$)'), (_) => ',');
+  String _formatNumber(int value) => value.toString().replaceAllMapped(RegExp(r'(?<!^)(?=(\\d{3})+$)'), (_) => ',');
 
   int _calendarYearsBetween(DateTime start, DateTime end) {
     var years = end.year - start.year;
