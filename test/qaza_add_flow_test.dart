@@ -46,10 +46,14 @@ void main() {
   testWidgets('changing date mode keeps the flow on Step 1 and resets date selection', (tester) async {
     await pumpFlow(tester);
 
+    await scrollToKey(tester, const Key('calendar_day_2026-09-15'));
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-15')));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Range'));
     await tester.pumpAndSettle();
     expect(find.text('Step 1 of 3 • Select Dates'), findsOneWidget);
-    expect(find.text('No dates selected'), findsOneWidget);
+    expect(find.text('Selected dates'), findsNothing);
 
     await tester.tap(find.text('Multiple'));
     await tester.pumpAndSettle();
@@ -60,9 +64,8 @@ void main() {
   testWidgets('selected date advances to Step 2 and Step 3 preserves selections', (tester) async {
     await pumpFlow(tester);
 
-    final day = find.byKey(const Key('calendar_day_2026-09-15'));
-    expect(day, findsOneWidget);
-    await tester.tap(day);
+    await scrollToKey(tester, const Key('calendar_day_2026-09-15'));
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-15')));
     await tester.pumpAndSettle();
 
     await scrollToKey(tester, const Key('qaza_continue_button'));
@@ -86,6 +89,7 @@ void main() {
 
     expect(find.text('Step 3 of 3 • Review & Add'), findsOneWidget);
     expect(find.text('Review & Add'), findsOneWidget);
+    expect(find.text('Selected dates'), findsOneWidget);
     expect(find.text('Selected date: 15/09/2026'), findsOneWidget);
     expect(find.text('Fajr'), findsWidgets);
     expect(find.byKey(const Key('qaza_final_add_button')), findsOneWidget);
@@ -94,6 +98,7 @@ void main() {
   testWidgets('back navigation preserves selected date and prayer state', (tester) async {
     await pumpFlow(tester);
 
+    await scrollToKey(tester, const Key('calendar_day_2026-09-15'));
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-15')));
     await tester.pumpAndSettle();
     await scrollToKey(tester, const Key('qaza_continue_button'));
