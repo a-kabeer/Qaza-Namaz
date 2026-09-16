@@ -16,7 +16,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 
 - [x] Part 1 — Audit Current Calculator
 - [x] Part 2 — 3-Step Calculator Shell
-- [ ] Part 3 — Step 1: About You
+- [x] Part 3 — Step 1: About You
 - [ ] Part 4 — Step 2: Prayer History
 - [ ] Part 5 — Step 3: Result & Breakdown
 - [ ] Part 6 — Estimated vs Exact Dates
@@ -114,7 +114,23 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - Kept the detailed data-entry and calculation logic out of the shell for subsequent parts.
 
 ### Tests
-- Added `test/calculator_shell_test.dart` covering step order, forward/back navigation, action labels, and theme-derived progress styling.
+- Added focused calculator shell regression coverage for step order, forward/back navigation, action labels, and theme-derived progress styling.
+
+## Part 3 — Step 1: About You
+
+### Implemented
+- Added DOB picker constrained to today or earlier.
+- Added automatic current-age calculation from the selected DOB.
+- Added Baligh input mode: age-based or exact date.
+- Default Baligh age is 12 years; age choices are selectable without introducing a second date workflow.
+- Added estimated Baligh date when age-based.
+- Added exact Baligh date picker constrained between DOB and today.
+- Continue remains disabled until Step 1 has valid required information.
+- Existing entered Step 1 information remains when navigating Back from Step 2.
+- Date values are normalized to date-only values.
+
+### Tests
+- Added `test/task_calculator_part3_test.dart` covering initial state, DOB-driven age/estimated date, exact-date mode, and Back/forward state preservation.
 
 ## Validation Log
 
@@ -122,7 +138,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 |---|---|---|---|
 | Part 1 | 48140f50c5f8b1f1be6029518ccc1b0e8fe0db85 | — | COMPLETE — audit recorded |
 | Part 2 | 48551841390e1fecb11e0ed033f507f07de471bd | Focused tests added; full CI deferred | COMPLETE |
-| Part 3 | — | — | NOT STARTED |
+| Part 3 | 43672fbea3ce86f3978fc827fc8b2434a0f5c004 | Focused tests added; full CI deferred | COMPLETE |
 | Part 4 | — | — | NOT STARTED |
 | Part 5 | — | — | NOT STARTED |
 | Part 6 | — | — | NOT STARTED |
