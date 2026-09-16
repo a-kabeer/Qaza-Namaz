@@ -25,6 +25,32 @@ void main() {
     expect(circle.backgroundColor, theme.colorScheme.primary);
   });
 
+  testWidgets('calculator step label remains visible in dark theme', (tester) async {
+    final theme = ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.teal,
+        brightness: Brightness.dark,
+      ),
+      textTheme: Typography.material2021().black,
+    );
+    final expectedColor = theme.colorScheme.primary;
+    final themed = theme.copyWith(
+      textTheme: theme.textTheme.copyWith(
+        labelLarge: theme.textTheme.labelLarge?.copyWith(color: expectedColor),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(theme: themed, home: const CalculatorScreen()),
+    );
+    await settleCalculator(tester);
+
+    final label = tester.widget<Text>(find.text('Step 1 of 3'));
+    expect(label.style?.color, expectedColor);
+    expect(label.style?.color, isNot(Colors.black));
+  });
+
   testWidgets('calculator renders within a narrow width', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
