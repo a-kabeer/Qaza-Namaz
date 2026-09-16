@@ -47,13 +47,32 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     setState(() => _monthAnchor = next);
   }
 
+  String _prompt(CalendarSelectionState state) {
+    switch (state.selectionMode) {
+      case DateSelectionMode.single:
+        return state.hasSelection
+            ? 'Date selected. Review the date below or choose another.'
+            : 'Tap one date to select it.';
+      case DateSelectionMode.range:
+        if (!state.hasSelection) return 'Tap a start date, then tap an end date.';
+        if (!state.isRangeComplete) return 'Now tap an end date on or after the start.';
+        return '${state.selectedCount} days selected.';
+      case DateSelectionMode.multiple:
+        return state.hasSelection
+            ? '${state.selectedCount} dates selected. Tap any selected date to remove it.'
+            : 'Tap dates individually to select or deselect them.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarControllerProvider);
     final selected = state.selectedDates;
+    final theme = Theme.of(context);
     final minimum = DateTime(1950, 1, 1);
     final canPrevious = _monthAnchor.isAfter(minimum);
-    final canNext = _monthAnchor.isBefore(DateTime(_today.year, _today.month, 1));
+    final canNext =
+        _monthAnchor.isBefore(DateTime(_today.year, _today.month, 1));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -70,16 +89,17 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               child: Column(
                 children: [
                   Text(
-                    MaterialLocalizations.of(context).formatMonthYear(_monthAnchor),
+                    MaterialLocalizations.of(context)
+                        .formatMonthYear(_monthAnchor),
                     key: const Key('calendar_month_header'),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: theme.textTheme.titleMedium,
                   ),
                   Text(
                     _hijriLabel(_monthAnchor),
                     key: const Key('calendar_hijri_month_label'),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ),
@@ -93,23 +113,24 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           ],
         ),
         const SizedBox(height: 8),
-        Text(
-          switch (state.selectionMode) {
-            DateSelectionMode.single => 'Select one date.',
-            DateSelectionMode.range => selected.length < 2
-                ? 'Select a start date, then an end date.'
-                : 'Range selected: ${selected.length} days.',
-            DateSelectionMode.multiple =>
-                '${selected.length} date${selected.length == 1 ? '' : 's'} selected.',
-          },
-          key: const Key('calendar_selection_prompt'),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _prompt(state),
+            key: const Key('calendar_selection_prompt'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         _DayGrid(
           anchor: _monthAnchor,
           today: _today,
+          selectionMode: state.selectionMode,
           selectedDates: selected,
           onDayTap: (date) =>
               ref.read(calendarControllerProvider.notifier).select(date),
@@ -117,6 +138,16 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           gregorianLabel: (date) => _gregorianLabel(context, date),
           isQazaDate: _isQazaDate,
         ),
+        if (selected.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _SelectionSummary(
+            state: state,
+            hijriLabel: _hijriLabel,
+            gregorianLabel: (date) => _gregorianLabel(context, date),
+            onClear: () =>
+                ref.read(calendarControllerProvider.notifier).clear(),
+          ),
+        ],
       ],
     );
   }
@@ -126,6 +157,7 @@ class _DayGrid extends StatelessWidget {
   const _DayGrid({
     required this.anchor,
     required this.today,
+    required this.selectionMode,
     required this.selectedDates,
     required this.onDayTap,
     required this.hijriLabel,
@@ -135,6 +167,7 @@ class _DayGrid extends StatelessWidget {
 
   final DateTime anchor;
   final DateTime today;
+  final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
   final ValueChanged<DateTime> onDayTap;
   final String Function(DateTime) hijriLabel;
@@ -148,11 +181,13 @@ class _DayGrid extends StatelessWidget {
       selectedDates.any((date) => _sameDay(date, day));
 
   bool _inRange(DateTime day) =>
+      selectionMode == DateSelectionMode.range &&
       selectedDates.length == 2 &&
       !day.isBefore(selectedDates.first) &&
       !day.isAfter(selectedDates.last);
 
   bool _rangeEndpoint(DateTime day) =>
+      selectionMode == DateSelectionMode.range &&
       selectedDates.length == 2 &&
       (_sameDay(day, selectedDates.first) ||
           _sameDay(day, selectedDates.last));
@@ -241,13 +276,11 @@ class _DayGrid extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: selected
                     ? scheme.primary
-                    : endpoint
+                    : endpoint || inRange
                         ? scheme.primaryContainer
-                        : inRange
-                            ? scheme.primaryContainer
-                            : todayDate
-                                ? scheme.secondaryContainer
-                                : null,
+                        : todayDate
+                            ? scheme.secondaryContainer
+                            : null,
               ),
               alignment: Alignment.center,
               child: Text(
@@ -278,4 +311,96 @@ class _DayGrid extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SelectionSummary extends StatelessWidget {
+  const _SelectionSummary({
+    required this.state,
+    required this.hijriLabel,
+    required this.gregorianLabel,
+    required this.onClear,
+  });
+
+  final CalendarSelectionState state;
+  final String Function(DateTime) hijriLabel;
+  final String Function(DateTime) gregorianLabel;
+  final VoidCallback onClear;
+
+  Widget _dateLine(BuildContext context, DateTime date, String label) {
+    final theme = Theme.of(context);
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor: theme.colorScheme.primaryContainer,
+        foregroundColor: theme.colorScheme.onPrimaryContainer,
+        child: Text('${date.day}', style: theme.textTheme.labelLarge),
+      ),
+      title: Text(label),
+      subtitle: Text(hijriLabel(date)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dates = state.selectedDates;
+    final title = switch (state.selectionMode) {
+      DateSelectionMode.single => 'Selected date',
+      DateSelectionMode.range => 'Selected range',
+      DateSelectionMode.multiple => '${state.selectedCount} selected dates',
+    };
+
+    return Card(
+      key: const Key('calendar_selected_summary'),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: theme.textTheme.titleSmall),
+                ),
+                TextButton(
+                  key: const Key('calendar_clear_selection'),
+                  onPressed: onClear,
+                  child: const Text('Clear'),
+                ),
+              ],
+            ),
+            const Divider(height: 12),
+            if (state.selectionMode == DateSelectionMode.multiple)
+              ...dates.map(
+                (date) => _dateLine(context, date, gregorianLabel(date)),
+              )
+            else if (dates.length == 1)
+              _dateLine(context, dates.single, gregorianLabel(dates.single))
+            else if (dates.length == 2) ...[
+              _dateLine(context, dates.first, 'Start · ${gregorianLabel(dates.first)}'),
+              _dateLine(context, dates.last, 'End · ${gregorianLabel(dates.last)}'),
+            ],
+            if (state.selectionMode == DateSelectionMode.single &&
+                dates.length == 1)
+              _continueHint(context),
+            if (state.selectionMode == DateSelectionMode.range &&
+                state.isRangeComplete)
+              _continueHint(context),
+            if (state.selectionMode == DateSelectionMode.multiple)
+              Text(
+                'Review the selected dates before continuing.',
+                style: theme.textTheme.bodySmall,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _continueHint(BuildContext context) => Text(
+        'Selection ready to continue.',
+        key: const Key('calendar_continue_ready'),
+        style: Theme.of(context).textTheme.bodySmall,
+      );
 }
