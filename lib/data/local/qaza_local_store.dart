@@ -35,14 +35,34 @@ abstract interface class QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
 
+  /// Returns only records matching the requested dates and optional filters.
+  /// Implementations backed by a database should answer this with an indexed
+  /// query instead of loading the complete ledger.
+  Future<List<QazaRecord>> getRecordsForDates({
+    required String userId,
+    required Iterable<DateTime> dates,
+    PrayerType? prayerType,
+    QazaStatus? status,
+  }) async {
+    final wanted = dates
+        .map((date) => DateTime(date.year, date.month, date.day))
+        .toSet();
+    if (wanted.isEmpty) return const [];
+    final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
+    return records.where((record) {
+      final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
+      return wanted.contains(date) &&
+          (prayerType == null || record.prayerType == prayerType) &&
+          (status == null || record.status == status);
+    }).toList(growable: false);
+  }
+
   Future<QazaLedgerSummary> getSummary(String userId) async {
     final records = (await load()).recordsByUser[userId] ?? const <QazaRecord>[];
     final byPrayer = <PrayerType, QazaProgress>{};
     for (final prayer in PrayerType.values) {
       final prayerRecords = records.where((r) => r.prayerType == prayer);
-      final pending = prayerRecords.where((r) => r.status == QazaStatus.pending).length;
-      final completed = prayerRecords.where((r) => r.status == QazaStatus.completed).length;
-      byPrayer[prayer] = QazaProgress(pending: pending, completed: completed);
+      byPrayer[prayer] = QazaProgress(pending: prayerRecords.where((r) => r.status == QazaStatus.pending).length, completed: prayerRecords.where((r) => r.status == QazaStatus.completed).length);
     }
     final pending = records.where((r) => r.status == QazaStatus.pending).length;
     final completed = records.where((r) => r.status == QazaStatus.completed).length;
