@@ -14,6 +14,7 @@ class HistoryState {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.isRefreshing = false,
+    this.loadMoreError,
   });
 
   final List<QazaRecord> records;
@@ -22,6 +23,7 @@ class HistoryState {
   final bool hasMore;
   final bool isLoadingMore;
   final bool isRefreshing;
+  final Object? loadMoreError;
 
   HistoryState copyWith({
     List<QazaRecord>? records,
@@ -30,6 +32,7 @@ class HistoryState {
     bool? hasMore,
     bool? isLoadingMore,
     bool? isRefreshing,
+    Object? loadMoreError = _keep,
   }) {
     return HistoryState(
       records: records ?? this.records,
@@ -38,6 +41,7 @@ class HistoryState {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      loadMoreError: identical(loadMoreError, _keep) ? this.loadMoreError : loadMoreError,
     );
   }
 }
@@ -61,7 +65,7 @@ class HistoryController extends AsyncNotifier<HistoryState> {
   Future<void> refresh() async {
     final current = state.valueOrNull;
     if (current != null) {
-      state = AsyncData(current.copyWith(isRefreshing: true));
+      state = AsyncData(current.copyWith(isRefreshing: true, loadMoreError: null));
     }
     final query = current?.query ?? const HistoryQuery();
     final refreshed = await AsyncValue.guard(() => _loadPage(query));
@@ -74,7 +78,7 @@ class HistoryController extends AsyncNotifier<HistoryState> {
     final cursor = current.nextCursor;
     if (cursor == null) return;
 
-    state = AsyncData(current.copyWith(isLoadingMore: true));
+    state = AsyncData(current.copyWith(isLoadingMore: true, loadMoreError: null));
     try {
       final page = await _fetchPage(current.query, cursor: cursor);
       final existingIds = current.records.map((record) => record.id).toSet();
@@ -88,11 +92,23 @@ class HistoryController extends AsyncNotifier<HistoryState> {
           nextCursor: page.nextCursor,
           hasMore: page.hasMore,
           isLoadingMore: false,
+          loadMoreError: null,
         ),
       );
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
+    } catch (error) {
+      state = AsyncData(
+        current.copyWith(
+          isLoadingMore: false,
+          loadMoreError: error,
+        ),
+      );
     }
+  }
+
+  void clearLoadMoreError() {
+    final current = state.valueOrNull;
+    if (current == null || current.loadMoreError == null) return;
+    state = AsyncData(current.copyWith(loadMoreError: null));
   }
 
   Future<HistoryState> _loadPage(HistoryQuery query) async {
