@@ -10,7 +10,7 @@ import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/local/sqlite_qaza_local_store.dart';
 import '../data/repositories/firestore_qaza_repository.dart';
-import '../data/repositories/offline_first_qaza_repository.dart';
+import '../data/repositories/paginated_offline_first_qaza_repository.dart';
 import '../data/sync/sync_state.dart';
 import '../domain/entities/app_user.dart';
 import '../domain/entities/qaza_record.dart';
@@ -25,9 +25,14 @@ final connectivityChangesProvider = Provider<Stream<bool>>((ref) => Connectivity
 final remoteQazaRepositoryProvider = Provider<QazaRepository>((ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)));
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
-  final repository = OfflineFirstQazaRepository(remote: ref.watch(remoteQazaRepositoryProvider), localStore: ref.watch(qazaLocalStoreProvider), connectivityChanges: ref.watch(connectivityChangesProvider));
+  final localStore = ref.watch(qazaLocalStoreProvider);
+  final repository = PaginatedOfflineFirstQazaRepository(
+    remote: ref.watch(remoteQazaRepositoryProvider),
+    localStore: localStore,
+    connectivityChanges: ref.watch(connectivityChangesProvider),
+  );
   ref.listen<AsyncValue<AppUser?>>(authStateProvider, (_, next) => repository.setActiveUser(next.valueOrNull?.id), fireImmediately: true);
-  ref.onDispose(repository.dispose);
+  ref.onDispose(repository.close);
   return repository;
 });
 
