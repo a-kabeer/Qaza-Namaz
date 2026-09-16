@@ -24,10 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     void open(Widget screen) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => screen),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
     }
 
     return AppScaffold(
@@ -38,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           SettingsSection(
             title: 'Appearance',
-            subtitle: 'Theme changes apply to the entire app instantly.',
+            subtitle: 'Choose how Qaza Namaz looks on your device.',
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: SegmentedButton<AppThemeMode>(
@@ -51,9 +48,7 @@ class SettingsScreen extends ConsumerWidget {
                 selected: {themeMode},
                 onSelectionChanged: (value) {
                   final selected = value.first;
-                  if (selected != themeMode) {
-                    ref.read(themeModeProvider.notifier).set(selected);
-                  }
+                  if (selected != themeMode) ref.read(themeModeProvider.notifier).set(selected);
                 },
               ),
             ),
@@ -61,13 +56,14 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           SettingsSection(
             title: 'Language',
-            subtitle: 'English is the current app language.',
+            subtitle: 'Select the language used throughout the app.',
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SegmentedButton<bool>(
+                    key: const Key('settings_language'),
                     segments: const [
                       ButtonSegment(value: false, icon: Icon(Icons.language_outlined), label: Text('English')),
                       ButtonSegment(value: true, label: Text('اردو (Soon)'), enabled: false),
@@ -76,26 +72,64 @@ class SettingsScreen extends ConsumerWidget {
                     onSelectionChanged: (_) {},
                   ),
                   const SizedBox(height: 8),
-                  Text('Urdu translation is not available yet. English is used across the app.', style: theme.textTheme.bodySmall),
+                  Text('Urdu translation is not available yet. English remains the active language.', style: theme.textTheme.bodySmall),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
           SettingsSection(
-            title: 'General',
-            child: Column(
-              children: [
-                SettingsNavRow(icon: Icons.account_circle_outlined, title: 'Account', subtitle: _accountSubtitle(account), onTap: () => open(const AccountScreen())),
-                const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(icon: Icons.menu_book_outlined, title: 'Prayer & Fiqh Rules', subtitle: 'Calculation method, Baligh, Witr', onTap: () => open(const FiqhScreen())),
-                const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(icon: Icons.notifications_none, title: 'Notifications', subtitle: 'Daily reminder and schedule', onTap: () => open(const NotificationsScreen())),
-                const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(icon: Icons.cloud_outlined, title: 'Data & Cloud', subtitle: 'Sync, export and import status', onTap: () => open(const DataCloudScreen())),
-                const Divider(indent: 16, endIndent: 16),
-                SettingsNavRow(icon: Icons.info_outline, title: 'About', subtitle: 'Qaza Namaz • version 0.2.0', onTap: () => open(const AboutScreen())),
-              ],
+            title: 'Account',
+            subtitle: 'Manage your sign-in and account details.',
+            child: SettingsNavRow(
+              icon: Icons.account_circle_outlined,
+              title: 'Account',
+              subtitle: _accountSubtitle(account),
+              onTap: () => open(const AccountScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: 'Prayer',
+            subtitle: 'Review the rules used by the Qaza calculator.',
+            child: SettingsNavRow(
+              icon: Icons.menu_book_outlined,
+              title: 'Prayer & Fiqh Rules',
+              subtitle: 'Calculation method, Baligh, Witr',
+              onTap: () => open(const FiqhScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: 'Notifications',
+            subtitle: 'Manage reminders and notification scheduling.',
+            child: SettingsNavRow(
+              icon: Icons.notifications_none,
+              title: 'Notifications',
+              subtitle: 'Daily reminder and schedule',
+              onTap: () => open(const NotificationsScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: 'Data & Storage',
+            subtitle: 'Sync, backup, export, and import your Qaza data.',
+            child: SettingsNavRow(
+              icon: Icons.cloud_outlined,
+              title: 'Data & Cloud',
+              subtitle: 'Sync, export and import status',
+              onTap: () => open(const DataCloudScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: 'About',
+            subtitle: 'App information and version details.',
+            child: SettingsNavRow(
+              icon: Icons.info_outline,
+              title: 'About',
+              subtitle: 'Qaza Namaz • version 0.2.0',
+              onTap: () => open(const AboutScreen()),
             ),
           ),
         ],
