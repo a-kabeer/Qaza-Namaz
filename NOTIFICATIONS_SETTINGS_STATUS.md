@@ -35,7 +35,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | 7 | Reminder time workflow | ✅ |
 | 8 | Test notification | ✅ |
 | 9 | Persistence & restore | ✅ |
-| 10 | Runtime reconciliation | ☐ |
+| 10 | Runtime reconciliation | ✅ |
 | 11 | Theme & responsive UX | ☐ |
 | 12 | Notification tests | ☐ |
 | 13 | Integration & regression | ☐ |
@@ -150,6 +150,17 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - A different account receives its own default notification configuration rather than inheriting another account's reminder setting.
 - This prevents notification preferences from leaking across signed-in accounts while keeping the existing SharedPreferences-based architecture.
 - Focused tests verify same-account restoration and cross-account isolation.
+
+## Part 10 — Runtime Reconciliation ✅
+
+- Notification initialization and OS permission status are checked whenever the notification settings provider is built.
+- Restored settings are reconciled immediately on startup: enabled + granted permission + pending Qaza schedules the daily reminder; otherwise the existing daily reminder is cancelled.
+- Permission state is checked again when the app resumes, so a user who changes notification permission in system settings is reflected without restarting the app.
+- When permission is revoked while the reminder preference remains enabled, the recurring reminder is cancelled and the UI exposes the `permissionRequired` state instead of claiming the reminder is scheduled.
+- When permission is restored, the next reconciliation schedules the reminder again when pending Qaza exists.
+- Qaza ledger changes continue to trigger reconciliation, so runtime state changes do not depend on reopening Settings.
+- Startup listening avoids duplicate immediate reconciliation while the initial provider state is being assembled.
+- Focused tests cover startup scheduling, startup cancellation with no pending Qaza, and permission revocation at runtime.
 
 ## Completion Criteria
 The task must not be marked complete until:
