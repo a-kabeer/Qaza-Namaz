@@ -7,13 +7,24 @@ import '../entities/qaza_record.dart';
 abstract interface class QazaRepository {
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status});
 
-  /// Reads only records belonging to the requested dates.
+  /// Reads only records belonging to the requested dates. Database-backed
+  /// implementations should override this with an indexed query.
   Future<List<QazaRecord>> getRecordsForDates({
     required String userId,
     required Iterable<DateTime> dates,
     PrayerType? prayerType,
     QazaStatus? status,
-  });
+  }) async {
+    final wanted = dates
+        .map((date) => DateTime(date.year, date.month, date.day))
+        .toSet();
+    if (wanted.isEmpty) return const <QazaRecord>[];
+    final records = await getRecords(userId: userId, prayerType: prayerType, status: status);
+    return records.where((record) {
+      final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
+      return wanted.contains(date);
+    }).toList(growable: false);
+  }
 
   Future<QazaLedgerSummary> getSummary(String userId) async {
     final records = await getRecords(userId: userId);
