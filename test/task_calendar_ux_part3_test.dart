@@ -72,9 +72,10 @@ void main() {
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-10')));
     await tester.pumpAndSettle();
 
+    final summary = find.byKey(const Key('calendar_selected_summary'));
     expect(find.textContaining('2 selected dates'), findsOneWidget);
-    expect(find.textContaining('Mar 10, 2027'), findsOneWidget);
-    expect(find.textContaining('Mar 12, 2027'), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text('10')), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text('12')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-10')));
     await tester.pumpAndSettle();
