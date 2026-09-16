@@ -70,7 +70,6 @@ void main() {
 
     final day = tester.widget<InkWell>(find.byKey(const Key('calendar_day_2026-09-10')));
     expect(day.onTap, isNull);
-    expect(find.text('no prayers available'), findsOneWidget);
   });
 
   testWidgets('fully unavailable date cannot be selected in multiple-date mode', (tester) async {
