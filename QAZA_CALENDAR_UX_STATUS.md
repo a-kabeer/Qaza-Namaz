@@ -4,7 +4,7 @@
 Unify the Qaza calendar into one Gregorian calendar with Hijri as secondary date information and provide a consistent Single / Range / Multiple selection UX.
 
 ## Branch
-`task-calendar-ux-unified`
+`task-calendar-ux-final-ci`
 
 ## Completion Standard
 Each part follows:
@@ -22,7 +22,7 @@ Each part follows:
 - [ ] Final — Full CI + status verification
 
 ## Current State
-Part 6 complete. Obsolete Hijri navigation regression coverage was removed and the calendar regression suite now validates the unified Gregorian calendar, secondary Hijri display, boundaries, future-date protection, and date serialization.
+All implementation parts are complete. Final full CI is pending on this integration checkpoint.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -50,7 +50,7 @@ Part 6 complete. Obsolete Hijri navigation regression coverage was removed and t
 | Part 4 | `73802e8b` | Not run | COMPLETE |
 | Part 5 | `9ee1ebec`, `c56e576b` | Not run | COMPLETE |
 | Part 6 | `67455a88` | Not run | COMPLETE |
-| Final | — | — | NOT STARTED |
+| Final | pending | Full CI required | IN PROGRESS |
 
 ## Notes
 The existing calendar architecture was consolidated rather than replaced. Selection remains centralized, date-only, unique, chronologically ordered, future-safe, and range expansion remains inclusive.
