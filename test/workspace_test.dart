@@ -49,14 +49,14 @@ void main() {
   });
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    await tester.tap(find.text('Calculator'));
+    await tester.tap(find.text('Calculator').first);
     await tester.pumpAndSettle();
-    expect(find.text('Qaza estimate calculator'), findsOneWidget);
-    await tester.tap(find.text('Logs'));
+    expect(find.byKey(const Key('calculator_continue')), findsOneWidget);
+    await tester.tap(find.text('Logs').first);
     await tester.pumpAndSettle();
     expect(find.text('Logs & Progress'), findsOneWidget);
     expect(find.text('No completed Qaza yet.'), findsOneWidget);
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.text('Settings').first);
     await tester.pumpAndSettle();
     expect(find.text('Account'), findsNWidgets(2));
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
