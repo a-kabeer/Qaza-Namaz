@@ -40,17 +40,25 @@ Unify Add Qaza calendar availability and Calculator overlap handling around one 
 - Calculator Add CTA now uses the actual new count and is disabled when there is nothing new to add.
 - Calculator save re-reads the tracker before insertion and re-checks it after insertion so stale UI state cannot create duplicates.
 - Existing Qaza records are preserved and never overwritten.
+- Simplified Add Qaza into exactly three focused steps: **Select Dates → Select Missed Prayers → Review & Add**.
+- Merged Single/Range/Multiple mode selection and the Gregorian calendar into Step 1 instead of using a separate Range Setup page.
+- Added selected date/range summary with clear selection action while preserving calendar eligibility rules.
+- Added a dedicated Step 2 continuation instead of creating records before review.
+- Added a dedicated Step 3 review showing selected dates, selected prayers, already tracked combinations, already prayed combinations when supplied, and new records.
+- Final creation remains save-time validated and creates only new date + prayer combinations.
+- Back navigation keeps the selected dates and prayers intact.
 
 ## Current Audit Findings
 
 - The current repository model contains Qaza status (`pending` / `completed`) but no separate prayer-history entity/provider. Therefore an independent “already prayed” source must not be invented. The centralized engine supports prayer-level eligibility and can consume a future prayer-history source.
-- The Calculator and Add Qaza flows now share the same availability/duplicate engine; remaining work is primarily regression coverage and CI verification.
+- The Calculator and Add Qaza flows share the same availability/duplicate engine.
+- Add Qaza now has one clear three-step workflow with no separate Method/Date page.
 
 ## Next Implementation Steps
 
-1. Add/finish UI regression tests for Add Qaza prayer-level availability and Calculator overlap states.
-2. Verify single/range/multiple date selection and partial-date behavior end-to-end.
-3. Verify Calculator add, repeat calculation, stale-save protection, and zero-new CTA behavior.
+1. Verify Add Qaza single/range/multiple selection and partial-date behavior end-to-end.
+2. Verify Step 2 prayer-level availability, Witr independence, and selection persistence.
+3. Verify Step 3 review, final add, repeat submission, and stale-save protection.
 4. Verify light/dark/system themes with no hardcoded custom colors.
 5. Run full CI and only then mark the project complete.
 
