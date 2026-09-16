@@ -12,16 +12,32 @@ subprojects {
 
 subprojects {
     project.evaluationDependsOn(":app")
+}
 
-    plugins.withId("org.jetbrains.kotlin.android") {
-        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-            kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+// AGP 8.11+ wires JavaCompile compatibility from `android.compileOptions`
+// during each subproject's own evaluation, which overrides rules registered
+// earlier from the root project. Enforce JVM target 11 for every Android
+// plugin module after all projects are evaluated (but before any task runs)
+// so the Java and Kotlin tasks always agree on the same JVM target.
+gradle.projectsEvaluated {
+    subprojects.each { sub ->
+        sub.plugins.withId("org.jetbrains.kotlin.android") {
+            sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+            }
         }
-    }
 
-    tasks.withType(JavaCompile).configureEach {
-        sourceCompatibility = JavaVersion.VERSION_11.toString()
-        targetCompatibility = JavaVersion.VERSION_11.toString()
+        if (sub.extensions.findByName("android") != null) {
+            sub.android.compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+
+        sub.tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_11.toString()
+            targetCompatibility = JavaVersion.VERSION_11.toString()
+        }
     }
 }
 
