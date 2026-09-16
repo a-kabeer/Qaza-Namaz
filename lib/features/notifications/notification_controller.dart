@@ -69,6 +69,12 @@ class NotificationSettingsNotifier
 
   @override
   Future<NotificationSettingsState> build() async {
+    ref.listen<AsyncValue<List<QazaRecord>>>(
+      qazaRecordsProvider,
+      (_, next) => _listenToQazaChanges(next),
+      fireImmediately: true,
+    );
+
     await _scheduler.initialize();
     final prefs = await SharedPreferences.getInstance();
     final requested = prefs.getBool(_permissionRequestedKey) ?? false;
@@ -116,6 +122,7 @@ class NotificationSettingsNotifier
   Future<bool> setEnabled(bool enabled) async {
     final current = state.valueOrNull;
     if (current == null) return false;
+
     if (!enabled) {
       try {
         await _scheduler.cancelDaily();
@@ -136,7 +143,6 @@ class NotificationSettingsNotifier
     try {
       final granted = current.canSendNotifications ||
           await _scheduler.requestPermission();
-      await _persistPermissionRequested();
       if (!granted) {
         final next = current.copyWith(
           enabled: false,
@@ -180,7 +186,9 @@ class NotificationSettingsNotifier
 
   Future<void> sendTestNotification() async {
     final current = state.valueOrNull;
-    if (current == null) throw StateError('Notification settings are not loaded.');
+    if (current == null) {
+      throw StateError('Notification settings are not loaded.');
+    }
     if (!current.canSendNotifications) {
       throw StateError('Notification permission is required first.');
     }
@@ -189,9 +197,9 @@ class NotificationSettingsNotifier
 
   void _listenToQazaChanges(AsyncValue<List<QazaRecord>> next) {
     final records = next.valueOrNull;
-    if (records == null) return;
     final current = state.valueOrNull;
-    if (current == null) return;
+    if (records == null || current == null) return;
+
     final updated = current.copyWith(
       hasPendingQaza: records.any(
         (record) => record.status == QazaStatus.pending,
@@ -209,11 +217,6 @@ class NotificationSettingsNotifier
     await _scheduler.scheduleDaily(hour: value.hour, minute: value.minute);
   }
 
-  Future<void> _persistPermissionRequested() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_permissionRequestedKey, true);
-  }
-
   Future<void> _persist(
     NotificationSettingsState value, {
     required bool? permissionRequested,
@@ -224,18 +227,6 @@ class NotificationSettingsNotifier
     await prefs.setInt(_minuteKey, value.minute);
     if (permissionRequested != null) {
       await prefs.setBool(_permissionRequestedKey, permissionRequested);
-    }
-  }
-
-  @override
-  void onAddListener(void Function() listener) {
-    super.onAddListener(listener);
-    if (hasListeners) {
-      ref.listen<AsyncValue<List<QazaRecord>>>(
-        qazaRecordsProvider,
-        (_, next) => _listenToQazaChanges(next),
-        fireImmediately: true,
-      );
     }
   }
 }
