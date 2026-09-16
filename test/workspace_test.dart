@@ -55,7 +55,7 @@ void main() {
     await tester.tap(find.text('Logs'));
     await tester.pumpAndSettle();
     expect(find.text('Logs & Progress'), findsOneWidget);
-    expect(find.text('No completed Qaza yet.'), findsOneWidget);
+    expect(find.text('No Qaza records yet.'), findsOneWidget);
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
     expect(find.text('Account'), findsOneWidget);
