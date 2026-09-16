@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +21,24 @@ QazaRecord record({required String id, required DateTime originalDate}) {
     createdAt: now,
     updatedAt: now,
   );
+}
+
+class DelayedCompletionRepository extends InMemoryQazaRepository {
+  final Completer<void> completion = Completer<void>();
+
+  @override
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    await completion.future;
+    await super.completeRecords(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
 }
 
 Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
@@ -122,7 +142,7 @@ void main() {
 
   testWidgets('completion button stays visible in a loading state while processing',
       (tester) async {
-    final repository = InMemoryQazaRepository();
+    final repository = DelayedCompletionRepository();
     await repository.addRecord(
       record(id: 'fajr_1', originalDate: DateTime(2026, 9, 1)),
     );
@@ -136,5 +156,8 @@ void main() {
     expect(find.byKey(const Key('complete_selected_qaza_button')), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Completing 1 Qaza…'), findsOneWidget);
+
+    repository.completion.complete();
+    await tester.pumpAndSettle();
   });
 }
