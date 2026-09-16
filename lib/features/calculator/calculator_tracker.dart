@@ -1,4 +1,6 @@
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_record.dart';
+import '../../domain/services/qaza_availability_service.dart';
 import 'qaza_calculation.dart';
 
 /// Expands the calculated period into the same date-only range used by the
@@ -18,3 +20,19 @@ List<PrayerType> trackerPrayerTypes({required bool includeWitr}) => [
 int trackerRecordCount(QazaCalculation calculation) =>
     calculation.totalDays *
     trackerPrayerTypes(includeWitr: calculation.includeWitr).length;
+
+QazaAvailabilityAnalysis analyzeTrackerCandidates({
+  required String userId,
+  required QazaCalculation calculation,
+  required Iterable<QazaRecord> existingRecords,
+  Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+}) {
+  const availability = QazaAvailabilityService();
+  return availability.analyze(
+    userId: userId,
+    dates: trackerDates(calculation),
+    prayerTypes: trackerPrayerTypes(includeWitr: calculation.includeWitr),
+    existingRecords: existingRecords,
+    prayedKeys: prayedKeys,
+  );
+}
