@@ -109,6 +109,68 @@ void main() {
     expect(state.permissionStatus, NotificationPermissionStatus.granted);
     expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
     expect(scheduler.initializeCalls, 1);
+    expect(scheduler.cancelCalls, 1);
+  });
+
+  test('restores enabled reminder and reconciles the daily schedule on startup', () async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_daily_notification_enabled:restore-user': true,
+      'qaza_daily_notification_hour:restore-user': 6,
+      'qaza_daily_notification_minute:restore-user': 30,
+      'qaza_notification_permission_requested:restore-user': true,
+    });
+    final scheduler = _FakeScheduler();
+    final container = createContainer(
+      scheduler,
+      records: [_pendingRecord()],
+      userId: 'restore-user',
+    );
+
+    final state = await container.read(notificationSettingsProvider.future);
+    expect(state.enabled, isTrue);
+    expect(state.hour, 6);
+    expect(state.minute, 30);
+    expect(state.scheduleStatus, NotificationScheduleStatus.scheduled);
+    expect(scheduler.permissionStatusCalls, 1);
+    expect(scheduler.scheduleCalls, 1);
+    expect(scheduler.lastHour, 6);
+    expect(scheduler.lastMinute, 30);
+  });
+
+  test('startup reconciliation cancels a restored reminder when there is no pending Qaza', () async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_daily_notification_enabled:restore-user': true,
+      'qaza_daily_notification_hour:restore-user': 6,
+      'qaza_daily_notification_minute:restore-user': 30,
+      'qaza_notification_permission_requested:restore-user': true,
+    });
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, userId: 'restore-user');
+
+    final state = await container.read(notificationSettingsProvider.future);
+    expect(state.enabled, isTrue);
+    expect(state.scheduleStatus, NotificationScheduleStatus.noPendingQaza);
+    expect(scheduler.scheduleCalls, 0);
+    expect(scheduler.cancelCalls, 1);
+  });
+
+  test('permission revoked at runtime cancels the daily reminder without changing saved preference', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    await notifier.setEnabled(true);
+    expect(scheduler.scheduleCalls, 1);
+
+    scheduler.permissionGrantedForStatus = false;
+    await notifier.refreshPermissionStatus();
+
+    final state = container.read(notificationSettingsProvider).requireValue;
+    expect(state.enabled, isTrue);
+    expect(state.permissionStatus, NotificationPermissionStatus.denied);
+    expect(state.scheduleStatus, NotificationScheduleStatus.permissionRequired);
+    expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
   });
 
   test('state derives schedule status from enablement, permission and pending Qaza', () async {
@@ -123,18 +185,6 @@ void main() {
     await notifier.setEnabled(true);
     state = container.read(notificationSettingsProvider).requireValue;
     expect(state.scheduleStatus, NotificationScheduleStatus.scheduled);
-
-    final deniedScheduler = _FakeScheduler()..permissionGrantedForStatus = false;
-    final deniedContainer = createContainer(
-      deniedScheduler,
-      records: [_pendingRecord()],
-      userId: 'denied-user',
-    );
-    final deniedNotifier = deniedContainer.read(notificationSettingsProvider.notifier);
-    await deniedContainer.read(notificationSettingsProvider.future);
-    await deniedNotifier.setEnabled(true);
-    final deniedState = deniedContainer.read(notificationSettingsProvider).requireValue;
-    expect(deniedState.scheduleStatus, NotificationScheduleStatus.scheduled);
   });
 
   test('enabling with pending Qaza requests permission and schedules one daily reminder', () async {
@@ -158,7 +208,7 @@ void main() {
 
     expect(await notifier.setEnabled(true), isTrue);
     expect(scheduler.scheduleCalls, 0);
-    expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
+    expect(scheduler.cancelCalls, greaterThanOrEqualTo(2));
   });
 
   test('pending-Qaza changes schedule and cancel the daily reminder', () async {
