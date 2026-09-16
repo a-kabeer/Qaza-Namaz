@@ -44,11 +44,13 @@ void main() {
     expect([hijri.hYear, hijri.hMonth, hijri.hDay], [1448, 4, 3]);
     expect(HijriCalendar().hijriToGregorian(hijri.hYear, hijri.hMonth, hijri.hDay), _today);
   });
+
   test('package handles Gregorian leap day conversion', () {
     final leap = DateTime(2024, 2, 29);
     final hijri = HijriCalendar.fromDate(leap);
     expect(HijriCalendar().hijriToGregorian(hijri.hYear, hijri.hMonth, hijri.hDay), leap);
   });
+
   test('Riverpod controller supports single, range and multi-date selection', () {
     final container = ProviderContainer(overrides: [calendarTodayProvider.overrideWithValue(_today)]);
     addTearDown(container.dispose);
@@ -69,6 +71,7 @@ void main() {
     controller.select(DateTime(2026, 9, 15));
     expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
   });
+
   testWidgets('Gregorian calendar renders and navigates months', (tester) async {
     await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
     await tester.pumpAndSettle();
@@ -77,16 +80,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('August 2026'), findsOneWidget);
   });
-  testWidgets('Hijri calendar renders package month and converts a selected day', (tester) async {
+
+  testWidgets('Gregorian calendar displays Hijri as secondary information', (tester) async {
     await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Hijri'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('1448 AH'), findsOneWidget);
+    expect(find.byKey(const Key('calendar_hijri_month_label')), findsOneWidget);
+    expect(find.text('Hijri'), findsNothing);
     await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('calendar_selected_summary')), findsOneWidget);
   });
+
   testWidgets('future date is disabled and qaza indicator is rendered', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecord(QazaRecord(id: 'u1_fajr_2026-09-10', userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 10), createdAt: _today, updatedAt: _today));
@@ -97,11 +101,10 @@ void main() {
     final ink = tester.widget<InkWell>(tomorrow);
     expect(ink.onTap, isNull);
   });
+
   testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Hijri'));
     await tester.pumpAndSettle();
     await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
@@ -122,6 +125,7 @@ void main() {
     expect(records.single.originalDate, DateTime(2026, 9, 13));
     expect(records.single.prayerType, PrayerType.maghrib);
   });
+
   testWidgets('range flow persists every day in the selected range', (tester) async {
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
