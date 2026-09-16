@@ -24,6 +24,41 @@ extension PrayerTypeX on PrayerType {
         return 'Witr';
     }
   }
+
+  /// A compact visual identifier for prayer-selection rows.
+  IconData get icon {
+    switch (this) {
+      case PrayerType.fajr:
+        return Icons.nightlight_round;
+      case PrayerType.zuhr:
+        return Icons.wb_sunny_outlined;
+      case PrayerType.asr:
+        return Icons.wb_twilight_outlined;
+      case PrayerType.maghrib:
+        return Icons.brightness_4_outlined;
+      case PrayerType.isha:
+        return Icons.nights_stay_outlined;
+      case PrayerType.witr:
+        return Icons.star_outline_rounded;
+    }
+  }
+
+  String get rakats {
+    switch (this) {
+      case PrayerType.fajr:
+        return '2 rakats';
+      case PrayerType.zuhr:
+        return '4 rakats';
+      case PrayerType.asr:
+        return '4 rakats';
+      case PrayerType.maghrib:
+        return '3 rakats';
+      case PrayerType.isha:
+        return '4 rakats';
+      case PrayerType.witr:
+        return '3 rakats';
+    }
+  }
 }
 
 const allPrayerTypes = PrayerType.values;
