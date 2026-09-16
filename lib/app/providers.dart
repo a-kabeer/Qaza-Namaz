@@ -13,6 +13,7 @@ import '../data/repositories/firestore_qaza_repository.dart';
 import '../data/repositories/paginated_offline_first_qaza_repository.dart';
 import '../data/sync/sync_state.dart';
 import '../domain/entities/app_user.dart';
+import '../domain/entities/qaza_ledger_summary.dart';
 import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
@@ -26,11 +27,7 @@ final remoteQazaRepositoryProvider = Provider<QazaRepository>((ref) => Firestore
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
   final localStore = ref.watch(qazaLocalStoreProvider);
-  final repository = PaginatedOfflineFirstQazaRepository(
-    remote: ref.watch(remoteQazaRepositoryProvider),
-    localStore: localStore,
-    connectivityChanges: ref.watch(connectivityChangesProvider),
-  );
+  final repository = PaginatedOfflineFirstQazaRepository(remote: ref.watch(remoteQazaRepositoryProvider), localStore: localStore, connectivityChanges: ref.watch(connectivityChangesProvider));
   ref.listen<AsyncValue<AppUser?>>(authStateProvider, (_, next) => repository.setActiveUser(next.valueOrNull?.id), fireImmediately: true);
   ref.onDispose(repository.close);
   return repository;
@@ -85,6 +82,11 @@ final overallProgressProvider = Provider<QazaProgress>((ref) => QazaService.prog
 final prayerProgressProvider = Provider<Map<PrayerType, PrayerProgress>>((ref) {
   final records = ref.watch(loadedRecordsProvider);
   return {for (final prayer in PrayerType.values) prayer: PrayerProgress(prayerType: prayer, progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)))};
+});
+final qazaLedgerSummaryProvider = FutureProvider.autoDispose<QazaLedgerSummary>((ref) {
+  final userId = ref.watch(activeUserIdProvider);
+  if (userId == null) return Future.value(const QazaLedgerSummary());
+  return ref.watch(qazaRepositoryProvider).getSummary(userId);
 });
 final qazaHistoryProvider = Provider<List<QazaRecord>>((ref) => QazaService.completedNewestFirst(ref.watch(loadedRecordsProvider)));
 final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((ref, prayer) => ref.watch(loadedRecordsProvider).where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate)));
