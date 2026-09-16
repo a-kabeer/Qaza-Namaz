@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum PrayerType {
   fajr,
   zuhr,
@@ -51,7 +53,6 @@ extension PrayerTypeX on PrayerType {
       case PrayerType.isha:
         return '4 rakats';
       case PrayerType.maghrib:
-        return '3 rakats';
       case PrayerType.witr:
         return '3 rakats';
     }
