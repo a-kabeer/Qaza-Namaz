@@ -38,7 +38,8 @@ class NotificationSettingsState {
   final NotificationPermissionStatus permissionStatus;
   final bool hasPendingQaza;
 
-  bool get canSendNotifications => permissionStatus == NotificationPermissionStatus.granted;
+  bool get canSendNotifications =>
+      permissionStatus == NotificationPermissionStatus.granted;
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
@@ -88,12 +89,11 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
     ref.listen<AsyncValue<List<QazaRecord>>>(
       qazaRecordsProvider,
       (_, next) => _listenToQazaChanges(next),
-      fireImmediately: true,
     );
 
     await _scheduler.initialize();
     final prefs = await SharedPreferences.getInstance();
-    final requested = prefs.getBool(_permissionRequestedKey) ?? false;
+    final requested = prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
     final permissionGranted = await _scheduler.isPermissionGranted();
     final records = await ref.read(qazaRecordsProvider.future);
     final hasPendingQaza = records.any((record) => record.status == QazaStatus.pending);
@@ -104,13 +104,16 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
             ? NotificationPermissionStatus.denied
             : NotificationPermissionStatus.notRequested;
 
-    return NotificationSettingsState(
+    final settings = NotificationSettingsState(
       enabled: prefs.getBool(_scopedKey(_enabledKey)) ?? false,
       hour: prefs.getInt(_scopedKey(_hourKey)) ?? _defaultReminderHour,
       minute: prefs.getInt(_scopedKey(_minuteKey)) ?? _defaultReminderMinute,
       permissionStatus: permissionStatus,
       hasPendingQaza: hasPendingQaza,
     );
+
+    await _reconcile(settings);
+    return settings;
   }
 
   Future<void> refreshPermissionStatus() async {
@@ -119,7 +122,8 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
     try {
       final granted = await _scheduler.isPermissionGranted();
       final prefs = await SharedPreferences.getInstance();
-      final requested = prefs.getBool(_permissionRequestedKey) ?? false;
+      final requested =
+          prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
       final permissionStatus = granted
           ? NotificationPermissionStatus.granted
           : requested
@@ -240,7 +244,7 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
     await prefs.setInt(_scopedKey(_hourKey), value.hour);
     await prefs.setInt(_scopedKey(_minuteKey), value.minute);
     if (permissionRequested != null) {
-      await prefs.setBool(_permissionRequestedKey, permissionRequested);
+      await prefs.setBool(_scopedKey(_permissionRequestedKey), permissionRequested);
     }
   }
 }
