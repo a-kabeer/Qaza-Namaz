@@ -15,7 +15,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ## Parts
 
 - [x] Part 1 — Audit Current Calculator
-- [ ] Part 2 — 3-Step Calculator Shell
+- [x] Part 2 — 3-Step Calculator Shell
 - [ ] Part 3 — Step 1: About You
 - [ ] Part 4 — Step 2: Prayer History
 - [ ] Part 5 — Step 3: Result & Breakdown
@@ -92,9 +92,9 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - There are no calculator-specific tests or calculator persistence currently attached to this feature.
 
 ### Existing architecture to preserve
-- Calculator is already a primary destination in `WorkspaceShell` through `IndexedStack`; the redesign should remain one destination rather than adding nested calculator pages. fileciteturn850file0L2-L5
-- Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path. fileciteturn849file0L2-L2
-- The existing prayer model contains the six supported prayer types and labels; the calculator should reuse these domain constants rather than create a second prayer list. fileciteturn845file0L2-L5
+- Calculator is already a primary `WorkspaceShell` destination; the redesign remains one destination rather than adding nested calculator pages.
+- Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path.
+- The existing prayer model contains the six supported prayer types and labels; the calculator should reuse these domain constants rather than create a second prayer list.
 
 ### Required implementation direction
 - Replace the placeholder body with a single stateful/Riverpod-backed three-step calculator flow.
@@ -104,12 +104,24 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - Reuse existing Qaza creation/service rules for tracker insertion and duplicate safety.
 - Add focused tests alongside each implementation part; defer full CI until the agreed integration/final checkpoint.
 
+## Part 2 — 3-Step Calculator Shell
+
+### Implemented
+- Replaced the placeholder calculator with one stateful screen containing exactly three steps: About You, Prayer History, Result.
+- Added compact progress indicator with active/completed/inactive states using the app `ColorScheme`.
+- Added forward/back step navigation without nested routes.
+- Added stable widget keys for step actions to support focused regression tests.
+- Kept the detailed data-entry and calculation logic out of the shell for subsequent parts.
+
+### Tests
+- Added `test/calculator_shell_test.dart` covering step order, forward/back navigation, action labels, and theme-derived progress styling.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
 |---|---|---|---|
 | Part 1 | 48140f50c5f8b1f1be6029518ccc1b0e8fe0db85 | — | COMPLETE — audit recorded |
-| Part 2 | — | — | NOT STARTED |
+| Part 2 | 48551841390e1fecb11e0ed033f507f07de471bd | Focused tests added; full CI deferred | COMPLETE |
 | Part 3 | — | — | NOT STARTED |
 | Part 4 | — | — | NOT STARTED |
 | Part 5 | — | — | NOT STARTED |
