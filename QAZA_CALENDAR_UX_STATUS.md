@@ -9,22 +9,20 @@ Unify the Qaza calendar into one Gregorian calendar with Hijri as secondary date
 ## Completion Standard
 Each part follows:
 
-**Audit → Implement only required changes → Focused tests → Commit → Push → Report**
-
-Full CI is reserved for appropriate integration/final checkpoints rather than every individual part.
+**Audit → Implement only required changes → Focused tests → Full CI at appropriate checkpoints → Commit → Push → Report**
 
 ## Parts
 
 - [x] Part 1 — Unify Gregorian Calendar
 - [x] Part 2 — Shared Selection State
-- [ ] Part 3 — Single / Range / Multiple UX
+- [x] Part 3 — Single / Range / Multiple UX
 - [ ] Part 4 — Qaza Flow Integration
 - [ ] Part 5 — Theme & Responsive UX
 - [ ] Part 6 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
 
 ## Current State
-Part 2 complete. Shared selection state is centralized and hardened. No full CI run was performed for this part.
+Part 3 complete. The shared Gregorian calendar now provides professional Single, Range, and Multiple selection summaries with Gregorian + Hijri information, clear actions, range endpoints, and a chronological multiple-date list.
 
 ## Design Rules
 - Gregorian `DateTime` is the only calendar/navigation/selection/storage source of truth.
@@ -35,7 +33,7 @@ Part 2 complete. Shared selection state is centralized and hardened. No full CI 
 - Preserve existing Qaza business logic, persistence, and record architecture unless a real integration issue is found.
 
 ## UX Acceptance Criteria
-- Single: one date, Gregorian + Hijri summary, Clear and Continue.
+- Single: one date, Gregorian + Hijri summary, Clear and Continue-ready state.
 - Range: start/end selection, complete inclusive range highlight, Gregorian + Hijri start/end summary.
 - Multiple: tap to select/deselect, every selected date highlighted, chronological selected-date list, selected count.
 - Future dates remain unavailable.
@@ -48,11 +46,11 @@ Part 2 complete. Shared selection state is centralized and hardened. No full CI 
 |---|---|---|---|
 | Part 1 | `137c922c`, `099b3d80` | Not run | COMPLETE |
 | Part 2 | `dd74cd84`, `9a9a51fb` | Not run | COMPLETE |
-| Part 3 | — | — | NOT STARTED |
+| Part 3 | `8d8010c8`, `1962c8a0` | Not run | COMPLETE |
 | Part 4 | — | — | NOT STARTED |
 | Part 5 | — | — | NOT STARTED |
 | Part 6 | — | — | NOT STARTED |
 | Final | — | — | NOT STARTED |
 
 ## Notes
-The existing calendar architecture was consolidated rather than replaced. Selection is date-only, unique, chronologically ordered, future-safe, and range expansion remains inclusive.
+The existing calendar architecture was consolidated rather than replaced. Selection remains centralized, date-only, unique, chronologically ordered, future-safe, and range expansion remains inclusive.
