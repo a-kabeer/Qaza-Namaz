@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
+Future<void> settleCalculator(WidgetTester tester, [Duration duration = const Duration(milliseconds: 600)]) async {
+  await tester.pump(duration);
+  await tester.pump();
+}
+
 void main() {
   testWidgets('calculator uses dark theme tokens', (tester) async {
     final theme = ThemeData.from(
@@ -14,7 +19,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(theme: theme, home: const CalculatorScreen()),
     );
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
 
     final circle = tester.widget<CircleAvatar>(find.byType(CircleAvatar).first);
     expect(circle.backgroundColor, theme.colorScheme.primary);
@@ -28,7 +33,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await settleCalculator(tester);
 
     expect(find.text('About You'), findsOneWidget);
     expect(tester.takeException(), isNull);
