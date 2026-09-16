@@ -72,6 +72,45 @@ class QazaRecordsNotifier extends AsyncNotifier<List<QazaRecord>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(qazaServiceProvider).getRecords(userId: userId));
   }
+
+  /// Completes the oldest pending record and updates the visible ledger
+  /// immediately. The repository is offline-first, so the next record can be
+  /// shown without waiting for a network refresh.
+  Future<bool> completeOldestPending(PrayerType prayerType) async {
+    final userId = ref.read(activeUserIdProvider);
+    final records = state.valueOrNull;
+    if (userId == null || records == null) return false;
+
+    final pending = records
+        .where((record) => record.prayerType == prayerType && record.status == QazaStatus.pending)
+        .toList()
+      ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    if (pending.isEmpty) return false;
+
+    final target = pending.first;
+    final completedAt = DateTime.now();
+    await ref.read(qazaServiceProvider).completeRecord(
+          userId: userId,
+          recordId: target.id,
+          completedAt: completedAt,
+        );
+
+    final latest = state.valueOrNull;
+    if (latest != null) {
+      state = AsyncData([
+        for (final record in latest)
+          if (record.id == target.id)
+            record.copyWith(
+              status: QazaStatus.completed,
+              completedAt: completedAt,
+              updatedAt: completedAt,
+            )
+          else
+            record,
+      ]);
+    }
+    return true;
+  }
 }
 
 final qazaRecordsProvider = AsyncNotifierProvider<QazaRecordsNotifier, List<QazaRecord>>(QazaRecordsNotifier.new);
