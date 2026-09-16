@@ -24,8 +24,8 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - [x] Part 8 — Edit & Recalculate Flow
 - [x] Part 9 — Validation & Edge Cases
 - [x] Part 10 — Local Persistence & Restore
-- [ ] Part 11 — Theme & Responsive UX
-- [ ] Part 12 — Regression Tests & Cleanup
+- [x] Part 11 — Theme & Responsive UX
+- [x] Part 12 — Regression Tests & Cleanup
 - [ ] Final — Full CI + status verification
 
 ## UX Principles
@@ -226,6 +226,34 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 ### Tests
 - Added `test/task_calculator_part10_test.dart` covering round-trip persistence, UID isolation, missing values, and malformed stored data.
 
+## Part 11 — Theme & Responsive UX
+
+### Implemented
+- Audited calculator surfaces for theme-dependent styling.
+- Preserved app-level `ColorScheme` usage instead of hardcoded calculator colors.
+- Kept progress indicator, information containers, result chips, controls, dividers, and error text readable across theme variants.
+- Added responsive handling for narrow layouts so result/edit actions and metric rows do not require horizontal overflow.
+- Preserved the single-screen three-step workflow at wider layouts without introducing unnecessary navigation or panels.
+
+### Tests
+- Added responsive/theme-focused calculator coverage and retained the existing theme-derived progress regression test.
+
+## Part 12 — Regression Tests & Cleanup
+
+### Audit
+- Rechecked the complete calculator flow after Parts 1–11.
+- No separate calculator navigation, duplicate storage path, or second calculation engine was introduced.
+- Existing offline-first Qaza storage/service architecture remains the integration path.
+- No unnecessary production refactor was identified; cleanup remained focused on regression coverage and consistency.
+
+### Implemented
+- Added consolidated end-to-end calculator regression coverage for calculation totals, five-prayer/Witr separation, tracker-period expansion, validation boundaries, persistence round-trip, and the three-step UI flow.
+- Verified stable widget keys and current action labels across the complete flow.
+
+### Tests
+- Added `test/task_calculator_part12_test.dart` as the final calculator regression suite.
+- Existing focused tests for Parts 2–10 remain in place.
+
 ## Validation Log
 
 | Part | Commit | CI | Status |
@@ -240,8 +268,8 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 | Part 8 | 799938a3a124bc855349dac4395ac7ada94cb83f + cefc4f5884e35638c348aa3dc2710987424779e4 | Focused tests added; full CI deferred | COMPLETE |
 | Part 9 | 202dd20bf6ec6562d066b9c7bd638312d66c6847 | Focused tests added; full CI deferred | COMPLETE |
 | Part 10 | c928d820d4e5d27acf71c99dd574f5e99101b963 + 8389f552ac3da8ef55409ecea65ed9fdf7744686 | Focused persistence tests added; integration CI deferred | COMPLETE |
-| Part 11 | — | — | NOT STARTED |
-| Part 12 | — | — | NOT STARTED |
+| Part 11 | e869a00eea4738f78c690fc90822f7a9cb5b67f9 + b46404f8135b4f78ba350e99393ca30a4a52a229 | Focused responsive/theme tests added; integration CI deferred | COMPLETE |
+| Part 12 | 9d6c3d4597e67541d81197caefb5a41dfb898e3e | Final regression tests added; integration CI deferred | COMPLETE |
 | Final | — | Full CI required | NOT STARTED |
 
 ## Notes
