@@ -219,6 +219,35 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     _queuePersistence();
   }
 
+  Future<void> _goToStep(int targetStep) async {
+    if (targetStep < 0 || targetStep > 2 || targetStep == _step || _addingToTracker || _restoring) return;
+
+    // Backward navigation is always allowed and preserves all current input.
+    if (targetStep < _step) {
+      setState(() => _step = targetStep);
+      _queuePersistence();
+      return;
+    }
+
+    // Forward navigation reuses the same validation as the Continue/Calculate actions.
+    if (targetStep >= 1 && _step == 0) {
+      if (!_step1Valid) {
+        setState(() {});
+        return;
+      }
+      setState(() => _step = 1);
+      _queuePersistence();
+    }
+
+    if (targetStep >= 2 && _step == 1) {
+      if (!_step2Valid) {
+        setState(() {});
+        return;
+      }
+      _calculate();
+    }
+  }
+
   void _editStep(int targetStep) {
     if (targetStep < 0 || targetStep > 1) return;
     setState(() {
@@ -417,7 +446,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _ProgressIndicator(step: _step),
+              _ProgressIndicator(step: _step, onStepTap: _goToStep),
               if (_restoring) const LinearProgressIndicator(minHeight: 2),
               Expanded(child: AnimatedSwitcher(duration: const Duration(milliseconds: 180), child: _stepContent())),
               _StepActions(
@@ -638,18 +667,75 @@ class _ResultMetric extends StatelessWidget {
 }
 
 class _ProgressIndicator extends StatelessWidget {
-  const _ProgressIndicator({required this.step});
+  const _ProgressIndicator({required this.step, required this.onStepTap});
   final int step;
+  final Future<void> Function(int targetStep) onStepTap;
+
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 8), child: Row(children: [
-      for (var index = 0; index < 3; index++) ...[
-        if (index > 0) Expanded(child: Container(height: 2, color: index <= step ? colors.primary : colors.outlineVariant)),
-        Semantics(label: 'Step ${index + 1}: ${_CalculatorScreenState.steps[index]}', selected: index == step, child: CircleAvatar(radius: 13, backgroundColor: index <= step ? colors.primary : colors.surfaceContainerHighest, child: Text('${index + 1}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: index <= step ? colors.onPrimary : colors.onSurfaceVariant, fontWeight: FontWeight.w700)))),
-        if (index < 2) const SizedBox(width: 6),
-      ],
-    ]));
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Row(
+        children: [
+          for (var index = 0; index < 3; index++) ...[
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: index == step,
+                label: '${index < step ? 'Return to' : 'Go to'} ${_CalculatorScreenState.steps[index]} step',
+                child: InkWell(
+                  key: Key('calculator_step_$index'),
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => onStepTap(index),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: index <= step ? colors.primary : colors.surfaceContainerHighest,
+                          child: index < step
+                              ? Icon(Icons.check_rounded, size: 16, color: colors.onPrimary)
+                              : Text(
+                                  '${index + 1}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: index == step ? colors.onPrimary : colors.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _CalculatorScreenState.steps[index],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: index == step ? colors.primary : index < step ? colors.onSurface : colors.onSurfaceVariant,
+                            fontWeight: index == step ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (index < 2)
+              SizedBox(
+                width: 18,
+                child: Container(
+                  height: 2,
+                  color: index < step ? colors.primary : colors.outlineVariant,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
