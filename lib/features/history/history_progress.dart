@@ -1,5 +1,5 @@
 // Logs & progress.
-// Step 7: compact log rows with an accessible detail sheet.
+// Step 10: progress summary is queried from the local database instead of loading the ledger.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,29 +48,17 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   }
 
   Future<void> _refresh() async {
-    await Future.wait([
-      ref.read(historyControllerProvider.notifier).refresh(),
-      ref.read(qazaRecordsProvider.notifier).refresh(),
-    ]);
+    await ref.read(historyControllerProvider.notifier).refresh();
+    ref.invalidate(qazaLedgerSummaryProvider);
+    await ref.read(qazaLedgerSummaryProvider.future);
   }
 
   Future<void> _setQuery(HistoryQuery query) => ref.read(historyControllerProvider.notifier).setQuery(query);
 
   Future<void> _pickDateRange(HistoryQuery query) async {
-    final selected = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-      initialDateRange: query.originalDateRange,
-      helpText: 'Filter by original Qaza date',
-    );
+    final selected = await showDateRangePicker(context: context, firstDate: DateTime(1950), lastDate: DateTime.now(), initialDateRange: query.originalDateRange, helpText: 'Filter by original Qaza date');
     if (selected == null || !mounted) return;
-    await _setQuery(query.copyWith(
-      originalDateRange: DateTimeRange(
-        start: DateTime(selected.start.year, selected.start.month, selected.start.day),
-        end: DateTime(selected.end.year, selected.end.month, selected.end.day),
-      ),
-    ));
+    await _setQuery(query.copyWith(originalDateRange: DateTimeRange(start: DateTime(selected.start.year, selected.start.month, selected.start.day), end: DateTime(selected.end.year, selected.end.month, selected.end.day))));
   }
 
   String _dateLabel(DateTimeRange? range) => range == null ? 'Date' : '${formatAppDate(range.start)} – ${formatAppDate(range.end)}';
@@ -79,10 +67,10 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final history = ref.watch(historyControllerProvider);
-    final ledger = ref.watch(qazaRecordsProvider);
-    final progress = ref.watch(overallProgressProvider);
-    final prayerProgress = ref.watch(prayerProgressProvider);
+    final summary = ref.watch(qazaLedgerSummaryProvider);
     final data = history.valueOrNull;
+    final summaryValue = summary.valueOrNull;
+    final progress = QazaProgress(pending: summaryValue?.pending ?? 0, completed: summaryValue?.completed ?? 0);
     final total = progress.pending + progress.completed;
 
     return AppScaffold(
@@ -102,7 +90,9 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
             else if (data != null) ...[
               if (data.refreshError != null)
                 SliverPadding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), sliver: SliverToBoxAdapter(child: _InlineError(message: 'Could not refresh the latest history.', onRetry: _refresh))),
-              SliverPadding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), sliver: SliverToBoxAdapter(child: ProgressOverviewCard(progress: progress, header: Text('Progress', style: theme.textTheme.titleMedium)))),
+              SliverPadding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 0), sliver: SliverToBoxAdapter(child: summary.hasError ? const SizedBox.shrink() : ProgressOverviewCard(progress: progress, header: Text('Progress', style: theme.textTheme.titleMedium)))),
+              if (summary.hasError)
+                SliverPadding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), sliver: SliverToBoxAdapter(child: _InlineError(message: 'Could not load progress summary.', onRetry: _refresh))),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 sliver: SliverToBoxAdapter(
@@ -115,33 +105,21 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                       trailing: Icon(_showPrayerProgress ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
                       onTap: () => setState(() => _showPrayerProgress = !_showPrayerProgress),
                     ),
-                    if (_showPrayerProgress) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: Column(children: [for (final p in PrayerType.values) _PrayerProgressTile(progress: prayerProgress[p])])),
+                    if (_showPrayerProgress && summaryValue != null)
+                      Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: Column(children: [for (final p in PrayerType.values) _PrayerProgressTile(prayerType: p, progress: summaryValue.byPrayer[p])])),
                   ])),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                 sliver: SliverToBoxAdapter(
-                  child: _HistoryHeader(
-                    query: data.query,
-                    loadedCount: data.records.length,
-                    dateLabel: _dateLabel(data.query.originalDateRange),
-                    onPrayerChanged: (v) => _setQuery(data.query.copyWith(prayer: v)),
-                    onStatusChanged: (v) => _setQuery(data.query.copyWith(status: v)),
-                    onDatePressed: () => _pickDateRange(data.query),
-                    onClear: data.query.hasFilters ? () => _setQuery(data.query.clearFilters()) : null,
-                  ),
+                  child: _HistoryHeader(query: data.query, loadedCount: data.records.length, dateLabel: _dateLabel(data.query.originalDateRange), onPrayerChanged: (v) => _setQuery(data.query.copyWith(prayer: v)), onStatusChanged: (v) => _setQuery(data.query.copyWith(status: v)), onDatePressed: () => _pickDateRange(data.query), onClear: data.query.hasFilters ? () => _setQuery(data.query.clearFilters()) : null),
                 ),
               ),
               if (data.records.isEmpty)
                 SliverPadding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 28), sliver: SliverToBoxAdapter(child: EmptyState(icon: data.query.hasFilters ? Icons.filter_alt_off_rounded : Icons.history_toggle_off_rounded, title: data.query.hasFilters ? 'No matching Qaza records.' : 'No Qaza records yet.', message: data.query.hasFilters ? 'Try changing or clearing the filters.' : 'Your Qaza records will appear here.')))
               else ...[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) => _HistoryTile(key: ValueKey(data.records[index].id), record: data.records[index]), childCount: data.records.length),
-                  ),
-                ),
+                SliverPadding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 0), sliver: SliverList(delegate: SliverChildBuilderDelegate((context, index) => _HistoryTile(key: ValueKey(data.records[index].id), record: data.records[index]), childCount: data.records.length))),
                 if (data.isLoadingMore) const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator()))),
                 if (data.loadMoreError != null) SliverPadding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 12), sliver: SliverToBoxAdapter(child: _InlineError(message: 'Could not load more logs.', onRetry: () => ref.read(historyControllerProvider.notifier).loadMore()))),
                 if (!data.hasMore) SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(16, 14, 16, 28), child: Center(child: Text('You have reached the end of the logs.', style: theme.textTheme.bodySmall)))),
@@ -163,7 +141,6 @@ class _HistoryHeader extends StatelessWidget {
   final ValueChanged<QazaStatus?> onStatusChanged;
   final VoidCallback onDatePressed;
   final VoidCallback? onClear;
-
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [Expanded(child: Text('Qaza logs', style: Theme.of(context).textTheme.titleLarge)), Text('$loadedCount loaded', key: const Key('history_result_count'), style: Theme.of(context).textTheme.labelLarge)]),
@@ -192,15 +169,15 @@ class _InlineError extends StatelessWidget {
 }
 
 class _PrayerProgressTile extends StatelessWidget {
-  const _PrayerProgressTile({required this.progress});
-  final PrayerProgress? progress;
+  const _PrayerProgressTile({required this.prayerType, required this.progress});
+  final PrayerType prayerType;
+  final QazaProgress? progress;
   @override
   Widget build(BuildContext context) {
-    final item = progress;
-    if (item == null) return const SizedBox.shrink();
-    final total = item.progress.pending + item.progress.completed;
-    final ratio = total == 0 ? 0.0 : item.progress.completed / total;
-    return Padding(padding: const EdgeInsets.only(bottom: 8), child: ListTile(contentPadding: EdgeInsets.zero, leading: const CircleAvatar(child: Icon(Icons.mosque_rounded)), title: Text(item.prayerType.label), subtitle: Text('${item.progress.pending} pending • ${item.progress.completed} completed'), trailing: SizedBox(width: 82, child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${(ratio * 100).round()}%'), const SizedBox(height: 4), LinearProgressIndicator(value: ratio)]))));
+    final item = progress ?? const QazaProgress(pending: 0, completed: 0);
+    final total = item.pending + item.completed;
+    final ratio = total == 0 ? 0.0 : item.completed / total;
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: ListTile(contentPadding: EdgeInsets.zero, leading: const CircleAvatar(child: Icon(Icons.mosque_rounded)), title: Text(prayerType.label), subtitle: Text('${item.pending} pending • ${item.completed} completed'), trailing: SizedBox(width: 82, child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${(ratio * 100).round()}%'), const SizedBox(height: 4), LinearProgressIndicator(value: ratio)]))));
   }
 }
 
@@ -210,18 +187,7 @@ class _HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completed = record.status == QazaStatus.completed;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      child: ListTile(
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        leading: CircleAvatar(radius: 18, child: Icon(completed ? Icons.check_rounded : Icons.schedule_rounded, size: 19)),
-        title: Text(record.prayerType.label, style: Theme.of(context).textTheme.titleSmall),
-        subtitle: Text(formatAppDate(record.originalDate)),
-        trailing: _StatusBadge(completed: completed),
-        onTap: () => _showHistoryDetail(context, record),
-      ),
-    );
+    return Card(margin: const EdgeInsets.only(bottom: 6), child: ListTile(dense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2), leading: CircleAvatar(radius: 18, child: Icon(completed ? Icons.check_rounded : Icons.schedule_rounded, size: 19)), title: Text(record.prayerType.label, style: Theme.of(context).textTheme.titleSmall), subtitle: Text(formatAppDate(record.originalDate)), trailing: _StatusBadge(completed: completed), onTap: () => _showHistoryDetail(context, record)));
   }
 }
 
@@ -237,24 +203,7 @@ class _StatusBadge extends StatelessWidget {
 
 void _showHistoryDetail(BuildContext context, QazaRecord record) {
   final completed = record.status == QazaStatus.completed;
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [CircleAvatar(child: Icon(completed ? Icons.check_rounded : Icons.schedule_rounded)), const SizedBox(width: 12), Expanded(child: Text('${record.prayerType.label} Qaza', style: Theme.of(context).textTheme.titleLarge)), _StatusBadge(completed: completed)]),
-          const SizedBox(height: 20),
-          _DetailRow(label: 'Original Qaza date', value: formatAppDate(record.originalDate), icon: Icons.event_rounded),
-          const SizedBox(height: 12),
-          _DetailRow(label: 'Status', value: completed ? 'Completed' : 'Pending', icon: completed ? Icons.check_circle_rounded : Icons.schedule_rounded),
-          if (completed && record.completedAt != null) ...[const SizedBox(height: 12), _DetailRow(label: 'Completed', value: formatAppDateTime(record.completedAt), icon: Icons.task_alt_rounded)],
-        ]),
-      ),
-    ),
-  );
+  showModalBottomSheet<void>(context: context, showDragHandle: true, isScrollControlled: true, builder: (context) => SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [CircleAvatar(child: Icon(completed ? Icons.check_rounded : Icons.schedule_rounded)), const SizedBox(width: 12), Expanded(child: Text('${record.prayerType.label} Qaza', style: Theme.of(context).textTheme.titleLarge)), _StatusBadge(completed: completed)]), const SizedBox(height: 20), _DetailRow(label: 'Original Qaza date', value: formatAppDate(record.originalDate), icon: Icons.event_rounded), const SizedBox(height: 12), _DetailRow(label: 'Status', value: completed ? 'Completed' : 'Pending', icon: completed ? Icons.check_circle_rounded : Icons.schedule_rounded), if (completed && record.completedAt != null) ...[const SizedBox(height: 12), _DetailRow(label: 'Completed', value: formatAppDateTime(record.completedAt), icon: Icons.task_alt_rounded)]]))));
 }
 
 class _DetailRow extends StatelessWidget {
