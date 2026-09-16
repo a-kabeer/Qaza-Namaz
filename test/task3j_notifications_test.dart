@@ -127,12 +127,10 @@ void main() {
       deniedScheduler,
       records: [_pendingRecord()],
     );
-    final deniedNotifier =
-        deniedContainer.read(notificationSettingsProvider.notifier);
+    final deniedNotifier = deniedContainer.read(notificationSettingsProvider.notifier);
     await deniedContainer.read(notificationSettingsProvider.future);
     await deniedNotifier.setEnabled(true);
-    final deniedState =
-        deniedContainer.read(notificationSettingsProvider).requireValue;
+    final deniedState = deniedContainer.read(notificationSettingsProvider).requireValue;
     expect(deniedState.scheduleStatus, NotificationScheduleStatus.scheduled);
   });
 
@@ -203,6 +201,33 @@ void main() {
     expect(scheduler.lastHour, 7);
     expect(scheduler.lastMinute, 45);
     expect((await container.read(notificationSettingsProvider.future)).formattedTime, '7:45 AM');
+  });
+
+  test('changing time while disabled persists without scheduling', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    final scheduleCallsBefore = scheduler.scheduleCalls;
+    await notifier.setTime(6, 30);
+    final state = container.read(notificationSettingsProvider).requireValue;
+
+    expect(state.enabled, isFalse);
+    expect(state.hour, 6);
+    expect(state.minute, 30);
+    expect(state.formattedTime, '6:30 AM');
+    expect(scheduler.scheduleCalls, scheduleCallsBefore);
+  });
+
+  test('invalid reminder time is rejected', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    expect(() => notifier.setTime(24, 0), throwsArgumentError);
+    expect(() => notifier.setTime(20, 60), throwsArgumentError);
   });
 
   test('disabling cancels the daily reminder and preserves the selected time', () async {
