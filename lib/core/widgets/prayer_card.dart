@@ -54,23 +54,3 @@ class PrayerCard extends StatelessWidget {
     );
   }
 }
-
-extension PrayerTypeVisuals on PrayerType {
-  IconData get icon => switch (this) {
-        PrayerType.fajr => Icons.wb_twilight_rounded,
-        PrayerType.zuhr => Icons.wb_sunny_rounded,
-        PrayerType.asr => Icons.wb_sunny_outlined,
-        PrayerType.maghrib => Icons.nights_stay_outlined,
-        PrayerType.isha => Icons.dark_mode_outlined,
-        PrayerType.witr => Icons.brightness_3_outlined,
-      };
-
-  String get rakats => switch (this) {
-        PrayerType.fajr => 'Fajr • 2 Rakat Fard',
-        PrayerType.zuhr => 'Zuhr • 4 Rakat Fard',
-        PrayerType.asr => 'Asr • 4 Rakat Fard',
-        PrayerType.maghrib => 'Maghrib • 3 Rakat Fard',
-        PrayerType.isha => 'Isha • 4 Rakat Fard',
-        PrayerType.witr => 'Witr • 3 Rakat Wajib • Independent',
-      };
-}
