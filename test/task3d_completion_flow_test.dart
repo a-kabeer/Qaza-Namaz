@@ -71,7 +71,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Witr Qaza'), findsOneWidget);
     expect(find.text('20 Aug 2026'), findsOneWidget);
-    expect(find.text('Complete 0 selected'), findsOneWidget);
+    expect(find.text('Complete 0 selected'), findsNothing);
   });
 
   testWidgets('Namaz-wise flow supports multi-select completion for one prayer', (tester) async {
@@ -79,17 +79,18 @@ void main() {
     await repository.addRecords([record(id: 'witr_1', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 20)), record(id: 'witr_2', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 21))]);
     await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
     await tester.pumpAndSettle();
+    expect(find.text('Complete 0 selected'), findsNothing);
     final boxes = find.byType(CheckboxListTile);
     expect(boxes, findsNWidgets(2));
-    await tester.ensureVisible(boxes.at(0));
     await tester.tap(boxes.at(0));
-    await tester.ensureVisible(boxes.at(1));
+    await tester.pumpAndSettle();
+    expect(find.text('Complete 1 Qaza'), findsOneWidget);
     await tester.tap(boxes.at(1));
     await tester.pumpAndSettle();
-    expect(find.text('Complete 2 selected'), findsOneWidget);
-    await tester.ensureVisible(find.text('Complete 2 selected'));
-    await tester.tap(find.text('Complete 2 selected'));
+    expect(find.text('Complete 2 Qaza'), findsOneWidget);
+    await tester.tap(find.text('Complete 2 Qaza'));
     await tester.pumpAndSettle();
+    expect(find.text('Complete 2 Qaza'), findsNothing);
     final records = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.witr);
     expect(records.length, 2);
     expect(records.every((r) => r.status == QazaStatus.completed), isTrue);
@@ -102,10 +103,9 @@ void main() {
     await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
     await tester.pumpAndSettle();
     final checkbox = find.byType(CheckboxListTile).first;
-    await tester.ensureVisible(checkbox);
     await tester.tap(checkbox);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Complete 1 selected'));
+    await tester.tap(find.text('Complete 1 Qaza'));
     await tester.pumpAndSettle();
     final witr = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.witr);
     final isha = await repository.getRecords(userId: 'test-user', prayerType: PrayerType.isha);
