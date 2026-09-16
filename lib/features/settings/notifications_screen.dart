@@ -15,6 +15,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     with WidgetsBindingObserver {
+  bool _working = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,31 +37,46 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   Future<void> _setEnabled(bool enabled) async {
-    final ok = await ref
-        .read(notificationSettingsProvider.notifier)
-        .setEnabled(enabled);
-    if (!mounted || ok || !enabled) return;
-    final value = ref.read(notificationSettingsProvider).valueOrNull;
-    final message = value?.permissionStatus ==
-            NotificationPermissionStatus.denied
-        ? 'Notifications are blocked. Allow them in system settings, then try again.'
-        : 'Notifications could not be enabled on this device.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      final ok = await ref
+          .read(notificationSettingsProvider.notifier)
+          .setEnabled(enabled);
+      if (!mounted || ok || !enabled) return;
+      final value = ref.read(notificationSettingsProvider).valueOrNull;
+      final message = value?.permissionStatus ==
+              NotificationPermissionStatus.denied
+          ? 'Notifications are blocked. Allow them in system settings, then try again.'
+          : 'Notifications could not be enabled on this device.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
   }
 
   Future<void> _pickTime(NotificationSettingsState value) async {
+    if (_working || !value.enabled) return;
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: value.hour, minute: value.minute),
       helpText: 'Choose daily reminder time',
     );
     if (picked == null || !mounted) return;
-    await ref
-        .read(notificationSettingsProvider.notifier)
-        .setTime(picked.hour, picked.minute);
+
+    setState(() => _working = true);
+    try {
+      await ref
+          .read(notificationSettingsProvider.notifier)
+          .setTime(picked.hour, picked.minute);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
   }
 
   Future<void> _sendTest() async {
+    if (_working) return;
+    setState(() => _working = true);
     try {
       await ref.read(notificationSettingsProvider.notifier).sendTestNotification();
       if (!mounted) return;
@@ -71,6 +88,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Test notification failed: $error')),
       );
+    } finally {
+      if (mounted) setState(() => _working = false);
     }
   }
 
@@ -80,7 +99,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     return AppScaffold(
       title: 'Notifications',
       body: settings.when(
-        loading: () => const LoadingState(message: 'Loading notification settings…'),
+        loading: () =>
+            const LoadingState(message: 'Loading notification settings…'),
         error: (error, stack) => ErrorState(
           message: 'Notification settings could not be loaded: $error',
           onRetry: () => ref.invalidate(notificationSettingsProvider),
@@ -106,10 +126,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             NotificationPermissionStatus.denied => Icons.notifications_off_outlined,
             NotificationPermissionStatus.unavailable => Icons.error_outline_rounded,
           };
+          final reminderEnabled = value.enabled && !_working;
+          final testEnabled = value.canSendNotifications && !_working;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
+              Text(
+                'Daily reminder',
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Get one gentle reminder to continue pending Qaza prayers.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
               Card(
                 child: SwitchListTile(
                   key: const Key('daily_notification_switch'),
@@ -118,103 +150,77 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   subtitle: Text(
                     value.enabled
                         ? value.hasPendingQaza
-                            ? 'Reminds you every day at ${value.formattedTime} while you have pending Qaza.'
-                            : 'Enabled. It will resume automatically when pending Qaza exists.'
-                        : 'Get one daily reminder to continue your Qaza routine.',
+                            ? 'On • ${value.formattedTime}'
+                            : 'On • starts when pending Qaza exists'
+                        : 'Off',
                   ),
-                  onChanged: _setEnabled,
+                  onChanged: _working ? null : _setEnabled,
                 ),
               ),
               const SizedBox(height: 12),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.schedule_outlined),
+                  key: const Key('reminder_time_tile'),
+                  leading: Icon(
+                    Icons.schedule_outlined,
+                    color: reminderEnabled
+                        ? theme.colorScheme.primary
+                        : theme.disabledColor,
+                  ),
                   title: const Text('Reminder time'),
-                  subtitle: Text(value.formattedTime),
+                  subtitle: Text(
+                    value.enabled
+                        ? 'Every day at ${value.formattedTime}'
+                        : 'Enable the reminder to change the time',
+                  ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  enabled: value.enabled,
-                  onTap: value.enabled ? () => _pickTime(value) : null,
+                  enabled: reminderEnabled,
+                  onTap: reminderEnabled ? () => _pickTime(value) : null,
                 ),
               ),
               const SizedBox(height: 12),
               Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(permissionIcon, color: theme.colorScheme.primary),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              permissionTitle,
-                              style: theme.textTheme.titleMedium,
-                            ),
+                child: ListTile(
+                  key: const Key('notification_permission_status'),
+                  leading: Icon(permissionIcon),
+                  title: Text(permissionTitle),
+                  subtitle: Text(permissionMessage),
+                  trailing: permission ==
+                          NotificationPermissionStatus.notRequested ||
+                      permission == NotificationPermissionStatus.denied
+                      ? TextButton(
+                          onPressed: _working ? null : () => _setEnabled(true),
+                          child: Text(
+                            permission == NotificationPermissionStatus.denied
+                                ? 'Try again'
+                                : 'Allow',
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(permissionMessage),
-                      if (permission == NotificationPermissionStatus.notRequested ||
-                          permission == NotificationPermissionStatus.denied) ...[
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: OutlinedButton.icon(
-                            key: const Key('notification_permission_action'),
-                            onPressed: () => _setEnabled(true),
-                            icon: const Icon(Icons.notifications_active_outlined),
-                            label: Text(
-                              permission == NotificationPermissionStatus.denied
-                                  ? 'Try again'
-                                  : 'Allow notifications',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                        )
+                      : null,
                 ),
               ),
               const SizedBox(height: 12),
               Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Test notifications', style: theme.textTheme.titleMedium),
-                      const SizedBox(height: 6),
-                      const Text('Send a notification now to confirm delivery is working.'),
-                      const SizedBox(height: 12),
-                      AppButton(
-                        label: 'Send test notification',
-                        icon: Icons.send_outlined,
-                        onPressed: value.canSendNotifications ? _sendTest : null,
-                        expand: true,
-                      ),
-                    ],
+                child: ListTile(
+                  leading: Icon(
+                    value.enabled && value.hasPendingQaza
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_none_outlined,
                   ),
+                  title: const Text('Reminder status'),
+                  subtitle: Text(_scheduleText(value)),
                 ),
               ),
               const SizedBox(height: 12),
               Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Only one daily reminder is scheduled. It is automatically cancelled when there is no pending Qaza and restored when pending Qaza returns.',
-                        ),
-                      ),
-                    ],
-                  ),
+                child: ListTile(
+                  key: const Key('test_notification_action'),
+                  leading: const Icon(Icons.send_outlined),
+                  title: const Text('Send test notification'),
+                  subtitle: const Text('Send one notification now to check delivery.'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  enabled: testEnabled,
+                  onTap: testEnabled ? _sendTest : null,
                 ),
               ),
             ],
@@ -222,5 +228,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         },
       ),
     );
+  }
+
+  String _scheduleText(NotificationSettingsState value) {
+    if (!value.enabled) return 'Reminder is off.';
+    if (!value.canSendNotifications) return 'Notification permission is required.';
+    if (!value.hasPendingQaza) return 'No pending Qaza. No reminder is scheduled.';
+    return 'Scheduled daily at ${value.formattedTime}.';
   }
 }
