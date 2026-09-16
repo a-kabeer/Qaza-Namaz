@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/widgets/prayer_card.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';
@@ -91,35 +90,22 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           child: Column(
             children: [
               _ProgressHeader(step: step),
-              Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()}),
+              Expanded(child: switch (step) {0 => _methodStep(), 1 => _dateStep(), _ => _prayerStep()}),
             ],
           ),
         ),
       );
 
-  Widget _modeStep() => ListView(
+  Widget _methodStep() => ListView(
         key: const ValueKey('qaza_step_list_0'),
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Step 1 of 3 • Range Setup', style: Theme.of(context).textTheme.labelLarge),
+          Text('Step 1 of 3 • Method', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
-          const Text('Choose the calendar and date selection method.'),
+          const Text('Choose how you want to select your missed dates.'),
           const SizedBox(height: 22),
-          _ChoiceCard(
-            title: 'Calendar',
-            icon: Icons.calendar_month_rounded,
-            child: SegmentedButton<CalendarMode>(
-              segments: const [
-                ButtonSegment(value: CalendarMode.gregorian, icon: Icon(Icons.calendar_today_rounded), label: Text('Gregorian')),
-                ButtonSegment(value: CalendarMode.hijri, icon: Icon(Icons.nightlight_round), label: Text('Hijri')),
-              ],
-              selected: {ref.watch(calendarControllerProvider).calendarMode},
-              onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setCalendarMode(value.first),
-            ),
-          ),
-          const SizedBox(height: 14),
           _ChoiceCard(
             title: 'Date selection',
             icon: Icons.date_range_rounded,
@@ -134,7 +120,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          const _InfoBox(text: 'Each date + prayer combination becomes one independent Qaza record. Witr remains separate from Isha. Records always store Gregorian originalDate.'),
+          const _InfoBox(text: 'The Gregorian calendar is used for all selections and storage. Hijri dates are shown as secondary information. Each date + prayer combination becomes one independent Qaza record.'),
           const SizedBox(height: 24),
           FilledButton.icon(key: const Key('qaza_continue_button'), onPressed: checking ? null : _openDateStep, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Loading ledger...' : 'Continue')),
         ],
