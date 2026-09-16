@@ -27,7 +27,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 | Part | Area | Status |
 |---|---|---|
 | 1 | Audit & baseline | ✅ |
-| 2 | Notification state model | ☐ |
+| 2 | Notification state model | ✅ |
 | 3 | Production Notifications UI | ☐ |
 | 4 | Enable workflow | ☐ |
 | 5 | Disable workflow | ☐ |
@@ -64,6 +64,21 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 
 ### Baseline issue carried into implementation
 The first full CI run showed one notification test expectation mismatch: the fake scheduler reported permission as granted during initial status loading, so the controller correctly skipped requesting permission. The test was updated to model the permission state expected by the enable-flow assertion.
+
+## Part 2 — Notification State Model ✅
+
+### State model implemented
+- `NotificationPermissionStatus` now explicitly represents `notRequested`, `granted`, `denied`, `unavailable`, and `restricted` states.
+- `NotificationScheduleStatus` separates the user's reminder preference from the derived operational state: `disabled`, `permissionRequired`, `noPendingQaza`, or `scheduled`.
+- Scheduling decisions are derived from enablement + permission + pending-Qaza state instead of treating `enabled` as proof that a reminder is actually scheduled.
+- The selected reminder time remains part of the persisted configuration and is independent from whether the reminder is currently active.
+- Permission status and pending-Qaza state remain runtime-derived, while the user preference and reminder time remain locally persisted.
+- Re-enabling an already-enabled reminder reconciles the actual schedule instead of silently skipping reconciliation.
+
+### Part 2 verification coverage
+- Tests now cover the default state and derived schedule state.
+- Tests cover the permission-request path with a distinct initial permission-status simulation.
+- Tests cover disabled, scheduled, no-pending, and denied/permission-required state transitions.
 
 ## Completion Criteria
 The task must not be marked complete until:
