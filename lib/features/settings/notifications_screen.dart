@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../notifications/notification_controller.dart';
@@ -113,18 +112,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             NotificationPermissionStatus.notRequested => 'Permission needed',
             NotificationPermissionStatus.denied => 'Notifications blocked',
             NotificationPermissionStatus.unavailable => 'Notifications unavailable',
+            NotificationPermissionStatus.restricted => 'Notifications restricted',
           };
           final permissionMessage = switch (permission) {
             NotificationPermissionStatus.granted => 'This device can deliver your reminder.',
             NotificationPermissionStatus.notRequested => 'Allow notifications so the app can remind you.',
             NotificationPermissionStatus.denied => 'Enable notifications in system settings to use reminders.',
             NotificationPermissionStatus.unavailable => 'Notifications are not available on this device.',
+            NotificationPermissionStatus.restricted => 'Notification delivery is restricted on this device.',
           };
           final permissionIcon = switch (permission) {
             NotificationPermissionStatus.granted => Icons.check_circle_outline_rounded,
             NotificationPermissionStatus.notRequested => Icons.notifications_active_outlined,
             NotificationPermissionStatus.denied => Icons.notifications_off_outlined,
             NotificationPermissionStatus.unavailable => Icons.error_outline_rounded,
+            NotificationPermissionStatus.restricted => Icons.lock_outline_rounded,
           };
           final reminderEnabled = value.enabled && !_working;
           final testEnabled = value.canSendNotifications && !_working;
@@ -132,10 +134,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
-              Text(
-                'Daily reminder',
-                style: theme.textTheme.headlineSmall,
-              ),
+              Text('Daily reminder', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 4),
               Text(
                 'Get one gentle reminder to continue pending Qaza prayers.',
@@ -186,8 +185,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   title: Text(permissionTitle),
                   subtitle: Text(permissionMessage),
                   trailing: permission ==
-                          NotificationPermissionStatus.notRequested ||
-                      permission == NotificationPermissionStatus.denied
+                              NotificationPermissionStatus.notRequested ||
+                          permission == NotificationPermissionStatus.denied
                       ? TextButton(
                           onPressed: _working ? null : () => _setEnabled(true),
                           child: Text(
