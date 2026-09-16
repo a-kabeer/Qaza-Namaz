@@ -77,6 +77,12 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp(r'Saturday, September 5, 2026')));
     await tester.pumpAndSettle();
 
+    final done = find.text('OK');
+    if (done.evaluate().isNotEmpty) {
+      await tester.tap(done.last);
+      await tester.pumpAndSettle();
+    }
+
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.text('Zuhr Qaza'), findsNothing);
     expect(find.text('03 Sep 2026 – 05 Sep 2026'), findsOneWidget);
