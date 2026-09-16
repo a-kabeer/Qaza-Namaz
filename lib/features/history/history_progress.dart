@@ -11,7 +11,6 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/date_display.dart';
-import '../../core/widgets/prayer_card.dart';
 import '../../core/widgets/progress_overview_card.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
@@ -64,8 +63,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       final range = _originalDateFilter;
       final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
       final matchesDate = range == null ||
-          !date.isBefore(range.start) &&
-          !date.isAfter(range.end);
+          (!date.isBefore(range.start) && !date.isAfter(range.end));
       return matchesPrayer && matchesStatus && matchesDate;
     }).toList();
 
@@ -146,7 +144,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                     children: [
                       DropdownButtonFormField<PrayerType?>(
                         key: const Key('history_prayer_filter'),
-                        initialValue: _prayerFilter,
+                        value: _prayerFilter,
                         decoration: const InputDecoration(
                           labelText: 'Prayer',
                           prefixIcon: Icon(Icons.mosque_rounded),
@@ -162,7 +160,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                       const SizedBox(height: 10),
                       DropdownButtonFormField<QazaStatus?>(
                         key: const Key('history_status_filter'),
-                        initialValue: _statusFilter,
+                        value: _statusFilter,
                         decoration: const InputDecoration(
                           labelText: 'Status',
                           prefixIcon: Icon(Icons.filter_alt_rounded),
