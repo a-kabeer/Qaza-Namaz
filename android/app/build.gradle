@@ -29,6 +29,7 @@ if (flutterVersionName == null) {
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
     compileSdk = flutter.compileSdkVersion
+    // Pin CI-compatible native/API levels required by current Android plugins.
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -43,6 +44,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.qaza_namaz_task1_flutter"
+        // Firebase Authentication requires Android API 23 or higher.
         minSdkVersion = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
