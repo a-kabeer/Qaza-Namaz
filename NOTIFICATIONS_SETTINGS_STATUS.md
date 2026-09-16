@@ -28,7 +28,7 @@ Replace the current Notifications placeholder/minimal workflow with a simple, pr
 |---|---|---|
 | 1 | Audit & baseline | ✅ |
 | 2 | Notification state model | ✅ |
-| 3 | Production Notifications UI | ☐ |
+| 3 | Production Notifications UI | ✅ |
 | 4 | Enable workflow | ☐ |
 | 5 | Disable workflow | ☐ |
 | 6 | Pending-Qaza scheduling rule | ☐ |
@@ -79,6 +79,20 @@ The first full CI run showed one notification test expectation mismatch: the fak
 - Tests now cover the default state and derived schedule state.
 - Tests cover the permission-request path with a distinct initial permission-status simulation.
 - Tests cover disabled, scheduled, no-pending, and denied/permission-required state transitions.
+
+## Part 3 — Production Notifications UI ✅
+
+### UI implemented
+- Kept the workflow on one Notifications Settings screen with no extra sub-pages.
+- Added a clear Daily Qaza reminder switch with concise state-aware supporting text.
+- Reminder time uses the native Material time picker and is disabled while the reminder is OFF.
+- Added an inline permission-status card with distinct copy for allowed, not requested, blocked, and unavailable states.
+- Added a direct permission action for not-requested/blocked states without introducing another settings page.
+- Added a clear derived Reminder status card showing Off, Permission required, No pending Qaza, or Scheduled states.
+- Added an inline Send test notification action, disabled when notification permission is unavailable.
+- Added lifecycle refresh on app resume so the screen reflects permission changes made outside the app.
+- Added basic busy-state protection to prevent duplicate taps while permission, scheduling, time selection, or test delivery is processing.
+- Kept Material/theme-based styling with responsive `ListView` layout and no hardcoded custom colors.
 
 ## Completion Criteria
 The task must not be marked complete until:
