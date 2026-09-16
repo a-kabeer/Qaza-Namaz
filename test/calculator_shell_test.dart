@@ -51,11 +51,11 @@ void main() {
     expect(find.text('Result'), findsOneWidget);
     expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(find.byKey(const Key('calculator_add_to_tracker')), findsOneWidget);
+    expect(find.byKey(const Key('calculator_back')), findsOneWidget);
 
     expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_prayer_history')), findsOneWidget);
 
-    expect(find.byKey(const Key('calculator_back')), findsNothing);
     await tester.tap(find.byKey(const Key('calculator_edit_prayer_history')));
     await settleCalculator(tester);
     expect(find.text('Prayer History'), findsOneWidget);
