@@ -62,6 +62,32 @@ void main() {
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
 
+  testWidgets('calculator step labels are clickable with validated forward navigation', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
+    await settleCalculator(tester);
+
+    // A future step cannot be entered before the required input is complete.
+    await tester.tap(find.byKey(const Key('calculator_step_1')));
+    await settleCalculator(tester);
+    expect(find.text('About You'), findsOneWidget);
+
+    await _selectDefaultDob(tester);
+    await tester.tap(find.byKey(const Key('calculator_step_1')));
+    await settleCalculator(tester);
+    expect(find.text('Prayer History'), findsOneWidget);
+
+    // The Result label can calculate and enter the final step directly.
+    await tester.tap(find.byKey(const Key('calculator_step_2')));
+    await settleCalculator(tester);
+    expect(find.text('Result'), findsOneWidget);
+
+    // Going back by tapping the step label preserves the existing input/calculation state.
+    await tester.tap(find.byKey(const Key('calculator_step_0')));
+    await settleCalculator(tester);
+    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('Current age'), findsOneWidget);
+  });
+
   testWidgets('calculator edit actions return to the relevant step and recalculate', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
     await settleCalculator(tester);
