@@ -13,6 +13,14 @@ enum NotificationPermissionStatus {
   granted,
   denied,
   unavailable,
+  restricted,
+}
+
+enum NotificationScheduleStatus {
+  disabled,
+  permissionRequired,
+  noPendingQaza,
+  scheduled,
 }
 
 class NotificationSettingsState {
@@ -33,6 +41,21 @@ class NotificationSettingsState {
   bool get canSendNotifications =>
       permissionStatus == NotificationPermissionStatus.granted;
 
+  NotificationScheduleStatus get scheduleStatus {
+    if (!enabled) return NotificationScheduleStatus.disabled;
+    if (!canSendNotifications) {
+      return NotificationScheduleStatus.permissionRequired;
+    }
+    if (!hasPendingQaza) return NotificationScheduleStatus.noPendingQaza;
+    return NotificationScheduleStatus.scheduled;
+  }
+
+  String get formattedTime {
+    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+    final suffix = hour >= 12 ? 'PM' : 'AM';
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
+  }
+
   NotificationSettingsState copyWith({
     bool? enabled,
     int? hour,
@@ -47,12 +70,6 @@ class NotificationSettingsState {
       permissionStatus: permissionStatus ?? this.permissionStatus,
       hasPendingQaza: hasPendingQaza ?? this.hasPendingQaza,
     );
-  }
-
-  String get formattedTime {
-    final displayHour = hour % 12 == 0 ? 12 : hour % 12;
-    final suffix = hour >= 12 ? 'PM' : 'AM';
-    return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
   }
 }
 
@@ -137,6 +154,7 @@ class NotificationSettingsNotifier
     }
 
     if (current.enabled && current.canSendNotifications) {
+      await _reconcile(current);
       return true;
     }
 
@@ -210,11 +228,18 @@ class NotificationSettingsNotifier
   }
 
   Future<void> _reconcile(NotificationSettingsState value) async {
-    if (!value.enabled || !value.canSendNotifications || !value.hasPendingQaza) {
-      await _scheduler.cancelDaily();
-      return;
+    switch (value.scheduleStatus) {
+      case NotificationScheduleStatus.disabled:
+      case NotificationScheduleStatus.permissionRequired:
+      case NotificationScheduleStatus.noPendingQaza:
+        await _scheduler.cancelDaily();
+        return;
+      case NotificationScheduleStatus.scheduled:
+        await _scheduler.scheduleDaily(
+          hour: value.hour,
+          minute: value.minute,
+        );
     }
-    await _scheduler.scheduleDaily(hour: value.hour, minute: value.minute);
   }
 
   Future<void> _persist(
