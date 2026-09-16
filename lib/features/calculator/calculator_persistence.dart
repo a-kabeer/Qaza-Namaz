@@ -53,7 +53,7 @@ class CalculatorSnapshot {
         value == null ? null : DateTime.parse(value as String);
     final savedStep = (json['step'] as num?)?.toInt() ?? 0;
     return CalculatorSnapshot(
-      step: savedStep.clamp(0, 2),
+      step: savedStep.clamp(0, 2).toInt(),
       dob: parseDate(json['dob']),
       balighMode: json['balighMode'] as String? ?? 'age',
       balighAge: (json['balighAge'] as num?)?.toInt() ?? 12,
