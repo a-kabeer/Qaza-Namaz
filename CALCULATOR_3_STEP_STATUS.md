@@ -92,9 +92,9 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 - There are no calculator-specific tests or calculator persistence currently attached to this feature.
 
 ### Existing architecture to preserve
-- Calculator is already a primary destination in `WorkspaceShell` through `IndexedStack`; the redesign should remain one destination rather than adding nested calculator pages.
-- Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path.
-- The project already has Riverpod and date-normalization utilities used by the Qaza flow; new calculator state should follow these conventions.
+- Calculator is already a primary destination in `WorkspaceShell` through `IndexedStack`; the redesign should remain one destination rather than adding nested calculator pages. fileciteturn850file0L2-L5
+- Qaza business logic is centralized in `QazaService`, including record creation and completion. Tracker integration should reuse this existing service/repository architecture rather than introduce a parallel storage path. fileciteturn849file0L2-L2
+- The existing prayer model contains the six supported prayer types and labels; the calculator should reuse these domain constants rather than create a second prayer list. fileciteturn845file0L2-L5
 
 ### Required implementation direction
 - Replace the placeholder body with a single stateful/Riverpod-backed three-step calculator flow.
@@ -108,7 +108,7 @@ Full CI is reserved for appropriate integration/final checkpoints, not every par
 
 | Part | Commit | CI | Status |
 |---|---|---|---|
-| Part 1 | e5f... | — | COMPLETE — audit recorded |
+| Part 1 | 48140f50c5f8b1f1be6029518ccc1b0e8fe0db85 | — | COMPLETE — audit recorded |
 | Part 2 | — | — | NOT STARTED |
 | Part 3 | — | — | NOT STARTED |
 | Part 4 | — | — | NOT STARTED |
