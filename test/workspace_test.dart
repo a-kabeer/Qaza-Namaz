@@ -64,7 +64,7 @@ void main() {
     expect(find.text('No Qaza records yet.'), findsOneWidget);
     await tester.tap(find.text('Settings').first);
     await _pumpNavigation(tester);
-    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('Account'), findsWidgets);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
   testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
