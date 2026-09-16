@@ -16,6 +16,7 @@ class _FakeScheduler implements NotificationScheduler {
   int cancelCalls = 0;
   int testCalls = 0;
   bool permissionGranted = true;
+  bool permissionGrantedForStatus = true;
   int? lastHour;
   int? lastMinute;
 
@@ -31,7 +32,7 @@ class _FakeScheduler implements NotificationScheduler {
   @override
   Future<bool> isPermissionGranted() async {
     permissionStatusCalls++;
-    return permissionGranted;
+    return permissionGrantedForStatus;
   }
 
   @override
@@ -99,27 +100,45 @@ void main() {
     expect(state.minute, 0);
     expect(state.hasPendingQaza, isFalse);
     expect(state.permissionStatus, NotificationPermissionStatus.granted);
+    expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
     expect(scheduler.initializeCalls, 1);
   });
 
-  test('enabling with pending Qaza requests permission and schedules one daily reminder', () async {
-    SharedPreferences.setMockInitialValues({
-      'qaza_notification_permission_requested': false,
-    });
+  test('state derives schedule status from enablement, permission and pending Qaza', () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
     await container.read(notificationSettingsProvider.future);
 
-    scheduler.permissionGranted = false;
-    expect(await notifier.setEnabled(true), isFalse);
-    expect(scheduler.permissionCalls, 1);
-    expect(scheduler.scheduleCalls, 0);
+    var state = container.read(notificationSettingsProvider).requireValue;
+    expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
 
-    scheduler.permissionGranted = true;
-    await notifier.refreshPermissionStatus();
+    await notifier.setEnabled(true);
+    state = container.read(notificationSettingsProvider).requireValue;
+    expect(state.scheduleStatus, NotificationScheduleStatus.scheduled);
+
+    final deniedScheduler = _FakeScheduler()..permissionGrantedForStatus = false;
+    final deniedContainer = createContainer(
+      deniedScheduler,
+      records: [_pendingRecord()],
+    );
+    final deniedNotifier =
+        deniedContainer.read(notificationSettingsProvider.notifier);
+    await deniedContainer.read(notificationSettingsProvider.future);
+    await deniedNotifier.setEnabled(true);
+    final deniedState =
+        deniedContainer.read(notificationSettingsProvider).requireValue;
+    expect(deniedState.scheduleStatus, NotificationScheduleStatus.scheduled);
+  });
+
+  test('enabling with pending Qaza requests permission and schedules one daily reminder', () async {
+    final scheduler = _FakeScheduler()..permissionGrantedForStatus = false;
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
     expect(await notifier.setEnabled(true), isTrue);
-    expect(scheduler.permissionCalls, 2);
+    expect(scheduler.permissionCalls, 1);
     expect(scheduler.scheduleCalls, 1);
     expect(scheduler.lastHour, 20);
     expect(scheduler.lastMinute, 0);
@@ -163,10 +182,13 @@ void main() {
     expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
     expect(state.enabled, isFalse);
     expect(state.formattedTime, '8:00 PM');
+    expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
   });
 
   test('permission denial never leaves reminder enabled', () async {
-    final scheduler = _FakeScheduler()..permissionGranted = false;
+    final scheduler = _FakeScheduler()
+      ..permissionGranted = false
+      ..permissionGrantedForStatus = false;
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
     await container.read(notificationSettingsProvider.future);
@@ -175,6 +197,7 @@ void main() {
     final state = await container.read(notificationSettingsProvider.future);
     expect(state.enabled, isFalse);
     expect(state.permissionStatus, NotificationPermissionStatus.denied);
+    expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
     expect(scheduler.scheduleCalls, 0);
   });
 
