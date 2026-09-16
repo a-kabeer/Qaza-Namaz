@@ -27,6 +27,12 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
 
   static const _availability = QazaAvailabilityService();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkExisting());
+  }
+
   QazaAvailabilityAnalysis _analysisFor(Iterable<PrayerType> prayerTypes) {
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) {
@@ -47,23 +53,16 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     );
   }
 
-  int get totalCombinations => dates.length * prayers.length;
-  int get existingCombinations => _analysisFor(prayers).alreadyRecorded;
-  int get newCombinations => _analysisFor(prayers).newCount;
+  QazaAvailabilityAnalysis get selectedAnalysis => _analysisFor(prayers);
 
   Future<void> _checkExisting() async {
-    if (checking) return;
+    if (checking || !mounted) return;
     setState(() => checking = true);
     try {
       existing = await ref.read(qazaRecordsProvider.future);
     } finally {
       if (mounted) setState(() => checking = false);
     }
-  }
-
-  Future<void> _openDateStep() async {
-    await _checkExisting();
-    if (mounted) setState(() => step = 1);
   }
 
   Future<void> _continueFromDates() async {
@@ -73,12 +72,54 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       );
       return;
     }
+
     await _checkExisting();
-    if (mounted) setState(() => step = 2);
+    if (!mounted) return;
+
+    final userId = ref.read(activeUserIdProvider);
+    if (userId != null && !_availability.isDateAvailable(
+      userId: userId,
+      date: dates.first,
+      existingRecords: existing,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No eligible prayers remain for the selected date(s).')),
+      );
+      return;
+    }
+
+    setState(() => step = 1);
+  }
+
+  void _changeDateMode(DateSelectionMode mode) {
+    ref.read(calendarControllerProvider.notifier).setSelectionMode(mode);
+    setState(() => prayers.clear());
+  }
+
+  void _clearDates() {
+    ref.read(calendarControllerProvider.notifier).clear();
+    setState(() => prayers.clear());
+  }
+
+  void _continueFromPrayers() {
+    final analysis = selectedAnalysis;
+    if (prayers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select at least one missed prayer.')),
+      );
+      return;
+    }
+    if (analysis.newCount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All selected prayer combinations are already tracked.')),
+      );
+      return;
+    }
+    setState(() => step = 2);
   }
 
   Future<void> _confirmAndSave() async {
-    if (prayers.isEmpty || newCombinations <= 0 || saving) return;
+    if (prayers.isEmpty || selectedAnalysis.newCount <= 0 || saving) return;
     setState(() => saving = true);
     try {
       final userId = ref.read(requiredUserIdProvider);
@@ -152,51 +193,14 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               _ProgressHeader(step: step),
               Expanded(
                 child: switch (step) {
-                  0 => _modeStep(),
-                  1 => _dateStep(),
-                  _ => _prayerStep(),
+                  0 => _dateStep(),
+                  1 => _prayerStep(),
+                  _ => _reviewStep(),
                 },
               ),
             ],
           ),
         ),
-      );
-
-  Widget _modeStep() => ListView(
-        key: const ValueKey('qaza_step_list_0'),
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('Step 1 of 3 • Range Setup', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 6),
-          Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text('Choose the date selection method.', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 22),
-          _ChoiceCard(
-            title: 'Date selection',
-            icon: Icons.date_range_rounded,
-            child: SegmentedButton<DateSelectionMode>(
-              segments: const [
-                ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
-                ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
-                ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
-              ],
-              selected: {dateMode},
-              onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const _InfoBox(
-            text: 'Each date + prayer combination becomes one independent Qaza record. A date stays selectable when at least one prayer is still available.',
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            key: const Key('qaza_continue_button'),
-            onPressed: checking ? null : _openDateStep,
-            icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded),
-            label: Text(checking ? 'Loading ledger...' : 'Continue'),
-          ),
-        ],
       );
 
   Widget _dateStep() {
@@ -214,23 +218,34 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             );
 
     return ListView(
-      key: const ValueKey('qaza_step_list_1'),
-      padding: const EdgeInsets.all(20),
+      key: const ValueKey('qaza_step_list_0'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       children: [
-        Text('Step 2 of 3 • Date Selection', style: Theme.of(context).textTheme.labelLarge),
+        Text('Step 1 of 3 • Select Dates', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        Text(
-          state.selectionMode == DateSelectionMode.single
-              ? 'Choose a date'
-              : state.selectionMode == DateSelectionMode.range
-                  ? 'Choose a date range'
-                  : 'Choose multiple dates',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        Text('Select Dates', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
         Text(
-          'Only today and earlier dates can be recorded. A date is disabled only when every prayer is unavailable.',
+          'Choose a single date, a range, or multiple dates. Only today and earlier dates can be recorded.',
           style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        _ChoiceCard(
+          title: 'Date selection',
+          icon: Icons.date_range_rounded,
+          child: SegmentedButton<DateSelectionMode>(
+            segments: const [
+              ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')),
+              ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')),
+              ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple')),
+            ],
+            selected: {dateMode},
+            onSelectionChanged: checking ? null : (value) => _changeDateMode(value.first),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _InfoBox(
+          text: 'Gregorian and Hijri dates are shown by the calendar. A date remains selectable when at least one prayer is still eligible.',
         ),
         const SizedBox(height: 16),
         CalendarPicker(
@@ -238,11 +253,14 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           qazaDates: qazaDates,
           isDateUnavailable: isDateUnavailable,
         ),
+        const SizedBox(height: 12),
+        _DateSelectionSummary(dates: dates, mode: state.selectionMode, onClear: dates.isEmpty ? null : _clearDates),
         const SizedBox(height: 16),
         FilledButton.icon(
+          key: const Key('qaza_continue_button'),
           onPressed: checking || dates.isEmpty ? null : _continueFromDates,
           icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded),
-          label: Text(checking ? 'Checking ledger...' : 'Next: Choose missed prayers'),
+          label: Text(checking ? 'Checking ledger...' : 'Next: Missed Prayers'),
         ),
       ],
     );
@@ -252,18 +270,18 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     final allAvailable = PrayerType.values.every(
       (prayer) => _analysisFor([prayer]).newCount > 0,
     );
-    final selectedAnalysis = _analysisFor(prayers);
+    final analysis = selectedAnalysis;
 
     return ListView(
-      key: const ValueKey('qaza_step_list_2'),
+      key: const ValueKey('qaza_step_list_1'),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       children: [
-        Text('Step 3 of 3 • Ledger Entry', style: Theme.of(context).textTheme.labelLarge),
+        Text('Step 2 of 3 • Select Missed Prayers', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
-        Text('Missed Prayers', style: Theme.of(context).textTheme.headlineMedium),
+        Text('Select Missed Prayers', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
         Text(
-          '${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select the prayers that were missed.',
+          '${dates.length} ${dates.length == 1 ? 'date' : 'dates'} selected • Choose the prayers that were missed.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -271,7 +289,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: saving
+                onPressed: checking || saving
                     ? null
                     : () => setState(() {
                           prayers.addAll(
@@ -304,27 +322,79 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               children: [
                 _SummaryRow(label: 'Dates', value: '${dates.length}'),
                 _SummaryRow(label: 'Selected prayers', value: '${prayers.length}'),
-                _SummaryRow(label: 'Already tracked', value: '${selectedAnalysis.alreadyRecorded}'),
-                if (selectedAnalysis.alreadyPrayed > 0)
-                  _SummaryRow(label: 'Already prayed', value: '${selectedAnalysis.alreadyPrayed}'),
-                _SummaryRow(label: 'New records', value: '${selectedAnalysis.newCount}', emphasis: true),
+                _SummaryRow(label: 'Already tracked', value: '${analysis.alreadyRecorded}'),
+                if (analysis.alreadyPrayed > 0)
+                  _SummaryRow(label: 'Already prayed', value: '${analysis.alreadyPrayed}'),
+                _SummaryRow(label: 'New records', value: '${analysis.newCount}', emphasis: true),
               ],
             ),
           ),
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: prayers.isEmpty || selectedAnalysis.newCount <= 0 || saving
-              ? null
-              : _confirmAndSave,
-          icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.verified_rounded),
-          label: Text(
-            saving
-                ? 'Creating Records...'
-                : selectedAnalysis.newCount > 0
-                    ? 'Review & Create ${selectedAnalysis.newCount}'
-                    : 'No New Records',
+          key: const Key('qaza_prayers_continue_button'),
+          onPressed: prayers.isEmpty || analysis.newCount <= 0 || saving ? null : _continueFromPrayers,
+          icon: const Icon(Icons.arrow_forward_rounded),
+          label: const Text('Review & Add'),
+        ),
+      ],
+    );
+  }
+
+  Widget _reviewStep() {
+    final analysis = selectedAnalysis;
+    return ListView(
+      key: const ValueKey('qaza_step_list_2'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      children: [
+        Text('Step 3 of 3 • Review & Add', style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 6),
+        Text('Review & Add', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 8),
+        Text('Review the exact date + prayer combinations before they are added to your Qaza ledger.'),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Selected dates', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                _DateSelectionSummary(dates: dates, mode: dateMode),
+                const SizedBox(height: 16),
+                Text('Selected prayers', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(prayers.map((prayer) => prayer.label).join(' • ')),
+              ],
+            ),
           ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _SummaryRow(label: 'Total combinations', value: '${analysis.total}'),
+                _SummaryRow(label: 'Already tracked', value: '${analysis.alreadyRecorded}'),
+                if (analysis.alreadyPrayed > 0)
+                  _SummaryRow(label: 'Already prayed', value: '${analysis.alreadyPrayed}'),
+                _SummaryRow(label: 'New records', value: '${analysis.newCount}', emphasis: true),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _InfoBox(
+          text: 'Only new date + prayer combinations will be created. Existing records are preserved, and Witr remains an independent prayer record.',
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          key: const Key('qaza_final_add_button'),
+          onPressed: analysis.newCount <= 0 || saving ? null : _confirmAndSave,
+          icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.add_task_rounded),
+          label: Text(saving ? 'Adding Qaza...' : 'Add ${analysis.newCount} New Qaza'),
         ),
       ],
     );
@@ -379,19 +449,38 @@ class _ProgressHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    const labels = ['Dates', 'Prayers', 'Review'];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
           for (var i = 0; i < 3; i++) ...[
-            if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? scheme.primary : scheme.outlineVariant)),
+            if (i > 0)
+              Expanded(
+                child: Container(
+                  height: 2,
+                  color: i <= step ? scheme.primary : scheme.outlineVariant,
+                ),
+              ),
             CircleAvatar(
               radius: 14,
               backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest,
-              child: Text('${i + 1}', style: theme.textTheme.labelSmall?.copyWith(color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant, fontWeight: FontWeight.w700)),
+              child: Text(
+                '${i + 1}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             const SizedBox(width: 6),
-            Text(const ['Method', 'Dates', 'Review'][i], style: theme.textTheme.labelMedium?.copyWith(color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: i == step ? FontWeight.w700 : null)),
+            Text(
+              labels[i],
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant,
+                fontWeight: i == step ? FontWeight.w700 : null,
+              ),
+            ),
           ],
         ],
       ),
@@ -414,7 +503,13 @@ class _ChoiceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Icon(icon, color: scheme.onSurfaceVariant), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]),
+            Row(
+              children: [
+                Icon(icon, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
             const SizedBox(height: 14),
             child,
           ],
@@ -433,8 +528,57 @@ class _InfoBox extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(16)),
-      child: Row(children: [Icon(Icons.info_outline_rounded, color: scheme.onPrimaryContainer), const SizedBox(width: 10), Expanded(child: Text(text, style: TextStyle(color: scheme.onPrimaryContainer)))]),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: scheme.onPrimaryContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: TextStyle(color: scheme.onPrimaryContainer)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateSelectionSummary extends StatelessWidget {
+  const _DateSelectionSummary({required this.dates, required this.mode, this.onClear});
+  final List<DateTime> dates;
+  final DateSelectionMode mode;
+  final VoidCallback? onClear;
+
+  String _formatDate(DateTime date) => '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final text = dates.isEmpty
+        ? 'No dates selected'
+        : dates.length == 1
+            ? 'Selected date: ${_formatDate(dates.first)}'
+            : mode == DateSelectionMode.range
+                ? 'Selected range: ${_formatDate(dates.first)} – ${_formatDate(dates.last)} (${dates.length} days)'
+                : 'Selected dates: ${dates.length}';
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        dense: true,
+        leading: const Icon(Icons.event_available_rounded),
+        title: Text(text, style: theme.textTheme.bodyMedium),
+        trailing: onClear == null
+            ? null
+            : IconButton(
+                key: const Key('qaza_clear_dates_button'),
+                tooltip: 'Clear selected dates',
+                onPressed: onClear,
+                icon: const Icon(Icons.clear_rounded),
+              ),
+      ),
     );
   }
 }
@@ -448,6 +592,11 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)]),
+        child: Row(
+          children: [
+            Expanded(child: Text(label)),
+            Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null),
+          ],
+        ),
       );
 }
