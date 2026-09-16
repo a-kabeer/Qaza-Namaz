@@ -12,13 +12,13 @@ Unify Add Qaza calendar availability and Calculator overlap handling around one 
 |---|---|---|
 | 1 | Centralize Qaza availability / duplicate logic | ✅ Complete |
 | 2 | Calendar date availability | ✅ Complete |
-| 3 | Prayer-level selection | 🟡 Next |
-| 4 | Calculator period overlap detection | 🟡 In progress |
-| 5 | Calculator duplicate/overlap UI | ⬜ Pending |
-| 6 | Partial-date handling | 🟡 Core logic ready; UI pending |
-| 7 | Calculator add action | ⬜ Pending |
-| 8 | Shared logic across both flows | 🟡 In progress |
-| 9 | Final validation and duplicate safety | ✅ Core validation complete |
+| 3 | Prayer-level selection | ✅ Complete |
+| 4 | Calculator period overlap detection | ✅ Complete |
+| 5 | Calculator duplicate/overlap UI | ✅ Complete |
+| 6 | Partial-date handling | ✅ Complete |
+| 7 | Calculator add action | ✅ Complete |
+| 8 | Shared logic across both flows | ✅ Complete |
+| 9 | Final validation and duplicate safety | 🟡 Core complete; stale-save verification in CI |
 | 10 | Tests and regression coverage | 🟡 In progress |
 
 ## Completed in this phase
@@ -32,23 +32,27 @@ Unify Add Qaza calendar availability and Calculator overlap handling around one 
 - Added Calculator tracker analysis helper using the same domain engine.
 - Updated the CalendarPicker to accept a shared date-unavailable callback.
 - Add Qaza now disables a calendar date only when all configured prayers are unavailable.
-- Partial dates remain selectable when at least one prayer is still available.
-- Added regression tests for partial/full dates and multiple-date selection behavior.
+- Add Qaza prayer rows now disable prayers with zero eligible combinations across the selected dates and show the available date count for partial selections.
+- Select Available now selects only prayers with at least one eligible date.
+- Add Qaza summary now reports already tracked and new combinations using the shared engine.
+- Calculator Result now compares the full calculated date + prayer set against the current tracker.
+- Calculator Result now shows Total calculated, Already recorded, and New to add counts.
+- Calculator Add CTA now uses the actual new count and is disabled when there is nothing new to add.
+- Calculator save re-reads the tracker before insertion and re-checks it after insertion so stale UI state cannot create duplicates.
+- Existing Qaza records are preserved and never overwritten.
 
 ## Current Audit Findings
 
-- Add Qaza prayer selection is still a global prayer list, so the next phase must make unavailable date + prayer combinations visibly non-selectable instead of relying only on final save filtering.
-- Calculator has the shared analysis helper, but its result screen still needs to display existing/new counts and use the new-only CTA.
 - The current repository model contains Qaza status (`pending` / `completed`) but no separate prayer-history entity/provider. Therefore an independent “already prayed” source must not be invented. The centralized engine supports prayer-level eligibility and can consume a future prayer-history source.
+- The Calculator and Add Qaza flows now share the same availability/duplicate engine; remaining work is primarily regression coverage and CI verification.
 
 ## Next Implementation Steps
 
-1. Make Add Qaza prayer selection operate on eligible date + prayer combinations.
-2. Integrate Calculator overlap analysis into the Result UI.
-3. Change Calculator Add CTA to the actual new count and disable it when new count is zero.
-4. Add stale-calculation save handling and verify final re-check behavior.
-5. Complete regression coverage for single/range/multiple selection, calculator overlap, and themes.
-6. Run full CI and only then mark the project complete.
+1. Add/finish UI regression tests for Add Qaza prayer-level availability and Calculator overlap states.
+2. Verify single/range/multiple date selection and partial-date behavior end-to-end.
+3. Verify Calculator add, repeat calculation, stale-save protection, and zero-new CTA behavior.
+4. Verify light/dark/system themes with no hardcoded custom colors.
+5. Run full CI and only then mark the project complete.
 
 ## Safety Rules
 
