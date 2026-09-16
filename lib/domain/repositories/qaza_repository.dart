@@ -7,6 +7,14 @@ import '../entities/qaza_record.dart';
 abstract interface class QazaRepository {
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status});
 
+  /// Reads only records belonging to the requested dates.
+  Future<List<QazaRecord>> getRecordsForDates({
+    required String userId,
+    required Iterable<DateTime> dates,
+    PrayerType? prayerType,
+    QazaStatus? status,
+  });
+
   Future<QazaLedgerSummary> getSummary(String userId) async {
     final records = await getRecords(userId: userId);
     final byPrayer = <PrayerType, QazaProgress>{};
