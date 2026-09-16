@@ -67,4 +67,17 @@ void main() {
     expect(find.text('Account'), findsOneWidget);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
+  testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
+    await pumpWorkspace(tester, InMemoryQazaRepository());
+    await tester.tap(find.text('Logs').first);
+    await _pumpNavigation(tester);
+    expect(find.text('Logs & Progress'), findsOneWidget);
+
+    final handled = await tester.binding.handlePopRoute();
+    await _pumpNavigation(tester);
+
+    expect(handled, isTrue);
+    expect(find.text('Logs & Progress'), findsNothing);
+    expect(find.text('Add Qaza'), findsOneWidget);
+  });
 }

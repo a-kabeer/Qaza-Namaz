@@ -24,27 +24,43 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   int index = 0;
   final Set<int> _mounted = {0};
 
+  void _selectDestination(int value) {
+    if (value == index) return;
+    setState(() {
+      index = value;
+      _mounted.add(value);
+    });
+  }
+
+  void _handleBack() {
+    if (index == 0) return;
+    setState(() => index = 0);
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: IndexedStack(
-          index: index,
-          children: [
-            for (var i = 0; i < _pages.length; i++)
-              if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: index,
-          onDestinationSelected: (value) => setState(() {
-            index = value;
-            _mounted.add(value);
-          }),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.mosque_outlined), selectedIcon: Icon(Icons.mosque_rounded), label: 'Dashboard'),
-            NavigationDestination(icon: Icon(Icons.calculate_outlined), selectedIcon: Icon(Icons.calculate_rounded), label: 'Calculator'),
-            NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history_rounded), label: 'Logs'),
-            NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune_rounded), label: 'Settings'),
-          ],
+  Widget build(BuildContext context) => PopScope<void>(
+        canPop: index == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _handleBack();
+        },
+        child: Scaffold(
+          body: IndexedStack(
+            index: index,
+            children: [
+              for (var i = 0; i < _pages.length; i++)
+                if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
+            ],
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: index,
+            onDestinationSelected: _selectDestination,
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.mosque_outlined), selectedIcon: Icon(Icons.mosque_rounded), label: 'Dashboard'),
+              NavigationDestination(icon: Icon(Icons.calculate_outlined), selectedIcon: Icon(Icons.calculate_rounded), label: 'Calculator'),
+              NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history_rounded), label: 'Logs'),
+              NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune_rounded), label: 'Settings'),
+            ],
+          ),
         ),
       );
 }
