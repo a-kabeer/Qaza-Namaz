@@ -56,7 +56,9 @@ void main() {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator').first);
     await _pumpNavigation(tester);
-    expect(find.text('Qaza estimate calculator'), findsOneWidget);
+    expect(find.text('Calculator'), findsOneWidget);
+    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('Step 1 of 3'), findsOneWidget);
     await tester.tap(find.text('Logs').first);
     await _pumpNavigation(tester);
     expect(find.text('Logs & Progress'), findsOneWidget);
