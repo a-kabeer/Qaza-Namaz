@@ -1,17 +1,4 @@
 // Centralized application state.
-//
-// Composition root for the Qaza Namaz app. Screens read what they need from
-// these providers instead of receiving repositories, services and user ids
-// through widget constructors, so swapping an implementation is a single
-// override in one place.
-//
-// Layering, outermost first:
-//   1. Infrastructure : Firebase handles, auth, local cache, connectivity.
-//   2. Repositories   : offline-first Qaza store wrapped around Firestore.
-//   3. Domain         : QazaService.
-//   4. Session        : signed-in account and active Firebase UID.
-//   5. Derived views  : records, progress and history for the active account.
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +8,7 @@ import '../core/theme/app_theme.dart';
 import '../data/auth/firebase_auth_repository.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/qaza_local_store.dart';
-import '../data/local/shared_preferences_qaza_local_store.dart';
+import '../data/local/sqlite_qaza_local_store.dart';
 import '../data/repositories/firestore_qaza_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
 import '../data/sync/sync_state.dart';
@@ -33,7 +20,7 @@ import '../domain/services/qaza_service.dart';
 
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 final authRepositoryProvider = Provider<AuthRepository>((ref) => FirebaseAuthRepository());
-final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) => SharedPreferencesQazaLocalStore());
+final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) => SqliteQazaLocalStore());
 final connectivityChangesProvider = Provider<Stream<bool>>((ref) => Connectivity().onConnectivityChanged.map((results) => results.any((r) => r != ConnectivityResult.none)));
 final remoteQazaRepositoryProvider = Provider<QazaRepository>((ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)));
 
@@ -65,49 +52,23 @@ class QazaRecordsNotifier extends AsyncNotifier<List<QazaRecord>> {
 
   Future<void> refresh() async {
     final userId = ref.read(activeUserIdProvider);
-    if (userId == null) {
-      state = const AsyncData(<QazaRecord>[]);
-      return;
-    }
+    if (userId == null) { state = const AsyncData(<QazaRecord>[]); return; }
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(qazaServiceProvider).getRecords(userId: userId));
   }
 
-  /// Completes the oldest pending record and updates the visible ledger
-  /// immediately. The repository is offline-first, so the next record can be
-  /// shown without waiting for a network refresh.
   Future<bool> completeOldestPending(PrayerType prayerType) async {
     final userId = ref.read(activeUserIdProvider);
     final records = state.valueOrNull;
     if (userId == null || records == null) return false;
-
-    final pending = records
-        .where((record) => record.prayerType == prayerType && record.status == QazaStatus.pending)
-        .toList()
-      ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    final pending = records.where((r) => r.prayerType == prayerType && r.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate));
     if (pending.isEmpty) return false;
-
     final target = pending.first;
     final completedAt = DateTime.now();
-    await ref.read(qazaServiceProvider).completeRecord(
-          userId: userId,
-          recordId: target.id,
-          completedAt: completedAt,
-        );
-
+    await ref.read(qazaServiceProvider).completeRecord(userId: userId, recordId: target.id, completedAt: completedAt);
     final latest = state.valueOrNull;
     if (latest != null) {
-      state = AsyncData([
-        for (final record in latest)
-          if (record.id == target.id)
-            record.copyWith(
-              status: QazaStatus.completed,
-              completedAt: completedAt,
-              updatedAt: completedAt,
-            )
-          else
-            record,
-      ]);
+      state = AsyncData([for (final record in latest) if (record.id == target.id) record.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt) else record]);
     }
     return true;
   }
@@ -121,24 +82,9 @@ final prayerProgressProvider = Provider<Map<PrayerType, PrayerProgress>>((ref) {
   return {for (final prayer in PrayerType.values) prayer: PrayerProgress(prayerType: prayer, progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)))};
 });
 final qazaHistoryProvider = Provider<List<QazaRecord>>((ref) => QazaService.completedNewestFirst(ref.watch(loadedRecordsProvider)));
-final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((ref, prayer) {
-  final pending = ref.watch(loadedRecordsProvider).where((record) => record.prayerType == prayer && record.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate));
-  return pending;
-});
+final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((ref, prayer) => ref.watch(loadedRecordsProvider).where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate)));
 
-class ThemeModeNotifier extends Notifier<AppThemeMode> {
-  @override
-  AppThemeMode build() => AppThemeMode.system;
-  void set(AppThemeMode mode) => state = mode;
-}
-
+class ThemeModeNotifier extends Notifier<AppThemeMode> { @override AppThemeMode build() => AppThemeMode.system; void set(AppThemeMode mode) => state = mode; }
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, AppThemeMode>(ThemeModeNotifier.new);
-final offlineRepositoryProvider = Provider<OfflineFirstQazaRepository?>((ref) {
-  final repository = ref.watch(qazaRepositoryProvider);
-  return repository is OfflineFirstQazaRepository ? repository : null;
-});
-final syncStateProvider = StreamProvider<SyncState?>((ref) {
-  final repository = ref.watch(offlineRepositoryProvider);
-  if (repository == null) return const Stream<SyncState?>.empty();
-  return repository.syncState.map<SyncState?>((state) => state);
-});
+final offlineRepositoryProvider = Provider<OfflineFirstQazaRepository?>((ref) { final repository = ref.watch(qazaRepositoryProvider); return repository is OfflineFirstQazaRepository ? repository : null; });
+final syncStateProvider = StreamProvider<SyncState?>((ref) { final repository = ref.watch(offlineRepositoryProvider); if (repository == null) return const Stream<SyncState?>.empty(); return repository.syncState.map<SyncState?>((state) => state); });
