@@ -5,10 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 
 void main() {
-  double contrastRatio(Color foreground, Color background) {
-    final lighter = foreground.computeLuminance() > background.computeLuminance() ? foreground : background;
-    final darker = identical(lighter, foreground) ? background : foreground;
-    return (lighter.computeLuminance() + 0.05) / (darker.computeLuminance() + 0.05);
+  double contrastRatio(Color first, Color second) {
+    final firstLuminance = first.computeLuminance();
+    final secondLuminance = second.computeLuminance();
+    final lighter = firstLuminance > secondLuminance ? firstLuminance : secondLuminance;
+    final darker = firstLuminance > secondLuminance ? secondLuminance : firstLuminance;
+    return (lighter + 0.05) / (darker + 0.05);
   }
 
   for (final brightness in Brightness.values) {
