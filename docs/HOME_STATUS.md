@@ -19,7 +19,7 @@ IN PROGRESS
 | 3 | Dashboard → Home Rename | ✅ Complete |
 | 4 | Home Header | ✅ Complete |
 | 5 | New User / Empty Home | ✅ Complete |
-| 6 | Active User Home | ⬜ Pending |
+| 6 | Active User Home | ✅ Complete |
 | 7 | Progress & Prayer Summary | ⬜ Pending |
 | 8 | Complete Qaza UX | ⬜ Pending |
 | 9 | Large Dataset / Database Performance | ⬜ Pending |
@@ -87,7 +87,7 @@ The rename is terminology/entry-point only in this part. Home visual redesign an
 
 ### Completed
 - Reused the existing `NotificationsScreen` as the Home header notification destination.
-- Reused the existing `AccountScreen` as the Home header profile destination.
+- Reused the existing `AccountScreen` as the Home profile destination.
 - Added accessible `Notifications` and `Profile` tooltips/actions to the Home header.
 - Removed the permanent refresh/sync header action to keep the header focused on account-level utilities.
 - Preserved pull-to-refresh for ledger refresh inside the Home content.
@@ -113,6 +113,24 @@ Home header remains intentionally minimal:
 ### Empty-State Rule
 New users see only the information and actions needed to create their first Qaza records. Progress analytics and prayer-level ledger summaries start once records exist.
 
+## Part 6 — Active User Home
+
+### Completed
+- Added state-specific Home rendering for active users with pending Qaza.
+- Made `Complete Qaza` the primary post-setup Home action, driven by `HomeStateResolver` rather than duplicate state logic.
+- Added a compact pending count and a focused `Keep going` task card instead of the old dashboard-style analytics stack.
+- Added `Continue by prayer` with only prayers that currently have pending records; each opens its existing pending-dates workflow.
+- Added `View All Qaza` as a secondary navigation path to the existing Namaz-wise view.
+- Added an explicit all-completed state with `Add New Qaza` as the primary next action and `Recalculate Qaza` as the secondary action.
+- Removed the old Ledger Overview / completion-percentage dashboard UI from active Home states.
+- Added widget coverage for pending and all-completed Home states and their action priorities.
+
+### Active-State Rules
+1. `hasPendingQaza` → focus on completing pending Qaza; `Complete Qaza` is primary.
+2. `hasPendingQaza` → `Add New Qaza` and `View All Qaza` remain available without competing with completion.
+3. `allQazaCompleted` → show a lightweight completion confirmation and guide the user to add new Qaza or recalculate.
+4. Full database-backed aggregate optimization remains deferred to Parts 7 and 9.
+
 ## Related Pull Requests
 
 ### Core dependencies
@@ -120,7 +138,7 @@ New users see only the information and actions needed to create their first Qaza
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
 ### Home task
-- #19 — Home Parts 1-5: baseline, state model, Dashboard→Home rename, header & empty state — OPEN; now contains Parts 1–5 implementation/status commits
+- #19 — Home Parts 1-6: baseline, state model, Dashboard→Home rename, header, empty & active states — OPEN; now contains Parts 1–6 implementation/status commits
 
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
@@ -134,10 +152,10 @@ New users see only the information and actions needed to create their first Qaza
 - #18 — KB-1: Knowledge Base foundation — OPEN, DRAFT, separate task
 
 ## Pending
-Parts 6–12.
+Parts 7–12.
 
 ## Current Part
-Part 6 — Active User Home
+Part 7 — Progress & Prayer Summary
 
 ## CI / Validation
-Part 5 includes focused widget coverage for the empty Home state and setup navigation. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
+Part 6 includes focused widget coverage for pending and all-completed Home states. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
