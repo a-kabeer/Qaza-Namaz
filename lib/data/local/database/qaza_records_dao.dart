@@ -3,6 +3,18 @@ import 'package:drift/drift.dart';
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
 
+/// A keyset page. The cursor is the last `(originalDate, id)` returned and can
+/// be supplied to the next query without an increasingly expensive OFFSET.
+class QazaRecordsPage {
+  const QazaRecordsPage({required this.records, required this.hasMore});
+
+  final List<QazaRecord> records;
+  final bool hasMore;
+
+  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  String? get nextId => records.isEmpty ? null : records.last.id;
+}
+
 @DriftAccessor(tables: [QazaRecords])
 class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     with _$QazaRecordsDaoMixin {
@@ -35,6 +47,50 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     }
   }
 
+  Future<QazaRecordsPage> getKeysetPage({
+    required String userId,
+    int limit = defaultPageSize,
+    String? prayerType,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    DateTime? afterOriginalDate,
+    String? afterId,
+  }) async {
+    _validatePage(limit, 0);
+    _validateRange(from, to);
+    if ((afterOriginalDate == null) != (afterId == null)) {
+      throw ArgumentError('afterOriginalDate and afterId must be provided together');
+    }
+
+    final query = select(qazaRecords)
+      ..where((row) {
+        final predicates = <Expression<bool>>[row.userId.equals(userId)];
+        if (prayerType != null) predicates.add(row.prayerType.equals(prayerType));
+        if (status != null) predicates.add(row.status.equals(status));
+        if (from != null) predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+        if (to != null) predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (afterOriginalDate != null) {
+          predicates.add(
+            row.originalDate.isBiggerThanValue(afterOriginalDate!) |
+                (row.originalDate.equals(afterOriginalDate) & row.id.isBiggerThanValue(afterId!)),
+          );
+        }
+        return predicates.reduce((a, b) => a & b);
+      })
+      ..orderBy([
+        (r) => OrderingTerm.asc(r.originalDate),
+        (r) => OrderingTerm.asc(r.id),
+      ])
+      // Fetch one extra row so the UI can know whether another page exists.
+      ..limit(limit + 1);
+
+    final rows = await query.get();
+    final hasMore = rows.length > limit;
+    final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
+    return QazaRecordsPage(records: visible, hasMore: hasMore);
+  }
+
   Future<List<QazaRecord>> getPage({
     required String userId,
     int limit = defaultPageSize,
@@ -60,10 +116,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
-  Future<void> replaceUserRecords({
-    required String userId,
-    required List<QazaRecordsCompanion> records,
-  }) async {
+  Future<void> replaceUserRecords({required String userId, required List<QazaRecordsCompanion> records}) async {
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
     for (final record in records) {
       await into(qazaRecords).insert(record);
