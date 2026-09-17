@@ -57,6 +57,7 @@ void main() {
         child: const MaterialApp(home: DashboardScreen()),
       ),
     );
+    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('2 pending'), findsWidgets);
