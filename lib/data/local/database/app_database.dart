@@ -2,16 +2,17 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'qaza_records_dao.dart';
+import 'sync_outbox_dao.dart';
 import 'tables/qaza_records.dart';
+import 'tables/sync_outbox.dart';
 
 part 'app_database.g.dart';
 
 /// Application-local SQLite database.
-///
-/// Part 2 introduces the normalized Qaza schema. The existing
-/// SharedPreferences store remains the active production store until the
-/// repository and migration work is completed in later parts.
-@DriftDatabase(tables: [QazaRecords], daos: [QazaRecordsDao])
+@DriftDatabase(
+  tables: [QazaRecords, SyncOutbox],
+  daos: [QazaRecordsDao, SyncOutboxDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'qaza_namaz'));
@@ -39,6 +40,14 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX qaza_records_user_status_completed_idx '
             'ON qaza_records (user_id, status, completed_at)',
+          );
+          await customStatement(
+            'CREATE INDEX sync_outbox_user_queued_idx '
+            'ON sync_outbox (user_id, queued_at, id)',
+          );
+          await customStatement(
+            'CREATE INDEX sync_outbox_user_type_idx '
+            'ON sync_outbox (user_id, type, queued_at)',
           );
         },
       );
