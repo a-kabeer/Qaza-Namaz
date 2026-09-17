@@ -23,15 +23,15 @@ CI/build validation is intentionally deferred until **Part 13**.
 ## Part 7 — Production bounded read paths
 - Added repository-level `QazaPage` keyset pagination with UID, prayer, and status filters.
 - Added repository-level oldest-pending lookup.
-- Drift uses the indexed keyset DAO; legacy full-ledger reads iterate bounded pages rather than SQL offsets.
+- Drift uses indexed keyset DAO reads; legacy full-ledger compatibility reads iterate keyset pages instead of offsets.
 - Offline-first paginated, oldest-pending, history, and aggregate reads bypass the legacy full snapshot.
-- Service progress and oldest-pending operations use database-backed/bounded paths.
-- Namaz-wise pending dates load 50 records at a time with Load more.
-- Firestore implements matching bounded contracts for repository parity.
+- Service progress, oldest-pending, and selected-record validation use bounded/database-backed paths.
+- Namaz-wise pending dates now load 50 records at a time with Load more.
+- Firestore implements matching bounded contracts.
 - Added regression coverage for 1,001-record paging and bounded reads.
 
 ## Legacy compatibility boundary
-`DriftQazaLocalStore.load()` remains only for legacy full-snapshot compatibility and explicit legacy APIs. Part 10 will retire the remaining compatibility path after migration callers are fully removed.
+`DriftQazaLocalStore.load()` remains only for legacy full-snapshot compatibility. Part 10 will retire this remaining compatibility path after migration callers are fully removed.
 
 ## Validation policy
 No Part 13 CI gate is claimed for Parts 1–12. Final completion requires the complete configured GitHub CI/build matrix to pass after Part 13.
