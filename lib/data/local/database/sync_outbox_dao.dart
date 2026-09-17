@@ -3,6 +3,8 @@ import 'package:drift/drift.dart';
 import 'app_database.dart';
 import 'tables/sync_outbox.dart';
 
+part 'sync_outbox_dao.g.dart';
+
 @DriftAccessor(tables: [SyncOutbox])
 class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     with _$SyncOutboxDaoMixin {
@@ -16,6 +18,15 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
             (row) => OrderingTerm.asc(row.id),
           ]))
         .get();
+  }
+
+  Future<List<String>> userIds() async {
+    final query = selectOnly(syncOutbox, distinct: true)
+      ..addColumns([syncOutbox.userId]);
+    final rows = await query.get();
+    return rows
+        .map((row) => row.read(syncOutbox.userId)!)
+        .toList(growable: false);
   }
 
   Future<int> countPending({required String userId}) async {
