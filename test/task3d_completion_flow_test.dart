@@ -39,7 +39,7 @@ void main() {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'fajr_new', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 10)), record(id: 'fajr_old', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 2))]);
     await pumpComplete(tester, repository);
-    expect(find.text('Oldest pending record'), findsOneWidget);
+    expect(find.text('Original missed date'), findsOneWidget);
     expect(find.text('02 Sep 2026'), findsOneWidget);
     expect(find.text('Complete oldest pending'), findsOneWidget);
   });
