@@ -69,9 +69,11 @@ class CalendarController extends Notifier<CalendarSelectionState> {
     state = state.copyWith(selectionMode: mode, selectedDates: const []);
   }
 
-  void select(DateTime value) {
+  void select(DateTime value, {bool Function(DateTime date)? isDateSelectable}) {
     final date = _dateOnly(value);
     if (date.isAfter(ref.read(calendarTodayProvider))) return;
+    final isSelectable = isDateSelectable ?? (_) => true;
+    if (!isSelectable(date)) return;
 
     switch (state.selectionMode) {
       case DateSelectionMode.single:
@@ -85,7 +87,13 @@ class CalendarController extends Notifier<CalendarSelectionState> {
         if (start == null || state.isRangeComplete || date.isBefore(start)) {
           state = state.copyWith(selectedDates: [date]);
         } else {
-          state = state.copyWith(selectedDates: [start, date]);
+          final end = date;
+          for (var cursor = start;
+              !cursor.isAfter(end);
+              cursor = DateTime(cursor.year, cursor.month, cursor.day + 1)) {
+            if (!isSelectable(cursor)) return;
+          }
+          state = state.copyWith(selectedDates: [start, end]);
         }
     }
   }
