@@ -1,9 +1,11 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 
 class InMemoryQazaRepository implements QazaRepository {
   final Map<String, QazaRecord> _records = {};
+  int historyPageCalls = 0;
 
   @override
   Future<List<QazaRecord>> getRecords({
@@ -17,6 +19,59 @@ class InMemoryQazaRepository implements QazaRepository {
         .where((record) => status == null || record.status == status)
         .toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
+  }
+
+  @override
+  Future<QazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status = QazaStatus.completed,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    historyPageCalls++;
+    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
+    if (from != null && to != null && from.isAfter(to)) {
+      throw ArgumentError('from must be <= to');
+    }
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError('beforeOriginalDate and beforeId must be provided together');
+    }
+
+    final records = _records.values
+        .where((record) => record.userId == userId)
+        .where((record) => prayerType == null || record.prayerType == prayerType)
+        .where((record) => status == null || record.status == status)
+        .where((record) => from == null || !record.originalDate.isBefore(from))
+        .where((record) => to == null || !record.originalDate.isAfter(to))
+        .where(
+          (record) =>
+              beforeOriginalDate == null ||
+              record.originalDate.isBefore(beforeOriginalDate) ||
+              (record.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
+                  record.id.compareTo(beforeId!) < 0),
+        )
+        .toList()
+      ..sort((a, b) {
+        final byDate = b.originalDate.compareTo(a.originalDate);
+        return byDate != 0 ? byDate : b.id.compareTo(a.id);
+      });
+
+    final hasMore = records.length > limit;
+    return QazaHistoryPage(
+      records: (hasMore ? records.take(limit) : records).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
+  @override
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    return QazaProgressSummary.fromRecords(
+      _records.values.where((record) => record.userId == userId),
+    );
   }
 
   @override

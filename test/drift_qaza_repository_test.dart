@@ -78,6 +78,75 @@ void main() {
     expect(fajr.last.id, 'f1000');
   });
 
+  test('history delegates to descending database pagination and cursor', () async {
+    await repository.addRecords([
+      record(id: 'old', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
+      record(id: 'new-a', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 3), status: QazaStatus.completed),
+      record(id: 'new-b', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 1, 3), status: QazaStatus.completed),
+      record(id: 'mid', userId: 'a', prayer: PrayerType.asr, date: DateTime(2026, 1, 2), status: QazaStatus.completed),
+      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 4), status: QazaStatus.completed),
+    ]);
+
+    final first = await repository.getHistoryPage(
+      userId: 'a',
+      limit: 2,
+      status: QazaStatus.completed,
+    );
+    final second = await repository.getHistoryPage(
+      userId: 'a',
+      limit: 2,
+      status: QazaStatus.completed,
+      beforeOriginalDate: first.nextOriginalDate,
+      beforeId: first.nextId,
+    );
+
+    expect(first.records.map((r) => r.id), ['new-b', 'new-a']);
+    expect(first.hasMore, isTrue);
+    expect(second.records.map((r) => r.id), ['mid', 'old']);
+    expect(second.hasMore, isFalse);
+  });
+
+  test('history filters are passed to SQLite and do not include another user', () async {
+    await repository.addRecords([
+      record(id: 'f1', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 5, 1), status: QazaStatus.completed),
+      record(id: 'f2', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
+      record(id: 'f3', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 5, 11), status: QazaStatus.pending),
+      record(id: 'z1', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
+      record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
+    ]);
+
+    final page = await repository.getHistoryPage(
+      userId: 'a',
+      limit: 10,
+      prayerType: PrayerType.fajr,
+      status: QazaStatus.completed,
+      from: DateTime(2026, 5, 5),
+      to: DateTime(2026, 5, 15),
+    );
+
+    expect(page.records.map((r) => r.id), ['f2']);
+    expect(page.records.every((r) => r.userId == 'a'), isTrue);
+  });
+
+  test('progress summary is database-backed and includes all six prayers', () async {
+    await repository.addRecords([
+      record(id: 'f1', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
+      record(id: 'f2', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 2), status: QazaStatus.completed),
+      record(id: 'z1', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
+      record(id: 'w1', userId: 'a', prayer: PrayerType.witr, date: DateTime(2026, 1, 1)),
+      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
+    ]);
+
+    final summary = await repository.getProgressSummary(userId: 'a');
+    expect(summary.overall.pending, 2);
+    expect(summary.overall.completed, 2);
+    expect(summary.overall.total, 4);
+    expect(summary.byPrayer, hasLength(PrayerType.values.length));
+    expect(summary.byPrayer[PrayerType.fajr]!.progress.pending, 1);
+    expect(summary.byPrayer[PrayerType.fajr]!.progress.completed, 1);
+    expect(summary.byPrayer[PrayerType.witr]!.progress.pending, 1);
+  });
+
   test('completion is transactional and does not complete another user record', () async {
     await repository.addRecords([
       record(id: 'a1', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),

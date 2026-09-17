@@ -53,6 +53,7 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
     final status = statusFilter;
     final rangeStart = from;
     final rangeEnd = to;
+    final previous = state.valueOrNull;
     _resetCursor();
 
     if (userId == null) {
@@ -60,7 +61,10 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
       return;
     }
 
-    state = const AsyncLoading();
+    if (previous == null) {
+      state = const AsyncLoading();
+    }
+
     try {
       final page = await ref.read(qazaServiceProvider).getHistoryPage(
             userId: userId,
@@ -75,7 +79,12 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
       state = AsyncData(page.records);
     } catch (error, stackTrace) {
       if (generation != _requestGeneration) return;
-      state = AsyncError(error, stackTrace);
+      if (previous == null) {
+        state = AsyncError(error, stackTrace);
+      } else {
+        state = AsyncValue.error(error, stackTrace)
+            .copyWithPrevious(AsyncData(previous));
+      }
     }
   }
 

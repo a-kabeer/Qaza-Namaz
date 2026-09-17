@@ -67,4 +67,48 @@ void main() {
     expect(snapshot.recordsByUser['user-b']!.map((r) => r.id), ['b1']);
     expect(snapshot.outboxByUser['user-a'], isEmpty);
   });
+
+  test('history page uses DAO query instead of local snapshot loading', () async {
+    final records = [
+      for (var i = 0; i < 120; i++)
+        record('user-a-$i', 'user-a').copyWith(
+          originalDate: DateTime(2026, 1, 1).add(Duration(days: i)),
+        ),
+    ];
+    await store.saveRecords('user-a', records);
+
+    final page = await store.getHistoryPage(
+      userId: 'user-a',
+      limit: 50,
+      status: null,
+    );
+
+    expect(page.records, hasLength(50));
+    expect(page.records.first.originalDate, DateTime(2026, 4, 30));
+    expect(page.hasMore, isTrue);
+  });
+
+  test('database-backed progress summary maps counts for every prayer', () async {
+    final fajr = record('fajr-pending', 'user-a');
+    final fajrCompleted = fajr.copyWith(
+      id: 'fajr-completed',
+      originalDate: DateTime(2026, 1, 2),
+      status: QazaStatus.completed,
+      completedAt: DateTime(2026, 9, 1),
+    );
+    final witr = fajr.copyWith(
+      id: 'witr-pending',
+      prayerType: PrayerType.witr,
+      originalDate: DateTime(2026, 1, 3),
+    );
+    await store.saveRecords('user-a', [fajr, fajrCompleted, witr]);
+
+    final summary = await store.getProgressSummary(userId: 'user-a');
+    expect(summary.overall.pending, 2);
+    expect(summary.overall.completed, 1);
+    expect(summary.byPrayer[PrayerType.fajr]!.progress.pending, 1);
+    expect(summary.byPrayer[PrayerType.fajr]!.progress.completed, 1);
+    expect(summary.byPrayer[PrayerType.witr]!.progress.pending, 1);
+    expect(summary.byPrayer, hasLength(PrayerType.values.length));
+  });
 }

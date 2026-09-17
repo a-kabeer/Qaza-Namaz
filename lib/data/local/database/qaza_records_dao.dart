@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/constants/prayer_types.dart';
-import '../../../domain/entities/qaza_record.dart';
+import '../../../domain/entities/qaza_record.dart' show QazaStatus;
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
 

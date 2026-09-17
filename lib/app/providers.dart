@@ -34,6 +34,8 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
+/// Transitional store: Qaza records remain in SharedPreferences until Part 6,
+/// while the synchronization outbox is already durable in SQLite.
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
 });
@@ -110,8 +112,8 @@ final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((
   return pending;
 });
 
-/// Database-backed progress for History. The query returns grouped counts,
-/// not the complete ledger, so the History page remains bounded as records grow.
+/// Database-backed progress for History. This is grouped/count-only and does
+/// not load the Qaza ledger into Dart.
 final historyProgressProvider = FutureProvider.autoDispose<QazaProgressSummary>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(QazaProgressSummary.empty());
