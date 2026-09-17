@@ -22,7 +22,7 @@ IN PROGRESS
 | 6 | Active User Home | ✅ Complete |
 | 7 | Progress & Prayer Summary | ✅ Complete |
 | 8 | Complete Qaza UX | ✅ Complete |
-| 9 | Large Dataset / Database Performance | ⬜ Pending |
+| 9 | Large Dataset / Database Performance | 🟡 Ready / blocked by DB migration |
 | 10 | Theme, RTL & Responsive UX | ⬜ Pending |
 | 11 | Navigation & Regression Testing | ⬜ Pending |
 | 12 | Final Validation, Documentation & CI | ⬜ Pending |
@@ -31,32 +31,37 @@ IN PROGRESS
 
 ### Completed
 - Added one cohesive `Your progress` card to active and all-completed Home states.
-- Reused the centralized overall progress provider for completed/pending totals and completion percentage.
-- Reused the centralized prayer progress provider for prayer-wise completed/total progress.
+- Reused centralized overall and prayer progress providers.
 - Displayed only prayers with existing records to keep the summary compact.
-- Added a reusable progress ring and per-prayer progress indicators using the existing theme-aware progress widgets.
-- Kept the summary read-only and lightweight at the UI layer; database-backed aggregation remains part of the later scalability/Drift work in Part 9.
+- Reused theme-aware progress widgets.
+- UI aggregation remains intentionally lightweight; final database-backed aggregation belongs to Part 9.
 
 ## Part 8 — Complete Qaza UX
 
 ### Completed
-- Audited the existing completion flow and reconciled the closed PR #15 instead of duplicating its implementation.
+- Audited completion flow and reconciled closed PR #15 rather than duplicating its implementation.
 - Preserved merged PR #6's fast, optimistic, idempotent oldest-pending completion architecture.
-- Preserved the Namaz-wise multi-selection path as the secondary bulk-completion workflow.
-- Improved the completion screen with prayer-specific pending counts and explicit oldest-record context.
-- Added count-aware completion feedback and a clear distinction between single oldest-first and multiple-record completion.
+- Preserved Namaz-wise multi-selection as the secondary bulk-completion workflow.
+- Added prayer-specific pending counts and explicit oldest-record context.
+- Added count-aware completion feedback and clear single-vs-multiple completion actions.
 - Added theme-aware prayer context styling and local-first/repeat-safe completion guidance.
-- Preserved loading, error, empty, refresh, and existing service/repository boundaries.
-- No duplicate completion business logic was introduced.
+- Preserved loading, error, empty, refresh, and service/repository boundaries.
 
 ## Part 9 — Large Dataset / Database Performance
 
-### Scope
-- Replace full-ledger materialization on Home with database-backed aggregate queries.
-- Keep Home summary queries bounded and indexed for 1,000–10,000+ records.
-- Move prayer-wise pending counts and overall pending/completed totals toward the Drift/SQLite data layer as the database migration lands.
-- Avoid loading the complete Qaza ledger solely to render Home summary cards.
-- Coordinate with existing DB migration PR #17 and reuse its schema/DAO work rather than duplicating it.
+### Audit result
+The current Home provider architecture still materializes the complete Qaza ledger before deriving overall and prayer-wise progress. That is acceptable for the current temporary SharedPreferences architecture but is not the production design for 1,000–10,000+ records.
+
+### Required implementation
+- Use Drift/SQLite aggregate queries for pending/completed totals.
+- Use indexed prayer + status queries for prayer-wise counts.
+- Use bounded oldest-pending queries for completion.
+- Avoid loading the full ledger just to render Home.
+- Keep detailed ledger screens independently paginated/bounded.
+- Reuse the existing DB migration PR #17 schema/DAO work; do not create a parallel database architecture on Home.
+
+### Dependency
+PR #17 is still the dedicated Drift foundation/migration path. Home Part 9 should integrate with the migration once its DAO/schema APIs are available instead of duplicating them on this branch.
 
 ## Part 10 — Theme, RTL & Responsive UX
 Pending.
