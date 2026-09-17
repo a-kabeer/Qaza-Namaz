@@ -104,7 +104,11 @@ class KnowledgeBaseParser {
     );
   }
 
-  KnowledgeLocalizedText _parseLocalizedText(Object? value, String field, String prefix) {
+  KnowledgeLocalizedText _parseLocalizedText(
+    Object? value,
+    String field,
+    String prefix,
+  ) {
     if (value is! Map) {
       throw KnowledgeBaseParseException('$prefix: "$field" must be an object.');
     }
@@ -177,5 +181,5 @@ class KnowledgeBaseParser {
     return value;
   }
 
-  static final RegExp _kebabCase = RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*\$');
+  static final RegExp _kebabCase = RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$');
 }
