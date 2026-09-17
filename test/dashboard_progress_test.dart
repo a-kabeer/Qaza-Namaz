@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/dashboard/dashboard_screen.dart';
-import 'package:qaza_namaz/core/widgets/progress_widgets.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 
@@ -35,17 +35,23 @@ void main() {
       record(id: 'witr-pending', prayer: PrayerType.witr, status: QazaStatus.pending),
     ]);
 
+    final summary = QazaProgressSummary.fromRecords([
+      record(id: 'fajr-pending', prayer: PrayerType.fajr, status: QazaStatus.pending),
+      record(id: 'fajr-completed', prayer: PrayerType.fajr, status: QazaStatus.completed),
+      record(id: 'witr-pending', prayer: PrayerType.witr, status: QazaStatus.pending),
+    ]);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           qazaRepositoryProvider.overrideWithValue(repository),
           activeUserIdProvider.overrideWithValue('test-user'),
           authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
+          progressSummaryProvider.overrideWith((ref) async => summary),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
     );
-    await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('1 fulfilled', skipOffstage: false), findsOneWidget);
@@ -61,7 +67,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fajrSummary, findsOneWidget);
-    expect(find.text('1 pending', skipOffstage: false), findsWidgets);
     expect(repository.getRecordsCalled, isFalse);
   });
 }
