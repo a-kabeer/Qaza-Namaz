@@ -24,6 +24,12 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
       child: child,
     );
 
+void _setTallViewport(WidgetTester tester) {
+  tester.view.physicalSize = const Size(800, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+}
+
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isNotEmpty) return;
   final scrollable = find.byType(Scrollable).first;
@@ -77,6 +83,7 @@ void main() {
   });
 
   testWidgets('Gregorian calendar renders and navigates months', (tester) async {
+    _setTallViewport(tester);
     await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
     await tester.pumpAndSettle();
     expect(find.text('September 2026'), findsOneWidget);
@@ -86,6 +93,7 @@ void main() {
   });
 
   testWidgets('Gregorian calendar displays Hijri as secondary information', (tester) async {
+    _setTallViewport(tester);
     await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('calendar_hijri_month_label')), findsOneWidget);
@@ -96,6 +104,7 @@ void main() {
   });
 
   testWidgets('future date is disabled and qaza indicator is rendered', (tester) async {
+    _setTallViewport(tester);
     final repository = InMemoryQazaRepository();
     await repository.addRecord(QazaRecord(id: 'u1_fajr_2026-09-10', userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 10), createdAt: _today, updatedAt: _today));
     await tester.pumpWidget(_scope(MaterialApp(home: Scaffold(body: CalendarPicker(qazaDates: {DateTime(2026, 9, 10)}))), repository: repository));
@@ -107,6 +116,7 @@ void main() {
   });
 
   testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
+    _setTallViewport(tester);
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
@@ -131,6 +141,7 @@ void main() {
   });
 
   testWidgets('range flow persists every day in the selected range', (tester) async {
+    _setTallViewport(tester);
     final repository = InMemoryQazaRepository();
     await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
