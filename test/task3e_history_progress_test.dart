@@ -41,6 +41,8 @@ void main() {
     expect(find.text('Pending'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history_prayer_progress_toggle')));
+    await tester.pumpAndSettle();
     for (final prayer in PrayerType.values) expect(find.text(prayer.label), findsOneWidget);
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
     expect(find.text('0 pending • 1 completed'), findsOneWidget);
