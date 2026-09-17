@@ -49,6 +49,15 @@ class LocalQazaPage {
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
+/// A bounded newest-first history page.
+class LocalQazaHistoryPage {
+  const LocalQazaHistoryPage({required this.records, required this.hasMore});
+  final List<QazaRecord> records;
+  final bool hasMore;
+  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  String? get nextId => records.isEmpty ? null : records.last.id;
+}
+
 abstract interface class QazaLocalStore {
   Future<OfflineCacheSnapshot> load();
   Future<void> saveRecords(String userId, List<QazaRecord> records);
@@ -68,6 +77,21 @@ abstract interface class QazaLocalStore {
     }
     final hasMore = records.length > limit;
     return LocalQazaPage(records: records.take(limit).toList(growable: false), hasMore: hasMore);
+  }
+
+  Future<LocalQazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
+    final snapshot = await load();
+    var records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
+    records = records.where((r) => prayerType == null || r.prayerType == prayerType).where((r) => status == null || r.status == status).where((r) => from == null || !r.originalDate.isBefore(from)).where((r) => to == null || !r.originalDate.isAfter(to)).toList()
+      ..sort((a, b) {
+        final date = b.originalDate.compareTo(a.originalDate);
+        return date != 0 ? date : b.id.compareTo(a.id);
+      });
+    if (beforeOriginalDate != null && beforeId != null) {
+      records = records.where((r) => r.originalDate.isBefore(beforeOriginalDate) || (r.originalDate.isAtSameMomentAs(beforeOriginalDate) && r.id.compareTo(beforeId) < 0)).toList();
+    }
+    final hasMore = records.length > limit;
+    return LocalQazaHistoryPage(records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
 
   Future<void> saveRecordsAndOutbox(String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
