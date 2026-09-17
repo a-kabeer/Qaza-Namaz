@@ -11,9 +11,9 @@ import 'shared_preferences_qaza_local_store.dart';
 /// Transitional local store used during the database migration.
 ///
 /// Qaza records remain in the existing SharedPreferences cache until Part 6,
-/// while the synchronization outbox is already durable in SQLite. This lets
-/// queued operations survive process death without moving the record cache
-/// prematurely.
+/// while the synchronization outbox is durable in SQLite. Existing legacy
+/// outbox entries are imported on first load so queued work cannot disappear
+/// when the provider switches to this store.
 class DriftQazaLocalStore implements QazaLocalStore {
   DriftQazaLocalStore({
     required AppDatabase database,
@@ -28,11 +28,25 @@ class DriftQazaLocalStore implements QazaLocalStore {
   Future<OfflineCacheSnapshot> load() async {
     final legacy = await _legacyStore.load();
     final outboxByUser = <String, List<PendingSyncOp>>{};
+    final users = legacy.recordsByUser.keys
+        .followedBy(legacy.outboxByUser.keys)
+        .toSet();
 
-    for (final userId in legacy.recordsByUser.keys.followedBy(
-      legacy.outboxByUser.keys,
-    ).toSet()) {
-      final rows = await _database.syncOutboxDao.getPending(userId: userId);
+    for (final userId in users) {
+      final legacyOps = legacy.outboxByUser[userId] ?? const <PendingSyncOp>[];
+      final existing = await _database.syncOutboxDao.getPending(userId: userId);
+
+      // Import the legacy queue only when SQLite does not already contain it.
+      // This makes the provider transition one-way without duplicating rows.
+      if (existing.isEmpty && legacyOps.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          legacyOps.map(_toCompanion).toList(growable: false),
+        );
+      }
+
+      final rows = existing.isEmpty && legacyOps.isNotEmpty
+          ? await _database.syncOutboxDao.getPending(userId: userId)
+          : existing;
       outboxByUser[userId] = rows.map(_toDomain).toList(growable: false);
     }
 
