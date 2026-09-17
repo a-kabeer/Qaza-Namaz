@@ -2,6 +2,16 @@ import '../../core/constants/prayer_types.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 
+class QazaPage {
+  const QazaPage({required this.records, required this.hasMore});
+
+  final List<QazaRecord> records;
+  final bool hasMore;
+
+  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  String? get nextId => records.isEmpty ? null : records.last.id;
+}
+
 class QazaHistoryPage {
   const QazaHistoryPage({required this.records, required this.hasMore});
 
@@ -13,10 +23,27 @@ class QazaHistoryPage {
 }
 
 abstract interface class QazaRepository {
+  /// Legacy full-ledger API. New production UI should use [getPage].
   Future<List<QazaRecord>> getRecords({
     required String userId,
     PrayerType? prayerType,
     QazaStatus? status,
+  });
+
+  /// Bounded ascending keyset page for scalable ledger screens.
+  Future<QazaPage> getPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status,
+    DateTime? afterOriginalDate,
+    String? afterId,
+  });
+
+  /// Returns the oldest pending record directly from the data source.
+  Future<QazaRecord?> getOldestPending({
+    required String userId,
+    required PrayerType prayerType,
   });
 
   Future<QazaHistoryPage> getHistoryPage({
@@ -30,12 +57,9 @@ abstract interface class QazaRepository {
     String? beforeId,
   });
 
-  /// Returns aggregate progress without requiring callers to materialize the
-  /// complete Qaza ledger.
   Future<QazaProgressSummary> getProgressSummary({required String userId});
 
   Future<void> addRecord(QazaRecord record);
-
   Future<void> addRecords(List<QazaRecord> records);
 
   Future<void> completeRecord({
