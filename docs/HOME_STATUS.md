@@ -15,7 +15,7 @@ IN PROGRESS
 | Part | Task | Status |
 |------|------|--------|
 | 1 | Baseline & PR Reconciliation | ✅ Complete |
-| 2 | Home Architecture & State Model | ⬜ Pending |
+| 2 | Home Architecture & State Model | ✅ Complete |
 | 3 | Dashboard → Home Rename | ⬜ Pending |
 | 4 | Home Header | ⬜ Pending |
 | 5 | New User / Empty Home | ⬜ Pending |
@@ -53,6 +53,22 @@ IN PROGRESS
 7. Notifications and Profile may be exposed from the Home header by reusing existing destinations; Settings remains a primary bottom-navigation destination.
 8. CI remains a final validation gate and is not introduced as a per-part gate for this Home task.
 
+## Part 2 — Home Architecture & State Model
+
+### Completed
+- Added `lib/features/home/home_state.dart` as a pure Home state model.
+- Defined three ledger states: `setupRequired`, `hasPendingQaza`, and `allQazaCompleted`.
+- Defined state-driven primary actions: Calculate Qaza, Complete Qaza, and Add New Qaza.
+- Defined complementary secondary actions for each Home state.
+- Kept loading/error/sync concerns orthogonal to the Home ledger state so the model remains reusable across storage implementations.
+- Added `test/home_state_test.dart` covering all states, action mapping, negative-count validation, and pending-state precedence.
+
+### State Rules
+1. `pending == 0 && completed == 0` → `setupRequired` → primary action `calculateQaza`.
+2. `pending > 0` → `hasPendingQaza` → primary action `completeQaza`.
+3. `pending == 0 && completed > 0` → `allQazaCompleted` → primary action `addNewQaza`.
+4. Negative progress counts are rejected as invalid state input.
+
 ## Related Pull Requests
 
 ### Core dependencies
@@ -71,10 +87,10 @@ IN PROGRESS
 - #18 — KB-1: Knowledge Base foundation — OPEN, DRAFT, separate task
 
 ## Pending
-Parts 2–12.
+Parts 3–12.
 
 ## Current Part
-Part 2 — Home Architecture & State Model
+Part 3 — Dashboard → Home Rename
 
 ## CI / Validation
-Part 1 is documentation/baseline work only. Full validation remains scheduled for Part 12 after implementation and regression coverage are complete.
+Part 2 includes focused automated tests for the pure state model. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
