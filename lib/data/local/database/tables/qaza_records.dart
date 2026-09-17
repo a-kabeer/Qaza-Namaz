@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 /// Part 2 defines the schema only. Repository/DAO integration is intentionally
 /// deferred to Part 3/4 so the existing SharedPreferences store remains the
 /// active source of truth until the migration is complete.
+@DataClassName('QazaRecordRow')
 class QazaRecords extends Table {
   TextColumn get id => text()();
 
