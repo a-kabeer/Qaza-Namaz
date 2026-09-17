@@ -5,9 +5,6 @@ import '../local/database/app_database.dart';
 import '../local/database/tables/qaza_records.dart';
 
 /// QazaRepository implementation backed by Drift/SQLite.
-///
-/// This adapter is introduced before production wiring so Part 6 can migrate
-/// existing SharedPreferences data safely before the active store is switched.
 class DriftQazaRepository implements QazaRepository {
   DriftQazaRepository(this.database);
 
@@ -36,6 +33,33 @@ class DriftQazaRepository implements QazaRepository {
       offset += page.length;
     }
     return rows;
+  }
+
+  @override
+  Future<QazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status = QazaStatus.completed,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    final page = await database.qazaRecordsDao.getHistoryPage(
+      userId: userId,
+      limit: limit,
+      prayerType: prayerType?.name,
+      status: status?.name,
+      from: from,
+      to: to,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+    );
+    return QazaHistoryPage(
+      records: page.records.map(_toDomain).toList(growable: false),
+      hasMore: page.hasMore,
+    );
   }
 
   @override
