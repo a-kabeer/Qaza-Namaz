@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -56,7 +55,7 @@ void main() {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator').first);
     await _pumpNavigation(tester);
-    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('About You').last, findsOneWidget);
     expect(find.text('Step 1 of 3'), findsOneWidget);
     await tester.tap(find.text('Logs').first);
     await _pumpNavigation(tester);
