@@ -31,11 +31,11 @@ Human-editable structured files under `assets/knowledge_base/content/` are the s
 
 ### Parser and validation layer
 
-The parser converts bundled source files into strongly typed models and rejects malformed content deterministically. Validation covers IDs, categories, bilingual fields, references, and relationship integrity.
+The parser converts bundled source files into strongly typed models and rejects malformed content deterministically. Validation covers IDs, categories, bilingual fields, references, and relationship fields.
 
 ### Domain model layer
 
-The domain model represents articles without coupling the UI to the storage format. UI code will consume typed models rather than raw JSON maps.
+The domain model represents articles without coupling the UI to the storage format. UI code consumes typed models rather than raw JSON maps.
 
 ### Repository layer
 
@@ -55,16 +55,23 @@ Article lists use lazy sliver construction so a larger published dataset does no
 
 ## Content author workflow
 
-The content author only needs to edit the structured content files. A typical workflow will be:
+The content author only needs to edit `assets/knowledge_base/content/articles.json`. No Dart or widget changes are needed for article wording updates.
 
 1. Add or edit an article record.
 2. Keep the stable article ID unchanged when editing an existing article.
 3. Provide Urdu and English title, summary, and body fields.
 4. Set the category to `masail` or `mugalat`.
 5. Add references and related-article IDs using the documented format.
-6. Run the provided validation/test workflow before publishing.
+6. Validate the dataset and run the test suite before publishing.
 
-No Flutter widget code should need to change when article wording changes.
+### Content QA rules
+
+- Do not publish unverified religious content.
+- Every published article must contain complete Urdu and English title, summary, and body fields.
+- IDs and slugs must remain unique and stable.
+- References should identify the source and citation; URLs must only be included when verified.
+- Related article IDs must point to existing published articles.
+- Keep article wording in the JSON dataset; never copy article text into Flutter widgets.
 
 ## Part 2 — Data Contract & Models
 
@@ -85,7 +92,7 @@ Every article contains:
 - `body` — required Urdu + English text pair.
 - `tags` — unique search tags.
 - `references` — structured source records.
-- `relatedArticleIds` — unique IDs resolved during later relationship validation.
+- `relatedArticleIds` — related article IDs resolved by validation/tests.
 
 ### Domain models added
 
@@ -162,9 +169,9 @@ Audited the planned 50–60 article workload and retained lazy `SliverList.build
 
 ### Part 11 — Content QA & Tests
 
-Status: PENDING
+Status: COMPLETE
 
-Add parser, repository, provider, widget, localization-direction, relationship, and regression tests. Validate representative and edge-case datasets.
+Added bundled-dataset quality coverage for schema version and parser compatibility, article ID/slug uniqueness, and complete bilingual fields. Preserved parser, repository, provider, widget, accessibility, RTL/LTR, and navigation regression coverage. The current dataset remains intentionally empty until verified religious content is supplied by the content author.
 
 ### Part 12 — Documentation & Release Readiness
 
