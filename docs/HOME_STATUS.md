@@ -17,7 +17,7 @@ IN PROGRESS
 | 1 | Baseline & PR Reconciliation | ✅ Complete |
 | 2 | Home Architecture & State Model | ✅ Complete |
 | 3 | Dashboard → Home Rename | ✅ Complete |
-| 4 | Home Header | ⬜ Pending |
+| 4 | Home Header | ✅ Complete |
 | 5 | New User / Empty Home | ⬜ Pending |
 | 6 | Active User Home | ⬜ Pending |
 | 7 | Progress & Prayer Summary | ⬜ Pending |
@@ -83,6 +83,22 @@ IN PROGRESS
 ### Rename Rule
 The rename is terminology/entry-point only in this part. Home visual redesign and workflow changes remain in Parts 4–10.
 
+## Part 4 — Home Header
+
+### Completed
+- Reused the existing `NotificationsScreen` as the Home header notification destination.
+- Reused the existing `AccountScreen` as the Home header profile destination.
+- Added accessible `Notifications` and `Profile` tooltips/actions to the Home header.
+- Removed the permanent refresh/sync header action to keep the header focused on account-level utilities.
+- Preserved pull-to-refresh for ledger refresh inside the Home content.
+- Kept Settings as a bottom-navigation destination and did not duplicate Data & Cloud/Sync controls in the header.
+- Added navigation regression coverage verifying both header actions open their existing screens.
+
+### Header Rule
+Home header remains intentionally minimal:
+
+`Home  |  Notifications  |  Profile`
+
 ## Related Pull Requests
 
 ### Core dependencies
@@ -90,7 +106,7 @@ The rename is terminology/entry-point only in this part. Home visual redesign an
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
 ### Home task
-- #19 — Home Part 1: baseline and PR reconciliation status — OPEN; now contains Parts 1–3 implementation/status commits
+- #19 — Home Part 1-4: baseline, state model, Dashboard→Home rename & header — OPEN; now contains Parts 1–4 implementation/status commits
 
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
@@ -104,10 +120,10 @@ The rename is terminology/entry-point only in this part. Home visual redesign an
 - #18 — KB-1: Knowledge Base foundation — OPEN, DRAFT, separate task
 
 ## Pending
-Parts 4–12.
+Parts 5–12.
 
 ## Current Part
-Part 4 — Home Header
+Part 5 — New User / Empty Home
 
 ## CI / Validation
-Part 3 is a rename/navigation-reference change only. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
+Part 4 includes focused widget coverage for the header destinations. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
