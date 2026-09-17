@@ -1,10 +1,10 @@
 # Qaza Namaz App - Project Status
 
 ## Current Migration
-SharedPreferences -> Drift/SQLite production migration - Part 11 complete
+SharedPreferences -> Drift/SQLite production migration - Part 12 complete
 
 ## Migration Progress
-11 / 13 parts implemented; final CI/build gate remains Part 13.
+12 / 13 parts implemented; final CI/build gate remains Part 13.
 
 ### Migration Status
 - Part 1 - COMPLETE - Drift foundation
@@ -18,20 +18,20 @@ SharedPreferences -> Drift/SQLite production migration - Part 11 complete
 - Part 9 - COMPLETE - Large-dataset Home/Logs performance integration
 - Part 10 - COMPLETE - Migration cleanup and legacy-store retirement
 - Part 11 - COMPLETE - Data migration/upgrade resilience
-- Part 12 - PENDING - Final application-level regression audit
+- Part 12 - COMPLETE - Final application-level regression audit
 - Part 13 - PENDING - Full GitHub CI/build validation and completion gate
 
-## Part 11 Summary
-- Hardened the one-time SharedPreferences -> Drift migration with serialized in-process execution.
-- Added explicit migration marker/version validation and rejection of unsupported future versions.
-- Hardened legacy JSON shape validation so malformed data cannot mark migration complete.
-- Preserved atomic database writes: migration conflicts or isolation failures abort without a completion marker.
-- Added per-user target-count verification after migration.
-- Completion/version markers are persisted only after successful database migration and verification.
-- Added regression coverage for fresh install, migration/idempotency, duplicate normalization, malformed data, user isolation, conflicts, and unsupported marker versions.
+## Part 12 Summary
+- Audited the production application read paths across ledger, oldest-pending, history, progress, completion, duplicate protection, and user isolation.
+- Added final regression coverage against a 5,000-record ledger to verify bounded page reads, direct oldest-pending lookup, and database-backed aggregate progress.
+- Added paginated history regression coverage across multiple pages with strict user scoping.
+- Added complete-oldest workflow coverage to verify only the intended prayer record changes.
+- Added duplicate and cross-account mutation regression coverage.
+- Existing database schema, migration resilience, dashboard aggregate, history pagination, and offline-first isolation tests remain part of the regression suite.
+- No production UI or database architecture was duplicated from the dedicated migration/Home workstreams.
 
 ## Validation
-Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 11.
+Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 12.
 
 ## Next
-Part 12 - Final application-level regression audit.
+Part 13 - Full GitHub CI/build validation and completion gate.
