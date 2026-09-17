@@ -45,17 +45,15 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
 
   Future<List<QazaRecord>> getAll({required String userId}) async {
     final records = <QazaRecord>[];
-    var cursorDate = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    DateTime? cursorDate;
     String? cursorId;
-    var firstPage = true;
     while (true) {
       final page = await getKeysetPage(
         userId: userId,
         limit: maxPageSize,
-        afterOriginalDate: firstPage ? null : cursorDate,
-        afterId: firstPage ? null : cursorId,
+        afterOriginalDate: cursorDate,
+        afterId: cursorId,
       );
-      firstPage = false;
       records.addAll(page.records);
       if (!page.hasMore) return records;
       cursorDate = page.nextOriginalDate!;
@@ -96,10 +94,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
     final rows = await query.get();
     final hasMore = rows.length > limit;
     final visibleRows = hasMore ? rows.take(limit) : rows;
-    return QazaRecordsPage(
-      records: visibleRows.map(_toDomain).toList(growable: false),
-      hasMore: hasMore,
-    );
+    return QazaRecordsPage(records: visibleRows.map(_toDomain).toList(growable: false), hasMore: hasMore);
   }
 
   Future<QazaHistoryPage> getHistoryPage({
@@ -135,10 +130,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
     final rows = await query.get();
     final hasMore = rows.length > limit;
     final visibleRows = hasMore ? rows.take(limit) : rows;
-    return QazaHistoryPage(
-      records: visibleRows.map(_toDomain).toList(growable: false),
-      hasMore: hasMore,
-    );
+    return QazaHistoryPage(records: visibleRows.map(_toDomain).toList(growable: false), hasMore: hasMore);
   }
 
   Future<Map<PrayerType, Map<QazaStatus, int>>> getProgressCounts({required String userId}) async {
@@ -167,15 +159,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
     return counts;
   }
 
-  Future<List<QazaRecord>> getPage({
-    required String userId,
-    int limit = defaultPageSize,
-    int offset = 0,
-    String? prayerType,
-    String? status,
-    DateTime? from,
-    DateTime? to,
-  }) async {
+  Future<List<QazaRecord>> getPage({required String userId, int limit = defaultPageSize, int offset = 0, String? prayerType, String? status, DateTime? from, DateTime? to}) async {
     _validatePage(limit, offset);
     _validateRange(from, to);
     final query = select(qazaRecords)
@@ -193,12 +177,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
     return rows.map(_toDomain).toList(growable: false);
   }
 
-  Future<List<QazaRecord>> getByPrayerAndDateRange({
-    required String userId,
-    required String prayerType,
-    required DateTime from,
-    required DateTime to,
-  }) => getPage(userId: userId, limit: maxPageSize, prayerType: prayerType, from: from, to: to);
+  Future<List<QazaRecord>> getByPrayerAndDateRange({required String userId, required String prayerType, required DateTime from, required DateTime to}) =>
+      getPage(userId: userId, limit: maxPageSize, prayerType: prayerType, from: from, to: to);
 
   Future<List<QazaRecord>> getPendingPage({required String userId, String? prayerType, int limit = maxPageSize}) =>
       getPage(userId: userId, limit: limit, prayerType: prayerType, status: QazaStatus.pending.name);
@@ -206,11 +186,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
   Future<List<QazaRecord>> getCompletedPage({required String userId, String? prayerType, int limit = maxPageSize}) =>
       getPage(userId: userId, limit: limit, prayerType: prayerType, status: QazaStatus.completed.name);
 
-  Future<int> countPending({required String userId, String? prayerType}) =>
-      count(userId: userId, prayerType: prayerType, status: QazaStatus.pending.name);
-
-  Future<int> countCompleted({required String userId, String? prayerType}) =>
-      count(userId: userId, prayerType: prayerType, status: QazaStatus.completed.name);
+  Future<int> countPending({required String userId, String? prayerType}) => count(userId: userId, prayerType: prayerType, status: QazaStatus.pending.name);
+  Future<int> countCompleted({required String userId, String? prayerType}) => count(userId: userId, prayerType: prayerType, status: QazaStatus.completed.name);
 
   Future<QazaRecord?> getOldestPending({required String userId, String? prayerType}) async {
     final rows = await getPage(userId: userId, limit: 1, prayerType: prayerType, status: QazaStatus.pending.name);
@@ -219,9 +196,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
 
   Future<void> replaceUserRecords({required String userId, required List<QazaRecordsCompanion> records}) async {
     for (final record in records) {
-      if (record.userId.value != userId) {
-        throw StateError('Cannot persist a Qaza record for a different user.');
-      }
+      if (record.userId.value != userId) throw StateError('Cannot persist a Qaza record for a different user.');
     }
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
     for (final record in records) {
@@ -239,21 +214,18 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
   }
 
   /// Duplicate adds are ignored at the database boundary. The unique key
-  /// `(userId, prayerType, originalDate)` also prevents a second record for
-  /// the same missed prayer even when the generated record id differs.
-  Future<int> insertRecord(QazaRecordsCompanion record) =>
-      into(qazaRecords).insertOnConflictUpdate(record);
+  /// `(userId, prayerType, originalDate)` prevents a second record for the
+  /// same missed prayer even when the generated record id differs.
+  Future<int> insertRecord(QazaRecordsCompanion record) => into(qazaRecords).insertOnConflictIgnore(record);
 
   Future<int> insertRecords(List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return 0;
     final userIds = records.map((record) => record.userId.value).toSet();
-    if (userIds.length > 1) {
-      throw StateError('A batch insert must contain records for one user only.');
-    }
+    if (userIds.length > 1) throw StateError('A batch insert must contain records for one user only.');
     return transaction(() async {
       var inserted = 0;
       for (final record in records) {
-        await into(qazaRecords).insertOnConflictUpdate(record);
+        await into(qazaRecords).insertOnConflictIgnore(record);
         inserted++;
       }
       return inserted;
@@ -268,15 +240,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
   QazaRecord _toDomain(QazaRecordRow row) => QazaRecord(
         id: row.id,
         userId: row.userId,
-        prayerType: PrayerType.values.firstWhere(
-          (value) => value.name == row.prayerType,
-          orElse: () => throw StateError('Unknown prayer type "${row.prayerType}" in local database.'),
-        ),
+        prayerType: PrayerType.values.firstWhere((value) => value.name == row.prayerType, orElse: () => throw StateError('Unknown prayer type "${row.prayerType}" in local database.')),
         originalDate: row.originalDate,
-        status: QazaStatus.values.firstWhere(
-          (value) => value.name == row.status,
-          orElse: () => throw StateError('Unknown Qaza status "${row.status}" in local database.'),
-        ),
+        status: QazaStatus.values.firstWhere((value) => value.name == row.status, orElse: () => throw StateError('Unknown Qaza status "${row.status}" in local database.')),
         completedAt: row.completedAt,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
