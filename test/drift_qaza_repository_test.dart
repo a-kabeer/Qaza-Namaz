@@ -40,8 +40,10 @@ void main() {
     await repository.addRecords([
       record(id: 'a1', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
       record(id: 'a2', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 1, 2)),
-      record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
     ]);
+    await repository.addRecord(
+      record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
+    );
 
     final rows = await repository.getRecords(userId: 'a');
     expect(rows.map((row) => row.id), ['a1', 'a2']);
@@ -59,12 +61,7 @@ void main() {
         ),
     ]);
     await repository.addRecord(
-      record(
-        id: 'z1',
-        userId: 'a',
-        prayer: PrayerType.zuhr,
-        date: DateTime(2020, 1, 1),
-      ),
+      record(id: 'z1', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2020, 1, 1)),
     );
 
     final fajr = await repository.getRecords(
@@ -84,8 +81,10 @@ void main() {
       record(id: 'new-a', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 3), status: QazaStatus.completed),
       record(id: 'new-b', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 1, 3), status: QazaStatus.completed),
       record(id: 'mid', userId: 'a', prayer: PrayerType.asr, date: DateTime(2026, 1, 2), status: QazaStatus.completed),
-      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 4), status: QazaStatus.completed),
     ]);
+    await repository.addRecord(
+      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 4), status: QazaStatus.completed),
+    );
 
     final first = await repository.getHistoryPage(
       userId: 'a',
@@ -112,8 +111,10 @@ void main() {
       record(id: 'f2', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
       record(id: 'f3', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 5, 11), status: QazaStatus.pending),
       record(id: 'z1', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
-      record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
     ]);
+    await repository.addRecord(
+      record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 5, 10), status: QazaStatus.completed),
+    );
 
     final page = await repository.getHistoryPage(
       userId: 'a',
@@ -134,8 +135,10 @@ void main() {
       record(id: 'f2', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 2), status: QazaStatus.completed),
       record(id: 'z1', userId: 'a', prayer: PrayerType.zuhr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
       record(id: 'w1', userId: 'a', prayer: PrayerType.witr, date: DateTime(2026, 1, 1)),
-      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
     ]);
+    await repository.addRecord(
+      record(id: 'other', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1), status: QazaStatus.completed),
+    );
 
     final summary = await repository.getProgressSummary(userId: 'a');
     expect(summary.overall.pending, 2);
@@ -148,10 +151,12 @@ void main() {
   });
 
   test('completion is transactional and does not complete another user record', () async {
-    await repository.addRecords([
+    await repository.addRecord(
       record(id: 'a1', userId: 'a', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
+    );
+    await repository.addRecord(
       record(id: 'b1', userId: 'b', prayer: PrayerType.fajr, date: DateTime(2026, 1, 1)),
-    ]);
+    );
 
     await repository.completeRecords(
       userId: 'a',

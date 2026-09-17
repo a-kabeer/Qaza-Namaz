@@ -1,5 +1,5 @@
 name: qaza_namaz
-description: Qaza Namaz ledger with Firebase Authentication and Cloud Firestore persistence.
+description: Qaza Namaz ledger with offline-first Drift/SQLite storage and optional Firebase cloud synchronization.
 publish_to: "none"
 version: 0.2.0+2
 

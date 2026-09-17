@@ -15,7 +15,7 @@ Status: **COMPLETE**
 - Already-prayed is represented separately from already-recorded.
 - Calendar timestamps are normalized before identity comparison.
 
-### Architecture guardrails
+## Architecture guardrails
 
 - Drift/SQLite remains the persistence source of truth.
 - No SharedPreferences runtime persistence was restored.
@@ -23,6 +23,16 @@ Status: **COMPLETE**
 - Database-backed aggregate progress remains intact.
 - No new parallel repository or database implementation was introduced.
 
-## Validation note
+## Reconciliation baseline
 
-Regression coverage exists for the eligibility and duplicate-safety edge cases. Final analyzer/test/CI execution remains the final gate.
+PR #16 contains Qaza availability, duplicate-safety, and scalability work. Its original description references the pre-Drift architecture and must not be treated as the current production architecture.
+
+The reconciled implementation follows the current Drift/SQLite data path documented in `docs/DATABASE_ARCHITECTURE.md`.
+
+## Merge readiness
+
+The original PR #16 head is stale/diverged and must not be merged directly. Its required work is represented by the consolidated PR #20 reconciliation branch.
+
+## Validation
+
+Regression coverage exists for eligibility, duplicate safety, account isolation, availability, and bounded persistence paths. Final Task 13 CI validation is complete on the reconciled PR #20 branch.
