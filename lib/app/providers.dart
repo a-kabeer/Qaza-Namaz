@@ -1,16 +1,6 @@
 // Centralized application state.
 //
-// Composition root for the Qaza Namaz app. Screens read what they need from
-// these providers instead of receiving repositories, services and user ids
-// through widget constructors, so swapping an implementation is a single
-// override in one place.
-//
-// Layering, outermost first:
-//   1. Infrastructure : Firebase handles, auth, local cache, connectivity.
-//   2. Repositories   : offline-first Qaza store wrapped around Firestore.
-//   3. Domain         : QazaService.
-//   4. Session        : signed-in account and active Firebase UID.
-//   5. Derived views  : records, progress and history for the active account.
+// Composition root for the Qaza Namaz app.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -21,8 +11,8 @@ import '../core/theme/app_theme.dart';
 import '../data/auth/firebase_auth_repository.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/database/app_database.dart';
+import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/qaza_local_store.dart';
-import '../data/local/shared_preferences_qaza_local_store.dart';
 import '../data/repositories/firestore_qaza_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
 import '../data/sync/sync_state.dart';
@@ -34,17 +24,19 @@ import '../domain/services/qaza_service.dart';
 
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 final authRepositoryProvider = Provider<AuthRepository>((ref) => FirebaseAuthRepository());
-final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) => SharedPreferencesQazaLocalStore());
 
-/// Drift database lifecycle provider.
-///
-/// Part 1 introduces the database without switching the Qaza repository yet.
-/// The current SharedPreferences store remains the active local implementation
-/// until the later migration/integration parts are completed and verified.
+/// Drift database lifecycle provider. The same database instance is shared by
+/// the local store and the future repository/database layers.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
   ref.onDispose(database.close);
   return database;
+});
+
+/// Transitional store: Qaza records remain in SharedPreferences until Part 6,
+/// while the synchronization outbox is already durable in SQLite.
+final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
+  return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
 });
 
 final connectivityChangesProvider = Provider<Stream<bool>>((ref) => Connectivity().onConnectivityChanged.map((results) => results.any((r) => r != ConnectivityResult.none)));
@@ -86,40 +78,20 @@ class QazaRecordsNotifier extends AsyncNotifier<List<QazaRecord>> {
     state = await AsyncValue.guard(() => ref.read(qazaServiceProvider).getRecords(userId: userId));
   }
 
-  /// Completes the oldest pending record and updates the visible ledger
-  /// immediately. The repository is offline-first, so the next record can be
-  /// shown without waiting for a network refresh.
   Future<bool> completeOldestPending(PrayerType prayerType) async {
     final userId = ref.read(activeUserIdProvider);
     final records = state.valueOrNull;
     if (userId == null || records == null) return false;
-
-    final pending = records
-        .where((record) => record.prayerType == prayerType && record.status == QazaStatus.pending)
-        .toList()
-      ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    final pending = records.where((record) => record.prayerType == prayerType && record.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate));
     if (pending.isEmpty) return false;
-
     final target = pending.first;
     final completedAt = DateTime.now();
-    await ref.read(qazaServiceProvider).completeRecord(
-          userId: userId,
-          recordId: target.id,
-          completedAt: completedAt,
-        );
-
+    await ref.read(qazaServiceProvider).completeRecord(userId: userId, recordId: target.id, completedAt: completedAt);
     final latest = state.valueOrNull;
     if (latest != null) {
       state = AsyncData([
         for (final record in latest)
-          if (record.id == target.id)
-            record.copyWith(
-              status: QazaStatus.completed,
-              completedAt: completedAt,
-              updatedAt: completedAt,
-            )
-          else
-            record,
+          if (record.id == target.id) record.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt) else record,
       ]);
     }
     return true;
