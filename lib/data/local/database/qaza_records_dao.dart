@@ -24,8 +24,16 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
-  Future<List<QazaRecord>> getAll({required String userId}) =>
-      getPage(userId: userId, limit: maxPageSize);
+  Future<List<QazaRecord>> getAll({required String userId}) async {
+    final records = <QazaRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await getPage(userId: userId, limit: maxPageSize, offset: offset);
+      records.addAll(page);
+      if (page.length < maxPageSize) return records;
+      offset += page.length;
+    }
+  }
 
   Future<List<QazaRecord>> getPage({
     required String userId,
@@ -85,7 +93,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
-  Future<bool> updateRecord(QazaRecord record) => update(qazaRecords).replace(record);
+  Future<bool> updateRecord(QazaRecordsCompanion record) => update(qazaRecords).replace(record);
 
   Future<int> deleteById({required String userId, required String id}) =>
       (delete(qazaRecords)..where((r) => r.userId.equals(userId) & r.id.equals(id))).go();
