@@ -31,7 +31,7 @@ class QazaService {
     final normalizedDates = dates.map(QazaDate.normalize).toSet(); final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
     final now = DateTime.now();
-    await repository.addRecords([for (final date in normalizedDates) for (final prayerType in selectedPrayers QazaRecord(id: '${userId}_${prayerType.name}_${QazaDate.key(date)}', userId: userId, prayerType: prayerType, originalDate: date, status: QazaStatus.pending, createdAt: now, updatedAt: now)]);
+    await repository.addRecords([for (final date in normalizedDates) for (final prayerType in selectedPrayers) QazaRecord(id: '${userId}_${prayerType.name}_${QazaDate.key(date)}', userId: userId, prayerType: prayerType, originalDate: date, status: QazaStatus.pending, createdAt: now, updatedAt: now)]);
   }
 
   Future<bool> completeOldestPending({required String userId, required PrayerType prayerType, DateTime? completedAt}) async {
