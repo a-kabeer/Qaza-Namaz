@@ -120,12 +120,16 @@ abstract interface class QazaLocalStore {
     DateTime? afterOriginalDate,
     String? afterId,
   }) async {
+    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
+    if ((afterOriginalDate == null) != (afterId == null)) {
+      throw ArgumentError('afterOriginalDate and afterId must be provided together');
+    }
     final snapshot = await load();
-    var records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
-    records = records
-        .where((r) => prayerType == null || r.prayerType == prayerType)
-        .where((r) => status == null || r.status == status)
-        .toList()
+    var records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    )
+      ..removeWhere((record) => prayerType != null && record.prayerType != prayerType)
+      ..removeWhere((record) => status != null && record.status != status)
       ..sort((a, b) {
         final date = a.originalDate.compareTo(b.originalDate);
         return date != 0 ? date : a.id.compareTo(b.id);
@@ -133,10 +137,10 @@ abstract interface class QazaLocalStore {
     if (afterOriginalDate != null && afterId != null) {
       records = records
           .where(
-            (r) =>
-                r.originalDate.isAfter(afterOriginalDate) ||
-                (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
-                    r.id.compareTo(afterId) > 0),
+            (record) =>
+                record.originalDate.isAfter(afterOriginalDate) ||
+                (record.originalDate.isAtSameMomentAs(afterOriginalDate) &&
+                    record.id.compareTo(afterId) > 0),
           )
           .toList();
     }
@@ -157,14 +161,21 @@ abstract interface class QazaLocalStore {
     DateTime? beforeOriginalDate,
     String? beforeId,
   }) async {
+    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError('beforeOriginalDate and beforeId must be provided together');
+    }
+    if (from != null && to != null && from.isAfter(to)) {
+      throw ArgumentError('from must be <= to');
+    }
     final snapshot = await load();
-    var records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
-    records = records
-        .where((r) => prayerType == null || r.prayerType == prayerType)
-        .where((r) => status == null || r.status == status)
-        .where((r) => from == null || !r.originalDate.isBefore(from))
-        .where((r) => to == null || !r.originalDate.isAfter(to))
-        .toList()
+    var records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    )
+      ..removeWhere((record) => prayerType != null && record.prayerType != prayerType)
+      ..removeWhere((record) => status != null && record.status != status)
+      ..removeWhere((record) => from != null && record.originalDate.isBefore(from))
+      ..removeWhere((record) => to != null && record.originalDate.isAfter(to))
       ..sort((a, b) {
         final date = b.originalDate.compareTo(a.originalDate);
         return date != 0 ? date : b.id.compareTo(a.id);
@@ -172,10 +183,10 @@ abstract interface class QazaLocalStore {
     if (beforeOriginalDate != null && beforeId != null) {
       records = records
           .where(
-            (r) =>
-                r.originalDate.isBefore(beforeOriginalDate) ||
-                (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
-                    r.id.compareTo(beforeId) < 0),
+            (record) =>
+                record.originalDate.isBefore(beforeOriginalDate) ||
+                (record.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
+                    record.id.compareTo(beforeId) < 0),
           )
           .toList();
     }
@@ -186,7 +197,12 @@ abstract interface class QazaLocalStore {
     );
   }
 
-  Future<QazaProgressSummary> getProgressSummary({required String userId});
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    final snapshot = await load();
+    return QazaProgressSummary.fromRecords(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+  }
 
   Future<void> saveRecordsAndOutbox(
     String userId,
