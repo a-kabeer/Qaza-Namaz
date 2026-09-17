@@ -87,7 +87,7 @@ The rename is terminology/entry-point only in this part. Home visual redesign an
 
 ### Completed
 - Reused the existing `NotificationsScreen` as the Home header notification destination.
-- Reused the existing `AccountScreen` as the Home header profile destination.
+- Reused the existing `AccountScreen` as the Home profile destination.
 - Added accessible `Notifications` and `Profile` tooltips/actions to the Home header.
 - Removed the permanent refresh/sync header action to keep the header focused on account-level utilities.
 - Preserved pull-to-refresh for ledger refresh inside the Home content.
