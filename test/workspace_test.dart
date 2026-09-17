@@ -31,7 +31,7 @@ void main() {
   }
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
@@ -39,7 +39,7 @@ void main() {
     await revealPrayerLedger(tester);
     expect(find.text('Prayer ledger'), findsOneWidget);
   });
-  testWidgets('Dashboard derives live totals from individual records', (tester) async {
+  testWidgets('Home derives live totals from individual records', (tester) async {
     final repository = InMemoryQazaRepository();
     final now = DateTime(2026, 9, 13);
     await repository.addRecords([
@@ -67,7 +67,7 @@ void main() {
     expect(find.text('Account'), findsWidgets);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
-  testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
+  testWidgets('Back from a non-root tab returns to Home instead of exiting', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Logs').first);
     await _pumpNavigation(tester);
