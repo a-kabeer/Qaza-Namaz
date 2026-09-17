@@ -51,7 +51,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('10 Sep 2026'), findsOneWidget);
-    expect(find.text('Fajr Qaza completed • next oldest is ready.'), findsOneWidget);
+    expect(find.text('Fajr Qaza completed • 1 remaining.'), findsOneWidget);
 
     final records = await repository.getRecords(userId: 'test-user');
     expect(records.singleWhere((r) => r.id == 'fajr_old').status, QazaStatus.completed);
