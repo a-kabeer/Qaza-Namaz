@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/local/shared_preferences_qaza_local_store.dart';
 import 'package:qaza_namaz/data/migration/shared_preferences_to_drift_migrator.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
@@ -54,7 +53,7 @@ void main() {
       completedAt: DateTime.utc(2026, 1, 1),
     );
     await preferences.setString(
-      SharedPreferencesQazaLocalStore.defaultStorageKey,
+      SharedPreferencesToDriftMigrator.legacyStorageKey,
       jsonEncode({
         'schemaVersion': 1,
         'recordsByUser': {
@@ -101,7 +100,7 @@ void main() {
       completedAt: DateTime.utc(2026, 2, 1),
     );
     await preferences.setString(
-      SharedPreferencesQazaLocalStore.defaultStorageKey,
+      SharedPreferencesToDriftMigrator.legacyStorageKey,
       jsonEncode({
         'schemaVersion': 1,
         'recordsByUser': {
@@ -130,7 +129,7 @@ void main() {
   test('does not mark migration complete when legacy data is invalid', () async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(
-      SharedPreferencesQazaLocalStore.defaultStorageKey,
+      SharedPreferencesToDriftMigrator.legacyStorageKey,
       '{not-valid-json',
     );
 
@@ -156,7 +155,7 @@ void main() {
       date: DateTime.utc(2025, 4, 1),
     );
     await preferences.setString(
-      SharedPreferencesQazaLocalStore.defaultStorageKey,
+      SharedPreferencesToDriftMigrator.legacyStorageKey,
       jsonEncode({
         'schemaVersion': 1,
         'recordsByUser': {'user-a': [item.toJson()]},
