@@ -14,7 +14,7 @@ CI/build validation is intentionally deferred until **Part 13**. Parts 1–12 ar
 - Part 4 — ✅ COMPLETE — Repository integration
 - Part 5 — ✅ COMPLETE — Persistent sync/outbox
 - Part 6 — ✅ COMPLETE — Authentication lifecycle and per-user isolation
-- Part 7 — ⏳ PENDING — Production read-path migration / remove legacy full-ledger dependencies
+- Part 7 — ✅ COMPLETE — Production bounded read paths
 - Part 8 — ⏳ PENDING — Mutation and transaction hardening
 - Part 9 — ⏳ PENDING — Large-dataset Home/Logs performance integration
 - Part 10 — ⏳ PENDING — Migration cleanup and legacy-store retirement
@@ -22,22 +22,23 @@ CI/build validation is intentionally deferred until **Part 13**. Parts 1–12 ar
 - Part 12 — ⏳ PENDING — Final application-level regression audit
 - Part 13 — ⏳ PENDING — Full GitHub CI/build validation and completion gate
 
-## Part 6 — Authentication lifecycle and per-user isolation
+## Part 7 — Production bounded read paths
 
 Completed on `task-db-1-drift-foundation`.
 
-- Added an authentication-session generation boundary to the offline-first repository.
-- Account switches invalidate stale asynchronous reads, writes, and synchronization work.
-- Sign-out clears the in-memory ledger, outbox, last-sync state, and active UID.
-- Local reads remain explicitly UID-scoped.
-- Local writes reject records whose `userId` does not match the active session.
-- Outbox processing validates operation ownership before remote replay.
-- Remote pull validates every returned record against the active Firebase UID.
-- Added regression tests for account switching, sign-out isolation, cross-account writes, and lazy authentication startup.
+- Added repository-level `QazaPage` keyset pagination with UID, prayer, and status filters.
+- Added repository-level oldest-pending lookup so completion flows do not need to scan the ledger.
+- Drift repository now uses the existing indexed keyset DAO for bounded reads; its legacy `getRecords()` compatibility API is implemented by controlled page iteration rather than SQL offsets.
+- Offline-first repository routes normal paginated, oldest-pending, history, and aggregate reads directly to the UID-scoped local store without materializing the legacy snapshot.
+- Qaza service progress calculations now use database-backed aggregate summaries.
+- Selected-record completion validation iterates bounded pending pages instead of loading the complete ledger in one request.
+- Namaz-wise pending-date UI now loads 50 records at a time with explicit Load more behavior, preventing 1,000+ pending records from being rendered at once.
+- Firestore repository received matching bounded page/oldest-pending contracts for repository parity.
+- Added regression coverage for 1,001-record keyset paging, oldest-pending lookup, service delegation, and aggregate progress.
 
-## Important remaining migration risk
+## Legacy compatibility boundary
 
-`DriftQazaLocalStore.load()` is retained as a compatibility/legacy full-snapshot path. It still materializes all users when called. Normal paginated/history/progress paths already use UID-scoped Drift queries, but Part 7 must remove remaining production dependencies on this full-ledger compatibility path before the migration can be considered complete.
+`DriftQazaLocalStore.load()` remains available only for legacy full-snapshot compatibility and explicit legacy APIs. New production scalable read paths must use `getPage`, `getHistoryPage`, `getOldestPending`, or `getProgressSummary`. Part 10 will retire the remaining compatibility path after migration callers are fully removed.
 
 ## Validation policy
 
