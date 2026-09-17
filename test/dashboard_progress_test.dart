@@ -93,7 +93,14 @@ void main() {
     expect(find.text('2 pending'), findsWidgets);
     expect(find.text('1 fulfilled'), findsOneWidget);
     expect(find.text('3'), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('1 pending • 1 completed'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
+
     expect(find.text('1 pending'), findsWidgets);
     expect(repository.progressSummaryCalls, greaterThanOrEqualTo(1));
     expect(repository.getRecordsCalled, isFalse);
