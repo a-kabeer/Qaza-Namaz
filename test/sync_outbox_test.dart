@@ -8,6 +8,8 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late AppDatabase database;
 
   setUp(() {

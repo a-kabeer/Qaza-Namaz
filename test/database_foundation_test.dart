@@ -10,7 +10,7 @@ void main() {
     addTearDown(database.close);
 
     expect(database.schemaVersion, 2);
-    expect(database.allTables, isEmpty);
+    expect(database.allTables, hasLength(2));
 
     final rows = await database.customSelect('PRAGMA user_version').getSingle();
     expect(rows.read<int>('user_version'), 2);
