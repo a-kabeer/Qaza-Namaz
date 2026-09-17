@@ -4,7 +4,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 
 /// Ephemeral QazaLocalStore used by tests as a deterministic local-store double.
-class InMemoryQazaLocalStore implements QazaLocalStore {
+class InMemoryQazaLocalStore extends QazaLocalStore {
   final Map<String, List<QazaRecord>> _recordsByUser = {};
   final Map<String, List<PendingSyncOp>> _outboxByUser = {};
   final Map<String, DateTime> _lastSyncByUser = {};
@@ -61,7 +61,7 @@ class InMemoryQazaLocalStore implements QazaLocalStore {
       });
 
     final hasMore = records.length > limit;
-    return LocalQazaHistoryPage(
+    return QazaHistoryPage(
       records: (hasMore ? records.take(limit) : records).toList(growable: false),
       hasMore: hasMore,
     );
