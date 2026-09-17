@@ -24,7 +24,7 @@ SharedPreferences → Drift/SQLite production migration — Part 7 complete
 ## Part 7 Summary
 - Added repository-level keyset pagination and oldest-pending contracts.
 - Routed OfflineFirst bounded reads directly to the UID-scoped local store.
-- Reworked Drift full-ledger compatibility reads to iterate keyset pages instead of offsets.
+- Reworked Drift compatibility reads to iterate keyset pages instead of offsets.
 - Moved service progress and oldest-pending operations to bounded/database-backed paths.
 - Updated Namaz-wise pending dates to load 50 records per page with Load more.
 - Added bounded-read regression coverage including 1,001-record datasets.
