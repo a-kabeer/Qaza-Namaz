@@ -79,6 +79,14 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   @override
+  Future<QazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
+    if (userId != _activeUserId) return const QazaHistoryPage(records: [], hasMore: false);
+    return _toHistoryPage(await _localStore.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId));
+  }
+
+  QazaHistoryPage _toHistoryPage(LocalQazaHistoryPage page) => QazaHistoryPage(records: page.records, hasMore: page.hasMore);
+
+  @override
   Future<void> addRecord(QazaRecord record) async {
     if (record.userId != _activeUserId) throw StateError('Cannot add a Qaza record for a non-active user.');
     await addRecords([record]);
