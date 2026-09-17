@@ -26,7 +26,7 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(find.text('Prayer History').last, findsOneWidget);
     expect(find.text('Regular prayer start'), findsOneWidget);
     expect(find.textContaining('Estimated prayer-start date:'), findsOneWidget);
     expect(find.text('Qaza period'), findsOneWidget);
