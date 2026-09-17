@@ -48,11 +48,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    final fulfilled = find.byType(StatusChip, skipOffstage: false).evaluate().where((element) {
-      final chip = element.widget as StatusChip;
-      return chip.label == '1 fulfilled';
-    });
-    expect(fulfilled, hasLength(1));
+    expect(find.text('1 fulfilled', skipOffstage: false), findsOneWidget);
     expect(find.text('2 pending', skipOffstage: false), findsWidgets);
     expect(find.text('3', skipOffstage: false), findsWidgets);
 
