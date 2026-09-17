@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../local/database/app_database.dart';
-import '../local/database/tables/qaza_records.dart';
 
 /// One-time migration from the legacy SharedPreferences cache to Drift/SQLite.
 ///
