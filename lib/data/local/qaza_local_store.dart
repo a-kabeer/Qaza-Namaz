@@ -106,7 +106,11 @@ class LocalQazaHistoryPage {
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
-abstract interface class QazaLocalStore {
+/// Shared local-store contract with safe default implementations for
+/// pagination, history pagination, progress aggregation, and atomicity fallback.
+/// Concrete stores extend this class when they only need to override storage
+/// primitives, ensuring the default methods are actually inherited.
+abstract class QazaLocalStore {
   Future<OfflineCacheSnapshot> load();
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
