@@ -22,6 +22,23 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+          await customStatement(
+            'CREATE INDEX qaza_records_user_date_idx '
+            'ON qaza_records (user_id, original_date)',
+          );
+          await customStatement(
+            'CREATE INDEX qaza_records_user_prayer_date_idx '
+            'ON qaza_records (user_id, prayer_type, original_date)',
+          );
+          await customStatement(
+            'CREATE INDEX qaza_records_user_prayer_status_date_idx '
+            'ON qaza_records '
+            '(user_id, prayer_type, status, original_date)',
+          );
+          await customStatement(
+            'CREATE INDEX qaza_records_user_status_completed_idx '
+            'ON qaza_records (user_id, status, completed_at)',
+          );
         },
       );
 }
