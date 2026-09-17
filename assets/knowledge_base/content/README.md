@@ -20,7 +20,7 @@ The machine-readable contract is `content.schema.json`.
 Each article must provide:
 
 - `id`: stable kebab-case identifier; do not change it when editing an existing article.
-- `slug`: stable kebab-case URL/navigation identifier.
+- `slug`: stable kebab-case navigation identifier.
 - `category`: `masail` or `mugalat`.
 - `sortOrder`: non-negative display order within the category.
 - `title`: object containing non-empty `ur` and `en` strings.
