@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -22,18 +23,46 @@ class SharedPreferencesToDriftMigrator {
   static const int migrationVersion = 1;
   static const String legacyStorageKey = 'qaza_offline_cache_v1';
   static const String migrationKey = 'qaza_drift_migration_v1_complete';
+  static const String migrationVersionKey = '${migrationKey}_version';
 
   final AppDatabase _database;
   final SharedPreferences _preferences;
   final String storageKey;
 
-  Future<MigrationResult> migrate() async {
-    if (_preferences.getBool(migrationKey) == true) {
+  Future<void> _migrationLock = Future<void>.value();
+
+  /// Serializes concurrent callers in the same application process.
+  ///
+  /// This prevents two bootstrap paths from importing the same legacy
+  /// snapshot simultaneously. The completion marker is still written only
+  /// after the database transaction and verification succeed.
+  Future<MigrationResult> migrate() {
+    final result = _migrationLock.then((_) => _migrateOnce());
+    _migrationLock = result.then<void>((_) {}, onError: (_, __) {});
+    return result;
+  }
+
+  Future<MigrationResult> _migrateOnce() async {
+    final marker = _preferences.getBool(migrationKey) == true;
+    final storedVersion = _preferences.getInt(migrationVersionKey);
+    if (marker) {
+      if (storedVersion != migrationVersion) {
+        throw StateError(
+          'Unsupported Qaza migration marker version: '
+          '${storedVersion ?? 'missing'} (expected $migrationVersion).',
+        );
+      }
       return const MigrationResult(alreadyComplete: true);
     }
 
+    if (storedVersion != null && storedVersion > migrationVersion) {
+      throw StateError(
+        'Qaza migration is newer than this app: version $storedVersion.',
+      );
+    }
+
     final raw = _preferences.getString(storageKey);
-    if (raw == null || raw.isEmpty) {
+    if (raw == null || raw.trim().isEmpty) {
       await _markComplete();
       return const MigrationResult();
     }
@@ -46,6 +75,13 @@ class SharedPreferencesToDriftMigrator {
       normalized[entry.key] = _normalizeRecords(entry.key, entry.value);
     }
 
+    final expectedCount = normalized.values.fold<int>(
+      0,
+      (sum, records) => sum + records.length,
+    );
+
+    // All inserts/conflict checks happen atomically. A conflict or malformed
+    // record therefore cannot leave a partially migrated database behind.
     await _database.transaction(() async {
       for (final entry in normalized.entries) {
         for (final record in entry.value) {
@@ -65,14 +101,20 @@ class SharedPreferencesToDriftMigrator {
       }
     });
 
+    // Verify every normalized user bucket, not just the aggregate total. This
+    // prevents a user-isolation error from being hidden by another user's rows.
     var targetCount = 0;
-    for (final userId in normalized.keys) {
-      targetCount += await _database.qazaRecordsDao.count(userId: userId);
+    for (final entry in normalized.entries) {
+      final count = await _database.qazaRecordsDao.count(userId: entry.key);
+      if (count < entry.value.length) {
+        throw StateError(
+          'Qaza migration verification failed for user ${entry.key}: '
+          'expected at least ${entry.value.length} records but found $count.',
+        );
+      }
+      targetCount += count;
     }
-    final expectedCount = normalized.values.fold<int>(
-      0,
-      (sum, records) => sum + records.length,
-    );
+
     if (targetCount < expectedCount) {
       throw StateError(
         'Qaza migration verification failed: expected at least '
@@ -89,8 +131,15 @@ class SharedPreferencesToDriftMigrator {
   }
 
   Future<void> _markComplete() async {
-    await _preferences.setInt('${migrationKey}_version', migrationVersion);
-    await _preferences.setBool(migrationKey, true);
+    final versionWritten =
+        await _preferences.setInt(migrationVersionKey, migrationVersion);
+    if (!versionWritten) {
+      throw StateError('Could not persist Qaza migration version marker.');
+    }
+    final markerWritten = await _preferences.setBool(migrationKey, true);
+    if (!markerWritten) {
+      throw StateError('Could not persist Qaza migration completion marker.');
+    }
   }
 
   List<QazaRecord> _normalizeRecords(String userId, List<QazaRecord> records) {
@@ -151,13 +200,35 @@ class SharedPreferencesToDriftMigrator {
 
   OfflineSnapshot _decode(String raw) {
     try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Root value must be a JSON object.');
+      }
+      final rawUsers = decoded['recordsByUser'];
+      if (rawUsers == null) {
+        return const OfflineSnapshot(recordsByUser: {});
+      }
+      if (rawUsers is! Map<String, dynamic>) {
+        throw const FormatException('recordsByUser must be a JSON object.');
+      }
+
       final recordsByUser = <String, List<QazaRecord>>{};
-      final rawUsers = decoded['recordsByUser'] as Map<String, dynamic>? ??
-          const <String, dynamic>{};
       for (final entry in rawUsers.entries) {
+        if (entry.key.trim().isEmpty) {
+          throw const FormatException('A user ID cannot be empty.');
+        }
+        if (entry.value is! List<dynamic>) {
+          throw FormatException(
+            'recordsByUser.${entry.key} must be a JSON array.',
+          );
+        }
         recordsByUser[entry.key] = (entry.value as List<dynamic>)
-            .map((item) => QazaRecord.fromJson(item as Map<String, dynamic>))
+            .map((item) {
+              if (item is! Map<String, dynamic>) {
+                throw const FormatException('A Qaza record must be a JSON object.');
+              }
+              return QazaRecord.fromJson(item);
+            })
             .toList(growable: false);
       }
       return OfflineSnapshot(recordsByUser: recordsByUser);
