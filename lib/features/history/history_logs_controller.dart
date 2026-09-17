@@ -82,8 +82,8 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
       if (previous == null) {
         state = AsyncError(error, stackTrace);
       } else {
-        state = AsyncValue.error(error, stackTrace)
-            .copyWithPrevious(AsyncData(previous));
+        state = AsyncValue<List<QazaRecord>>.error(error, stackTrace)
+            .copyWithPrevious(AsyncData<List<QazaRecord>>(previous));
       }
     }
   }
