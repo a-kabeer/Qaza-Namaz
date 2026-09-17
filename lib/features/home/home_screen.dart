@@ -35,7 +35,6 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final ledger = ref.watch(qazaRecordsProvider);
     final records = ref.watch(loadedRecordsProvider);
     final progress = ref.watch(overallProgressProvider);
     final pending = progress.pending;
@@ -151,8 +150,9 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildSetupHome(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final primary = HomeStateResolver.primaryAction(HomeLedgerState.setupRequired);
-    final secondary = HomeStateResolver.secondaryAction(HomeLedgerState.setupRequired);
+    final state = HomeLedgerState.setupRequired;
+    final primary = HomeStateResolver.primaryAction(state);
+    final secondary = HomeStateResolver.secondaryAction(state);
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
