@@ -4,115 +4,130 @@ import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
 import 'database/app_database.dart';
+import 'database/tables/qaza_records.dart';
 import 'database/tables/sync_outbox.dart';
 import 'qaza_local_store.dart';
-import 'shared_preferences_qaza_local_store.dart';
 
-/// Transitional local store used during the database migration.
+/// SQLite-backed local store used by the production offline-first repository.
 ///
-/// Qaza records remain in the existing SharedPreferences cache until Part 6,
-/// while the synchronization outbox is durable in SQLite. Existing legacy
-/// outbox entries are imported on first load so queued work cannot disappear
-/// when the provider switches to this store.
+/// Records and outbox entries are normalized and user-scoped. Legacy
+/// SharedPreferences data is migrated before this store becomes active.
 class DriftQazaLocalStore implements QazaLocalStore {
-  DriftQazaLocalStore({
-    required AppDatabase database,
-    SharedPreferencesQazaLocalStore? legacyStore,
-  })  : _database = database,
-        _legacyStore = legacyStore ?? SharedPreferencesQazaLocalStore();
+  DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
-  final SharedPreferencesQazaLocalStore _legacyStore;
 
   @override
   Future<OfflineCacheSnapshot> load() async {
-    final legacy = await _legacyStore.load();
+    final users = await _database.qazaRecordsDao.userIds();
+    final outboxUsers = await _database.syncOutboxDao.userIds();
+    final allUsers = {...users, ...outboxUsers};
+    final recordsByUser = <String, List<QazaRecord>>{};
     final outboxByUser = <String, List<PendingSyncOp>>{};
-    final users = legacy.recordsByUser.keys
-        .followedBy(legacy.outboxByUser.keys)
-        .toSet();
 
-    for (final userId in users) {
-      final legacyOps = legacy.outboxByUser[userId] ?? const <PendingSyncOp>[];
-      final existing = await _database.syncOutboxDao.getPending(userId: userId);
-
-      // Import the legacy queue only when SQLite does not already contain it.
-      // This makes the provider transition one-way without duplicating rows.
-      if (existing.isEmpty && legacyOps.isNotEmpty) {
-        await _database.syncOutboxDao.putAll(
-          legacyOps.map(_toCompanion).toList(growable: false),
-        );
-      }
-
-      final rows = existing.isEmpty && legacyOps.isNotEmpty
-          ? await _database.syncOutboxDao.getPending(userId: userId)
-          : existing;
-      outboxByUser[userId] = rows.map(_toDomain).toList(growable: false);
+    for (final userId in allUsers) {
+      final records = await _database.qazaRecordsDao.getAll(userId: userId);
+      final ops = await _database.syncOutboxDao.getPending(userId: userId);
+      recordsByUser[userId] = records.map(_toDomain).toList(growable: false);
+      outboxByUser[userId] = ops.map(_toDomainOp).toList(growable: false);
     }
 
     return OfflineCacheSnapshot(
-      recordsByUser: legacy.recordsByUser,
+      recordsByUser: recordsByUser,
       outboxByUser: outboxByUser,
-      lastSyncByUser: legacy.lastSyncByUser,
     );
   }
 
   @override
-  Future<void> saveRecords(String userId, List<QazaRecord> records) {
-    return _legacyStore.saveRecords(userId, records);
+  Future<void> saveRecords(String userId, List<QazaRecord> records) async {
+    await _database.transaction(() async {
+      await _database.qazaRecordsDao.replaceUserRecords(
+        userId: userId,
+        records: records.map(_toCompanion).toList(growable: false),
+      );
+    });
   }
 
   @override
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
-    await _database.syncOutboxDao.removeAll(userId: userId);
-    if (ops.isEmpty) return;
-    await _database.syncOutboxDao.putAll(
-      ops.map(_toCompanion).toList(growable: false),
-    );
+    await _database.transaction(() async {
+      await _database.syncOutboxDao.removeAll(userId: userId);
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
+    });
   }
 
   @override
-  Future<void> saveLastSync(String userId, DateTime? lastSync) {
-    return _legacyStore.saveLastSync(userId, lastSync);
+  Future<void> saveRecordsAndOutbox(
+    String userId,
+    List<QazaRecord> records,
+    List<PendingSyncOp> ops,
+  ) async {
+    await _database.transaction(() async {
+      await _database.qazaRecordsDao.replaceUserRecords(
+        userId: userId,
+        records: records.map(_toCompanion).toList(growable: false),
+      );
+      await _database.syncOutboxDao.removeAll(userId: userId);
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
+    });
   }
 
-  PendingSyncOp _toDomain(SyncOutboxData row) {
-    return PendingSyncOp(
-      id: row.id,
-      type: SyncOpType.values.firstWhere((value) => value.name == row.type),
-      userId: row.userId,
-      queuedAt: row.queuedAt,
-      record: row.recordJson == null
-          ? null
-          : QazaRecord.fromJson(
-              jsonDecode(row.recordJson!) as Map<String, dynamic>,
-            ),
-      targetRecordId: row.targetRecordId,
-      completedAt: row.completedAt,
-      attempts: row.attempts,
-      lastError: row.lastError,
-    );
+  @override
+  Future<void> saveLastSync(String userId, DateTime? lastSync) async {
+    // Sync metadata is maintained by the repository until its dedicated
+    // metadata table is introduced in the schema-versioning phase.
+    // No SharedPreferences writes occur on the production path.
   }
 
-  SyncOutboxCompanion _toCompanion(PendingSyncOp op) {
-    return SyncOutboxCompanion.insert(
-      id: op.id,
-      userId: op.userId,
-      type: op.type.name,
-      queuedAt: op.queuedAt,
-      recordJson: op.record == null
-          ? const Value.absent()
-          : Value(jsonEncode(op.record!.toJson())),
-      targetRecordId: op.targetRecordId == null
-          ? const Value.absent()
-          : Value(op.targetRecordId),
-      completedAt: op.completedAt == null
-          ? const Value.absent()
-          : Value(op.completedAt),
-      attempts: Value(op.attempts),
-      lastError: op.lastError == null
-          ? const Value.absent()
-          : Value(op.lastError),
-    );
-  }
+  QazaRecord _toDomain(dynamic row) => QazaRecord(
+        id: row.id as String,
+        userId: row.userId as String,
+        prayerType: PrayerType.values.firstWhere((v) => v.name == row.prayerType),
+        originalDate: row.originalDate as DateTime,
+        status: QazaStatus.values.firstWhere((v) => v.name == row.status),
+        completedAt: row.completedAt as DateTime?,
+        createdAt: row.createdAt as DateTime,
+        updatedAt: row.updatedAt as DateTime,
+      );
+
+  PendingSyncOp _toDomainOp(dynamic row) => PendingSyncOp(
+        id: row.id as String,
+        type: SyncOpType.values.firstWhere((v) => v.name == row.type),
+        userId: row.userId as String,
+        queuedAt: row.queuedAt as DateTime,
+        record: row.recordJson == null
+            ? null
+            : QazaRecord.fromJson(jsonDecode(row.recordJson as String) as Map<String, dynamic>),
+        targetRecordId: row.targetRecordId as String?,
+        completedAt: row.completedAt as DateTime?,
+        attempts: row.attempts as int,
+        lastError: row.lastError as String?,
+      );
+
+  QazaRecordsCompanion _toCompanion(QazaRecord record) => QazaRecordsCompanion.insert(
+        id: record.id,
+        userId: record.userId,
+        prayerType: record.prayerType.name,
+        originalDate: record.originalDate,
+        status: record.status.name,
+        completedAt: record.completedAt == null ? const Value.absent() : Value(record.completedAt),
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      );
+
+  SyncOutboxCompanion _toOpCompanion(PendingSyncOp op) => SyncOutboxCompanion.insert(
+        id: op.id,
+        userId: op.userId,
+        type: op.type.name,
+        queuedAt: op.queuedAt,
+        recordJson: op.record == null ? const Value.absent() : Value(jsonEncode(op.record!.toJson())),
+        targetRecordId: op.targetRecordId == null ? const Value.absent() : Value(op.targetRecordId),
+        completedAt: op.completedAt == null ? const Value.absent() : Value(op.completedAt),
+        attempts: Value(op.attempts),
+        lastError: op.lastError == null ? const Value.absent() : Value(op.lastError),
+      );
 }
