@@ -37,6 +37,7 @@ Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
 Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
 Future<void> _scrollToNextPrayers(WidgetTester tester) => _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
 Future<void> _scrollToReview(WidgetTester tester) => _scrollToFinder(tester, find.text('Review & Create Records'));
+Future<void> _scrollToPrayer(WidgetTester tester, String prayer) => _scrollToFinder(tester, find.text(prayer));
 
 void main() {
   test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
@@ -114,6 +115,7 @@ void main() {
     await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
+    await _scrollToPrayer(tester, 'Maghrib');
     await tester.tap(find.text('Maghrib'));
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
@@ -143,6 +145,7 @@ void main() {
     await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
+    await _scrollToPrayer(tester, 'Fajr');
     await tester.tap(find.text('Fajr'));
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
