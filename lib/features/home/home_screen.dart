@@ -17,6 +17,8 @@ import '../qaza/add_qaza_screen.dart';
 import '../qaza/completion_screen.dart';
 import '../qaza/namaz_wise_screen.dart';
 import '../qaza/pending_dates_screen.dart';
+import '../settings/account_screen.dart';
+import '../settings/notifications_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -43,9 +45,20 @@ class HomeScreen extends ConsumerWidget {
       title: 'Home',
       actions: [
         IconButton(
-          tooltip: 'Refresh ledger',
-          onPressed: ledger.isLoading ? null : () => ref.read(qazaRecordsProvider.notifier).refresh(),
-          icon: const Icon(Icons.sync_rounded),
+          tooltip: 'Notifications',
+          onPressed: () => Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+          ),
+          icon: const Icon(Icons.notifications_none_rounded),
+        ),
+        IconButton(
+          tooltip: 'Profile',
+          onPressed: () => Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const AccountScreen()),
+          ),
+          icon: const Icon(Icons.person_outline_rounded),
         ),
       ],
       body: RefreshIndicator(
