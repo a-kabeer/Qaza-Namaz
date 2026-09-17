@@ -49,6 +49,10 @@ Riverpod providers own loading, filtering, searching, selected-article state, an
 
 The feature provides article browsing, category filtering, search, article detail, references, and related-article navigation. UI widgets are reusable and data-driven.
 
+### Performance & accessibility
+
+Article lists use lazy sliver construction so a larger published dataset does not require building every card at once. The repository caches parsed content after the first load. Article cards expose useful semantic labels, and article bodies remain compatible with Flutter text scaling and selectable for easier reading. The UI uses theme-provided colors rather than feature-specific hardcoded colors.
+
 ## Content author workflow
 
 The content author only needs to edit the structured content files. A typical workflow will be:
@@ -152,9 +156,9 @@ Integrated the Knowledge Base into the existing Settings → Prayer area without
 
 ### Part 10 — Performance & Accessibility
 
-Status: PENDING
+Status: COMPLETE
 
-Audit large datasets, lazy rendering, search efficiency, rebuild scope, semantics, text scaling, RTL behavior, and theme contrast.
+Audited the planned 50–60 article workload and retained lazy `SliverList.builder` rendering plus repository caching. Added isolated list-item repaint boundaries, semantic labels, selectable article body text, large-text-scale coverage, and explicit RTL/LTR preservation without introducing feature-specific color tokens.
 
 ### Part 11 — Content QA & Tests
 
