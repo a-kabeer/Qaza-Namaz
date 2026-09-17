@@ -12,9 +12,9 @@ import '../sync/sync_state.dart';
 /// one operation when the store supports transactions; Firestore remains a
 /// background synchronization target.
 ///
-/// The in-memory ledger is deliberately lazy. Authentication/user switching
-/// must not materialize the entire SQLite dataset; legacy full-ledger callers
-/// load it only when they explicitly request that API.
+/// Authentication is an explicit session boundary: every user switch clears
+/// the in-memory ledger/outbox, invalidates in-flight work, and requires all
+/// subsequent reads and writes to match the active Firebase UID.
 class OfflineFirstQazaRepository implements QazaRepository {
   OfflineFirstQazaRepository({required QazaRepository remote, required QazaLocalStore localStore, Stream<bool>? connectivityChanges, DateTime Function()? now})
       : _remote = remote,
@@ -33,6 +33,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   String? _activeUserId;
   bool _isOnline = true;
   bool _loaded = false;
+  int _sessionGeneration = 0;
   final StreamController<SyncState> _stateController = StreamController<SyncState>.broadcast();
   SyncState _state = const SyncState();
   Future<void>? _syncFuture;
@@ -42,6 +43,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
   String? get activeUserId => _activeUserId;
 
   Future<void> setActiveUser(String? userId) async {
+    // Increment first so any operation that resumes after an await from the
+    // previous authentication session can detect that it is stale.
+    final generation = ++_sessionGeneration;
     _activeUserId = null;
     _loaded = false;
     final inflight = _syncFuture;
@@ -52,6 +56,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _records.clear();
     _outbox = [];
     _lastSyncAt = null;
+    // A newer authentication event may have arrived while the previous sync
+    // was being awaited. Do not overwrite that newer session.
+    if (generation != _sessionGeneration) return;
     _activeUserId = userId;
     if (userId == null) {
       _emit(const SyncState());
@@ -60,14 +67,16 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
     // Do not call _ensureLoaded() here. A user switch happens during
     // authentication/startup and must remain O(1) with respect to ledger size.
-    // Full-ledger legacy reads and explicit syncNow() remain lazy entry points.
     _emitPending();
   }
 
   Future<void> _ensureLoaded() async {
     if (_loaded || _activeUserId == null) return;
-    final snapshot = await _localStore.load();
+    final generation = _sessionGeneration;
     final userId = _activeUserId!;
+    final snapshot = await _localStore.load();
+    // Never publish a snapshot loaded for an older authentication session.
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     _records
       ..clear()
       ..addAll({for (final record in snapshot.recordsByUser[userId] ?? const []) record.id: record});
@@ -79,11 +88,11 @@ class OfflineFirstQazaRepository implements QazaRepository {
   @override
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
     if (userId != _activeUserId) return const [];
+    final generation = _sessionGeneration;
     await _ensureLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId) return const [];
     final records = _records.values.where((r) => prayerType == null || r.prayerType == prayerType).where((r) => status == null || r.status == status).toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
-    // This legacy API explicitly asks for the complete in-memory ledger, so it
-    // is also the point at which background synchronization may safely begin.
     unawaited(_syncInBackground());
     return records;
   }
@@ -91,13 +100,19 @@ class OfflineFirstQazaRepository implements QazaRepository {
   @override
   Future<QazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
     if (userId != _activeUserId) return const QazaHistoryPage(records: [], hasMore: false);
-    return _toHistoryPage(await _localStore.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId));
+    final generation = _sessionGeneration;
+    final page = await _localStore.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId);
+    if (generation != _sessionGeneration || userId != _activeUserId) return const QazaHistoryPage(records: [], hasMore: false);
+    return _toHistoryPage(page);
   }
 
   @override
   Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
     if (userId != _activeUserId) return QazaProgressSummary.empty();
-    return _localStore.getProgressSummary(userId: userId);
+    final generation = _sessionGeneration;
+    final summary = await _localStore.getProgressSummary(userId: userId);
+    if (generation != _sessionGeneration || userId != _activeUserId) return QazaProgressSummary.empty();
+    return summary;
   }
 
   QazaHistoryPage _toHistoryPage(LocalQazaHistoryPage page) => QazaHistoryPage(records: page.records, hasMore: page.hasMore);
@@ -113,7 +128,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     if (records.isEmpty) return;
     final userId = _activeUserId;
     if (userId == null) throw StateError('Cannot add Qaza records while signed out.');
+    final generation = _sessionGeneration;
     await _ensureLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId) throw StateError('Authentication session changed while loading Qaza data.');
     final knownKeys = {for (final r in _records.values) _combinationKey(r)};
     final fresh = <QazaRecord>[];
     for (final record in records) {
@@ -125,6 +142,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     if (fresh.isEmpty) return;
     _enqueueAdds(fresh);
     await _persistSnapshot();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     _emitPending();
     unawaited(_syncInBackground());
   }
@@ -135,7 +153,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
   @override
   Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async {
     if (recordIds.isEmpty || userId != _activeUserId) return;
+    final generation = _sessionGeneration;
     await _ensureLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     final now = _now();
     final changedIds = <String>{};
     for (final recordId in recordIds.toSet()) {
@@ -147,54 +167,68 @@ class OfflineFirstQazaRepository implements QazaRepository {
     if (changedIds.isEmpty) return;
     _enqueueCompletions(changedIds, completedAt);
     await _persistSnapshot();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     _emitPending();
     unawaited(_syncInBackground());
   }
 
   Future<void> syncNow() async {
     if (_activeUserId == null) return;
+    final generation = _sessionGeneration;
     await _ensureLoaded();
+    if (generation != _sessionGeneration || _activeUserId == null) return;
     await _syncInBackground();
   }
 
   Future<void> _syncInBackground() async {
     final existing = _syncFuture;
     if (existing != null) return existing;
-    // A startup auth event must not cause a full ledger load. Sync becomes
-    // eligible after an explicit full-ledger read/mutation or syncNow().
-    if (!_loaded) return;
-    final future = _runSync();
+    if (!_loaded || _activeUserId == null) return;
+    final generation = _sessionGeneration;
+    final future = _runSync(generation);
     _syncFuture = future;
-    try { await future; } finally { _syncFuture = null; }
+    try { await future; } finally {
+      if (generation == _sessionGeneration) _syncFuture = null;
+    }
   }
 
-  Future<void> _runSync() async {
+  Future<void> _runSync(int generation) async {
     final userId = _activeUserId;
-    if (userId == null) return;
+    if (userId == null || generation != _sessionGeneration) return;
     if (!_isOnline) {
       _emit(SyncState(status: SyncStatus.offline, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length));
       return;
     }
     _emit(SyncState(status: SyncStatus.syncing, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length));
     try {
-      await _flushOutbox(userId);
-      await _pullRemote(userId);
+      await _flushOutbox(userId, generation);
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
+      await _pullRemote(userId, generation);
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
       _lastSyncAt = _now();
       await _localStore.saveLastSync(userId, _lastSyncAt);
-      _emit(SyncState(status: _outbox.isEmpty ? SyncStatus.synced : SyncStatus.pendingSync, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length));
+      if (generation == _sessionGeneration && userId == _activeUserId) {
+        _emit(SyncState(status: _outbox.isEmpty ? SyncStatus.synced : SyncStatus.pendingSync, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length));
+      }
     } catch (error) {
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
       await _persistOutbox();
       _emit(SyncState(status: _isOnline ? SyncStatus.syncError : SyncStatus.offline, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length, detail: error.toString()));
     }
   }
 
-  Future<void> _flushOutbox(String userId) async {
+  Future<void> _flushOutbox(String userId, int generation) async {
     while (_outbox.isNotEmpty) {
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
       final op = _outbox.first;
+      if (op.userId != userId) {
+        throw StateError('Outbox contains an operation for a different user.');
+      }
       try {
         switch (op.type) {
           case SyncOpType.add:
             if (op.record == null) { _outbox.removeAt(0); await _persistOutbox(); continue; }
+            if (op.record!.userId != userId) throw StateError('Outbox add operation user mismatch.');
             await _remote.addRecord(op.record!);
             break;
           case SyncOpType.complete:
@@ -203,20 +237,26 @@ class OfflineFirstQazaRepository implements QazaRepository {
             break;
         }
       } catch (error) {
+        if (generation != _sessionGeneration || userId != _activeUserId) return;
         _outbox[0] = op.copyWith(attempts: op.attempts + 1, lastError: error.toString());
         await _persistOutbox();
         rethrow;
       }
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
       _outbox.removeAt(0);
       await _persistOutbox();
     }
   }
 
-  Future<void> _pullRemote(String userId) async {
+  Future<void> _pullRemote(String userId, int generation) async {
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     final remoteRecords = await _remote.getRecords(userId: userId);
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
     final queuedCompletionIds = {for (final op in _outbox) if (op.type == SyncOpType.complete) op.targetRecordId};
     final now = _now();
     for (final remote in remoteRecords) {
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
+      if (remote.userId != userId) throw StateError('Remote returned a Qaza record for a different user.');
       final local = _records[remote.id];
       if (local == null) { _records[remote.id] = remote; continue; }
       if (remote.status == QazaStatus.completed) {
