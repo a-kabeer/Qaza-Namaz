@@ -1,0 +1,4 @@
+enum KnowledgeCategory {
+  masail,
+  mugalat,
+}
