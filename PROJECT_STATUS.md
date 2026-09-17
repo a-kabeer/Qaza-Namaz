@@ -13,24 +13,21 @@ Knowledge Base — 13-part implementation
 - Part 6 — ✅ COMPLETE — Riverpod state layer
 - Part 7 — ✅ COMPLETE — Article list & search UI
 - Part 8 — ✅ COMPLETE — Article detail & references UI
-- Part 9 — NOT STARTED — Integration & regression protection
+- Part 9 — ✅ COMPLETE — Integration & regression protection
 - Part 10 — NOT STARTED — Performance & accessibility
 - Part 11 — NOT STARTED — Content QA & tests
 - Part 12 — NOT STARTED — Documentation & release readiness
 - Part 13 — NOT STARTED — Full GitHub CI
 
-## Knowledge Base Part 8 — COMPLETE
+## Knowledge Base Part 9 — COMPLETE
 
-- Replaced the temporary article-detail placeholder with a real article detail page.
-- Added English/Urdu language switching with explicit LTR/RTL text direction.
-- Added article title, summary, category, and full body rendering from typed content.
-- Added structured references display.
-- Added related-article navigation using stable article IDs.
-- Added detail loading, missing-article, and retry states.
-- Added focused widget coverage for bilingual rendering and references.
-- Kept article wording in the dataset; no article content was hardcoded into widgets.
+- Integrated the Knowledge Base into the existing Settings → Prayer area.
+- Preserved the existing four-item primary bottom navigation and its order: Dashboard, Calculator, Logs, Settings.
+- Added a regression contract test for the primary navigation labels.
+- Kept Knowledge Base navigation isolated from Qaza records, calculator, history, authentication, sync, and notification state.
+- Kept the Knowledge Base entry as a secondary Settings destination rather than changing the primary navigation structure.
 - CI remains deferred to Part 13.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 9 — Integration & Regression Protection.
+Proceed to Knowledge Base Part 10 — Performance & Accessibility.
