@@ -1,76 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hijri/hijri_calendar.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
+import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
-
 import 'support/in_memory_qaza_repository.dart';
 
-Widget _scope(Widget child, InMemoryQazaRepository repository) {
-  return ProviderScope(
-    overrides: [
-      qazaRepositoryProvider.overrideWithValue(repository),
-      activeUserIdProvider.overrideWithValue('u1'),
-    ],
-    child: child,
-  );
+final _today = DateTime(2026, 9, 14);
+
+ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => ProviderScope(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(_today),
+        if (repository != null) ...[
+          qazaRepositoryProvider.overrideWithValue(repository),
+          activeUserIdProvider.overrideWithValue('u1'),
+        ],
+      ],
+      child: child,
+    );
+
+Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isNotEmpty) return;
+  final listViews = find.byType(ListView);
+  final scrollable = listViews.evaluate().isEmpty ? find.byType(Scrollable).first : listViews.last;
+  for (var i = 0; i < 6 && finder.evaluate().isEmpty; i++) {
+    await tester.drag(scrollable, const Offset(0, -500));
+    await tester.pumpAndSettle();
+  }
 }
 
-Future<void> _scrollToContinue(WidgetTester tester) async {
-  final finder = find.byKey(const Key('qaza_continue_button'));
-  await tester.scrollUntilVisible(finder, 400, scrollable: find.byType(Scrollable).first);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _scrollToNextPrayers(WidgetTester tester) async {
-  final finder = find.text('Next: Choose missed prayers');
-  await tester.scrollUntilVisible(finder, 400, scrollable: find.byType(Scrollable).first);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _scrollToReview(WidgetTester tester) async {
-  final finder = find.text('Review & Create Records');
-  await tester.scrollUntilVisible(finder, 400, scrollable: find.byType(Scrollable).first);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _scrollToPrayer(WidgetTester tester, String prayer) async {
-  final finder = find.text(prayer, skipOffstage: false);
-  await tester.scrollUntilVisible(finder, 400, scrollable: find.byType(Scrollable).first, duration: const Duration(milliseconds: 100));
-  await tester.pumpAndSettle();
-}
+Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
+Future<void> _scrollToNextPrayers(WidgetTester tester) => _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
+Future<void> _scrollToReview(WidgetTester tester) => _scrollToFinder(tester, find.text('Review & Create Records'));
+Future<void> _scrollToPrayer(WidgetTester tester, String prayer) => _scrollToFinder(tester, find.text(prayer));
 
 void main() {
+  test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
+    final hijri = HijriCalendar.fromDate(_today);
+    expect([hijri.hYear, hijri.hMonth, hijri.hDay], [1448, 4, 3]);
+    expect(HijriCalendar().hijriToGregorian(hijri.hYear, hijri.hMonth, hijri.hDay), _today);
+  });
+
+  test('package handles Gregorian leap day conversion', () {
+    final leap = DateTime(2024, 2, 29);
+    final hijri = HijriCalendar.fromDate(leap);
+    expect(HijriCalendar().hijriToGregorian(hijri.hYear, hijri.hMonth, hijri.hDay), leap);
+  });
+
+  test('Riverpod controller supports single, range and multi-date selection', () {
+    final container = ProviderContainer(overrides: [calendarTodayProvider.overrideWithValue(_today)]);
+    addTearDown(container.dispose);
+    final controller = container.read(calendarControllerProvider.notifier);
+    controller.select(DateTime(2026, 9, 10));
+    expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 10)]);
+    controller.setSelectionMode(DateSelectionMode.range);
+    controller.select(DateTime(2026, 9, 10));
+    controller.select(DateTime(2026, 9, 13));
+    expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 10), DateTime(2026, 9, 13)]);
+    controller.setSelectionMode(DateSelectionMode.multiple);
+    controller.select(DateTime(2026, 9, 12));
+    controller.select(DateTime(2026, 9, 10));
+    controller.select(DateTime(2026, 9, 10));
+    expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
+    controller.setSelectionMode(DateSelectionMode.single);
+    controller.select(DateTime(2026, 9, 12));
+    controller.select(DateTime(2026, 9, 15));
+    expect(container.read(calendarControllerProvider).selectedDates, [DateTime(2026, 9, 12)]);
+  });
+
   testWidgets('Gregorian calendar renders and navigates months', (tester) async {
-    final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Single'));
-    await _scrollToContinue(tester);
-    await tester.tap(find.byKey(const Key('qaza_continue_button')));
+    expect(find.text('September 2026'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('calendar_prev_month')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('qaza_calendar_picker')), findsOneWidget);
+    expect(find.text('August 2026'), findsOneWidget);
   });
 
   testWidgets('Gregorian calendar displays Hijri as secondary information', (tester) async {
+    await tester.pumpWidget(_scope(const MaterialApp(home: Scaffold(body: CalendarPicker()))));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('calendar_hijri_month_label')), findsOneWidget);
+    expect(find.text('Hijri'), findsNothing);
+    await tester.tap(find.byKey(const Key('calendar_day_2026-09-13')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('calendar_selected_summary')), findsOneWidget);
+  });
+
+  testWidgets('future date is disabled and qaza indicator is rendered', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository));
+    await repository.addRecord(QazaRecord(id: 'u1_fajr_2026-09-10', userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 10), createdAt: _today, updatedAt: _today));
+    await tester.pumpWidget(_scope(MaterialApp(home: Scaffold(body: CalendarPicker(qazaDates: {DateTime(2026, 9, 10)}))), repository: repository));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Single'));
-    await _scrollToContinue(tester);
-    await tester.tap(find.byKey(const Key('qaza_continue_button')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('qaza_calendar_picker')), findsOneWidget);
+    expect(find.byKey(const Key('calendar_qaza_indicator_2026-09-10')), findsOneWidget);
+    final tomorrow = find.byKey(const Key('calendar_day_2026-09-15'));
+    final ink = tester.widget<InkWell>(tomorrow);
+    expect(ink.onTap, isNull);
   });
 
   testWidgets('calendar stores canonical Gregorian originalDate through Qaza flow', (tester) async {
     final repository = InMemoryQazaRepository();
-    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository));
+    await tester.pumpWidget(_scope(const MaterialApp(home: AddQazaScreen()), repository: repository));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Single'));
     await _scrollToContinue(tester);
     await tester.tap(find.byKey(const Key('qaza_continue_button')));
     await tester.pumpAndSettle();
@@ -80,7 +116,7 @@ void main() {
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await _scrollToPrayer(tester, 'Maghrib');
-    await tester.tap(find.text('Maghrib', skipOffstage: false));
+    await tester.tap(find.text('Maghrib'));
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
@@ -110,7 +146,7 @@ void main() {
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await _scrollToPrayer(tester, 'Fajr');
-    await tester.tap(find.text('Fajr', skipOffstage: false).first);
+    await tester.tap(find.text('Fajr', skipOffstage: false));
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
