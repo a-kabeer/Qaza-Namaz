@@ -15,11 +15,8 @@ class PendingSyncOp {
   final DateTime? completedAt;
   final int attempts;
   final String? lastError;
-
   PendingSyncOp copyWith({int? attempts, String? lastError}) => PendingSyncOp(id: id, type: type, userId: userId, queuedAt: queuedAt, record: record, targetRecordId: targetRecordId, completedAt: completedAt, attempts: attempts ?? this.attempts, lastError: lastError ?? this.lastError);
-
   Map<String, dynamic> toJson() => {'id': id, 'type': type.name, 'userId': userId, 'queuedAt': queuedAt.toIso8601String(), 'record': record?.toJson(), 'targetRecordId': targetRecordId, 'completedAt': completedAt?.toIso8601String(), 'attempts': attempts, 'lastError': lastError};
-
   static PendingSyncOp fromJson(Map<String, dynamic> json) => PendingSyncOp(id: json['id'] as String, type: SyncOpType.values.firstWhere((value) => value.name == json['type'], orElse: () => throw StateError('Unknown sync op type "${json['type']}".')), userId: json['userId'] as String, queuedAt: DateTime.parse(json['queuedAt'] as String), record: json['record'] == null ? null : QazaRecord.fromJson(json['record'] as Map<String, dynamic>), targetRecordId: json['targetRecordId'] as String?, completedAt: json['completedAt'] == null ? null : DateTime.parse(json['completedAt'] as String), attempts: (json['attempts'] as num?)?.toInt() ?? 0, lastError: json['lastError'] as String?);
 }
 
@@ -57,10 +54,10 @@ abstract class QazaLocalStore {
     if ((afterOriginalDate == null) != (afterId == null)) throw ArgumentError('afterOriginalDate and afterId must be provided together');
     final snapshot = await load();
     var records = List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
-      ..removeWhere((record) => prayerType != null && record.prayerType != prayerType)
-      ..removeWhere((record) => status != null && record.status != status)
-      ..sort((a, b) { final date = a.originalDate.compareTo(b.originalDate); return date != 0 ? date : a.id.compareTo(b.id); });
-    if (afterOriginalDate != null) records = records.where((record) => record.originalDate.isAfter(afterOriginalDate) || (record.originalDate.isAtSameMomentAs(afterOriginalDate) && record.id.compareTo(afterId!) > 0)).toList();
+      ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
+      ..removeWhere((r) => status != null && r.status != status)
+      ..sort((a,b) { final d=a.originalDate.compareTo(b.originalDate); return d != 0 ? d : a.id.compareTo(b.id); });
+    if (afterOriginalDate != null) records = records.where((r) => r.originalDate.isAfter(afterOriginalDate) || (r.originalDate.isAtSameMomentAs(afterOriginalDate) && r.id.compareTo(afterId!) > 0)).toList();
     final hasMore = records.length > limit;
     return LocalQazaPage(records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
@@ -76,12 +73,12 @@ abstract class QazaLocalStore {
     if (from != null && to != null && from.isAfter(to)) throw ArgumentError('from must be <= to');
     final snapshot = await load();
     var records = List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
-      ..removeWhere((record) => prayerType != null && record.prayerType != prayerType)
-      ..removeWhere((record) => status != null && record.status != status)
-      ..removeWhere((record) => from != null && record.originalDate.isBefore(from))
-      ..removeWhere((record) => to != null && record.originalDate.isAfter(to))
-      ..sort((a, b) { final date = b.originalDate.compareTo(a.originalDate); return date != 0 ? date : b.id.compareTo(a.id); });
-    if (beforeOriginalDate != null) records = records.where((record) => record.originalDate.isBefore(beforeOriginalDate) || (record.originalDate.isAtSameMomentAs(beforeOriginalDate) && record.id.compareTo(beforeId!) < 0)).toList();
+      ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
+      ..removeWhere((r) => status != null && r.status != status)
+      ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
+      ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
+      ..sort((a,b) { final d=b.originalDate.compareTo(a.originalDate); return d != 0 ? d : b.id.compareTo(a.id); });
+    if (beforeOriginalDate != null) records = records.where((r) => r.originalDate.isBefore(beforeOriginalDate) || (r.originalDate.isAtSameMomentAs(beforeOriginalDate) && r.id.compareTo(beforeId!) < 0)).toList();
     final hasMore = records.length > limit;
     return LocalQazaHistoryPage(records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
