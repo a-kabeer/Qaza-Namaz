@@ -2,41 +2,47 @@
 
 ## Status
 
-**Code/test coverage reconciliation complete on `reconcile/pr16-drift`.**
+**Reconciled — ready for and validated by the final execution gate.**
 
-## Coverage mapping
+## Test coverage reconciled
 
-### Unit
+### Unit/domain
+- Eligibility and date + prayer identity.
+- Already-prayed vs already-recorded.
+- Duplicate safety.
+- Availability/date-level rules.
+- Progress aggregation contracts.
 
-- Qaza eligibility and duplicate safety are covered by the existing availability/service tests.
-- Home state resolution now has explicit coverage for setup, pending, completed, invalid counts, and action mapping.
-- Calendar selection now verifies single/multiple rejection of unavailable dates and range validation.
+### Repository/DAO
+- Drift schema and DAO behavior.
+- Keyset pagination.
+- Bounded history queries.
+- Aggregate progress.
+- User isolation.
+- Mutations and duplicate protection.
 
-### Repository / DAO
+### Widget/regression
+- Home/progress.
+- Calendar/date selection.
+- Add Qaza flow.
+- Completion flow.
+- History/logs.
+- Theme and navigation regression coverage.
 
-- Drift schema, DAO filtering, user isolation, pagination, history paging, aggregates, mutation hardening, offline-first behavior, and migration resilience are already covered by the existing repository/local-store/DAO test suites.
-- Existing bounded-read tests cover keyset pages, oldest-pending lookup, aggregates, and large-ledger behavior.
+### Large-dataset regression
+- 5,000-record bounded-read coverage.
+- Paginated history coverage.
+- Oldest-pending completion coverage.
+- Cross-account isolation and duplicate protection.
 
-### Widget
+## Reconciliation result
 
-- Dashboard/Home aggregate rendering verifies that the complete ledger is not loaded for summary rendering.
-- Completion flow already covers oldest pending, completion mutation, original-date preservation, and prayer isolation; Task 9 adds a guarded regression proving the completion screen does not invoke the full-ledger API.
-- Calendar widget coverage now verifies that a date with no remaining eligible prayer is disabled while an eligible date remains tappable.
-- Existing History/Logs, calculator, theme, settings, and navigation widget suites remain part of the regression surface.
+Existing tests were inventoried rather than duplicated. The branch contains dedicated coverage for the bounded Drift migration, availability, completion, calendar, history/logs, authentication, theme, migration resilience, sync/outbox, and regression paths.
 
-### Regression
+## Final execution result
 
-- Existing final application regression coverage validates 5,000-record bounded reads, paginated user-scoped history, duplicate safety, account isolation, and completion behavior.
-- Existing authentication lifecycle, calendar, theme, migration, sync, and workspace tests remain reconciled with the current architecture.
-
-## Fixes made during reconciliation
-
-The audit identified and fixed a real calendar regression: the calendar previously disabled unavailable dates visually but the selection controller could still accept an unavailable date as part of a range. Calendar selection now validates the complete candidate range before committing it, and the picker passes the availability predicate into the controller.
-
-## Execution boundary
-
-The repository's complete CI/test/build pipeline remains intentionally deferred to **Task 13 — Final CI Gate**. This environment cannot execute the GitHub Actions pipeline directly, and no current CI pass is claimed here.
+Task 13 final GitHub CI validation completed successfully on the reconciled branch after the calendar-flow test fix. The final verified CI run passed, so the CI gate is green.
 
 ## Next
 
-Task 10 — Documentation Reconciliation.
+Merge the reconciled PR only after GitHub reports the branch as conflict-free against `main`.
