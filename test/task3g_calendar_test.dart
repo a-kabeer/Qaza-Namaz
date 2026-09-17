@@ -31,10 +31,15 @@ void _setTallViewport(WidgetTester tester) {
 }
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
-  if (finder.evaluate().isNotEmpty) return;
-  final scrollable = find.byType(Scrollable).first;
-  for (var i = 0; i < 8 && finder.evaluate().isEmpty; i++) {
-    await tester.drag(scrollable, const Offset(0, -450));
+  if (finder.evaluate().isEmpty) {
+    final scrollable = find.byType(Scrollable).first;
+    for (var i = 0; i < 8 && finder.evaluate().isEmpty; i++) {
+      await tester.drag(scrollable, const Offset(0, -450));
+      await tester.pumpAndSettle();
+    }
+  }
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder.first);
     await tester.pumpAndSettle();
   }
 }
