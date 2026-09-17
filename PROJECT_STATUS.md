@@ -1,10 +1,10 @@
 # Qaza Namaz App - Project Status
 
 ## Current Migration
-SharedPreferences -> Drift/SQLite production migration - Part 8 complete
+SharedPreferences -> Drift/SQLite production migration - Part 10 complete
 
 ## Migration Progress
-8 / 13 parts implemented; final CI/build gate remains Part 13.
+10 / 13 parts implemented; final CI/build gate remains Part 13.
 
 ### Migration Status
 - Part 1 - COMPLETE - Drift foundation
@@ -15,22 +15,22 @@ SharedPreferences -> Drift/SQLite production migration - Part 8 complete
 - Part 6 - COMPLETE - Authentication lifecycle and per-user isolation
 - Part 7 - COMPLETE - Production bounded read paths
 - Part 8 - COMPLETE - Mutation and transaction hardening
-- Part 9 - PENDING - Large-dataset Home/Logs performance integration
-- Part 10 - PENDING - Migration cleanup and legacy-store retirement
+- Part 9 - COMPLETE - Large-dataset Home/Logs performance integration
+- Part 10 - COMPLETE - Migration cleanup and legacy-store retirement
 - Part 11 - PENDING - Data migration/upgrade resilience
 - Part 12 - PENDING - Final application-level regression audit
 - Part 13 - PENDING - Full GitHub CI/build validation and completion gate
 
-## Part 8 Summary
-- Hardened local Qaza inserts against duplicate primary/unique-key writes without overwriting an existing record.
-- Kept batch inserts transactional and rejected mixed-user batches at the database boundary.
-- Enforced user ownership when replacing a user's local ledger.
-- Preserved atomic record + outbox snapshot persistence for offline-first mutations.
-- Preserved idempotent completion semantics and user-scoped completion checks.
-- Added mutation regression coverage for duplicate adds, duplicate dates, mixed-user batches, repeated completion, and cross-user completion attempts.
+## Part 10 Summary
+- Drift is now the only runtime Qaza local-store implementation.
+- Removed the SharedPreferences local-store implementation from the application data layer.
+- Removed the runtime Drift-store dependency on SharedPreferences.
+- Kept SharedPreferences isolated to the one-time legacy migration bootstrap required for existing installations.
+- Migration completion remains guarded by a persisted migration marker and target verification.
+- Last-sync state is now runtime session state rather than a legacy SharedPreferences persistence dependency.
 
 ## Validation
-Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 8.
+Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 10.
 
 ## Next
-Part 9 - Large-dataset Home/Logs performance integration.
+Part 11 - Data migration/upgrade resilience.
