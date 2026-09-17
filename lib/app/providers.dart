@@ -20,6 +20,7 @@ import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../data/auth/firebase_auth_repository.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
+import '../data/local/database/app_database.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/local/shared_preferences_qaza_local_store.dart';
 import '../data/repositories/firestore_qaza_repository.dart';
@@ -34,6 +35,18 @@ import '../domain/services/qaza_service.dart';
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 final authRepositoryProvider = Provider<AuthRepository>((ref) => FirebaseAuthRepository());
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) => SharedPreferencesQazaLocalStore());
+
+/// Drift database lifecycle provider.
+///
+/// Part 1 introduces the database without switching the Qaza repository yet.
+/// The current SharedPreferences store remains the active local implementation
+/// until the later migration/integration parts are completed and verified.
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final database = AppDatabase();
+  ref.onDispose(database.close);
+  return database;
+});
+
 final connectivityChangesProvider = Provider<Stream<bool>>((ref) => Connectivity().onConnectivityChanged.map((results) => results.any((r) => r != ConnectivityResult.none)));
 final remoteQazaRepositoryProvider = Provider<QazaRepository>((ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)));
 
