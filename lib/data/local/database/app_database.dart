@@ -17,38 +17,51 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'qaza_namaz'));
 
+  /// Schema version 2 establishes an explicit migration boundary for the
+  /// production database. Version 1 databases already contain the same
+  /// tables; the upgrade path below is intentionally data-preserving and
+  /// idempotently restores the indexes required by the paginated DAOs.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
-          await customStatement(
-            'CREATE INDEX qaza_records_user_date_idx '
-            'ON qaza_records (user_id, original_date)',
-          );
-          await customStatement(
-            'CREATE INDEX qaza_records_user_prayer_date_idx '
-            'ON qaza_records (user_id, prayer_type, original_date)',
-          );
-          await customStatement(
-            'CREATE INDEX qaza_records_user_prayer_status_date_idx '
-            'ON qaza_records '
-            '(user_id, prayer_type, status, original_date)',
-          );
-          await customStatement(
-            'CREATE INDEX qaza_records_user_status_completed_idx '
-            'ON qaza_records (user_id, status, completed_at)',
-          );
-          await customStatement(
-            'CREATE INDEX sync_outbox_user_queued_idx '
-            'ON sync_outbox (user_id, queued_at, id)',
-          );
-          await customStatement(
-            'CREATE INDEX sync_outbox_user_type_idx '
-            'ON sync_outbox (user_id, type, queued_at)',
-          );
+          await _ensurePerformanceIndexes();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await _ensurePerformanceIndexes();
+          }
         },
       );
+
+  Future<void> _ensurePerformanceIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
+      'ON qaza_records (user_id, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_prayer_date_idx '
+      'ON qaza_records (user_id, prayer_type, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_prayer_status_date_idx '
+      'ON qaza_records '
+      '(user_id, prayer_type, status, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_idx '
+      'ON qaza_records (user_id, status, completed_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS sync_outbox_user_queued_idx '
+      'ON sync_outbox (user_id, queued_at, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS sync_outbox_user_type_idx '
+      'ON sync_outbox (user_id, type, queued_at)',
+    );
+  }
 }
