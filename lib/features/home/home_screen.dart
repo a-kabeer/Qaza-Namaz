@@ -10,6 +10,7 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_card.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/sync_status.dart';
+import '../../domain/entities/qaza_record.dart';
 import '../calculator/calculator_screen.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/completion_screen.dart';
@@ -191,7 +192,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingPrayerCard(BuildContext context, WidgetRef ref, List<dynamic> records) {
+  Widget _buildPendingPrayerCard(BuildContext context, WidgetRef ref, List<QazaRecord> records) {
     final theme = Theme.of(context);
     final pendingByPrayer = <PrayerType, int>{for (final prayer in PrayerType.values) prayer: records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length};
     final prayersWithPending = pendingByPrayer.entries.where((entry) => entry.value > 0).toList();
