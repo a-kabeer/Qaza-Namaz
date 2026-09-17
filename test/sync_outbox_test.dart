@@ -1,11 +1,12 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/core/constants/prayer_types.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ void main() {
   late AppDatabase database;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     database = AppDatabase(NativeDatabase.memory());
   });
 
