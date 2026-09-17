@@ -1,21 +1,29 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'database/app_database.dart';
 import 'database/tables/qaza_records.dart';
 import 'database/tables/sync_outbox.dart';
 import 'qaza_local_store.dart';
+import 'shared_preferences_qaza_local_store.dart';
 
 /// SQLite-backed local store used by the production offline-first repository.
 ///
 /// Records and outbox entries are normalized and user-scoped. Legacy
 /// SharedPreferences data is migrated before this store becomes active.
 class DriftQazaLocalStore implements QazaLocalStore {
-  DriftQazaLocalStore({required AppDatabase database}) : _database = database;
+  DriftQazaLocalStore({
+    required AppDatabase database,
+    SharedPreferencesQazaLocalStore? legacyStore,
+  })  : _database = database,
+        _legacyStore = legacyStore ?? SharedPreferencesQazaLocalStore();
 
   final AppDatabase _database;
+  final SharedPreferencesQazaLocalStore _legacyStore;
 
   @override
   Future<OfflineCacheSnapshot> load() async {
@@ -24,6 +32,7 @@ class DriftQazaLocalStore implements QazaLocalStore {
     final allUsers = {...users, ...outboxUsers};
     final recordsByUser = <String, List<QazaRecord>>{};
     final outboxByUser = <String, List<PendingSyncOp>>{};
+    final legacy = await _legacyStore.load();
 
     for (final userId in allUsers) {
       final records = await _database.qazaRecordsDao.getAll(userId: userId);
@@ -35,6 +44,7 @@ class DriftQazaLocalStore implements QazaLocalStore {
     return OfflineCacheSnapshot(
       recordsByUser: recordsByUser,
       outboxByUser: outboxByUser,
+      lastSyncByUser: legacy.lastSyncByUser,
     );
   }
 
@@ -52,9 +62,7 @@ class DriftQazaLocalStore implements QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
     await _database.transaction(() async {
       await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(
-        ops.map(_toOpCompanion).toList(growable: false),
-      );
+      await _database.syncOutboxDao.putAll(ops.map(_toOpCompanion).toList(growable: false));
     });
   }
 
@@ -70,18 +78,13 @@ class DriftQazaLocalStore implements QazaLocalStore {
         records: records.map(_toCompanion).toList(growable: false),
       );
       await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(
-        ops.map(_toOpCompanion).toList(growable: false),
-      );
+      await _database.syncOutboxDao.putAll(ops.map(_toOpCompanion).toList(growable: false));
     });
   }
 
   @override
-  Future<void> saveLastSync(String userId, DateTime? lastSync) async {
-    // Sync metadata is maintained by the repository until its dedicated
-    // metadata table is introduced in the schema-versioning phase.
-    // No SharedPreferences writes occur on the production path.
-  }
+  Future<void> saveLastSync(String userId, DateTime? lastSync) =>
+      _legacyStore.saveLastSync(userId, lastSync);
 
   QazaRecord _toDomain(dynamic row) => QazaRecord(
         id: row.id as String,
