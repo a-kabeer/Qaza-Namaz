@@ -23,8 +23,12 @@ class _FakeRepository implements KnowledgeBaseRepository {
   ) async => articles.where((item) => item.category == category).toList();
 
   @override
-  Future<KnowledgeArticle?> getArticleById(String id) async =>
-      articles.where((item) => item.id == id).firstOrNull;
+  Future<KnowledgeArticle?> getArticleById(String id) async {
+    for (final article in articles) {
+      if (article.id == id) return article;
+    }
+    return null;
+  }
 }
 
 void main() {
