@@ -1,8 +1,10 @@
 // Logs & progress.
 //
-// The history screen remains a derived view over the shared Qaza ledger. UI
-// filters and sorting are intentionally local to this screen so business
-// logic, persistence, and synchronization remain unchanged.
+// History rows are loaded from the local SQLite source of truth in bounded
+// keyset pages. Progress cards remain separate derived views for now and will
+// be optimized in the statistics phase.
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,7 @@ import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../sync/sync_status_bar.dart';
+import 'history_logs_controller.dart';
 
 class HistoryProgressScreen extends ConsumerStatefulWidget {
   const HistoryProgressScreen({super.key});
@@ -28,9 +31,41 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   PrayerType? _prayerFilter;
   QazaStatus? _statusFilter;
   DateTimeRange? _originalDateFilter;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter > 500) return;
+    unawaited(_loadMore());
+  }
+
+  Future<void> _loadMore() async {
+    try {
+      await ref.read(historyLogsProvider.notifier).loadMore();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load more history: $error')),
+      );
+    }
+  }
 
   Future<void> _refresh() async {
-    await ref.read(qazaRecordsProvider.notifier).refresh();
+    await ref.read(historyLogsProvider.notifier).refresh();
   }
 
   Future<void> _pickOriginalDateRange() async {
@@ -42,10 +77,44 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       helpText: 'Filter by original Qaza date',
     );
     if (selected == null) return;
-    setState(() => _originalDateFilter = DateTimeRange(
-          start: DateTime(selected.start.year, selected.start.month, selected.start.day),
-          end: DateTime(selected.end.year, selected.end.month, selected.end.day),
-        ));
+
+    final normalized = DateTimeRange(
+      start: DateTime(selected.start.year, selected.start.month, selected.start.day),
+      end: DateTime(selected.end.year, selected.end.month, selected.end.day),
+    );
+    setState(() => _originalDateFilter = normalized);
+    unawaited(
+      ref.read(historyLogsProvider.notifier).setFilters(
+            prayer: _prayerFilter,
+            status: _statusFilter,
+            rangeStart: normalized.start,
+            rangeEnd: normalized.end,
+          ),
+    );
+  }
+
+  void _setPrayerFilter(PrayerType? value) {
+    setState(() => _prayerFilter = value);
+    unawaited(
+      ref.read(historyLogsProvider.notifier).setFilters(
+            prayer: value,
+            status: _statusFilter,
+            rangeStart: _originalDateFilter?.start,
+            rangeEnd: _originalDateFilter?.end,
+          ),
+    );
+  }
+
+  void _setStatusFilter(QazaStatus? value) {
+    setState(() => _statusFilter = value);
+    unawaited(
+      ref.read(historyLogsProvider.notifier).setFilters(
+            prayer: _prayerFilter,
+            status: value,
+            rangeStart: _originalDateFilter?.start,
+            rangeEnd: _originalDateFilter?.end,
+          ),
+    );
   }
 
   void _clearFilters() {
@@ -54,31 +123,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       _statusFilter = null;
       _originalDateFilter = null;
     });
-  }
-
-  List<QazaRecord> _filteredAndSorted(List<QazaRecord> records) {
-    final filtered = records.where((record) {
-      final matchesPrayer = _prayerFilter == null || record.prayerType == _prayerFilter;
-      final matchesStatus = _statusFilter == null || record.status == _statusFilter;
-      final range = _originalDateFilter;
-      final date = DateTime(record.originalDate.year, record.originalDate.month, record.originalDate.day);
-      final matchesDate = range == null ||
-          (!date.isBefore(range.start) && !date.isAfter(range.end));
-      return matchesPrayer && matchesStatus && matchesDate;
-    }).toList();
-
-    filtered.sort((a, b) {
-      final byOriginal = b.originalDate.compareTo(a.originalDate);
-      if (byOriginal != 0) return byOriginal;
-      final aCompleted = a.completedAt;
-      final bCompleted = b.completedAt;
-      if (aCompleted == null && bCompleted == null) return a.id.compareTo(b.id);
-      if (aCompleted == null) return 1;
-      if (bCompleted == null) return -1;
-      final byCompleted = bCompleted.compareTo(aCompleted);
-      return byCompleted != 0 ? byCompleted : a.id.compareTo(b.id);
-    });
-    return filtered;
+    unawaited(ref.read(historyLogsProvider.notifier).clearFilters());
   }
 
   String _dateFilterLabel() {
@@ -90,11 +135,11 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ledger = ref.watch(qazaRecordsProvider);
-    final allRecords = ref.watch(loadedRecordsProvider);
+    final history = ref.watch(historyLogsProvider);
+    final records = history.valueOrNull ?? const <QazaRecord>[];
+    final notifier = ref.read(historyLogsProvider.notifier);
     final progress = ref.watch(overallProgressProvider);
     final prayerProgress = ref.watch(prayerProgressProvider);
-    final records = _filteredAndSorted(allRecords);
     final hasFilters = _prayerFilter != null || _statusFilter != null || _originalDateFilter != null;
 
     return AppScaffold(
@@ -102,23 +147,24 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       actions: [
         IconButton(
           tooltip: 'Refresh logs',
-          onPressed: ledger.isLoading ? null : _refresh,
+          onPressed: history.isLoading ? null : _refresh,
           icon: const Icon(Icons.sync_rounded),
         ),
       ],
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
             const SyncStatusBar(),
-            if (ledger.isLoading && !ledger.hasValue)
-              const LoadingState(message: 'Loading your ledger...', padding: 60)
-            else if (ledger.hasError && !ledger.hasValue)
+            if (history.isLoading && !history.hasValue)
+              const LoadingState(message: 'Loading your history...', padding: 60)
+            else if (history.hasError && !history.hasValue)
               ErrorState(message: 'We could not load your history.', onRetry: _refresh)
             else ...[
-              if (ledger.hasError && ledger.hasValue)
+              if (history.hasError && history.hasValue)
                 _InlineError(message: 'We could not refresh the latest history.', onRetry: _refresh),
               ProgressOverviewCard(
                 progress: progress,
@@ -132,8 +178,8 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(child: Text('Qaza ledger', style: theme.textTheme.titleLarge)),
-                  Text('${records.length}', style: theme.textTheme.titleMedium),
+                  Expanded(child: Text('Qaza logs', style: theme.textTheme.titleLarge)),
+                  Text('${records.length}${notifier.hasMore ? '+' : ''}', key: const Key('history_result_count'), style: theme.textTheme.titleMedium),
                 ],
               ),
               const SizedBox(height: 10),
@@ -142,35 +188,45 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     children: [
-                      DropdownButtonFormField<PrayerType?>(
-                        key: const Key('history_prayer_filter'),
-                        value: _prayerFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Prayer',
-                          prefixIcon: Icon(Icons.mosque_rounded),
-                        ),
-                        items: [
-                          const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
-                          ...PrayerType.values.map(
-                            (prayer) => DropdownMenuItem<PrayerType?>(value: prayer, child: Text(prayer.label)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<PrayerType?>(
+                              key: const Key('history_prayer_filter'),
+                              value: _prayerFilter,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Prayer',
+                                prefixIcon: Icon(Icons.mosque_rounded),
+                              ),
+                              items: [
+                                const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
+                                ...PrayerType.values.map(
+                                  (prayer) => DropdownMenuItem<PrayerType?>(value: prayer, child: Text(prayer.label)),
+                                ),
+                              ],
+                              onChanged: _setPrayerFilter,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButtonFormField<QazaStatus?>(
+                              key: const Key('history_status_filter'),
+                              value: _statusFilter,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                                prefixIcon: Icon(Icons.filter_alt_rounded),
+                              ),
+                              items: const [
+                                DropdownMenuItem<QazaStatus?>(value: null, child: Text('All')),
+                                DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
+                                DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
+                              ],
+                              onChanged: _setStatusFilter,
+                            ),
                           ),
                         ],
-                        onChanged: (value) => setState(() => _prayerFilter = value),
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<QazaStatus?>(
-                        key: const Key('history_status_filter'),
-                        value: _statusFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Status',
-                          prefixIcon: Icon(Icons.filter_alt_rounded),
-                        ),
-                        items: const [
-                          DropdownMenuItem<QazaStatus?>(value: null, child: Text('All statuses')),
-                          DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
-                          DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
-                        ],
-                        onChanged: (value) => setState(() => _statusFilter = value),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -198,7 +254,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Newest original Qaza dates first',
+                          'Newest original Qaza dates first • loads 50 at a time',
                           style: theme.textTheme.bodySmall,
                         ),
                       ),
@@ -215,8 +271,18 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                       ? 'Try changing or clearing the filters.'
                       : 'Your Qaza records will appear here in chronological order.',
                 )
-              else
-                for (final record in records) _HistoryTile(record: record),
+              else ...[
+                for (final record in records) _HistoryTile(key: ValueKey(record.id), record: record),
+                if (notifier.hasMore || notifier.isLoadingMore)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: notifier.isLoadingMore
+                          ? const CircularProgressIndicator()
+                          : Text('Scroll for more history', style: theme.textTheme.bodySmall),
+                    ),
+                  ),
+              ],
             ],
           ],
         ),
@@ -275,7 +341,7 @@ class _PrayerProgressTile extends StatelessWidget {
 }
 
 class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.record});
+  const _HistoryTile({super.key, required this.record});
   final QazaRecord record;
 
   @override
