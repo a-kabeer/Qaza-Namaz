@@ -208,6 +208,58 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return query.get();
   }
 
+  /// Compatibility helpers retained for the pre-migration Qaza-list code.
+  Future<List<QazaRecord>> getByPrayerAndDateRange({
+    required String userId,
+    required String prayerType,
+    required DateTime from,
+    required DateTime to,
+  }) => getPage(
+        userId: userId,
+        limit: maxPageSize,
+        prayerType: prayerType,
+        from: from,
+        to: to,
+      );
+
+  Future<List<QazaRecord>> getPendingPage({
+    required String userId,
+    String? prayerType,
+    int limit = maxPageSize,
+  }) => getPage(
+        userId: userId,
+        limit: limit,
+        prayerType: prayerType,
+        status: QazaStatus.pending.name,
+      );
+
+  Future<List<QazaRecord>> getCompletedPage({
+    required String userId,
+    String? prayerType,
+    int limit = maxPageSize,
+  }) => getPage(
+        userId: userId,
+        limit: limit,
+        prayerType: prayerType,
+        status: QazaStatus.completed.name,
+      );
+
+  Future<int> countPending({required String userId, String? prayerType}) =>
+      count(userId: userId, prayerType: prayerType, status: QazaStatus.pending.name);
+
+  Future<int> countCompleted({required String userId, String? prayerType}) =>
+      count(userId: userId, prayerType: prayerType, status: QazaStatus.completed.name);
+
+  Future<QazaRecord?> getOldestPending({required String userId, String? prayerType}) async {
+    final rows = await getPage(
+      userId: userId,
+      limit: 1,
+      prayerType: prayerType,
+      status: QazaStatus.pending.name,
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
   Future<void> replaceUserRecords({required String userId, required List<QazaRecordsCompanion> records}) async {
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
     for (final record in records) {
