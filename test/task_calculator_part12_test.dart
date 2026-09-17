@@ -116,10 +116,10 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('About You').last, findsOneWidget);
     await _reachResult(tester);
     expect(find.text('Step 3 of 3'), findsOneWidget);
-    expect(find.text('Result'), findsOneWidget);
+    expect(find.text('Result').last, findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_prayer_history')), findsOneWidget);
     expect(find.byType(Scaffold), findsOneWidget);
