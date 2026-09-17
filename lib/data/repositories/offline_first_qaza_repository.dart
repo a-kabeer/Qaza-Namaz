@@ -6,19 +6,13 @@ import '../../domain/repositories/qaza_repository.dart';
 import '../local/qaza_local_store.dart';
 import '../sync/sync_state.dart';
 
-/// Offline-first decorator around the real repository.
-///
-/// SQLite/Drift is now the local source of truth. Local record changes and
-/// their durable outbox entries are persisted atomically where the store
-/// supports transactions, while Firestore synchronization remains
-/// backgrounded and idempotent.
+/// Offline-first repository using the local store as the source of truth.
+/// Local record mutations and their durable outbox entries are committed as
+/// one operation when the store supports transactions; Firestore remains a
+/// background synchronization target.
 class OfflineFirstQazaRepository implements QazaRepository {
-  OfflineFirstQazaRepository({
-    required QazaRepository remote,
-    required QazaLocalStore localStore,
-    Stream<bool>? connectivityChanges,
-    DateTime Function()? now,
-  })  : _remote = remote,
+  OfflineFirstQazaRepository({required QazaRepository remote, required QazaLocalStore localStore, Stream<bool>? connectivityChanges, DateTime Function()? now})
+      : _remote = remote,
         _localStore = localStore,
         _now = now ?? DateTime.now {
     _connectivitySubscription = connectivityChanges?.listen(_onConnectivityChanged);
@@ -48,9 +42,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final inflight = _syncFuture;
     _syncFuture = null;
     if (inflight != null) {
-      try {
-        await inflight;
-      } catch (_) {}
+      try { await inflight; } catch (_) {}
     }
     _records.clear();
     _outbox = [];
@@ -81,10 +73,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
     if (userId != _activeUserId) return const [];
     await _ensureLoaded();
-    final records = _records.values
-        .where((r) => prayerType == null || r.prayerType == prayerType)
-        .where((r) => status == null || r.status == status)
-        .toList()
+    final records = _records.values.where((r) => prayerType == null || r.prayerType == prayerType).where((r) => status == null || r.status == status).toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
     return records;
   }
@@ -117,8 +106,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   @override
-  Future<void> completeRecord({required String userId, required String recordId, required DateTime completedAt}) =>
-      completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
+  Future<void> completeRecord({required String userId, required String recordId, required DateTime completedAt}) => completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
 
   @override
   Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async {
@@ -129,11 +117,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     for (final recordId in recordIds.toSet()) {
       final record = _records[recordId];
       if (record == null || record.status == QazaStatus.completed) continue;
-      _records[recordId] = record.copyWith(
-        status: QazaStatus.completed,
-        completedAt: record.completedAt == null || completedAt.isBefore(record.completedAt!) ? completedAt : record.completedAt,
-        updatedAt: now,
-      );
+      _records[recordId] = record.copyWith(status: QazaStatus.completed, completedAt: record.completedAt == null || completedAt.isBefore(record.completedAt!) ? completedAt : record.completedAt, updatedAt: now);
       changedIds.add(recordId);
     }
     if (changedIds.isEmpty) return;
@@ -154,11 +138,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     if (existing != null) return existing;
     final future = _runSync();
     _syncFuture = future;
-    try {
-      await future;
-    } finally {
-      _syncFuture = null;
-    }
+    try { await future; } finally { _syncFuture = null; }
   }
 
   Future<void> _runSync() async {
@@ -187,19 +167,13 @@ class OfflineFirstQazaRepository implements QazaRepository {
       try {
         switch (op.type) {
           case SyncOpType.add:
-            if (op.record == null) {
-              _outbox.removeAt(0);
-              await _persistOutbox();
-              continue;
-            }
+            if (op.record == null) { _outbox.removeAt(0); await _persistOutbox(); continue; }
             await _remote.addRecord(op.record!);
+            break;
           case SyncOpType.complete:
-            if (op.targetRecordId == null) {
-              _outbox.removeAt(0);
-              await _persistOutbox();
-              continue;
-            }
+            if (op.targetRecordId == null) { _outbox.removeAt(0); await _persistOutbox(); continue; }
             await _remote.completeRecord(userId: userId, recordId: op.targetRecordId!, completedAt: op.completedAt ?? _now());
+            break;
         }
       } catch (error) {
         _outbox[0] = op.copyWith(attempts: op.attempts + 1, lastError: error.toString());
@@ -213,64 +187,41 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
   Future<void> _pullRemote(String userId) async {
     final remoteRecords = await _remote.getRecords(userId: userId);
-    var outboxDirty = false;
-    final now = _now();
     final queuedCompletionIds = {for (final op in _outbox) if (op.type == SyncOpType.complete) op.targetRecordId};
+    final now = _now();
     for (final remote in remoteRecords) {
       final local = _records[remote.id];
-      if (local == null) {
-        _records[remote.id] = remote;
-        continue;
-      }
+      if (local == null) { _records[remote.id] = remote; continue; }
       if (remote.status == QazaStatus.completed) {
         final remoteAt = remote.completedAt;
         if (local.status != QazaStatus.completed) {
           _records[remote.id] = local.copyWith(status: QazaStatus.completed, completedAt: remoteAt, updatedAt: remote.updatedAt);
-          final before = _outbox.length;
-          _outbox = _outbox.where((op) => !(op.type == SyncOpType.complete && op.targetRecordId == remote.id)).toList();
-          if (_outbox.length != before) {
-            outboxDirty = true;
-            queuedCompletionIds.remove(remote.id);
-          }
+          _outbox.removeWhere((op) => op.type == SyncOpType.complete && op.targetRecordId == remote.id);
         } else if (remoteAt != null && local.completedAt != null && remoteAt.isBefore(local.completedAt!)) {
           _records[remote.id] = local.copyWith(completedAt: remoteAt, updatedAt: remote.updatedAt);
         }
       } else if (local.status == QazaStatus.completed && !queuedCompletionIds.contains(remote.id)) {
-        _outbox = [PendingSyncOp(id: 'complete_${remote.id}', type: SyncOpType.complete, userId: userId, queuedAt: now, targetRecordId: remote.id, completedAt: local.completedAt), ..._outbox];
-        queuedCompletionIds.add(remote.id);
-        outboxDirty = true;
+        _outbox.insert(0, PendingSyncOp(id: 'complete_${remote.id}', type: SyncOpType.complete, userId: userId, queuedAt: now, targetRecordId: remote.id, completedAt: local.completedAt));
       }
     }
     await _persistSnapshot();
-    if (!outboxDirty) return;
   }
 
   void _enqueueAdds(List<QazaRecord> records) {
     final queuedAt = _now();
-    _outbox = [..._outbox, for (final record in records) PendingSyncOp(id: 'add_${record.id}', type: SyncOpType.add, userId: record.userId, queuedAt: queuedAt, record: record)];
+    _outbox.addAll([for (final record in records) PendingSyncOp(id: 'add_${record.id}', type: SyncOpType.add, userId: record.userId, queuedAt: queuedAt, record: record)]);
   }
 
   void _enqueueCompletions(Set<String> recordIds, DateTime completedAt) {
     final queuedAt = _now();
     final alreadyQueued = {for (final op in _outbox) if (op.type == SyncOpType.complete) op.targetRecordId};
-    final fresh = [
-      for (final recordId in recordIds)
-        if (!alreadyQueued.contains(recordId))
-          PendingSyncOp(id: 'complete_$recordId', type: SyncOpType.complete, userId: _activeUserId!, queuedAt: queuedAt, targetRecordId: recordId, completedAt: completedAt),
-    ];
-    _outbox = [..._outbox, ...fresh];
+    _outbox.addAll([for (final recordId in recordIds) if (!alreadyQueued.contains(recordId)) PendingSyncOp(id: 'complete_$recordId', type: SyncOpType.complete, userId: _activeUserId!, queuedAt: queuedAt, targetRecordId: recordId, completedAt: completedAt)]);
   }
 
   Future<void> _persistSnapshot() async {
     final userId = _activeUserId;
     if (userId == null) return;
     await _localStore.saveRecordsAndOutbox(userId, _records.values.toList(), _outbox);
-  }
-
-  Future<void> _persistRecords() async {
-    final userId = _activeUserId;
-    if (userId == null) return;
-    await _localStore.saveRecords(userId, _records.values.toList());
   }
 
   Future<void> _persistOutbox() async {
