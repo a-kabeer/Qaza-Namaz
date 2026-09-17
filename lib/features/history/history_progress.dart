@@ -1,8 +1,8 @@
 // Logs & progress.
 //
-// History rows are loaded from the local SQLite source of truth in bounded
-// keyset pages. Progress cards remain separate derived views for now and will
-// be optimized in the statistics phase.
+// History rows come from the local SQLite source of truth in bounded keyset
+// pages. The progress cards use database aggregates so the History screen does
+// not materialize the complete ledger.
 
 import 'dart:async';
 
@@ -66,6 +66,23 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
 
   Future<void> _refresh() async {
     await ref.read(historyLogsProvider.notifier).refresh();
+    ref.invalidate(historyProgressProvider);
+  }
+
+  Future<void> _applyFilters({
+    required PrayerType? prayer,
+    required QazaStatus? status,
+    required DateTime? rangeStart,
+    required DateTime? rangeEnd,
+  }) async {
+    await ref.read(historyLogsProvider.notifier).setFilters(
+          prayer: prayer,
+          status: status,
+          rangeStart: rangeStart,
+          rangeEnd: rangeEnd,
+        );
+    if (!mounted || !_scrollController.hasClients) return;
+    _scrollController.jumpTo(0);
   }
 
   Future<void> _pickOriginalDateRange() async {
@@ -84,36 +101,36 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
     );
     setState(() => _originalDateFilter = normalized);
     unawaited(
-      ref.read(historyLogsProvider.notifier).setFilters(
-            prayer: _prayerFilter,
-            status: _statusFilter,
-            rangeStart: normalized.start,
-            rangeEnd: normalized.end,
-          ),
+      _applyFilters(
+        prayer: _prayerFilter,
+        status: _statusFilter,
+        rangeStart: normalized.start,
+        rangeEnd: normalized.end,
+      ),
     );
   }
 
   void _setPrayerFilter(PrayerType? value) {
     setState(() => _prayerFilter = value);
     unawaited(
-      ref.read(historyLogsProvider.notifier).setFilters(
-            prayer: value,
-            status: _statusFilter,
-            rangeStart: _originalDateFilter?.start,
-            rangeEnd: _originalDateFilter?.end,
-          ),
+      _applyFilters(
+        prayer: value,
+        status: _statusFilter,
+        rangeStart: _originalDateFilter?.start,
+        rangeEnd: _originalDateFilter?.end,
+      ),
     );
   }
 
   void _setStatusFilter(QazaStatus? value) {
     setState(() => _statusFilter = value);
     unawaited(
-      ref.read(historyLogsProvider.notifier).setFilters(
-            prayer: _prayerFilter,
-            status: value,
-            rangeStart: _originalDateFilter?.start,
-            rangeEnd: _originalDateFilter?.end,
-          ),
+      _applyFilters(
+        prayer: _prayerFilter,
+        status: value,
+        rangeStart: _originalDateFilter?.start,
+        rangeEnd: _originalDateFilter?.end,
+      ),
     );
   }
 
@@ -123,7 +140,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       _statusFilter = null;
       _originalDateFilter = null;
     });
-    unawaited(ref.read(historyLogsProvider.notifier).clearFilters());
+    unawaited(_applyFilters(prayer: null, status: null, rangeStart: null, rangeEnd: null));
   }
 
   String _dateFilterLabel() {
@@ -132,15 +149,47 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
     return '${formatAppDate(range.start)} – ${formatAppDate(range.end)}';
   }
 
+  Widget _progressSection(ThemeData theme, AsyncValue<QazaProgressSummary> progressAsync) {
+    final summary = progressAsync.valueOrNull;
+    if (progressAsync.hasError && summary == null) {
+      return _InlineError(
+        message: 'We could not load the progress summary.',
+        onRetry: () => ref.invalidate(historyProgressProvider),
+      );
+    }
+    if (summary == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ProgressOverviewCard(
+          progress: summary.overall,
+          header: Text('Your progress', style: theme.textTheme.titleLarge),
+        ),
+        const SizedBox(height: 18),
+        Text('Prayer progress', style: theme.textTheme.titleLarge),
+        const SizedBox(height: 10),
+        for (final prayer in PrayerType.values)
+          _PrayerProgressTile(progress: summary.byPrayer[prayer]),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final history = ref.watch(historyLogsProvider);
+    final progressAsync = ref.watch(historyProgressProvider);
     final records = history.valueOrNull ?? const <QazaRecord>[];
     final notifier = ref.read(historyLogsProvider.notifier);
-    final progress = ref.watch(overallProgressProvider);
-    final prayerProgress = ref.watch(prayerProgressProvider);
     final hasFilters = _prayerFilter != null || _statusFilter != null || _originalDateFilter != null;
+    final showRecordSliver = history.hasValue && records.isNotEmpty;
+    final showPaginationFooter = notifier.hasMore || notifier.isLoadingMore;
 
     return AppScaffold(
       title: 'Logs & Progress',
@@ -153,137 +202,157 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       ],
       body: RefreshIndicator(
         onRefresh: _refresh,
-        child: ListView(
+        child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-          children: [
-            const SyncStatusBar(),
-            if (history.isLoading && !history.hasValue)
-              const LoadingState(message: 'Loading your history...', padding: 60)
-            else if (history.hasError && !history.hasValue)
-              ErrorState(message: 'We could not load your history.', onRetry: _refresh)
-            else ...[
-              if (history.hasError && history.hasValue)
-                _InlineError(message: 'We could not refresh the latest history.', onRetry: _refresh),
-              ProgressOverviewCard(
-                progress: progress,
-                header: Text('Your progress', style: theme.textTheme.titleLarge),
-              ),
-              const SizedBox(height: 18),
-              Text('Prayer progress', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 10),
-              for (final prayer in PrayerType.values)
-                _PrayerProgressTile(progress: prayerProgress[prayer]),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(child: Text('Qaza logs', style: theme.textTheme.titleLarge)),
-                  Text('${records.length}${notifier.hasMore ? '+' : ''}', key: const Key('history_result_count'), style: theme.textTheme.titleMedium),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<PrayerType?>(
-                              key: const Key('history_prayer_filter'),
-                              value: _prayerFilter,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Prayer',
-                                prefixIcon: Icon(Icons.mosque_rounded),
-                              ),
-                              items: [
-                                const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
-                                ...PrayerType.values.map(
-                                  (prayer) => DropdownMenuItem<PrayerType?>(value: prayer, child: Text(prayer.label)),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SyncStatusBar(),
+                  if (history.isLoading && !history.hasValue)
+                    const LoadingState(message: 'Loading your history...', padding: 60)
+                  else if (history.hasError && !history.hasValue)
+                    ErrorState(message: 'We could not load your history.', onRetry: _refresh)
+                  else ...[
+                    if (history.hasError && history.hasValue)
+                      _InlineError(
+                        message: 'We could not refresh the latest history.',
+                        onRetry: _refresh,
+                      ),
+                    _progressSection(theme, progressAsync),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(child: Text('Qaza logs', style: theme.textTheme.titleLarge)),
+                        Text(
+                          '${records.length}${notifier.hasMore ? '+' : ''}',
+                          key: const Key('history_result_count'),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<PrayerType?>(
+                                    key: const Key('history_prayer_filter'),
+                                    value: _prayerFilter,
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Prayer',
+                                      prefixIcon: Icon(Icons.mosque_rounded),
+                                    ),
+                                    items: [
+                                      const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
+                                      ...PrayerType.values.map(
+                                        (prayer) => DropdownMenuItem<PrayerType?>(
+                                          value: prayer,
+                                          child: Text(prayer.label),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: _setPrayerFilter,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: DropdownButtonFormField<QazaStatus?>(
+                                    key: const Key('history_status_filter'),
+                                    value: _statusFilter,
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Status',
+                                      prefixIcon: Icon(Icons.filter_alt_rounded),
+                                    ),
+                                    items: const [
+                                      DropdownMenuItem<QazaStatus?>(value: null, child: Text('All')),
+                                      DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
+                                      DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
+                                    ],
+                                    onChanged: _setStatusFilter,
+                                  ),
                                 ),
                               ],
-                              onChanged: _setPrayerFilter,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: DropdownButtonFormField<QazaStatus?>(
-                              key: const Key('history_status_filter'),
-                              value: _statusFilter,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Status',
-                                prefixIcon: Icon(Icons.filter_alt_rounded),
-                              ),
-                              items: const [
-                                DropdownMenuItem<QazaStatus?>(value: null, child: Text('All')),
-                                DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
-                                DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    key: const Key('history_date_filter'),
+                                    onPressed: _pickOriginalDateRange,
+                                    icon: const Icon(Icons.date_range_rounded),
+                                    label: Text(_dateFilterLabel()),
+                                  ),
+                                ),
+                                if (hasFilters) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    key: const Key('history_clear_filters'),
+                                    tooltip: 'Clear filters',
+                                    onPressed: _clearFilters,
+                                    icon: const Icon(Icons.clear_rounded),
+                                  ),
+                                ],
                               ],
-                              onChanged: _setStatusFilter,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              key: const Key('history_date_filter'),
-                              onPressed: _pickOriginalDateRange,
-                              icon: const Icon(Icons.date_range_rounded),
-                              label: Text(_dateFilterLabel()),
-                            ),
-                          ),
-                          if (hasFilters) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              key: const Key('history_clear_filters'),
-                              tooltip: 'Clear filters',
-                              onPressed: _clearFilters,
-                              icon: const Icon(Icons.clear_rounded),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Newest original Qaza dates first • loads 50 at a time',
+                                style: theme.textTheme.bodySmall,
+                              ),
                             ),
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Newest original Qaza dates first • loads 50 at a time',
-                          style: theme.textTheme.bodySmall,
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (history.hasValue && records.isEmpty)
+                      EmptyState(
+                        icon: hasFilters ? Icons.filter_alt_off_rounded : Icons.history_toggle_off_rounded,
+                        title: hasFilters ? 'No matching Qaza records.' : 'No Qaza records yet.',
+                        message: hasFilters
+                            ? 'Try changing or clearing the filters.'
+                            : 'Your Qaza records will appear here in chronological order.',
+                      ),
+                  ],
+                ]),
+              ),
+            ),
+            if (showRecordSliver)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index < records.length) {
+                        final record = records[index];
+                        return _HistoryTile(key: ValueKey(record.id), record: record);
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: notifier.isLoadingMore
+                              ? const CircularProgressIndicator()
+                              : Text('Scroll for more history', style: theme.textTheme.bodySmall),
+                        ),
+                      );
+                    },
+                    childCount: records.length + (showPaginationFooter ? 1 : 0),
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              if (records.isEmpty)
-                EmptyState(
-                  icon: hasFilters ? Icons.filter_alt_off_rounded : Icons.history_toggle_off_rounded,
-                  title: hasFilters ? 'No matching Qaza records.' : 'No Qaza records yet.',
-                  message: hasFilters
-                      ? 'Try changing or clearing the filters.'
-                      : 'Your Qaza records will appear here in chronological order.',
-                )
-              else ...[
-                for (final record in records) _HistoryTile(key: ValueKey(record.id), record: record),
-                if (notifier.hasMore || notifier.isLoadingMore)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: notifier.isLoadingMore
-                          ? const CircularProgressIndicator()
-                          : Text('Scroll for more history', style: theme.textTheme.bodySmall),
-                    ),
-                  ),
-              ],
-            ],
+            const SliverToBoxAdapter(child: SizedBox(height: 28)),
           ],
         ),
       ),

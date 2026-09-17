@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 
 class QazaHistoryPage {
@@ -28,6 +29,10 @@ abstract interface class QazaRepository {
     DateTime? beforeOriginalDate,
     String? beforeId,
   });
+
+  /// Returns aggregate progress without requiring callers to materialize the
+  /// complete Qaza ledger.
+  Future<QazaProgressSummary> getProgressSummary({required String userId});
 
   Future<void> addRecord(QazaRecord record);
 

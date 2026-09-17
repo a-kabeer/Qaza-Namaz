@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 
@@ -102,6 +103,13 @@ class FirestoreQazaRepository implements QazaRepository {
     final records = documents.map(_fromDocument).toList(growable: false);
 
     return QazaHistoryPage(records: records, hasMore: hasMore);
+  }
+
+  @override
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    // Firestore remains the remote synchronization implementation. This
+    // fallback preserves repository parity without changing the sync design.
+    return QazaProgressSummary.fromRecords(await getRecords(userId: userId));
   }
 
   @override

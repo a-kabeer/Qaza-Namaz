@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../local/database/app_database.dart';
@@ -59,6 +60,39 @@ class DriftQazaRepository implements QazaRepository {
     return QazaHistoryPage(
       records: page.records.map(_toDomain).toList(growable: false),
       hasMore: page.hasMore,
+    );
+  }
+
+  @override
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    final counts = await database.qazaRecordsDao.getProgressCounts(userId: userId);
+    final pending = <PrayerType, int>{
+      for (final prayer in PrayerType.values) prayer: 0,
+    };
+    final completed = <PrayerType, int>{
+      for (final prayer in PrayerType.values) prayer: 0,
+    };
+
+    for (final entry in counts.entries) {
+      pending[entry.key] = entry.value[QazaStatus.pending] ?? 0;
+      completed[entry.key] = entry.value[QazaStatus.completed] ?? 0;
+    }
+
+    return QazaProgressSummary(
+      overall: QazaProgress(
+        pending: pending.values.fold(0, (total, count) => total + count),
+        completed: completed.values.fold(0, (total, count) => total + count),
+      ),
+      byPrayer: {
+        for (final prayer in PrayerType.values)
+          prayer: PrayerProgress(
+            prayerType: prayer,
+            progress: QazaProgress(
+              pending: pending[prayer]!,
+              completed: completed[prayer]!,
+            ),
+          ),
+      },
     );
   }
 

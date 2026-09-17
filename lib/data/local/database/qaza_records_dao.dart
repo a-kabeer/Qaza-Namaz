@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/qaza_record.dart';
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
 
@@ -143,6 +145,42 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final hasMore = rows.length > limit;
     final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
     return QazaHistoryPage(records: visible, hasMore: hasMore);
+  }
+
+  /// Database-side grouped counts used by History progress cards. No Qaza
+  /// rows are materialized by the caller.
+  Future<Map<PrayerType, Map<QazaStatus, int>>> getProgressCounts({
+    required String userId,
+  }) async {
+    final countExpression = qazaRecords.id.count();
+    final query = selectOnly(qazaRecords)
+      ..addColumns([
+        qazaRecords.prayerType,
+        qazaRecords.status,
+        countExpression,
+      ])
+      ..where(qazaRecords.userId.equals(userId))
+      ..groupBy([qazaRecords.prayerType, qazaRecords.status]);
+
+    final rows = await query.get();
+    final counts = <PrayerType, Map<QazaStatus, int>>{};
+    for (final row in rows) {
+      final prayerName = row.read(qazaRecords.prayerType);
+      final statusName = row.read(qazaRecords.status);
+      final count = row.read(countExpression) ?? 0;
+      if (prayerName == null || statusName == null) continue;
+
+      final prayer = PrayerType.values.firstWhere(
+        (value) => value.name == prayerName,
+        orElse: () => throw StateError('Unknown prayer type "$prayerName" in local database.'),
+      );
+      final status = QazaStatus.values.firstWhere(
+        (value) => value.name == statusName,
+        orElse: () => throw StateError('Unknown Qaza status "$statusName" in local database.'),
+      );
+      counts.putIfAbsent(prayer, () => <QazaStatus, int>{})[status] = count;
+    }
+    return counts;
   }
 
   Future<List<QazaRecord>> getPage({

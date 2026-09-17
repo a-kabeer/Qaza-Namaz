@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../local/qaza_local_store.dart';
@@ -82,6 +83,12 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<QazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
     if (userId != _activeUserId) return const QazaHistoryPage(records: [], hasMore: false);
     return _toHistoryPage(await _localStore.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId));
+  }
+
+  @override
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    if (userId != _activeUserId) return QazaProgressSummary.empty();
+    return _localStore.getProgressSummary(userId: userId);
   }
 
   QazaHistoryPage _toHistoryPage(LocalQazaHistoryPage page) => QazaHistoryPage(records: page.records, hasMore: page.hasMore);

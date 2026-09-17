@@ -27,15 +27,19 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
     final generation = ++_requestGeneration;
     _resetCursor();
     final userId = ref.watch(activeUserIdProvider);
+    final prayer = prayerFilter;
+    final status = statusFilter;
+    final rangeStart = from;
+    final rangeEnd = to;
     if (userId == null) return const <QazaRecord>[];
 
     final page = await ref.read(qazaServiceProvider).getHistoryPage(
           userId: userId,
           limit: pageSize,
-          prayerType: prayerFilter,
-          status: statusFilter,
-          from: from,
-          to: to,
+          prayerType: prayer,
+          status: status,
+          from: rangeStart,
+          to: rangeEnd,
         );
     if (generation != _requestGeneration) return const <QazaRecord>[];
     _setCursor(page);
@@ -45,30 +49,42 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
   Future<void> refresh() async {
     final generation = ++_requestGeneration;
     final userId = ref.read(activeUserIdProvider);
+    final prayer = prayerFilter;
+    final status = statusFilter;
+    final rangeStart = from;
+    final rangeEnd = to;
+    _resetCursor();
+
     if (userId == null) {
-      _resetCursor();
       state = const AsyncData(<QazaRecord>[]);
       return;
     }
 
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      _resetCursor();
+    try {
       final page = await ref.read(qazaServiceProvider).getHistoryPage(
             userId: userId,
             limit: pageSize,
-            prayerType: prayerFilter,
-            status: statusFilter,
-            from: from,
-            to: to,
+            prayerType: prayer,
+            status: status,
+            from: rangeStart,
+            to: rangeEnd,
           );
-      if (generation != _requestGeneration) return const <QazaRecord>[];
+      if (generation != _requestGeneration) return;
       _setCursor(page);
-      return page.records;
-    });
+      state = AsyncData(page.records);
+    } catch (error, stackTrace) {
+      if (generation != _requestGeneration) return;
+      state = AsyncError(error, stackTrace);
+    }
   }
 
-  Future<void> setFilters({PrayerType? prayer, QazaStatus? status, DateTime? rangeStart, DateTime? rangeEnd}) async {
+  Future<void> setFilters({
+    PrayerType? prayer,
+    QazaStatus? status,
+    DateTime? rangeStart,
+    DateTime? rangeEnd,
+  }) async {
     prayerFilter = prayer;
     statusFilter = status;
     from = rangeStart;
@@ -89,28 +105,41 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) return;
 
-    _loadingMore = true;
+    final generation = _requestGeneration;
+    final beforeOriginalDate = _beforeOriginalDate;
+    final beforeId = _beforeId;
+    final prayer = prayerFilter;
+    final status = statusFilter;
+    final rangeStart = from;
+    final rangeEnd = to;
     final current = state.valueOrNull ?? const <QazaRecord>[];
+    _loadingMore = true;
+
     try {
       final page = await ref.read(qazaServiceProvider).getHistoryPage(
             userId: userId,
             limit: pageSize,
-            prayerType: prayerFilter,
-            status: statusFilter,
-            from: from,
-            to: to,
-            beforeOriginalDate: _beforeOriginalDate,
-            beforeId: _beforeId,
+            prayerType: prayer,
+            status: status,
+            from: rangeStart,
+            to: rangeEnd,
+            beforeOriginalDate: beforeOriginalDate,
+            beforeId: beforeId,
           );
+      if (generation != _requestGeneration) return;
+
       final existingIds = current.map((record) => record.id).toSet();
       final appended = page.records.where((record) => existingIds.add(record.id));
       _setCursor(page);
       state = AsyncData([...current, ...appended]);
     } catch (error, stackTrace) {
+      if (generation != _requestGeneration) return;
       state = AsyncData(current);
       Error.throwWithStackTrace(error, stackTrace);
     } finally {
-      _loadingMore = false;
+      if (generation == _requestGeneration) {
+        _loadingMore = false;
+      }
     }
   }
 
@@ -118,6 +147,7 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
     _beforeOriginalDate = null;
     _beforeId = null;
     _hasMore = false;
+    _loadingMore = false;
   }
 
   void _setCursor(QazaHistoryPage page) {

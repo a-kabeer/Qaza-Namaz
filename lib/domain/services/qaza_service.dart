@@ -46,6 +46,12 @@ class QazaService {
     );
   }
 
+  /// Returns aggregate progress suitable for History without materializing
+  /// the complete Qaza ledger when the repository supports local aggregation.
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) {
+    return repository.getProgressSummary(userId: userId);
+  }
+
   Future<List<QazaRecord>> getPendingForUser({required String userId}) {
     return getRecords(userId: userId, status: QazaStatus.pending);
   }
