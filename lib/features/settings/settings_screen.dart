@@ -11,6 +11,7 @@ import '../../core/widgets/sync_status.dart';
 import '../../data/sync/sync_state.dart' as sync_models;
 import '../../domain/entities/app_user.dart';
 import '../data_management/qaza_data_management_screen.dart';
+import '../knowledge_base/presentation/knowledge_base_page.dart';
 import 'account_screen.dart';
 import 'notifications_screen.dart';
 
@@ -92,11 +93,22 @@ class SettingsScreen extends ConsumerWidget {
           SettingsSection(
             title: 'Prayer',
             subtitle: 'Review the rules used by the Qaza calculator.',
-            child: SettingsNavRow(
-              icon: Icons.menu_book_outlined,
-              title: 'Prayer & Fiqh Rules',
-              subtitle: 'Calculation method, Baligh, Witr',
-              onTap: () => open(const FiqhScreen()),
+            child: Column(
+              children: [
+                SettingsNavRow(
+                  icon: Icons.menu_book_outlined,
+                  title: 'Prayer & Fiqh Rules',
+                  subtitle: 'Calculation method, Baligh, Witr',
+                  onTap: () => open(const FiqhScreen()),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SettingsNavRow(
+                  icon: Icons.library_books_outlined,
+                  title: 'Knowledge Base',
+                  subtitle: 'Browse Masail & Mugalat',
+                  onTap: () => open(const KnowledgeBasePage()),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
