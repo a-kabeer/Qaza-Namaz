@@ -11,7 +11,7 @@ import 'qaza_local_store.dart';
 /// The whole cache (records + outbox + last-sync per Firebase UID) is stored
 /// as one JSON document so writes are atomic from the app's point of view.
 /// Records are kept individually with all fields — never aggregate counters.
-class SharedPreferencesQazaLocalStore implements QazaLocalStore {
+class SharedPreferencesQazaLocalStore extends QazaLocalStore {
   SharedPreferencesQazaLocalStore({
     SharedPreferences? preferences,
     this.storageKey = defaultStorageKey,
@@ -137,9 +137,6 @@ class SharedPreferencesQazaLocalStore implements QazaLocalStore {
     } on StateError {
       rethrow;
     } catch (error) {
-      // A malformed cache cannot be migrated safely. Reset it rather than
-      // interpreting partial data as valid records; Firestore remains the
-      // canonical source after the account reconnects.
       debugPrint('Qaza offline cache was unreadable and has been reset: $error');
       return _emptySnapshot();
     }
