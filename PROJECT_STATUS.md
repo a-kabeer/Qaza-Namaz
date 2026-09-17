@@ -6,6 +6,36 @@ Task 9 — Reminders / Notifications (optional)
 ## Overall Progress
 8 / 15 major tasks formally audited and verified
 
+## Feature Work In Progress — Knowledge Base
+
+The Knowledge Base is a separate feature implementation and does not replace or reorder the existing 15-task audit sequence.
+
+### Knowledge Base Part Status
+
+- Part 1 — ✅ COMPLETE — Module foundation, content-authoring location, architecture boundaries, offline requirement, and regression-safety guardrails established.
+- Part 2 — NOT STARTED — Data contract & models
+- Part 3 — NOT STARTED — Content dataset foundation
+- Part 4 — NOT STARTED — Parser & validator
+- Part 5 — NOT STARTED — Repository & data layer
+- Part 6 — NOT STARTED — Riverpod state layer
+- Part 7 — NOT STARTED — Article list & search UI
+- Part 8 — NOT STARTED — Article detail & references UI
+- Part 9 — NOT STARTED — Integration & regression protection
+- Part 10 — NOT STARTED — Performance & accessibility
+- Part 11 — NOT STARTED — Content QA & tests
+- Part 12 — NOT STARTED — Documentation & release readiness
+- Part 13 — NOT STARTED — Full GitHub CI
+
+### Knowledge Base Part 1 — COMPLETE
+
+- Created the dedicated `lib/features/knowledge_base/` feature boundary.
+- Added module-level architecture guidance enforcing `Content → Parser/Validator → Models → Repository → Riverpod → UI`.
+- Established `assets/knowledge_base/content/` as the human-editable bundled content location so article authors do not need to edit Dart widgets.
+- Added `docs/KNOWLEDGE_BASE.md` with scope, non-negotiable requirements, architecture, author workflow, and the 13-part implementation sequence.
+- Explicitly protected existing navigation, Qaza logic, authentication, synchronization, calculator, calendar, and notification behavior from this feature work.
+- No CI was run in Part 1; CI is reserved for Part 13 after Parts 1–12 are complete.
+- No article content, parser, repository, Riverpod provider, UI, or navigation code was introduced in Part 1.
+
 ## Task Status
 
 - Task 1 — ✅ COMPLETE — Product workflow
@@ -103,7 +133,7 @@ Authentication lifecycle audit completed without replacing the existing Firebase
 
 ## Task 6 Validation — VERIFIED
 
-GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ede7dd` completed successfully:
+GitHub Actions run `35012895549` on commit `3602b7d58aeceb27fabce604eaf7448e62ede7dd` completed successfully:
 
 - Analyze — ✅
 - Tests (Windows) — ✅
