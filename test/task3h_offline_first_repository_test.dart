@@ -94,13 +94,14 @@ class _FailingRepository implements QazaRepository {
 
   @override
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) => _delegate.getRecords(userId: userId, prayerType: prayerType, status: status);
-
+  @override
+  Future<QazaPage> getPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status, DateTime? afterOriginalDate, String? afterId}) => _delegate.getPage(userId: userId, limit: limit, prayerType: prayerType, status: status, afterOriginalDate: afterOriginalDate, afterId: afterId);
+  @override
+  Future<QazaRecord?> getOldestPending({required String userId, required PrayerType prayerType}) => _delegate.getOldestPending(userId: userId, prayerType: prayerType);
   @override
   Future<QazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) => _delegate.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId);
-
   @override
   Future<QazaProgressSummary> getProgressSummary({required String userId}) => _delegate.getProgressSummary(userId: userId);
-
   @override
   Future<void> addRecord(QazaRecord record) { if (failWrites) return Future.error(StateError('simulated remote outage')); return _delegate.addRecord(record); }
   @override
