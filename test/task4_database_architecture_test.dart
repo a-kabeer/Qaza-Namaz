@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/data/local/shared_preferences_qaza_local_store.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/migration/shared_preferences_to_drift_migrator.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 QazaRecord _record({
@@ -26,7 +29,31 @@ QazaRecord _record({
   );
 }
 
+Future<void> _seedLegacySnapshot(
+  SharedPreferences preferences,
+  Map<String, List<QazaRecord>> recordsByUser, {
+  bool includeSchemaVersion = true,
+}) async {
+  final payload = <String, dynamic>{
+    if (includeSchemaVersion) 'schemaVersion': 1,
+    'recordsByUser': {
+      for (final entry in recordsByUser.entries)
+        entry.key: entry.value.map((record) => record.toJson()).toList(),
+    },
+  };
+  await preferences.setString(
+    SharedPreferencesToDriftMigrator.legacyStorageKey,
+    jsonEncode(payload),
+  );
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   test('Qaza record preserves the complete database field set', () {
     final completedAt = DateTime.utc(2026, 1, 3, 10);
     final record = _record(
@@ -60,84 +87,96 @@ void main() {
     expect(restored.updatedAt, record.updatedAt);
   });
 
-  test('local cache writes an explicit schema version', () async {
-    SharedPreferences.setMockInitialValues({});
+  test('legacy snapshot migrates into Drift and records migration version', () async {
     final preferences = await SharedPreferences.getInstance();
-    final store = SharedPreferencesQazaLocalStore(
+    await _seedLegacySnapshot(preferences, {
+      'user-a': [_record()],
+    });
+
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final result = await SharedPreferencesToDriftMigrator(
+      database: database,
       preferences: preferences,
-      storageKey: 'test_cache',
+    ).migrate();
+
+    expect(result.migratedRecordCount, 1);
+    expect(await database.qazaRecordsDao.count(userId: 'user-a'), 1);
+    expect(
+      preferences.getInt(SharedPreferencesToDriftMigrator.migrationVersionKey),
+      SharedPreferencesToDriftMigrator.migrationVersion,
     );
-
-    await store.saveRecords('user-a', [_record()]);
-
-    final raw = preferences.getString('test_cache');
-    expect(raw, isNotNull);
-    final decoded = jsonDecode(raw!) as Map<String, dynamic>;
-    expect(decoded['schemaVersion'], SharedPreferencesQazaLocalStore.currentSchemaVersion);
-    expect((decoded['recordsByUser'] as Map<String, dynamic>).containsKey('user-a'), isTrue);
+    expect(preferences.getBool(SharedPreferencesToDriftMigrator.migrationKey), true);
   });
 
-  test('legacy v1 cache without schemaVersion remains readable', () async {
-    final record = _record();
+  test('legacy v1 snapshot without schemaVersion remains migratable', () async {
+    final preferences = await SharedPreferences.getInstance();
+    await _seedLegacySnapshot(
+      preferences,
+      {'user-a': [_record()]},
+      includeSchemaVersion: false,
+    );
+
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final result = await SharedPreferencesToDriftMigrator(
+      database: database,
+      preferences: preferences,
+    ).migrate();
+
+    expect(result.migratedRecordCount, 1);
+    expect(await database.qazaRecordsDao.count(userId: 'user-a'), 1);
+  });
+
+  test('unsupported completed migration version is rejected instead of silently reset', () async {
     SharedPreferences.setMockInitialValues({
-      'test_cache': jsonEncode({
-        'recordsByUser': {
-          'user-a': [record.toJson()],
-        },
-        'outboxByUser': {},
-        'lastSyncByUser': {},
-      }),
+      SharedPreferencesToDriftMigrator.migrationKey: true,
+      SharedPreferencesToDriftMigrator.migrationVersionKey:
+          SharedPreferencesToDriftMigrator.migrationVersion + 1,
     });
     final preferences = await SharedPreferences.getInstance();
-    final store = SharedPreferencesQazaLocalStore(
-      preferences: preferences,
-      storageKey: 'test_cache',
-    );
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
 
-    final snapshot = await store.load();
-    expect(snapshot.recordsByUser['user-a'], hasLength(1));
-    expect(snapshot.recordsByUser['user-a']!.single.id, record.id);
+    expect(
+      SharedPreferencesToDriftMigrator(
+        database: database,
+        preferences: preferences,
+      ).migrate(),
+      throwsA(isA<StateError>()),
+    );
   });
 
-  test('unsupported local cache version is rejected instead of silently reset', () async {
-    SharedPreferences.setMockInitialValues({
-      'test_cache': jsonEncode({
-        'schemaVersion': SharedPreferencesQazaLocalStore.currentSchemaVersion + 1,
-        'recordsByUser': {},
-        'outboxByUser': {},
-        'lastSyncByUser': {},
-      }),
+  test('migrated records remain isolated by Firebase UID', () async {
+    final preferences = await SharedPreferences.getInstance();
+    await _seedLegacySnapshot(preferences, {
+      'user-a': [_record(userId: 'user-a')],
+      'user-b': [
+        _record(
+          userId: 'user-b',
+          id: 'user-b_witr_2026-01-01',
+          prayerType: PrayerType.witr,
+        ),
+      ],
     });
-    final preferences = await SharedPreferences.getInstance();
-    final store = SharedPreferencesQazaLocalStore(
+
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await SharedPreferencesToDriftMigrator(
+      database: database,
       preferences: preferences,
-      storageKey: 'test_cache',
-    );
+    ).migrate();
 
-    expect(store.load(), throwsA(isA<StateError>()));
-  });
-
-  test('local cache remains namespaced by Firebase UID', () async {
-    SharedPreferences.setMockInitialValues({});
-    final preferences = await SharedPreferences.getInstance();
-    final store = SharedPreferencesQazaLocalStore(
-      preferences: preferences,
-      storageKey: 'test_cache',
-    );
-
-    await store.saveRecords('user-a', [_record(userId: 'user-a')]);
-    await store.saveRecords('user-b', [
-      _record(
-        userId: 'user-b',
-        id: 'user-b_witr_2026-01-01',
-        prayerType: PrayerType.witr,
-      ),
-    ]);
-
-    final snapshot = await store.load();
-    expect(snapshot.recordsByUser['user-a']!.single.userId, 'user-a');
-    expect(snapshot.recordsByUser['user-b']!.single.userId, 'user-b');
-    expect(snapshot.recordsByUser['user-a']!.single.prayerType, PrayerType.fajr);
-    expect(snapshot.recordsByUser['user-b']!.single.prayerType, PrayerType.witr);
+    final userA = await database.qazaRecordsDao.getPage(userId: 'user-a');
+    final userB = await database.qazaRecordsDao.getPage(userId: 'user-b');
+    expect(userA, hasLength(1));
+    expect(userB, hasLength(1));
+    expect(userA.single.userId, 'user-a');
+    expect(userB.single.userId, 'user-b');
+    expect(userA.single.prayerType, PrayerType.fajr);
+    expect(userB.single.prayerType, PrayerType.witr);
   });
 }

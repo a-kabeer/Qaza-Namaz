@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,7 +8,9 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/features/history/history_progress.dart';
+import 'package:qaza_namaz/features/history/history_logs_controller.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 
@@ -44,15 +48,12 @@ void main() {
       record(id: 'fajr_done', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 4), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 10, 8)),
       record(id: 'zuhr_done', prayer: PrayerType.zuhr, originalDate: DateTime(2026, 9, 6), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 11, 8)),
     ]);
-
     await pumpScreen(tester, repository);
     expect(find.text('Fajr Qaza'), findsNWidgets(2));
     expect(find.text('Zuhr Qaza'), findsOneWidget);
-
     await selectDropdown(tester, const Key('history_prayer_filter'), 'Fajr');
     expect(find.text('Fajr Qaza'), findsNWidgets(2));
     expect(find.text('Zuhr Qaza'), findsNothing);
-
     await selectDropdown(tester, const Key('history_status_filter'), 'Completed');
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.textContaining('Status: Pending'), findsNothing);
@@ -65,17 +66,14 @@ void main() {
       record(id: 'inside', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 3)),
       record(id: 'outside', prayer: PrayerType.zuhr, originalDate: DateTime(2026, 9, 10)),
     ]);
-
     await pumpScreen(tester, repository);
     await tester.tap(find.byKey(const Key('history_date_filter')));
     await tester.pumpAndSettle();
-
     expect(find.byType(DateRangePickerDialog), findsOneWidget);
     await tester.tap(find.bySemanticsLabel(RegExp(r'Thursday, September 3, 2026')));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel(RegExp(r'Saturday, September 5, 2026')));
     await tester.pumpAndSettle();
-
     final apply = find.byWidgetPredicate((widget) {
       if (widget is! Text) return false;
       final value = widget.data?.toUpperCase();
@@ -85,7 +83,6 @@ void main() {
       await tester.tap(apply.last);
       await tester.pumpAndSettle();
     }
-
     expect(find.byType(DateRangePickerDialog), findsNothing);
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.text('Zuhr Qaza'), findsNothing);
@@ -99,7 +96,6 @@ void main() {
       record(id: 'new', prayer: PrayerType.asr, originalDate: DateTime(2026, 9, 1), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 11, 9)),
       record(id: 'pending', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 15)),
     ]);
-
     await pumpScreen(tester, repository);
     final newFinder = find.text('Asr Qaza');
     final oldFinder = find.text('Fajr Qaza');
@@ -114,11 +110,107 @@ void main() {
   testWidgets('shows a distinct empty state when filters have no matches', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'fajr', prayer: PrayerType.fajr, originalDate: DateTime(2026, 8, 1))]);
-
     await pumpScreen(tester, repository);
     await selectDropdown(tester, const Key('history_prayer_filter'), 'Isha');
-
     expect(find.text('No matching Qaza records.'), findsOneWidget);
     expect(find.text('Try changing or clearing the filters.'), findsOneWidget);
   });
+
+  testWidgets('loads the next page on scroll and keeps the list lazy', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      for (var i = 0; i < 120; i++)
+        record(id: 'item-$i', prayer: i.isEven ? PrayerType.fajr : PrayerType.zuhr, originalDate: DateTime(2026, 9, 17).subtract(Duration(days: i)), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18).subtract(Duration(days: i))),
+    ]);
+    await pumpScreen(tester, repository);
+    expect(repository.historyPageCalls, 1);
+    expect(find.textContaining('Original Qaza date: 29 Jul 2026'), findsNothing);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
+    await tester.pumpAndSettle();
+    expect(repository.historyPageCalls, greaterThanOrEqualTo(2));
+    expect(find.textContaining('Original Qaza date: 29 Jul 2026'), findsOneWidget);
+  });
+
+  testWidgets('clear filters resets pagination and returns to the first page', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      for (var i = 0; i < 120; i++)
+        record(id: 'item-$i', prayer: i.isEven ? PrayerType.fajr : PrayerType.zuhr, originalDate: DateTime(2026, 9, 17).subtract(Duration(days: i)), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18).subtract(Duration(days: i))),
+    ]);
+    await pumpScreen(tester, repository);
+    await selectDropdown(tester, const Key('history_prayer_filter'), 'Fajr');
+    expect(repository.historyPageCalls, 2);
+    expect(find.byKey(const Key('history_clear_filters')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history_clear_filters')));
+    await tester.pumpAndSettle();
+    expect(repository.historyPageCalls, 3);
+    expect(find.text('All prayers'), findsOneWidget);
+    expect(find.textContaining('Original Qaza date: 17 Sep 2026'), findsOneWidget);
+  });
+
+  testWidgets('refresh requests a new first page without using the loaded ledger provider', (tester) async {
+    final repository = _HistoryOnlyRepository();
+    await repository.addRecords([
+      record(id: 'newest', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 17), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18)),
+      record(id: 'older', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 10), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18)),
+    ]);
+    await pumpScreen(tester, repository);
+    expect(repository.historyPageCalls, 1);
+    expect(repository.progressSummaryCalls, greaterThanOrEqualTo(1));
+    await tester.tap(find.byTooltip('Refresh logs'));
+    await tester.pumpAndSettle();
+    expect(repository.historyPageCalls, 2);
+    expect(repository.progressSummaryCalls, greaterThanOrEqualTo(2));
+    expect(find.textContaining('Original Qaza date: 17 Sep 2026'), findsOneWidget);
+  });
+
+  test('two simultaneous page requests result in one database request', () async {
+    final repository = _SlowHistoryRepository();
+    await repository.addRecords([
+      for (var i = 0; i < 120; i++)
+        record(id: 'item-$i', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 17).subtract(Duration(days: i)), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18).subtract(Duration(days: i))),
+    ]);
+    final container = ProviderContainer(
+      overrides: [qazaRepositoryProvider.overrideWithValue(repository), activeUserIdProvider.overrideWithValue('test-user')],
+    );
+    addTearDown(container.dispose);
+    await container.read(historyLogsProvider.future);
+    repository.blockNextPage = true;
+    final notifier = container.read(historyLogsProvider.notifier);
+    final first = notifier.loadMore();
+    await Future<void>.delayed(Duration.zero);
+    final second = notifier.loadMore();
+    expect(repository.historyPageCalls, 2);
+    repository.releaseBlockedPage();
+    await Future.wait([first, second]);
+    expect(repository.historyPageCalls, 2);
+  });
+}
+
+class _HistoryOnlyRepository extends InMemoryQazaRepository {
+  @override
+  Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) {
+    throw StateError('History screen must not use getRecords().');
+  }
+}
+
+class _SlowHistoryRepository extends InMemoryQazaRepository {
+  bool blockNextPage = false;
+  Completer<void>? _releaseCompleter;
+
+  @override
+  Future<QazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
+    final page = await super.getHistoryPage(userId: userId, limit: limit, prayerType: prayerType, status: status, from: from, to: to, beforeOriginalDate: beforeOriginalDate, beforeId: beforeId);
+    if (blockNextPage && historyPageCalls == 2) {
+      blockNextPage = false;
+      _releaseCompleter = Completer<void>();
+      await _releaseCompleter!.future;
+    }
+    return page;
+  }
+
+  void releaseBlockedPage() {
+    _releaseCompleter?.complete();
+    _releaseCompleter = null;
+  }
 }

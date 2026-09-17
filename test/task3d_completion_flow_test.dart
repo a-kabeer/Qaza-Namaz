@@ -24,14 +24,19 @@ Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
       child: MaterialApp(home: child),
     );
 
+Future<void> settleAuth(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
 Future<void> pumpComplete(WidgetTester tester, InMemoryQazaRepository repository) async {
   await tester.pumpWidget(scoped(const CompleteQazaScreen(), repository));
-  await tester.pumpAndSettle();
+  await settleAuth(tester);
 }
 
 Future<void> pumpNamazWise(WidgetTester tester, InMemoryQazaRepository repository) async {
   await tester.pumpWidget(scoped(const NamazWiseScreen(), repository));
-  await tester.pumpAndSettle();
+  await settleAuth(tester);
 }
 
 void main() {
@@ -68,7 +73,7 @@ void main() {
     await tester.scrollUntilVisible(witr, 300, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(witr);
-    await tester.pumpAndSettle();
+    await settleAuth(tester);
     expect(find.text('Witr Qaza'), findsOneWidget);
     expect(find.text('20 Aug 2026'), findsOneWidget);
     expect(find.text('Complete 0 selected'), findsNothing);
@@ -78,7 +83,7 @@ void main() {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'witr_1', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 20)), record(id: 'witr_2', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 21))]);
     await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
-    await tester.pumpAndSettle();
+    await settleAuth(tester);
     expect(find.text('Complete 0 selected'), findsNothing);
     final boxes = find.byType(CheckboxListTile);
     expect(boxes, findsNWidgets(2));
@@ -101,7 +106,7 @@ void main() {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([record(id: 'witr_1', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 20)), record(id: 'isha_1', prayer: PrayerType.isha, originalDate: DateTime(2026, 8, 19))]);
     await tester.pumpWidget(scoped(const PendingDatesScreen(prayer: PrayerType.witr), repository));
-    await tester.pumpAndSettle();
+    await settleAuth(tester);
     final checkbox = find.byType(CheckboxListTile).first;
     await tester.tap(checkbox);
     await tester.pumpAndSettle();

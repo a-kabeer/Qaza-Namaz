@@ -23,19 +23,24 @@ class QazaRecord {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-    QazaRecord copyWith({
+  QazaRecord copyWith({
+    String? id,
+    String? userId,
+    PrayerType? prayerType,
+    DateTime? originalDate,
     QazaStatus? status,
     DateTime? completedAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return QazaRecord(
-      id: id,
-      userId: userId,
-      prayerType: prayerType,
-      originalDate: originalDate,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      prayerType: prayerType ?? this.prayerType,
+      originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
       completedAt: completedAt ?? this.completedAt,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -63,7 +68,7 @@ class QazaRecord {
         originalDate: DateTime.parse(json['originalDate'] as String),
         status: QazaStatus.values
             .firstWhere((v) => v.name == (json['status'] as String)),
-                        completedAt: json['completedAt'] == null
+        completedAt: json['completedAt'] == null
             ? null
             : DateTime.parse(json['completedAt'] as String),
         createdAt: DateTime.parse(json['createdAt'] as String),

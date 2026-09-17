@@ -130,6 +130,49 @@ void main() {
       expect(await service.completeSelected(userId: 'u1', recordIds: []), 0);
     });
 
+    test('history page keeps descending original-date order and passes filters through', () async {
+      final repository = service.repository as InMemoryQazaRepository;
+      await service.addRecords([
+        QazaRecord(id: 'old', userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 1, 1), status: QazaStatus.completed, completedAt: DateTime(2026, 2, 1), createdAt: DateTime(2026, 1, 1), updatedAt: DateTime(2026, 2, 1)),
+        QazaRecord(id: 'new-a', userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 1, 3), status: QazaStatus.completed, completedAt: DateTime(2026, 2, 2), createdAt: DateTime(2026, 1, 3), updatedAt: DateTime(2026, 2, 2)),
+        QazaRecord(id: 'new-b', userId: 'u1', prayerType: PrayerType.zuhr, originalDate: DateTime(2026, 1, 3), status: QazaStatus.completed, completedAt: DateTime(2026, 2, 3), createdAt: DateTime(2026, 1, 3), updatedAt: DateTime(2026, 2, 3)),
+      ]);
+
+      final first = await service.getHistoryPage(userId: 'u1', limit: 2);
+      final second = await service.getHistoryPage(userId: 'u1', limit: 2, beforeOriginalDate: first.nextOriginalDate, beforeId: first.nextId);
+
+      expect(first.records.map((r) => r.id), ['new-b', 'new-a']);
+      expect(first.hasMore, isTrue);
+      expect(second.records.map((r) => r.id), ['old']);
+      expect(second.hasMore, isFalse);
+      expect(repository.historyPageCalls, 2);
+    });
+
+    test('history page accepts explicit all-status filtering', () async {
+      await service.recordQaza(userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 1, 1));
+      await service.recordQaza(userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 1, 2));
+      final records = await service.repository.getRecords(userId: 'u1');
+      await service.completeRecord(userId: 'u1', recordId: records.last.id, completedAt: DateTime(2026, 3, 1));
+
+      final completed = await service.getHistoryPage(userId: 'u1', status: QazaStatus.completed);
+      final all = await service.getHistoryPage(userId: 'u1', status: null);
+      expect(completed.records.map((r) => r.id), [records.last.id]);
+      expect(all.records, hasLength(2));
+    });
+
+    test('progress summary is exposed through the service contract', () async {
+      await service.recordQaza(userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 1, 1));
+      await service.recordQaza(userId: 'u1', prayerType: PrayerType.witr, originalDate: DateTime(2026, 1, 2));
+      final records = await service.repository.getRecords(userId: 'u1');
+      await service.completeRecord(userId: 'u1', recordId: records.last.id, completedAt: DateTime(2026, 2, 1));
+
+      final summary = await service.getProgressSummary(userId: 'u1');
+      expect(summary.overall.pending, 1);
+      expect(summary.overall.completed, 1);
+      expect(summary.byPrayer[PrayerType.witr]!.progress.completed, 1);
+      expect(summary.byPrayer[PrayerType.fajr]!.progress.pending, 1);
+    });
+
     test('history is newest-first by completion timestamp', () async {
       for (var day = 1; day <= 3; day++) {
         await service.recordQaza(userId: 'u1', prayerType: PrayerType.fajr, originalDate: DateTime(2024, 1, day));

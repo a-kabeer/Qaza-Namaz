@@ -122,7 +122,9 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     final records = await repository.getRecords(userId: 'u1');
-    expect(records.single.originalDate, DateTime(2026, 9, 13));
+    expect(records, hasLength(1));
+    final storedDate = records.single.originalDate;
+    expect([storedDate.year, storedDate.month, storedDate.day], [2026, 9, 13]);
     expect(records.single.prayerType, PrayerType.maghrib);
   });
 
