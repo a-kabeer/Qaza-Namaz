@@ -8,9 +8,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: WorkspaceShell()));
 
     final navigationBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(
-      navigationBar.destinations.map((destination) => destination.label).toList(),
-      const ['Home', 'Calculator', 'Logs', 'Settings'],
-    );
+    final labels = navigationBar.destinations
+        .whereType<NavigationDestination>()
+        .map((destination) => destination.label)
+        .toList();
+
+    expect(labels, const ['Home', 'Calculator', 'Logs', 'Settings']);
   });
 }
