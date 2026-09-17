@@ -216,7 +216,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
   /// Duplicate adds are ignored at the database boundary. The unique key
   /// `(userId, prayerType, originalDate)` prevents a second record for the
   /// same missed prayer even when the generated record id differs.
-  Future<int> insertRecord(QazaRecordsCompanion record) => into(qazaRecords).insertOnConflictIgnore(record);
+  Future<int> insertRecord(QazaRecordsCompanion record) =>
+      into(qazaRecords).insert(record, mode: InsertMode.insertOrIgnore);
 
   Future<int> insertRecords(List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return 0;
@@ -225,8 +226,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase> with _$QazaRecordsDao
     return transaction(() async {
       var inserted = 0;
       for (final record in records) {
-        await into(qazaRecords).insertOnConflictIgnore(record);
-        inserted++;
+        final result = await into(qazaRecords).insert(
+          record,
+          mode: InsertMode.insertOrIgnore,
+        );
+        if (result > 0) inserted++;
       }
       return inserted;
     });
