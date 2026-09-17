@@ -3,21 +3,25 @@
 ## Completed
 
 - [x] Audited the 3-step Add Qaza flow.
+- [x] Removed the Add Qaza screen's eager full-ledger pre-check.
+- [x] Add Qaza now checks availability only after dates and prayers are selected.
 - [x] Confirmed Gregorian normalized dates are the storage identity.
 - [x] Confirmed duplicate identity is date + prayer + user, not date-only.
 - [x] Confirmed single/range/multiple selection canonicalizes dates.
-- [x] Confirmed current UI does not persist the full ledger itself.
-- [x] Confirmed save-time availability analysis preserves already-prayed and already-recorded distinctions.
-- [x] Added regression coverage for duplicate normalization and eligibility rules through the Task 3 test suite.
+- [x] Preserved already-prayed and already-recorded distinctions.
+- [x] Preserved final save-time revalidation.
+- [x] Kept the 3-step Add Qaza flow intact.
+
+## Task 8 integration
+
+The shared QazaService availability path has now been migrated to bounded date-scoped reads. It no longer calls the legacy full-ledger API for availability analysis or Add Qaza persistence.
 
 ## Remaining
 
-- [ ] Replace Add Qaza's pre-check full-ledger load with a bounded/date-scoped repository query.
-- [ ] Add a Drift DAO query for existing records constrained to the selected date range and selected prayers.
-- [ ] Prevent huge date ranges from materializing the entire user's ledger during availability checks.
-- [ ] Add large-range performance tests.
+- [ ] Add dedicated large-range performance regression tests.
+- [ ] Finish per-date/per-prayer CalendarPicker availability integration so a date is disabled only when no eligible prayer remains.
 - [ ] Full CI — final Task 13 gate.
 
 ## Decision
 
-The current Add Qaza correctness behavior is retained. The remaining optimization is deliberately separated from the eligibility rules so date/prayer availability semantics are not changed while the data access path is made scalable.
+Availability reads are now constrained by the selected date range and selected prayers. The database-backed path uses paginated range queries rather than materializing the user's entire ledger.
