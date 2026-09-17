@@ -113,7 +113,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         const SizedBox(height: 8),
         Text(
           state.hasSelection
-              ? '${state.selectedCount} dates selected.'
+              ? '${state.selectedCount} ${state.selectedCount == 1 ? 'date' : 'dates'} selected.'
               : 'Tap an available date to select it.',
           key: const Key('calendar_selection_prompt'),
         ),
@@ -296,6 +296,7 @@ class _Grid extends StatelessWidget {
               Positioned(
                 bottom: 2,
                 child: Container(
+                  key: Key('calendar_qaza_indicator_$key'),
                   width: 5,
                   height: 5,
                   decoration: BoxDecoration(
