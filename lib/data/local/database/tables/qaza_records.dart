@@ -2,9 +2,8 @@ import 'package:drift/drift.dart';
 
 /// Normalized local representation of a Qaza prayer record.
 ///
-/// Part 2 defines the schema only. Repository/DAO integration is intentionally
-/// deferred to Part 3/4 so the existing SharedPreferences store remains the
-/// active source of truth until the migration is complete.
+/// The domain model remains separate from Drift's generated row type so DAO
+/// code can explicitly map persistence data into domain entities.
 @DataClassName('QazaRecordRow')
 class QazaRecords extends Table {
   TextColumn get id => text()();
