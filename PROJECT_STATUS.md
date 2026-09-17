@@ -17,7 +17,7 @@ Knowledge Base — 13-part implementation
 - Part 10 — ✅ COMPLETE — Performance & accessibility
 - Part 11 — ✅ COMPLETE — Content QA & tests
 - Part 12 — ✅ COMPLETE — Documentation & release readiness
-- Part 13 — NOT STARTED — Full GitHub CI
+- Part 13 — ⏳ IN PROGRESS — Full GitHub CI and CI-exposed integration fixes
 
 ## Knowledge Base Part 12 — COMPLETE
 
@@ -26,8 +26,17 @@ Knowledge Base — 13-part implementation
 - Documented the current empty dataset as intentional until verified religious content is supplied by the content author.
 - Documented the final pre-release commands and offline verification requirements.
 - Confirmed primary navigation and existing Qaza functionality remain outside the Knowledge Base feature boundary.
-- CI remains deferred to Part 13.
+
+## Knowledge Base Part 13 — IN PROGRESS
+
+- Full CI exposed pre-existing Drift/Qaza compilation issues that must be fixed before release validation can pass.
+- Separated the generated Drift row type from the domain `QazaRecord` model.
+- Restored generated DAO part directives and aligned DAO/repository/local-store type boundaries.
+- Added the missing SyncOutbox DAO user query and backward-compatible local-store defaults.
+- Preserved the full DAO test coverage and added explicit domain imports where needed.
+- Fixed the Knowledge Base repository test's `FlutterError` import and removed an unused detail-page import.
+- CI has automatically re-triggered on the fixes; final Part 13 completion remains gated on a successful Analyze, Linux tests, Windows tests, and Android build matrix.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 13 — Full GitHub CI.
+Confirm the latest GitHub CI run passes all jobs, then mark Part 13 complete.
