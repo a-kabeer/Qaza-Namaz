@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -109,7 +107,8 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
       _setCursor(page);
       state = AsyncData([...current, ...appended]);
     } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
+      state = AsyncData(current);
+      Error.throwWithStackTrace(error, stackTrace);
     } finally {
       _loadingMore = false;
     }
