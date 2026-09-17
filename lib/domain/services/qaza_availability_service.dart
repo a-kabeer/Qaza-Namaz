@@ -32,8 +32,7 @@ class QazaPrayerKey {
         prayerType: record.prayerType,
       );
 
-  String get value =>
-      '${userId}_${prayerType.name}_${QazaDate.key(date)}';
+  String get value => '${userId}_${prayerType.name}_${QazaDate.key(date)}';
 
   @override
   bool operator ==(Object other) =>
@@ -111,18 +110,36 @@ class QazaAvailabilityService {
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
     Iterable<PrayerType> prayerTypes = PrayerType.values,
   }) {
+    final recorded = recordedKeys(existingRecords);
     return [
       for (final prayer in prayerTypes)
-        if (eligibility(
+        if (eligibilityFromKeys(
               userId: userId,
               date: date,
               prayerType: prayer,
-              existingRecords: existingRecords,
+              recordedKeys: recorded,
               prayedKeys: prayedKeys,
             ) ==
             QazaEligibility.available)
           prayer,
     ];
+  }
+
+  QazaEligibility eligibilityFromKeys({
+    required String userId,
+    required DateTime date,
+    required PrayerType prayerType,
+    required Set<QazaPrayerKey> recordedKeys,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+  }) {
+    final key = QazaPrayerKey(
+      userId: userId,
+      date: QazaDate.normalize(date),
+      prayerType: prayerType,
+    );
+    if (prayedKeys.contains(key)) return QazaEligibility.alreadyPrayed;
+    if (recordedKeys.contains(key)) return QazaEligibility.alreadyRecorded;
+    return QazaEligibility.available;
   }
 
   bool isDateAvailable({
@@ -181,5 +198,42 @@ class QazaAvailabilityService {
       candidates: List.unmodifiable(candidates),
       newCandidates: List.unmodifiable(newCandidates),
     );
+  }
+
+  /// Returns dates in the requested month that have no eligible prayer left.
+  /// The caller supplies only the records fetched for that month, so this
+  /// operation remains bounded even when the overall ledger is very large.
+  Set<DateTime> unavailableDatesForMonth({
+    required String userId,
+    required DateTime month,
+    required Iterable<QazaRecord> existingRecords,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Iterable<PrayerType> prayerTypes = PrayerType.values,
+  }) {
+    final start = DateTime(month.year, month.month, 1);
+    final end = DateTime(month.year, month.month + 1, 0);
+    final uniquePrayers = prayerTypes.toSet();
+    final recorded = recordedKeys(existingRecords);
+    final unavailable = <DateTime>{};
+
+    for (var date = start; !date.isAfter(end); date = DateTime(date.year, date.month, date.day + 1)) {
+      var hasEligiblePrayer = false;
+      for (final prayer in uniquePrayers) {
+        final eligibility = eligibilityFromKeys(
+          userId: userId,
+          date: date,
+          prayerType: prayer,
+          recordedKeys: recorded,
+          prayedKeys: prayedKeys,
+        );
+        if (eligibility == QazaEligibility.available) {
+          hasEligiblePrayer = true;
+          break;
+        }
+      }
+      if (!hasEligiblePrayer) unavailable.add(date);
+    }
+
+    return Set.unmodifiable(unavailable);
   }
 }
