@@ -34,11 +34,11 @@ Completed on `task-db-1-drift-foundation`.
 - Selected-record completion validation iterates bounded pending pages instead of loading the complete ledger in one request.
 - Namaz-wise pending-date UI now loads 50 records at a time with explicit Load more behavior, preventing 1,000+ pending records from being rendered at once.
 - Firestore repository received matching bounded page/oldest-pending contracts for repository parity.
-- Added regression coverage for 1,001-record keyset paging, oldest-pending lookup, service delegation, and aggregate progress.
+- Added regression coverage for 1,001-record keyset paging, oldest-pending lookup, service delegation, aggregate progress, and zero-snapshot bounded reads.
 
 ## Legacy compatibility boundary
 
-`DriftQazaLocalStore.load()` remains available only for legacy full-snapshot compatibility and explicit legacy APIs. New production scalable read paths must use `getPage`, `getHistoryPage`, `getOldestPending`, or `getProgressSummary`. Part 10 will retire the remaining compatibility path after migration callers are fully removed.
+`DriftQazaLocalStore.load()` remains available only for legacy full-snapshot compatibility and explicit legacy APIs. New production scalable read paths use `getPage`, `getHistoryPage`, `getOldestPending`, or `getProgressSummary`. Part 10 will retire the remaining compatibility path after migration callers are fully removed.
 
 ## Validation policy
 
