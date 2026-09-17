@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../local/database/app_database.dart';
 import '../local/database/tables/qaza_records.dart';
@@ -32,10 +33,6 @@ class SharedPreferencesToDriftMigrator {
   Future<void> _migrationLock = Future<void>.value();
 
   /// Serializes concurrent callers in the same application process.
-  ///
-  /// This prevents two bootstrap paths from importing the same legacy
-  /// snapshot simultaneously. The completion marker is still written only
-  /// after the database transaction and verification succeed.
   Future<MigrationResult> migrate() {
     final result = _migrationLock.then((_) => _migrateOnce());
     _migrationLock = result.then<void>((_) {}, onError: (_, __) {});
@@ -80,8 +77,6 @@ class SharedPreferencesToDriftMigrator {
       (sum, records) => sum + records.length,
     );
 
-    // All inserts/conflict checks happen atomically. A conflict or malformed
-    // record therefore cannot leave a partially migrated database behind.
     await _database.transaction(() async {
       for (final entry in normalized.entries) {
         for (final record in entry.value) {
@@ -101,8 +96,6 @@ class SharedPreferencesToDriftMigrator {
       }
     });
 
-    // Verify every normalized user bucket, not just the aggregate total. This
-    // prevents a user-isolation error from being hidden by another user's rows.
     var targetCount = 0;
     for (final entry in normalized.entries) {
       final count = await _database.qazaRecordsDao.count(userId: entry.key);
@@ -144,15 +137,22 @@ class SharedPreferencesToDriftMigrator {
 
   List<QazaRecord> _normalizeRecords(String userId, List<QazaRecord> records) {
     final byKey = <String, QazaRecord>{};
-    for (final record in records) {
-      if (record.userId != userId) {
+    for (final input in records) {
+      if (input.userId != userId) {
         throw StateError(
           'Qaza migration found a user-isolation mismatch for record '
-          '${record.id}.',
+          '${input.id}.',
         );
       }
+
+      // Qaza dates are calendar dates, not instants. Canonicalize legacy
+      // timezone-aware values before deduplication and persistence so the
+      // same missed calendar date cannot become two SQLite rows.
+      final record = input.copyWith(
+        originalDate: QazaDate.normalize(input.originalDate),
+      );
       final key = '${record.userId}|${record.prayerType.name}|'
-          '${record.originalDate.toUtc().toIso8601String()}';
+          '${QazaDate.key(record.originalDate)}';
       final existing = byKey[key];
       if (existing == null) {
         byKey[key] = record;
@@ -225,7 +225,9 @@ class SharedPreferencesToDriftMigrator {
         recordsByUser[entry.key] = (entry.value as List<dynamic>)
             .map((item) {
               if (item is! Map<String, dynamic>) {
-                throw const FormatException('A Qaza record must be a JSON object.');
+                throw const FormatException(
+                  'A Qaza record must be a JSON object.',
+                );
               }
               return QazaRecord.fromJson(item);
             })
