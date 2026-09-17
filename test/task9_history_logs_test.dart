@@ -89,7 +89,9 @@ void main() {
     expect(find.byType(DateRangePickerDialog), findsNothing);
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.text('Zuhr Qaza'), findsNothing);
-    expect(find.text('03 Sep 2026 – 05 Sep 2026'), findsOneWidget);
+    expect(find.byKey(const Key('history_date_filter')), findsOneWidget);
+    final rangeLabels = find.text('03 Sep 2026 – 05 Sep 2026');
+    expect(rangeLabels, findsNWidgets(2));
   });
 
   testWidgets('sorts newest original Qaza date first and labels both dates', (tester) async {
