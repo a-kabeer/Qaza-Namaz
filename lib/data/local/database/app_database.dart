@@ -11,8 +11,8 @@ part 'app_database.g.dart';
 /// SQLite without changing application behaviour in this part.
 @DriftDatabase(tables: [])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([DatabaseConnection? connection])
-      : super(connection ?? driftDatabase(name: 'qaza_namaz'));
+  AppDatabase([QueryExecutor? executor])
+      : super(executor ?? driftDatabase(name: 'qaza_namaz'));
 
   @override
   int get schemaVersion => 1;
