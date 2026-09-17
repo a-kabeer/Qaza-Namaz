@@ -37,7 +37,7 @@ void main() {
       record(id: 'witr_completed', prayer: PrayerType.witr, originalDate: DateTime(2026, 8, 18), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 3, 9)),
     ]);
     await pumpScreen(tester, repository);
-    expect(find.text('Your progress'), findsOneWidget);
+    expect(find.text('Progress'), findsOneWidget);
     expect(find.text('Pending'), findsOneWidget);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
