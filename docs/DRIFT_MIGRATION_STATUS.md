@@ -21,17 +21,20 @@ CI/build validation is intentionally deferred until **Part 13**.
 - Part 13 — ⏳ PENDING — Full GitHub CI/build validation and completion gate
 
 ## Part 7 — Production bounded read paths
-- Added repository-level `QazaPage` keyset pagination with UID, prayer, and status filters.
-- Added repository-level oldest-pending lookup.
-- Drift uses indexed keyset DAO reads; legacy full-ledger compatibility reads iterate keyset pages instead of offsets.
-- Offline-first paginated, oldest-pending, history, and aggregate reads bypass the legacy full snapshot.
-- Service progress, oldest-pending, and selected-record validation use bounded/database-backed paths.
-- Namaz-wise pending dates now load 50 records at a time with Load more.
-- Firestore implements matching bounded contracts.
-- Added regression coverage for 1,001-record paging and bounded reads.
+
+Implemented on `task-db-1-drift-foundation`.
+
+- Repository-level keyset pagination and oldest-pending contracts are available.
+- Drift reads use indexed keyset pagination and direct oldest-pending lookup.
+- Offline-first bounded reads bypass `DriftQazaLocalStore.load()`.
+- Service progress and oldest-pending operations use bounded/database-backed paths.
+- Selected-record validation iterates bounded pending pages.
+- Namaz-wise pending dates render 50 records per page with Load more.
+- Firestore provides matching bounded read contracts.
+- Regression coverage includes a 1,001-record ledger and zero-snapshot bounded reads.
 
 ## Legacy compatibility boundary
-`DriftQazaLocalStore.load()` remains only for legacy full-snapshot compatibility. Part 10 will retire this remaining compatibility path after migration callers are fully removed.
+`DriftQazaLocalStore.load()` remains only for legacy full-snapshot compatibility. Part 10 will retire this final compatibility path after all remaining migration callers are removed.
 
 ## Validation policy
 No Part 13 CI gate is claimed for Parts 1–12. Final completion requires the complete configured GitHub CI/build matrix to pass after Part 13.
