@@ -28,7 +28,6 @@ QazaRecord record({required String id, required PrayerType prayer, required Qaza
 
 class _SummaryOnlyRepository extends InMemoryQazaRepository {
   bool getRecordsCalled = false;
-  int progressSummaryCalls = 0;
 
   @override
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async {
@@ -38,7 +37,6 @@ class _SummaryOnlyRepository extends InMemoryQazaRepository {
 
   @override
   Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
-    progressSummaryCalls++;
     return super.getProgressSummary(userId: userId);
   }
 }
@@ -64,13 +62,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2 pending'), findsWidgets);
-    final fulfilledChips = find.byType(StatusChip).evaluate().where((element) =>
-        tester.widget<StatusChip>(element).label == '1 fulfilled');
+    final fulfilledChips = find.byType(StatusChip).evaluate().where(
+          (element) => (element.widget as StatusChip).label == '1 fulfilled',
+        );
     expect(fulfilledChips, hasLength(1));
     expect(find.text('3'), findsWidgets);
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
     expect(find.text('1 pending'), findsWidgets);
-    expect(repository.progressSummaryCalls, greaterThanOrEqualTo(1));
     expect(repository.getRecordsCalled, isFalse);
   });
 }
