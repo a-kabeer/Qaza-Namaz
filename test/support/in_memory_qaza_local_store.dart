@@ -30,6 +30,55 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<LocalQazaPage> getPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status,
+    DateTime? afterOriginalDate,
+    String? afterId,
+  }) async {
+    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
+    if ((afterOriginalDate == null) != (afterId == null)) {
+      throw ArgumentError('afterOriginalDate and afterId must be provided together');
+    }
+    var records = (_recordsByUser[userId] ?? const <QazaRecord>[])
+        .where((record) => prayerType == null || record.prayerType == prayerType)
+        .where((record) => status == null || record.status == status)
+        .where(
+          (record) =>
+              afterOriginalDate == null ||
+              record.originalDate.isAfter(afterOriginalDate) ||
+              (record.originalDate.isAtSameMomentAs(afterOriginalDate) &&
+                  record.id.compareTo(afterId!) > 0),
+        )
+        .toList()
+      ..sort((a, b) {
+        final byDate = a.originalDate.compareTo(b.originalDate);
+        return byDate != 0 ? byDate : a.id.compareTo(b.id);
+      });
+    final hasMore = records.length > limit;
+    return LocalQazaPage(
+      records: (hasMore ? records.take(limit) : records).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
+  @override
+  Future<QazaRecord?> getOldestPending({
+    required String userId,
+    required PrayerType prayerType,
+  }) async {
+    final page = await getPage(
+      userId: userId,
+      limit: 1,
+      prayerType: prayerType,
+      status: QazaStatus.pending,
+    );
+    return page.records.isEmpty ? null : page.records.first;
+  }
+
+  @override
   Future<LocalQazaHistoryPage> getHistoryPage({
     required String userId,
     int limit = 50,
