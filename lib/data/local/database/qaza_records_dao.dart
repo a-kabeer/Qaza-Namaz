@@ -15,6 +15,18 @@ class QazaRecordsPage {
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
+/// A newest-first history page using a stable descending `(originalDate, id)`
+/// cursor.
+class QazaHistoryPage {
+  const QazaHistoryPage({required this.records, required this.hasMore});
+
+  final List<QazaRecord> records;
+  final bool hasMore;
+
+  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  String? get nextId => records.isEmpty ? null : records.last.id;
+}
+
 @DriftAccessor(tables: [QazaRecords])
 class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     with _$QazaRecordsDaoMixin {
@@ -82,13 +94,55 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         (r) => OrderingTerm.asc(r.originalDate),
         (r) => OrderingTerm.asc(r.id),
       ])
-      // Fetch one extra row so the UI can know whether another page exists.
       ..limit(limit + 1);
 
     final rows = await query.get();
     final hasMore = rows.length > limit;
     final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
     return QazaRecordsPage(records: visible, hasMore: hasMore);
+  }
+
+  Future<QazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = defaultPageSize,
+    String? prayerType,
+    String? status,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    _validatePage(limit, 0);
+    _validateRange(from, to);
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError('beforeOriginalDate and beforeId must be provided together');
+    }
+
+    final query = select(qazaRecords)
+      ..where((row) {
+        final predicates = <Expression<bool>>[row.userId.equals(userId)];
+        if (prayerType != null) predicates.add(row.prayerType.equals(prayerType));
+        if (status != null) predicates.add(row.status.equals(status));
+        if (from != null) predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+        if (to != null) predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (beforeOriginalDate != null) {
+          predicates.add(
+            row.originalDate.isSmallerThanValue(beforeOriginalDate!) |
+                (row.originalDate.equals(beforeOriginalDate) & row.id.isSmallerThanValue(beforeId!)),
+          );
+        }
+        return predicates.reduce((a, b) => a & b);
+      })
+      ..orderBy([
+        (r) => OrderingTerm.desc(r.originalDate),
+        (r) => OrderingTerm.desc(r.id),
+      ])
+      ..limit(limit + 1);
+
+    final rows = await query.get();
+    final hasMore = rows.length > limit;
+    final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
+    return QazaHistoryPage(records: visible, hasMore: hasMore);
   }
 
   Future<List<QazaRecord>> getPage({
