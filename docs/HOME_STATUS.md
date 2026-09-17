@@ -18,7 +18,7 @@ IN PROGRESS
 | 2 | Home Architecture & State Model | ✅ Complete |
 | 3 | Dashboard → Home Rename | ✅ Complete |
 | 4 | Home Header | ✅ Complete |
-| 5 | New User / Empty Home | ⬜ Pending |
+| 5 | New User / Empty Home | ✅ Complete |
 | 6 | Active User Home | ⬜ Pending |
 | 7 | Progress & Prayer Summary | ⬜ Pending |
 | 8 | Complete Qaza UX | ⬜ Pending |
@@ -99,6 +99,20 @@ Home header remains intentionally minimal:
 
 `Home  |  Notifications  |  Profile`
 
+## Part 5 — New User / Empty Home
+
+### Completed
+- Added a dedicated setup state presentation for `pending == 0 && completed == 0` using the existing `HomeStateResolver`.
+- Replaced the zero-stat dashboard for new users with a focused `Start Your Qaza Journey` setup experience.
+- Added two clear entry points: primary `Calculate Qaza` and secondary `Add Qaza Manually`.
+- Connected both actions to the existing Calculator and Add Qaza workflows instead of duplicating logic.
+- Removed setup-state clutter such as Ledger Overview and Prayer Ledger cards until the user has actual Qaza records.
+- Kept pull-to-refresh and the Home header actions intact.
+- Added widget coverage for the empty-state presentation and both setup journeys.
+
+### Empty-State Rule
+New users see only the information and actions needed to create their first Qaza records. Progress analytics and prayer-level ledger summaries start once records exist.
+
 ## Related Pull Requests
 
 ### Core dependencies
@@ -106,7 +120,7 @@ Home header remains intentionally minimal:
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
 ### Home task
-- #19 — Home Part 1-4: baseline, state model, Dashboard→Home rename & header — OPEN; now contains Parts 1–4 implementation/status commits
+- #19 — Home Parts 1-5: baseline, state model, Dashboard→Home rename, header & empty state — OPEN; now contains Parts 1–5 implementation/status commits
 
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
@@ -120,10 +134,10 @@ Home header remains intentionally minimal:
 - #18 — KB-1: Knowledge Base foundation — OPEN, DRAFT, separate task
 
 ## Pending
-Parts 5–12.
+Parts 6–12.
 
 ## Current Part
-Part 5 — New User / Empty Home
+Part 6 — Active User Home
 
 ## CI / Validation
-Part 4 includes focused widget coverage for the header destinations. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
+Part 5 includes focused widget coverage for the empty Home state and setup navigation. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
