@@ -36,9 +36,7 @@ class _SummaryOnlyRepository extends InMemoryQazaRepository {
   }
 
   @override
-  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
-    return super.getProgressSummary(userId: userId);
-  }
+  Future<QazaProgressSummary> getProgressSummary({required String userId}) async => super.getProgressSummary(userId: userId);
 }
 
 void main() {
