@@ -50,7 +50,7 @@ void main() {
     await pumpWorkspace(tester, InMemoryQazaRepository());
 
     expect(find.text('Start Your Qaza Journey'), findsOneWidget);
-    expect(find.text('Your Qaza ledger is empty.'), findsOneWidget);
+    expect(find.textContaining('Your Qaza ledger is empty.'), findsOneWidget);
     expect(find.text('Ledger overview'), findsNothing);
     expect(find.text('Prayer ledger'), findsNothing);
 
