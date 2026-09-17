@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/widgets/progress_widgets.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
@@ -63,7 +64,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2 pending'), findsWidgets);
-    expect(find.text('1 fulfilled'), findsWidgets);
+    final fulfilledChips = find.byType(StatusChip).evaluate().where((element) =>
+        tester.widget<StatusChip>(element).label == '1 fulfilled');
+    expect(fulfilledChips, hasLength(1));
     expect(find.text('3'), findsWidgets);
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
     expect(find.text('1 pending'), findsWidgets);
