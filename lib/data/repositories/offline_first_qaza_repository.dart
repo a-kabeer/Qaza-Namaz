@@ -11,6 +11,10 @@ import '../sync/sync_state.dart';
 /// Local record mutations and their durable outbox entries are committed as
 /// one operation when the store supports transactions; Firestore remains a
 /// background synchronization target.
+///
+/// The in-memory ledger is deliberately lazy. Authentication/user switching
+/// must not materialize the entire SQLite dataset; legacy full-ledger callers
+/// load it only when they explicitly request that API.
 class OfflineFirstQazaRepository implements QazaRepository {
   OfflineFirstQazaRepository({required QazaRepository remote, required QazaLocalStore localStore, Stream<bool>? connectivityChanges, DateTime Function()? now})
       : _remote = remote,
@@ -53,9 +57,11 @@ class OfflineFirstQazaRepository implements QazaRepository {
       _emit(const SyncState());
       return;
     }
-    await _ensureLoaded();
+
+    // Do not call _ensureLoaded() here. A user switch happens during
+    // authentication/startup and must remain O(1) with respect to ledger size.
+    // Full-ledger legacy reads and explicit syncNow() remain lazy entry points.
     _emitPending();
-    unawaited(_syncInBackground());
   }
 
   Future<void> _ensureLoaded() async {
@@ -76,6 +82,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     await _ensureLoaded();
     final records = _records.values.where((r) => prayerType == null || r.prayerType == prayerType).where((r) => status == null || r.status == status).toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
+    // This legacy API explicitly asks for the complete in-memory ledger, so it
+    // is also the point at which background synchronization may safely begin.
+    unawaited(_syncInBackground());
     return records;
   }
 
@@ -151,6 +160,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<void> _syncInBackground() async {
     final existing = _syncFuture;
     if (existing != null) return existing;
+    // A startup auth event must not cause a full ledger load. Sync becomes
+    // eligible after an explicit full-ledger read/mutation or syncNow().
+    if (!_loaded) return;
     final future = _runSync();
     _syncFuture = future;
     try { await future; } finally { _syncFuture = null; }
@@ -261,7 +273,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
       _emit(SyncState(status: SyncStatus.offline, lastSyncAt: _lastSyncAt, pendingCount: _outbox.length));
       return;
     }
-    unawaited(_syncInBackground());
+    if (_loaded) unawaited(_syncInBackground());
   }
 
   String _combinationKey(QazaRecord record) => '${record.prayerType.name}|${_dateKey(record.originalDate)}';
