@@ -7,6 +7,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/dashboard/dashboard_screen.dart';
+import 'package:qaza_namaz/core/widgets/progress_widgets.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 
@@ -38,6 +39,7 @@ void main() {
       ProviderScope(
         overrides: [
           qazaRepositoryProvider.overrideWithValue(repository),
+          activeUserIdProvider.overrideWithValue('test-user'),
           authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
         ],
         child: const MaterialApp(home: DashboardScreen()),
@@ -46,8 +48,12 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    final fulfilled = find.byType(StatusChip).evaluate().where((element) {
+      final chip = element.widget as StatusChip;
+      return chip.label == '1 fulfilled';
+    });
+    expect(fulfilled, hasLength(1));
     expect(find.text('2 pending'), findsWidgets);
-    expect(find.text('1 fulfilled'), findsOneWidget);
     expect(find.text('3'), findsWidgets);
 
     // Prayer overview is below the initial viewport. ListView materializes
