@@ -34,8 +34,6 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
-/// Transitional store: Qaza records remain in SharedPreferences until Part 6,
-/// while the synchronization outbox is already durable in SQLite.
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
 });
@@ -112,13 +110,18 @@ final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((
   return pending;
 });
 
-/// Database-backed progress for History. This is grouped/count-only and does
-/// not load the Qaza ledger into Dart.
-final historyProgressProvider = FutureProvider.autoDispose<QazaProgressSummary>((ref) {
+/// Shared database-backed progress for screens that only need counts. It does
+/// not subscribe to qazaRecordsProvider and therefore does not materialize the
+/// complete ledger merely to render statistics.
+final progressSummaryProvider = FutureProvider.autoDispose<QazaProgressSummary>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(QazaProgressSummary.empty());
   return ref.read(qazaServiceProvider).getProgressSummary(userId: userId);
 });
+
+/// Backwards-compatible History alias. History uses the same aggregate query
+/// as the dashboard rather than maintaining a second statistics implementation.
+final historyProgressProvider = progressSummaryProvider;
 
 class ThemeModeNotifier extends Notifier<AppThemeMode> {
   @override
