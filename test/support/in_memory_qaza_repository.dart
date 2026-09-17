@@ -51,6 +51,18 @@ class InMemoryQazaRepository implements QazaRepository {
   @override
   Future<void> completeRecord({required String userId, required String recordId, required DateTime completedAt}) => completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
   @override
-  Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async { for (final id in recordIds) { final r=_records[id]; if (r == null || r.userId != userId || r.status == QazaStatus.completed) continue; _records[id]=r.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt); } }
+  Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async {
+    for (final id in recordIds) {
+      final r = _records[id];
+      if (r == null || r.userId != userId) continue;
+      if (r.status == QazaStatus.completed) {
+        if (r.completedAt == null || completedAt.isBefore(r.completedAt!)) {
+          _records[id] = r.copyWith(completedAt: completedAt, updatedAt: completedAt);
+        }
+        continue;
+      }
+      _records[id] = r.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt);
+    }
+  }
   bool _sameDate(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 }
