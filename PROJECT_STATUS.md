@@ -11,7 +11,7 @@ Knowledge Base — 13-part implementation
 - Part 4 — ✅ COMPLETE — Parser & validator
 - Part 5 — ✅ COMPLETE — Repository & data layer
 - Part 6 — ✅ COMPLETE — Riverpod state layer
-- Part 7 — NOT STARTED — Article list & search UI
+- Part 7 — ✅ COMPLETE — Article list & search UI
 - Part 8 — NOT STARTED — Article detail & references UI
 - Part 9 — NOT STARTED — Integration & regression protection
 - Part 10 — NOT STARTED — Performance & accessibility
@@ -19,17 +19,17 @@ Knowledge Base — 13-part implementation
 - Part 12 — NOT STARTED — Documentation & release readiness
 - Part 13 — NOT STARTED — Full GitHub CI
 
-## Knowledge Base Part 6 — COMPLETE
+## Knowledge Base Part 7 — COMPLETE
 
-- Added repository dependency-injection provider.
-- Added offline article loading provider.
-- Added category and search state providers.
-- Added derived bilingual article filtering across titles, summaries, bodies, IDs, slugs, and tags.
-- Added selected-article and related-article providers.
-- Added Riverpod tests for categories, filtering/search, selection, and related content.
-- Corrected the Part 4 kebab-case validation regex and added a valid-identifier parser test.
+- Added the Knowledge Base article list page.
+- Added search with clear action and bilingual filtering through the Riverpod state layer.
+- Added All, Masail, and Mugalat category filters.
+- Added loading, empty, error, retry, and pull-to-refresh states.
+- Added article cards using theme-aware Material components.
+- Kept article content sourced from the data/state layer; no article text is hardcoded into the UI.
+- Added a temporary detail navigation placeholder for Part 8.
 - CI remains deferred to Part 13.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 7 — Article List & Search UI.
+Proceed to Knowledge Base Part 8 — Article Detail & References UI.
