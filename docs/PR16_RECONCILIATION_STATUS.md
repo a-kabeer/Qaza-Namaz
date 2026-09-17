@@ -35,4 +35,4 @@ The original PR #16 head is stale/diverged and must not be merged directly. Its 
 
 ## Validation
 
-Regression coverage exists for eligibility, duplicate safety, account isolation, availability, and bounded persistence paths. Final Task 13 CI validation is now complete on the reconciled branch.
+Regression coverage exists for eligibility, duplicate safety, account isolation, availability, and bounded persistence paths. Final Task 13 CI validation is complete on the reconciled PR #20 branch.
