@@ -24,11 +24,13 @@ void main() {
     ));
     await _pumpNavigation(tester);
   }
+
   Future<void> revealPrayerLedger(WidgetTester tester) async {
     final scrollable = find.byType(Scrollable).first;
     await tester.drag(scrollable, const Offset(0, -500));
     await _pumpNavigation(tester);
   }
+
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     expect(find.text('Home'), findsOneWidget);
@@ -36,9 +38,12 @@ void main() {
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.byTooltip('Notifications'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
     await revealPrayerLedger(tester);
     expect(find.text('Prayer ledger'), findsOneWidget);
   });
+
   testWidgets('Home derives live totals from individual records', (tester) async {
     final repository = InMemoryQazaRepository();
     final now = DateTime(2026, 9, 13);
@@ -52,6 +57,23 @@ void main() {
     expect(find.text('2'), findsWidgets);
     expect(find.text('50% completed'), findsOneWidget);
   });
+
+  testWidgets('Home header opens Notifications and Profile', (tester) async {
+    await pumpWorkspace(tester, InMemoryQazaRepository());
+
+    await tester.tap(find.byTooltip('Notifications'));
+    await _pumpNavigation(tester);
+    expect(find.text('Notifications'), findsOneWidget);
+
+    await tester.pageBack();
+    await _pumpNavigation(tester);
+    expect(find.byTooltip('Profile'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Profile'));
+    await _pumpNavigation(tester);
+    expect(find.text('Account'), findsOneWidget);
+  });
+
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator').first);
@@ -67,6 +89,7 @@ void main() {
     expect(find.text('Account'), findsWidgets);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
+
   testWidgets('Back from a non-root tab returns to Home instead of exiting', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Logs').first);
