@@ -27,8 +27,9 @@ SharedPreferences -> Drift/SQLite production migration - Part 12 complete
 - Added paginated history regression coverage across multiple pages with strict user scoping.
 - Added complete-oldest workflow coverage to verify only the intended prayer record changes.
 - Added duplicate and cross-account mutation regression coverage.
+- Expanded migration regression coverage for concurrent bootstrap calls and timezone-aware legacy calendar dates.
+- Migration now canonicalizes legacy `originalDate` values as calendar dates before deduplication/persistence.
 - Existing database schema, migration resilience, dashboard aggregate, history pagination, and offline-first isolation tests remain part of the regression suite.
-- No production UI or database architecture was duplicated from the dedicated migration/Home workstreams.
 
 ## Validation
 Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 12.
