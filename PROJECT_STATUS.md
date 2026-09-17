@@ -12,24 +12,25 @@ Knowledge Base — 13-part implementation
 - Part 5 — ✅ COMPLETE — Repository & data layer
 - Part 6 — ✅ COMPLETE — Riverpod state layer
 - Part 7 — ✅ COMPLETE — Article list & search UI
-- Part 8 — NOT STARTED — Article detail & references UI
+- Part 8 — ✅ COMPLETE — Article detail & references UI
 - Part 9 — NOT STARTED — Integration & regression protection
 - Part 10 — NOT STARTED — Performance & accessibility
 - Part 11 — NOT STARTED — Content QA & tests
 - Part 12 — NOT STARTED — Documentation & release readiness
 - Part 13 — NOT STARTED — Full GitHub CI
 
-## Knowledge Base Part 7 — COMPLETE
+## Knowledge Base Part 8 — COMPLETE
 
-- Added the Knowledge Base article list page.
-- Added search with clear action and bilingual filtering through the Riverpod state layer.
-- Added All, Masail, and Mugalat category filters.
-- Added loading, empty, error, retry, and pull-to-refresh states.
-- Added article cards using theme-aware Material components.
-- Kept article content sourced from the data/state layer; no article text is hardcoded into the UI.
-- Added a temporary detail navigation placeholder for Part 8.
+- Replaced the temporary article-detail placeholder with a real article detail page.
+- Added English/Urdu language switching with explicit LTR/RTL text direction.
+- Added article title, summary, category, and full body rendering from typed content.
+- Added structured references display.
+- Added related-article navigation using stable article IDs.
+- Added detail loading, missing-article, and retry states.
+- Added focused widget coverage for bilingual rendering and references.
+- Kept article wording in the dataset; no article content was hardcoded into widgets.
 - CI remains deferred to Part 13.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 8 — Article Detail & References UI.
+Proceed to Knowledge Base Part 9 — Integration & Regression Protection.
