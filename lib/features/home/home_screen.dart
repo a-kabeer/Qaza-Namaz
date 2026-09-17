@@ -10,6 +10,7 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_card.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/sync_status.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../calculator/calculator_screen.dart';
 import '../qaza/add_qaza_screen.dart';
