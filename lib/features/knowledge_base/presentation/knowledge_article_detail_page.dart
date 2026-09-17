@@ -34,7 +34,9 @@ class _KnowledgeArticleDetailPageState
       body: articleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _DetailErrorState(
-          onRetry: () => ref.invalidate(knowledgeArticleProvider(widget.articleId)),
+          onRetry: () => ref.invalidate(
+            knowledgeArticleProvider(widget.articleId),
+          ),
         ),
         data: (article) {
           if (article == null) {
@@ -45,6 +47,7 @@ class _KnowledgeArticleDetailPageState
           final body = _showUrdu ? article.body.ur : article.body.en;
           final summary = _showUrdu ? article.summary.ur : article.summary.en;
           final direction = _showUrdu ? TextDirection.rtl : TextDirection.ltr;
+          final textAlign = _showUrdu ? TextAlign.right : TextAlign.left;
 
           return CustomScrollView(
             slivers: [
@@ -54,44 +57,47 @@ class _KnowledgeArticleDetailPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SegmentedButton<bool>(
-                        segments: const [
-                          ButtonSegment<bool>(
-                            value: false,
-                            icon: Icon(Icons.language),
-                            label: Text('English'),
-                          ),
-                          ButtonSegment<bool>(
-                            value: true,
-                            label: Text('اردو'),
-                          ),
-                        ],
-                        selected: {_showUrdu},
-                        onSelectionChanged: (selection) => setState(() {
-                          _showUrdu = selection.single;
-                        }),
+                      Semantics(
+                        label: 'Article language',
+                        child: SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment<bool>(
+                              value: false,
+                              icon: Icon(Icons.language),
+                              label: Text('English'),
+                            ),
+                            ButtonSegment<bool>(
+                              value: true,
+                              label: Text('اردو'),
+                            ),
+                          ],
+                          selected: {_showUrdu},
+                          onSelectionChanged: (selection) => setState(() {
+                            _showUrdu = selection.single;
+                          }),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Text(
                         title,
                         textDirection: direction,
-                        textAlign: _showUrdu ? TextAlign.right : TextAlign.left,
+                        textAlign: textAlign,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         summary,
                         textDirection: direction,
-                        textAlign: _showUrdu ? TextAlign.right : TextAlign.left,
+                        textAlign: textAlign,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 20),
                       _CategoryBadge(category: article.category),
                       const SizedBox(height: 20),
-                      Text(
+                      SelectableText(
                         body,
                         textDirection: direction,
-                        textAlign: _showUrdu ? TextAlign.right : TextAlign.left,
+                        textAlign: textAlign,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               height: 1.7,
                             ),
@@ -101,7 +107,7 @@ class _KnowledgeArticleDetailPageState
                         Text(
                           _showUrdu ? 'حوالہ جات' : 'References',
                           textDirection: direction,
-                          textAlign: _showUrdu ? TextAlign.right : TextAlign.left,
+                          textAlign: textAlign,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
@@ -127,7 +133,9 @@ class _KnowledgeArticleDetailPageState
                   loading: () => const SliverToBoxAdapter(
                     child: Center(child: CircularProgressIndicator()),
                   ),
-                  error: (error, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  error: (error, _) => const SliverToBoxAdapter(
+                    child: SizedBox.shrink(),
+                  ),
                   data: (related) {
                     if (related.isEmpty) {
                       return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -138,7 +146,7 @@ class _KnowledgeArticleDetailPageState
                           child: Text(
                             _showUrdu ? 'متعلقہ مضامین' : 'Related articles',
                             textDirection: direction,
-                            textAlign: _showUrdu ? TextAlign.right : TextAlign.left,
+                            textAlign: textAlign,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
@@ -150,21 +158,23 @@ class _KnowledgeArticleDetailPageState
                             final relatedTitle = _showUrdu
                                 ? relatedArticle.title.ur
                                 : relatedArticle.title.en;
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                title: Text(
-                                  relatedTitle,
-                                  textDirection: direction,
-                                  textAlign: _showUrdu
-                                      ? TextAlign.right
-                                      : TextAlign.left,
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => KnowledgeArticleDetailPage(
-                                      articleId: relatedArticle.id,
+                            return Semantics(
+                              button: true,
+                              label: relatedTitle,
+                              child: Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  title: Text(
+                                    relatedTitle,
+                                    textDirection: direction,
+                                    textAlign: textAlign,
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => KnowledgeArticleDetailPage(
+                                        articleId: relatedArticle.id,
+                                      ),
                                     ),
                                   ),
                                 ),
