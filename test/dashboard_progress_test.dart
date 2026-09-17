@@ -48,18 +48,15 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    final fulfilled = find.byType(StatusChip).evaluate().where((element) {
+    final fulfilled = find.byType(StatusChip, skipOffstage: false).evaluate().where((element) {
       final chip = element.widget as StatusChip;
       return chip.label == '1 fulfilled';
     });
     expect(fulfilled, hasLength(1));
-    expect(find.text('2 pending'), findsWidgets);
-    expect(find.text('3'), findsWidgets);
+    expect(find.text('2 pending', skipOffstage: false), findsWidgets);
+    expect(find.text('3', skipOffstage: false), findsWidgets);
 
-    // Prayer overview is below the initial viewport. ListView materializes
-    // off-screen children lazily, so reveal the Fajr summary before asserting
-    // the per-prayer card content.
-    final fajrSummary = find.text('1 pending • 1 completed');
+    final fajrSummary = find.text('1 pending • 1 completed', skipOffstage: false);
     await tester.scrollUntilVisible(
       fajrSummary,
       400,
@@ -68,7 +65,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fajrSummary, findsOneWidget);
-    expect(find.text('1 pending'), findsWidgets);
+    expect(find.text('1 pending', skipOffstage: false), findsWidgets);
     expect(repository.getRecordsCalled, isFalse);
   });
 }
