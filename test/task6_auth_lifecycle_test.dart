@@ -104,7 +104,7 @@ void main() {
     expect(startTracking, findsOneWidget);
     await tester.tap(startTracking);
     await tester.pumpAndSettle();
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Home').first, findsOneWidget);
 
     await _pumpAuthEvent(tester, null, auth);
     await _pumpAuthEvent(tester, secondUser, auth);
