@@ -6,6 +6,7 @@ import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 class InMemoryQazaRepository implements QazaRepository {
   final Map<String, QazaRecord> _records = {};
   int historyPageCalls = 0;
+  int progressSummaryCalls = 0;
 
   @override
   Future<List<QazaRecord>> getRecords({
@@ -69,6 +70,7 @@ class InMemoryQazaRepository implements QazaRepository {
 
   @override
   Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+    progressSummaryCalls++;
     return QazaProgressSummary.fromRecords(
       _records.values.where((record) => record.userId == userId),
     );
