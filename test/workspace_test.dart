@@ -19,27 +19,36 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(ProviderScope(
-      overrides: [qazaRepositoryProvider.overrideWithValue(repository), authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com')))],
+      overrides: [
+        qazaRepositoryProvider.overrideWithValue(repository),
+        activeUserIdProvider.overrideWithValue('test-user'),
+        authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
+      ],
       child: const MaterialApp(home: WorkspaceShell()),
     ));
     await _pumpNavigation(tester);
+    await tester.pumpAndSettle();
   }
+
   Future<void> revealPrayerLedger(WidgetTester tester) async {
     final scrollable = find.byType(Scrollable).first;
     await tester.drag(scrollable, const Offset(0, -500));
     await _pumpNavigation(tester);
   }
+
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+    expect(find.text('Add Qaza Manually'), findsOneWidget);
     await revealPrayerLedger(tester);
-    expect(find.text('Prayer overview'), findsOneWidget);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
   });
-  testWidgets('Dashboard derives live totals from individual records', (tester) async {
+
+  testWidgets('Home derives live totals from the aggregate repository summary', (tester) async {
     final repository = InMemoryQazaRepository();
     final now = DateTime(2026, 9, 13);
     await repository.addRecords([
@@ -47,11 +56,11 @@ void main() {
       QazaRecord(id: 'test_zuhr_2026-09-02', userId: 'test-user', prayerType: PrayerType.zuhr, originalDate: DateTime(2026, 9, 2), status: QazaStatus.completed, completedAt: now, createdAt: now, updatedAt: now),
     ]);
     await pumpWorkspace(tester, repository);
-    expect(find.text('1 pending'), findsWidgets);
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('2'), findsWidgets);
-    expect(find.text('50% completed'), findsOneWidget);
+    expect(find.text('1 pending • 1 completed'), findsWidgets);
+    expect(find.text('50%'), findsOneWidget);
+    expect(find.text('1/1'), findsOneWidget);
   });
+
   testWidgets('Selecting Calculator, Logs and Settings preserves destination state', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Calculator').first);
@@ -67,7 +76,8 @@ void main() {
     expect(find.text('Account'), findsWidgets);
     expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
   });
-  testWidgets('Back from a non-root tab returns to Dashboard instead of exiting', (tester) async {
+
+  testWidgets('Back from a non-root tab returns to Home instead of exiting', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     await tester.tap(find.text('Logs').first);
     await _pumpNavigation(tester);
@@ -78,6 +88,6 @@ void main() {
 
     expect(handled, isTrue);
     expect(find.text('Logs & Progress'), findsNothing);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
   });
 }
