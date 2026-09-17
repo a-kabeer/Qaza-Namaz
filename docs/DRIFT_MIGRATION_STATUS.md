@@ -31,8 +31,8 @@ Implemented on `task-db-1-drift-foundation`.
 - The migration marker and target verification remain in place so a completed migration is not repeated.
 - Runtime last-sync state no longer depends on the legacy SharedPreferences store.
 
-## Legacy boundary
-The remaining SharedPreferences dependency is intentionally limited to migration bootstrap code. Part 11 will harden upgrade/data-migration resilience before the legacy dependency can be considered removable from the shipped migration path.
+## Remaining legacy boundary
+The only remaining SharedPreferences usage is the one-time migration bootstrap. Part 11 will harden migration/upgrade resilience and verify repeatability, failure recovery, and preservation of existing data before the migration path is considered production-final.
 
 ## Validation policy
 No Part 13 CI gate is claimed for Parts 1–12. Final completion requires the complete configured GitHub CI/build matrix to pass after Part 13.
