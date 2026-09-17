@@ -26,8 +26,9 @@ void main() {
     PrayerType prayer = PrayerType.fajr,
     QazaStatus status = QazaStatus.pending,
     DateTime? completedAt,
+    DateTime? originalDate,
   }) {
-    final date = DateTime.utc(2020, 1, 1);
+    final date = originalDate ?? DateTime.utc(2020, 1, 1);
     return QazaRecord(
       id: id,
       userId: userId,
@@ -92,10 +93,32 @@ void main() {
     expect(first.migratedRecordCount, 2);
     expect(first.duplicateRecordCount, 2);
     expect(second.alreadyComplete, true);
-    expect(
-      await DriftQazaRepository(db).getRecords(userId: 'user-a'),
-      hasLength(2),
+    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'), hasLength(2));
+  });
+
+  test('canonicalizes timezone-aware legacy dates as calendar dates before deduplication', () async {
+    final first = record(
+      'date-a',
+      originalDate: DateTime.parse('2026-04-10T23:30:00-05:00'),
     );
+    final sameCalendarDate = record(
+      'date-b',
+      originalDate: DateTime.parse('2026-04-10T02:00:00+05:00'),
+    );
+    final prefs = await prefsWith({
+      'user-a': [first.toJson(), sameCalendarDate.toJson()],
+    });
+
+    final result = await SharedPreferencesToDriftMigrator(
+      database: db,
+      preferences: prefs,
+    ).migrate();
+    final rows = await DriftQazaRepository(db).getRecords(userId: 'user-a');
+
+    expect(result.sourceRecordCount, 2);
+    expect(result.migratedRecordCount, 1);
+    expect(rows, hasLength(1));
+    expect(rows.single.originalDate, DateTime(2026, 4, 10));
   });
 
   test('malformed legacy JSON does not set completion marker', () async {
@@ -132,17 +155,13 @@ void main() {
       prefs.getBool(SharedPreferencesToDriftMigrator.migrationKey),
       isNot(true),
     );
-    expect(
-      await DriftQazaRepository(db).getRecords(userId: 'user-a'),
-      isEmpty,
-    );
+    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'), isEmpty);
   });
 
   test('conflicting existing row aborts before completion marker', () async {
     final repository = DriftQazaRepository(db);
     await repository.addRecords([record('conflict')]);
-    final conflicting =
-        record('conflict').copyWith(status: QazaStatus.completed);
+    final conflicting = record('conflict').copyWith(status: QazaStatus.completed);
     final prefs = await prefsWith({'user-a': [conflicting.toJson()]});
 
     expect(
@@ -172,5 +191,25 @@ void main() {
       ).migrate(),
       throwsStateError,
     );
+  });
+
+  test('concurrent migration calls serialize and only one performs the import', () async {
+    final prefs = await prefsWith({
+      'user-a': [record('concurrent').toJson()],
+    });
+    final migrator = SharedPreferencesToDriftMigrator(
+      database: db,
+      preferences: prefs,
+    );
+
+    final results = await Future.wait([
+      migrator.migrate(),
+      migrator.migrate(),
+      migrator.migrate(),
+    ]);
+
+    expect(results.where((result) => !result.alreadyComplete), hasLength(1));
+    expect(results.where((result) => result.alreadyComplete), hasLength(2));
+    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'), hasLength(1));
   });
 }
