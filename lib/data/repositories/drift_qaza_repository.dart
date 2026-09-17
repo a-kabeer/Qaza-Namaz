@@ -1,0 +1,124 @@
+import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_repository.dart';
+import '../local/database/app_database.dart';
+import '../local/database/tables/qaza_records.dart';
+
+/// QazaRepository implementation backed by Drift/SQLite.
+///
+/// This adapter is introduced before production wiring so Part 6 can migrate
+/// existing SharedPreferences data safely before the active store is switched.
+class DriftQazaRepository implements QazaRepository {
+  DriftQazaRepository(this.database);
+
+  final AppDatabase database;
+
+  static const int _pageSize = 500;
+
+  @override
+  Future<List<QazaRecord>> getRecords({
+    required String userId,
+    PrayerType? prayerType,
+    QazaStatus? status,
+  }) async {
+    final rows = <QazaRecord>[];
+    var offset = 0;
+    while (true) {
+      final page = await database.qazaRecordsDao.getPage(
+        userId: userId,
+        limit: _pageSize,
+        offset: offset,
+        prayerType: prayerType?.name,
+        status: status?.name,
+      );
+      rows.addAll(page.map(_toDomain));
+      if (page.length < _pageSize) break;
+      offset += page.length;
+    }
+    return rows;
+  }
+
+  @override
+  Future<void> addRecord(QazaRecord record) async {
+    await database.qazaRecordsDao.insertRecord(_toCompanion(record));
+  }
+
+  @override
+  Future<void> addRecords(List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    await database.qazaRecordsDao.insertRecords(
+      records.map(_toCompanion).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    await completeRecords(
+      userId: userId,
+      recordIds: [recordId],
+      completedAt: completedAt,
+    );
+  }
+
+  @override
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    if (recordIds.isEmpty) return;
+
+    await database.transaction(() async {
+      for (final id in recordIds.toSet()) {
+        final existing = await database.qazaRecordsDao.findById(
+          userId: userId,
+          id: id,
+        );
+        if (existing == null || existing.status == 'completed') continue;
+
+        final updated = existing.copyWith(
+          status: 'completed',
+          completedAt: completedAt,
+          updatedAt: completedAt,
+        );
+        await database.qazaRecordsDao.updateRecord(updated);
+      }
+    });
+  }
+
+  QazaRecord _toDomain(dynamic row) {
+    return QazaRecord(
+      id: row.id as String,
+      userId: row.userId as String,
+      prayerType: PrayerType.values.firstWhere(
+        (value) => value.name == row.prayerType,
+      ),
+      originalDate: row.originalDate as DateTime,
+      status: QazaStatus.values.firstWhere(
+        (value) => value.name == row.status,
+      ),
+      completedAt: row.completedAt as DateTime?,
+      createdAt: row.createdAt as DateTime,
+      updatedAt: row.updatedAt as DateTime,
+    );
+  }
+
+  QazaRecordsCompanion _toCompanion(QazaRecord record) {
+    return QazaRecordsCompanion.insert(
+      id: record.id,
+      userId: record.userId,
+      prayerType: record.prayerType.name,
+      originalDate: record.originalDate,
+      status: record.status.name,
+      completedAt: record.completedAt == null
+          ? const Value.absent()
+          : Value(record.completedAt),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    );
+  }
+}
