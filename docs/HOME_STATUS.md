@@ -16,7 +16,7 @@ IN PROGRESS
 |------|------|--------|
 | 1 | Baseline & PR Reconciliation | ✅ Complete |
 | 2 | Home Architecture & State Model | ✅ Complete |
-| 3 | Dashboard → Home Rename | ⬜ Pending |
+| 3 | Dashboard → Home Rename | ✅ Complete |
 | 4 | Home Header | ⬜ Pending |
 | 5 | New User / Empty Home | ⬜ Pending |
 | 6 | Active User Home | ⬜ Pending |
@@ -69,6 +69,20 @@ IN PROGRESS
 3. `pending == 0 && completed > 0` → `allQazaCompleted` → primary action `addNewQaza`.
 4. Negative progress counts are rejected as invalid state input.
 
+## Part 3 — Dashboard → Home Rename
+
+### Completed
+- Replaced the Dashboard screen entry point with `lib/features/home/home_screen.dart` and renamed the widget to `HomeScreen`.
+- Updated the Home scaffold title from `Qaza Namaz` to `Home`.
+- Updated the empty-state copy from Dashboard terminology to Home terminology.
+- Updated `WorkspaceShell` to import/use `HomeScreen`.
+- Renamed the primary bottom-navigation label from `Dashboard` to `Home`.
+- Preserved the existing `NavigationBar + IndexedStack` structure and destination order.
+- Removed the obsolete `lib/features/dashboard/dashboard_screen.dart` entry point.
+
+### Rename Rule
+The rename is terminology/entry-point only in this part. Home visual redesign and workflow changes remain in Parts 4–10.
+
 ## Related Pull Requests
 
 ### Core dependencies
@@ -76,7 +90,7 @@ IN PROGRESS
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
 ### Home task
-- #19 — Home Parts 1–2: baseline, PR reconciliation & state model — OPEN
+- #19 — Home Part 1: baseline and PR reconciliation status — OPEN; now contains Parts 1–3 implementation/status commits
 
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
@@ -90,10 +104,10 @@ IN PROGRESS
 - #18 — KB-1: Knowledge Base foundation — OPEN, DRAFT, separate task
 
 ## Pending
-Parts 3–12.
+Parts 4–12.
 
 ## Current Part
-Part 3 — Dashboard → Home Rename
+Part 4 — Home Header
 
 ## CI / Validation
-Part 2 includes focused automated tests for the pure state model. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
+Part 3 is a rename/navigation-reference change only. Full CI remains scheduled for Part 12 after the Home implementation and final regression coverage are complete.
