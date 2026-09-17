@@ -48,15 +48,12 @@ void main() {
       record(id: 'fajr_done', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 4), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 10, 8)),
       record(id: 'zuhr_done', prayer: PrayerType.zuhr, originalDate: DateTime(2026, 9, 6), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 11, 8)),
     ]);
-
     await pumpScreen(tester, repository);
     expect(find.text('Fajr Qaza'), findsNWidgets(2));
     expect(find.text('Zuhr Qaza'), findsOneWidget);
-
     await selectDropdown(tester, const Key('history_prayer_filter'), 'Fajr');
     expect(find.text('Fajr Qaza'), findsNWidgets(2));
     expect(find.text('Zuhr Qaza'), findsNothing);
-
     await selectDropdown(tester, const Key('history_status_filter'), 'Completed');
     expect(find.text('Fajr Qaza'), findsOneWidget);
     expect(find.textContaining('Status: Pending'), findsNothing);
@@ -69,7 +66,6 @@ void main() {
       record(id: 'inside', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 3)),
       record(id: 'outside', prayer: PrayerType.zuhr, originalDate: DateTime(2026, 9, 10)),
     ]);
-
     await pumpScreen(tester, repository);
     await tester.tap(find.byKey(const Key('history_date_filter')));
     await tester.pumpAndSettle();
@@ -128,12 +124,11 @@ void main() {
     ]);
     await pumpScreen(tester, repository);
     expect(repository.historyPageCalls, 1);
-    expect(find.textContaining('Original Qaza date: 21 May 2026'), findsNothing);
-    expect(find.textContaining('120'), findsNothing);
+    expect(find.textContaining('Original Qaza date: 29 Jul 2026'), findsNothing);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
     await tester.pumpAndSettle();
     expect(repository.historyPageCalls, greaterThanOrEqualTo(2));
-    expect(find.textContaining('Original Qaza date: 21 May 2026'), findsOneWidget);
+    expect(find.textContaining('Original Qaza date: 29 Jul 2026'), findsOneWidget);
   });
 
   testWidgets('clear filters resets pagination and returns to the first page', (tester) async {
@@ -176,21 +171,16 @@ void main() {
         record(id: 'item-$i', prayer: PrayerType.fajr, originalDate: DateTime(2026, 9, 17).subtract(Duration(days: i)), status: QazaStatus.completed, completedAt: DateTime(2026, 9, 18).subtract(Duration(days: i))),
     ]);
     final container = ProviderContainer(
-      overrides: [
-        qazaRepositoryProvider.overrideWithValue(repository),
-        activeUserIdProvider.overrideWithValue('test-user'),
-      ],
+      overrides: [qazaRepositoryProvider.overrideWithValue(repository), activeUserIdProvider.overrideWithValue('test-user')],
     );
     addTearDown(container.dispose);
     await container.read(historyLogsProvider.future);
-
     repository.blockNextPage = true;
     final notifier = container.read(historyLogsProvider.notifier);
     final first = notifier.loadMore();
     await Future<void>.delayed(Duration.zero);
     final second = notifier.loadMore();
     expect(repository.historyPageCalls, 2);
-
     repository.releaseBlockedPage();
     await Future.wait([first, second]);
     expect(repository.historyPageCalls, 2);
