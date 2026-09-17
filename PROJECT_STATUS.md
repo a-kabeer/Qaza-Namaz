@@ -16,17 +16,18 @@ Knowledge Base — 13-part implementation
 - Part 9 — ✅ COMPLETE — Integration & regression protection
 - Part 10 — ✅ COMPLETE — Performance & accessibility
 - Part 11 — ✅ COMPLETE — Content QA & tests
-- Part 12 — NOT STARTED — Documentation & release readiness
+- Part 12 — ✅ COMPLETE — Documentation & release readiness
 - Part 13 — NOT STARTED — Full GitHub CI
 
-## Knowledge Base Part 11 — COMPLETE
+## Knowledge Base Part 12 — COMPLETE
 
-- Added bundled-dataset quality coverage for schema version and parser compatibility.
-- Added dataset checks for article ID/slug uniqueness and complete bilingual fields.
-- Preserved parser, repository, provider, widget, accessibility, RTL/LTR, and navigation regression coverage from earlier parts.
-- Confirmed the current bundled dataset remains intentionally empty until verified religious content is supplied by the content author; no unverified religious claims were introduced by implementation tests.
+- Finalized the Knowledge Base architecture, content-authoring workflow, and QA rules in `docs/KNOWLEDGE_BASE.md`.
+- Added `docs/KNOWLEDGE_BASE_RELEASE_CHECKLIST.md` covering content verification, integration, UX/accessibility, validation, testing, and release checks.
+- Documented the current empty dataset as intentional until verified religious content is supplied by the content author.
+- Documented the final pre-release commands and offline verification requirements.
+- Confirmed primary navigation and existing Qaza functionality remain outside the Knowledge Base feature boundary.
 - CI remains deferred to Part 13.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 12 — Documentation & Release Readiness.
+Proceed to Knowledge Base Part 13 — Full GitHub CI.
