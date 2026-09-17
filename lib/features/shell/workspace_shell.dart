@@ -63,11 +63,27 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
           bottomNavigationBar: NavigationBar(
             selectedIndex: index,
             onDestinationSelected: _selectDestination,
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.mosque_outlined), selectedIcon: Icon(Icons.mosque_rounded), label: 'Dashboard'),
-              NavigationDestination(icon: Icon(Icons.calculate_outlined), selectedIcon: Icon(Icons.calculate_rounded), label: 'Calculator'),
-              NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history_rounded), label: 'Logs'),
-              NavigationDestination(icon: Icon(Icons.tune_outlined), selectedIcon: Icon(Icons.tune_rounded), label: 'Settings'),
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.mosque_outlined),
+                selectedIcon: const Icon(Icons.mosque_rounded),
+                label: workspaceNavigationLabels[0],
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.calculate_outlined),
+                selectedIcon: const Icon(Icons.calculate_rounded),
+                label: workspaceNavigationLabels[1],
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.history_outlined),
+                selectedIcon: const Icon(Icons.history_rounded),
+                label: workspaceNavigationLabels[2],
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.tune_outlined),
+                selectedIcon: const Icon(Icons.tune_rounded),
+                label: workspaceNavigationLabels[3],
+              ),
             ],
           ),
         ),
