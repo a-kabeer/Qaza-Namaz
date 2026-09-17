@@ -25,6 +25,15 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
   QazaRecord? get oldest => pending.isEmpty ? null : pending.first;
   Future<void> _refresh() => ref.read(qazaRecordsProvider.notifier).refresh();
 
+  IconData _prayerIcon(PrayerType value) => switch (value) {
+        PrayerType.fajr => Icons.wb_twilight_rounded,
+        PrayerType.zuhr => Icons.wb_sunny_rounded,
+        PrayerType.asr => Icons.wb_sunny_outlined,
+        PrayerType.maghrib => Icons.wb_twilight_rounded,
+        PrayerType.isha => Icons.nightlight_round,
+        PrayerType.witr => Icons.nightlight_outlined,
+      };
+
   Future<void> _complete() async {
     if (working || oldest == null) return;
     final completedPrayer = prayer;
@@ -117,7 +126,7 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                               CircleAvatar(
                                 backgroundColor: scheme.primaryContainer,
                                 foregroundColor: scheme.onPrimaryContainer,
-                                child: Icon(prayer.icon),
+                                child: Icon(_prayerIcon(prayer)),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -148,27 +157,14 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 key: const Key('complete_oldest_pending'),
                 label: working ? 'Completing…' : 'Complete oldest pending',
                 icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
-                onPressed: record == null || ledger.isLoading || working ? null : _complete,
-                expand: true,
+                onPressed: working || oldest == null || ledger.isLoading ? null : _complete,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               AppButton(
-                label: 'Complete multiple Qaza',
-                icon: Icons.playlist_add_check_rounded,
                 secondary: true,
-                onPressed: () => Navigator.push<void>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NamazWiseScreen()),
-                ),
-                expand: true,
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Completion is saved locally first and remains safe to repeat.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                ),
+                icon: Icons.list_alt_rounded,
+                label: 'View all Qaza',
+                onPressed: () => Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const NamazWiseScreen())),
               ),
             ],
           ),
