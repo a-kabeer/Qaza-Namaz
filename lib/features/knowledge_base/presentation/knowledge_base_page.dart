@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'providers/knowledge_base_providers.dart';
 import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
+import 'knowledge_article_detail_page.dart';
+import 'providers/knowledge_base_providers.dart';
 
 class KnowledgeBasePage extends ConsumerStatefulWidget {
   const KnowledgeBasePage({super.key});
@@ -45,9 +46,11 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                 child: TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
-                  onChanged: (value) => ref
-                      .read(knowledgeSearchQueryProvider.notifier)
-                      .state = value,
+                  onChanged: (value) {
+                    ref.read(knowledgeSearchQueryProvider.notifier).state =
+                        value;
+                    setState(() {});
+                  },
                   decoration: InputDecoration(
                     hintText: 'Search Masail & Mugalat',
                     prefixIcon: const Icon(Icons.search),
@@ -73,7 +76,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
               child: SizedBox(
                 height: 52,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
@@ -112,16 +118,13 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         itemCount: items.length,
                         itemBuilder: (context, index) => _ArticleCard(
                           article: items[index],
-                          onTap: () {
-                            ref
-                                .read(knowledgeSelectedArticleIdProvider.notifier)
-                                .state = items[index].id;
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const _KnowledgeArticlePlaceholderPage(),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => KnowledgeArticleDetailPage(
+                                articleId: items[index].id,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -185,7 +188,9 @@ class _ArticleCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                article.category == KnowledgeCategory.masail ? 'Masail' : 'Mugalat',
+                article.category == KnowledgeCategory.masail
+                    ? 'Masail'
+                    : 'Mugalat',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
             ],
@@ -208,7 +213,10 @@ class _EmptyKnowledgeState extends StatelessWidget {
             children: [
               const Icon(Icons.menu_book_outlined, size: 48),
               const SizedBox(height: 12),
-              Text('No articles found', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'No articles found',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 4),
               const Text('Try another search or category.'),
             ],
@@ -231,7 +239,10 @@ class _ErrorKnowledgeState extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 48),
               const SizedBox(height: 12),
-              Text('Unable to load Knowledge Base', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Unable to load Knowledge Base',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: onRetry,
@@ -241,14 +252,5 @@ class _ErrorKnowledgeState extends StatelessWidget {
             ],
           ),
         ),
-      );
-}
-
-class _KnowledgeArticlePlaceholderPage extends StatelessWidget {
-  const _KnowledgeArticlePlaceholderPage();
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(
-        body: Center(child: Text('Article detail will be implemented in Part 8.')),
       );
 }
