@@ -25,12 +25,6 @@ void main() {
     await _pumpNavigation(tester);
   }
 
-  Future<void> revealPrayerLedger(WidgetTester tester) async {
-    final scrollable = find.byType(Scrollable).first;
-    await tester.drag(scrollable, const Offset(0, -500));
-    await _pumpNavigation(tester);
-  }
-
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     expect(find.text('Home'), findsOneWidget);
@@ -42,8 +36,6 @@ void main() {
     expect(find.text('Add Qaza Manually'), findsOneWidget);
     expect(find.byTooltip('Notifications'), findsOneWidget);
     expect(find.byTooltip('Profile'), findsOneWidget);
-    await revealPrayerLedger(tester);
-    expect(find.text('Prayer ledger'), findsNothing);
   });
 
   testWidgets('Home empty state uses the Home state model and opens setup journeys', (tester) async {
@@ -68,18 +60,43 @@ void main() {
     expect(find.byKey(const Key('qaza_flow_heading')), findsOneWidget);
   });
 
-  testWidgets('Home derives live totals from individual records', (tester) async {
+  testWidgets('Home pending state prioritizes completion and removes dashboard clutter', (tester) async {
     final repository = InMemoryQazaRepository();
     final now = DateTime(2026, 9, 13);
     await repository.addRecords([
-      QazaRecord(id: 'test_fajr_2026-09-01', userId: 'test-user', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 1), createdAt: now, updatedAt: now),
-      QazaRecord(id: 'test_zuhr_2026-09-02', userId: 'test-user', prayerType: PrayerType.zuhr, originalDate: DateTime(2026, 9, 2), status: QazaStatus.completed, completedAt: now, createdAt: now, updatedAt: now),
+      QazaRecord(id: 'pending_fajr', userId: 'test-user', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 1), createdAt: now, updatedAt: now),
+      QazaRecord(id: 'pending_zuhr', userId: 'test-user', prayerType: PrayerType.zuhr, originalDate: DateTime(2026, 9, 2), createdAt: now, updatedAt: now),
+      QazaRecord(id: 'completed_asr', userId: 'test-user', prayerType: PrayerType.asr, originalDate: DateTime(2026, 9, 3), status: QazaStatus.completed, completedAt: now, createdAt: now, updatedAt: now),
     ]);
+
     await pumpWorkspace(tester, repository);
-    expect(find.text('1 pending'), findsWidgets);
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('2'), findsWidgets);
-    expect(find.text('50% completed'), findsOneWidget);
+
+    expect(find.text('Keep going'), findsOneWidget);
+    expect(find.text('2 Qaza prayers remain in your ledger.'), findsOneWidget);
+    expect(find.text('Complete Qaza'), findsOneWidget);
+    expect(find.text('Add New Qaza'), findsOneWidget);
+    expect(find.text('Continue by prayer'), findsOneWidget);
+    expect(find.textContaining('1 pending'), findsNWidgets(2));
+    expect(find.text('Ledger overview'), findsNothing);
+    expect(find.text('50% completed'), findsNothing);
+  });
+
+  testWidgets('Home all-completed state focuses on the next setup action', (tester) async {
+    final repository = InMemoryQazaRepository();
+    final now = DateTime(2026, 9, 13);
+    await repository.addRecords([
+      QazaRecord(id: 'completed_fajr', userId: 'test-user', prayerType: PrayerType.fajr, originalDate: DateTime(2026, 9, 1), status: QazaStatus.completed, completedAt: now, createdAt: now, updatedAt: now),
+      QazaRecord(id: 'completed_isha', userId: 'test-user', prayerType: PrayerType.isha, originalDate: DateTime(2026, 9, 2), status: QazaStatus.completed, completedAt: now, createdAt: now, updatedAt: now),
+    ]);
+
+    await pumpWorkspace(tester, repository);
+
+    expect(find.text('You are all caught up'), findsOneWidget);
+    expect(find.text('2 Qaza prayers have been completed.'), findsOneWidget);
+    expect(find.text('Add New Qaza'), findsOneWidget);
+    expect(find.text('Recalculate Qaza'), findsOneWidget);
+    expect(find.text('Complete Qaza'), findsNothing);
+    expect(find.text('Continue by prayer'), findsNothing);
   });
 
   testWidgets('Home header opens Notifications and Profile', (tester) async {
