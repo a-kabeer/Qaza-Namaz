@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
@@ -29,7 +31,7 @@ class DriftQazaRepository implements QazaRepository {
         prayerType: prayerType?.name,
         status: status?.name,
       );
-      rows.addAll(page.map(_toDomain));
+      rows.addAll(page);
       if (page.length < _pageSize) break;
       offset += page.length;
     }
@@ -57,10 +59,7 @@ class DriftQazaRepository implements QazaRepository {
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
     );
-    return QazaHistoryPage(
-      records: page.records.map(_toDomain).toList(growable: false),
-      hasMore: page.hasMore,
-    );
+    return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
   }
 
   @override
@@ -136,33 +135,16 @@ class DriftQazaRepository implements QazaRepository {
           userId: userId,
           id: id,
         );
-        if (existing == null || existing.status == 'completed') continue;
+        if (existing == null || existing.status == QazaStatus.completed) continue;
 
         final updated = existing.copyWith(
-          status: 'completed',
+          status: QazaStatus.completed,
           completedAt: completedAt,
           updatedAt: completedAt,
         );
         await database.qazaRecordsDao.updateRecord(updated);
       }
     });
-  }
-
-  QazaRecord _toDomain(dynamic row) {
-    return QazaRecord(
-      id: row.id as String,
-      userId: row.userId as String,
-      prayerType: PrayerType.values.firstWhere(
-        (value) => value.name == row.prayerType,
-      ),
-      originalDate: row.originalDate as DateTime,
-      status: QazaStatus.values.firstWhere(
-        (value) => value.name == row.status,
-      ),
-      completedAt: row.completedAt as DateTime?,
-      createdAt: row.createdAt as DateTime,
-      updatedAt: row.updatedAt as DateTime,
-    );
   }
 
   QazaRecordsCompanion _toCompanion(QazaRecord record) {
