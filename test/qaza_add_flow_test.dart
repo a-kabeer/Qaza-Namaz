@@ -8,6 +8,9 @@ import 'support/in_memory_qaza_repository.dart';
 
 void main() {
   Future<void> pumpFlow(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
