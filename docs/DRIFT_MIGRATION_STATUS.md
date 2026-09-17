@@ -13,28 +13,26 @@ CI/build validation is intentionally deferred until **Part 13**.
 - Part 5 — ✅ COMPLETE — Persistent sync/outbox
 - Part 6 — ✅ COMPLETE — Authentication lifecycle and per-user isolation
 - Part 7 — ✅ COMPLETE — Production bounded read paths
-- Part 8 — ⏳ PENDING — Mutation and transaction hardening
-- Part 9 — ⏳ PENDING — Large-dataset Home/Logs performance integration
-- Part 10 — ⏳ PENDING — Migration cleanup and legacy-store retirement
+- Part 8 — ✅ COMPLETE — Mutation and transaction hardening
+- Part 9 — ✅ COMPLETE — Large-dataset Home/Logs performance integration
+- Part 10 — ✅ COMPLETE — Migration cleanup and legacy-store retirement
 - Part 11 — ⏳ PENDING — Data migration/upgrade resilience
 - Part 12 — ⏳ PENDING — Final application-level regression audit
 - Part 13 — ⏳ PENDING — Full GitHub CI/build validation and completion gate
 
-## Part 7 — Production bounded read paths
+## Part 10 — Migration cleanup and legacy-store retirement
 
 Implemented on `task-db-1-drift-foundation`.
 
-- Repository-level keyset pagination and oldest-pending contracts are available.
-- Drift reads use indexed keyset pagination and direct oldest-pending lookup.
-- Offline-first bounded reads bypass `DriftQazaLocalStore.load()`.
-- Service progress and oldest-pending operations use bounded/database-backed paths.
-- Selected-record validation iterates bounded pending pages.
-- Namaz-wise pending dates render 50 records per page with Load more.
-- Firestore provides matching bounded read contracts.
-- Regression coverage includes a 1,001-record ledger and zero-snapshot bounded reads.
+- `DriftQazaLocalStore` is now the only production Qaza local-store implementation.
+- The application runtime no longer constructs or imports the SharedPreferences local store.
+- The retired SharedPreferences local-store source file was removed.
+- SharedPreferences remains isolated to the one-time legacy migration bootstrap so existing installations can still upgrade.
+- The migration marker and target verification remain in place so a completed migration is not repeated.
+- Runtime last-sync state no longer depends on the legacy SharedPreferences store.
 
-## Legacy compatibility boundary
-`DriftQazaLocalStore.load()` remains only for legacy full-snapshot compatibility. Part 10 will retire this final compatibility path after all remaining migration callers are removed.
+## Legacy boundary
+The remaining SharedPreferences dependency is intentionally limited to migration bootstrap code. Part 11 will harden upgrade/data-migration resilience before the legacy dependency can be considered removable from the shipped migration path.
 
 ## Validation policy
 No Part 13 CI gate is claimed for Parts 1–12. Final completion requires the complete configured GitHub CI/build matrix to pass after Part 13.
