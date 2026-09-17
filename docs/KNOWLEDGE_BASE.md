@@ -27,7 +27,7 @@ The module is content-driven and must remain independent from the existing Qaza 
 
 ### Content layer
 
-Human-editable structured files under `assets/knowledge_base/content/` are the single source for published article content. The format will be versioned and documented before the dataset is added.
+Human-editable structured files under `assets/knowledge_base/content/` are the single source for published article content. The format is versioned by `schemaVersion` and documented in the content README and `content.schema.json`.
 
 ### Parser and validation layer
 
@@ -35,7 +35,7 @@ The parser will convert bundled source files into strongly typed models and reje
 
 ### Domain model layer
 
-The domain model will represent articles without coupling the UI to the storage format. UI code will consume typed models rather than raw JSON maps.
+The domain model represents articles without coupling the UI to the storage format. UI code will consume typed models rather than raw JSON maps.
 
 ### Repository layer
 
@@ -54,13 +54,49 @@ The feature will provide article browsing, category filtering, search, article d
 The content author only needs to edit the structured content files. A typical workflow will be:
 
 1. Add or edit an article record.
-2. Keep the stable article ID unchanged when editing existing content.
-3. Provide Urdu and English title/body fields as required by the schema.
+2. Keep the stable article ID unchanged when editing an existing article.
+3. Provide Urdu and English title, summary, and body fields.
 4. Set the category to `masail` or `mugalat`.
 5. Add references and related-article IDs using the documented format.
 6. Run the provided validation/test workflow before publishing.
 
 No Flutter widget code should need to change when article wording changes.
+
+## Part 2 — Data Contract & Models
+
+### Schema version
+
+The first content contract is `schemaVersion: 1`. The top-level document contains an `articles` array. The machine-readable contract is stored at `assets/knowledge_base/content/content.schema.json`.
+
+### Article contract
+
+Every article contains:
+
+- `id` — stable kebab-case identifier.
+- `slug` — stable kebab-case navigation identifier.
+- `category` — `masail` or `mugalat`.
+- `sortOrder` — non-negative integer for deterministic presentation order.
+- `title` — required Urdu + English text pair.
+- `summary` — required Urdu + English text pair.
+- `body` — required Urdu + English text pair.
+- `tags` — unique search tags.
+- `references` — structured source records.
+- `relatedArticleIds` — unique IDs resolved during later relationship validation.
+
+### Domain models added
+
+The application now has typed models for:
+
+- `KnowledgeCategory`
+- `KnowledgeLocalizedText`
+- `KnowledgeReference`
+- `KnowledgeArticle`
+
+The models intentionally do not parse JSON. Raw-content parsing and validation remain a separate concern for Part 4.
+
+### Data-layer rule
+
+Widgets must never consume raw JSON maps or contain article wording. They will receive `KnowledgeArticle` and related typed values from the repository/state layers.
 
 ## Planned implementation parts
 
@@ -72,9 +108,9 @@ Established the dedicated feature boundary, offline content-authoring location, 
 
 ### Part 2 — Data Contract & Models
 
-Status: PENDING
+Status: COMPLETE
 
-Define the versioned structured content schema, validation rules, and strongly typed domain models.
+Defined schema version 1, machine-readable JSON contract, bilingual text contract, category contract, structured references, relationship fields, stable IDs, deterministic sort order, and strongly typed domain models. No parser, article dataset, repository, provider, or UI was added.
 
 ### Part 3 — Content Dataset Foundation
 
@@ -142,6 +178,10 @@ Status: PENDING
 
 Run the complete GitHub CI/build/test matrix only after Parts 1–12 are complete. Fix CI-discovered regressions before marking the Knowledge Base task complete.
 
-## Current Part 1 decision record
+## Part 1 decision record
 
-Part 1 intentionally does not add article content, a Dart parser, Riverpod providers, UI screens, or navigation changes. Keeping those concerns separate prevents the initial foundation commit from becoming coupled to an unfinished content schema.
+Part 1 intentionally did not add article content, a Dart parser, Riverpod providers, UI screens, or navigation changes. Keeping those concerns separate prevented the foundation from becoming coupled to an unfinished content schema.
+
+## Part 2 decision record
+
+Part 2 establishes a strict, versioned contract before content authors or runtime code depend on it. Required bilingual fields prevent incomplete published articles, stable IDs protect references between articles, and structured references avoid embedding citation semantics inside presentation code.
