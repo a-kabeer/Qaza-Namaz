@@ -21,41 +21,47 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
   PrayerType prayer = PrayerType.fajr;
   bool working = false;
 
-  List<QazaRecord> get pending => ref.watch(pendingForPrayerProvider(prayer));
-  QazaRecord? get oldest => pending.isEmpty ? null : pending.first;
-  Future<void> _refresh() => ref.read(qazaRecordsProvider.notifier).refresh();
+  AsyncValue<QazaRecord?> get oldestState => ref.watch(oldestPendingProvider(prayer));
+  QazaRecord? get oldest => oldestState.valueOrNull;
+
+  Future<void> _refresh() async {
+    ref.invalidate(oldestPendingProvider(prayer));
+    ref.invalidate(progressSummaryProvider);
+    await ref.read(oldestPendingProvider(prayer).future);
+  }
 
   Future<void> _complete() async {
-    if (working || oldest == null) return;
-    final completedRecord = oldest!;
+    final record = oldest;
+    if (working || record == null) return;
     final completedPrayer = prayer;
     setState(() => working = true);
     try {
-      final completed = await ref
-          .read(qazaRecordsProvider.notifier)
-          .completeOldestPending(completedPrayer);
-      if (!mounted || !completed) return;
+      final userId = ref.read(requiredUserIdProvider);
+      await ref.read(qazaServiceProvider).completeRecord(
+        userId: userId,
+        recordId: record.id,
+        completedAt: DateTime.now(),
+      );
+      ref.invalidate(oldestPendingProvider(completedPrayer));
+      ref.invalidate(progressSummaryProvider);
+      if (!mounted) return;
       HapticFeedback.mediumImpact();
-      final nextPending = ref.read(pendingForPrayerProvider(completedPrayer));
+      final nextPending = await ref.read(oldestPendingProvider(completedPrayer).future);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(milliseconds: 900),
           content: Text(
-            nextPending.isEmpty
+            nextPending == null
                 ? '${completedPrayer.label} Qaza completed successfully.'
                 : '${completedPrayer.label} Qaza completed • next oldest is ready.',
           ),
         ),
       );
-      // The provider has already advanced the visible ledger optimistically;
-      // no network refresh is needed before completing the next record.
-      assert(completedRecord.status == QazaStatus.pending);
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Qaza could not be completed. Please try again.'),
-        ),
+        const SnackBar(content: Text('Qaza could not be completed. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => working = false);
@@ -64,8 +70,8 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ledger = ref.watch(qazaRecordsProvider);
-    final record = oldest;
+    final state = oldestState;
+    final record = state.valueOrNull;
     return AppScaffold(
       title: 'Complete Qaza',
       onBack: () => Navigator.pop(context),
@@ -84,15 +90,17 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 value: prayer,
                 decoration: const InputDecoration(labelText: 'Prayer', prefixIcon: Icon(Icons.mosque_outlined)),
                 items: [for (final item in PrayerType.values) DropdownMenuItem(value: item, child: Text(item.label))],
-                onChanged: working || ledger.isLoading ? null : (value) { if (value != null) setState(() => prayer = value); },
+                onChanged: working || state.isLoading ? null : (value) {
+                  if (value != null) setState(() => prayer = value);
+                },
               ),
               const SizedBox(height: 16),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(18),
-                  child: ledger.when(
-                    loading: () => const LoadingState(message: 'Loading your ledger…', padding: 24),
-                    error: (_, __) => ErrorState(message: 'We could not load your Qaza ledger.', onRetry: _refresh),
+                  child: state.when(
+                    loading: () => const LoadingState(message: 'Loading oldest pending record…', padding: 24),
+                    error: (_, __) => ErrorState(message: 'We could not load your Qaza record.', onRetry: _refresh),
                     data: (_) {
                       if (record == null) {
                         return const EmptyState(icon: Icons.check_circle_outline_rounded, title: 'No pending Qaza for this prayer.', message: 'Choose another prayer or add a Qaza record first.');
@@ -125,7 +133,7 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                 key: const Key('complete_oldest_pending'),
                 label: working ? 'Completing...' : 'Complete oldest pending',
                 icon: working ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
-                onPressed: record == null || ledger.isLoading || working ? null : _complete,
+                onPressed: record == null || state.isLoading || working ? null : _complete,
                 expand: true,
               ),
               const SizedBox(height: 12),

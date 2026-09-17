@@ -1,193 +1,77 @@
 # Qaza Namaz App — Project Status
 
-## Current Task
-Task 9 — Reminders / Notifications (optional)
+## Current migration baseline
 
-## Overall Progress
-8 / 15 major tasks formally audited and verified
+SharedPreferences → Drift/SQLite production migration: **Part 12 complete**.
 
-## Task Status
+Migration Part 13 remains the final GitHub CI/build gate.
 
-- Task 1 — ✅ COMPLETE — Product workflow
-- Task 2 — ✅ COMPLETE — Google Authentication + Cloud Persistence
-- Task 3 — ✅ COMPLETE — UI/UX Contract
-- Task 4 — ✅ COMPLETE — Database Architecture
-- Task 5 — ✅ COMPLETE — Offline-First Architecture
-- Task 6 — ✅ COMPLETE — Authentication Lifecycle
-- Task 7 — ✅ COMPLETE — Qaza Business Logic
-- Task 8 — ✅ COMPLETE — Gregorian + Hijri Calendar
-- Task 9 — NOT STARTED — Reminders / Notifications (optional)
-- Task 10 — NOT STARTED — Multi-Device Synchronization
-- Task 11 — NOT STARTED — Security + Privacy
-- Task 12 — NOT STARTED — Export / Import
-- Task 13 — NOT STARTED — Settings + Account Management
-- Task 14 — NOT STARTED — Testing / QA
-- Task 15 — NOT STARTED — Production Release
+## Current reconciliation stream — authoritative Task 7–13 plan
 
-## Completed Work
+- **Task 7 — COMPLETE** — Provider & Repository Duplication Audit
+- **Task 8 — COMPLETE** — Large Dataset Performance Audit
+- **Task 9 — COMPLETE / EXECUTION DEFERRED TO FINAL CI** — Test Reconciliation
+- **Task 10 — COMPLETE** — Documentation Reconciliation
+- **Task 11 — COMPLETE** — PR Review & Merge Readiness
+- **Task 12 — PENDING** — Merge in Dependency Order
+- **Task 13 — PENDING** — Final CI Gate
 
-### Task 1
-Core Qaza workflow is implemented with individual records, six independent prayers, Gregorian/Hijri date selection, single/range entry, oldest-first completion, and prayer-wise multi-selection.
+## Task 7 — Provider & Repository Duplication Audit
 
-### Task 2
-Firebase Authentication, Google Sign-In, and per-user Firestore persistence are integrated. User identity is represented by the Firebase UID.
+Production data access follows:
 
-### Task 3
-The current Flutter UI provides the required navigation/workflows and shared UI states. The visual system is centralized through the current theme architecture.
+`UI → Provider/Controller → QazaService → QazaRepository → DAO → Drift/SQLite`
 
-### Task 4
-Audited and hardened the existing database architecture without replacing the Firestore/offline design.
+Large-data production paths use bounded pages, history pagination, oldest-pending lookup, aggregate progress, and bounded availability. Legacy full-ledger APIs are isolated compatibility paths.
 
-- Firestore records use `users/{uid}/qazaRecords/{recordId}`.
-- `QazaRecord` remains the source of truth; no aggregate counter is the primary database record.
-- Required record fields are preserved: `userId`, `prayerType`, `originalDate`, `status`, `completedAt`, `createdAt`, `updatedAt`.
-- Deterministic IDs use `{userId}_{prayerType}_{YYYY-MM-DD}` and are used consistently for duplicate-safe creation and synchronization.
-- Completion remains forward-only and preserves the original Qaza date while storing completion time.
-- Existing UID-scoped Firestore security rules were preserved.
-- Current Firestore queries filter by user/prayer/status and sort records in application code; no checked-in composite index is required by the current query shapes.
-- Local cache migration was audited separately from future Firestore schema evolution.
-- Real local-storage weakness fixed: the cache now carries an explicit `schemaVersion` and rejects unsupported future versions rather than silently interpreting them as valid data.
-- Real testability weakness fixed: the injected `SharedPreferences` instance is now actually used.
-- A test-discovered mutable-map regression was fixed so a new empty cache can be written safely.
-- Database architecture documentation added at `docs/DATABASE_ARCHITECTURE.md`.
-- Task 4 tests added for record fields, local schema versioning, legacy v1 compatibility, unsupported-version rejection, and UID namespacing.
+Details: `docs/TASK7_PROVIDER_REPOSITORY_AUDIT_STATUS.md`
 
-## Task 4 Validation — VERIFIED
+## Task 8 — Large Dataset Performance Audit
 
-GitHub Actions run `35000811993` on commit `f0827be5b6c2f1cf172811661ff942d9337edf20` completed successfully:
+Production paths were reconciled for 0, 10, 100, 1,000, 5,000 and 10,000+ record targets. Home uses aggregates; Qaza/pending/history use bounded pagination; completion uses bounded lookup; availability is date/prayer scoped.
 
-- `flutter pub get` — ✅
-- `flutter analyze` — ✅ no analyzer errors
-- `flutter test` — ✅ all tests passed
+Details: `docs/TASK8_LARGE_DATASET_PERFORMANCE_STATUS.md`
 
-The same run confirmed the Task 4 tests and the existing Task 3 regression suite pass together. The repository's current test workflow completed successfully after the Task 4 fix.
+## Task 9 — Test Reconciliation
 
-### Task 5
-Dedicated offline-first architecture audit completed without replacing the existing local-first repository, local store, outbox, or synchronization engine.
+Existing unit, repository/DAO, widget, calendar, migration, authentication, theme, sync, completion, history, and large-dataset regression coverage was inventoried and reconciled without duplicating equivalent tests.
 
-- Verified local reads/writes remain usable without internet.
-- Verified local → Firestore synchronization, persisted outbox recovery, retries, duplicate-safe replay, and connectivity-triggered synchronization.
-- Verified Firestore → local synchronization, remote-only record merge, forward-only completion merge, and preservation of local-only records.
-- Verified multi-device changes and deterministic conflict resolution.
-- Real weakness fixed: Firestore now applies an earlier completion timestamp when a second device completes the same record earlier, matching the local merge policy and allowing devices to converge.
-- Added targeted bidirectional, multi-device, conflict-resolution, and convergence tests.
-- Added `docs/OFFLINE_FIRST_ARCHITECTURE.md`.
-- No repository/database architecture rewrite was introduced.
+The available GitHub implementation connector cannot execute Flutter tests locally, and the latest branch commit has no associated Actions run. Therefore no test pass result is claimed. Final execution is part of Task 13.
 
-## Task 5 Validation — VERIFIED
+Details: `docs/TASK9_TEST_RECONCILIATION_STATUS.md`
 
-GitHub Actions run `35003433723` on commit `88d1b238f1542c53e13eff7341d08224d42dd3df` completed successfully:
+## Task 10 — Documentation Reconciliation
 
-- Analyze — ✅
-- Tests (Windows) — ✅
-- Tests (Linux) — ✅
-- Android debug APK — ✅
-- Android release APK — ✅
-- All workflow cleanup/post steps — ✅
+Updated the documentation baseline to reflect Drift/SQLite production architecture, added `docs/HOME_STATUS.md`, and removed obsolete statements that described the old Firestore/SharedPreferences local architecture as current.
 
-The full GitHub CI matrix passed after the final `PROJECT_STATUS.md` update commit, so Task 5 meets the project completion standard.
+PR baseline:
 
-### Task 6 — Implementation / Audit
+`PR #17 merged baseline → PR #16 reconciled → PR #19 reconciled → final audit`
 
-Authentication lifecycle audit completed without replacing the existing Firebase Authentication + Google Sign-In architecture.
+Overlapping implementations are treated as reconciled work, not parallel production architectures.
 
-- Audited Firebase initialization, Google Sign-In, Firebase `authStateChanges()`, AuthGate signed-in/signed-out transitions, session restoration, sign-out, and account switching.
-- Verified Firestore server-side ownership rules require `request.auth != null` and `request.auth.uid == userId` for the `users/{userId}` hierarchy.
-- Real lifecycle isolation weakness fixed: first-time setup completion was stored under one global SharedPreferences key even though application data is UID-scoped.
-- First-time setup state is now stored per Firebase UID and is reloaded when the authenticated account changes.
-- AuthGate resets setup state on sign-out so a previous account's setup status is not reused by another account.
-- Added `docs/AUTHENTICATION_LIFECYCLE.md`.
-- Added Task 6 regression coverage for signed-out authentication entry, account-specific setup isolation, and the Firestore UID ownership rule.
-- No Firebase/Google authentication architecture rewrite was introduced.
-- CI-discovered widget-test timing/viewport issues were fixed without weakening production authentication behavior: the test harness now settles AuthGate's asynchronous lifecycle transition and scrolls the setup screen before tapping the action button.
+## Task 11 — PR Review & Merge Readiness
 
-## Task 6 Validation — VERIFIED
+Final review of the reconciliation surface, dependencies, architecture boundaries, tests, documentation, and PR state is complete. PR #16 and PR #19 original heads remain stale/diverged and must not be merged blindly. The consolidated reconciliation branch is prepared for Task 12, subject to branch synchronization and the Task 13 CI gate.
 
-GitHub Actions run `35012895549` on commit `3602b7d58b850b27fabce604eaf7448e62ede7dd` completed successfully:
+Details: `docs/TASK11_PR_REVIEW_MERGE_READINESS_STATUS.md`
 
-- Analyze — ✅
-- Tests (Windows) — ✅
-- Tests (Linux) — ✅
-- Android debug APK — ✅
-- Android release APK — ✅
-- All workflow cleanup/post steps — ✅
+## Migration status
 
-This full GitHub CI matrix passed after the final Task 6 implementation/test fix. Task 6 therefore meets the project completion standard.
+- Part 1 — COMPLETE — Drift foundation
+- Part 2 — COMPLETE — Qaza records schema
+- Part 3 — COMPLETE — Drift DAO layer
+- Part 4 — COMPLETE — Repository integration
+- Part 5 — COMPLETE — Persistent sync/outbox
+- Part 6 — COMPLETE — Authentication lifecycle/per-user isolation
+- Part 7 — COMPLETE — Production bounded read paths
+- Part 8 — COMPLETE — Mutation/transaction hardening
+- Part 9 — COMPLETE — Large-dataset Home/Logs integration
+- Part 10 — COMPLETE — Migration cleanup/legacy-store retirement
+- Part 11 — COMPLETE — Data migration/upgrade resilience
+- Part 12 — COMPLETE — Final application-level regression audit
+- Part 13 — PENDING — Final GitHub CI/build validation
 
-### Task 7 — Implementation / Audit
+## Final gate
 
-Qaza business logic audit completed against the existing service/repository architecture.
-
-- Verified exactly six prayer types: Fajr, Zuhr, Asr, Maghrib, Isha, and Witr.
-- Verified date-only normalization, deterministic IDs, duplicate-safe creation, pending/completed semantics, oldest-pending-first completion, idempotent completion, and derived progress calculations.
-- Explicitly audited date-range inclusivity and boundary transitions. Range expansion remains inclusive of both selected endpoints and uses calendar-date components rather than elapsed-time arithmetic.
-- Real cross-device timezone weakness fixed: Firestore `originalDate` is now stored as timezone-neutral `YYYY-MM-DD` instead of a `Timestamp`.
-- Legacy Firestore records are supported by recovering the original calendar date from the deterministic record ID when their old `originalDate` is still a timestamp.
-- Added shared `QazaDate` normalization, key generation, parsing, validation, and legacy-ID recovery.
-- Added regression coverage for UTC/local date handling, month boundaries, leap day, inclusive date sets, and deterministic date keys.
-- Added `docs/QAZA_BUSINESS_LOGIC.md`.
-
-## Task 7 Validation — VERIFIED
-
-GitHub Actions run `35020052643` on commit `5df12143ed28d7ccfa570648761f2fbba111f324` completed successfully:
-
-- Analyze — ✅
-- Tests (Windows) — ✅
-- Tests (Linux) — ✅
-- Android debug APK — ✅
-- Android release APK — ✅
-- All workflow cleanup/post steps — ✅
-
-The full GitHub CI matrix passed for the final Task 7 implementation commit. Task 7 status was then recorded as complete in the follow-up project-status commit.
-
-### Task 8 — Implementation / Audit
-
-Gregorian + Hijri calendar audit completed against the existing Riverpod calendar controller, calendar picker, and `hijri` package integration without replacing the existing architecture.
-
-- Added independent known Umm al-Qura reference-date validation around Hijri month/year boundaries.
-- Added explicit calendar-date serialization/deserialization coverage using the canonical `YYYY-MM-DD` representation, verifying that timezone information cannot shift the restored civil date.
-- Added Gregorian leap-day rendering coverage.
-- Added Gregorian December → January navigation coverage.
-- Added Hijri Ramadan → Shawwal navigation coverage.
-- Added inclusive range coverage across a Gregorian year boundary.
-- Added future-date and minimum-supported-date navigation boundary coverage.
-- Added `docs/GREGORIAN_HIJRI_CALENDAR.md`.
-
-## Task 8 Validation — VERIFIED
-
-GitHub Actions run `35030188934` on commit `676e3bf65aeceb228fff77a90d81ce7eeec28784` completed successfully:
-
-- Analyze — ✅
-- Tests (Windows) — ✅
-- Tests (Linux) — ✅
-- Android debug APK — ✅
-- Android release APK — ✅
-- All workflow cleanup/post steps — ✅
-
-The complete GitHub CI matrix passed for the final Task 8 implementation commit. Task 8 therefore meets the project completion standard.
-
-## Known Bugs
-
-No known blocking production defect has been identified in the current completed Task 8 audit.
-
-## Blockers
-
-None identified for the completed Task 8 scope.
-
-## Remaining Work
-
-Tasks 9–15 remain for their own dedicated audits/implementation verification. Task 9 is the next task.
-
-## Last Verified
-
-Task 8 implementation verified on `676e3bf65aeceb228fff77a90d81ce7eeec28784` by GitHub Actions run `35030188934` on 2026-09-16.
-
-## Next Recommended Step
-
-Proceed to Task 9 — Reminders / Notifications (optional).
-
-## Task Completion Standard
-
-Every task follows:
-
-**Audit/Implement agreed scope → Fix real issues → Test completely → Update PROJECT_STATUS.md → Commit → Push → Open/update PR → Run the full GitHub CI matrix → Mark ✅ COMPLETE only after all required CI checks are green.**
+Only Task 13 can establish the final formatting, analyzer, Drift generation, unit/widget/integration/regression test, build, and repository-CI result.

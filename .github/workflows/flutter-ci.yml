@@ -5,9 +5,14 @@ on:
     branches:
       - main
       - 'task*'
+      - 'reconcile/**'
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -19,13 +24,15 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.4'
           channel: stable
           cache: true
       - name: Flutter clean
         run: flutter clean
       - name: pub get
         run: flutter pub get
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -38,13 +45,15 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.4'
           channel: stable
           cache: true
       - name: Flutter clean
         run: flutter clean
       - name: pub get
         run: flutter pub get
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Run tests
         run: flutter test --reporter expanded
 
@@ -57,7 +66,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.4'
           channel: stable
           cache: true
       - name: Enable Windows desktop
@@ -66,6 +75,8 @@ jobs:
         run: flutter clean
       - name: pub get
         run: flutter pub get
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Run tests
         run: flutter test --reporter expanded
 
@@ -78,13 +89,15 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'
+          flutter-version: '3.47.4'
           channel: stable
           cache: true
       - name: Flutter clean
         run: flutter clean
       - name: pub get
         run: flutter pub get
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Build debug APK
         run: flutter build apk --debug
       - name: Build release APK

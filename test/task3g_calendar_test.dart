@@ -25,18 +25,42 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
     );
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
-  if (finder.evaluate().isNotEmpty) return;
-  final listViews = find.byType(ListView);
-  final scrollable = listViews.evaluate().isEmpty ? find.byType(Scrollable).first : listViews.last;
-  for (var i = 0; i < 6 && finder.evaluate().isEmpty; i++) {
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder.first);
+    await tester.pumpAndSettle();
+    return;
+  }
+
+  final scrollables = find.byType(Scrollable);
+  if (scrollables.evaluate().isEmpty) {
+    fail('No scrollable found while looking for $finder');
+  }
+
+  final scrollable = scrollables.last;
+  for (var attempt = 0; attempt < 10; attempt++) {
+    if (finder.evaluate().isNotEmpty) {
+      await tester.ensureVisible(finder.first);
+      await tester.pumpAndSettle();
+      return;
+    }
     await tester.drag(scrollable, const Offset(0, -500));
     await tester.pumpAndSettle();
   }
+
+  expect(finder, findsOneWidget);
 }
 
-Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
-Future<void> _scrollToNextPrayers(WidgetTester tester) => _scrollToFinder(tester, find.text('Next: Choose missed prayers'));
-Future<void> _scrollToReview(WidgetTester tester) => _scrollToFinder(tester, find.text('Review & Create Records'));
+Future<void> _scrollToContinue(WidgetTester tester) =>
+    _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button'), skipOffstage: false));
+
+Future<void> _scrollToNextPrayers(WidgetTester tester) =>
+    _scrollToFinder(tester, find.text('Next: Choose missed prayers', skipOffstage: false));
+
+Future<void> _scrollToReview(WidgetTester tester) =>
+    _scrollToFinder(tester, find.text('Review & Create Records', skipOffstage: false));
+
+Future<void> _scrollToPrayer(WidgetTester tester, String prayer) =>
+    _scrollToFinder(tester, find.text(prayer, skipOffstage: false));
 
 void main() {
   test('package converts Gregorian to Umm al-Qura Hijri and back exactly', () {
@@ -114,15 +138,19 @@ void main() {
     await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
+    await _scrollToPrayer(tester, 'Maghrib');
     await tester.tap(find.text('Maghrib'));
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
+    await _scrollToFinder(tester, find.text('Done', skipOffstage: false));
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     final records = await repository.getRecords(userId: 'u1');
-    expect(records.single.originalDate, DateTime(2026, 9, 13));
+    expect(records, hasLength(1));
+    final storedDate = records.single.originalDate;
+    expect([storedDate.year, storedDate.month, storedDate.day], [2026, 9, 13]);
     expect(records.single.prayerType, PrayerType.maghrib);
   });
 
@@ -141,11 +169,16 @@ void main() {
     await _scrollToNextPrayers(tester);
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fajr'));
+    await _scrollToPrayer(tester, 'Fajr');
+    final fajr = find.text('Fajr', skipOffstage: false);
+    await tester.ensureVisible(fajr.first);
+    await tester.pumpAndSettle();
+    await tester.tap(fajr.first);
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
+    await _scrollToFinder(tester, find.text('Done', skipOffstage: false));
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     final records = await repository.getRecords(userId: 'u1');
