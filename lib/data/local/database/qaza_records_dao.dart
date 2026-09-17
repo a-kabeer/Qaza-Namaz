@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/constants/prayer_types.dart';
-import '../../../domain/entities/qaza_record.dart' show QazaStatus;
+import '../../../domain/entities/qaza_record.dart';
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
+
+part 'qaza_records_dao.g.dart';
 
 /// A keyset page. The cursor is the last `(originalDate, id)` returned and can
 /// be supplied to the next query without an increasingly expensive OFFSET.
@@ -41,13 +43,17 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final query = selectOnly(qazaRecords, distinct: true)
       ..addColumns([qazaRecords.userId]);
     final rows = await query.get();
-    return rows.map((row) => row.read(qazaRecords.userId)!).toList(growable: false);
+    return rows
+        .map((row) => row.read(qazaRecords.userId)!)
+        .toList(growable: false);
   }
 
-  Future<QazaRecord?> findById({required String userId, required String id}) {
-    return (select(qazaRecords)
-          ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
+  Future<QazaRecord?> findById({required String userId, required String id}) async {
+    final row = await (select(qazaRecords)
+          ..where((record) =>
+              record.userId.equals(userId) & record.id.equals(id)))
         .getSingleOrNull();
+    return row == null ? null : _toDomain(row);
   }
 
   Future<List<QazaRecord>> getAll({required String userId}) async {
@@ -86,8 +92,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (to != null) predicates.add(row.originalDate.isSmallerOrEqualValue(to));
         if (afterOriginalDate != null) {
           predicates.add(
-            row.originalDate.isBiggerThanValue(afterOriginalDate!) |
-                (row.originalDate.equals(afterOriginalDate) & row.id.isBiggerThanValue(afterId!)),
+            row.originalDate.isBiggerThanValue(afterOriginalDate) |
+                (row.originalDate.equals(afterOriginalDate) &
+                    row.id.isBiggerThanValue(afterId!)),
           );
         }
         return predicates.reduce((a, b) => a & b);
@@ -100,7 +107,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
     final rows = await query.get();
     final hasMore = rows.length > limit;
-    final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
+    final visibleRows = hasMore ? rows.take(limit) : rows;
+    final visible = visibleRows.map(_toDomain).toList(growable: false);
     return QazaRecordsPage(records: visible, hasMore: hasMore);
   }
 
@@ -129,8 +137,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (to != null) predicates.add(row.originalDate.isSmallerOrEqualValue(to));
         if (beforeOriginalDate != null) {
           predicates.add(
-            row.originalDate.isSmallerThanValue(beforeOriginalDate!) |
-                (row.originalDate.equals(beforeOriginalDate) & row.id.isSmallerThanValue(beforeId!)),
+            row.originalDate.isSmallerThanValue(beforeOriginalDate) |
+                (row.originalDate.equals(beforeOriginalDate) &
+                    row.id.isSmallerThanValue(beforeId!)),
           );
         }
         return predicates.reduce((a, b) => a & b);
@@ -143,7 +152,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
     final rows = await query.get();
     final hasMore = rows.length > limit;
-    final visible = hasMore ? rows.take(limit).toList(growable: false) : rows;
+    final visibleRows = hasMore ? rows.take(limit) : rows;
+    final visible = visibleRows.map(_toDomain).toList(growable: false);
     return QazaHistoryPage(records: visible, hasMore: hasMore);
   }
 
@@ -191,7 +201,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     String? status,
     DateTime? from,
     DateTime? to,
-  }) {
+  }) async {
     _validatePage(limit, offset);
     _validateRange(from, to);
     final query = select(qazaRecords)
@@ -203,9 +213,13 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (to != null) predicates.add(row.originalDate.isSmallerOrEqualValue(to));
         return predicates.reduce((a, b) => a & b);
       })
-      ..orderBy([(r) => OrderingTerm.asc(r.originalDate), (r) => OrderingTerm.asc(r.id)])
+      ..orderBy([
+        (r) => OrderingTerm.asc(r.originalDate),
+        (r) => OrderingTerm.asc(r.id),
+      ])
       ..limit(limit, offset: offset);
-    return query.get();
+    final rows = await query.get();
+    return rows.map(_toDomain).toList(growable: false);
   }
 
   /// Compatibility helpers retained for the pre-migration Qaza-list code.
@@ -260,7 +274,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return rows.isEmpty ? null : rows.first;
   }
 
-  Future<void> replaceUserRecords({required String userId, required List<QazaRecordsCompanion> records}) async {
+  Future<void> replaceUserRecords({
+    required String userId,
+    required List<QazaRecordsCompanion> records,
+  }) async {
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
     for (final record in records) {
       await into(qazaRecords).insert(record);
@@ -290,10 +307,45 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
-  Future<bool> updateRecord(QazaRecordsCompanion record) => update(qazaRecords).replace(record);
+  Future<bool> updateRecord(QazaRecord record) =>
+      update(qazaRecords).replace(_toCompanion(record));
 
   Future<int> deleteById({required String userId, required String id}) =>
       (delete(qazaRecords)..where((r) => r.userId.equals(userId) & r.id.equals(id))).go();
+
+  QazaRecord _toDomain(QazaRecordRow row) {
+    return QazaRecord(
+      id: row.id,
+      userId: row.userId,
+      prayerType: PrayerType.values.firstWhere(
+        (value) => value.name == row.prayerType,
+        orElse: () => throw StateError('Unknown prayer type "${row.prayerType}" in local database.'),
+      ),
+      originalDate: row.originalDate,
+      status: QazaStatus.values.firstWhere(
+        (value) => value.name == row.status,
+        orElse: () => throw StateError('Unknown Qaza status "${row.status}" in local database.'),
+      ),
+      completedAt: row.completedAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    );
+  }
+
+  QazaRecordsCompanion _toCompanion(QazaRecord record) {
+    return QazaRecordsCompanion.insert(
+      id: record.id,
+      userId: record.userId,
+      prayerType: record.prayerType.name,
+      originalDate: record.originalDate,
+      status: record.status.name,
+      completedAt: record.completedAt == null
+          ? const Value.absent()
+          : Value(record.completedAt),
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    );
+  }
 
   void _validatePage(int limit, int offset) {
     if (limit < 1 || limit > maxPageSize) throw ArgumentError.value(limit, 'limit');
@@ -301,6 +353,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }
 
   void _validateRange(DateTime? from, DateTime? to) {
-    if (from != null && to != null && from.isAfter(to)) throw ArgumentError('from must be <= to');
+    if (from != null && to != null && from.isAfter(to)) {
+      throw ArgumentError('from must be <= to');
+    }
   }
 }
