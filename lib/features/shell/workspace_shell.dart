@@ -6,6 +6,15 @@ import '../dashboard/dashboard_screen.dart';
 import '../history/history_progress.dart';
 import '../settings/settings_screen.dart';
 
+/// Regression contract for the existing primary navigation.
+/// Keep this order unchanged while adding secondary features.
+const workspaceNavigationLabels = <String>[
+  'Dashboard',
+  'Calculator',
+  'Logs',
+  'Settings',
+];
+
 class WorkspaceShell extends ConsumerStatefulWidget {
   const WorkspaceShell({super.key});
 
