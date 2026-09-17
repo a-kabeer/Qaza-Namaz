@@ -51,10 +51,20 @@ class DriftQazaRepository implements QazaRepository {
 
   @override
   Future<void> addRecord(QazaRecord record) => database.qazaRecordsDao.insertRecord(_toCompanion(record));
+
   @override
-  Future<void> addRecords(List<QazaRecord> records) async { if (records.isEmpty) return; await database.qazaRecordsDao.insertRecords(records.map(_toCompanion).toList(growable: false)); }
+  Future<void> addRecords(List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final userIds = records.map((record) => record.userId).toSet();
+    if (userIds.length != 1) {
+      throw StateError('A Qaza batch mutation must belong to one user.');
+    }
+    await database.qazaRecordsDao.insertRecords(records.map(_toCompanion).toList(growable: false));
+  }
+
   @override
   Future<void> completeRecord({required String userId, required String recordId, required DateTime completedAt}) => completeRecords(userId: userId, recordIds: [recordId], completedAt: completedAt);
+
   @override
   Future<void> completeRecords({required String userId, required List<String> recordIds, required DateTime completedAt}) async {
     if (recordIds.isEmpty) return;
