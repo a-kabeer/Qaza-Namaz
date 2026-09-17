@@ -42,6 +42,69 @@ class FirestoreQazaRepository implements QazaRepository {
   }
 
   @override
+  Future<QazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status = QazaStatus.completed,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    if (from != null && to != null && from.isAfter(to)) {
+      throw ArgumentError('from must be <= to');
+    }
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError('beforeOriginalDate and beforeId must be provided together');
+    }
+
+    Query<Map<String, dynamic>> query = _recordsCollection(userId);
+
+    if (prayerType != null) {
+      query = query.where('prayerType', isEqualTo: prayerType.name);
+    }
+    if (status != null) {
+      query = query.where('status', isEqualTo: status.name);
+    }
+    if (from != null) {
+      query = query.where(
+        'originalDate',
+        isGreaterThanOrEqualTo: QazaDate.key(QazaDate.normalize(from)),
+      );
+    }
+    if (to != null) {
+      query = query.where(
+        'originalDate',
+        isLessThanOrEqualTo: QazaDate.key(QazaDate.normalize(to)),
+      );
+    }
+
+    query = query
+        .orderBy('originalDate', descending: true)
+        .orderBy(FieldPath.documentId, descending: true);
+
+    if (beforeOriginalDate != null) {
+      query = query.startAfter([
+        QazaDate.key(QazaDate.normalize(beforeOriginalDate)),
+        beforeId,
+      ]);
+    }
+
+    final snapshot = await query.limit(limit + 1).get();
+    final hasMore = snapshot.docs.length > limit;
+    final documents = hasMore
+        ? snapshot.docs.take(limit)
+        : snapshot.docs;
+    final records = documents.map(_fromDocument).toList(growable: false);
+
+    return QazaHistoryPage(records: records, hasMore: hasMore);
+  }
+
+  @override
   Future<void> addRecord(QazaRecord record) async {
     final reference = _recordsCollection(record.userId).doc(record.id);
 
