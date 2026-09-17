@@ -14,20 +14,23 @@ Knowledge Base — 13-part implementation
 - Part 7 — ✅ COMPLETE — Article list & search UI
 - Part 8 — ✅ COMPLETE — Article detail & references UI
 - Part 9 — ✅ COMPLETE — Integration & regression protection
-- Part 10 — NOT STARTED — Performance & accessibility
+- Part 10 — ✅ COMPLETE — Performance & accessibility
 - Part 11 — NOT STARTED — Content QA & tests
 - Part 12 — NOT STARTED — Documentation & release readiness
 - Part 13 — NOT STARTED — Full GitHub CI
 
-## Knowledge Base Part 9 — COMPLETE
+## Knowledge Base Part 10 — COMPLETE
 
-- Integrated the Knowledge Base into the existing Settings → Prayer area.
-- Preserved the existing four-item primary bottom navigation and its order: Dashboard, Calculator, Logs, Settings.
-- Added a regression contract test for the primary navigation labels.
-- Kept Knowledge Base navigation isolated from Qaza records, calculator, history, authentication, sync, and notification state.
-- Kept the Knowledge Base entry as a secondary Settings destination rather than changing the primary navigation structure.
+- Kept article browsing lazy with `SliverList.builder` for the planned larger content set.
+- Preserved repository-level in-memory caching so the bundled dataset is not repeatedly parsed.
+- Added `RepaintBoundary` around article cards to isolate independent list-item repaints.
+- Added semantic labels for article cards and related-article actions.
+- Added selectable article body text for easier reading and copying.
+- Preserved dynamic theme colors and existing light/dark/system theme architecture.
+- Preserved explicit Urdu RTL and English LTR rendering.
+- Added accessibility coverage for semantic article labels and large text scaling.
 - CI remains deferred to Part 13.
 
 ## Next Recommended Step
 
-Proceed to Knowledge Base Part 10 — Performance & Accessibility.
+Proceed to Knowledge Base Part 11 — Content QA & Tests.
