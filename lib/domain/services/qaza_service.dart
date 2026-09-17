@@ -5,6 +5,7 @@ import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 
 export '../entities/qaza_progress.dart';
+export '../repositories/qaza_repository.dart' show QazaHistoryPage;
 
 class QazaService {
   QazaService(this.repository);
@@ -20,6 +21,28 @@ class QazaService {
       userId: userId,
       prayerType: prayerType,
       status: status,
+    );
+  }
+
+  Future<QazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status = QazaStatus.completed,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) {
+    return repository.getHistoryPage(
+      userId: userId,
+      limit: limit,
+      prayerType: prayerType,
+      status: status,
+      from: from,
+      to: to,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
     );
   }
 
@@ -195,8 +218,6 @@ class QazaService {
   }
 
   /// Completed records, newest completion first.
-  ///
-  /// Shared with the derived history provider so ordering is defined once.
   static List<QazaRecord> completedNewestFirst(
     Iterable<QazaRecord> records,
   ) {
@@ -219,9 +240,6 @@ class QazaService {
   }
 
   /// Pure progress math over records already in memory.
-  ///
-  /// Shared by the asynchronous ledger queries and by the derived state
-  /// providers, so "what counts as progress" is defined exactly once.
   static QazaProgress progressOf(Iterable<QazaRecord> records) {
     var completed = 0;
     var total = 0;
