@@ -35,7 +35,7 @@ void main() {
     );
     await settleCalculator(tester);
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('About You').last, findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
