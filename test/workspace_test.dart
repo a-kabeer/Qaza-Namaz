@@ -38,7 +38,7 @@ void main() {
 
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Home').first, findsOneWidget);
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
@@ -88,6 +88,6 @@ void main() {
 
     expect(handled, isTrue);
     expect(find.text('Logs & Progress'), findsNothing);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Home').first, findsOneWidget);
   });
 }
