@@ -43,11 +43,11 @@ The repository exposes read-only Knowledge Base operations such as listing artic
 
 ### State layer
 
-Riverpod providers will own loading, filtering, searching, and selected-article state. Providers will not contain article content.
+Riverpod providers own loading, filtering, searching, selected-article state, and related-content resolution. Providers do not contain article content.
 
 ### UI layer
 
-The feature will provide article browsing, category filtering, search, article detail, references, and related-article navigation. UI widgets will be reusable and data-driven.
+The feature provides article browsing, category filtering, search, article detail, references, and related-article navigation. UI widgets are reusable and data-driven.
 
 ## Content author workflow
 
@@ -128,21 +128,21 @@ Implemented a read-only repository contract and bundled-content repository. The 
 
 ### Part 6 — Riverpod State Layer
 
-Status: PENDING
+Status: COMPLETE
 
-Add providers for loading, categories, search, filters, article selection, and related content.
+Added providers for repository access, article loading, categories, search, category filters, selected article, and related articles. Added bilingual search across article metadata and content fields, with focused Riverpod coverage.
 
 ### Part 7 — Article List & Search UI
 
-Status: PENDING
+Status: COMPLETE
 
-Implement data-driven article listing, category filtering, search, loading, empty, and error states.
+Implemented the data-driven article list, All/Masail/Mugalat category filters, bilingual search, clear action, loading/empty/error/retry states, and theme-aware article cards. Article content remains sourced from the data layer.
 
 ### Part 8 — Article Detail & References UI
 
-Status: PENDING
+Status: COMPLETE
 
-Implement bilingual article detail, references, related articles, RTL/LTR direction handling, and approved Urdu typography.
+Implemented the real article detail page with English/Urdu switching, explicit LTR/RTL direction, title/summary/body rendering, structured references, related-article navigation, missing/loading/error states, and focused widget coverage. Existing theme architecture remains the source of truth.
 
 ### Part 9 — Integration & Regression Protection
 
