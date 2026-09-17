@@ -84,7 +84,13 @@ final loadedRecordsProvider = Provider<List<QazaRecord>>((ref) => ref.watch(qaza
 final overallProgressProvider = Provider<QazaProgress>((ref) => QazaService.progressOf(ref.watch(loadedRecordsProvider)));
 final prayerProgressProvider = Provider<Map<PrayerType, PrayerProgress>>((ref) {
   final records = ref.watch(loadedRecordsProvider);
-  return {for (final prayer in PrayerType.values prayer: PrayerProgress(prayerType: prayer, progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)))};
+  return {
+    for (final prayer in PrayerType.values)
+      prayer: PrayerProgress(
+        prayerType: prayer,
+        progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)),
+      ),
+  };
 });
 final qazaHistoryProvider = Provider<List<QazaRecord>>((ref) => QazaService.completedNewestFirst(ref.watch(loadedRecordsProvider)));
 final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((ref, prayer) {
