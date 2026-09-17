@@ -10,7 +10,6 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_card.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/sync_status.dart';
-import '../../domain/entities/qaza_record.dart';
 import '../calculator/calculator_screen.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/completion_screen.dart';
@@ -61,96 +60,110 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
+  Widget _responsiveList({required List<Widget> children}) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(children: children),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSetupHome(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 28, 16, 28),
-      children: [
-        AppCard(
-          color: scheme.primaryContainer,
-          padding: const EdgeInsets.all(24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 32),
-            const SizedBox(height: 20),
-            Text('Start Your Qaza Journey', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
-            Text('Your Qaza ledger is empty. Calculate an estimate from your prayer history or add missed prayers manually to begin tracking them.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .86), height: 1.45)),
-            const SizedBox(height: 24),
-            AppButton(expand: true, icon: Icons.calculate_outlined, label: 'Calculate Qaza', onPressed: () => _open(context, ref, const CalculatorScreen())),
-            const SizedBox(height: 10),
-            AppButton(expand: true, secondary: true, icon: Icons.add_rounded, label: 'Add Qaza Manually', onPressed: () => _open(context, ref, const AddQazaScreen())),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.info_outline_rounded, color: scheme.primary),
-          const SizedBox(width: 12),
-          Expanded(child: Text('After you add records, Home will focus on your pending Qaza and progress.', style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
-        ])),
-      ],
-    );
+    return _responsiveList(children: [
+      AppCard(
+        color: scheme.primaryContainer,
+        padding: const EdgeInsets.all(24),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(Icons.auto_awesome_rounded, color: scheme.primary, size: 32),
+          const SizedBox(height: 20),
+          Text('Start Your Qaza Journey', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Text('Your Qaza ledger is empty. Calculate an estimate from your prayer history or add missed prayers manually to begin tracking them.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .86), height: 1.45)),
+          const SizedBox(height: 24),
+          AppButton(expand: true, icon: Icons.calculate_outlined, label: 'Calculate Qaza', onPressed: () => _open(context, ref, const CalculatorScreen())),
+          const SizedBox(height: 10),
+          AppButton(expand: true, secondary: true, icon: Icons.add_rounded, label: 'Add Qaza Manually', onPressed: () => _open(context, ref, const AddQazaScreen())),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.info_outline_rounded, color: scheme.primary),
+        const SizedBox(width: 12),
+        Expanded(child: Text('After you add records, Home will focus on your pending Qaza and progress.', style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
+      ])),
+      const SizedBox(height: 16),
+    ]);
   }
 
   Widget _buildPendingHome(BuildContext context, WidgetRef ref, int pending) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final records = ref.watch(loadedRecordsProvider);
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-      children: [
-        const SyncStatus(),
-        const SizedBox(height: 8),
-        AppCard(
-          color: scheme.primaryContainer,
-          padding: const EdgeInsets.all(22),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_todayLabel(), style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Keep going', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Text('$pending Qaza ${pending == 1 ? 'prayer remains' : 'prayers remain'} in your ledger.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .86), height: 1.45)),
-              ])),
-              const SizedBox(width: 16),
-              DecoratedBox(decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle), child: Padding(padding: const EdgeInsets.all(16), child: Text('$pending', style: theme.textTheme.titleLarge?.copyWith(color: scheme.onPrimary, fontWeight: FontWeight.w800)))),
-            ]),
-            const SizedBox(height: 20),
-            AppButton(expand: true, icon: Icons.check_circle_outline_rounded, label: 'Complete Qaza', onPressed: () => _open(context, ref, const CompleteQazaScreen())),
-            const SizedBox(height: 10),
-            AppButton(expand: true, secondary: true, icon: Icons.add_rounded, label: 'Add New Qaza', onPressed: () => _open(context, ref, const AddQazaScreen())),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        _buildProgressSummary(context, ref),
-        const SizedBox(height: 18),
-        _buildPendingPrayerCard(context, ref, records),
-        const SizedBox(height: 14),
-        AppButton(expand: true, secondary: true, icon: Icons.list_alt_rounded, label: 'View All Qaza', onPressed: () => _open(context, ref, const NamazWiseScreen())),
-      ],
-    );
+    return _responsiveList(children: [
+      const SyncStatus(),
+      const SizedBox(height: 8),
+      AppCard(
+        color: scheme.primaryContainer,
+        padding: const EdgeInsets.all(22),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_todayLabel(), style: TextStyle(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          LayoutBuilder(builder: (context, constraints) {
+            final compact = constraints.maxWidth < 380;
+            final message = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Keep going', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onPrimaryContainer, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text('$pending Qaza ${pending == 1 ? 'prayer remains' : 'prayers remain'} in your ledger.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .86), height: 1.45)),
+            ]);
+            final count = DecoratedBox(decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle), child: Padding(padding: const EdgeInsets.all(16), child: Text('$pending', style: theme.textTheme.titleLarge?.copyWith(color: scheme.onPrimary, fontWeight: FontWeight.w800))));
+            return compact ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [message, const SizedBox(height: 14), Align(alignment: AlignmentDirectional.centerEnd, child: count)]) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: message), const SizedBox(width: 16), count]);
+          }),
+          const SizedBox(height: 20),
+          AppButton(expand: true, icon: Icons.check_circle_outline_rounded, label: 'Complete Qaza', onPressed: () => _open(context, ref, const CompleteQazaScreen())),
+          const SizedBox(height: 10),
+          AppButton(expand: true, secondary: true, icon: Icons.add_rounded, label: 'Add New Qaza', onPressed: () => _open(context, ref, const AddQazaScreen())),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      _buildProgressSummary(context, ref),
+      const SizedBox(height: 18),
+      _buildPendingPrayerCard(context, ref, records),
+      const SizedBox(height: 14),
+      AppButton(expand: true, secondary: true, icon: Icons.list_alt_rounded, label: 'View All Qaza', onPressed: () => _open(context, ref, const NamazWiseScreen())),
+      const SizedBox(height: 16),
+    ]);
   }
 
   Widget _buildProgressSummary(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final progress = ref.watch(overallProgressProvider);
     final prayerProgress = ref.watch(prayerProgressProvider);
-    final scheme = theme.colorScheme;
     final activePrayers = PrayerType.values.where((prayer) => prayerProgress[prayer]!.progress.total > 0).toList();
 
     return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        LayoutBuilder(builder: (context, constraints) {
+          final compact = constraints.maxWidth < 340;
+          final summary = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Your progress', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text('${progress.completed} completed • ${progress.pending} pending', style: theme.textTheme.bodyMedium),
-          ])),
-          ProgressRing(progress: progress.percentage, size: 64, strokeWidth: 6),
-        ]),
+          ]);
+          final ring = ProgressRing(progress: progress.percentage, size: 64, strokeWidth: 6);
+          return compact ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [summary, const SizedBox(height: 12), Align(alignment: AlignmentDirectional.centerEnd, child: ring)]) : Row(children: [Expanded(child: summary), ring]);
+        }),
         if (activePrayers.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Divider(height: 1),
@@ -178,9 +191,9 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingPrayerCard(BuildContext context, WidgetRef ref, List<QazaRecord> records) {
+  Widget _buildPendingPrayerCard(BuildContext context, WidgetRef ref, List<dynamic> records) {
     final theme = Theme.of(context);
-    final pendingByPrayer = <PrayerType, int>{for (final prayer in PrayerType.values) prayer: _pendingFor(records, prayer)};
+    final pendingByPrayer = <PrayerType, int>{for (final prayer in PrayerType.values) prayer: records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length};
     final prayersWithPending = pendingByPrayer.entries.where((entry) => entry.value > 0).toList();
     return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Continue by prayer', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
@@ -202,36 +215,31 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildCompletedHome(BuildContext context, WidgetRef ref, int completed) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-      children: [
-        const SyncStatus(),
+    return _responsiveList(children: [
+      const SyncStatus(),
+      const SizedBox(height: 8),
+      AppCard(color: scheme.secondaryContainer, padding: const EdgeInsets.all(22), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.check_circle_rounded, color: scheme.secondary, size: 42),
+        const SizedBox(height: 16),
+        Text('You are all caught up', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        AppCard(color: scheme.secondaryContainer, padding: const EdgeInsets.all(22), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.check_circle_rounded, color: scheme.secondary, size: 42),
-          const SizedBox(height: 16),
-          Text('You are all caught up', style: theme.textTheme.headlineSmall?.copyWith(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text('$completed ${completed == 1 ? 'Qaza prayer has' : 'Qaza prayers have'} been completed. Your pending ledger is currently clear.', style: TextStyle(color: scheme.onSecondaryContainer.withValues(alpha: .86), height: 1.45)),
-          const SizedBox(height: 20),
-          AppButton(expand: true, icon: Icons.add_rounded, label: 'Add New Qaza', onPressed: () => _open(context, ref, const AddQazaScreen())),
-          const SizedBox(height: 10),
-          AppButton(expand: true, secondary: true, icon: Icons.calculate_outlined, label: 'Recalculate Qaza', onPressed: () => _open(context, ref, const CalculatorScreen())),
-        ])),
-        const SizedBox(height: 16),
-        _buildProgressSummary(context, ref),
-        const SizedBox(height: 16),
-        AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.history_rounded, color: scheme.primary),
-          const SizedBox(width: 12),
-          Expanded(child: Text('Your completed history remains available in Logs.', style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
-        ])),
-      ],
-    );
+        Text('$completed ${completed == 1 ? 'Qaza prayer has' : 'Qaza prayers have'} been completed. Your pending ledger is currently clear.', style: TextStyle(color: scheme.onSecondaryContainer.withValues(alpha: .86), height: 1.45)),
+        const SizedBox(height: 20),
+        AppButton(expand: true, icon: Icons.add_rounded, label: 'Add New Qaza', onPressed: () => _open(context, ref, const AddQazaScreen())),
+        const SizedBox(height: 10),
+        AppButton(expand: true, secondary: true, icon: Icons.calculate_outlined, label: 'Recalculate Qaza', onPressed: () => _open(context, ref, const CalculatorScreen())),
+      ])),
+      const SizedBox(height: 16),
+      _buildProgressSummary(context, ref),
+      const SizedBox(height: 16),
+      AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.history_rounded, color: scheme.primary),
+        const SizedBox(width: 12),
+        Expanded(child: Text('Your completed history remains available in Logs.', style: theme.textTheme.bodyMedium?.copyWith(height: 1.4))),
+      ])),
+      const SizedBox(height: 16),
+    ]);
   }
-
-  int _pendingFor(List<QazaRecord> records, PrayerType prayer) => records.where((r) => r.prayerType == prayer && r.status == QazaStatus.pending).length;
 
   String _prayerLabel(PrayerType prayer) => switch (prayer) {
         PrayerType.fajr => 'Fajr',
