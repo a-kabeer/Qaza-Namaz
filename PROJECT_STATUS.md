@@ -31,8 +31,15 @@ SharedPreferences -> Drift/SQLite production migration - Part 12 complete
 - Migration now canonicalizes legacy `originalDate` values as calendar dates before deduplication/persistence.
 - Existing database schema, migration resilience, dashboard aggregate, history pagination, and offline-first isolation tests remain part of the regression suite.
 
+## Reconciliation Task Stream
+- Task 7 - COMPLETE - Add Qaza availability/date-range optimization
+- Task 8 - COMPLETE - Bounded availability query hardening
+- Task 9 - COMPLETE - Calendar availability and date-selection hardening
+
+Task 9 details: `docs/TASK9_CALENDAR_AVAILABILITY_STATUS.md`
+
 ## Validation
-Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Part 12.
+Part 13 CI/build validation is intentionally deferred. No CI result is claimed for Task 9.
 
 ## Next
 Part 13 - Full GitHub CI/build validation and completion gate.
