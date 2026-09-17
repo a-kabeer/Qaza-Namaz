@@ -11,7 +11,7 @@ import 'database/tables/sync_outbox.dart';
 import 'qaza_local_store.dart';
 import 'shared_preferences_qaza_local_store.dart';
 
-class DriftQazaLocalStore implements QazaLocalStore {
+class DriftQazaLocalStore extends QazaLocalStore {
   DriftQazaLocalStore({required AppDatabase database, SharedPreferencesQazaLocalStore? legacyStore})
       : _database = database,
         _legacyStore = legacyStore ?? SharedPreferencesQazaLocalStore();
