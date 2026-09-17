@@ -50,7 +50,19 @@ void main() {
     expect(find.text('2 pending'), findsWidgets);
     expect(find.text('1 fulfilled'), findsOneWidget);
     expect(find.text('3'), findsWidgets);
-    expect(find.text('1 pending • 1 completed'), findsOneWidget);
+
+    // Prayer overview is below the initial viewport. ListView materializes
+    // off-screen children lazily, so reveal the Fajr summary before asserting
+    // the per-prayer card content.
+    final fajrSummary = find.text('1 pending • 1 completed');
+    await tester.scrollUntilVisible(
+      fajrSummary,
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(fajrSummary, findsOneWidget);
     expect(find.text('1 pending'), findsWidgets);
     expect(repository.getRecordsCalled, isFalse);
   });
