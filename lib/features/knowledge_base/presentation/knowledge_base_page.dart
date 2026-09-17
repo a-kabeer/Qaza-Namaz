@@ -159,41 +159,47 @@ class _ArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                article.title.en,
-                style: Theme.of(context).textTheme.titleMedium,
+    return RepaintBoundary(
+      child: Semantics(
+        button: true,
+        label: '${article.title.en}. ${article.summary.en}',
+        child: Card(
+          margin: const EdgeInsets.only(bottom: 10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    article.title.en,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    article.title.ur,
+                    textDirection: TextDirection.rtl,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    article.summary.en,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    article.category == KnowledgeCategory.masail
+                        ? 'Masail'
+                        : 'Mugalat',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                article.title.ur,
-                textDirection: TextDirection.rtl,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                article.summary.en,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                article.category == KnowledgeCategory.masail
-                    ? 'Masail'
-                    : 'Mugalat',
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ],
+            ),
           ),
         ),
       ),
