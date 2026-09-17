@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/widgets/app_button.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/qaza/completion_screen.dart';
@@ -148,69 +151,73 @@ void main() {
   });
 
   group('Completion widget', () {
-    testWidgets('loads oldest record without a full-ledger read and completes it', (
-      tester,
-    ) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(
-          id: 'f-new',
-          prayer: PrayerType.fajr,
-          date: DateTime(2026, 1, 3),
-        ),
-        _record(
-          id: 'f-old',
-          prayer: PrayerType.fajr,
-          date: DateTime(2026, 1, 1),
-        ),
-      ]);
+    testWidgets(
+      'loads oldest record without a full-ledger read and completes it',
+      (tester) async {
+        final repository = InMemoryQazaRepository();
+        await repository.addRecords([
+          _record(
+            id: 'f-new',
+            prayer: PrayerType.fajr,
+            date: DateTime(2026, 1, 3),
+          ),
+          _record(
+            id: 'f-old',
+            prayer: PrayerType.fajr,
+            date: DateTime(2026, 1, 1),
+          ),
+        ]);
 
-      var fullLedgerReads = 0;
-      final guardedRepository = _NoFullLedgerRepository(
-        delegate: repository,
-        onFullLedgerRead: () => fullLedgerReads++,
-      );
+        var fullLedgerReads = 0;
+        final guardedRepository = _NoFullLedgerRepository(
+          delegate: repository,
+          onFullLedgerRead: () => fullLedgerReads++,
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            qazaRepositoryProvider.overrideWithValue(guardedRepository),
-            activeUserIdProvider.overrideWithValue('test-user'),
-          ],
-          child: const MaterialApp(home: CompleteQazaScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              qazaRepositoryProvider.overrideWithValue(guardedRepository),
+              activeUserIdProvider.overrideWithValue('test-user'),
+            ],
+            child: const MaterialApp(home: CompleteQazaScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('January 1, 2026'), findsOneWidget);
-      expect(find.byKey(const Key('complete_oldest_pending')), findsOneWidget);
-      expect(
-        tester.widget<FilledButton>(
-          find.byKey(const Key('complete_oldest_pending')),
-        ).onPressed,
-        isNotNull,
-      );
-      expect(fullLedgerReads, 0);
+        expect(find.text('January 1, 2026'), findsOneWidget);
+        expect(find.byKey(const Key('complete_oldest_pending')), findsOneWidget);
+        expect(
+          tester.widget<AppButton>(
+            find.byKey(const Key('complete_oldest_pending')),
+          ).onPressed,
+          isNotNull,
+        );
+        expect(fullLedgerReads, 0);
 
-      await tester.tap(find.byKey(const Key('complete_oldest_pending')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('complete_oldest_pending')));
+        await tester.pumpAndSettle();
 
-      final records = await repository.getRecords(userId: 'test-user');
-      expect(
-        records.singleWhere((record) => record.id == 'f-old').status,
-        QazaStatus.completed,
-      );
-      expect(
-        records.singleWhere((record) => record.id == 'f-new').status,
-        QazaStatus.pending,
-      );
-      expect(fullLedgerReads, 0);
-    });
+        final records = await repository.getRecords(userId: 'test-user');
+        expect(
+          records.singleWhere((record) => record.id == 'f-old').status,
+          QazaStatus.completed,
+        );
+        expect(
+          records.singleWhere((record) => record.id == 'f-new').status,
+          QazaStatus.pending,
+        );
+        expect(fullLedgerReads, 0);
+      },
+    );
   });
 }
 
-class _NoFullLedgerRepository implements InMemoryQazaRepository {
-  _NoFullLedgerRepository({required this.delegate, required this.onFullLedgerRead});
+class _NoFullLedgerRepository extends InMemoryQazaRepository {
+  _NoFullLedgerRepository({
+    required this.delegate,
+    required this.onFullLedgerRead,
+  });
 
   final InMemoryQazaRepository delegate;
   final void Function() onFullLedgerRead;
