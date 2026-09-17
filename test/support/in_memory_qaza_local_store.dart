@@ -61,7 +61,7 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
       });
 
     final hasMore = records.length > limit;
-    return QazaHistoryPage(
+    return LocalQazaHistoryPage(
       records: (hasMore ? records.take(limit) : records).toList(growable: false),
       hasMore: hasMore,
     );
