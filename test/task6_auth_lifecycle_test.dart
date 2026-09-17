@@ -104,7 +104,7 @@ void main() {
     expect(startTracking, findsOneWidget);
     await tester.tap(startTracking);
     await tester.pump();
-    expect(find.text('Qaza Namaz'), findsWidgets);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
 
     await _pumpAuthEvent(tester, null, auth);
     await _pumpAuthEvent(tester, secondUser, auth);
