@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/database/qaza_records_dao.dart';
+import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 void main() {
   late AppDatabase database;
