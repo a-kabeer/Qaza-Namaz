@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -36,7 +37,7 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Add Qaza'), findsOneWidget);
     await revealPrayerLedger(tester);
-    expect(find.text('Prayer ledger'), findsOneWidget);
+    expect(find.text('Prayer overview'), findsOneWidget);
   });
   testWidgets('Dashboard derives live totals from individual records', (tester) async {
     final repository = InMemoryQazaRepository();
