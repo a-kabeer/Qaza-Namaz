@@ -75,6 +75,9 @@ IN PROGRESS
 - #17 — DB-1: Add Drift database foundation — OPEN
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
+### Home task
+- #19 — Home Part 1: baseline and PR reconciliation status — OPEN; now contains Parts 1–2 implementation/status commits
+
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
 - #6 — Task 10: make Qaza completion instant and repeat-safe — MERGED
