@@ -9,42 +9,95 @@ class CalendarPicker extends ConsumerStatefulWidget {
     super.key,
     this.qazaDates = const <DateTime>{},
     this.isDateUnavailable,
+    this.loadUnavailableDates,
   });
+
   final Set<DateTime> qazaDates;
   final bool Function(DateTime date)? isDateUnavailable;
+  final Future<Set<DateTime>> Function(DateTime month)? loadUnavailableDates;
+
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
 }
 
 class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   late DateTime _monthAnchor;
+  Set<DateTime> _monthUnavailable = const <DateTime>{};
+  bool _loadingAvailability = false;
+  int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
     final today = ref.read(calendarTodayProvider);
     _monthAnchor = DateTime(today.year, today.month, 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMonthAvailability(_monthAnchor));
+  }
+
+  @override
+  void didUpdateWidget(covariant CalendarPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.loadUnavailableDates != widget.loadUnavailableDates) {
+      _loadMonthAvailability(_monthAnchor);
+    }
   }
 
   DateTime get _today => ref.read(calendarTodayProvider);
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _isQazaDate(DateTime date) => widget.qazaDates.any((qaza) => _sameDay(qaza, date));
-  bool _isUnavailableDate(DateTime date) => widget.isDateUnavailable?.call(date) ?? false;
+  bool _isUnavailableDate(DateTime date) {
+    if (_loadingAvailability && widget.loadUnavailableDates != null) return true;
+    if (_monthUnavailable.any((unavailable) => _sameDay(unavailable, date))) return true;
+    return widget.isDateUnavailable?.call(date) ?? false;
+  }
+
   String _hijriLabel(DateTime date) {
     final h = HijriCalendar.fromDate(date);
     return '${h.hDay} ${h.getLongMonthName()} ${h.hYear} AH';
   }
+
   String _gregorianLabel(BuildContext context, DateTime date) => MaterialLocalizations.of(context).formatMediumDate(date);
 
-  void _goMonth(int delta) {
+  Future<void> _loadMonthAvailability(DateTime month) async {
+    final loader = widget.loadUnavailableDates;
+    if (loader == null) return;
+
+    final normalizedMonth = DateTime(month.year, month.month, 1);
+    final requestId = ++_requestId;
+    if (mounted) {
+      setState(() {
+        _loadingAvailability = true;
+        _monthUnavailable = const <DateTime>{};
+      });
+    }
+
+    try {
+      final unavailable = await loader(normalizedMonth);
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _monthUnavailable = unavailable;
+        _loadingAvailability = false;
+      });
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _monthUnavailable = const <DateTime>{};
+        _loadingAvailability = false;
+      });
+    }
+  }
+
+  Future<void> _goMonth(int delta) async {
     final next = DateTime(_monthAnchor.year, _monthAnchor.month + delta, 1);
     final minimum = DateTime(1950, 1, 1);
     final maximum = DateTime(_today.year, _today.month, 1);
     if (next.isBefore(minimum) || next.isAfter(maximum)) return;
     setState(() => _monthAnchor = next);
+    await _loadMonthAvailability(next);
   }
 
   String _prompt(CalendarSelectionState state) {
+    if (_loadingAvailability && widget.loadUnavailableDates != null) return 'Checking prayer availability for this month…';
     switch (state.selectionMode) {
       case DateSelectionMode.single:
         return state.hasSelection ? 'Date selected. Review the date below or choose another.' : 'Tap one date to select it.';
@@ -69,12 +122,12 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(children: [
-          IconButton(key: const Key('calendar_prev_month'), tooltip: 'Previous month', onPressed: canPrevious ? () => _goMonth(-1) : null, icon: const Icon(Icons.chevron_left_rounded)),
+          IconButton(key: const Key('calendar_prev_month'), tooltip: 'Previous month', onPressed: canPrevious && !_loadingAvailability ? () => _goMonth(-1) : null, icon: const Icon(Icons.chevron_left_rounded)),
           Expanded(child: Column(children: [
             Text(MaterialLocalizations.of(context).formatMonthYear(_monthAnchor), key: const Key('calendar_month_header'), textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
             Text(_hijriLabel(_monthAnchor), key: const Key('calendar_hijri_month_label'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
           ])),
-          IconButton(key: const Key('calendar_next_month'), tooltip: 'Next month', onPressed: canNext ? () => _goMonth(1) : null, icon: const Icon(Icons.chevron_right_rounded)),
+          IconButton(key: const Key('calendar_next_month'), tooltip: 'Next month', onPressed: canNext && !_loadingAvailability ? () => _goMonth(1) : null, icon: const Icon(Icons.chevron_right_rounded)),
         ]),
         const SizedBox(height: 8),
         Container(
@@ -83,6 +136,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           child: Text(_prompt(state), key: const Key('calendar_selection_prompt'), textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
         ),
         const SizedBox(height: 12),
+        if (_loadingAvailability && widget.loadUnavailableDates != null) const LinearProgressIndicator(minHeight: 2),
         _DayGrid(anchor: _monthAnchor, today: _today, selectionMode: state.selectionMode, selectedDates: selected, onDayTap: (date) => ref.read(calendarControllerProvider.notifier).select(date), hijriLabel: _hijriLabel, gregorianLabel: (date) => _gregorianLabel(context, date), isQazaDate: _isQazaDate, isUnavailableDate: _isUnavailableDate),
         if (selected.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -100,7 +154,7 @@ class _DayGrid extends StatelessWidget {
   final List<DateTime> selectedDates;
   final ValueChanged<DateTime> onDayTap;
   final String Function(DateTime) hijriLabel, gregorianLabel;
-  final bool Function(DateTime) isQazaDate, isUnavailableDate;
+  final bool Function(DateTime) isQazaDate, isDateUnavailable;
   bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
   bool _selected(DateTime day) => selectedDates.any((date) => _sameDay(date, day));
   bool _inRange(DateTime day) => selectionMode == DateSelectionMode.range && selectedDates.length == 2 && !day.isBefore(selectedDates.first) && !day.isAfter(selectedDates.last);
@@ -126,7 +180,7 @@ class _DayGrid extends StatelessWidget {
     if (number < 1 || number > daysInMonth) return const SizedBox.shrink();
     final date = DateTime(anchor.year, anchor.month, number);
     final baseEnabled = !date.isAfter(today) && !date.isBefore(DateTime(1950));
-    final unavailable = isUnavailableDate(date);
+    final unavailable = isDateUnavailable(date);
     final enabled = baseEnabled && !unavailable;
     final selected = _selected(date), inRange = _inRange(date), endpoint = _rangeEndpoint(date), todayDate = _sameDay(date, today), qaza = isQazaDate(date);
     final scheme = Theme.of(context).colorScheme;
