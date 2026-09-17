@@ -65,7 +65,7 @@ void main() {
 
     expect(find.text('2 pending'), findsWidgets);
     final fulfilledChips = find.byType(StatusChip).evaluate().where((element) =>
-        tester.widget<StatusChip>(element).label == '1 fulfilled');
+        (element.widget as StatusChip).label == '1 fulfilled');
     expect(fulfilledChips, hasLength(1));
     expect(find.text('3'), findsWidgets);
     expect(find.text('1 pending • 1 completed'), findsOneWidget);
