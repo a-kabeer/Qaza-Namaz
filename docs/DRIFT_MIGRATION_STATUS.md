@@ -16,9 +16,22 @@ CI/build validation is intentionally deferred until **Part 13**.
 - Part 8 — ✅ COMPLETE — Mutation and transaction hardening
 - Part 9 — ✅ COMPLETE — Large-dataset Home/Logs performance integration
 - Part 10 — ✅ COMPLETE — Migration cleanup and legacy-store retirement
-- Part 11 — ⏳ PENDING — Data migration/upgrade resilience
+- Part 11 — ✅ COMPLETE — Data migration/upgrade resilience
 - Part 12 — ⏳ PENDING — Final application-level regression audit
 - Part 13 — ⏳ PENDING — Full GitHub CI/build validation and completion gate
+
+## Part 11 — Data migration/upgrade resilience
+
+Implemented on `task-db-1-drift-foundation`.
+
+- Serialized concurrent migration calls within the application process.
+- Added explicit migration version validation and rejected unsupported future marker versions.
+- Hardened legacy JSON shape/type validation; malformed snapshots fail safely without setting completion state.
+- Kept all target inserts and conflict checks inside one Drift transaction so failures cannot leave partial imports.
+- Preserved user isolation checks and added per-user target-count verification.
+- Migration/version markers are written only after successful database work and verification.
+- Re-running a successfully completed migration is a safe no-op.
+- Added regression coverage for fresh installs, legacy import, duplicate normalization, idempotency, malformed data, isolation mismatches, existing-row conflicts, and unsupported marker versions.
 
 ## Part 10 — Migration cleanup and legacy-store retirement
 
@@ -32,7 +45,7 @@ Implemented on `task-db-1-drift-foundation`.
 - Runtime last-sync state no longer depends on the legacy SharedPreferences store.
 
 ## Remaining legacy boundary
-The only remaining SharedPreferences usage is the one-time migration bootstrap. Part 11 will harden migration/upgrade resilience and verify repeatability, failure recovery, and preservation of existing data before the migration path is considered production-final.
+The only remaining SharedPreferences usage is the one-time migration bootstrap. Part 12 will audit remaining full-snapshot compatibility paths, database lifecycle/upgrade behavior, and application-level regressions before Part 13 CI/build validation.
 
 ## Validation policy
 No Part 13 CI gate is claimed for Parts 1–12. Final completion requires the complete configured GitHub CI/build matrix to pass after Part 13.
