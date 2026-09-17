@@ -31,51 +31,40 @@ class QazaService {
     final normalizedDates = dates.map(QazaDate.normalize).toSet(); final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
     final now = DateTime.now();
-    await repository.addRecords([for (final date in normalizedDates) for (final prayerType in selectedPrayers) QazaRecord(id: '${userId}_${prayerType.name}_${QazaDate.key(date)}', userId: userId, prayerType: prayerType, originalDate: date, status: QazaStatus.pending, createdAt: now, updatedAt: now)]);
+    await repository.addRecords([for (final date in normalizedDates) for (final prayerType in selectedPrayers QazaRecord(id: '${userId}_${prayerType.name}_${QazaDate.key(date)}', userId: userId, prayerType: prayerType, originalDate: date, status: QazaStatus.pending, createdAt: now, updatedAt: now)]);
   }
 
   Future<bool> completeOldestPending({required String userId, required PrayerType prayerType, DateTime? completedAt}) async {
-    final record = await oldestPending(userId: userId, prayerType: prayerType);
-    if (record == null) return false;
-    await completeRecord(userId: userId, recordId: record.id, completedAt: completedAt ?? DateTime.now());
-    return true;
+    final record = await oldestPending(userId: userId, prayerType: prayerType); if (record == null) return false;
+    await completeRecord(userId: userId, recordId: record.id, completedAt: completedAt ?? DateTime.now()); return true;
   }
 
   Future<int> completeSelected({required String userId, required List<String> recordIds, DateTime? completedAt}) async {
-    if (recordIds.isEmpty) return 0;
-    // Validation is performed by the repository against the UID-scoped local source.
-    // Avoid loading the entire ledger just to validate selected IDs.
-    final before = await repository.getPage(userId: userId, limit: 500, status: QazaStatus.pending);
-    final selected = recordIds.toSet();
-    final valid = before.records.where((r) => selected.contains(r.id)).map((r) => r.id).toList(growable: false);
+    final remaining = recordIds.toSet(); if (remaining.isEmpty) return 0;
+    final valid = <String>[]; DateTime? afterDate; String? afterId;
+    while (remaining.isNotEmpty) {
+      final page = await repository.getPage(userId: userId, limit: 500, status: QazaStatus.pending, afterOriginalDate: afterDate, afterId: afterId);
+      for (final record in page.records) { if (remaining.remove(record.id)) valid.add(record.id); }
+      if (!page.hasMore) break;
+      afterDate = page.nextOriginalDate; afterId = page.nextId;
+    }
     if (valid.isEmpty) return 0;
     await completeRecords(userId: userId, recordIds: valid, completedAt: completedAt ?? DateTime.now());
     return valid.length;
   }
 
   Future<QazaProgress> overallProgress(String userId) async => (await getProgressSummary(userId: userId)).overall;
-
   Future<PrayerProgress> prayerProgress(String userId, PrayerType prayerType) async => (await getProgressSummary(userId: userId)).byPrayer[prayerType] ?? PrayerProgress(prayerType: prayerType, progress: const QazaProgress(pending: 0, completed: 0));
 
   static List<QazaRecord> completedNewestFirst(Iterable<QazaRecord> records) {
     final completed = records.where((record) => record.status == QazaStatus.completed).toList();
-    completed.sort((a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
-    return completed;
+    completed.sort((a, b) => (b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0))); return completed;
   }
 
   Future<List<QazaRecord>> history(String userId) async {
     final result = <QazaRecord>[]; DateTime? date; String? id;
-    while (true) {
-      final page = await getHistoryPage(userId: userId, limit: 500, status: QazaStatus.completed, beforeOriginalDate: date, beforeId: id);
-      result.addAll(page.records);
-      if (!page.hasMore) return result;
-      date = page.nextOriginalDate; id = page.nextId;
-    }
+    while (true) { final page = await getHistoryPage(userId: userId, limit: 500, status: QazaStatus.completed, beforeOriginalDate: date, beforeId: id); result.addAll(page.records); if (!page.hasMore) return result; date=page.nextOriginalDate; id=page.nextId; }
   }
 
-  static QazaProgress progressOf(Iterable<QazaRecord> records) {
-    var completed = 0, total = 0;
-    for (final record in records) { total++; if (record.status == QazaStatus.completed) completed++; }
-    return QazaProgress(pending: total - completed < 0 ? 0 : total - completed, completed: completed);
-  }
+  static QazaProgress progressOf(Iterable<QazaRecord> records) { var completed=0,total=0; for (final record in records) { total++; if (record.status == QazaStatus.completed) completed++; } return QazaProgress(pending: total-completed < 0 ? 0 : total-completed, completed: completed); }
 }
