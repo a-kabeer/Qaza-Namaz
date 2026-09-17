@@ -1,25 +1,38 @@
 # PR #16 Reconciliation Status
 
-## Historical correctness baseline
+## Task 3 — Qaza Eligibility & Duplicate-Safety Hardening
 
-PR #16 contains Qaza availability, duplicate-safety, and scalability work. Its stale description references the pre-Drift architecture and must not be treated as the current production architecture.
+Status: **COMPLETE**
+
+### Validated rules
+
+- Duplicate identity is user + normalized calendar date + prayer.
+- Pending and completed Qaza records both block duplicate creation.
+- A record belonging to another user does not block the active user's candidate.
+- A date remains available while at least one configured prayer remains eligible.
+- Witr remains independent.
+- Duplicate input dates and duplicate prayer selections collapse to unique combinations.
+- Already-prayed is represented separately from already-recorded.
+- Calendar timestamps are normalized before identity comparison.
+
+## Architecture guardrails
+
+- Drift/SQLite remains the persistence source of truth.
+- No SharedPreferences runtime persistence was restored.
+- Existing bounded repository APIs remain intact.
+- Database-backed aggregate progress remains intact.
+- No new parallel repository or database implementation was introduced.
+
+## Reconciliation baseline
+
+PR #16 contains Qaza availability, duplicate-safety, and scalability work. Its original description references the pre-Drift architecture and must not be treated as the current production architecture.
 
 The reconciled implementation follows the current Drift/SQLite data path documented in `docs/DATABASE_ARCHITECTURE.md`.
 
-## Reconciliation rules
-
-- Duplicate identity is user + normalized calendar date + prayer.
-- Pending and completed Qaza records block duplicate creation.
-- Different users remain isolated.
-- A date remains available while at least one prayer remains eligible.
-- Witr remains independent.
-- Availability and persistence use bounded repository/service paths.
-- Full-ledger compatibility APIs are not used by production large-data screens.
-
 ## Merge readiness
 
-PR #16 remains **open and not mergeable as-is** because its original head is stale/diverged from the current Drift baseline. The reconciled work is maintained on the dedicated reconciliation branch and must be reviewed there before merge.
+The original PR #16 head is stale/diverged and must not be merged directly. Its required work is represented by the consolidated PR #20 reconciliation branch.
 
-## Dependency
+## Validation
 
-PR #17 is the merged Drift baseline. PR #16 must be reconciled against that baseline before PR #19 is merged.
+Regression coverage exists for eligibility, duplicate safety, account isolation, availability, and bounded persistence paths. Final Task 13 CI validation is now complete on the reconciled branch.
