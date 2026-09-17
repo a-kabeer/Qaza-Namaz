@@ -75,6 +75,38 @@ class QazaService {
     );
   }
 
+  /// Loads availability for one visible calendar month only.
+  ///
+  /// The repository query is bounded to the month's dates, so navigating the
+  /// calendar never requires loading the user's complete ledger.
+  Future<Set<DateTime>> unavailableDatesForMonth({
+    required String userId,
+    required DateTime month,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Iterable<PrayerType> prayerTypes = PrayerType.values,
+  }) async {
+    final start = DateTime(month.year, month.month, 1);
+    final end = DateTime(month.year, month.month + 1, 0);
+    final dates = <DateTime>[];
+    for (var date = start;
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)) {
+      dates.add(date);
+    }
+
+    final existing = await repository.getRecordsForDates(
+      userId: userId,
+      dates: dates,
+    );
+    return availability.unavailableDatesForMonth(
+      userId: userId,
+      month: month,
+      existingRecords: existing,
+      prayedKeys: prayedKeys,
+      prayerTypes: prayerTypes,
+    );
+  }
+
   Future<void> addRecords(List<QazaRecord> records) {
     return repository.addRecords(records);
   }
