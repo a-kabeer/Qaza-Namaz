@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import 'providers/knowledge_base_providers.dart';
 
