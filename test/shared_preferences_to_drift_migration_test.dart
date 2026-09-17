@@ -78,7 +78,7 @@ void main() {
     expect(await database.qazaRecordsDao.count(userId: 'user-b'), 1);
     expect(
       (await database.qazaRecordsDao.findById(userId: 'user-b', id: 'b1'))!.status,
-      'completed',
+      QazaStatus.completed,
     );
     expect(preferences.getBool(SharedPreferencesToDriftMigrator.migrationKey), true);
   });
@@ -123,7 +123,7 @@ void main() {
     expect(result.duplicateRecordCount, 1);
     expect(await database.qazaRecordsDao.count(userId: 'user-a'), 1);
     final migrated = (await database.qazaRecordsDao.getPage(userId: 'user-a')).single;
-    expect(migrated.status, 'completed');
+    expect(migrated.status, QazaStatus.completed);
     expect(migrated.completedAt, DateTime.utc(2026, 2, 1));
   });
 

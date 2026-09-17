@@ -37,7 +37,7 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Add Qaza'), findsOneWidget);
     await revealPrayerLedger(tester);
-    expect(find.text('Prayer ledger'), findsOneWidget);
+    expect(find.text('Prayer overview'), findsOneWidget);
   });
   testWidgets('Dashboard derives live totals from individual records', (tester) async {
     final repository = InMemoryQazaRepository();
