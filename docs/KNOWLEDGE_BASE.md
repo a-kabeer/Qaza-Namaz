@@ -31,7 +31,7 @@ Human-editable structured files under `assets/knowledge_base/content/` are the s
 
 ### Parser and validation layer
 
-The parser will convert bundled source files into strongly typed models and reject malformed content deterministically. Validation will cover IDs, categories, bilingual fields, references, and relationship integrity.
+The parser converts bundled source files into strongly typed models and rejects malformed content deterministically. Validation covers IDs, categories, bilingual fields, references, and relationship integrity.
 
 ### Domain model layer
 
@@ -39,7 +39,7 @@ The domain model represents articles without coupling the UI to the storage form
 
 ### Repository layer
 
-The repository will expose read-only Knowledge Base operations such as listing articles, filtering by category, searching, loading a single article, and resolving related articles. It will not depend on Firestore or the Qaza database.
+The repository exposes read-only Knowledge Base operations such as listing articles, filtering by category, and loading a single article by stable ID. It owns the bundled asset boundary, deterministic ordering, and in-memory caching. It does not depend on Firestore or the Qaza database.
 
 ### State layer
 
@@ -92,11 +92,7 @@ The application now has typed models for:
 - `KnowledgeReference`
 - `KnowledgeArticle`
 
-The models intentionally do not parse JSON. Raw-content parsing and validation remain a separate concern for Part 4.
-
-### Data-layer rule
-
-Widgets must never consume raw JSON maps or contain article wording. They will receive `KnowledgeArticle` and related typed values from the repository/state layers.
+The models intentionally do not parse JSON. Raw-content parsing and validation remain a separate concern.
 
 ## Planned implementation parts
 
@@ -110,25 +106,25 @@ Established the dedicated feature boundary, offline content-authoring location, 
 
 Status: COMPLETE
 
-Defined schema version 1, machine-readable JSON contract, bilingual text contract, category contract, structured references, relationship fields, stable IDs, deterministic sort order, and strongly typed domain models. No parser, article dataset, repository, provider, or UI was added.
+Defined schema version 1, machine-readable JSON contract, bilingual text contract, category contract, structured references, relationship fields, stable IDs, deterministic sort order, and strongly typed domain models.
 
 ### Part 3 — Content Dataset Foundation
 
-Status: PENDING
+Status: COMPLETE
 
-Add initial valid Masail/Mugalat content files using the approved schema and reference structure.
+Added the bundled `assets/knowledge_base/content/articles.json` entry point with an initially empty, valid version-1 dataset. Religious article wording is intentionally left for the verified content author rather than being invented in the implementation.
 
 ### Part 4 — Parser & Validator
 
-Status: PENDING
+Status: COMPLETE
 
-Implement parsing, schema validation, relationship validation, and deterministic error handling.
+Implemented deterministic JSON parsing and validation for schema version, article structure, bilingual fields, categories, IDs/slugs, ordering, tags, references, and relationship fields. Added focused parser tests.
 
 ### Part 5 — Repository & Data Layer
 
-Status: PENDING
+Status: COMPLETE
 
-Implement a read-only repository over bundled content with efficient indexed access.
+Implemented a read-only repository contract and bundled-content repository. The repository loads the packaged dataset through Flutter assets, parses it through the dedicated parser, applies deterministic ordering, caches the parsed dataset in memory, and exposes category and stable-ID lookups without coupling to Firestore or Qaza persistence.
 
 ### Part 6 — Riverpod State Layer
 
@@ -178,10 +174,6 @@ Status: PENDING
 
 Run the complete GitHub CI/build/test matrix only after Parts 1–12 are complete. Fix CI-discovered regressions before marking the Knowledge Base task complete.
 
-## Part 1 decision record
+## Part 5 decision record
 
-Part 1 intentionally did not add article content, a Dart parser, Riverpod providers, UI screens, or navigation changes. Keeping those concerns separate prevented the foundation from becoming coupled to an unfinished content schema.
-
-## Part 2 decision record
-
-Part 2 establishes a strict, versioned contract before content authors or runtime code depend on it. Required bilingual fields prevent incomplete published articles, stable IDs protect references between articles, and structured references avoid embedding citation semantics inside presentation code.
+The repository is deliberately read-only because the Knowledge Base is bundled reference content, not user-generated Qaza data. Runtime access is isolated behind a repository contract so the Riverpod and UI layers do not know where content is stored. The bundled dataset is cached after the first load to avoid repeated asset parsing, while callers receive unmodifiable collections.
