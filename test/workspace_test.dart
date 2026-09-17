@@ -37,11 +37,35 @@ void main() {
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+    expect(find.text('Calculate Qaza'), findsOneWidget);
+    expect(find.text('Add Qaza Manually'), findsOneWidget);
     expect(find.byTooltip('Notifications'), findsOneWidget);
     expect(find.byTooltip('Profile'), findsOneWidget);
     await revealPrayerLedger(tester);
-    expect(find.text('Prayer ledger'), findsOneWidget);
+    expect(find.text('Prayer ledger'), findsNothing);
+  });
+
+  testWidgets('Home empty state uses the Home state model and opens setup journeys', (tester) async {
+    await pumpWorkspace(tester, InMemoryQazaRepository());
+
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+    expect(find.text('Your Qaza ledger is empty.'), findsOneWidget);
+    expect(find.text('Ledger overview'), findsNothing);
+    expect(find.text('Prayer ledger'), findsNothing);
+
+    await tester.tap(find.text('Calculate Qaza'));
+    await _pumpNavigation(tester);
+    expect(find.text('About You'), findsOneWidget);
+    expect(find.text('Step 1 of 3'), findsOneWidget);
+
+    await tester.pageBack();
+    await _pumpNavigation(tester);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+
+    await tester.tap(find.text('Add Qaza Manually'));
+    await _pumpNavigation(tester);
+    expect(find.byKey(const Key('qaza_flow_heading')), findsOneWidget);
   });
 
   testWidgets('Home derives live totals from individual records', (tester) async {
@@ -101,6 +125,6 @@ void main() {
 
     expect(handled, isTrue);
     expect(find.text('Logs & Progress'), findsNothing);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
   });
 }
