@@ -6,8 +6,6 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import 'database/app_database.dart';
-import 'database/tables/qaza_records.dart';
-import 'database/tables/sync_outbox.dart';
 import 'qaza_local_store.dart';
 
 /// Production local store backed exclusively by Drift/SQLite.

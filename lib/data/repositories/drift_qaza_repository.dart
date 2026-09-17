@@ -5,7 +5,6 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../local/database/app_database.dart';
-import '../local/database/tables/qaza_records.dart';
 
 class DriftQazaRepository implements QazaRepository {
   DriftQazaRepository(this.database);
