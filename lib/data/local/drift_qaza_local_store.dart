@@ -9,15 +9,17 @@ import 'database/app_database.dart';
 import 'database/tables/qaza_records.dart';
 import 'database/tables/sync_outbox.dart';
 import 'qaza_local_store.dart';
-import 'shared_preferences_qaza_local_store.dart';
 
+/// Production local store backed exclusively by Drift/SQLite.
+///
+/// SharedPreferences is intentionally not part of the runtime persistence
+/// path. It is retained only by the one-time migration bootstrap so existing
+/// installations can be upgraded safely.
 class DriftQazaLocalStore extends QazaLocalStore {
-  DriftQazaLocalStore({required AppDatabase database, SharedPreferencesQazaLocalStore? legacyStore})
-      : _database = database,
-        _legacyStore = legacyStore ?? SharedPreferencesQazaLocalStore();
+  DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
-  final SharedPreferencesQazaLocalStore _legacyStore;
+  final Map<String, DateTime?> _lastSyncByUser = <String, DateTime?>{};
 
   @override
   Future<OfflineCacheSnapshot> load() async {
@@ -26,17 +28,21 @@ class DriftQazaLocalStore extends QazaLocalStore {
     final allUsers = {...users, ...outboxUsers};
     final recordsByUser = <String, List<QazaRecord>>{};
     final outboxByUser = <String, List<PendingSyncOp>>{};
-    final legacy = await _legacyStore.load();
+
     for (final userId in allUsers) {
       final records = await _database.qazaRecordsDao.getAll(userId: userId);
       final ops = await _database.syncOutboxDao.getPending(userId: userId);
       recordsByUser[userId] = List<QazaRecord>.unmodifiable(records);
       outboxByUser[userId] = ops.map(_toDomainOp).toList(growable: false);
     }
+
     return OfflineCacheSnapshot(
       recordsByUser: recordsByUser,
       outboxByUser: outboxByUser,
-      lastSyncByUser: legacy.lastSyncByUser,
+      lastSyncByUser: {
+        for (final entry in _lastSyncByUser.entries)
+          if (entry.value != null) entry.key: entry.value!,
+      },
     );
   }
 
@@ -152,8 +158,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
-  Future<void> saveLastSync(String userId, DateTime? lastSync) =>
-      _legacyStore.saveLastSync(userId, lastSync);
+  Future<void> saveLastSync(String userId, DateTime? lastSync) async {
+    _lastSyncByUser[userId] = lastSync;
+  }
 
   PendingSyncOp _toDomainOp(SyncOutboxData row) => PendingSyncOp(
         id: row.id,
