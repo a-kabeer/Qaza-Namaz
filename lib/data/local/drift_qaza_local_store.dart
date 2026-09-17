@@ -30,14 +30,25 @@ class DriftQazaLocalStore implements QazaLocalStore {
     for (final userId in allUsers) {
       final records = await _database.qazaRecordsDao.getAll(userId: userId);
       final ops = await _database.syncOutboxDao.getPending(userId: userId);
-      recordsByUser[userId] = records.map(_toDomain).toList(growable: false);
+      recordsByUser[userId] = List<QazaRecord>.unmodifiable(records);
       outboxByUser[userId] = ops.map(_toDomainOp).toList(growable: false);
     }
-    return OfflineCacheSnapshot(recordsByUser: recordsByUser, outboxByUser: outboxByUser, lastSyncByUser: legacy.lastSyncByUser);
+    return OfflineCacheSnapshot(
+      recordsByUser: recordsByUser,
+      outboxByUser: outboxByUser,
+      lastSyncByUser: legacy.lastSyncByUser,
+    );
   }
 
   @override
-  Future<LocalQazaPage> getPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status, DateTime? afterOriginalDate, String? afterId}) async {
+  Future<LocalQazaPage> getPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status,
+    DateTime? afterOriginalDate,
+    String? afterId,
+  }) async {
     final page = await _database.qazaRecordsDao.getKeysetPage(
       userId: userId,
       limit: limit,
@@ -46,11 +57,20 @@ class DriftQazaLocalStore implements QazaLocalStore {
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
     );
-    return LocalQazaPage(records: page.records.map(_toDomain).toList(growable: false), hasMore: page.hasMore);
+    return LocalQazaPage(records: page.records, hasMore: page.hasMore);
   }
 
   @override
-  Future<LocalQazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
+  Future<LocalQazaHistoryPage> getHistoryPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status = QazaStatus.completed,
+    DateTime? from,
+    DateTime? to,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
     final page = await _database.qazaRecordsDao.getHistoryPage(
       userId: userId,
       limit: limit,
@@ -61,7 +81,7 @@ class DriftQazaLocalStore implements QazaLocalStore {
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
     );
-    return LocalQazaHistoryPage(records: page.records.map(_toDomain).toList(growable: false), hasMore: page.hasMore);
+    return LocalQazaHistoryPage(records: page.records, hasMore: page.hasMore);
   }
 
   @override
@@ -96,7 +116,10 @@ class DriftQazaLocalStore implements QazaLocalStore {
   @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     await _database.transaction(() async {
-      await _database.qazaRecordsDao.replaceUserRecords(userId: userId, records: records.map(_toCompanion).toList(growable: false));
+      await _database.qazaRecordsDao.replaceUserRecords(
+        userId: userId,
+        records: records.map(_toCompanion).toList(growable: false),
+      );
     });
   }
 
@@ -104,27 +127,82 @@ class DriftQazaLocalStore implements QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
     await _database.transaction(() async {
       await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(ops.map(_toOpCompanion).toList(growable: false));
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
     });
   }
 
   @override
-  Future<void> saveRecordsAndOutbox(String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+  Future<void> saveRecordsAndOutbox(
+    String userId,
+    List<QazaRecord> records,
+    List<PendingSyncOp> ops,
+  ) async {
     await _database.transaction(() async {
-      await _database.qazaRecordsDao.replaceUserRecords(userId: userId, records: records.map(_toCompanion).toList(growable: false));
+      await _database.qazaRecordsDao.replaceUserRecords(
+        userId: userId,
+        records: records.map(_toCompanion).toList(growable: false),
+      );
       await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(ops.map(_toOpCompanion).toList(growable: false));
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
     });
   }
 
   @override
-  Future<void> saveLastSync(String userId, DateTime? lastSync) => _legacyStore.saveLastSync(userId, lastSync);
+  Future<void> saveLastSync(String userId, DateTime? lastSync) =>
+      _legacyStore.saveLastSync(userId, lastSync);
 
-  QazaRecord _toDomain(dynamic row) => QazaRecord(id: row.id as String, userId: row.userId as String, prayerType: PrayerType.values.firstWhere((v) => v.name == row.prayerType), originalDate: row.originalDate as DateTime, status: QazaStatus.values.firstWhere((v) => v.name == row.status), completedAt: row.completedAt as DateTime?, createdAt: row.createdAt as DateTime, updatedAt: row.updatedAt as DateTime);
+  PendingSyncOp _toDomainOp(SyncOutboxData row) => PendingSyncOp(
+        id: row.id,
+        type: SyncOpType.values.firstWhere((value) => value.name == row.type),
+        userId: row.userId,
+        queuedAt: row.queuedAt,
+        record: row.recordJson == null
+            ? null
+            : QazaRecord.fromJson(
+                jsonDecode(row.recordJson!) as Map<String, dynamic>,
+              ),
+        targetRecordId: row.targetRecordId,
+        completedAt: row.completedAt,
+        attempts: row.attempts,
+        lastError: row.lastError,
+      );
 
-  PendingSyncOp _toDomainOp(dynamic row) => PendingSyncOp(id: row.id as String, type: SyncOpType.values.firstWhere((v) => v.name == row.type), userId: row.userId as String, queuedAt: row.queuedAt as DateTime, record: row.recordJson == null ? null : QazaRecord.fromJson(jsonDecode(row.recordJson as String) as Map<String, dynamic>), targetRecordId: row.targetRecordId as String?, completedAt: row.completedAt as DateTime?, attempts: row.attempts as int, lastError: row.lastError as String?);
+  QazaRecordsCompanion _toCompanion(QazaRecord record) =>
+      QazaRecordsCompanion.insert(
+        id: record.id,
+        userId: record.userId,
+        prayerType: record.prayerType.name,
+        originalDate: record.originalDate,
+        status: record.status.name,
+        completedAt: record.completedAt == null
+            ? const Value.absent()
+            : Value(record.completedAt),
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      );
 
-  QazaRecordsCompanion _toCompanion(QazaRecord record) => QazaRecordsCompanion.insert(id: record.id, userId: record.userId, prayerType: record.prayerType.name, originalDate: record.originalDate, status: record.status.name, completedAt: record.completedAt == null ? const Value.absent() : Value(record.completedAt), createdAt: record.createdAt, updatedAt: record.updatedAt);
-
-  SyncOutboxCompanion _toOpCompanion(PendingSyncOp op) => SyncOutboxCompanion.insert(id: op.id, userId: op.userId, type: op.type.name, queuedAt: op.queuedAt, recordJson: op.record == null ? const Value.absent() : Value(jsonEncode(op.record!.toJson())), targetRecordId: op.targetRecordId == null ? const Value.absent() : Value(op.targetRecordId), completedAt: op.completedAt == null ? const Value.absent() : Value(op.completedAt), attempts: Value(op.attempts), lastError: op.lastError == null ? const Value.absent() : Value(op.lastError));
+  SyncOutboxCompanion _toOpCompanion(PendingSyncOp op) =>
+      SyncOutboxCompanion.insert(
+        id: op.id,
+        userId: op.userId,
+        type: op.type.name,
+        queuedAt: op.queuedAt,
+        recordJson: op.record == null
+            ? const Value.absent()
+            : Value(jsonEncode(op.record!.toJson())),
+        targetRecordId: op.targetRecordId == null
+            ? const Value.absent()
+            : Value(op.targetRecordId),
+        completedAt: op.completedAt == null
+            ? const Value.absent()
+            : Value(op.completedAt),
+        attempts: Value(op.attempts),
+        lastError: op.lastError == null
+            ? const Value.absent()
+            : Value(op.lastError),
+      );
 }
