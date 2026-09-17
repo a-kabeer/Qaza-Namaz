@@ -24,13 +24,15 @@ CI/build validation is intentionally deferred until **Part 13**.
 
 Implemented on `task-db-1-drift-foundation`.
 
-- Audited production read paths for bounded ledger pages, direct oldest-pending lookup, history pagination, aggregate progress, and strict user scoping.
+- Audited production read paths for bounded ledger pages, direct oldest-pending lookup, history pagination, aggregate progress, completion, duplicate protection, and strict user scoping.
 - Added final regression coverage using a 5,000-record ledger to protect large-dataset behavior.
 - Added multi-page history coverage and cross-user isolation checks.
 - Added complete-oldest workflow coverage to verify the intended prayer record is changed.
 - Added duplicate protection and cross-account mutation coverage.
-- Confirmed database schema/index coverage, migration resilience coverage, dashboard aggregate coverage, and offline-first lazy-loading coverage remain represented by dedicated tests.
-- Kept migration, Home, and existing feature workstreams separated without duplicating their implementations.
+- Expanded migration regression coverage for concurrent bootstrap calls and timezone-aware legacy calendar dates.
+- Migration now canonicalizes legacy `originalDate` values as calendar dates before deduplication/persistence, matching the app's date-only Qaza semantics.
+- Existing database schema/index coverage, migration resilience coverage, dashboard aggregate coverage, history pagination coverage, and offline-first lazy-loading coverage remain represented by dedicated tests.
+- No production UI or database architecture was duplicated from the dedicated migration/Home workstreams.
 
 ## Remaining legacy boundary
 SharedPreferences remains only at the one-time migration bootstrap required for existing installations. The runtime Qaza local store is Drift/SQLite-backed.
