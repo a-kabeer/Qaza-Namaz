@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
@@ -47,6 +46,21 @@ class DriftQazaLocalStore implements QazaLocalStore {
       afterId: afterId,
     );
     return LocalQazaPage(records: page.records.map(_toDomain).toList(growable: false), hasMore: page.hasMore);
+  }
+
+  @override
+  Future<LocalQazaHistoryPage> getHistoryPage({required String userId, int limit = 50, PrayerType? prayerType, QazaStatus? status = QazaStatus.completed, DateTime? from, DateTime? to, DateTime? beforeOriginalDate, String? beforeId}) async {
+    final page = await _database.qazaRecordsDao.getHistoryPage(
+      userId: userId,
+      limit: limit,
+      prayerType: prayerType?.name,
+      status: status?.name,
+      from: from,
+      to: to,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+    );
+    return LocalQazaHistoryPage(records: page.records.map(_toDomain).toList(growable: false), hasMore: page.hasMore);
   }
 
   @override
