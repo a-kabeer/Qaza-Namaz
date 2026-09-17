@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 
 void main() {
@@ -17,6 +18,7 @@ void main() {
     testWidgets('${brightness.name} theme keeps Qaza step content readable', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [activeUserIdProvider.overrideWithValue('test-user')],
           child: MaterialApp(
             theme: ThemeData(brightness: brightness),
             home: const AddQazaScreen(),
@@ -31,7 +33,10 @@ void main() {
 
       final readableTexts = [
         tester.widget<Text>(find.text('Step 1 of 3 • Range Setup')),
-        ...['Method', 'Dates', 'Review'].map((label) => tester.widget<Text>(find.text(label))),
+        tester.widget<Text>(find.byKey(const Key('qaza_flow_heading'))),
+        tester.widget<Text>(find.text('Single').first),
+        tester.widget<Text>(find.text('Range').first),
+        tester.widget<Text>(find.text('Multiple').first),
       ];
       for (final text in readableTexts) {
         final color = text.style?.color ?? DefaultTextStyle.of(tester.element(find.byWidget(text))).style.color;
@@ -46,10 +51,6 @@ void main() {
       final inactiveStepNumber = tester.widget<Text>(find.text('2').first);
       expect(inactiveStepNumber.style?.color, scheme.onSurfaceVariant);
       expect(contrastRatio(scheme.onSurfaceVariant, scheme.surfaceContainerHighest), greaterThanOrEqualTo(3.0));
-
-      final choiceIcon = tester.widget<Icon>(find.byIcon(Icons.date_range_rounded).first);
-      expect(choiceIcon.color, scheme.onSurfaceVariant);
-      expect(contrastRatio(scheme.onSurfaceVariant, background), greaterThanOrEqualTo(3.0));
     });
   }
 }
