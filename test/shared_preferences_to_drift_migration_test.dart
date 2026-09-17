@@ -124,7 +124,10 @@ void main() {
     expect(await database.qazaRecordsDao.count(userId: 'user-a'), 1);
     final migrated = (await database.qazaRecordsDao.getPage(userId: 'user-a')).single;
     expect(migrated.status, QazaStatus.completed);
-    expect(migrated.completedAt, DateTime(2026, 2, 1));
+    expect(
+      migrated.completedAt?.isAtSameMomentAs(DateTime.utc(2026, 2, 1)),
+      isTrue,
+    );
   });
 
   test('does not mark migration complete when legacy data is invalid', () async {
