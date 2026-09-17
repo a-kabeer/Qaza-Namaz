@@ -76,7 +76,7 @@ IN PROGRESS
 - #16 — Qaza availability, duplicate safety & scalability — OPEN
 
 ### Home task
-- #19 — Home Part 1: baseline and PR reconciliation status — OPEN; now contains Parts 1–2 implementation/status commits
+- #19 — Home Part 1: baseline and PR reconciliation status — OPEN; contains Parts 1–2 implementation/status commits
 
 ### Reuse from merged work
 - #9 — Task 13: audit and harden navigation flow — MERGED
