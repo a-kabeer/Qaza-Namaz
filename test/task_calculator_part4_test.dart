@@ -29,6 +29,11 @@ void main() {
     expect(find.text('Prayer History').last, findsOneWidget);
     expect(find.text('Regular prayer start'), findsOneWidget);
     expect(find.textContaining('Estimated prayer-start date:'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('calculator_qaza_period_summary')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Qaza period'), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
