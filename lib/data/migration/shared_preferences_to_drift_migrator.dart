@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/qaza_record.dart';
@@ -35,6 +36,7 @@ class SharedPreferencesToDriftMigrator {
 
     final raw = _preferences.getString(storageKey);
     if (raw == null || raw.isEmpty) {
+      await _preferences.setInt('${migrationKey}_version', migrationVersion);
       await _preferences.setBool(migrationKey, true);
       return const MigrationResult();
     }
