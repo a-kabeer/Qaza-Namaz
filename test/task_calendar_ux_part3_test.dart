@@ -36,18 +36,25 @@ void main() {
         ),
       );
 
+  String mediumDate(WidgetTester tester, DateTime date) {
+    final context = tester.element(find.byKey(const Key('calendar_selected_summary')));
+    return MaterialLocalizations.of(context).formatMediumDate(date);
+  }
+
   testWidgets('single selection shows Gregorian and Hijri date summary', (tester) async {
     await tester.pumpWidget(app(mode: DateSelectionMode.single));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-15')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('calendar_selected_summary')), findsOneWidget);
+    final summary = find.byKey(const Key('calendar_selected_summary'));
+    expect(summary, findsOneWidget);
     expect(find.byKey(const Key('calendar_clear_selection')), findsOneWidget);
-    expect(find.byKey(const Key('calendar_continue_ready')), findsOneWidget);
+    expect(find.textContaining('1 date selected'), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text(mediumDate(tester, DateTime(2027, 3, 15)))), findsOneWidget);
   });
 
-  testWidgets('range selection shows distinct start and end dates', (tester) async {
+  testWidgets('range selection shows both selected Gregorian dates', (tester) async {
     await tester.pumpWidget(app(mode: DateSelectionMode.range));
     await tester.pumpAndSettle();
 
@@ -57,9 +64,10 @@ void main() {
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-12')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Start ·'), findsOneWidget);
-    expect(find.textContaining('End ·'), findsOneWidget);
-    expect(find.byKey(const Key('calendar_continue_ready')), findsOneWidget);
+    final summary = find.byKey(const Key('calendar_selected_summary'));
+    expect(find.textContaining('2 dates selected'), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text(mediumDate(tester, DateTime(2027, 3, 10)))), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))), findsOneWidget);
   });
 
   testWidgets('multiple selection lists every selected Gregorian date', (tester) async {
@@ -73,12 +81,13 @@ void main() {
     await tester.pumpAndSettle();
 
     final summary = find.byKey(const Key('calendar_selected_summary'));
-    expect(find.textContaining('2 selected dates'), findsOneWidget);
-    expect(find.descendant(of: summary, matching: find.text('10')), findsOneWidget);
-    expect(find.descendant(of: summary, matching: find.text('12')), findsOneWidget);
+    expect(find.textContaining('2 dates selected'), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text(mediumDate(tester, DateTime(2027, 3, 10)))), findsOneWidget);
+    expect(find.descendant(of: summary, matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-10')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('1 selected date'), findsOneWidget);
+    expect(find.textContaining('1 date selected'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('calendar_selected_summary')), matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))), findsOneWidget);
   });
 }

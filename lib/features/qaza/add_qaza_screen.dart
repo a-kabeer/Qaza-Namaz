@@ -1,82 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/prayer_card.dart';
-import '../../domain/entities/qaza_record.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';
 
-class AddQazaScreen extends ConsumerStatefulWidget {
-  const AddQazaScreen({super.key});
-  @override
-  ConsumerState<AddQazaScreen> createState() => _AddQazaScreenState();
+class AddQazaScreen extends ConsumerStatefulWidget { const AddQazaScreen({super.key}); @override ConsumerState<AddQazaScreen> createState()=>_AddQazaScreenState(); }
+class _AddQazaScreenState extends ConsumerState<AddQazaScreen>{
+ int step=0; Set<PrayerType> prayers={}; int existing=0,newCount=0; bool checking=false,saving=false,calendarLoading=false; Map<DateTime,Set<PrayerType>>? calendarAvailability; int request=0;
+ DateSelectionMode get mode=>ref.watch(calendarControllerProvider).selectionMode; List<DateTime> get dates=>ref.read(calendarControllerProvider).datesForStorage.toList();
+ Future<void> loadMonth(DateTime month) async { final token=++request; setState((){calendarLoading=true;calendarAvailability=null;}); try { final first=DateTime(month.year,month.month,1); final last0=DateTime(month.year,month.month+1,0); final today=ref.read(calendarTodayProvider); final last=last0.isAfter(today)?today:last0; if(last.isBefore(first)){if(mounted&&token==request)setState(()=>calendarAvailability={});return;} final map=await ref.read(qazaServiceProvider).getAvailablePrayersByDate(userId:ref.read(requiredUserIdProvider),dates:[for(var d=first;!d.isAfter(last);d=d.add(const Duration(days:1)))d]); if(mounted&&token==request)setState(()=>calendarAvailability=map); } finally { if(mounted&&token==request)setState(()=>calendarLoading=false); } }
+ Future<void> refresh() async { if(checking||dates.isEmpty||prayers.isEmpty)return; setState(()=>checking=true); try { final a=await ref.read(qazaServiceProvider).analyzeAvailability(userId:ref.read(requiredUserIdProvider),dates:dates,prayerTypes:prayers); if(mounted)setState((){existing=a.unavailableCount;newCount=a.newCount;}); } finally {if(mounted)setState(()=>checking=false);} }
+ void nextDates(){if(dates.isEmpty){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Choose at least one date.')));return;}setState(()=>step=2);}
+ Future<void> toggle(PrayerType p,bool v)async{setState(()=>v?prayers.add(p):prayers.remove(p));if(prayers.isEmpty){setState((){existing=0;newCount=0;});return;}await refresh();}
+ Future<void> save()async{if(saving||prayers.isEmpty||newCount<=0)return;setState(()=>saving=true);try{final n=newCount;await ref.read(qazaServiceProvider).recordQazaForDates(userId:ref.read(requiredUserIdProvider),dates:dates,prayerTypes:prayers);if(!mounted)return;await showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('Qaza records created'),content:Text('$n record${n==1?'':'s'} were added to your ledger.'),actions:[FilledButton(onPressed:()=>Navigator.pop(context),child:const Text('Done'))]));if(mounted)Navigator.pop(context,n);}finally{if(mounted)setState(()=>saving=false);}}
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Add Qaza'),leading:IconButton(onPressed:()=>step==0?Navigator.pop(context):setState(()=>step--),icon:Icon(step==0?Icons.close:Icons.arrow_back))),body:SafeArea(child:Column(children:[_Header(step),Expanded(child:switch(step){0=>modeStep(),1=>dateStep(),_=>prayerStep()})])));
+ Widget modeStep()=>ListView(padding:const EdgeInsets.all(20),children:[Text('Step 1 of 3 • Range Setup',key:const Key('qaza_flow_step'),style:Theme.of(context).textTheme.labelLarge),const SizedBox(height:8),Text('Add Qaza',key:const Key('qaza_flow_heading'),style:Theme.of(context).textTheme.headlineMedium),const SizedBox(height:20),SegmentedButton<DateSelectionMode>(segments:const[ButtonSegment(value:DateSelectionMode.single,label:Text('Single')),ButtonSegment(value:DateSelectionMode.range,label:Text('Range')),ButtonSegment(value:DateSelectionMode.multiple,label:Text('Multiple'))],selected:{mode},onSelectionChanged:(v)=>ref.read(calendarControllerProvider.notifier).setSelectionMode(v.first)),const SizedBox(height:20),const _Info(text:'Gregorian is the source of truth. Each date + prayer combination is an independent Qaza record.'),const SizedBox(height:24),FilledButton(key:const Key('qaza_continue_button'),onPressed:()=>setState(()=>step=1),child:const Text('Continue'))]);
+ Widget dateStep(){final s=ref.watch(calendarControllerProvider);return ListView(padding:const EdgeInsets.all(20),children:[Text('Step 2 of 3 • Date Selection',style:Theme.of(context).textTheme.labelLarge),const SizedBox(height:8),Text(s.selectionMode==DateSelectionMode.single?'Choose a date':s.selectionMode==DateSelectionMode.range?'Choose a date range':'Choose multiple dates',style:Theme.of(context).textTheme.headlineMedium),const SizedBox(height:8),Text('A date is disabled only when no prayer remains eligible.',style:Theme.of(context).textTheme.bodyMedium),const SizedBox(height:16),Container(key:const Key('qaza_calendar_picker'),child:CalendarPicker(availablePrayersByDate:calendarAvailability,availabilityLoading:calendarLoading,onMonthChanged:loadMonth)),const SizedBox(height:16),FilledButton(onPressed:dates.isEmpty?null:nextDates,child:const Text('Next: Choose missed prayers'))]);}
+ Widget prayerStep(){final all=prayers.length==PrayerType.values.length;return ListView(padding:const EdgeInsets.fromLTRB(20,12,20,28),children:[Text('Step 3 of 3 • Ledger Entry',style:Theme.of(context).textTheme.labelLarge),const SizedBox(height:8),Text('Missed Prayers',style:Theme.of(context).textTheme.headlineMedium),const SizedBox(height:8),Text('${dates.length} ${dates.length==1?'day':'days'} • Select every prayer that was missed.'),const SizedBox(height:16),Row(children:[Expanded(child:OutlinedButton(onPressed:checking||all?null:(){setState(()=>prayers.addAll(PrayerType.values));refresh();},child:Text(all?'All selected':'Select All'))),const SizedBox(width:10),Expanded(child:OutlinedButton(onPressed:checking||prayers.isEmpty?null:(){setState((){prayers.clear();existing=0;newCount=0;});},child:const Text('Clear')))]),const SizedBox(height:12),for(final p in PrayerType.values)Card(child:CheckboxListTile(value:prayers.contains(p),onChanged:saving||checking?null:(v)=>toggle(p,v==true),secondary:CircleAvatar(child:Icon(p.icon)),title:Text(p.label),subtitle:Text(p.rakats))),const SizedBox(height:12),Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(children:[_Row('Dates','${dates.length}'),_Row('Prayers per date','${prayers.length}'),_Row('Existing combinations','$existing'),_Row('New records','$newCount',bold:true)]))),const SizedBox(height:16),FilledButton(onPressed:saving||checking||newCount<=0?null:save,child:Text(saving?'Creating Records...':'Review & Create Records'))]);}
 }
-
-class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
-  DateSelectionMode get dateMode => ref.watch(calendarControllerProvider).selectionMode;
-  List<DateTime> get dates => ref.read(calendarControllerProvider).datesForStorage.toList();
-  Set<PrayerType> prayers = <PrayerType>{};
-  List<QazaRecord> existing = const [];
-  bool checking = false;
-  bool saving = false;
-  int step = 0;
-
-  int get totalCombinations => dates.length * prayers.length;
-  int get existingCombinations {
-    final keys = existing.map((r) => '${r.prayerType.name}_${_dateKey(r.originalDate)}').toSet();
-    return dates.expand((d) => prayers.map((p) => '${p.name}_${_dateKey(d)}')).where(keys.contains).length;
-  }
-  int get newCombinations => totalCombinations - existingCombinations;
-  String _dateKey(DateTime date) => '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-  Future<void> _checkExisting() async {
-    if (checking) return;
-    setState(() => checking = true);
-    try { existing = await ref.read(qazaRecordsProvider.future); } finally { if (mounted) setState(() => checking = false); }
-  }
-  Future<void> _openDateStep() async { await _checkExisting(); if (mounted) setState(() => step = 1); }
-  Future<void> _continueFromDates() async {
-    if (dates.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose at least one date.'))); return; }
-    await _checkExisting(); if (mounted) setState(() => step = 2);
-  }
-  Future<void> _confirmAndSave() async {
-    if (prayers.isEmpty || newCombinations <= 0 || saving) return;
-    setState(() => saving = true);
-    try {
-      await ref.read(qazaServiceProvider).recordQazaForDates(userId: ref.read(requiredUserIdProvider), dates: dates, prayerTypes: prayers);
-      if (!mounted) return;
-      final created = newCombinations;
-      await showDialog<void>(context: context, builder: (context) => AlertDialog(title: const Text('Qaza records created'), content: Text('$created independent Qaza record${created == 1 ? '' : 's'} were added to your ledger.'), actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))]));
-      if (mounted) Navigator.pop(context, created);
-    } finally { if (mounted) setState(() => saving = false); }
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Add Qaza'), leading: IconButton(tooltip: step == 0 ? 'Close' : 'Back', onPressed: () => step == 0 ? Navigator.pop(context) : setState(() => step--), icon: Icon(step == 0 ? Icons.close_rounded : Icons.arrow_back_rounded))),
-    body: SafeArea(child: Column(children: [_ProgressHeader(step: step), Expanded(child: switch (step) {0 => _modeStep(), 1 => _dateStep(), _ => _prayerStep()})])),
-  );
-
-  Widget _modeStep() => ListView(
-    key: const ValueKey('qaza_step_list_0'), padding: const EdgeInsets.all(20), children: [
-      Text('Step 1 of 3 • Range Setup', style: Theme.of(context).textTheme.labelLarge), const SizedBox(height: 6),
-      Text('Add Qaza', key: const Key('qaza_flow_heading'), style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 8),
-      Text('Choose the date selection method.', style: Theme.of(context).textTheme.bodyMedium), const SizedBox(height: 22),
-      _ChoiceCard(title: 'Date selection', icon: Icons.date_range_rounded, child: SegmentedButton<DateSelectionMode>(segments: const [ButtonSegment(value: DateSelectionMode.single, icon: Icon(Icons.today_rounded), label: Text('Single')), ButtonSegment(value: DateSelectionMode.range, icon: Icon(Icons.date_range_rounded), label: Text('Range')), ButtonSegment(value: DateSelectionMode.multiple, icon: Icon(Icons.library_add_check_rounded), label: Text('Multiple'))], selected: {dateMode}, onSelectionChanged: (value) => ref.read(calendarControllerProvider.notifier).setSelectionMode(value.first))),
-      const SizedBox(height: 18),
-      const _InfoBox(text: 'Gregorian is the source of truth for selection and storage. Hijri dates are shown as secondary information. Each date + prayer combination becomes one independent Qaza record.'),
-      const SizedBox(height: 24),
-      FilledButton.icon(key: const Key('qaza_continue_button'), onPressed: checking ? null : _openDateStep, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Loading ledger...' : 'Continue')),
-    ]);
-
-  Widget _dateStep() { final state = ref.watch(calendarControllerProvider); final qazaDates = existing.map((r) => DateTime(r.originalDate.year, r.originalDate.month, r.originalDate.day)).toSet(); return ListView(key: const ValueKey('qaza_step_list_1'), padding: const EdgeInsets.all(20), children: [Text('Step 2 of 3 • Date Selection', style: Theme.of(context).textTheme.labelLarge), const SizedBox(height: 6), Text(state.selectionMode == DateSelectionMode.single ? 'Choose a date' : state.selectionMode == DateSelectionMode.range ? 'Choose a date range' : 'Choose multiple dates', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 8), Text('Only today and earlier dates can be recorded.', style: Theme.of(context).textTheme.bodyMedium), const SizedBox(height: 16), CalendarPicker(key: const Key('qaza_calendar_picker'), qazaDates: qazaDates), const SizedBox(height: 16), FilledButton.icon(onPressed: checking || dates.isEmpty ? null : _continueFromDates, icon: Icon(checking ? Icons.sync_rounded : Icons.arrow_forward_rounded), label: Text(checking ? 'Checking ledger...' : 'Next: Choose missed prayers'))]); }
-
-  Widget _prayerStep() { final all = prayers.length == PrayerType.values.length; return ListView(key: const ValueKey('qaza_step_list_2'), padding: const EdgeInsets.fromLTRB(20, 12, 20, 28), children: [Text('Step 3 of 3 • Ledger Entry', style: Theme.of(context).textTheme.labelLarge), const SizedBox(height: 6), Text('Missed Prayers', style: Theme.of(context).textTheme.headlineMedium), const SizedBox(height: 8), Text('${dates.length} ${dates.length == 1 ? 'day' : 'days'} • Select every prayer that was missed.', style: Theme.of(context).textTheme.bodyMedium), const SizedBox(height: 16), Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => prayers.addAll(PrayerType.values)), icon: Icon(all ? Icons.done_all_rounded : Icons.select_all_rounded), label: const Text('Select All'))), const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: prayers.isEmpty ? null : () => setState(prayers.clear), icon: const Icon(Icons.clear_all_rounded), label: const Text('Clear')))]), const SizedBox(height: 12), for (final prayer in PrayerType.values) Card(margin: const EdgeInsets.only(bottom: 8), child: CheckboxListTile(value: prayers.contains(prayer), onChanged: saving ? null : (value) => setState(() => value == true ? prayers.add(prayer) : prayers.remove(prayer)), secondary: CircleAvatar(child: Icon(prayer.icon)), title: Text(prayer.label), subtitle: Text(prayer.rakats), controlAffinity: ListTileControlAffinity.trailing)), const SizedBox(height: 8), Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [_SummaryRow(label: 'Dates', value: '${dates.length}'), _SummaryRow(label: 'Prayers per date', value: '${prayers.length}'), _SummaryRow(label: 'Existing combinations', value: '$existingCombinations'), _SummaryRow(label: 'New records', value: '$newCombinations', emphasis: true)]))), const SizedBox(height: 16), FilledButton.icon(onPressed: prayers.isEmpty || newCombinations <= 0 || saving ? null : _confirmAndSave, icon: Icon(saving ? Icons.hourglass_top_rounded : Icons.verified_rounded), label: Text(saving ? 'Creating Records...' : 'Review & Create Records'))]); }
-}
-
-class _ProgressHeader extends StatelessWidget { const _ProgressHeader({required this.step}); final int step; @override Widget build(BuildContext context) { final theme = Theme.of(context); final scheme = theme.colorScheme; return Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 8), child: Row(children: [for (var i = 0; i < 3; i++) ...[if (i > 0) Expanded(child: Container(height: 2, color: i <= step ? scheme.primary : scheme.outlineVariant)), CircleAvatar(radius: 14, backgroundColor: i <= step ? scheme.primary : scheme.surfaceContainerHighest, child: Text('${i + 1}', style: theme.textTheme.labelSmall?.copyWith(color: i <= step ? scheme.onPrimary : scheme.onSurfaceVariant, fontWeight: FontWeight.w700))), const SizedBox(width: 6), Text(const ['Method', 'Dates', 'Review'][i], style: theme.textTheme.labelMedium?.copyWith(color: i <= step ? scheme.onSurface : scheme.onSurfaceVariant, fontWeight: i == step ? FontWeight.w700 : null))]])); } }
-class _ChoiceCard extends StatelessWidget { const _ChoiceCard({required this.title, required this.icon, required this.child}); final String title; final IconData icon; final Widget child; @override Widget build(BuildContext context) { final scheme = Theme.of(context).colorScheme; return Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, color: scheme.onSurfaceVariant), const SizedBox(width: 10), Text(title, style: Theme.of(context).textTheme.titleMedium)]), const SizedBox(height: 14), child]))); } }
-class _InfoBox extends StatelessWidget { const _InfoBox({required this.text}); final String text; @override Widget build(BuildContext context) { final scheme = Theme.of(context).colorScheme; return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(Icons.info_outline_rounded, color: scheme.onPrimaryContainer), const SizedBox(width: 10), Expanded(child: Text(text, style: TextStyle(color: scheme.onPrimaryContainer)))])); } }
-class _SummaryRow extends StatelessWidget { const _SummaryRow({required this.label, required this.value, this.emphasis = false}); final String label; final String value; final bool emphasis; @override Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(children: [Expanded(child: Text(label)), Text(value, style: emphasis ? Theme.of(context).textTheme.titleMedium : null)])); }
+class _Header extends StatelessWidget{const _Header(this.step);final int step;@override Widget build(BuildContext c){final s=Theme.of(c).colorScheme;return Padding(padding:const EdgeInsets.all(16),child:Row(children:[for(var i=0;i<3;i++)...[CircleAvatar(radius:14,backgroundColor:i<=step?s.primary:s.surfaceContainerHighest,child:Text('${i+1}',style:TextStyle(color:i<=step?s.onPrimary:s.onSurfaceVariant))),if(i<2)Expanded(child:Container(height:2,color:i<step?s.primary:s.outlineVariant))]]));}}
+class _Info extends StatelessWidget{const _Info({required this.text});final String text;@override Widget build(BuildContext c){final s=Theme.of(c).colorScheme;return Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:s.primaryContainer,borderRadius:BorderRadius.circular(14)),child:Text(text,style:TextStyle(color:s.onPrimaryContainer)));}}
+class _Row extends StatelessWidget{const _Row(this.a,this.b,{this.bold=false});final String a,b;final bool bold;@override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Expanded(child:Text(a)),Text(b,style:bold?Theme.of(c).textTheme.titleMedium:null)]));}

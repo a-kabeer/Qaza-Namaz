@@ -19,6 +19,7 @@ QazaRecord record({required String id, required PrayerType prayer, required Date
 Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
       overrides: [
         qazaRepositoryProvider.overrideWithValue(repository),
+        activeUserIdProvider.overrideWithValue('test-user'),
         authStateProvider.overrideWith((ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com'))),
       ],
       child: MaterialApp(home: child),

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Reconciled — ready for the final execution gate.**
+**Reconciled — ready for and validated by the final execution gate.**
 
 ## Test coverage reconciled
 
@@ -37,12 +37,12 @@
 
 ## Reconciliation result
 
-Existing tests were inventoried rather than duplicated. The branch already contains dedicated coverage for the bounded Drift migration, availability, completion, calendar, history/logs, authentication, theme, migration resilience, sync/outbox, and regression paths.
+Existing tests were inventoried rather than duplicated. The branch contains dedicated coverage for the bounded Drift migration, availability, completion, calendar, history/logs, authentication, theme, migration resilience, sync/outbox, and regression paths.
 
-## Execution note
+## Final execution result
 
-The GitHub connector available for this implementation session does not provide a local Flutter test runner, and the latest branch commit has no associated GitHub Actions run. Therefore **no test pass result is claimed**. Test execution remains part of the final Task 13 CI gate, where formatting, analyzer, Drift generation, unit/widget/integration/regression tests, and build validation will be executed together.
+Task 13 final GitHub CI validation completed successfully on the reconciled branch after the calendar-flow test fix. The final verified CI run passed, so the CI gate is green.
 
 ## Next
 
-Task 10 — Documentation Reconciliation.
+Merge the reconciled PR only after GitHub reports the branch as conflict-free against `main`.

@@ -31,7 +31,8 @@ void main() {
   testWidgets('Qaza add flow exposes one Gregorian calendar with secondary Hijri and three selection modes', (tester) async {
     await pumpFlow(tester);
     expect(find.byKey(const Key('qaza_flow_heading')), findsOneWidget);
-    expect(find.text('Date selection'), findsOneWidget);
+    expect(find.text('Step 1 of 3 • Range Setup'), findsOneWidget);
+    expect(find.text('Date selection'), findsNothing);
     expect(find.text('Gregorian'), findsNothing);
     expect(find.text('Hijri'), findsNothing);
     expect(find.text('Single'), findsOneWidget);

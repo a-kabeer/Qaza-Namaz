@@ -26,8 +26,6 @@ import '../domain/services/qaza_service.dart';
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 final authRepositoryProvider = Provider<AuthRepository>((ref) => FirebaseAuthRepository());
 
-/// Drift database lifecycle provider. The same database instance is shared by
-/// the local store and the future repository/database layers.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
   ref.onDispose(database.close);
@@ -76,33 +74,23 @@ class QazaRecordsNotifier extends AsyncNotifier<List<QazaRecord>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => ref.read(qazaServiceProvider).getRecords(userId: userId));
   }
-
-  Future<bool> completeOldestPending(PrayerType prayerType) async {
-    final userId = ref.read(activeUserIdProvider);
-    final records = state.valueOrNull;
-    if (userId == null || records == null) return false;
-    final pending = records.where((record) => record.prayerType == prayerType && record.status == QazaStatus.pending).toList()..sort((a, b) => a.originalDate.compareTo(b.originalDate));
-    if (pending.isEmpty) return false;
-    final target = pending.first;
-    final completedAt = DateTime.now();
-    await ref.read(qazaServiceProvider).completeRecord(userId: userId, recordId: target.id, completedAt: completedAt);
-    final latest = state.valueOrNull;
-    if (latest != null) {
-      state = AsyncData([
-        for (final record in latest)
-          if (record.id == target.id) record.copyWith(status: QazaStatus.completed, completedAt: completedAt, updatedAt: completedAt) else record,
-      ]);
-    }
-    return true;
-  }
 }
 
 final qazaRecordsProvider = AsyncNotifierProvider<QazaRecordsNotifier, List<QazaRecord>>(QazaRecordsNotifier.new);
 final loadedRecordsProvider = Provider<List<QazaRecord>>((ref) => ref.watch(qazaRecordsProvider).valueOrNull ?? const <QazaRecord>[]);
+
+/// Legacy full-ledger derived providers remain available for detailed/legacy
+/// screens, but scalable summary screens must use [progressSummaryProvider].
 final overallProgressProvider = Provider<QazaProgress>((ref) => QazaService.progressOf(ref.watch(loadedRecordsProvider)));
 final prayerProgressProvider = Provider<Map<PrayerType, PrayerProgress>>((ref) {
   final records = ref.watch(loadedRecordsProvider);
-  return {for (final prayer in PrayerType.values) prayer: PrayerProgress(prayerType: prayer, progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)))};
+  return {
+    for (final prayer in PrayerType.values)
+      prayer: PrayerProgress(
+        prayerType: prayer,
+        progress: QazaService.progressOf(records.where((record) => record.prayerType == prayer)),
+      ),
+  };
 });
 final qazaHistoryProvider = Provider<List<QazaRecord>>((ref) => QazaService.completedNewestFirst(ref.watch(loadedRecordsProvider)));
 final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((ref, prayer) {
@@ -110,17 +98,21 @@ final pendingForPrayerProvider = Provider.family<List<QazaRecord>, PrayerType>((
   return pending;
 });
 
-/// Shared database-backed progress for screens that only need counts. It does
-/// not subscribe to qazaRecordsProvider and therefore does not materialize the
-/// complete ledger merely to render statistics.
+/// Database-backed aggregate for Home and other summary screens.
 final progressSummaryProvider = FutureProvider.autoDispose<QazaProgressSummary>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(QazaProgressSummary.empty());
   return ref.read(qazaServiceProvider).getProgressSummary(userId: userId);
 });
 
-/// Backwards-compatible History alias. History uses the same aggregate query
-/// as the dashboard rather than maintaining a second statistics implementation.
+/// Bounded lookup for completion UI. This fetches one record directly from
+/// Drift instead of materializing the user's entire pending ledger.
+final oldestPendingProvider = FutureProvider.autoDispose.family<QazaRecord?, PrayerType>((ref, prayer) {
+  final userId = ref.watch(activeUserIdProvider);
+  if (userId == null) return Future.value(null);
+  return ref.read(qazaServiceProvider).oldestPending(userId: userId, prayerType: prayer);
+});
+
 final historyProgressProvider = progressSummaryProvider;
 
 class ThemeModeNotifier extends Notifier<AppThemeMode> {

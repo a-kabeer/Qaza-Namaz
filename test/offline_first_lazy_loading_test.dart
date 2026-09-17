@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
-import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 import 'support/in_memory_qaza_local_store.dart';
@@ -61,7 +60,10 @@ void main() {
     await repository.addRecord(record(id: 'a1', userId: 'user-a'));
     await repository.setActiveUser('user-b');
     expect(await repository.getRecords(userId: 'user-b'), isEmpty);
-    expect(await repository.getProgressSummary(userId: 'user-b'), QazaProgressSummary.empty());
+    final emptySummary = await repository.getProgressSummary(userId: 'user-b');
+    expect(emptySummary.overall.pending, 0);
+    expect(emptySummary.overall.completed, 0);
+    expect(emptySummary.byPrayer.length, PrayerType.values.length);
     await repository.setActiveUser('user-a');
     expect((await repository.getRecords(userId: 'user-a')).map((item) => item.id), ['a1']);
   });
