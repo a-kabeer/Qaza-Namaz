@@ -79,7 +79,7 @@ void main() {
 
   testWidgets('Settings navigation opens Account and lists companion sections', (tester) async {
     await pumpSettings(tester, ThemeMode.light);
-    expect(find.text('Account'), findsNWidgets(2)); expect(find.text('Prayer & Fiqh Rules'), findsOneWidget); expect(find.text('Notifications'), findsWidgets); expect(find.text('Data & Cloud'), findsOneWidget); expect(find.text('About'), findsNWidgets(2)); expect(find.byType(SettingsNavRow), findsNWidgets(5));
+    expect(find.text('Account'), findsNWidgets(2)); expect(find.text('Prayer & Fiqh Rules'), findsOneWidget); expect(find.text('Notifications'), findsWidgets); expect(find.text('Data & Cloud'), findsOneWidget); expect(find.text('About'), findsNWidgets(2)); expect(find.byType(SettingsNavRow), findsNWidgets(6));
     await tester.tap(find.text('Account').last); await tester.pumpAndSettle();
     expect(find.text('Sign-in method'), findsOneWidget); expect(find.text('Account status'), findsOneWidget); expect(find.text('Sign out'), findsOneWidget);
   });
