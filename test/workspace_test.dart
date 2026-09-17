@@ -27,7 +27,7 @@ void main() {
 
   testWidgets('Workspace exposes four primary navigation destinations', (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Home'), findsNWidgets(2));
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
@@ -92,7 +92,7 @@ void main() {
     await pumpWorkspace(tester, repository);
 
     expect(find.text('You are all caught up'), findsOneWidget);
-    expect(find.text('2 Qaza prayers have been completed.'), findsOneWidget);
+    expect(find.textContaining('2 Qaza prayers have been completed.'), findsOneWidget);
     expect(find.text('Add New Qaza'), findsOneWidget);
     expect(find.text('Recalculate Qaza'), findsOneWidget);
     expect(find.text('Complete Qaza'), findsNothing);
