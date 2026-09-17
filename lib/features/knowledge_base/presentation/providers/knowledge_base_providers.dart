@@ -29,13 +29,12 @@ final knowledgeSelectedArticleIdProvider = StateProvider<String?>(
   (ref) => null,
 );
 
-final knowledgeFilteredArticlesProvider =
-    Provider<AsyncValue<List<KnowledgeArticle>>>((ref) {
-  final articles = ref.watch(knowledgeArticlesProvider);
-  final category = ref.watch(knowledgeCategoryFilterProvider);
-  final query = ref.watch(knowledgeSearchQueryProvider).trim().toLowerCase();
+final knowledgeFilteredArticlesProvider = FutureProvider<List<KnowledgeArticle>>(
+  (ref) async {
+    final items = await ref.watch(knowledgeArticlesProvider.future);
+    final category = ref.watch(knowledgeCategoryFilterProvider);
+    final query = ref.watch(knowledgeSearchQueryProvider).trim().toLowerCase();
 
-  return articles.whenData((items) {
     final filtered = items.where((article) {
       if (category != null && article.category != category) {
         return false;
@@ -47,8 +46,8 @@ final knowledgeFilteredArticlesProvider =
     });
 
     return List.unmodifiable(filtered);
-  });
-});
+  },
+);
 
 final knowledgeArticleProvider =
     FutureProvider.family<KnowledgeArticle?, String>((ref, id) {
@@ -56,31 +55,29 @@ final knowledgeArticleProvider =
 });
 
 final selectedKnowledgeArticleProvider =
-    Provider<AsyncValue<KnowledgeArticle?>>((ref) {
+    FutureProvider<KnowledgeArticle?>((ref) async {
   final id = ref.watch(knowledgeSelectedArticleIdProvider);
   if (id == null || id.trim().isEmpty) {
-    return const AsyncValue.data(null);
+    return null;
   }
-  return ref.watch(knowledgeArticleProvider(id));
+  return ref.watch(knowledgeArticleProvider(id).future);
 });
 
 final knowledgeRelatedArticlesProvider =
-    Provider.family<AsyncValue<List<KnowledgeArticle>>, String>((ref, id) {
-  final articles = ref.watch(knowledgeArticlesProvider);
-  return articles.whenData((items) {
-    final byId = <String, KnowledgeArticle>{
-      for (final article in items) article.id: article,
-    };
+    FutureProvider.family<List<KnowledgeArticle>, String>((ref, id) async {
+  final items = await ref.watch(knowledgeArticlesProvider.future);
+  final byId = <String, KnowledgeArticle>{
+    for (final article in items) article.id: article,
+  };
 
-    final related = <KnowledgeArticle>[];
-    for (final relatedId in byId[id]?.relatedArticleIds ?? const <String>[]) {
-      final article = byId[relatedId];
-      if (article != null && article.id != id) {
-        related.add(article);
-      }
+  final related = <KnowledgeArticle>[];
+  for (final relatedId in byId[id]?.relatedArticleIds ?? const <String>[]) {
+    final article = byId[relatedId];
+    if (article != null && article.id != id) {
+      related.add(article);
     }
-    return List.unmodifiable(related);
-  });
+  }
+  return List.unmodifiable(related);
 });
 
 bool _matchesQuery(KnowledgeArticle article, String query) {
