@@ -25,13 +25,9 @@ ProviderScope _scope(Widget child, {InMemoryQazaRepository? repository}) => Prov
     );
 
 Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
-  if (finder.evaluate().isNotEmpty) return;
-  final listViews = find.byType(ListView);
-  final scrollable = listViews.evaluate().isEmpty ? find.byType(Scrollable).first : listViews.last;
-  for (var i = 0; i < 6 && finder.evaluate().isEmpty; i++) {
-    await tester.drag(scrollable, const Offset(0, -500));
-    await tester.pumpAndSettle();
-  }
+  if (finder.evaluate().isEmpty) return;
+  await tester.ensureVisible(finder.first);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _scrollToContinue(WidgetTester tester) => _scrollToFinder(tester, find.byKey(const Key('qaza_continue_button')));
@@ -146,11 +142,15 @@ void main() {
     await tester.tap(find.text('Next: Choose missed prayers'));
     await tester.pumpAndSettle();
     await _scrollToPrayer(tester, 'Fajr');
-    await tester.tap(find.text('Fajr', skipOffstage: false));
+    final fajr = find.text('Fajr', skipOffstage: false);
+    await tester.ensureVisible(fajr.first);
+    await tester.pumpAndSettle();
+    await tester.tap(fajr.first);
     await tester.pumpAndSettle();
     await _scrollToReview(tester);
     await tester.tap(find.text('Review & Create Records'));
     await tester.pumpAndSettle();
+    await _scrollToFinder(tester, find.text('Done'));
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     final records = await repository.getRecords(userId: 'u1');
