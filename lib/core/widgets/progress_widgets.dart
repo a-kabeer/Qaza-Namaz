@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 class ProgressRing extends StatelessWidget {
-  const ProgressRing({super.key, required this.progress, this.size = 72, this.strokeWidth = 6});
+  const ProgressRing(
+      {super.key,
+      required this.progress,
+      this.size = 72,
+      this.strokeWidth = 6});
 
   final double progress;
   final double size;

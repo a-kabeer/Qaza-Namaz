@@ -6,7 +6,8 @@ enum HomePrimaryAction { calculateQaza, addQaza, completeQaza, addNewQaza }
 class HomeStateResolver {
   const HomeStateResolver._();
 
-  static HomeLedgerState ledgerState({required int pending, required int completed}) {
+  static HomeLedgerState ledgerState(
+      {required int pending, required int completed}) {
     if (pending < 0 || completed < 0) {
       throw ArgumentError('Home progress counts cannot be negative.');
     }
@@ -15,13 +16,15 @@ class HomeStateResolver {
     return HomeLedgerState.setupRequired;
   }
 
-  static HomePrimaryAction primaryAction(HomeLedgerState state) => switch (state) {
+  static HomePrimaryAction primaryAction(HomeLedgerState state) =>
+      switch (state) {
         HomeLedgerState.setupRequired => HomePrimaryAction.calculateQaza,
         HomeLedgerState.hasPendingQaza => HomePrimaryAction.completeQaza,
         HomeLedgerState.allQazaCompleted => HomePrimaryAction.addNewQaza,
       };
 
-  static HomePrimaryAction secondaryAction(HomeLedgerState state) => switch (state) {
+  static HomePrimaryAction secondaryAction(HomeLedgerState state) =>
+      switch (state) {
         HomeLedgerState.setupRequired => HomePrimaryAction.addQaza,
         HomeLedgerState.hasPendingQaza => HomePrimaryAction.addQaza,
         HomeLedgerState.allQazaCompleted => HomePrimaryAction.calculateQaza,

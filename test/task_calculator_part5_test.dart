@@ -38,7 +38,8 @@ void main() {
     expect(result.prayerBreakdown.containsKey(PrayerType.witr), isFalse);
   });
 
-  test('decomposes a multi-year period into calendar years and remaining days', () {
+  test('decomposes a multi-year period into calendar years and remaining days',
+      () {
     final result = calculateQaza(
       startDate: DateTime(2020, 1, 1),
       endDate: DateTime(2022, 1, 2),

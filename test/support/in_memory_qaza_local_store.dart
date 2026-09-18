@@ -35,16 +35,22 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     int limit = 50,
     PrayerType? prayerType,
     QazaStatus? status,
+    DateTime? from,
+    DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
   }) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
     if ((afterOriginalDate == null) != (afterId == null)) {
-      throw ArgumentError('afterOriginalDate and afterId must be provided together');
+      throw ArgumentError(
+          'afterOriginalDate and afterId must be provided together');
     }
     var records = (_recordsByUser[userId] ?? const <QazaRecord>[])
-        .where((record) => prayerType == null || record.prayerType == prayerType)
+        .where(
+            (record) => prayerType == null || record.prayerType == prayerType)
         .where((record) => status == null || record.status == status)
+        .where((record) => from == null || !record.originalDate.isBefore(from))
+        .where((record) => to == null || !record.originalDate.isAfter(to))
         .where(
           (record) =>
               afterOriginalDate == null ||
@@ -59,7 +65,8 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
       });
     final hasMore = records.length > limit;
     return LocalQazaPage(
-      records: (hasMore ? records.take(limit) : records).toList(growable: false),
+      records:
+          (hasMore ? records.take(limit) : records).toList(growable: false),
       hasMore: hasMore,
     );
   }
@@ -92,7 +99,8 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     historyPageCalls++;
     var records = _recordsByUser[userId] ?? const <QazaRecord>[];
     records = records
-        .where((record) => prayerType == null || record.prayerType == prayerType)
+        .where(
+            (record) => prayerType == null || record.prayerType == prayerType)
         .where((record) => status == null || record.status == status)
         .where((record) => from == null || !record.originalDate.isBefore(from))
         .where((record) => to == null || !record.originalDate.isAfter(to))
@@ -111,13 +119,15 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
 
     final hasMore = records.length > limit;
     return LocalQazaHistoryPage(
-      records: (hasMore ? records.take(limit) : records).toList(growable: false),
+      records:
+          (hasMore ? records.take(limit) : records).toList(growable: false),
       hasMore: hasMore,
     );
   }
 
   @override
-  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
+  Future<QazaProgressSummary> getProgressSummary(
+      {required String userId}) async {
     progressSummaryCalls++;
     return QazaProgressSummary.fromRecords(
       _recordsByUser[userId] ?? const <QazaRecord>[],

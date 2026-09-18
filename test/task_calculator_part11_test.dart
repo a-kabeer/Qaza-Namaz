@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
-Future<void> settleCalculator(WidgetTester tester, [Duration duration = const Duration(milliseconds: 600)]) async {
+Future<void> settleCalculator(WidgetTester tester,
+    [Duration duration = const Duration(milliseconds: 600)]) async {
   await tester.pump(duration);
   await tester.pump();
 }
@@ -17,7 +20,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(theme: theme, home: const CalculatorScreen()),
+      ProviderScope(
+          child: TestApp(theme: theme, home: const CalculatorScreen())),
     );
     await settleCalculator(tester);
 
@@ -27,9 +31,11 @@ void main() {
 
   testWidgets('calculator renders within a narrow width', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Center(
-          child: SizedBox(width: 320, child: CalculatorScreen()),
+      const ProviderScope(
+        child: TestApp(
+          home: Center(
+            child: SizedBox(width: 320, child: CalculatorScreen()),
+          ),
         ),
       ),
     );

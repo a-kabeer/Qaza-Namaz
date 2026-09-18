@@ -87,7 +87,8 @@ void main() {
     expect(restored.updatedAt, record.updatedAt);
   });
 
-  test('legacy snapshot migrates into Drift and records migration version', () async {
+  test('legacy snapshot migrates into Drift and records migration version',
+      () async {
     final preferences = await SharedPreferences.getInstance();
     await _seedLegacySnapshot(preferences, {
       'user-a': [_record()],
@@ -107,14 +108,17 @@ void main() {
       preferences.getInt(SharedPreferencesToDriftMigrator.migrationVersionKey),
       SharedPreferencesToDriftMigrator.migrationVersion,
     );
-    expect(preferences.getBool(SharedPreferencesToDriftMigrator.migrationKey), true);
+    expect(preferences.getBool(SharedPreferencesToDriftMigrator.migrationKey),
+        true);
   });
 
   test('legacy v1 snapshot without schemaVersion remains migratable', () async {
     final preferences = await SharedPreferences.getInstance();
     await _seedLegacySnapshot(
       preferences,
-      {'user-a': [_record()]},
+      {
+        'user-a': [_record()]
+      },
       includeSchemaVersion: false,
     );
 
@@ -130,7 +134,9 @@ void main() {
     expect(await database.qazaRecordsDao.count(userId: 'user-a'), 1);
   });
 
-  test('unsupported completed migration version is rejected instead of silently reset', () async {
+  test(
+      'unsupported completed migration version is rejected instead of silently reset',
+      () async {
     SharedPreferences.setMockInitialValues({
       SharedPreferencesToDriftMigrator.migrationKey: true,
       SharedPreferencesToDriftMigrator.migrationVersionKey:

@@ -22,7 +22,8 @@ void main() {
     );
   }
 
-  test('keyset pagination advances by date and stable id without offset', () async {
+  test('keyset pagination advances by date and stable id without offset',
+      () async {
     await database.qazaRecordsDao.insertRecords([
       for (var i = 0; i < 1200; i++) record(i),
     ]);
@@ -55,7 +56,8 @@ void main() {
     expect(last.hasMore, isFalse);
   });
 
-  test('keyset pagination preserves filters and rejects partial cursor', () async {
+  test('keyset pagination preserves filters and rejects partial cursor',
+      () async {
     await database.qazaRecordsDao.insertRecords([
       record(0),
       record(1),

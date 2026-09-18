@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hijri/hijri_calendar.dart';
-
 import '../../core/constants/prayer_types.dart';
+import '../../core/utils/date_formatters.dart';
+import '../../l10n/app_localizations.dart';
 import 'calendar_controller.dart';
 
 class CalendarPicker extends ConsumerStatefulWidget {
@@ -61,15 +61,13 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     widget.onMonthChanged?.call(next);
   }
 
-  String _hijriLabel(DateTime date) {
-    final hijri = HijriCalendar.fromDate(date);
-    return '${hijri.hDay} ${hijri.getLongMonthName()} ${hijri.hYear} AH';
-  }
+  String _hijriLabel(DateTime date) => DateFormatters.hijriLabel(date);
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarControllerProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final min = DateTime(1950);
     final selected = state.selectedDates;
     final currentMonth = DateTime(month.year, month.month, 1);
@@ -113,8 +111,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         const SizedBox(height: 8),
         Text(
           state.hasSelection
-              ? '${state.selectedCount} ${state.selectedCount == 1 ? 'date' : 'dates'} selected.'
-              : 'Tap an available date to select it.',
+              ? l10n.calendarSelectedCount(state.selectedCount)
+              : l10n.calendarSelectHint,
           key: const Key('calendar_selection_prompt'),
         ),
         const SizedBox(height: 12),
@@ -147,7 +145,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                   key: const Key('calendar_clear_selection'),
                   onPressed: () =>
                       ref.read(calendarControllerProvider.notifier).clear(),
-                  child: const Text('Clear'),
+                  child: Text(l10n.commonClear),
                 ),
               ],
             ),
@@ -198,8 +196,17 @@ class _Grid extends StatelessWidget {
       children: [
         Row(
           children: [
-            for (final label in ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'])
-              Expanded(child: Center(child: Text(label))),
+            // Weekday names come from Material's own localizations. The grid
+            // stays Monday-first, so the Sunday-indexed list is re-ordered
+            // rather than hard-coded in English.
+            for (final weekday in const [1, 2, 3, 4, 5, 6, 0])
+              Expanded(
+                child: Center(
+                  child: Text(
+                    MaterialLocalizations.of(context).narrowWeekdays[weekday],
+                  ),
+                ),
+              ),
           ],
         ),
         SizedBox(

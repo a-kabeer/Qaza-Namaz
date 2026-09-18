@@ -8,7 +8,8 @@ class QazaPage {
   final List<QazaRecord> records;
   final bool hasMore;
 
-  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  DateTime? get nextOriginalDate =>
+      records.isEmpty ? null : records.last.originalDate;
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
@@ -18,7 +19,8 @@ class QazaHistoryPage {
   final List<QazaRecord> records;
   final bool hasMore;
 
-  DateTime? get nextOriginalDate => records.isEmpty ? null : records.last.originalDate;
+  DateTime? get nextOriginalDate =>
+      records.isEmpty ? null : records.last.originalDate;
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
@@ -31,11 +33,17 @@ abstract interface class QazaRepository {
   });
 
   /// Bounded ascending keyset page for scalable ledger screens.
+  ///
+  /// [from] and [to] bound the original Qaza date inclusively, so status,
+  /// prayer and date filtering all happen in the data source rather than in
+  /// Dart over a materialized ledger.
   Future<QazaPage> getPage({
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
     QazaStatus? status,
+    DateTime? from,
+    DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
   });

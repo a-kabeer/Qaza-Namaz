@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../domain/knowledge_category.dart';
-import 'bundled_knowledge_base_repository.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/data/bundled_knowledge_base_repository.dart';
 
 class _MemoryAssetBundle extends CachingAssetBundle {
   _MemoryAssetBundle(this._assets);

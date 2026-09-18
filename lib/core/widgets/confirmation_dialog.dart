@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 Future<bool> showConfirmationDialog(
   BuildContext context, {
   required String title,
@@ -16,7 +18,7 @@ Future<bool> showConfirmationDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         FilledButton(
           style: destructive
@@ -39,10 +41,11 @@ Future<bool> confirmDestructive(
   required String title,
   required String message,
   required String confirmLabel,
-}) => showConfirmationDialog(
-  context,
-  title: title,
-  message: message,
-  confirmLabel: confirmLabel,
-  destructive: true,
-);
+}) =>
+    showConfirmationDialog(
+      context,
+      title: title,
+      message: message,
+      confirmLabel: confirmLabel,
+      destructive: true,
+    );

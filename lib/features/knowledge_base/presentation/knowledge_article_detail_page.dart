@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../domain/knowledge_category.dart';
 import 'providers/knowledge_base_providers.dart';
 
@@ -29,7 +30,8 @@ class _KnowledgeArticleDetailPageState
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Article')),
+      appBar: AppBar(
+          title: Text(AppLocalizations.of(context).knowledgeArticleTitle)),
       body: articleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _DetailErrorState(
@@ -57,7 +59,8 @@ class _KnowledgeArticleDetailPageState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Semantics(
-                        label: 'Article language',
+                        label: AppLocalizations.of(context)
+                            .knowledgeArticleLanguage,
                         child: SegmentedButton<bool>(
                           segments: const [
                             ButtonSegment<bool>(
@@ -104,7 +107,8 @@ class _KnowledgeArticleDetailPageState
                       if (article.references.isNotEmpty) ...[
                         const SizedBox(height: 28),
                         Text(
-                          _showUrdu ? 'حوالہ جات' : 'References',
+                          AppLocalizations.of(context)
+                              .knowledgeArticleReferences,
                           textDirection: direction,
                           textAlign: textAlign,
                           style: Theme.of(context).textTheme.titleLarge,
@@ -143,7 +147,8 @@ class _KnowledgeArticleDetailPageState
                       slivers: [
                         SliverToBoxAdapter(
                           child: Text(
-                            _showUrdu ? 'متعلقہ مضامین' : 'Related articles',
+                            AppLocalizations.of(context)
+                                .knowledgeArticleRelated,
                             textDirection: direction,
                             textAlign: textAlign,
                             style: Theme.of(context).textTheme.titleLarge,
@@ -169,9 +174,11 @@ class _KnowledgeArticleDetailPageState
                                     textAlign: textAlign,
                                   ),
                                   trailing: const Icon(Icons.chevron_right),
-                                  onTap: () => Navigator.of(context).pushReplacement(
+                                  onTap: () =>
+                                      Navigator.of(context).pushReplacement(
                                     MaterialPageRoute<void>(
-                                      builder: (_) => KnowledgeArticleDetailPage(
+                                      builder: (_) =>
+                                          KnowledgeArticleDetailPage(
                                         articleId: relatedArticle.id,
                                       ),
                                     ),
@@ -202,8 +209,10 @@ class _CategoryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (category) {
-      KnowledgeCategory.masail => 'Masail',
-      KnowledgeCategory.mugalat => 'Mugalat',
+      KnowledgeCategory.masail =>
+        AppLocalizations.of(context).knowledgeCategoryMasail,
+      KnowledgeCategory.mugalat =>
+        AppLocalizations.of(context).knowledgeCategoryMugalat,
     };
     return Align(
       alignment: AlignmentDirectional.centerStart,
@@ -219,10 +228,10 @@ class _MissingArticleState extends StatelessWidget {
   const _MissingArticleState();
 
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Text('Article not found.'),
+          child: Text(AppLocalizations.of(context).knowledgeArticleNotFound),
         ),
       );
 }
@@ -237,7 +246,7 @@ class _DetailErrorState extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: onRetry,
           icon: const Icon(Icons.refresh),
-          label: const Text('Retry'),
+          label: Text(AppLocalizations.of(context).commonRetry),
         ),
       );
 }

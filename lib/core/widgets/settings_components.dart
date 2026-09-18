@@ -5,7 +5,8 @@ import 'confirmation_dialog.dart';
 import 'section_header.dart';
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({super.key, required this.title, this.subtitle, required this.child});
+  const SettingsSection(
+      {super.key, required this.title, this.subtitle, required this.child});
 
   final String title;
   final String? subtitle;
@@ -23,7 +24,12 @@ class SettingsSection extends StatelessWidget {
 }
 
 class SettingsNavRow extends StatelessWidget {
-  const SettingsNavRow({super.key, required this.icon, required this.title, this.subtitle, this.onTap});
+  const SettingsNavRow(
+      {super.key,
+      required this.icon,
+      required this.title,
+      this.subtitle,
+      this.onTap});
 
   final IconData icon;
   final String title;

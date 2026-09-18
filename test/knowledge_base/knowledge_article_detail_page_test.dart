@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/test_app.dart';
 
-import '../data/knowledge_base_repository.dart';
-import '../domain/knowledge_article.dart';
-import '../domain/knowledge_category.dart';
-import '../domain/knowledge_localized_text.dart';
-import '../domain/knowledge_reference.dart';
-import 'knowledge_article_detail_page.dart';
-import 'providers/knowledge_base_providers.dart';
+import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_text.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/knowledge_article_detail_page.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
 class _FakeRepository implements KnowledgeBaseRepository {
   _FakeRepository(this.article);
@@ -21,7 +21,8 @@ class _FakeRepository implements KnowledgeBaseRepository {
   @override
   Future<List<KnowledgeArticle>> getArticlesByCategory(
     KnowledgeCategory category,
-  ) async => [article].where((item) => item.category == category).toList();
+  ) async =>
+      [article].where((item) => item.category == category).toList();
 
   @override
   Future<KnowledgeArticle?> getArticleById(String id) async =>
@@ -64,7 +65,7 @@ void main() {
             _FakeRepository(article),
           ),
         ],
-        child: const MaterialApp(
+        child: const TestApp(
           home: KnowledgeArticleDetailPage(articleId: 'sample-article'),
         ),
       ),

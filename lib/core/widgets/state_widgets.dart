@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'app_button.dart';
 import 'app_scaffold.dart';
 
@@ -34,13 +35,15 @@ class ErrorState extends StatelessWidget {
     super.key,
     required this.message,
     this.onRetry,
-    this.title = 'Something went wrong',
+    this.title,
     this.icon = Icons.error_outline_rounded,
   });
 
   final String message;
   final VoidCallback? onRetry;
-  final String title;
+
+  /// Defaults to the localized "Something went wrong" when omitted.
+  final String? title;
   final IconData icon;
 
   @override
@@ -62,7 +65,8 @@ class ErrorState extends StatelessWidget {
               child: Icon(icon, color: scheme.onErrorContainer),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(title ?? AppLocalizations.of(context).stateErrorTitle,
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpacing.sm),
             Text(
               message,
@@ -72,7 +76,7 @@ class ErrorState extends StatelessWidget {
             if (onRetry != null) ...[
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: 'Retry',
+                label: AppLocalizations.of(context).commonRetry,
                 icon: Icons.refresh_rounded,
                 secondary: true,
                 onPressed: onRetry,
@@ -127,7 +131,10 @@ class EmptyState extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
-            if (child != null) ...[const SizedBox(height: AppSpacing.lg), child!],
+            if (child != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              child!
+            ],
           ],
         ),
       ),

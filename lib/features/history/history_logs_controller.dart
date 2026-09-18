@@ -138,7 +138,8 @@ class HistoryLogsNotifier extends AsyncNotifier<List<QazaRecord>> {
       if (generation != _requestGeneration) return;
 
       final existingIds = current.map((record) => record.id).toSet();
-      final appended = page.records.where((record) => existingIds.add(record.id));
+      final appended =
+          page.records.where((record) => existingIds.add(record.id));
       _setCursor(page);
       state = AsyncData([...current, ...appended]);
     } catch (error, stackTrace) {

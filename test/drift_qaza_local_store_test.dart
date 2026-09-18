@@ -68,7 +68,8 @@ void main() {
     expect(snapshot.outboxByUser['user-a'], isEmpty);
   });
 
-  test('history page uses DAO query instead of local snapshot loading', () async {
+  test('history page uses DAO query instead of local snapshot loading',
+      () async {
     final records = [
       for (var i = 0; i < 120; i++)
         record('user-a-$i', 'user-a').copyWith(
@@ -88,7 +89,8 @@ void main() {
     expect(page.hasMore, isTrue);
   });
 
-  test('database-backed progress summary maps counts for every prayer', () async {
+  test('database-backed progress summary maps counts for every prayer',
+      () async {
     final fajr = record('fajr-pending', 'user-a');
     final fajrCompleted = fajr.copyWith(
       id: 'fajr-completed',

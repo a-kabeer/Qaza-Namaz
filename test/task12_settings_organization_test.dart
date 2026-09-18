@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/features/settings/settings_screen.dart';
 
 void main() {
-  testWidgets('Settings presents clear grouped sections and existing destinations', (tester) async {
+  testWidgets(
+      'Settings presents clear grouped sections and existing destinations',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -16,10 +19,11 @@ void main() {
       ProviderScope(
         overrides: [
           authStateProvider.overrideWith(
-            (ref) => Stream.value(const AppUser(id: 'test-user', email: 'test@example.com')),
+            (ref) => Stream.value(
+                const AppUser(id: 'test-user', email: 'test@example.com')),
           ),
         ],
-        child: const MaterialApp(home: SettingsScreen()),
+        child: const TestApp(home: SettingsScreen()),
       ),
     );
     await tester.pumpAndSettle();

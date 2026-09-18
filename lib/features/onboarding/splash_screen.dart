@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -19,16 +21,26 @@ class SplashScreen extends StatelessWidget {
                   color: scheme.primary.withOpacity(.10),
                   borderRadius: BorderRadius.circular(26),
                 ),
-                child: Icon(Icons.mosque_rounded, size: 48, color: scheme.primary),
+                child:
+                    Icon(Icons.mosque_rounded, size: 48, color: scheme.primary),
               ),
               const SizedBox(height: 20),
-              Text('Qaza Namaz', style: Theme.of(context).textTheme.headlineMedium),
+              Text(AppLocalizations.of(context).appTitle,
+                  style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),
-              Text('قضاء نماز', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: scheme.secondary)),
+              Text('قضاء نماز',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: scheme.secondary)),
               const SizedBox(height: 8),
-              Text('A calm place for prayer accountability', style: Theme.of(context).textTheme.bodySmall),
+              Text(AppLocalizations.of(context).splashTagline,
+                  style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 28),
-              const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2)),
             ],
           ),
         ),

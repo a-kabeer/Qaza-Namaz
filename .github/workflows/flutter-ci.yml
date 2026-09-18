@@ -33,6 +33,10 @@ jobs:
         run: flutter pub get
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
+      # Runs after generation so the check covers the same tree Analyze sees,
+      # generated sources included.
+      - name: Check formatting
+        run: dart format --set-exit-if-changed lib test
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

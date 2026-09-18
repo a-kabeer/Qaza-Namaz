@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
-Future<void> settleCalculator(WidgetTester tester, [Duration duration = const Duration(milliseconds: 600)]) async {
+Future<void> settleCalculator(WidgetTester tester,
+    [Duration duration = const Duration(milliseconds: 600)]) async {
   await tester.pump(duration);
   await tester.pump();
 }
@@ -27,8 +30,11 @@ Future<void> _calculateDefaultResult(WidgetTester tester) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('calculator presents three steps and supports forward/back navigation', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
+  testWidgets(
+      'calculator presents three steps and supports forward/back navigation',
+      (tester) async {
+    await tester.pumpWidget(
+        const ProviderScope(child: TestApp(home: CalculatorScreen())));
     await settleCalculator(tester);
 
     expect(find.text('About You'), findsOneWidget);
@@ -36,7 +42,11 @@ void main() {
     expect(find.byKey(const Key('calculator_continue')), findsOneWidget);
 
     await _selectDefaultDob(tester);
-    expect(tester.widget<FilledButton>(find.byKey(const Key('calculator_continue'))).onPressed, isNotNull);
+    expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('calculator_continue')))
+            .onPressed,
+        isNotNull);
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
@@ -54,7 +64,8 @@ void main() {
     expect(find.byKey(const Key('calculator_back')), findsOneWidget);
 
     expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
-    expect(find.byKey(const Key('calculator_edit_prayer_history')), findsOneWidget);
+    expect(find.byKey(const Key('calculator_edit_prayer_history')),
+        findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calculator_edit_prayer_history')));
     await settleCalculator(tester);
@@ -62,8 +73,11 @@ void main() {
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
 
-  testWidgets('calculator edit actions return to the relevant step and recalculate', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
+  testWidgets(
+      'calculator edit actions return to the relevant step and recalculate',
+      (tester) async {
+    await tester.pumpWidget(
+        const ProviderScope(child: TestApp(home: CalculatorScreen())));
     await settleCalculator(tester);
 
     await _calculateDefaultResult(tester);
@@ -86,7 +100,8 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_edit_prayer_history')));
     await settleCalculator(tester);
     expect(find.text('Prayer History'), findsOneWidget);
-    expect(find.byKey(const Key('calculator_prayer_start_age')), findsOneWidget);
+    expect(
+        find.byKey(const Key('calculator_prayer_start_age')), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
 
@@ -96,7 +111,8 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(theme: theme, home: const CalculatorScreen()),
+      ProviderScope(
+          child: TestApp(theme: theme, home: const CalculatorScreen())),
     );
     await settleCalculator(tester);
 
