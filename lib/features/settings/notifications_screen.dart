@@ -50,9 +50,24 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       final message =
           value?.permissionStatus == NotificationPermissionStatus.denied
               ? l10n.notificationsBlockedDetail
-              : l10n.notificationsEnableFailed;
+              : value?.permissionStatus ==
+                      NotificationPermissionStatus.unavailable
+                  ? l10n.notificationsUnavailableDetail
+                  : l10n.notificationsEnableFailed;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _refreshPermission() async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      await ref
+          .read(notificationSettingsProvider.notifier)
+          .refreshPermissionStatus();
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -111,7 +126,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         loading: () => LoadingState(message: l10n.notificationsLoading),
         error: (error, stack) => ErrorState(
           message: l10n.notificationsLoadError('$error'),
-          onRetry: () => ref.invalidate(notificationSettingsProvider),
+          onRetry: () {
+            ref.invalidate(progressSummaryProvider);
+            ref.invalidate(notificationSettingsProvider);
+          },
         ),
         data: (value) {
           final theme = Theme.of(context);
@@ -152,6 +170,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           };
           final reminderEnabled = value.enabled && !_working;
           final testEnabled = value.canSendNotifications && !_working;
+          final showPermissionAction =
+              permission == NotificationPermissionStatus.notRequested ||
+                  permission == NotificationPermissionStatus.denied ||
+                  permission == NotificationPermissionStatus.unavailable;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -207,13 +229,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   leading: Icon(permissionIcon),
                   title: Text(permissionTitle),
                   subtitle: Text(permissionMessage),
-                  trailing: permission ==
-                              NotificationPermissionStatus.notRequested ||
-                          permission == NotificationPermissionStatus.denied
+                  trailing: showPermissionAction
                       ? TextButton(
-                          onPressed: _working ? null : () => _setEnabled(true),
+                          onPressed: _working
+                              ? null
+                              : permission ==
+                                      NotificationPermissionStatus.unavailable
+                                  ? _refreshPermission
+                                  : () => _setEnabled(true),
                           child: Text(
-                            permission == NotificationPermissionStatus.denied
+                            permission ==
+                                        NotificationPermissionStatus.denied ||
+                                    permission ==
+                                        NotificationPermissionStatus.unavailable
                                 ? l10n.notificationsTryAgain
                                 : l10n.notificationsAllow,
                           ),
