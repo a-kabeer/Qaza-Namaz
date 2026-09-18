@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../../l10n/prayer_type_l10n.dart';
 import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import 'knowledge_article_detail_page.dart';
@@ -30,11 +32,12 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final articles = ref.watch(knowledgeFilteredArticlesProvider);
     final selectedCategory = ref.watch(knowledgeCategoryFilterProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Knowledge Base')),
+      appBar: AppBar(title: Text(l10n.knowledgeBaseTitle)),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(knowledgeArticlesProvider),
         child: CustomScrollView(
@@ -52,12 +55,12 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     setState(() {});
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search Masail & Mugalat',
+                    hintText: l10n.knowledgeBaseSearchHint,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
                         : IconButton(
-                            tooltip: 'Clear search',
+                            tooltip: l10n.knowledgeBaseClearSearch,
                             onPressed: () {
                               _searchController.clear();
                               ref
@@ -83,7 +86,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
-                      label: const Text('All'),
+                      label: Text(l10n.filterAll),
                       selected: selectedCategory == null,
                       onSelected: (_) => ref
                           .read(knowledgeCategoryFilterProvider.notifier)
@@ -94,7 +97,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                       (category) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(_categoryLabel(category)),
+                          label: Text(category.localizedLabel(l10n)),
                           selected: selectedCategory == category,
                           onSelected: (_) => ref
                               .read(knowledgeCategoryFilterProvider.notifier)
@@ -144,11 +147,6 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
       ),
     );
   }
-
-  String _categoryLabel(KnowledgeCategory category) => switch (category) {
-        KnowledgeCategory.masail => 'Masail',
-        KnowledgeCategory.mugalat => 'Mugalat',
-      };
 }
 
 class _ArticleCard extends StatelessWidget {
@@ -192,9 +190,8 @@ class _ArticleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    article.category == KnowledgeCategory.masail
-                        ? 'Masail'
-                        : 'Mugalat',
+                    article.category
+                        .localizedLabel(AppLocalizations.of(context)),
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ],
@@ -220,11 +217,11 @@ class _EmptyKnowledgeState extends StatelessWidget {
               const Icon(Icons.menu_book_outlined, size: 48),
               const SizedBox(height: 12),
               Text(
-                'No articles found',
+                AppLocalizations.of(context).knowledgeBaseEmptyTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 4),
-              const Text('Try another search or category.'),
+              Text(AppLocalizations.of(context).knowledgeBaseEmptyMessage),
             ],
           ),
         ),
@@ -246,14 +243,14 @@ class _ErrorKnowledgeState extends StatelessWidget {
               const Icon(Icons.error_outline, size: 48),
               const SizedBox(height: 12),
               Text(
-                'Unable to load Knowledge Base',
+                AppLocalizations.of(context).knowledgeBaseLoadError,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppLocalizations.of(context).commonRetry),
               ),
             ],
           ),

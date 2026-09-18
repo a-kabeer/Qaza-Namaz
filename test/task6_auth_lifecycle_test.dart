@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
@@ -43,7 +43,7 @@ Future<void> _pumpGate(
         authRepositoryProvider.overrideWithValue(_FakeAuthRepository(auth)),
         qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
       ],
-      child: const MaterialApp(home: AuthGate()),
+      child: const TestApp(home: AuthGate()),
     ),
   );
   auth.add(null);
@@ -80,7 +80,23 @@ void main() {
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 
-  testWidgets('setup completion is isolated per authenticated account', (tester) async {
+  testWidgets('signing in goes straight to Home with no setup step',
+      (tester) async {
+    final auth = StreamController<AppUser?>();
+    addTearDown(auth.close);
+
+    await _pumpGate(tester, auth);
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
+
+    const firstUser = AppUser(id: 'user-a', email: 'a@example.com');
+    await _pumpAuthEvent(tester, firstUser, auth);
+
+    expect(find.text('Home').first, findsOneWidget);
+    expect(find.text('First-Time Setup'), findsNothing);
+  });
+
+  testWidgets('a brand new account also reaches Home directly', (tester) async {
     final auth = StreamController<AppUser?>();
     addTearDown(auth.close);
 
@@ -92,27 +108,39 @@ void main() {
     const secondUser = AppUser(id: 'user-b', email: 'b@example.com');
 
     await _pumpAuthEvent(tester, firstUser, auth);
-    expect(find.text('First-Time Setup'), findsOneWidget);
-
-    final startTracking = find.text('Start Tracking');
-    await tester.scrollUntilVisible(
-      startTracking,
-      600,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(startTracking, findsOneWidget);
-    await tester.tap(startTracking);
-    await tester.pumpAndSettle();
     expect(find.text('Home').first, findsOneWidget);
 
+    // Switching to an account that has never signed in before must not
+    // reintroduce a configuration step.
     await _pumpAuthEvent(tester, null, auth);
     await _pumpAuthEvent(tester, secondUser, auth);
 
-    expect(find.text('First-Time Setup'), findsOneWidget);
+    expect(find.text('Home').first, findsOneWidget);
+    expect(find.text('First-Time Setup'), findsNothing);
   });
 
-  test('Firestore rules enforce authenticated UID ownership for users data', () async {
+  testWidgets('signing out returns to the welcome entry', (tester) async {
+    final auth = StreamController<AppUser?>();
+    addTearDown(auth.close);
+
+    await _pumpGate(tester, auth);
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
+    expect(find.text('Continue with Google'), findsOneWidget);
+
+    await _pumpAuthEvent(
+      tester,
+      const AppUser(id: 'user-a', email: 'a@example.com'),
+      auth,
+    );
+    expect(find.text('Home').first, findsOneWidget);
+
+    await _pumpAuthEvent(tester, null, auth);
+    expect(find.text('Get Started'), findsOneWidget);
+  });
+
+  test('Firestore rules enforce authenticated UID ownership for users data',
+      () async {
     final rules = await File('firestore.rules').readAsString();
     expect(rules, contains("request.auth != null"));
     expect(rules, contains("request.auth.uid == userId"));

@@ -1,14 +1,47 @@
 # Qaza Namaz — Offline-First Architecture
 
-## Task 5 scope
+## Current architecture
 
-This document records the dedicated Offline-First Architecture audit. The existing local-first repository, SharedPreferences cache, and synchronization engine are preserved; only concrete weaknesses identified by the audit are changed.
+The local production source of truth is **Drift/SQLite**. SharedPreferences
+holds settings (theme, language, calculator inputs, reminder preferences, the
+one-shot migration flag) and is never a Qaza persistence layer.
+
+The flow is:
+
+`UI -> Riverpod controller -> QazaService -> OfflineFirstQazaRepository -> QazaLocalStore (Drift) -> FirestoreQazaRepository`
+
+## Startup: bootstrap and hydration
+
+A signed-in account whose local database is empty must not be mistaken for an
+account with no Qaza. `OfflineFirstQazaRepository` therefore runs an explicit
+startup lifecycle on every `setActiveUser`:
+
+```text
+signed in -> BOOTSTRAPPING -> (local database empty?) -> HYDRATING -> READY
+```
+
+- `BOOTSTRAPPING` — the local database is being opened for this account.
+- `HYDRATING` — the local database was empty, so remote records are being
+  pulled before the ledger is treated as complete.
+- Ready — any other state (`synced`, `pendingSync`, `offline`, `syncError`).
+  `SyncState.isReady` is the single check.
+
+`ensureHydrated()` gates `getPage`, `getRecords`, `getOldestPending`,
+`getHistoryPage` and `getProgressSummary`, so **availability and duplicate
+calculations can never observe a partially hydrated ledger** and wrongly
+conclude that a date is free.
+
+Every path terminates in a ready state: an offline start, an empty cloud
+account, a failed pull and an interrupted pull all continue offline-first from
+whatever is local, and retry on the next sync. An account switch supersedes any
+in-flight bootstrap through the session generation counter.
+
+User-facing wording for these states is `Setting up` and `Restoring`; Firestore,
+outbox, DAO and repository never appear in the UI.
+
+Covered by `test/cloud_bootstrap_test.dart`.
 
 ## Audited architecture
-
-The current flow is:
-
-`UI -> QazaService -> OfflineFirstQazaRepository -> QazaLocalStore -> FirestoreQazaRepository`
 
 The offline-first repository keeps reads local, applies writes to the local cache first, persists pending remote work in an outbox, and synchronizes in the background.
 

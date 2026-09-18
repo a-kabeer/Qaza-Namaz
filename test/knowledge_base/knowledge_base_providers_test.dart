@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../data/knowledge_base_repository.dart';
-import '../../domain/knowledge_article.dart';
-import '../../domain/knowledge_category.dart';
-import '../../domain/knowledge_localized_text.dart';
-import '../../domain/knowledge_reference.dart';
-import 'knowledge_base_providers.dart';
+import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_text.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
 class _FakeKnowledgeBaseRepository implements KnowledgeBaseRepository {
   _FakeKnowledgeBaseRepository(this._articles);
@@ -123,7 +123,8 @@ void main() {
     container.read(knowledgeSelectedArticleIdProvider.notifier).state =
         'masail-fasting';
 
-    final selected = await container.read(selectedKnowledgeArticleProvider.future);
+    final selected =
+        await container.read(selectedKnowledgeArticleProvider.future);
     expect(selected?.id, 'masail-fasting');
 
     final related = await container.read(

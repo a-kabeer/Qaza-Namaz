@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../domain/knowledge_category.dart';
-import 'knowledge_base_parser.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_parser.dart';
 
 void main() {
   const parser = KnowledgeBaseParser();

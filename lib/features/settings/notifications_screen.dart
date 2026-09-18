@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_scaffold.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../notifications/notification_controller.dart';
 
@@ -9,7 +10,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
@@ -37,6 +39,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   Future<void> _setEnabled(bool enabled) async {
     if (_working) return;
+    final l10n = AppLocalizations.of(context);
     setState(() => _working = true);
     try {
       final ok = await ref
@@ -44,11 +47,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           .setEnabled(enabled);
       if (!mounted || ok || !enabled) return;
       final value = ref.read(notificationSettingsProvider).valueOrNull;
-      final message = value?.permissionStatus ==
-              NotificationPermissionStatus.denied
-          ? 'Notifications are blocked. Allow them in system settings, then try again.'
-          : 'Notifications could not be enabled on this device.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      final message =
+          value?.permissionStatus == NotificationPermissionStatus.denied
+              ? l10n.notificationsBlockedDetail
+              : l10n.notificationsEnableFailed;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -59,7 +63,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: value.hour, minute: value.minute),
-      helpText: 'Choose daily reminder time',
+      helpText: AppLocalizations.of(context).notificationsChooseTime,
     );
     if (picked == null || !mounted) return;
 
@@ -77,15 +81,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (_working) return;
     setState(() => _working = true);
     try {
-      await ref.read(notificationSettingsProvider.notifier).sendTestNotification();
+      await ref
+          .read(notificationSettingsProvider.notifier)
+          .sendTestNotification();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Test notification sent.')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).notificationsTestSent)),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Test notification failed: $error')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)
+                .notificationsTestFailed('$error'))),
       );
     } finally {
       if (mounted) setState(() => _working = false);
@@ -94,39 +103,52 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final settings = ref.watch(notificationSettingsProvider);
     return AppScaffold(
-      title: 'Notifications',
+      title: l10n.notificationsTitle,
       body: settings.when(
-        loading: () =>
-            const LoadingState(message: 'Loading notification settings…'),
+        loading: () => LoadingState(message: l10n.notificationsLoading),
         error: (error, stack) => ErrorState(
-          message: 'Notification settings could not be loaded: $error',
+          message: l10n.notificationsLoadError('$error'),
           onRetry: () => ref.invalidate(notificationSettingsProvider),
         ),
         data: (value) {
           final theme = Theme.of(context);
           final permission = value.permissionStatus;
           final permissionTitle = switch (permission) {
-            NotificationPermissionStatus.granted => 'Notifications allowed',
-            NotificationPermissionStatus.notRequested => 'Permission needed',
-            NotificationPermissionStatus.denied => 'Notifications blocked',
-            NotificationPermissionStatus.unavailable => 'Notifications unavailable',
-            NotificationPermissionStatus.restricted => 'Notifications restricted',
+            NotificationPermissionStatus.granted => l10n.notificationsAllowed,
+            NotificationPermissionStatus.notRequested =>
+              l10n.notificationsPermissionNeeded,
+            NotificationPermissionStatus.denied => l10n.notificationsBlocked,
+            NotificationPermissionStatus.unavailable =>
+              l10n.notificationsUnavailable,
+            NotificationPermissionStatus.restricted =>
+              l10n.notificationsRestricted,
           };
           final permissionMessage = switch (permission) {
-            NotificationPermissionStatus.granted => 'This device can deliver your reminder.',
-            NotificationPermissionStatus.notRequested => 'Allow notifications so the app can remind you.',
-            NotificationPermissionStatus.denied => 'Enable notifications in system settings to use reminders.',
-            NotificationPermissionStatus.unavailable => 'Notifications are not available on this device.',
-            NotificationPermissionStatus.restricted => 'Notification delivery is restricted on this device.',
+            NotificationPermissionStatus.granted =>
+              l10n.notificationsDeviceCanDeliver,
+            NotificationPermissionStatus.notRequested =>
+              l10n.notificationsAllowPrompt,
+            NotificationPermissionStatus.denied =>
+              l10n.notificationsEnableInSettings,
+            NotificationPermissionStatus.unavailable =>
+              l10n.notificationsUnavailableDetail,
+            NotificationPermissionStatus.restricted =>
+              l10n.notificationsRestrictedDetail,
           };
           final permissionIcon = switch (permission) {
-            NotificationPermissionStatus.granted => Icons.check_circle_outline_rounded,
-            NotificationPermissionStatus.notRequested => Icons.notifications_active_outlined,
-            NotificationPermissionStatus.denied => Icons.notifications_off_outlined,
-            NotificationPermissionStatus.unavailable => Icons.error_outline_rounded,
-            NotificationPermissionStatus.restricted => Icons.lock_outline_rounded,
+            NotificationPermissionStatus.granted =>
+              Icons.check_circle_outline_rounded,
+            NotificationPermissionStatus.notRequested =>
+              Icons.notifications_active_outlined,
+            NotificationPermissionStatus.denied =>
+              Icons.notifications_off_outlined,
+            NotificationPermissionStatus.unavailable =>
+              Icons.error_outline_rounded,
+            NotificationPermissionStatus.restricted =>
+              Icons.lock_outline_rounded,
           };
           final reminderEnabled = value.enabled && !_working;
           final testEnabled = value.canSendNotifications && !_working;
@@ -134,10 +156,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
-              Text('Daily reminder', style: theme.textTheme.headlineSmall),
+              Text(l10n.notificationsDailyToggle,
+                  style: theme.textTheme.headlineSmall),
               const SizedBox(height: 4),
               Text(
-                'Get one gentle reminder to continue pending Qaza prayers.',
+                l10n.notificationsDailySubtitle,
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -145,13 +168,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 child: SwitchListTile(
                   key: const Key('daily_notification_switch'),
                   value: value.enabled,
-                  title: const Text('Daily Qaza reminder'),
+                  title: Text(l10n.notificationsDailyTitle),
                   subtitle: Text(
                     value.enabled
                         ? value.hasPendingQaza
-                            ? 'On • ${value.formattedTime}'
-                            : 'On • starts when pending Qaza exists'
-                        : 'Off',
+                            ? l10n.notificationsOnAt(value.formattedTime)
+                            : l10n.notificationsOnPendingWait
+                        : l10n.notificationsOff,
                   ),
                   onChanged: _working ? null : _setEnabled,
                 ),
@@ -166,11 +189,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                         ? theme.colorScheme.primary
                         : theme.disabledColor,
                   ),
-                  title: const Text('Reminder time'),
+                  title: Text(l10n.notificationsReminderTime),
                   subtitle: Text(
                     value.enabled
-                        ? 'Every day at ${value.formattedTime}'
-                        : 'Enable the reminder to change the time',
+                        ? l10n.notificationsEveryDayAt(value.formattedTime)
+                        : l10n.notificationsEnableToChangeTime,
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   enabled: reminderEnabled,
@@ -191,8 +214,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                           onPressed: _working ? null : () => _setEnabled(true),
                           child: Text(
                             permission == NotificationPermissionStatus.denied
-                                ? 'Try again'
-                                : 'Allow',
+                                ? l10n.notificationsTryAgain
+                                : l10n.notificationsAllow,
                           ),
                         )
                       : null,
@@ -206,8 +229,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                         ? Icons.notifications_active_outlined
                         : Icons.notifications_none_outlined,
                   ),
-                  title: const Text('Reminder status'),
-                  subtitle: Text(_scheduleText(value)),
+                  title: Text(l10n.notificationsStatusHeading),
+                  subtitle: Text(_scheduleText(l10n, value)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -215,8 +238,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 child: ListTile(
                   key: const Key('test_notification_action'),
                   leading: const Icon(Icons.send_outlined),
-                  title: const Text('Send test notification'),
-                  subtitle: const Text('Send one notification now to check delivery.'),
+                  title: Text(l10n.notificationsSendTest),
+                  subtitle: Text(l10n.notificationsSendTestSubtitle),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   enabled: testEnabled,
                   onTap: testEnabled ? _sendTest : null,
@@ -229,10 +252,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     );
   }
 
-  String _scheduleText(NotificationSettingsState value) {
-    if (!value.enabled) return 'Reminder is off.';
-    if (!value.canSendNotifications) return 'Notification permission is required.';
-    if (!value.hasPendingQaza) return 'No pending Qaza. No reminder is scheduled.';
-    return 'Scheduled daily at ${value.formattedTime}.';
+  String _scheduleText(AppLocalizations l10n, NotificationSettingsState value) {
+    if (!value.enabled) return l10n.notificationsOffStatus;
+    if (!value.canSendNotifications) {
+      return l10n.notificationsPermissionRequired;
+    }
+    if (!value.hasPendingQaza) return l10n.notificationsNoPending;
+    return l10n.notificationsScheduledAt(value.formattedTime);
   }
 }

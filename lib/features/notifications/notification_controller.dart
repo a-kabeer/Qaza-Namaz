@@ -3,7 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../data/notifications/local_notification_service.dart';
-import '../../domain/entities/qaza_record.dart';
+import '../../l10n/app_localizations.dart';
+import '../../domain/entities/qaza_progress.dart';
 
 const _defaultReminderHour = 20;
 const _defaultReminderMinute = 0;
@@ -43,7 +44,8 @@ class NotificationSettingsState {
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
-    if (!canSendNotifications) return NotificationScheduleStatus.permissionRequired;
+    if (!canSendNotifications)
+      return NotificationScheduleStatus.permissionRequired;
     if (!hasPendingQaza) return NotificationScheduleStatus.noPendingQaza;
     return NotificationScheduleStatus.scheduled;
   }
@@ -71,13 +73,30 @@ class NotificationSettingsState {
   }
 }
 
-class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsState> {
+class NotificationSettingsNotifier
+    extends AsyncNotifier<NotificationSettingsState> {
   static const _enabledKey = 'qaza_daily_notification_enabled';
   static const _hourKey = 'qaza_daily_notification_hour';
   static const _minuteKey = 'qaza_daily_notification_minute';
-  static const _permissionRequestedKey = 'qaza_notification_permission_requested';
+  static const _permissionRequestedKey =
+      'qaza_notification_permission_requested';
 
-  NotificationScheduler get _scheduler => ref.read(notificationSchedulerProvider);
+  NotificationScheduler get _scheduler =>
+      ref.read(notificationSchedulerProvider);
+
+  /// Notification text for the language the user has chosen.
+  ///
+  /// The scheduler runs without a widget tree, so the strings are resolved here
+  /// from the same generated resources the UI uses.
+  NotificationContent _content({bool test = false}) {
+    final l10n = lookupAppLocalizations(ref.read(localeProvider));
+    return NotificationContent(
+      title: test ? l10n.notificationTestTitle : l10n.notificationReminderTitle,
+      body: test ? l10n.notificationTestBody : l10n.notificationReminderBody,
+      channelName: l10n.notificationChannelName,
+      channelDescription: l10n.notificationChannelDescription,
+    );
+  }
 
   String _scopedKey(String baseKey) {
     final userId = ref.read(activeUserIdProvider);
@@ -86,17 +105,20 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
 
   @override
   Future<NotificationSettingsState> build() async {
-    ref.listen<AsyncValue<List<QazaRecord>>>(
-      qazaRecordsProvider,
+    ref.listen<AsyncValue<QazaProgressSummary>>(
+      progressSummaryProvider,
       (_, next) => _listenToQazaChanges(next),
     );
 
     await _scheduler.initialize();
     final prefs = await SharedPreferences.getInstance();
-    final requested = prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
+    final requested =
+        prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
     final permissionGranted = await _scheduler.isPermissionGranted();
-    final records = await ref.read(qazaRecordsProvider.future);
-    final hasPendingQaza = records.any((record) => record.status == QazaStatus.pending);
+    // Aggregate-only: reminders need to know whether anything is pending, not
+    // what the pending records are, so this never reads the ledger.
+    final summary = await ref.read(progressSummaryProvider.future);
+    final hasPendingQaza = summary.overall.pending > 0;
 
     final permissionStatus = permissionGranted
         ? NotificationPermissionStatus.granted
@@ -160,7 +182,8 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
     }
 
     try {
-      final granted = current.canSendNotifications || await _scheduler.requestPermission();
+      final granted =
+          current.canSendNotifications || await _scheduler.requestPermission();
       if (!granted) {
         final next = current.copyWith(
           enabled: false,
@@ -204,20 +227,21 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
 
   Future<void> sendTestNotification() async {
     final current = state.valueOrNull;
-    if (current == null) throw StateError('Notification settings are not loaded.');
+    if (current == null)
+      throw StateError('Notification settings are not loaded.');
     if (!current.canSendNotifications) {
       throw StateError('Notification permission is required first.');
     }
-    await _scheduler.showTestNotification();
+    await _scheduler.showTestNotification(_content(test: true));
   }
 
-  void _listenToQazaChanges(AsyncValue<List<QazaRecord>> next) {
-    final records = next.valueOrNull;
+  void _listenToQazaChanges(AsyncValue<QazaProgressSummary> next) {
+    final summary = next.valueOrNull;
     final current = state.valueOrNull;
-    if (records == null || current == null) return;
+    if (summary == null || current == null) return;
 
     final updated = current.copyWith(
-      hasPendingQaza: records.any((record) => record.status == QazaStatus.pending),
+      hasPendingQaza: summary.overall.pending > 0,
     );
     state = AsyncData(updated);
     _reconcile(updated);
@@ -231,7 +255,8 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
         await _scheduler.cancelDaily();
         return;
       case NotificationScheduleStatus.scheduled:
-        await _scheduler.scheduleDaily(hour: value.hour, minute: value.minute);
+        await _scheduler.scheduleDaily(
+            hour: value.hour, minute: value.minute, content: _content());
     }
   }
 
@@ -244,7 +269,8 @@ class NotificationSettingsNotifier extends AsyncNotifier<NotificationSettingsSta
     await prefs.setInt(_scopedKey(_hourKey), value.hour);
     await prefs.setInt(_scopedKey(_minuteKey), value.minute);
     if (permissionRequested != null) {
-      await prefs.setBool(_scopedKey(_permissionRequestedKey), permissionRequested);
+      await prefs.setBool(
+          _scopedKey(_permissionRequestedKey), permissionRequested);
     }
   }
 }
@@ -253,6 +279,7 @@ final notificationSchedulerProvider = Provider<NotificationScheduler>(
   (ref) => LocalNotificationService(),
 );
 
-final notificationSettingsProvider = AsyncNotifierProvider<NotificationSettingsNotifier, NotificationSettingsState>(
+final notificationSettingsProvider = AsyncNotifierProvider<
+    NotificationSettingsNotifier, NotificationSettingsState>(
   NotificationSettingsNotifier.new,
 );

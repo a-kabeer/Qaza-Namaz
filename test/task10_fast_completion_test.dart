@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -32,11 +33,12 @@ Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
           ),
         ),
       ],
-      child: MaterialApp(home: child),
+      child: TestApp(home: child),
     );
 
 void main() {
-  testWidgets('completion immediately advances to the next oldest record', (tester) async {
+  testWidgets('completion immediately advances to the next oldest record',
+      (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
       record(id: 'fajr_old', originalDate: DateTime(2026, 9, 2)),
@@ -51,16 +53,22 @@ void main() {
     await tester.pump();
 
     expect(find.text('10 Sep 2026'), findsOneWidget);
-    expect(find.text('Fajr Qaza completed • next oldest is ready.'), findsOneWidget);
+    expect(find.text('Fajr Qaza completed • next oldest is ready.'),
+        findsOneWidget);
 
     final records = await repository.getRecords(userId: 'test-user');
-    expect(records.singleWhere((r) => r.id == 'fajr_old').status, QazaStatus.completed);
-    expect(records.singleWhere((r) => r.id == 'fajr_next').status, QazaStatus.pending);
+    expect(records.singleWhere((r) => r.id == 'fajr_old').status,
+        QazaStatus.completed);
+    expect(records.singleWhere((r) => r.id == 'fajr_next').status,
+        QazaStatus.pending);
   });
 
-  testWidgets('button becomes unavailable after the final pending record is completed', (tester) async {
+  testWidgets(
+      'button becomes unavailable after the final pending record is completed',
+      (tester) async {
     final repository = InMemoryQazaRepository();
-    await repository.addRecord(record(id: 'fajr_old', originalDate: DateTime(2026, 9, 2)));
+    await repository
+        .addRecord(record(id: 'fajr_old', originalDate: DateTime(2026, 9, 2)));
 
     await tester.pumpWidget(scoped(const CompleteQazaScreen(), repository));
     await tester.pumpAndSettle();

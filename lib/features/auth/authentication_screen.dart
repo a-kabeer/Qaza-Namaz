@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../l10n/app_localizations.dart';
 
 class AuthenticationScreen extends ConsumerStatefulWidget {
   const AuthenticationScreen({super.key});
 
   @override
-  ConsumerState<AuthenticationScreen> createState() => _AuthenticationScreenState();
+  ConsumerState<AuthenticationScreen> createState() =>
+      _AuthenticationScreenState();
 }
 
 class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
@@ -22,7 +24,8 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
     } catch (_) {
-      if (mounted) setState(() => notice = 'Unable to sign in. Please try again.');
+      if (mounted)
+        setState(() => notice = AppLocalizations.of(context).authFailed);
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -31,12 +34,20 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final scheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(onPressed: () => Navigator.maybePop(context), icon: const Icon(Icons.arrow_back_rounded)),
-        title: const Text('Sign in'),
-        actions: [IconButton(onPressed: () => _showHelp(context), tooltip: 'Authentication help', icon: const Icon(Icons.help_outline_rounded))],
+        leading: IconButton(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_rounded)),
+        title: Text(l10n.authTitle),
+        actions: [
+          IconButton(
+              onPressed: () => _showHelp(context),
+              tooltip: l10n.authHelpTooltip,
+              icon: const Icon(Icons.help_outline_rounded))
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -49,24 +60,38 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
                 children: [
                   const _BrandHeader(),
                   const SizedBox(height: 28),
-                  Text('Welcome back', style: theme.textTheme.headlineMedium),
+                  Text(l10n.authWelcomeBack,
+                      style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 6),
-                  Text('Sign in to continue to your Qaza Namaz tracker.', style: theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant, height: 1.45)),
+                  Text(l10n.authSubtitle,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                          color: scheme.onSurfaceVariant, height: 1.45)),
                   const SizedBox(height: 18),
                   if (notice != null) ...[
-                    _Notice(message: notice!, onClose: () => setState(() => notice = null)),
+                    _Notice(
+                        message: notice!,
+                        onClose: () => setState(() => notice = null)),
                     const SizedBox(height: 14),
                   ],
                   SizedBox(
                     height: 52,
                     child: OutlinedButton.icon(
                       onPressed: loading ? null : _google,
-                      icon: loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.g_mobiledata_rounded),
-                      label: Text(loading ? 'Signing in...' : 'Continue with Google'),
+                      icon: loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.g_mobiledata_rounded),
+                      label: Text(loading
+                          ? l10n.authSigningIn
+                          : l10n.authContinueWithGoogle),
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text('Google is the currently connected authentication provider. Sign-in status is restored automatically from Firebase.', textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+                  Text(l10n.authProviderNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall),
                 ],
               ),
             ),
@@ -77,12 +102,13 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   }
 
   void _showHelp(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
-      builder: (_) => const AlertDialog(
-        title: Text('Authentication'),
-        content: Text('Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.'),
-        actions: [CloseButton()],
+      builder: (_) => AlertDialog(
+        title: Text(l10n.authHelpTitle),
+        content: Text(l10n.authHelpBody),
+        actions: const [CloseButton()],
       ),
     );
   }
@@ -95,13 +121,25 @@ class _BrandHeader extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Container(width: 64, height: 64, decoration: BoxDecoration(color: scheme.primary.withOpacity(.10), borderRadius: BorderRadius.circular(18)), child: Icon(Icons.mosque_rounded, size: 36, color: scheme.primary)),
+        Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+                color: scheme.primary.withOpacity(.10),
+                borderRadius: BorderRadius.circular(18)),
+            child: Icon(Icons.mosque_rounded, size: 36, color: scheme.primary)),
         const SizedBox(height: 12),
-        Text('Qaza Namaz', style: Theme.of(context).textTheme.titleLarge),
+        Text(AppLocalizations.of(context).appTitle,
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 2),
-        Text('قضاء نماز', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.secondary)),
+        Text('قضاء نماز',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: scheme.secondary)),
         const SizedBox(height: 2),
-        Text('Spiritual Devotion & Prayer Accountability', style: Theme.of(context).textTheme.bodySmall),
+        Text(AppLocalizations.of(context).welcomeTagline,
+            style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
@@ -116,14 +154,21 @@ class _Notice extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: scheme.errorContainer, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+          color: scheme.errorContainer,
+          borderRadius: BorderRadius.circular(14)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.info_outline_rounded, color: scheme.onErrorContainer),
           const SizedBox(width: 10),
-          Expanded(child: Text(message, style: TextStyle(color: scheme.onErrorContainer))),
-          IconButton(onPressed: onClose, icon: const Icon(Icons.close_rounded), tooltip: 'Dismiss'),
+          Expanded(
+              child: Text(message,
+                  style: TextStyle(color: scheme.onErrorContainer))),
+          IconButton(
+              onPressed: onClose,
+              icon: const Icon(Icons.close_rounded),
+              tooltip: AppLocalizations.of(context).authDismiss),
         ],
       ),
     );

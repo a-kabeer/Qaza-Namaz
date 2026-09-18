@@ -50,6 +50,8 @@ class DriftQazaLocalStore extends QazaLocalStore {
     int limit = 50,
     PrayerType? prayerType,
     QazaStatus? status,
+    DateTime? from,
+    DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
   }) async {
@@ -58,6 +60,8 @@ class DriftQazaLocalStore extends QazaLocalStore {
       limit: limit,
       prayerType: prayerType?.name,
       status: status?.name,
+      from: from,
+      to: to,
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
     );
@@ -89,10 +93,16 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
-  Future<QazaProgressSummary> getProgressSummary({required String userId}) async {
-    final counts = await _database.qazaRecordsDao.getProgressCounts(userId: userId);
-    final pending = <PrayerType, int>{for (final prayer in PrayerType.values) prayer: 0};
-    final completed = <PrayerType, int>{for (final prayer in PrayerType.values) prayer: 0};
+  Future<QazaProgressSummary> getProgressSummary(
+      {required String userId}) async {
+    final counts =
+        await _database.qazaRecordsDao.getProgressCounts(userId: userId);
+    final pending = <PrayerType, int>{
+      for (final prayer in PrayerType.values) prayer: 0
+    };
+    final completed = <PrayerType, int>{
+      for (final prayer in PrayerType.values) prayer: 0
+    };
 
     for (final entry in counts.entries) {
       pending[entry.key] = entry.value[QazaStatus.pending] ?? 0;
@@ -206,8 +216,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
             ? const Value.absent()
             : Value(op.completedAt),
         attempts: Value(op.attempts),
-        lastError: op.lastError == null
-            ? const Value.absent()
-            : Value(op.lastError),
+        lastError:
+            op.lastError == null ? const Value.absent() : Value(op.lastError),
       );
 }

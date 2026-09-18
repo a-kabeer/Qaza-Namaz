@@ -3,13 +3,36 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+/// What the platform layer needs in order to show a notification.
+///
+/// Notification text is resolved by the caller for the active locale and
+/// passed in: the scheduler runs without a widget tree, so it must never
+/// build user-facing strings of its own.
+class NotificationContent {
+  const NotificationContent({
+    required this.title,
+    required this.body,
+    required this.channelName,
+    required this.channelDescription,
+  });
+
+  final String title;
+  final String body;
+  final String channelName;
+  final String channelDescription;
+}
+
 abstract interface class NotificationScheduler {
   Future<void> initialize();
   Future<bool> requestPermission();
   Future<bool> isPermissionGranted();
-  Future<void> scheduleDaily({required int hour, required int minute});
+  Future<void> scheduleDaily({
+    required int hour,
+    required int minute,
+    required NotificationContent content,
+  });
   Future<void> cancelDaily();
-  Future<void> showTestNotification();
+  Future<void> showTestNotification(NotificationContent content);
 }
 
 class LocalNotificationService implements NotificationScheduler {
@@ -73,7 +96,11 @@ class LocalNotificationService implements NotificationScheduler {
   }
 
   @override
-  Future<void> scheduleDaily({required int hour, required int minute}) async {
+  Future<void> scheduleDaily({
+    required int hour,
+    required int minute,
+    required NotificationContent content,
+  }) async {
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
       throw ArgumentError('Invalid reminder time.');
     }
@@ -93,22 +120,12 @@ class LocalNotificationService implements NotificationScheduler {
       next = next.add(const Duration(days: 1));
     }
 
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        _channelId,
-        _channelName,
-        channelDescription: _channelDescription,
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        icon: '@drawable/ic_stat_qaza',
-      ),
-      iOS: DarwinNotificationDetails(),
-    );
+    final details = _detailsFor(content);
 
     await _plugin.zonedSchedule(
       _notificationId,
-      'Qaza Namaz reminder',
-      'Continue your Qaza prayers with consistency.',
+      content.title,
+      content.body,
       next,
       details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -125,24 +142,26 @@ class LocalNotificationService implements NotificationScheduler {
   }
 
   @override
-  Future<void> showTestNotification() async {
+  Future<void> showTestNotification(NotificationContent content) async {
     await initialize();
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        _channelId,
-        _channelName,
-        channelDescription: _channelDescription,
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        icon: '@drawable/ic_stat_qaza',
-      ),
-      iOS: DarwinNotificationDetails(),
-    );
     await _plugin.show(
       _testNotificationId,
-      'Qaza Namaz',
-      'Test notification received successfully.',
-      details,
+      content.title,
+      content.body,
+      _detailsFor(content),
     );
   }
+
+  NotificationDetails _detailsFor(NotificationContent content) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          content.channelName,
+          channelDescription: content.channelDescription,
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          icon: '@drawable/ic_stat_qaza',
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
 }

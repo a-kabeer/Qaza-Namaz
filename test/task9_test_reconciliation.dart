@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -63,7 +64,9 @@ void main() {
       );
     });
 
-    test('maps each ledger state to deterministic primary and secondary actions', () {
+    test(
+        'maps each ledger state to deterministic primary and secondary actions',
+        () {
       expect(
         HomeStateResolver.primaryAction(HomeLedgerState.setupRequired),
         HomePrimaryAction.calculateQaza,
@@ -98,7 +101,8 @@ void main() {
       expect(container.read(calendarControllerProvider).selectedDates, isEmpty);
 
       controller.select(_day(10), isDateSelectable: selectable);
-      expect(container.read(calendarControllerProvider).selectedDates, [_day(10)]);
+      expect(
+          container.read(calendarControllerProvider).selectedDates, [_day(10)]);
     });
 
     test('range mode rejects a range containing an unavailable day', () {
@@ -115,10 +119,12 @@ void main() {
       controller.select(_day(10), isDateSelectable: selectable);
       controller.select(_day(15), isDateSelectable: selectable);
 
-      expect(container.read(calendarControllerProvider).selectedDates, [_day(10)]);
+      expect(
+          container.read(calendarControllerProvider).selectedDates, [_day(10)]);
     });
 
-    test('range mode accepts a fully eligible range and expands it for storage', () {
+    test('range mode accepts a fully eligible range and expands it for storage',
+        () {
       final container = ProviderContainer(
         overrides: [
           calendarTodayProvider.overrideWithValue(_day(30)),
@@ -137,13 +143,14 @@ void main() {
   });
 
   group('Calendar widget', () {
-    testWidgets('disables dates with no remaining eligible prayers', (tester) async {
+    testWidgets('disables dates with no remaining eligible prayers',
+        (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             calendarTodayProvider.overrideWithValue(_day(17)),
           ],
-          child: MaterialApp(
+          child: TestApp(
             home: CalendarPicker(
               availablePrayersByDate: {
                 _day(10): {PrayerType.fajr},
@@ -196,7 +203,7 @@ void main() {
               qazaRepositoryProvider.overrideWithValue(guardedRepository),
               activeUserIdProvider.overrideWithValue('test-user'),
             ],
-            child: const MaterialApp(home: CompleteQazaScreen()),
+            child: const TestApp(home: CompleteQazaScreen()),
           ),
         );
         await tester.pumpAndSettle();
@@ -205,11 +212,14 @@ void main() {
           tester.element(find.byType(CompleteQazaScreen)),
         ).formatMediumDate(DateTime(2026, 1, 1));
         expect(find.text(localizedDate), findsOneWidget);
-        expect(find.byKey(const Key('complete_oldest_pending')), findsOneWidget);
         expect(
-          tester.widget<AppButton>(
-            find.byKey(const Key('complete_oldest_pending')),
-          ).onPressed,
+            find.byKey(const Key('complete_oldest_pending')), findsOneWidget);
+        expect(
+          tester
+              .widget<AppButton>(
+                find.byKey(const Key('complete_oldest_pending')),
+              )
+              .onPressed,
           isNotNull,
         );
         expect(fullLedgerReads, 0);
@@ -257,13 +267,18 @@ class _NoFullLedgerRepository extends InMemoryQazaRepository {
     int limit = 50,
     PrayerType? prayerType,
     QazaStatus? status,
+    DateTime? from,
+    DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
-  }) => delegate.getPage(
+  }) =>
+      delegate.getPage(
         userId: userId,
         limit: limit,
         prayerType: prayerType,
         status: status,
+        from: from,
+        to: to,
         afterOriginalDate: afterOriginalDate,
         afterId: afterId,
       );
@@ -272,7 +287,8 @@ class _NoFullLedgerRepository extends InMemoryQazaRepository {
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
-  }) => delegate.getOldestPending(userId: userId, prayerType: prayerType);
+  }) =>
+      delegate.getOldestPending(userId: userId, prayerType: prayerType);
 
   @override
   Future<QazaHistoryPage> getHistoryPage({
@@ -284,7 +300,8 @@ class _NoFullLedgerRepository extends InMemoryQazaRepository {
     DateTime? to,
     DateTime? beforeOriginalDate,
     String? beforeId,
-  }) => delegate.getHistoryPage(
+  }) =>
+      delegate.getHistoryPage(
         userId: userId,
         limit: limit,
         prayerType: prayerType,
@@ -303,14 +320,16 @@ class _NoFullLedgerRepository extends InMemoryQazaRepository {
   Future<void> addRecord(QazaRecord record) => delegate.addRecord(record);
 
   @override
-  Future<void> addRecords(List<QazaRecord> records) => delegate.addRecords(records);
+  Future<void> addRecords(List<QazaRecord> records) =>
+      delegate.addRecords(records);
 
   @override
   Future<void> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
-  }) => delegate.completeRecord(
+  }) =>
+      delegate.completeRecord(
         userId: userId,
         recordId: recordId,
         completedAt: completedAt,
@@ -321,7 +340,8 @@ class _NoFullLedgerRepository extends InMemoryQazaRepository {
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
-  }) => delegate.completeRecords(
+  }) =>
+      delegate.completeRecords(
         userId: userId,
         recordIds: recordIds,
         completedAt: completedAt,

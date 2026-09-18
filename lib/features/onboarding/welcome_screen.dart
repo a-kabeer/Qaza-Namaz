@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({required this.onGetStarted, super.key});
   final VoidCallback onGetStarted;
@@ -24,22 +26,47 @@ class WelcomeScreen extends StatelessWidget {
                       color: scheme.primary.withOpacity(.10),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: Icon(Icons.mosque_rounded, size: 46, color: scheme.primary),
+                    child: Icon(Icons.mosque_rounded,
+                        size: 46, color: scheme.primary),
                   ),
                   const SizedBox(height: 20),
-                  Text('Qaza Namaz', style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+                  Text(AppLocalizations.of(context).appTitle,
+                      style: Theme.of(context).textTheme.headlineLarge,
+                      textAlign: TextAlign.center),
                   const SizedBox(height: 4),
-                  Text('قضاء نماز', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: scheme.secondary)),
+                  Text('قضاء نماز',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(color: scheme.secondary)),
                   const SizedBox(height: 28),
-                  Text('Track your missed prayers with clarity and consistency.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(height: 1.25)),
+                  Text(AppLocalizations.of(context).welcomeHeadline,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(height: 1.25)),
                   const SizedBox(height: 12),
-                  Text('Record, complete, and keep track of your Qaza Namaz — one prayer at a time.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant, height: 1.5)),
+                  Text(AppLocalizations.of(context).welcomeBody,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: scheme.onSurfaceVariant, height: 1.5)),
                   const SizedBox(height: 36),
-                  SizedBox(width: double.infinity, height: 52, child: FilledButton.icon(onPressed: onGetStarted, icon: const Icon(Icons.arrow_forward_rounded), label: const Text('Get Started'))),
+                  SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                          onPressed: onGetStarted,
+                          icon: const Icon(Icons.arrow_forward_rounded),
+                          label: Text(
+                              AppLocalizations.of(context).welcomeGetStarted))),
                   const SizedBox(height: 8),
-                  TextButton(onPressed: onGetStarted, child: const Text('Already have an account? Sign In')),
+                  TextButton(
+                      onPressed: onGetStarted,
+                      child: Text(AppLocalizations.of(context).welcomeSignIn)),
                   const SizedBox(height: 18),
-                  Text('Spiritual Devotion & Prayer Accountability', style: Theme.of(context).textTheme.bodySmall),
+                  Text(AppLocalizations.of(context).welcomeTagline,
+                      style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),

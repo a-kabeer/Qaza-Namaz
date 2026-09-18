@@ -142,4 +142,62 @@ void main() {
     expect(analysis.newCount, 1);
     expect(analysis.newCandidates.single.prayerType, PrayerType.asr);
   });
+
+  test('completed records are counted as already completed, not recorded', () {
+    final records = [
+      _record(
+        prayer: PrayerType.fajr,
+        date: DateTime(2024, 1, 1),
+        status: QazaStatus.completed,
+      ),
+      _record(prayer: PrayerType.zuhr, date: DateTime(2024, 1, 1)),
+    ];
+    final analysis = service.analyze(
+      userId: 'u1',
+      dates: [DateTime(2024, 1, 1)],
+      prayerTypes: [PrayerType.fajr, PrayerType.zuhr, PrayerType.asr],
+      existingRecords: records,
+    );
+    expect(analysis.requestedCount, 3);
+    expect(analysis.alreadyCompleted, 1);
+    expect(analysis.alreadyRecorded, 1);
+    expect(analysis.newCount, 1);
+    expect(analysis.existingCandidates.length, 2);
+    expect(analysis.newCandidates.single.prayerType, PrayerType.asr);
+  });
+
+  test('eligibility reports a completed record as already prayed', () {
+    final records = [
+      _record(
+        prayer: PrayerType.fajr,
+        date: DateTime(2024, 1, 1),
+        status: QazaStatus.completed,
+      ),
+    ];
+    expect(
+      service.eligibility(
+        userId: 'u1',
+        date: DateTime(2024, 1, 1),
+        prayerType: PrayerType.fajr,
+        existingRecords: records,
+      ),
+      QazaEligibility.alreadyPrayed,
+    );
+  });
+
+  test('blocked dates are the dates with no eligible prayer left', () {
+    final records = [
+      for (final prayer in PrayerType.values)
+        _record(prayer: prayer, date: DateTime(2024, 1, 1)),
+      _record(prayer: PrayerType.fajr, date: DateTime(2024, 1, 2)),
+    ];
+    final analysis = service.analyze(
+      userId: 'u1',
+      dates: [DateTime(2024, 1, 1), DateTime(2024, 1, 2), DateTime(2024, 1, 3)],
+      prayerTypes: PrayerType.values,
+      existingRecords: records,
+    );
+    expect(analysis.blockedDateCount, 1);
+    expect(analysis.newCount, 5 + 6);
+  });
 }

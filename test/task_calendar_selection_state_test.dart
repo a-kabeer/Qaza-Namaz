@@ -87,7 +87,7 @@ void main() {
     expect(scope.read(calendarControllerProvider).hasSelection, isFalse);
   });
 
-  test('changing selection mode clears previous selection', () {
+  test('changing selection mode preserves dates that remain valid', () {
     final scope = container();
     addTearDown(scope.dispose);
     final controller = scope.read(calendarControllerProvider.notifier);
@@ -97,6 +97,77 @@ void main() {
 
     final state = scope.read(calendarControllerProvider);
     expect(state.selectionMode, DateSelectionMode.range);
-    expect(state.selectedDates, isEmpty);
+    expect(state.selectedDates, [DateTime(2027, 1, 10)]);
+    expect(state.datesForStorage, [DateTime(2027, 1, 10)]);
+  });
+
+  test('switching to single keeps the latest selected date', () {
+    final scope = container();
+    addTearDown(scope.dispose);
+    final controller = scope.read(calendarControllerProvider.notifier);
+
+    controller.setSelectionMode(DateSelectionMode.multiple);
+    controller.select(DateTime(2027, 1, 8));
+    controller.select(DateTime(2027, 1, 12));
+    controller.select(DateTime(2027, 1, 10));
+    controller.setSelectionMode(DateSelectionMode.single);
+
+    // Selections are canonically sorted, so the latest calendar date survives.
+    expect(scope.read(calendarControllerProvider).selectedDates, [
+      DateTime(2027, 1, 12),
+    ]);
+  });
+
+  test('switching to range collapses multiple dates to its endpoints', () {
+    final scope = container();
+    addTearDown(scope.dispose);
+    final controller = scope.read(calendarControllerProvider.notifier);
+
+    controller.setSelectionMode(DateSelectionMode.multiple);
+    controller.select(DateTime(2027, 1, 8));
+    controller.select(DateTime(2027, 1, 10));
+    controller.select(DateTime(2027, 1, 12));
+    controller.setSelectionMode(DateSelectionMode.range);
+
+    final state = scope.read(calendarControllerProvider);
+    expect(state.selectedDates, [DateTime(2027, 1, 8), DateTime(2027, 1, 12)]);
+    expect(state.isRangeComplete, isTrue);
+    expect(state.datesForStorage, [
+      DateTime(2027, 1, 8),
+      DateTime(2027, 1, 9),
+      DateTime(2027, 1, 10),
+      DateTime(2027, 1, 11),
+      DateTime(2027, 1, 12),
+    ]);
+  });
+
+  test('switching to multiple keeps every selected date', () {
+    final scope = container();
+    addTearDown(scope.dispose);
+    final controller = scope.read(calendarControllerProvider.notifier);
+
+    controller.setSelectionMode(DateSelectionMode.range);
+    controller.select(DateTime(2027, 1, 8));
+    controller.select(DateTime(2027, 1, 10));
+    controller.setSelectionMode(DateSelectionMode.multiple);
+
+    final state = scope.read(calendarControllerProvider);
+    expect(state.selectedDates, [DateTime(2027, 1, 8), DateTime(2027, 1, 10)]);
+    expect(state.selectedCount, 2);
+  });
+
+  test('re-tapping the range anchor does not collapse into a same-day range',
+      () {
+    final scope = container();
+    addTearDown(scope.dispose);
+    final controller = scope.read(calendarControllerProvider.notifier);
+
+    controller.setSelectionMode(DateSelectionMode.range);
+    controller.select(DateTime(2027, 1, 10));
+    controller.select(DateTime(2027, 1, 10));
+
+    final state = scope.read(calendarControllerProvider);
+    expect(state.selectedDates, [DateTime(2027, 1, 10)]);
+    expect(state.isRangeComplete, isFalse);
   });
 }

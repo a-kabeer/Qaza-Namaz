@@ -7,7 +7,8 @@ final calendarTodayProvider = Provider<DateTime>((ref) {
 
 enum DateSelectionMode { single, range, multiple }
 
-DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
 
 class CalendarSelectionState {
   const CalendarSelectionState({
@@ -59,17 +60,40 @@ class CalendarSelectionState {
 }
 
 final calendarControllerProvider =
-    NotifierProvider<CalendarController, CalendarSelectionState>(CalendarController.new);
+    NotifierProvider<CalendarController, CalendarSelectionState>(
+        CalendarController.new);
 
 class CalendarController extends Notifier<CalendarSelectionState> {
   @override
   CalendarSelectionState build() => const CalendarSelectionState();
 
   void setSelectionMode(DateSelectionMode mode) {
-    state = state.copyWith(selectionMode: mode, selectedDates: const []);
+    if (mode == state.selectionMode) return;
+    // Add Qaza merges the mode selector and the calendar onto one step, so
+    // users may switch modes after selecting dates. Keep the dates that remain
+    // valid under the new mode instead of discarding the selection.
+    state = state.copyWith(
+      selectionMode: mode,
+      selectedDates: _preserveAcrossModeChange(mode, state.selectedDates),
+    );
   }
 
-  void select(DateTime value, {bool Function(DateTime date)? isDateSelectable}) {
+  static List<DateTime> _preserveAcrossModeChange(
+    DateSelectionMode mode,
+    List<DateTime> dates,
+  ) {
+    if (dates.isEmpty) return const <DateTime>[];
+    // dates are canonically sorted; `.last` is the most recent calendar date.
+    return switch (mode) {
+      DateSelectionMode.single => [dates.last],
+      DateSelectionMode.range =>
+        dates.length == 1 ? dates : [dates.first, dates.last],
+      DateSelectionMode.multiple => dates,
+    };
+  }
+
+  void select(DateTime value,
+      {bool Function(DateTime date)? isDateSelectable}) {
     final date = _dateOnly(value);
     if (date.isAfter(ref.read(calendarTodayProvider))) return;
     final isSelectable = isDateSelectable ?? (_) => true;
@@ -86,6 +110,10 @@ class CalendarController extends Notifier<CalendarSelectionState> {
         final start = state.startDate;
         if (start == null || state.isRangeComplete || date.isBefore(start)) {
           state = state.copyWith(selectedDates: [date]);
+        } else if (date == start) {
+          // Re-tapping the pending anchor must not collapse into a same-day
+          // range; the anchor stays pending until a different end is chosen.
+          return;
         } else {
           final end = date;
           for (var cursor = start;

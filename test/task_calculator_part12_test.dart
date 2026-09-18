@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/test_app.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/features/calculator/calculator_persistence.dart';
@@ -35,13 +37,15 @@ void main() {
 
       expect(result.dailyPrayerCount, 5);
       expect(result.prayerBreakdown.keys.length, 5);
-      expect(result.prayerBreakdown.keys, containsAll(<PrayerType>[
-        PrayerType.fajr,
-        PrayerType.zuhr,
-        PrayerType.asr,
-        PrayerType.maghrib,
-        PrayerType.isha,
-      ]));
+      expect(
+          result.prayerBreakdown.keys,
+          containsAll(<PrayerType>[
+            PrayerType.fajr,
+            PrayerType.zuhr,
+            PrayerType.asr,
+            PrayerType.maghrib,
+            PrayerType.isha,
+          ]));
       expect(result.prayerBreakdown.keys, isNot(contains(PrayerType.witr)));
       expect(result.totalPrayers, 50);
       expect(result.witrCount, 10);
@@ -63,7 +67,8 @@ void main() {
       expect(trackerRecordCount(result), result.totalPrayers);
     });
 
-    test('validation accepts same-day boundaries and rejects invalid ordering', () {
+    test('validation accepts same-day boundaries and rejects invalid ordering',
+        () {
       final valid = validateCalculatorDates(
         today: DateTime(2026, 9, 16),
         dob: DateTime(2010, 9, 16),
@@ -86,7 +91,9 @@ void main() {
   group('calculator persistence regression', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    test('round trip retains the minimum calculator state needed to rebuild a result', () async {
+    test(
+        'round trip retains the minimum calculator state needed to rebuild a result',
+        () async {
       final prefs = await SharedPreferences.getInstance();
       const persistence = CalculatorPersistence();
       const snapshot = CalculatorSnapshot(
@@ -103,8 +110,10 @@ void main() {
         keptAsEstimate: false,
       );
 
-      await persistence.save(snapshot, userId: 'regression-user', preferences: prefs);
-      final restored = await persistence.load(userId: 'regression-user', preferences: prefs);
+      await persistence.save(snapshot,
+          userId: 'regression-user', preferences: prefs);
+      final restored =
+          await persistence.load(userId: 'regression-user', preferences: prefs);
 
       expect(restored?.step, 2);
       expect(restored?.includeWitr, isTrue);
@@ -112,8 +121,11 @@ void main() {
     });
   });
 
-  testWidgets('calculator remains a single three-step surface after full-flow regression', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: CalculatorScreen()));
+  testWidgets(
+      'calculator remains a single three-step surface after full-flow regression',
+      (tester) async {
+    await tester.pumpWidget(
+        const ProviderScope(child: TestApp(home: CalculatorScreen())));
     await tester.pumpAndSettle();
 
     expect(find.text('About You'), findsOneWidget);
@@ -121,7 +133,8 @@ void main() {
     expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(find.text('Result'), findsOneWidget);
     expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
-    expect(find.byKey(const Key('calculator_edit_prayer_history')), findsOneWidget);
+    expect(find.byKey(const Key('calculator_edit_prayer_history')),
+        findsOneWidget);
     expect(find.byType(Scaffold), findsOneWidget);
   });
 }

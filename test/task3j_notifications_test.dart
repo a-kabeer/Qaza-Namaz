@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,8 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/notifications/local_notification_service.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/notifications/notification_controller.dart';
+import 'package:qaza_namaz/l10n/app_localizations_en.dart';
+import 'package:qaza_namaz/l10n/app_localizations_ur.dart';
 
 class _FakeScheduler implements NotificationScheduler {
   int initializeCalls = 0;
@@ -35,31 +39,39 @@ class _FakeScheduler implements NotificationScheduler {
     return permissionGrantedForStatus;
   }
 
+  NotificationContent? lastContent;
+  NotificationContent? lastTestContent;
+
   @override
-  Future<void> scheduleDaily({required int hour, required int minute}) async {
+  Future<void> scheduleDaily({
+    required int hour,
+    required int minute,
+    required NotificationContent content,
+  }) async {
     scheduleCalls++;
     lastHour = hour;
     lastMinute = minute;
+    lastContent = content;
   }
 
   @override
   Future<void> cancelDaily() async => cancelCalls++;
 
   @override
-  Future<void> showTestNotification() async => testCalls++;
+  Future<void> showTestNotification(NotificationContent content) async {
+    testCalls++;
+    lastTestContent = content;
+  }
 }
 
-class _FakeQazaRecordsNotifier extends QazaRecordsNotifier {
-  _FakeQazaRecordsNotifier(this.records);
+/// Backs the aggregate summary the notification controller reads. Reminders
+/// only need to know whether anything is pending, so the test supplies records
+/// and lets the production aggregate derive the counts.
+class _FakeLedger {
+  _FakeLedger(this.records);
   List<QazaRecord> records;
 
-  @override
-  Future<List<QazaRecord>> build() async => records;
-
-  void setRecords(List<QazaRecord> next) {
-    records = next;
-    state = AsyncData(next);
-  }
+  QazaProgressSummary get summary => QazaProgressSummary.fromRecords(records);
 }
 
 QazaRecord _pendingRecord() {
@@ -79,18 +91,19 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  late _FakeLedger ledger;
+
   ProviderContainer createContainer(
     _FakeScheduler scheduler, {
     List<QazaRecord> records = const <QazaRecord>[],
     String userId = 'test-user',
   }) {
+    ledger = _FakeLedger(records);
     final container = ProviderContainer(
       overrides: [
         notificationSchedulerProvider.overrideWithValue(scheduler),
         activeUserIdProvider.overrideWithValue(userId),
-        qazaRecordsProvider.overrideWith(
-          () => _FakeQazaRecordsNotifier(records),
-        ),
+        progressSummaryProvider.overrideWith((ref) async => ledger.summary),
       ],
     );
     addTearDown(container.dispose);
@@ -112,7 +125,8 @@ void main() {
     expect(scheduler.cancelCalls, 1);
   });
 
-  test('restores enabled reminder and reconciles the daily schedule on startup', () async {
+  test('restores enabled reminder and reconciles the daily schedule on startup',
+      () async {
     SharedPreferences.setMockInitialValues({
       'qaza_daily_notification_enabled:restore-user': true,
       'qaza_daily_notification_hour:restore-user': 6,
@@ -137,7 +151,9 @@ void main() {
     expect(scheduler.lastMinute, 30);
   });
 
-  test('startup reconciliation cancels a restored reminder when there is no pending Qaza', () async {
+  test(
+      'startup reconciliation cancels a restored reminder when there is no pending Qaza',
+      () async {
     SharedPreferences.setMockInitialValues({
       'qaza_daily_notification_enabled:restore-user': true,
       'qaza_daily_notification_hour:restore-user': 6,
@@ -154,7 +170,9 @@ void main() {
     expect(scheduler.cancelCalls, 1);
   });
 
-  test('permission revoked at runtime cancels the daily reminder without changing saved preference', () async {
+  test(
+      'permission revoked at runtime cancels the daily reminder without changing saved preference',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -173,7 +191,9 @@ void main() {
     expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
   });
 
-  test('state derives schedule status from enablement, permission and pending Qaza', () async {
+  test(
+      'state derives schedule status from enablement, permission and pending Qaza',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -187,7 +207,9 @@ void main() {
     expect(state.scheduleStatus, NotificationScheduleStatus.scheduled);
   });
 
-  test('enabling with pending Qaza requests permission and schedules one daily reminder', () async {
+  test(
+      'enabling with pending Qaza requests permission and schedules one daily reminder',
+      () async {
     final scheduler = _FakeScheduler()..permissionGrantedForStatus = false;
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -200,7 +222,8 @@ void main() {
     expect(scheduler.lastMinute, 0);
   });
 
-  test('enabled reminder does not schedule when there is no pending Qaza', () async {
+  test('enabled reminder does not schedule when there is no pending Qaza',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -218,30 +241,42 @@ void main() {
     await container.read(notificationSettingsProvider.future);
 
     await notifier.setEnabled(true);
-    final recordsNotifier =
-        container.read(qazaRecordsProvider.notifier) as _FakeQazaRecordsNotifier;
 
-    recordsNotifier.setRecords([_pendingRecord()]);
+    ledger.records = [_pendingRecord()];
+    container.invalidate(progressSummaryProvider);
     await Future<void>.delayed(Duration.zero);
     expect(scheduler.scheduleCalls, 1);
-    expect(container.read(notificationSettingsProvider).requireValue.hasPendingQaza, isTrue);
+    expect(
+        container
+            .read(notificationSettingsProvider)
+            .requireValue
+            .hasPendingQaza,
+        isTrue);
     expect(
       container.read(notificationSettingsProvider).requireValue.scheduleStatus,
       NotificationScheduleStatus.scheduled,
     );
 
     final cancelCallsBeforeRemoval = scheduler.cancelCalls;
-    recordsNotifier.setRecords(const <QazaRecord>[]);
+    ledger.records = const <QazaRecord>[];
+    container.invalidate(progressSummaryProvider);
     await Future<void>.delayed(Duration.zero);
     expect(scheduler.cancelCalls, greaterThan(cancelCallsBeforeRemoval));
-    expect(container.read(notificationSettingsProvider).requireValue.hasPendingQaza, isFalse);
+    expect(
+        container
+            .read(notificationSettingsProvider)
+            .requireValue
+            .hasPendingQaza,
+        isFalse);
     expect(
       container.read(notificationSettingsProvider).requireValue.scheduleStatus,
       NotificationScheduleStatus.noPendingQaza,
     );
   });
 
-  test('changing reminder time reschedules with the selected time when pending exists', () async {
+  test(
+      'changing reminder time reschedules with the selected time when pending exists',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -286,7 +321,8 @@ void main() {
     expect(() => notifier.setTime(20, 60), throwsArgumentError);
   });
 
-  test('disabling cancels the daily reminder and preserves the selected time', () async {
+  test('disabling cancels the daily reminder and preserves the selected time',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -322,7 +358,9 @@ void main() {
     expect(scheduler.scheduleCalls, 0);
   });
 
-  test('test notification requires permission and delegates without changing daily schedule', () async {
+  test(
+      'test notification requires permission and delegates without changing daily schedule',
+      () async {
     final scheduler = _FakeScheduler();
     final container = createContainer(scheduler, records: [_pendingRecord()]);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -336,7 +374,8 @@ void main() {
     expect(scheduler.scheduleCalls, dailyScheduleCallsBeforeTest);
   });
 
-  test('test notification is rejected when permission is unavailable', () async {
+  test('test notification is rejected when permission is unavailable',
+      () async {
     final scheduler = _FakeScheduler()..permissionGrantedForStatus = false;
     final container = createContainer(scheduler);
     final notifier = container.read(notificationSettingsProvider.notifier);
@@ -346,7 +385,8 @@ void main() {
     expect(scheduler.testCalls, 0);
   });
 
-  test('settings restore enabled state and selected time for the same account', () async {
+  test('settings restore enabled state and selected time for the same account',
+      () async {
     final firstScheduler = _FakeScheduler();
     final first = createContainer(
       firstScheduler,
@@ -368,6 +408,43 @@ void main() {
     expect(restored.enabled, isTrue);
     expect(restored.hour, 6);
     expect(restored.minute, 30);
+  });
+
+  test('reminder text follows the selected language', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    await container.read(notificationSettingsProvider.future);
+    await container
+        .read(notificationSettingsProvider.notifier)
+        .setEnabled(true);
+
+    final english = scheduler.lastContent;
+    expect(english, isNotNull);
+    expect(english!.title, AppLocalizationsEn().notificationReminderTitle);
+
+    container.read(localeProvider.notifier).set(const Locale('ur'));
+    await container.read(notificationSettingsProvider.notifier).setTime(7, 15);
+
+    final urdu = scheduler.lastContent;
+    expect(urdu!.title, AppLocalizationsUr().notificationReminderTitle);
+    expect(urdu.title, isNot(english.title));
+    expect(urdu.channelDescription,
+        AppLocalizationsUr().notificationChannelDescription);
+  });
+
+  test('the test notification is localized too', () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler, records: [_pendingRecord()]);
+    await container.read(notificationSettingsProvider.future);
+
+    container.read(localeProvider.notifier).set(const Locale('ur'));
+    await container
+        .read(notificationSettingsProvider.notifier)
+        .sendTestNotification();
+
+    expect(scheduler.testCalls, 1);
+    expect(scheduler.lastTestContent!.body,
+        AppLocalizationsUr().notificationTestBody);
   });
 
   test('notification settings are isolated between accounts', () async {

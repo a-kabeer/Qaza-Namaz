@@ -17,6 +17,7 @@ import '../../core/widgets/progress_overview_card.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../l10n/app_localizations.dart';
 import '../sync/sync_status_bar.dart';
 import 'history_logs_controller.dart';
 
@@ -24,7 +25,8 @@ class HistoryProgressScreen extends ConsumerStatefulWidget {
   const HistoryProgressScreen({super.key});
 
   @override
-  ConsumerState<HistoryProgressScreen> createState() => _HistoryProgressScreenState();
+  ConsumerState<HistoryProgressScreen> createState() =>
+      _HistoryProgressScreenState();
 }
 
 class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
@@ -59,7 +61,9 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load more history: $error')),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context).logsLoadMoreError('$error'))),
       );
     }
   }
@@ -91,12 +95,13 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       initialDateRange: _originalDateFilter,
-      helpText: 'Filter by original Qaza date',
+      helpText: AppLocalizations.of(context).logsFilterDate,
     );
     if (selected == null) return;
 
     final normalized = DateTimeRange(
-      start: DateTime(selected.start.year, selected.start.month, selected.start.day),
+      start: DateTime(
+          selected.start.year, selected.start.month, selected.start.day),
       end: DateTime(selected.end.year, selected.end.month, selected.end.day),
     );
     setState(() => _originalDateFilter = normalized);
@@ -140,20 +145,22 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       _statusFilter = null;
       _originalDateFilter = null;
     });
-    unawaited(_applyFilters(prayer: null, status: null, rangeStart: null, rangeEnd: null));
+    unawaited(_applyFilters(
+        prayer: null, status: null, rangeStart: null, rangeEnd: null));
   }
 
-  String _dateFilterLabel() {
+  String _dateFilterLabel(AppLocalizations l10n) {
     final range = _originalDateFilter;
-    if (range == null) return 'Original Qaza date';
+    if (range == null) return l10n.logsOriginalDateLabel;
     return '${formatAppDate(range.start)} – ${formatAppDate(range.end)}';
   }
 
-  Widget _progressSection(ThemeData theme, AsyncValue<QazaProgressSummary> progressAsync) {
+  Widget _progressSection(
+      ThemeData theme, AsyncValue<QazaProgressSummary> progressAsync) {
     final summary = progressAsync.valueOrNull;
     if (progressAsync.hasError && summary == null) {
       return _InlineError(
-        message: 'We could not load the progress summary.',
+        message: AppLocalizations.of(context).logsProgressError,
         onRetry: () => ref.invalidate(historyProgressProvider),
       );
     }
@@ -169,10 +176,12 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
       children: [
         ProgressOverviewCard(
           progress: summary.overall,
-          header: Text('Your progress', style: theme.textTheme.titleLarge),
+          header: Text(AppLocalizations.of(context).logsProgressTitle,
+              style: theme.textTheme.titleLarge),
         ),
         const SizedBox(height: 18),
-        Text('Prayer progress', style: theme.textTheme.titleLarge),
+        Text(AppLocalizations.of(context).logsPrayerProgressTitle,
+            style: theme.textTheme.titleLarge),
         const SizedBox(height: 10),
         for (final prayer in PrayerType.values)
           _PrayerProgressTile(progress: summary.byPrayer[prayer]),
@@ -183,19 +192,22 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final history = ref.watch(historyLogsProvider);
     final progressAsync = ref.watch(historyProgressProvider);
     final records = history.valueOrNull ?? const <QazaRecord>[];
     final notifier = ref.read(historyLogsProvider.notifier);
-    final hasFilters = _prayerFilter != null || _statusFilter != null || _originalDateFilter != null;
+    final hasFilters = _prayerFilter != null ||
+        _statusFilter != null ||
+        _originalDateFilter != null;
     final showRecordSliver = history.hasValue && records.isNotEmpty;
     final showPaginationFooter = notifier.hasMore || notifier.isLoadingMore;
 
     return AppScaffold(
-      title: 'Logs & Progress',
+      title: l10n.logsTitle,
       actions: [
         IconButton(
-          tooltip: 'Refresh logs',
+          tooltip: l10n.logsRefresh,
           onPressed: history.isLoading ? null : _refresh,
           icon: const Icon(Icons.sync_rounded),
         ),
@@ -212,20 +224,22 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                 delegate: SliverChildListDelegate([
                   const SyncStatusBar(),
                   if (history.isLoading && !history.hasValue)
-                    const LoadingState(message: 'Loading your history...', padding: 60)
+                    LoadingState(message: l10n.logsLoading, padding: 60)
                   else if (history.hasError && !history.hasValue)
-                    ErrorState(message: 'We could not load your history.', onRetry: _refresh)
+                    ErrorState(message: l10n.logsLoadError, onRetry: _refresh)
                   else ...[
                     if (history.hasError && history.hasValue)
                       _InlineError(
-                        message: 'We could not refresh the latest history.',
+                        message: l10n.logsRefreshError,
                         onRetry: _refresh,
                       ),
                     _progressSection(theme, progressAsync),
                     const SizedBox(height: 18),
                     Row(
                       children: [
-                        Expanded(child: Text('Qaza logs', style: theme.textTheme.titleLarge)),
+                        Expanded(
+                            child: Text(l10n.logsSectionTitle,
+                                style: theme.textTheme.titleLarge)),
                         Text(
                           '${records.length}${notifier.hasMore ? '+' : ''}',
                           key: const Key('history_result_count'),
@@ -246,14 +260,19 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                                     key: const Key('history_prayer_filter'),
                                     value: _prayerFilter,
                                     isExpanded: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Prayer',
-                                      prefixIcon: Icon(Icons.mosque_rounded),
+                                    decoration: InputDecoration(
+                                      labelText: l10n.logsFilterPrayer,
+                                      prefixIcon:
+                                          const Icon(Icons.mosque_rounded),
                                     ),
                                     items: [
-                                      const DropdownMenuItem<PrayerType?>(value: null, child: Text('All prayers')),
+                                      DropdownMenuItem<PrayerType?>(
+                                          value: null,
+                                          child:
+                                              Text(l10n.logsFilterAllPrayers)),
                                       ...PrayerType.values.map(
-                                        (prayer) => DropdownMenuItem<PrayerType?>(
+                                        (prayer) =>
+                                            DropdownMenuItem<PrayerType?>(
                                           value: prayer,
                                           child: Text(prayer.label),
                                         ),
@@ -268,14 +287,21 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                                     key: const Key('history_status_filter'),
                                     value: _statusFilter,
                                     isExpanded: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Status',
-                                      prefixIcon: Icon(Icons.filter_alt_rounded),
+                                    decoration: InputDecoration(
+                                      labelText: l10n.logsFilterStatus,
+                                      prefixIcon:
+                                          const Icon(Icons.filter_alt_rounded),
                                     ),
-                                    items: const [
-                                      DropdownMenuItem<QazaStatus?>(value: null, child: Text('All')),
-                                      DropdownMenuItem<QazaStatus?>(value: QazaStatus.pending, child: Text('Pending')),
-                                      DropdownMenuItem<QazaStatus?>(value: QazaStatus.completed, child: Text('Completed')),
+                                    items: [
+                                      DropdownMenuItem<QazaStatus?>(
+                                          value: null,
+                                          child: Text(l10n.filterAll)),
+                                      DropdownMenuItem<QazaStatus?>(
+                                          value: QazaStatus.pending,
+                                          child: Text(l10n.statusPending)),
+                                      DropdownMenuItem<QazaStatus?>(
+                                          value: QazaStatus.completed,
+                                          child: Text(l10n.statusCompleted)),
                                     ],
                                     onChanged: _setStatusFilter,
                                   ),
@@ -290,14 +316,14 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                                     key: const Key('history_date_filter'),
                                     onPressed: _pickOriginalDateRange,
                                     icon: const Icon(Icons.date_range_rounded),
-                                    label: Text(_dateFilterLabel()),
+                                    label: Text(_dateFilterLabel(l10n)),
                                   ),
                                 ),
                                 if (hasFilters) ...[
                                   const SizedBox(width: 8),
                                   IconButton(
                                     key: const Key('history_clear_filters'),
-                                    tooltip: 'Clear filters',
+                                    tooltip: l10n.logsClearFilters,
                                     onPressed: _clearFilters,
                                     icon: const Icon(Icons.clear_rounded),
                                   ),
@@ -308,7 +334,7 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                'Newest original Qaza dates first • loads 50 at a time',
+                                l10n.logsOrderNote,
                                 style: theme.textTheme.bodySmall,
                               ),
                             ),
@@ -319,11 +345,15 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                     const SizedBox(height: 10),
                     if (history.hasValue && records.isEmpty)
                       EmptyState(
-                        icon: hasFilters ? Icons.filter_alt_off_rounded : Icons.history_toggle_off_rounded,
-                        title: hasFilters ? 'No matching Qaza records.' : 'No Qaza records yet.',
+                        icon: hasFilters
+                            ? Icons.filter_alt_off_rounded
+                            : Icons.history_toggle_off_rounded,
+                        title: hasFilters
+                            ? l10n.logsFilteredEmptyTitle
+                            : l10n.logsEmptyTitle,
                         message: hasFilters
-                            ? 'Try changing or clearing the filters.'
-                            : 'Your Qaza records will appear here in chronological order.',
+                            ? l10n.logsFilteredEmptyMessage
+                            : l10n.logsEmptyMessage,
                       ),
                   ],
                 ]),
@@ -337,14 +367,16 @@ class _HistoryProgressScreenState extends ConsumerState<HistoryProgressScreen> {
                     (context, index) {
                       if (index < records.length) {
                         final record = records[index];
-                        return _HistoryTile(key: ValueKey(record.id), record: record);
+                        return _HistoryTile(
+                            key: ValueKey(record.id), record: record);
                       }
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Center(
                           child: notifier.isLoadingMore
                               ? const CircularProgressIndicator()
-                              : Text('Scroll for more history', style: theme.textTheme.bodySmall),
+                              : Text(l10n.logsScrollForMore,
+                                  style: theme.textTheme.bodySmall),
                         ),
                       );
                     },
@@ -371,7 +403,9 @@ class _InlineError extends StatelessWidget {
           key: const Key('history_refresh_error'),
           leading: const Icon(Icons.cloud_off_rounded),
           title: Text(message),
-          trailing: TextButton(onPressed: onRetry, child: const Text('Retry')),
+          trailing: TextButton(
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).commonRetry)),
         ),
       );
 }
@@ -391,7 +425,8 @@ class _PrayerProgressTile extends StatelessWidget {
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.mosque_rounded)),
         title: Text(item.prayerType.label),
-        subtitle: Text('${item.progress.pending} pending • ${item.progress.completed} completed'),
+        subtitle: Text(
+            '${item.progress.pending} pending • ${item.progress.completed} completed'),
         trailing: SizedBox(
           width: 82,
           child: Column(
@@ -418,18 +453,22 @@ class _HistoryTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         child: ListTile(
           leading: CircleAvatar(
-            child: Icon(record.status == QazaStatus.completed ? Icons.check_rounded : Icons.schedule_rounded),
+            child: Icon(record.status == QazaStatus.completed
+                ? Icons.check_rounded
+                : Icons.schedule_rounded),
           ),
           title: Text('${record.prayerType.label} Qaza'),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              Text('Original Qaza date: ${formatAppDate(record.originalDate)}'),
+              Text(AppLocalizations.of(context)
+                  .logsOriginalDateValue(formatAppDate(record.originalDate))),
               Text(
                 record.status == QazaStatus.completed
-                    ? 'Completed: ${formatAppDateTime(record.completedAt)}'
-                    : 'Status: Pending',
+                    ? AppLocalizations.of(context).logsCompletedValue(
+                        formatAppDateTime(record.completedAt))
+                    : AppLocalizations.of(context).logsStatusPending,
               ),
             ],
           ),
