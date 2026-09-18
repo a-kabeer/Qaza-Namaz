@@ -10,7 +10,6 @@ import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-import 'add_qaza_screen.dart';
 import 'qaza_tracker_controller.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
@@ -25,22 +24,8 @@ class QazaTrackerScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
 
     return AppScaffold(
+      // Adding is offered by the workspace action button, not the header.
       title: l10n.qazaTitle,
-      actions: [
-        IconButton(
-          key: const Key('qaza_tracker_add'),
-          tooltip: l10n.qazaAddTooltip,
-          onPressed: () async {
-            await Navigator.push<void>(
-              context,
-              MaterialPageRoute(builder: (_) => const AddQazaScreen()),
-            );
-            ref.invalidate(progressSummaryProvider);
-            await controller.refresh();
-          },
-          icon: const Icon(Icons.add_rounded),
-        ),
-      ],
       body: SafeArea(
         child: Column(
           children: [

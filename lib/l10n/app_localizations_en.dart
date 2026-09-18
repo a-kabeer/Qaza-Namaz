@@ -144,6 +144,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your changes are saved on this device. We will retry automatically.';
 
   @override
+  String get commonClose => 'Close';
+
+  @override
   String get commonCancel => 'Cancel';
 
   @override
@@ -188,8 +191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeHeadingCompleted => 'You are all caught up';
 
   @override
-  String get homeSetupMessage =>
-      'Calculate an estimate or add missed prayers manually to begin tracking them.';
+  String get homeSetupMessage => 'You haven\'t added any Qaza prayers yet.';
 
   @override
   String get homeCalculateQaza => 'Calculate Qaza';
@@ -589,6 +591,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String notificationsLoadError(String error) {
     return 'Notification settings could not be loaded: $error';
   }
+
+  @override
+  String get notificationsOpenSettings => 'Open notification settings';
 
   @override
   String get notificationsTryAgain => 'Try again';

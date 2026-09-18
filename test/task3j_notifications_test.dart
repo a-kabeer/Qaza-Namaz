@@ -39,6 +39,15 @@ class _FakeScheduler implements NotificationScheduler {
     return permissionGrantedForStatus;
   }
 
+  int settingsCalls = 0;
+  bool settingsOpen = true;
+
+  @override
+  Future<bool> openSystemNotificationSettings() async {
+    settingsCalls++;
+    return settingsOpen;
+  }
+
   NotificationContent? lastContent;
   NotificationContent? lastTestContent;
 

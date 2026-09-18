@@ -59,6 +59,9 @@ void main() {
 
   Finder fab() => find.byKey(const Key('complete_qaza_fab'));
 
+  /// The Qaza page's own action button, which is the add menu.
+  Finder addFab() => find.byKey(const Key('add_actions_fab'));
+
   bool isExtended(WidgetTester tester) =>
       tester.widget<FloatingActionButton>(fab()).isExtended;
 
@@ -109,7 +112,7 @@ void main() {
           findsOneWidget);
 
       final actionRect = tester.getRect(complete);
-      final fabRect = tester.getRect(fab());
+      final fabRect = tester.getRect(addFab());
       expect(actionRect.bottom, lessThanOrEqualTo(fabRect.top),
           reason: 'the action row must not sit under the FAB');
     });

@@ -49,14 +49,16 @@ void main() {
     await pumpDetail(tester);
 
     expect(find.text('Sample title'), findsOneWidget);
-    expect(find.text('Sample summary'), findsOneWidget);
+    // The summary is not repeated here: the datasets carry the same text in
+    // summary and content, so showing both printed the article twice.
+    expect(find.text('Sample summary'), findsNothing);
     expect(find.text('Sample body'), findsOneWidget);
 
     await tester.tap(find.text('اردو'));
     await tester.pump();
 
     expect(find.text('نمونہ عنوان'), findsOneWidget);
-    expect(find.text('نمونہ خلاصہ'), findsOneWidget);
+    expect(find.text('نمونہ خلاصہ'), findsNothing);
     expect(find.text('نمونہ متن'), findsOneWidget);
   });
 

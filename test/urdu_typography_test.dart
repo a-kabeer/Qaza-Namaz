@@ -275,8 +275,6 @@ void main() {
       expect(
           tester.widget<Text>(find.text('قضا نماز کا مسئلہ')).style!.fontFamily,
           AppTheme.urduFamily);
-      expect(tester.widget<Text>(find.text('مختصر خلاصہ')).style!.fontFamily,
-          AppTheme.urduFamily);
       final body =
           tester.widget<SelectableText>(find.byType(SelectableText).first);
       expect(body.style!.fontFamily, AppTheme.urduFamily);

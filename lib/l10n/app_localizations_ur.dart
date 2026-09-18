@@ -143,6 +143,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'آپ کی تبدیلیاں اس ڈیوائس پر محفوظ ہیں۔ ہم خود بخود دوبارہ کوشش کریں گے۔';
 
   @override
+  String get commonClose => 'بند کریں';
+
+  @override
   String get commonCancel => 'منسوخ کریں';
 
   @override
@@ -187,8 +190,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeHeadingCompleted => 'آپ کی تمام قضا مکمل ہے';
 
   @override
-  String get homeSetupMessage =>
-      'اندازہ لگائیں یا چھوٹی ہوئی نمازیں دستی طور پر شامل کریں تاکہ ان کا حساب رکھا جا سکے۔';
+  String get homeSetupMessage => 'آپ نے اب تک کوئی قضا نماز شامل نہیں کی۔';
 
   @override
   String get homeCalculateQaza => 'قضا کا حساب لگائیں';
@@ -591,6 +593,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String notificationsLoadError(String error) {
     return 'اطلاعات کی ترتیبات لوڈ نہیں ہو سکیں: $error';
   }
+
+  @override
+  String get notificationsOpenSettings => 'اطلاعات کی ترتیبات کھولیں';
 
   @override
   String get notificationsTryAgain => 'دوبارہ کوشش کریں';

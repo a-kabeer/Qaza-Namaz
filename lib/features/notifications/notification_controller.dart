@@ -204,25 +204,23 @@ class NotificationSettingsNotifier
     }
   }
 
+  /// Re-reads the platform permission, after a trip to system settings or a
+  /// return to the foreground.
+  ///
+  /// A permission that has just been granted enables the reminder the reader
+  /// already asked for, so coming back from settings finishes the job instead
+  /// of making them tap the toggle again.
   Future<void> refreshPermissionStatus() async {
     final current = state.valueOrNull;
     if (current == null) return;
-    try {
-      final granted = await _scheduler.isPermissionGranted();
-      final prefs = await SharedPreferences.getInstance();
-      final requested =
-          prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
-      final permissionStatus = granted
-          ? NotificationPermissionStatus.granted
-          : requested
-              ? NotificationPermissionStatus.denied
-              : NotificationPermissionStatus.notRequested;
-      final next = current.copyWith(permissionStatus: permissionStatus);
-      state = AsyncData(next);
-      await _reconcile(next);
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
-    }
+    final prefs = await SharedPreferences.getInstance();
+    final requested =
+        prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
+    final permissionStatus =
+        await _resolvePermissionStatus(requested: requested);
+    final next = current.copyWith(permissionStatus: permissionStatus);
+    state = AsyncData(next);
+    await _reconcile(next);
   }
 
   Future<bool> setEnabled(bool enabled) async {
@@ -230,16 +228,13 @@ class NotificationSettingsNotifier
     if (current == null) return false;
 
     if (!enabled) {
-      try {
-        await _scheduler.cancelDaily();
-        final next = current.copyWith(enabled: false);
-        await _persist(next, permissionRequested: null);
-        state = AsyncData(next);
-        return true;
-      } catch (error, stack) {
-        state = AsyncError(error, stack);
-        return false;
-      }
+      // Turning off must always succeed from the reader's point of view: the
+      // preference is theirs even if the platform call fails.
+      await _cancelQuietly();
+      final next = current.copyWith(enabled: false);
+      await _persist(next, permissionRequested: null);
+      state = AsyncData(next);
+      return true;
     }
 
     if (current.enabled && current.canSendNotifications) {
@@ -247,30 +242,54 @@ class NotificationSettingsNotifier
       return true;
     }
 
+    // A refused or failed request leaves the reader on this page with the
+    // permission card explaining what to do, never on an error screen.
+    bool granted;
     try {
-      final granted =
+      granted =
           current.canSendNotifications || await _scheduler.requestPermission();
-      if (!granted) {
-        final next = current.copyWith(
-          enabled: false,
-          permissionStatus: NotificationPermissionStatus.denied,
-        );
-        await _persist(next, permissionRequested: true);
-        state = AsyncData(next);
-        return false;
-      }
+    } catch (_) {
+      granted = false;
+    }
 
+    if (!granted) {
       final next = current.copyWith(
-        enabled: true,
-        permissionStatus: NotificationPermissionStatus.granted,
+        enabled: false,
+        permissionStatus: NotificationPermissionStatus.denied,
       );
       await _persist(next, permissionRequested: true);
       state = AsyncData(next);
-      await _reconcile(next);
-      return true;
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
       return false;
+    }
+
+    final next = current.copyWith(
+      enabled: true,
+      permissionStatus: NotificationPermissionStatus.granted,
+    );
+    await _persist(next, permissionRequested: true);
+    state = AsyncData(next);
+    await _reconcile(next);
+    return true;
+  }
+
+  /// Opens the system notification settings, for a permission the app can no
+  /// longer request itself.
+  ///
+  /// Returns false when the platform has no such screen, so the caller can
+  /// say so rather than appearing to do nothing.
+  Future<bool> openSystemSettings() async {
+    try {
+      return await _scheduler.openSystemNotificationSettings();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _cancelQuietly() async {
+    try {
+      await _scheduler.cancelDaily();
+    } catch (_) {
+      // The page already reports an unusable scheduler.
     }
   }
 
@@ -282,13 +301,11 @@ class NotificationSettingsNotifier
     }
 
     final next = current.copyWith(hour: hour, minute: minute);
-    try {
-      await _persist(next, permissionRequested: null);
-      state = AsyncData(next);
-      await _reconcile(next);
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
-    }
+    await _persist(next, permissionRequested: null);
+    state = AsyncData(next);
+    // _reconcile already swallows scheduler failures; the saved time stands
+    // either way.
+    await _reconcile(next);
   }
 
   Future<void> sendTestNotification() async {

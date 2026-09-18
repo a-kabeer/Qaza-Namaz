@@ -21,7 +21,13 @@ class _FlakyScheduler implements NotificationScheduler {
   int initializeCalls = 0;
   int scheduleCalls = 0;
   int cancelCalls = 0;
+
+  /// What a request returns.
   bool permissionGranted = true;
+
+  /// What a status check reports, which can differ from the request result:
+  /// that is exactly the blocked-then-allowed case.
+  bool permissionGrantedForStatus = true;
 
   @override
   Future<void> initialize() async {
@@ -32,11 +38,26 @@ class _FlakyScheduler implements NotificationScheduler {
   @override
   Future<bool> isPermissionGranted() async {
     if (failPermissionCheck) throw StateError('permission check failed');
-    return permissionGranted;
+    return permissionGrantedForStatus;
   }
 
   @override
-  Future<bool> requestPermission() async => permissionGranted;
+  Future<bool> requestPermission() async {
+    requestCalls++;
+    if (failRequest) throw StateError('permission request failed');
+    return permissionGranted;
+  }
+
+  int requestCalls = 0;
+  bool failRequest = false;
+  int settingsCalls = 0;
+  bool settingsOpen = true;
+
+  @override
+  Future<bool> openSystemNotificationSettings() async {
+    settingsCalls++;
+    return settingsOpen;
+  }
 
   @override
   Future<void> scheduleDaily({
@@ -206,6 +227,117 @@ void main() {
       await pumpPage(tester, scheduler, ledgerFails: true);
 
       expect(scheduler.scheduleCalls, 0);
+    });
+  });
+
+  group('enabling the daily reminder', () {
+    testWidgets('granted permission enables and schedules it', (tester) async {
+      final scheduler = _FlakyScheduler()..permissionGranted = true;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+      await tester.tap(switchTile());
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(switchTile()).value, isTrue);
+      expect(scheduler.scheduleCalls, 1);
+      expect(errorState(), findsNothing);
+      expect(statusText(tester), contains('8:00 PM'));
+    });
+
+    testWidgets('a refused permission keeps the reader on the page',
+        (tester) async {
+      final scheduler = _FlakyScheduler()
+        ..permissionGranted = false
+        ..permissionGrantedForStatus = false;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+      await tester.tap(switchTile());
+      await tester.pumpAndSettle();
+
+      // Regression: this used to leave the whole page in an error state.
+      expect(errorState(), findsNothing);
+      expect(switchTile(), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(switchTile()).value, isFalse);
+      expect(find.text('Notifications blocked'), findsOneWidget);
+      expect(scheduler.scheduleCalls, 0);
+    });
+
+    testWidgets('a request that throws is a refusal, not a page error',
+        (tester) async {
+      final scheduler = _FlakyScheduler()
+        ..permissionGrantedForStatus = false
+        ..failRequest = true;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+      await tester.tap(switchTile());
+      await tester.pumpAndSettle();
+
+      expect(errorState(), findsNothing);
+      expect(find.text('Notifications blocked'), findsOneWidget);
+    });
+  });
+
+  group('recovering from a blocked permission', () {
+    Future<_FlakyScheduler> pumpBlocked(WidgetTester tester) async {
+      final scheduler = _FlakyScheduler()
+        ..permissionGranted = false
+        ..permissionGrantedForStatus = false;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
+      await tester.tap(switchTile());
+      await tester.pumpAndSettle();
+      return scheduler;
+    }
+
+    testWidgets('the blocked card offers system settings, not another try',
+        (tester) async {
+      await pumpBlocked(tester);
+
+      // Asking again would be refused without a prompt, so it is not offered.
+      expect(
+          find.byKey(const Key('notification_open_settings')), findsOneWidget);
+      expect(
+          find.byKey(const Key('notification_permission_allow')), findsNothing);
+      expect(find.text('Open notification settings'), findsOneWidget);
+    });
+
+    testWidgets('it opens the system screen', (tester) async {
+      final scheduler = await pumpBlocked(tester);
+
+      await tester.tap(find.byKey(const Key('notification_open_settings')));
+      await tester.pumpAndSettle();
+
+      expect(scheduler.settingsCalls, 1);
+    });
+
+    testWidgets('a permission granted there takes effect on return',
+        (tester) async {
+      final scheduler = await pumpBlocked(tester);
+      expect(find.text('Notifications blocked'), findsOneWidget);
+
+      // The reader allows notifications in system settings and comes back.
+      scheduler.permissionGrantedForStatus = true;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notifications blocked'), findsNothing);
+      expect(find.text('Notifications allowed'), findsOneWidget);
+      expect(errorState(), findsNothing);
+    });
+
+    testWidgets('enabling then works and schedules the reminder',
+        (tester) async {
+      final scheduler = await pumpBlocked(tester);
+      scheduler.permissionGrantedForStatus = true;
+      scheduler.permissionGranted = true;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      await tester.tap(switchTile());
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(switchTile()).value, isTrue);
+      expect(scheduler.scheduleCalls, greaterThanOrEqualTo(1));
+      expect(errorState(), findsNothing);
     });
   });
 

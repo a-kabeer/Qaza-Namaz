@@ -8,6 +8,8 @@ import '../../l10n/app_localizations.dart';
 import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
+import '../qaza/add_actions_fab.dart';
+import '../qaza/add_qaza_screen.dart';
 import '../qaza/completion_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
@@ -46,10 +48,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   ///
   /// It lives on the shell rather than inside each page, so the two screens
   /// share one button and one rule about when it appears.
-  static const _completeQazaDestinations = {
-    WorkspaceDestination.home,
-    WorkspaceDestination.qaza,
-  };
+  static const _completeQazaDestinations = {WorkspaceDestination.home};
 
   /// The destinations the bottom bar offers.
   ///
@@ -103,10 +102,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         WorkspaceDestination.home;
   }
 
-  Future<void> _openCompleteQaza() async {
+  Future<void> _openCompleteQaza() => _push(const CompleteQazaScreen());
+
+  Future<void> _push(Widget page) async {
     await Navigator.push<void>(
       context,
-      MaterialPageRoute(builder: (_) => const CompleteQazaScreen()),
+      MaterialPageRoute(builder: (_) => page),
     );
     if (mounted) ref.invalidate(progressSummaryProvider);
   }
@@ -145,17 +146,23 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
               if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
           ],
         ),
-        floatingActionButton: showCompleteQaza
-            ? FloatingActionButton.extended(
-                key: const Key('complete_qaza_fab'),
-                onPressed: _openCompleteQaza,
-                // Material animates the label away on its own; the icon and
-                // the button's own behaviour are untouched either way.
-                isExtended: _fabExtended,
-                icon: const Icon(Icons.check_circle_outline_rounded),
-                label: Text(l10n.homeCompleteQaza),
+        // The Qaza page's action is adding; Home's is completing.
+        floatingActionButton: destination == WorkspaceDestination.qaza
+            ? AddActionsFab(
+                onAddQaza: () => _push(const AddQazaScreen()),
+                onCalculateQaza: () => _push(const CalculatorScreen()),
               )
-            : null,
+            : showCompleteQaza
+                ? FloatingActionButton.extended(
+                    key: const Key('complete_qaza_fab'),
+                    onPressed: _openCompleteQaza,
+                    // Material animates the label away on its own; the icon
+                    // and the button's behaviour are untouched either way.
+                    isExtended: _fabExtended,
+                    icon: const Icon(Icons.check_circle_outline_rounded),
+                    label: Text(l10n.homeCompleteQaza),
+                  )
+                : null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: selectedBarIndex,
           onDestinationSelected: _selectDestination,

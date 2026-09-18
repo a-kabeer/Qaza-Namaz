@@ -41,7 +41,19 @@ void main() {
 
   testWidgets('Workspace exposes three primary navigation destinations',
       (tester) async {
-    await pumpWorkspace(tester, InMemoryQazaRepository());
+    // A record of some kind, or Home shows its empty state instead of the
+    // dashboard this test is about.
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      QazaRecord(
+          id: 'test_fajr_2026-09-01',
+          userId: 'test-user',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 1),
+          createdAt: DateTime(2026, 9, 13),
+          updatedAt: DateTime(2026, 9, 13)),
+    ]);
+    await pumpWorkspace(tester, repository);
     expect(find.text('Home').first, findsOneWidget);
     expect(find.text('Knowledge'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);

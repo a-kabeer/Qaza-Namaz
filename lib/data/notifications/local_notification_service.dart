@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -26,6 +27,13 @@ abstract interface class NotificationScheduler {
   Future<void> initialize();
   Future<bool> requestPermission();
   Future<bool> isPermissionGranted();
+
+  /// Opens the platform's notification settings for this app.
+  ///
+  /// Once notifications are blocked the app can no longer ask for them, so
+  /// this is the only way back; returns false when the screen cannot be
+  /// opened.
+  Future<bool> openSystemNotificationSettings();
   Future<void> scheduleDaily({
     required int hour,
     required int minute,
@@ -75,6 +83,21 @@ class LocalNotificationService implements NotificationScheduler {
     await androidPlugin?.createNotificationChannel(channel);
 
     _initialized = true;
+  }
+
+  static const MethodChannel _settingsChannel =
+      MethodChannel('qaza_namaz/notification_settings');
+
+  @override
+  Future<bool> openSystemNotificationSettings() async {
+    try {
+      final opened =
+          await _settingsChannel.invokeMethod<bool>('openNotificationSettings');
+      return opened ?? false;
+    } catch (_) {
+      // No channel on this platform; the caller falls back to explaining.
+      return false;
+    }
   }
 
   @override

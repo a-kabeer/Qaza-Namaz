@@ -48,7 +48,6 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
 
           final title = showUrdu ? article.title.ur : article.title.en;
           final body = showUrdu ? article.body.ur : article.body.en;
-          final summary = showUrdu ? article.summary.ur : article.summary.en;
           final direction = language.direction;
           final textAlign = language.textAlign;
           // The article's language is independent of the interface language,
@@ -69,13 +68,6 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                         textDirection: direction,
                         textAlign: textAlign,
                         style: type.headlineSmall,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        summary,
-                        textDirection: direction,
-                        textAlign: textAlign,
-                        style: type.bodyLarge,
                       ),
                       const SizedBox(height: 20),
                       _CategoryBadge(

@@ -7,7 +7,11 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 import 'package:qaza_namaz/features/home/home_screen.dart';
+import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
+import 'package:qaza_namaz/features/settings/qaza_reset_controller.dart';
+import 'package:qaza_namaz/features/qaza/complete_qaza_section.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 
@@ -93,6 +97,36 @@ void main() {
       expect(find.byKey(const Key('home_progress_ring')), findsOneWidget);
     });
 
+    testWidgets('the ring leads, with the counts under it', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      final ring = tester.getRect(find.byKey(const Key('home_progress_ring')));
+      final pending =
+          tester.getRect(find.byKey(const Key('home_pending_value')));
+
+      expect(ring.bottom, lessThanOrEqualTo(pending.top));
+      // The ring is the card's largest element.
+      expect(ring.width, greaterThan(pending.width));
+    });
+
+    testWidgets('the three counts share one row, in order', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      final total = tester.getRect(find.text('Total'));
+      final pendingLabel = tester.getRect(find.text('Pending'));
+      final completed = tester.getRect(find.text('Completed').first);
+
+      // Left to right: Total, Pending, Completed.
+      expect(total.center.dx, lessThan(pendingLabel.center.dx));
+      expect(pendingLabel.center.dx, lessThan(completed.center.dx));
+      // Total and Completed are the same size, so their labels line up;
+      // Pending's sits lower because its count is drawn larger.
+      expect(total.top, completed.top);
+      expect(pendingLabel.top, greaterThan(total.top));
+      // All three are still one row: each overlaps the others vertically.
+      expect(pendingLabel.top, lessThan(total.bottom + 24));
+    });
+
     testWidgets('pending is the most prominent number', (tester) async {
       await pumpHome(tester, await ledger());
 
@@ -102,15 +136,6 @@ void main() {
       expect(pending.style!.fontSize, theme.textTheme.displaySmall!.fontSize);
       expect(pending.style!.fontSize,
           greaterThan(theme.textTheme.titleLarge!.fontSize!));
-    });
-
-    testWidgets('an empty ledger reads zero rather than failing',
-        (tester) async {
-      await pumpHome(tester, InMemoryQazaRepository());
-
-      expect(textOf(tester, const Key('home_pending_value')), '0');
-      expect(find.text('0%'), findsWidgets);
-      expect(find.byKey(const Key('home_prayer_row_witr')), findsOneWidget);
     });
 
     testWidgets('a fully completed ledger reads 100%', (tester) async {
@@ -174,20 +199,190 @@ void main() {
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
     });
 
-    testWidgets('the action follows the user to the Qaza tab', (tester) async {
+    testWidgets('completing belongs to Home and adding to the Qaza tab',
+        (tester) async {
       final container =
           await pumpHome(tester, await ledger(), home: const WorkspaceShell());
+      expect(find.byKey(const Key('complete_qaza_fab')), findsOneWidget);
 
       container.read(workspaceDestinationProvider.notifier).state =
           WorkspaceDestination.qaza;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('complete_qaza_fab')), findsOneWidget);
+      expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
+      expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
 
-      // Configuration screens do not carry it.
+      // Configuration screens carry neither.
       container.read(workspaceDestinationProvider.notifier).state =
           WorkspaceDestination.settings;
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
+      expect(find.byKey(const Key('add_actions_fab')), findsNothing);
+    });
+  });
+
+  group('empty ledger', () {
+    testWidgets('shows the empty state instead of the dashboard',
+        (tester) async {
+      await pumpHome(tester, InMemoryQazaRepository());
+
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+      expect(
+          find.text("You haven't added any Qaza prayers yet."), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_calculate')), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_add')), findsOneWidget);
+      expect(find.text('Calculate Qaza'), findsOneWidget);
+      expect(find.text('Add Qaza Manually'), findsOneWidget);
+
+      // The dashboard is not built at all.
+      expect(find.byKey(const Key('home_progress_overview')), findsNothing);
+      expect(find.byType(CompleteQazaSection), findsNothing);
+      expect(find.byKey(const Key('home_prayer_row_fajr')), findsNothing);
+    });
+
+    testWidgets('the dashboard returns as soon as a record exists',
+        (tester) async {
+      await pumpHome(tester, await ledger());
+
+      expect(find.byKey(const Key('home_empty_state')), findsNothing);
+      expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
+    });
+
+    testWidgets('completed-only ledgers are not empty', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository
+          .addRecords([_record(PrayerType.fajr, 1, QazaStatus.completed)]);
+      await pumpHome(tester, repository);
+
+      expect(find.byKey(const Key('home_empty_state')), findsNothing);
+      expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
+    });
+
+    testWidgets('the Complete Qaza action is hidden', (tester) async {
+      await pumpHome(tester, InMemoryQazaRepository(),
+          home: const WorkspaceShell());
+
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
+    });
+
+    testWidgets('Calculate Qaza opens the calculator', (tester) async {
+      await pumpHome(tester, InMemoryQazaRepository());
+
+      await tester.tap(find.byKey(const Key('home_empty_calculate')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(CalculatorScreen), findsWidgets);
+    });
+
+    testWidgets('Add Qaza Manually opens the Add Qaza screen', (tester) async {
+      await pumpHome(tester, InMemoryQazaRepository());
+
+      await tester.tap(find.byKey(const Key('home_empty_add')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(AddQazaScreen), findsOneWidget);
+    });
+
+    testWidgets('it appears after a reset, without a restart', (tester) async {
+      final repository = await ledger();
+      final container = await pumpHome(tester, repository);
+      expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
+
+      // The real reset path, not a hand-rolled one.
+      final reset =
+          await container.read(qazaResetControllerProvider.notifier).reset();
+      expect(reset, isTrue);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+    });
+
+    testWidgets('it renders in Urdu and in dark', (tester) async {
+      await pumpHome(tester, InMemoryQazaRepository(),
+          locale: const Locale('ur'), themeMode: ThemeMode.dark);
+
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.text('Start Your Qaza Journey'), findsNothing);
+      expect(find.text('اپنا قضا سفر شروع کریں'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Complete Qaza section', () {
+    testWidgets('sits between the overview and the quick actions',
+        (tester) async {
+      await pumpHome(tester, await ledger());
+
+      final overview =
+          tester.getRect(find.byKey(const Key('home_progress_overview')));
+      final pills =
+          tester.getRect(find.byKey(const Key('home_complete_prayer_pills')));
+      final complete =
+          tester.getRect(find.byKey(const Key('home_complete_oldest_pending')));
+      final quickActions =
+          tester.getRect(find.byKey(const Key('home_calculate_qaza')));
+
+      expect(overview.bottom, lessThanOrEqualTo(pills.top));
+      expect(pills.bottom, lessThanOrEqualTo(complete.top));
+      expect(complete.bottom, lessThanOrEqualTo(quickActions.top));
+    });
+
+    testWidgets('carries the whole section, pills through button',
+        (tester) async {
+      await pumpHome(tester, await ledger());
+
+      for (final prayer in PrayerType.values) {
+        expect(find.byKey(Key('home_complete_prayer_pill_${prayer.name}')),
+            findsOneWidget,
+            reason: prayer.name);
+      }
+      // The record card for the selected prayer, and the action below it.
+      expect(find.text('Original missed date'), findsOneWidget);
+      expect(find.byKey(const Key('home_complete_oldest_pending')),
+          findsOneWidget);
+    });
+
+    testWidgets('it is the same widget the Complete Qaza page uses',
+        (tester) async {
+      await pumpHome(tester, await ledger());
+
+      expect(find.byType(CompleteQazaSection), findsOneWidget);
+    });
+
+    testWidgets('choosing a pill shows that prayer latest record',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(PrayerType.fajr, 2, QazaStatus.pending),
+        _record(PrayerType.fajr, 10, QazaStatus.pending),
+        _record(PrayerType.zuhr, 20, QazaStatus.pending),
+      ]);
+      await pumpHome(tester, repository);
+
+      expect(find.text('10 Jan 2026'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home_complete_prayer_pill_zuhr')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('20 Jan 2026'), findsOneWidget);
+    });
+
+    testWidgets('completing from Home updates the overview', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository
+          .addRecords([_record(PrayerType.fajr, 2, QazaStatus.pending)]);
+      await pumpHome(tester, repository);
+      expect(textOf(tester, const Key('home_pending_value')), '1');
+
+      await tester.tap(find.byKey(const Key('home_complete_oldest_pending')));
+      await tester.pumpAndSettle();
+
+      expect(textOf(tester, const Key('home_pending_value')), '0');
+      expect(find.text('No pending Qaza for this prayer.'), findsOneWidget);
     });
   });
 
@@ -201,8 +396,15 @@ void main() {
         expect(
             find.byKey(Key('home_prayer_bar_${prayer.name}')), findsOneWidget);
       }
-      expect(find.text('Fajr'), findsOneWidget);
-      expect(find.text('Witr'), findsOneWidget);
+      // Prayer names now also appear as pills in the Complete Qaza section,
+      // so the row's own label is what is asserted here.
+      for (final name in const ['Fajr', 'Witr']) {
+        expect(
+            find.descendant(
+                of: find.byKey(Key('home_prayer_row_${name.toLowerCase()}')),
+                matching: find.text(name)),
+            findsOneWidget);
+      }
     });
 
     testWidgets('a row shows pending, completed and the percentage',

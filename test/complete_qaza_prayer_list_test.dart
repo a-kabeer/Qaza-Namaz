@@ -179,6 +179,48 @@ void main() {
       expect(find.text('05 Jan 2026'), findsNothing);
     });
 
+    testWidgets('the record shows Gregorian first, Hijri under it',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository
+          .addRecords([_record(PrayerType.fajr, 10, QazaStatus.pending)]);
+      await pumpPage(tester, repository);
+
+      final gregorian = find.byKey(const Key('complete_original_date'));
+      final hijri = find.byKey(const Key('complete_original_date_hijri'));
+
+      expect(tester.widget<Text>(gregorian).data, '10 Jan 2026');
+      // 10 January 2026 is 21 Rajab 1447 in the Umm al-Qura calendar.
+      expect(tester.widget<Text>(hijri).data, '21 Rajab 1447 AH');
+      // Gregorian leads, both in order and in weight.
+      expect(tester.getRect(gregorian).bottom,
+          lessThanOrEqualTo(tester.getRect(hijri).top));
+      expect(tester.widget<Text>(gregorian).style!.fontSize,
+          greaterThan(tester.widget<Text>(hijri).style!.fontSize!));
+    });
+
+    testWidgets('the Hijri line follows the selected prayer', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(PrayerType.fajr, 10, QazaStatus.pending),
+        _record(PrayerType.zuhr, 20, QazaStatus.pending),
+      ]);
+      await pumpPage(tester, repository);
+      final before = tester
+          .widget<Text>(find.byKey(const Key('complete_original_date_hijri')))
+          .data;
+
+      await tester.tap(find.byKey(const Key('complete_prayer_pill_zuhr')));
+      await tester.pumpAndSettle();
+
+      expect(
+          tester
+              .widget<Text>(
+                  find.byKey(const Key('complete_original_date_hijri')))
+              .data,
+          isNot(before));
+    });
+
     testWidgets('a prayer with nothing pending says so', (tester) async {
       await pumpPage(tester, await ledger());
 

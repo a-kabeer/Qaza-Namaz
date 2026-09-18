@@ -77,6 +77,29 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     }
   }
 
+  /// Sends the reader to the system screen, the only place a blocked
+  /// permission can be undone.
+  ///
+  /// Returning to the app re-checks the permission through the lifecycle
+  /// observer above, so a permission granted there takes effect without
+  /// another tap.
+  Future<void> _openSystemSettings() async {
+    if (_working) return;
+    final l10n = AppLocalizations.of(context);
+    setState(() => _working = true);
+    try {
+      final opened = await ref
+          .read(notificationSettingsProvider.notifier)
+          .openSystemSettings();
+      if (!mounted || opened) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.notificationsEnableInSettings)),
+      );
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   Future<void> _sendTest() async {
     if (_working) return;
     setState(() => _working = true);
@@ -213,18 +236,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   leading: Icon(permissionIcon),
                   title: Text(permissionTitle),
                   subtitle: Text(permissionMessage),
-                  trailing: permission ==
-                              NotificationPermissionStatus.notRequested ||
-                          permission == NotificationPermissionStatus.denied
-                      ? TextButton(
-                          onPressed: _working ? null : () => _setEnabled(true),
-                          child: Text(
-                            permission == NotificationPermissionStatus.denied
-                                ? l10n.notificationsTryAgain
-                                : l10n.notificationsAllow,
-                          ),
-                        )
-                      : null,
+                  trailing: switch (permission) {
+                    NotificationPermissionStatus.notRequested => TextButton(
+                        key: const Key('notification_permission_allow'),
+                        onPressed: _working ? null : () => _setEnabled(true),
+                        child: Text(l10n.notificationsAllow),
+                      ),
+                    // Asking again would be refused without a prompt, so the
+                    // reader is taken where the choice can be changed.
+                    NotificationPermissionStatus.denied => TextButton(
+                        key: const Key('notification_open_settings'),
+                        onPressed: _working ? null : _openSystemSettings,
+                        child: Text(l10n.notificationsOpenSettings),
+                      ),
+                    _ => null,
+                  },
                 ),
               ),
               const SizedBox(height: 12),

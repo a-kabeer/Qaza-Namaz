@@ -143,8 +143,10 @@ void main() {
       ]);
       await _pumpTracker(tester, repository);
 
+      // Adding moved to the workspace action button, so the header carries
+      // no actions of its own; the record checkbox is what remains here.
       for (final finder in <Finder>[
-        find.byKey(const Key('qaza_tracker_add')),
+        find.byType(Checkbox).first,
       ]) {
         final size = tester.getSize(finder);
         expect(size.width, greaterThanOrEqualTo(48.0),

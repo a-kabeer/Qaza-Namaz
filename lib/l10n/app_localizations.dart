@@ -350,6 +350,12 @@ abstract class AppLocalizations {
   /// **'Your changes are saved on this device. We will retry automatically.'**
   String get syncErrorDetail;
 
+  /// No description provided for @commonClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get commonClose;
+
   /// No description provided for @commonCancel.
   ///
   /// In en, this message translates to:
@@ -437,7 +443,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeSetupMessage.
   ///
   /// In en, this message translates to:
-  /// **'Calculate an estimate or add missed prayers manually to begin tracking them.'**
+  /// **'You haven\'t added any Qaza prayers yet.'**
   String get homeSetupMessage;
 
   /// No description provided for @homeCalculateQaza.
@@ -1081,6 +1087,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification settings could not be loaded: {error}'**
   String notificationsLoadError(String error);
+
+  /// No description provided for @notificationsOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open notification settings'**
+  String get notificationsOpenSettings;
 
   /// No description provided for @notificationsTryAgain.
   ///
