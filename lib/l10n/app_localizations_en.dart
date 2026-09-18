@@ -37,9 +37,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackupSubtitle => 'Cloud sync, export and import.';
 
   @override
-  String get knowledgePrayerRulesTooltip => 'Prayer & Fiqh Rules';
-
-  @override
   String get navSettings => 'Settings';
 
   @override
@@ -239,9 +236,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qazaProgressLabel => 'Progress';
-
-  @override
-  String get qazaLogsTooltip => 'Logs';
 
   @override
   String get qazaAddTooltip => 'Add Qaza';
@@ -897,10 +891,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaChooseMultiple => 'Choose multiple dates';
 
   @override
-  String get addQazaGregorianNote =>
-      'Gregorian is the source of truth. Each date + prayer combination is an independent Qaza record.';
-
-  @override
   String get addQazaAvailabilityNote =>
       'A date is disabled only when no prayer remains eligible.';
 
@@ -1005,17 +995,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeTitle => 'Complete Qaza';
 
   @override
-  String get completeHeading => 'Complete the oldest pending record';
+  String get completeHeading => 'Complete the latest pending record';
 
   @override
   String get completeIntro =>
-      'Complete one record at a time. After success, the next oldest record is shown immediately.';
+      'Complete one record at a time. After success, the next pending record is shown immediately.';
 
   @override
-  String get completePrayerLabel => 'Prayer';
-
-  @override
-  String get completeLoading => 'Loading oldest pending record…';
+  String get completeLoading => 'Loading latest pending record…';
 
   @override
   String get completeLoadError => 'We could not load your Qaza record.';
@@ -1028,7 +1015,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose another prayer or add a Qaza record first.';
 
   @override
-  String get completeOldestSubtitle => 'Oldest pending record';
+  String get completeOldestSubtitle => 'Latest pending record';
 
   @override
   String get completeOriginalDate => 'Original missed date';
@@ -1038,13 +1025,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Completion timestamp is recorded separately.';
 
   @override
-  String get completeAction => 'Complete oldest pending';
+  String get completeAction => 'Complete latest pending';
 
   @override
   String get completeInProgress => 'Completing...';
-
-  @override
-  String get completeOpenWorkspace => 'Open the Qaza workspace';
 
   @override
   String get completeFailed => 'Qaza could not be completed. Please try again.';
@@ -1061,92 +1045,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String completeSuccessNext(String prayer) {
-    return '$prayer Qaza completed • next oldest is ready.';
+    return '$prayer Qaza completed • the next one is ready.';
   }
-
-  @override
-  String get logsTitle => 'Logs & Progress';
-
-  @override
-  String get logsSectionTitle => 'Qaza logs';
-
-  @override
-  String get logsRefresh => 'Refresh logs';
-
-  @override
-  String get logsOrderNote =>
-      'Newest original Qaza dates first • loads 50 at a time';
-
-  @override
-  String get logsScrollForMore => 'Scroll for more history';
-
-  @override
-  String get logsLoading => 'Loading your history...';
-
-  @override
-  String get logsLoadError => 'We could not load your history.';
-
-  @override
-  String get logsRefreshError => 'We could not refresh the latest history.';
-
-  @override
-  String logsLoadMoreError(String error) {
-    return 'Could not load more history: $error';
-  }
-
-  @override
-  String get logsEmptyTitle => 'No Qaza records yet.';
-
-  @override
-  String get logsEmptyMessage =>
-      'Your Qaza records will appear here in chronological order.';
-
-  @override
-  String get logsFilteredEmptyTitle => 'No matching Qaza records.';
-
-  @override
-  String get logsFilteredEmptyMessage =>
-      'Try changing or clearing the filters.';
-
-  @override
-  String get logsClearFilters => 'Clear filters';
-
-  @override
-  String get logsFilterAllPrayers => 'All prayers';
-
-  @override
-  String get logsFilterStatus => 'Status';
-
-  @override
-  String get logsFilterPrayer => 'Prayer';
-
-  @override
-  String get logsFilterDate => 'Filter by original Qaza date';
-
-  @override
-  String get logsOriginalDateLabel => 'Original Qaza date';
-
-  @override
-  String get logsProgressTitle => 'Your progress';
-
-  @override
-  String get logsPrayerProgressTitle => 'Prayer progress';
-
-  @override
-  String get logsProgressError => 'We could not load the progress summary.';
-
-  @override
-  String logsOriginalDateValue(String date) {
-    return 'Original Qaza date: $date';
-  }
-
-  @override
-  String logsCompletedValue(String timestamp) {
-    return 'Completed: $timestamp';
-  }
-
-  @override
-  String get logsStatusPending => 'Status: Pending';
 
   @override
   String get knowledgeBaseTitle => 'Knowledge Base';
@@ -1248,19 +1148,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGoogleSignIn => 'Google sign-in';
 
   @override
-  String get settingsPrayerSection => 'Prayer';
-
-  @override
-  String get settingsPrayerSubtitle =>
-      'Review the rules used by the Qaza calculator.';
-
-  @override
-  String get settingsPrayerRules => 'Prayer & Fiqh Rules';
-
-  @override
-  String get settingsPrayerRulesSubtitle => 'Calculation method, Baligh, Witr';
-
-  @override
   String get settingsKnowledgeBaseSubtitle => 'Browse Masail & Mugalat';
 
   @override
@@ -1336,26 +1223,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppDescription => 'Islamic Prayer Qaza Tracker';
-
-  @override
-  String get rulesCalculationMethod => 'Calculation Method';
-
-  @override
-  String get rulesCalculationMethodSubtitle =>
-      'Choose the method applicable to your circumstances.';
-
-  @override
-  String get rulesBaligh => 'Baligh / Puberty';
-
-  @override
-  String get rulesBalighSubtitle => 'Used by the planning calculator.';
-
-  @override
-  String get rulesWitr => 'Witr';
-
-  @override
-  String get rulesWitrSubtitle =>
-      'Witr remains an independent prayer category.';
 
   @override
   String get cloudSyncTitle => 'Cloud Sync';

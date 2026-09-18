@@ -37,7 +37,7 @@ Widget scoped(Widget child, InMemoryQazaRepository repository) => ProviderScope(
     );
 
 void main() {
-  testWidgets('completion immediately advances to the next oldest record',
+  testWidgets('completion immediately advances to the next pending record',
       (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
@@ -47,19 +47,20 @@ void main() {
 
     await tester.pumpWidget(scoped(const CompleteQazaScreen(), repository));
     await tester.pumpAndSettle();
-    expect(find.text('02 Sep 2026'), findsOneWidget);
+    // The page shows the latest pending record, so the newer date leads.
+    expect(find.text('10 Sep 2026'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('complete_oldest_pending')));
     await tester.pump();
 
-    expect(find.text('10 Sep 2026'), findsOneWidget);
-    expect(find.text('Fajr Qaza completed • next oldest is ready.'),
+    expect(find.text('02 Sep 2026'), findsOneWidget);
+    expect(find.text('Fajr Qaza completed • the next one is ready.'),
         findsOneWidget);
 
     final records = await repository.getRecords(userId: 'test-user');
-    expect(records.singleWhere((r) => r.id == 'fajr_old').status,
-        QazaStatus.completed);
     expect(records.singleWhere((r) => r.id == 'fajr_next').status,
+        QazaStatus.completed);
+    expect(records.singleWhere((r) => r.id == 'fajr_old').status,
         QazaStatus.pending);
   });
 

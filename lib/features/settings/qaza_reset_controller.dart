@@ -45,6 +45,7 @@ class QazaResetController extends AutoDisposeNotifier<QazaResetState> {
       // Everything derived from the ledger is now stale.
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(oldestPendingProvider);
+      ref.invalidate(latestPendingProvider);
       ref.invalidate(qazaTrackerControllerProvider);
       state = QazaResetState(recordCount: summary.overall.total);
       return true;

@@ -145,7 +145,6 @@ void main() {
 
       for (final finder in <Finder>[
         find.byKey(const Key('qaza_tracker_add')),
-        find.byKey(const Key('qaza_tracker_history')),
       ]) {
         final size = tester.getSize(finder);
         expect(size.width, greaterThanOrEqualTo(48.0),

@@ -8,7 +8,6 @@ import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import '../domain/knowledge_language.dart';
 import 'knowledge_article_detail_page.dart';
-import 'prayer_rules_page.dart';
 import 'providers/knowledge_base_providers.dart';
 import 'widgets/knowledge_language_switcher.dart';
 
@@ -37,6 +36,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // Category, topic and search labels describe content, so they follow the
+    // Knowledge Base switcher rather than the interface language.
+    final contentL10n = ref.watch(knowledgeLocalizationsProvider);
     final articles = ref.watch(knowledgeFilteredArticlesProvider);
     final selectedCategory = ref.watch(knowledgeCategoryFilterProvider);
     final selectedTopic = ref.watch(knowledgeTopicFilterProvider);
@@ -47,18 +49,6 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.knowledgeBaseTitle),
-        actions: [
-          // Prayer & Fiqh rules are reference material, so they live here
-          // with the Masail and Mugalat rather than in Settings.
-          IconButton(
-            key: const Key('knowledge_prayer_rules'),
-            tooltip: l10n.knowledgePrayerRulesTooltip,
-            icon: const Icon(Icons.rule_folder_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const FiqhScreen()),
-            ),
-          ),
-        ],
         bottom: const KnowledgeLanguageBar(),
       ),
       body: RefreshIndicator(
@@ -78,12 +68,12 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     setState(() {});
                   },
                   decoration: InputDecoration(
-                    hintText: l10n.knowledgeBaseSearchHint,
+                    hintText: contentL10n.knowledgeBaseSearchHint,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
                         : IconButton(
-                            tooltip: l10n.knowledgeBaseClearSearch,
+                            tooltip: contentL10n.knowledgeBaseClearSearch,
                             onPressed: () {
                               _searchController.clear();
                               ref
@@ -109,7 +99,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
-                      label: Text(l10n.filterAll),
+                      label: Text(contentL10n.filterAll),
                       selected: selectedCategory == null,
                       onSelected: (_) => ref
                           .read(knowledgeCategoryFilterProvider.notifier)
@@ -120,7 +110,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                       (category) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(category.localizedLabel(l10n)),
+                          label: Text(category.localizedLabel(contentL10n)),
                           selected: selectedCategory == category,
                           onSelected: (_) => ref
                               .read(knowledgeCategoryFilterProvider.notifier)
@@ -145,7 +135,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       ChoiceChip(
-                        label: Text(l10n.knowledgeBaseTopicAll),
+                        label: Text(contentL10n.knowledgeBaseTopicAll),
                         selected: selectedTopic == null,
                         onSelected: (_) => ref
                             .read(knowledgeTopicFilterProvider.notifier)
@@ -156,7 +146,8 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         (topicId) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
-                            label: Text(localizedKnowledgeTopic(topicId, l10n)),
+                            label: Text(
+                                localizedKnowledgeTopic(topicId, contentL10n)),
                             selected: selectedTopic == topicId,
                             onSelected: (_) => ref
                                 .read(knowledgeTopicFilterProvider.notifier)

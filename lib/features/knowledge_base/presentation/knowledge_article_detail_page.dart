@@ -184,15 +184,17 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
   }
 }
 
-class _CategoryBadge extends StatelessWidget {
+class _CategoryBadge extends ConsumerWidget {
   const _CategoryBadge({required this.category, required this.topicId});
 
   final KnowledgeCategory category;
   final String topicId;
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The section and topic name the content, so they follow the article's
+    // language rather than the interface language.
+    final l10n = ref.watch(knowledgeLocalizationsProvider);
     final section = switch (category) {
       KnowledgeCategory.masail => l10n.knowledgeCategoryMasail,
       KnowledgeCategory.mugalat => l10n.knowledgeCategoryMugalat,

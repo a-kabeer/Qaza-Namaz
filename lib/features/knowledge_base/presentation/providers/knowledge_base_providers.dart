@@ -1,4 +1,7 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../app/providers.dart';
@@ -94,12 +97,28 @@ final knowledgeSelectedArticleIdProvider = StateProvider<String?>(
   (ref) => null,
 );
 
-/// The three filter controls, gathered into the one value the data layer takes.
+/// The filter controls plus the reading language, gathered into the one value
+/// the data layer takes.
+///
+/// The language belongs in the query because search reads the chosen
+/// language's fields; switching language re-runs the search against the other
+/// dataset rather than leaving stale results on screen.
 final knowledgeQueryProvider = Provider<KnowledgeQuery>(
   (ref) => KnowledgeQuery(
     text: ref.watch(knowledgeSearchQueryProvider),
     category: ref.watch(knowledgeCategoryFilterProvider),
     topicId: ref.watch(knowledgeTopicFilterProvider),
+    language: ref.watch(knowledgeLanguageProvider),
+  ),
+);
+
+/// Strings resolved in the Knowledge Base's own language.
+///
+/// Category and topic names label content, so they follow the Knowledge Base
+/// switcher rather than Settings -> Language, which owns the interface.
+final knowledgeLocalizationsProvider = Provider<AppLocalizations>(
+  (ref) => lookupAppLocalizations(
+    Locale(ref.watch(knowledgeLanguageProvider).code),
   ),
 );
 

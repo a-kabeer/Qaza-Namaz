@@ -8,7 +8,7 @@ import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import '../../support/in_memory_qaza_repository.dart';
 
 void main() {
-  testWidgets('primary navigation offers the five destinations',
+  testWidgets('primary navigation offers Home, Knowledge and Settings',
       (tester) async {
     final repository = InMemoryQazaRepository();
 
@@ -37,7 +37,6 @@ void main() {
         .map((destination) => destination.label)
         .toList();
 
-    expect(
-        labels, const ['Home', 'Qaza', 'Calculator', 'Knowledge', 'Settings']);
+    expect(labels, const ['Home', 'Knowledge', 'Settings']);
   });
 }

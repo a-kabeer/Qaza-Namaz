@@ -167,8 +167,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             onMonthChanged: loadMonth,
           ),
         ),
-        const SizedBox(height: 16),
-        _Info(text: l10n.addQazaGregorianNote),
         const SizedBox(height: 24),
         FilledButton(
           key: const Key('qaza_continue_button'),

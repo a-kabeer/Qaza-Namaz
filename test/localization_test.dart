@@ -190,9 +190,10 @@ void main() {
       await _pump(tester);
 
       expect(find.text('Home'), findsWidgets);
-      expect(find.text('Qaza'), findsWidgets);
-      expect(find.text('Calculator'), findsOneWidget);
+      expect(find.text('Knowledge'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
+      // Qaza and Calculator are no longer bar destinations.
+      expect(find.text('Calculator'), findsNothing);
     });
 
     testWidgets('navigation destinations render in Urdu', (tester) async {
@@ -207,8 +208,8 @@ void main() {
       await _pump(tester);
 
       final ur = AppLocalizationsUr();
-      expect(find.text(ur.navQaza), findsWidgets);
-      expect(find.text(ur.navCalculator), findsOneWidget);
+      expect(find.text(ur.navHome), findsWidgets);
+      expect(find.text(ur.navKnowledge), findsOneWidget);
       expect(find.text(ur.navSettings), findsOneWidget);
       expect(find.text('Settings'), findsNothing);
     });

@@ -43,6 +43,23 @@ class QazaService {
   Future<QazaRecord?> oldestPending(
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
+
+  /// The most recent pending record for [prayerType], or null when there is
+  /// none.
+  ///
+  /// Uses the history page, which the data source already returns newest
+  /// first, bounded to a single row — no ledger is materialized to find it.
+  Future<QazaRecord?> latestPending(
+      {required String userId, required PrayerType prayerType}) async {
+    final page = await repository.getHistoryPage(
+      userId: userId,
+      limit: 1,
+      prayerType: prayerType,
+      status: QazaStatus.pending,
+    );
+    return page.records.isEmpty ? null : page.records.first;
+  }
+
   Future<QazaHistoryPage> getHistoryPage(
           {required String userId,
           int limit = 50,

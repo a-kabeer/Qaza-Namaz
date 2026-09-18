@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,7 +12,10 @@ import '../qaza/completion_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
 
-/// The five workspace destinations, in navigation-bar order.
+/// Every workspace destination.
+///
+/// Not all of them are bottom-bar entries: Qaza and Calculator are reached
+/// from Home. See `_barDestinations` for what the bar offers.
 enum WorkspaceDestination { home, qaza, calculator, knowledge, settings }
 
 /// The selected destination.
@@ -46,11 +51,51 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     WorkspaceDestination.qaza,
   };
 
+  /// The destinations the bottom bar offers.
+  ///
+  /// Qaza and Calculator stay part of the workspace — Home's prayer rows open
+  /// the tracker, and its quick action opens the calculator — they are simply
+  /// not bar destinations any more.
+  static const _barDestinations = [
+    WorkspaceDestination.home,
+    WorkspaceDestination.knowledge,
+    WorkspaceDestination.settings,
+  ];
+
+  /// How long the Complete Qaza action names itself before collapsing to its
+  /// icon.
+  static const _fabLabelDuration = Duration(seconds: 5);
+
   final Set<int> _mounted = {0};
+
+  Timer? _fabCollapseTimer;
+  bool _fabVisible = false;
+  bool _fabExtended = true;
+
+  @override
+  void dispose() {
+    _fabCollapseTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Starts the collapse countdown when the action first appears.
+  ///
+  /// Keyed on the action becoming visible, not on every build, so scrolling
+  /// and unrelated rebuilds never hold the label open.
+  void _syncFabLabel({required bool visible}) {
+    if (visible == _fabVisible) return;
+    _fabVisible = visible;
+    _fabCollapseTimer?.cancel();
+    if (!visible) return;
+    _fabExtended = true;
+    _fabCollapseTimer = Timer(_fabLabelDuration, () {
+      if (mounted) setState(() => _fabExtended = false);
+    });
+  }
 
   void _selectDestination(int value) {
     ref.read(workspaceDestinationProvider.notifier).state =
-        WorkspaceDestination.values[value];
+        _barDestinations[value];
   }
 
   void _handleBack() {
@@ -75,14 +120,20 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     // scroll position and in-progress state.
     _mounted.add(index);
 
+    // Qaza and Calculator are reached from Home, so while one of them is open
+    // the bar keeps Home lit rather than showing nothing selected.
+    final barIndex = _barDestinations.indexOf(destination);
+    final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
+
     // Nothing pending means nothing to complete, so the action is absent
     // rather than present and inert.
     final pending = ref.watch(progressSummaryProvider).valueOrNull?.overall;
     final showCompleteQaza = _completeQazaDestinations.contains(destination) &&
         (pending?.pending ?? 0) > 0;
+    _syncFabLabel(visible: showCompleteQaza);
 
     return PopScope<void>(
-      canPop: index == 0,
+      canPop: destination == WorkspaceDestination.home,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _handleBack();
       },
@@ -98,26 +149,21 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             ? FloatingActionButton.extended(
                 key: const Key('complete_qaza_fab'),
                 onPressed: _openCompleteQaza,
+                // Material animates the label away on its own; the icon and
+                // the button's own behaviour are untouched either way.
+                isExtended: _fabExtended,
                 icon: const Icon(Icons.check_circle_outline_rounded),
                 label: Text(l10n.homeCompleteQaza),
               )
             : null,
         bottomNavigationBar: NavigationBar(
-          selectedIndex: index,
+          selectedIndex: selectedBarIndex,
           onDestinationSelected: _selectDestination,
           destinations: [
             NavigationDestination(
                 icon: const Icon(Icons.mosque_outlined),
                 selectedIcon: const Icon(Icons.mosque_rounded),
                 label: l10n.navHome),
-            NavigationDestination(
-                icon: const Icon(Icons.checklist_outlined),
-                selectedIcon: const Icon(Icons.checklist_rounded),
-                label: l10n.navQaza),
-            NavigationDestination(
-                icon: const Icon(Icons.calculate_outlined),
-                selectedIcon: const Icon(Icons.calculate_rounded),
-                label: l10n.navCalculator),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),

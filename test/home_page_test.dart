@@ -264,6 +264,82 @@ void main() {
     }
   });
 
+  group('repeated prayer selection', () {
+    testWidgets('a second prayer replaces the first filter', (tester) async {
+      final container =
+          await pumpHome(tester, await ledger(), home: const WorkspaceShell());
+
+      await tester.tap(find.byKey(const Key('home_prayer_row_fajr')));
+      await tester.pumpAndSettle();
+      expect(container.read(qazaTrackerControllerProvider).prayerFilter,
+          PrayerType.fajr);
+
+      // Back to Home and pick a different prayer. The Qaza tab stays mounted,
+      // so this is the case that used to keep showing the first prayer.
+      container.read(workspaceDestinationProvider.notifier).state =
+          WorkspaceDestination.home;
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_prayer_row_asr')));
+      await tester.pumpAndSettle();
+
+      expect(container.read(workspaceDestinationProvider),
+          WorkspaceDestination.qaza);
+      final tracker = container.read(qazaTrackerControllerProvider);
+      expect(tracker.prayerFilter, PrayerType.asr);
+      expect(tracker.statusFilter, QazaStatusFilter.pending);
+      // The hand-off is consumed, not left to replay later.
+      expect(container.read(qazaTrackerFilterRequestProvider), isNull);
+    });
+
+    testWidgets('every prayer in turn lands on its own filter', (tester) async {
+      final container =
+          await pumpHome(tester, await ledger(), home: const WorkspaceShell());
+
+      for (final prayer in PrayerType.values) {
+        container.read(workspaceDestinationProvider.notifier).state =
+            WorkspaceDestination.home;
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(Key('home_prayer_row_${prayer.name}')));
+        await tester.pumpAndSettle();
+
+        expect(
+            container.read(qazaTrackerControllerProvider).prayerFilter, prayer,
+            reason: prayer.name);
+      }
+    });
+
+    testWidgets('a filter the user set by hand is not overwritten later',
+        (tester) async {
+      final container =
+          await pumpHome(tester, await ledger(), home: const WorkspaceShell());
+
+      await tester.tap(find.byKey(const Key('home_prayer_row_fajr')));
+      await tester.pumpAndSettle();
+
+      // Changing the filter inside the tracker must stick: no stale request
+      // is left over to re-apply Fajr.
+      container
+          .read(qazaTrackerControllerProvider.notifier)
+          .setPrayerFilter(PrayerType.isha);
+      await tester.pumpAndSettle();
+
+      expect(container.read(qazaTrackerControllerProvider).prayerFilter,
+          PrayerType.isha);
+    });
+  });
+
+  group('sync status', () {
+    testWidgets('the sync card is not on Home', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      // It stays available under Settings -> Backup & Data; Home leads with
+      // progress instead.
+      expect(find.byKey(const Key('sync_status_bar')), findsNothing);
+      expect(find.textContaining('Your changes are saved on this device'),
+          findsNothing);
+    });
+  });
+
   group('header', () {
     testWidgets('carries the title alone', (tester) async {
       await pumpHome(tester, await ledger());

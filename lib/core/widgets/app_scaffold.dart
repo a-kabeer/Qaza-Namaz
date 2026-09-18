@@ -45,6 +45,13 @@ class AppSpacing {
   static const md = 12.0;
   static const lg = 16.0;
   static const xl = 24.0;
+
+  /// Room a scrollable must leave at its bottom so a floating action button
+  /// does not cover its last item.
+  ///
+  /// The workspace FAB is 56dp tall with a 16dp margin; the extra 16dp keeps
+  /// the last row clear of it rather than flush against it.
+  static const fabClearance = 88.0;
 }
 
 class AppRadius {

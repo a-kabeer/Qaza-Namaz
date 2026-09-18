@@ -7,11 +7,13 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/date_display.dart';
+import '../../core/widgets/prayer_progress_row.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-import 'qaza_tracker_screen.dart';
+import 'qaza_navigation.dart';
 
 class CompleteQazaScreen extends ConsumerStatefulWidget {
   const CompleteQazaScreen({super.key});
@@ -23,18 +25,27 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
   PrayerType prayer = PrayerType.fajr;
   bool working = false;
 
-  AsyncValue<QazaRecord?> get oldestState =>
-      ref.watch(oldestPendingProvider(prayer));
-  QazaRecord? get oldest => oldestState.valueOrNull;
+  AsyncValue<QazaRecord?> get selectedState =>
+      ref.watch(latestPendingProvider(prayer));
+  QazaRecord? get selected => selectedState.valueOrNull;
+
+  /// Leaves this page for the Qaza tab, filtered to [item].
+  ///
+  /// Complete Qaza is a pushed route, so it has to pop itself or the tab
+  /// change would happen out of sight behind it.
+  void _openPrayer(PrayerType item) {
+    openQazaForPrayer(ref, item);
+    Navigator.of(context).pop();
+  }
 
   Future<void> _refresh() async {
-    ref.invalidate(oldestPendingProvider(prayer));
+    ref.invalidate(latestPendingProvider(prayer));
     ref.invalidate(progressSummaryProvider);
-    await ref.read(oldestPendingProvider(prayer).future);
+    await ref.read(latestPendingProvider(prayer).future);
   }
 
   Future<void> _complete() async {
-    final record = oldest;
+    final record = selected;
     if (working || record == null) return;
     final completedPrayer = prayer;
     final l10n = AppLocalizations.of(context);
@@ -46,12 +57,12 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
             recordId: record.id,
             completedAt: DateTime.now(),
           );
-      ref.invalidate(oldestPendingProvider(completedPrayer));
+      ref.invalidate(latestPendingProvider(completedPrayer));
       ref.invalidate(progressSummaryProvider);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       final nextPending =
-          await ref.read(oldestPendingProvider(completedPrayer).future);
+          await ref.read(latestPendingProvider(completedPrayer).future);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -76,9 +87,11 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = oldestState;
+    final state = selectedState;
     final record = state.valueOrNull;
     final l10n = AppLocalizations.of(context);
+    // The same aggregate Home reads; the counts are never recomputed here.
+    final summary = ref.watch(progressSummaryProvider).valueOrNull;
     return AppScaffold(
       title: l10n.completeTitle,
       onBack: () => Navigator.pop(context),
@@ -94,21 +107,29 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
               const SizedBox(height: 8),
               Text(l10n.completeIntro),
               const SizedBox(height: 20),
-              DropdownButtonFormField<PrayerType>(
-                value: prayer,
-                decoration: InputDecoration(
-                    labelText: l10n.completePrayerLabel,
-                    prefixIcon: const Icon(Icons.mosque_outlined)),
-                items: [
-                  for (final item in PrayerType.values)
-                    DropdownMenuItem(
-                        value: item, child: Text(item.localizedLabel(l10n)))
-                ],
-                onChanged: working || state.isLoading
-                    ? null
-                    : (value) {
-                        if (value != null) setState(() => prayer = value);
-                      },
+              SizedBox(
+                height: 52,
+                child: ListView(
+                  key: const Key('complete_prayer_pills'),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    // One pill per prayer, in the Qaza page's own chip style.
+                    // No "All" pill: this page completes one prayer at a time,
+                    // so there is no unfiltered state to offer.
+                    for (final item in PrayerType.values)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: FilterChip(
+                          key: Key('complete_prayer_pill_${item.name}'),
+                          label: Text(item.localizedLabel(l10n)),
+                          selected: prayer == item,
+                          onSelected: working || state.isLoading
+                              ? null
+                              : (_) => setState(() => prayer = item),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Card(
@@ -175,16 +196,24 @@ class _CompleteQazaScreenState extends ConsumerState<CompleteQazaScreen> {
                     : _complete,
                 expand: true,
               ),
-              const SizedBox(height: 12),
-              AppButton(
-                  label: l10n.completeOpenWorkspace,
-                  icon: Icons.checklist_rounded,
-                  secondary: true,
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const QazaTrackerScreen())),
-                  expand: true),
+              const SizedBox(height: 24),
+              Text(
+                l10n.homeProgressTitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              // The same list Home shows, from the same widget.
+              for (final item in PrayerType.values)
+                PrayerProgressRow(
+                  keyPrefix: 'complete',
+                  prayer: item,
+                  progress: summary?.byPrayer[item]?.progress ??
+                      const QazaProgress(pending: 0, completed: 0),
+                  onTap: () => _openPrayer(item),
+                ),
             ],
           ),
         ),

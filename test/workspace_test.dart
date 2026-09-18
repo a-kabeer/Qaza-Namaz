@@ -39,13 +39,14 @@ void main() {
     await _pumpNavigation(tester);
   }
 
-  testWidgets('Workspace exposes four primary navigation destinations',
+  testWidgets('Workspace exposes three primary navigation destinations',
       (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
     expect(find.text('Home').first, findsOneWidget);
-    expect(find.text('Calculator'), findsOneWidget);
-    expect(find.text('Qaza'), findsWidgets);
+    expect(find.text('Knowledge'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
+    // Qaza and Calculator are reached from Home, not from the bar.
+    expect(find.text('Calculator'), findsNothing);
     // Home leads with the progress overview and its two quick actions.
     expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
     expect(find.byKey(const Key('home_calculate_qaza')), findsOneWidget);
@@ -87,19 +88,13 @@ void main() {
     expect(find.text('Completed'), findsWidgets);
   });
 
-  testWidgets(
-      'Selecting Qaza, Calculator and Settings preserves destination state',
+  testWidgets('Selecting Knowledge and Settings preserves destination state',
       (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    await tester.tap(find.text('Calculator').first);
-    await _pumpNavigation(tester);
-    expect(find.text('About You'), findsOneWidget);
-    expect(find.text('Step 1 of 3'), findsOneWidget);
-    await tester.tap(find.text('Qaza').first);
+    await tester.tap(find.text('Knowledge').first);
     await _pumpNavigation(tester);
     await _pumpNavigation(tester);
-    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsOneWidget);
-    expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
+    expect(find.text('Knowledge Base'), findsWidgets);
     await tester.tap(find.text('Settings').first);
     await _pumpNavigation(tester);
     expect(find.text('Account'), findsWidgets);
@@ -112,16 +107,16 @@ void main() {
   testWidgets('Back from a non-root tab returns to Home instead of exiting',
       (tester) async {
     await pumpWorkspace(tester, InMemoryQazaRepository());
-    await tester.tap(find.text('Qaza').first);
+    await tester.tap(find.text('Knowledge').first);
     await _pumpNavigation(tester);
     await _pumpNavigation(tester);
-    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsOneWidget);
+    expect(find.text('Knowledge Base'), findsWidgets);
 
     final handled = await tester.binding.handlePopRoute();
     await _pumpNavigation(tester);
 
     expect(handled, isTrue);
-    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsNothing);
+    expect(find.text('Knowledge Base'), findsNothing);
     expect(find.text('Home').first, findsOneWidget);
   });
 }

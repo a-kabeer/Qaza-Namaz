@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/knowledge_base/data/bundled_knowledge_base_repository.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
 
 /// Checks the datasets that actually ship, not a fixture standing in for them.
@@ -113,8 +114,13 @@ void main() {
 
     expect(await repository.search(const KnowledgeQuery(text: 'qaza')),
         isNotEmpty);
+    // Free text reads the selected language's fields, so the Urdu search has
+    // to say so; under English the Urdu words match nothing.
     expect(
-        await repository.search(const KnowledgeQuery(text: 'قضا')), isNotEmpty);
+        await repository.search(const KnowledgeQuery(
+            text: 'قضا', language: KnowledgeLanguage.urdu)),
+        isNotEmpty);
+    expect(await repository.search(const KnowledgeQuery(text: 'قضا')), isEmpty);
     expect(
       await repository.search(const KnowledgeQuery(
         text: 'sleep',

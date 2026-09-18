@@ -126,17 +126,54 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   @override
   QazaTrackerState build() {
     ref.watch(activeUserIdProvider);
+    // The Qaza tab stays mounted once visited, so a second hand-off arrives
+    // while this controller is already built and build() never runs again for
+    // it. Listening covers those; the read below covers the first one, which
+    // is already waiting before this listener exists.
+    ref.listen<QazaTrackerFilterRequest?>(
+      qazaTrackerFilterRequestProvider,
+      (_, next) {
+        if (next != null) _applyRequest(next);
+      },
+    );
+
     final request = ref.read(qazaTrackerFilterRequestProvider);
     Future.microtask(refresh);
     if (request == null) return const QazaTrackerState();
-    // A request is consumed once, so returning to the tab later shows the
-    // filters the user last chose rather than replaying the old hand-off.
-    Future.microtask(
-        () => ref.read(qazaTrackerFilterRequestProvider.notifier).state = null);
+    _consumeRequest(request);
     return QazaTrackerState(
       statusFilter: request.status ?? QazaStatusFilter.pending,
       prayerFilter: request.prayer,
     );
+  }
+
+  /// Applies a hand-off to a tracker that is already on screen.
+  void _applyRequest(QazaTrackerFilterRequest request) {
+    _consumeRequest(request);
+    final status = request.status ?? state.statusFilter;
+    // A new prayer means a new list, so any selection made under the previous
+    // filter is dropped rather than carried across.
+    state = request.prayer == null
+        ? state.copyWith(
+            statusFilter: status,
+            clearPrayerFilter: true,
+            selected: const <String>{})
+        : state.copyWith(
+            statusFilter: status,
+            prayerFilter: request.prayer,
+            selected: const <String>{});
+    refresh();
+  }
+
+  /// Clears a request once it has been applied.
+  ///
+  /// Only this exact request is cleared: a newer one that arrived in the
+  /// meantime must survive to be applied in its turn.
+  void _consumeRequest(QazaTrackerFilterRequest request) {
+    Future.microtask(() {
+      final notifier = ref.read(qazaTrackerFilterRequestProvider.notifier);
+      if (identical(notifier.state, request)) notifier.state = null;
+    });
   }
 
   Future<void> refresh() async {

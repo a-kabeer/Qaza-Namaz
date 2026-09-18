@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
 import 'support/knowledge_fixtures.dart';
@@ -96,10 +97,17 @@ void main() {
         ['masala_001']);
   });
 
-  test('search matches Urdu text as well as English', () async {
+  test('search reads the selected Knowledge Base language', () async {
     final container = buildContainer();
 
     container.read(knowledgeSearchQueryProvider.notifier).state = 'نیند';
+    // English is the reading language, so Urdu words find nothing.
+    expect(await container.read(knowledgeFilteredArticlesProvider.future),
+        isEmpty);
+
+    container
+        .read(knowledgeLanguageProvider.notifier)
+        .set(KnowledgeLanguage.urdu);
     expect(
         (await container.read(knowledgeFilteredArticlesProvider.future))
             .map((article) => article.id),

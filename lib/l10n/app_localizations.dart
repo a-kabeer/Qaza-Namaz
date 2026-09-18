@@ -152,12 +152,6 @@ abstract class AppLocalizations {
   /// **'Cloud sync, export and import.'**
   String get settingsBackupSubtitle;
 
-  /// No description provided for @knowledgePrayerRulesTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer & Fiqh Rules'**
-  String get knowledgePrayerRulesTooltip;
-
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:
@@ -523,12 +517,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Progress'**
   String get qazaProgressLabel;
-
-  /// No description provided for @qazaLogsTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Logs'**
-  String get qazaLogsTooltip;
 
   /// No description provided for @qazaAddTooltip.
   ///
@@ -1616,12 +1604,6 @@ abstract class AppLocalizations {
   /// **'Choose multiple dates'**
   String get addQazaChooseMultiple;
 
-  /// No description provided for @addQazaGregorianNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Gregorian is the source of truth. Each date + prayer combination is an independent Qaza record.'**
-  String get addQazaGregorianNote;
-
   /// No description provided for @addQazaAvailabilityNote.
   ///
   /// In en, this message translates to:
@@ -1775,25 +1757,19 @@ abstract class AppLocalizations {
   /// No description provided for @completeHeading.
   ///
   /// In en, this message translates to:
-  /// **'Complete the oldest pending record'**
+  /// **'Complete the latest pending record'**
   String get completeHeading;
 
   /// No description provided for @completeIntro.
   ///
   /// In en, this message translates to:
-  /// **'Complete one record at a time. After success, the next oldest record is shown immediately.'**
+  /// **'Complete one record at a time. After success, the next pending record is shown immediately.'**
   String get completeIntro;
-
-  /// No description provided for @completePrayerLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer'**
-  String get completePrayerLabel;
 
   /// No description provided for @completeLoading.
   ///
   /// In en, this message translates to:
-  /// **'Loading oldest pending record…'**
+  /// **'Loading latest pending record…'**
   String get completeLoading;
 
   /// No description provided for @completeLoadError.
@@ -1817,7 +1793,7 @@ abstract class AppLocalizations {
   /// No description provided for @completeOldestSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Oldest pending record'**
+  /// **'Latest pending record'**
   String get completeOldestSubtitle;
 
   /// No description provided for @completeOriginalDate.
@@ -1835,7 +1811,7 @@ abstract class AppLocalizations {
   /// No description provided for @completeAction.
   ///
   /// In en, this message translates to:
-  /// **'Complete oldest pending'**
+  /// **'Complete latest pending'**
   String get completeAction;
 
   /// No description provided for @completeInProgress.
@@ -1843,12 +1819,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completing...'**
   String get completeInProgress;
-
-  /// No description provided for @completeOpenWorkspace.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the Qaza workspace'**
-  String get completeOpenWorkspace;
 
   /// No description provided for @completeFailed.
   ///
@@ -1871,158 +1841,8 @@ abstract class AppLocalizations {
   /// No description provided for @completeSuccessNext.
   ///
   /// In en, this message translates to:
-  /// **'{prayer} Qaza completed • next oldest is ready.'**
+  /// **'{prayer} Qaza completed • the next one is ready.'**
   String completeSuccessNext(String prayer);
-
-  /// No description provided for @logsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Logs & Progress'**
-  String get logsTitle;
-
-  /// No description provided for @logsSectionTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza logs'**
-  String get logsSectionTitle;
-
-  /// No description provided for @logsRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh logs'**
-  String get logsRefresh;
-
-  /// No description provided for @logsOrderNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Newest original Qaza dates first • loads 50 at a time'**
-  String get logsOrderNote;
-
-  /// No description provided for @logsScrollForMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Scroll for more history'**
-  String get logsScrollForMore;
-
-  /// No description provided for @logsLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading your history...'**
-  String get logsLoading;
-
-  /// No description provided for @logsLoadError.
-  ///
-  /// In en, this message translates to:
-  /// **'We could not load your history.'**
-  String get logsLoadError;
-
-  /// No description provided for @logsRefreshError.
-  ///
-  /// In en, this message translates to:
-  /// **'We could not refresh the latest history.'**
-  String get logsRefreshError;
-
-  /// No description provided for @logsLoadMoreError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load more history: {error}'**
-  String logsLoadMoreError(String error);
-
-  /// No description provided for @logsEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No Qaza records yet.'**
-  String get logsEmptyTitle;
-
-  /// No description provided for @logsEmptyMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Qaza records will appear here in chronological order.'**
-  String get logsEmptyMessage;
-
-  /// No description provided for @logsFilteredEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No matching Qaza records.'**
-  String get logsFilteredEmptyTitle;
-
-  /// No description provided for @logsFilteredEmptyMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Try changing or clearing the filters.'**
-  String get logsFilteredEmptyMessage;
-
-  /// No description provided for @logsClearFilters.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear filters'**
-  String get logsClearFilters;
-
-  /// No description provided for @logsFilterAllPrayers.
-  ///
-  /// In en, this message translates to:
-  /// **'All prayers'**
-  String get logsFilterAllPrayers;
-
-  /// No description provided for @logsFilterStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get logsFilterStatus;
-
-  /// No description provided for @logsFilterPrayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer'**
-  String get logsFilterPrayer;
-
-  /// No description provided for @logsFilterDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Filter by original Qaza date'**
-  String get logsFilterDate;
-
-  /// No description provided for @logsOriginalDateLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Original Qaza date'**
-  String get logsOriginalDateLabel;
-
-  /// No description provided for @logsProgressTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your progress'**
-  String get logsProgressTitle;
-
-  /// No description provided for @logsPrayerProgressTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer progress'**
-  String get logsPrayerProgressTitle;
-
-  /// No description provided for @logsProgressError.
-  ///
-  /// In en, this message translates to:
-  /// **'We could not load the progress summary.'**
-  String get logsProgressError;
-
-  /// No description provided for @logsOriginalDateValue.
-  ///
-  /// In en, this message translates to:
-  /// **'Original Qaza date: {date}'**
-  String logsOriginalDateValue(String date);
-
-  /// No description provided for @logsCompletedValue.
-  ///
-  /// In en, this message translates to:
-  /// **'Completed: {timestamp}'**
-  String logsCompletedValue(String timestamp);
-
-  /// No description provided for @logsStatusPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Status: Pending'**
-  String get logsStatusPending;
 
   /// No description provided for @knowledgeBaseTitle.
   ///
@@ -2216,30 +2036,6 @@ abstract class AppLocalizations {
   /// **'Google sign-in'**
   String get settingsGoogleSignIn;
 
-  /// No description provided for @settingsPrayerSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer'**
-  String get settingsPrayerSection;
-
-  /// No description provided for @settingsPrayerSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Review the rules used by the Qaza calculator.'**
-  String get settingsPrayerSubtitle;
-
-  /// No description provided for @settingsPrayerRules.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer & Fiqh Rules'**
-  String get settingsPrayerRules;
-
-  /// No description provided for @settingsPrayerRulesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculation method, Baligh, Witr'**
-  String get settingsPrayerRulesSubtitle;
-
   /// No description provided for @settingsKnowledgeBaseSubtitle.
   ///
   /// In en, this message translates to:
@@ -2359,42 +2155,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Islamic Prayer Qaza Tracker'**
   String get settingsAppDescription;
-
-  /// No description provided for @rulesCalculationMethod.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculation Method'**
-  String get rulesCalculationMethod;
-
-  /// No description provided for @rulesCalculationMethodSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the method applicable to your circumstances.'**
-  String get rulesCalculationMethodSubtitle;
-
-  /// No description provided for @rulesBaligh.
-  ///
-  /// In en, this message translates to:
-  /// **'Baligh / Puberty'**
-  String get rulesBaligh;
-
-  /// No description provided for @rulesBalighSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Used by the planning calculator.'**
-  String get rulesBalighSubtitle;
-
-  /// No description provided for @rulesWitr.
-  ///
-  /// In en, this message translates to:
-  /// **'Witr'**
-  String get rulesWitr;
-
-  /// No description provided for @rulesWitrSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Witr remains an independent prayer category.'**
-  String get rulesWitrSubtitle;
 
   /// No description provided for @cloudSyncTitle.
   ///

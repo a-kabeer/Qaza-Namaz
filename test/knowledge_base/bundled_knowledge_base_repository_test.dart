@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/features/knowledge_base/data/bundled_knowledge_base_repository.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
 
 import 'support/knowledge_fixtures.dart';
@@ -104,9 +105,13 @@ void main() {
         (await repository.search(const KnowledgeQuery(text: 'masala_001')))
             .map((article) => article.id),
         ['masala_001']);
-    // Urdu text finds the same record the English text does.
-    expect(await repository.search(const KnowledgeQuery(text: 'متن')),
+    // Free text reads the selected language only: Urdu words match under the
+    // Urdu reading language and nothing under English.
+    expect(
+        await repository.search(const KnowledgeQuery(
+            text: 'متن', language: KnowledgeLanguage.urdu)),
         hasLength(3));
+    expect(await repository.search(const KnowledgeQuery(text: 'متن')), isEmpty);
     expect(
         await repository.search(const KnowledgeQuery(
             text: 'masala_001', category: KnowledgeCategory.mugalat)),

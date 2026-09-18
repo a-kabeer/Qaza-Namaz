@@ -95,7 +95,15 @@ final oldestPendingProvider =
       .oldestPending(userId: userId, prayerType: prayer);
 });
 
-final historyProgressProvider = progressSummaryProvider;
+/// The newest pending record for one prayer, bounded the same way.
+final latestPendingProvider =
+    FutureProvider.autoDispose.family<QazaRecord?, PrayerType>((ref, prayer) {
+  final userId = ref.watch(activeUserIdProvider);
+  if (userId == null) return Future.value(null);
+  return ref
+      .read(qazaServiceProvider)
+      .latestPending(userId: userId, prayerType: prayer);
+});
 
 /// Theme choice, persisted locally and restored on startup.
 ///

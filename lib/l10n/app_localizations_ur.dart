@@ -36,9 +36,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsBackupSubtitle => 'کلاؤڈ سنک، برآمد اور درآمد۔';
 
   @override
-  String get knowledgePrayerRulesTooltip => 'نماز اور فقہی احکام';
-
-  @override
   String get navSettings => 'ترتیبات';
 
   @override
@@ -238,9 +235,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get qazaProgressLabel => 'پیش رفت';
-
-  @override
-  String get qazaLogsTooltip => 'ریکارڈ';
 
   @override
   String get qazaAddTooltip => 'قضا شامل کریں';
@@ -898,10 +892,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaChooseMultiple => 'متعدد تاریخیں منتخب کریں';
 
   @override
-  String get addQazaGregorianNote =>
-      'گریگورین تاریخ بنیاد ہے۔ ہر تاریخ اور نماز کا جوڑ ایک الگ قضا ریکارڈ ہے۔';
-
-  @override
   String get addQazaAvailabilityNote =>
       'کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔';
 
@@ -1013,9 +1003,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'ایک وقت میں ایک ریکارڈ مکمل کریں۔ کامیابی کے بعد اگلا پرانا ریکارڈ فوراً دکھایا جاتا ہے۔';
 
   @override
-  String get completePrayerLabel => 'نماز';
-
-  @override
   String get completeLoading => 'سب سے پرانا باقی ریکارڈ لوڈ ہو رہا ہے…';
 
   @override
@@ -1029,7 +1016,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'کوئی اور نماز منتخب کریں یا پہلے قضا ریکارڈ شامل کریں۔';
 
   @override
-  String get completeOldestSubtitle => 'سب سے پرانا باقی ریکارڈ';
+  String get completeOldestSubtitle => 'تازہ ترین باقی ریکارڈ';
 
   @override
   String get completeOriginalDate => 'اصل چھوٹنے کی تاریخ';
@@ -1038,13 +1025,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get completeTimestampNote => 'ادائیگی کا وقت الگ محفوظ کیا جاتا ہے۔';
 
   @override
-  String get completeAction => 'سب سے پرانی قضا ادا کریں';
+  String get completeAction => 'تازہ ترین قضا ادا کریں';
 
   @override
   String get completeInProgress => 'مکمل ہو رہا ہے...';
-
-  @override
-  String get completeOpenWorkspace => 'قضا ورک اسپیس کھولیں';
 
   @override
   String get completeFailed => 'قضا مکمل نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
@@ -1063,89 +1047,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String completeSuccessNext(String prayer) {
     return '$prayer کی قضا مکمل ہوئی • اگلا پرانا ریکارڈ تیار ہے۔';
   }
-
-  @override
-  String get logsTitle => 'ریکارڈ و پیش رفت';
-
-  @override
-  String get logsSectionTitle => 'قضا ریکارڈ';
-
-  @override
-  String get logsRefresh => 'ریکارڈ تازہ کریں';
-
-  @override
-  String get logsOrderNote =>
-      'نئی اصل تاریخیں پہلے • ایک وقت میں 50 لوڈ ہوتے ہیں';
-
-  @override
-  String get logsScrollForMore => 'مزید تاریخ کے لیے اسکرول کریں';
-
-  @override
-  String get logsLoading => 'آپ کی تاریخ لوڈ ہو رہی ہے...';
-
-  @override
-  String get logsLoadError => 'آپ کی تاریخ لوڈ نہیں ہو سکی۔';
-
-  @override
-  String get logsRefreshError => 'تازہ ترین تاریخ حاصل نہیں ہو سکی۔';
-
-  @override
-  String logsLoadMoreError(String error) {
-    return 'مزید تاریخ لوڈ نہیں ہو سکی: $error';
-  }
-
-  @override
-  String get logsEmptyTitle => 'ابھی کوئی قضا ریکارڈ نہیں۔';
-
-  @override
-  String get logsEmptyMessage =>
-      'آپ کے قضا ریکارڈ یہاں ترتیب وار دکھائی دیں گے۔';
-
-  @override
-  String get logsFilteredEmptyTitle => 'کوئی مماثل قضا ریکارڈ نہیں۔';
-
-  @override
-  String get logsFilteredEmptyMessage => 'فلٹرز تبدیل یا صاف کر کے دیکھیں۔';
-
-  @override
-  String get logsClearFilters => 'فلٹرز صاف کریں';
-
-  @override
-  String get logsFilterAllPrayers => 'تمام نمازیں';
-
-  @override
-  String get logsFilterStatus => 'حالت';
-
-  @override
-  String get logsFilterPrayer => 'نماز';
-
-  @override
-  String get logsFilterDate => 'اصل قضا تاریخ کے مطابق فلٹر کریں';
-
-  @override
-  String get logsOriginalDateLabel => 'اصل قضا تاریخ';
-
-  @override
-  String get logsProgressTitle => 'آپ کی پیش رفت';
-
-  @override
-  String get logsPrayerProgressTitle => 'نماز کے اعتبار سے پیش رفت';
-
-  @override
-  String get logsProgressError => 'پیش رفت کا خلاصہ لوڈ نہیں ہو سکا۔';
-
-  @override
-  String logsOriginalDateValue(String date) {
-    return 'اصل قضا تاریخ: $date';
-  }
-
-  @override
-  String logsCompletedValue(String timestamp) {
-    return 'مکمل ہوئی: $timestamp';
-  }
-
-  @override
-  String get logsStatusPending => 'حالت: باقی';
 
   @override
   String get knowledgeBaseTitle => 'معلومات';
@@ -1247,19 +1148,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsGoogleSignIn => 'گوگل سائن اِن';
 
   @override
-  String get settingsPrayerSection => 'نماز';
-
-  @override
-  String get settingsPrayerSubtitle =>
-      'قضا کیلکولیٹر میں استعمال ہونے والے اصول دیکھیں۔';
-
-  @override
-  String get settingsPrayerRules => 'نماز و فقہی اصول';
-
-  @override
-  String get settingsPrayerRulesSubtitle => 'حسابی طریقہ، بلوغت، وتر';
-
-  @override
   String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
 
   @override
@@ -1336,26 +1224,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsAppDescription => 'اسلامی نماز قضا ٹریکر';
-
-  @override
-  String get rulesCalculationMethod => 'حسابی طریقہ';
-
-  @override
-  String get rulesCalculationMethodSubtitle =>
-      'اپنے حالات کے مطابق طریقہ منتخب کریں۔';
-
-  @override
-  String get rulesBaligh => 'بلوغت';
-
-  @override
-  String get rulesBalighSubtitle =>
-      'منصوبہ بندی کے کیلکولیٹر میں استعمال ہوتا ہے۔';
-
-  @override
-  String get rulesWitr => 'وتر';
-
-  @override
-  String get rulesWitrSubtitle => 'وتر ایک مستقل نماز کے طور پر شمار ہوتی ہے۔';
 
   @override
   String get cloudSyncTitle => 'کلاؤڈ سنک';

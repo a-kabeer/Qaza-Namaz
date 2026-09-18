@@ -48,22 +48,24 @@ class KnowledgeArticle {
   final List<KnowledgeReference> references;
   final List<String> relatedArticleIds;
 
-  /// Everything a free-text search should look at, in both languages.
+  /// Everything a free-text search should look at, for one language.
+  ///
+  /// Searching the other language's text would return an article whose visible
+  /// title and summary contain nothing the reader typed, so the language-bearing
+  /// fields are taken from the chosen side only. The id, the topic and the
+  /// bibliographic references carry no language and appear identically in both
+  /// datasets, so they stay searchable either way.
   ///
   /// Lives on the article rather than in a provider so search behaves the same
   /// wherever it is invoked from.
-  String get searchableText => [
+  String searchableTextFor({required bool urdu}) => [
         id,
         topicId,
-        title.en,
-        title.ur,
-        question.en,
-        question.ur,
-        summary.en,
-        summary.ur,
-        body.en,
-        body.ur,
-        ...keywords.all,
+        urdu ? title.ur : title.en,
+        urdu ? question.ur : question.en,
+        urdu ? summary.ur : summary.en,
+        urdu ? body.ur : body.en,
+        ...(urdu ? keywords.ur : keywords.en),
         for (final reference in references)
           '${reference.sourceName} ${reference.bookName} ${reference.author}',
       ].join(' ').toLowerCase();

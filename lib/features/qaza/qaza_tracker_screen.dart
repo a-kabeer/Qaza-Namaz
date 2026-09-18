@@ -10,7 +10,6 @@ import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-import '../history/history_progress.dart';
 import 'add_qaza_screen.dart';
 import 'qaza_tracker_controller.dart';
 
@@ -28,15 +27,6 @@ class QazaTrackerScreen extends ConsumerWidget {
     return AppScaffold(
       title: l10n.qazaTitle,
       actions: [
-        IconButton(
-          key: const Key('qaza_tracker_history'),
-          tooltip: l10n.qazaLogsTooltip,
-          onPressed: () => Navigator.push<void>(
-            context,
-            MaterialPageRoute(builder: (_) => const HistoryProgressScreen()),
-          ),
-          icon: const Icon(Icons.history_rounded),
-        ),
         IconButton(
           key: const Key('qaza_tracker_add'),
           tooltip: l10n.qazaAddTooltip,
@@ -402,7 +392,13 @@ class _BulkCompletionBar extends StatelessWidget {
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        // Sits above the FAB rather than under it, so both stay tappable.
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.fabClearance,
+        ),
         child: Row(
           children: [
             TextButton(
