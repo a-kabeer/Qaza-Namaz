@@ -24,6 +24,18 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+// Release signing material. `android/key.properties` is git-ignored and is
+// never committed; see android/key.properties.example for the expected keys.
+// When it is absent — CI, a fresh clone, any contributor without the keystore —
+// the release build falls back to the debug key so the build still succeeds,
+// but the resulting APK is not distributable.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(keystorePropertiesFile.newReader("UTF-8"))
+}
+
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
     compileSdk = flutter.compileSdkVersion
@@ -50,10 +62,28 @@ android {
         versionName = flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                storeFile = file(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own release signing config.
-            signingConfig = signingConfigs.debug
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.release
+            } else {
+                logger.warn(
+                    "WARNING: android/key.properties not found. Signing the " +
+                    "release build with the DEBUG key. This APK cannot be " +
+                    "distributed. See android/key.properties.example.")
+                signingConfig = signingConfigs.debug
+            }
         }
     }
 }
