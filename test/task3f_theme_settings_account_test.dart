@@ -139,10 +139,10 @@ void main() {
       (tester) async {
     await pumpSettings(tester, ThemeMode.light);
     expect(find.text('Account'), findsNWidgets(2));
-    expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
     expect(find.text('Notifications'), findsWidgets);
-    expect(find.text('Data & Cloud'), findsOneWidget);
+    expect(find.text('Cloud Sync'), findsOneWidget);
     expect(find.text('About'), findsNWidgets(2));
+    // Account, Reminders, Cloud sync, Export, Import, About.
     expect(find.byType(SettingsNavRow), findsNWidgets(6));
     await tester.tap(find.text('Account').last);
     await tester.pumpAndSettle();
@@ -163,7 +163,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Abdul Kabeer'), findsOneWidget);
     expect(find.text('kabeer@example.com'), findsOneWidget);
-    expect(find.text('uid-abc'), findsOneWidget);
+    // The Firebase UID is developer context and no longer shown to the user.
+    expect(find.text('uid-abc'), findsNothing);
+    expect(find.text('Developer context'), findsNothing);
     expect(find.text('Google authentication'), findsOneWidget);
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Sign out'), findsOneWidget);

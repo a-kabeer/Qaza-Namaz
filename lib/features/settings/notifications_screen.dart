@@ -108,10 +108,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     return AppScaffold(
       title: l10n.notificationsTitle,
       body: settings.when(
-        loading: () => LoadingState(message: l10n.notificationsLoading),
+        loading: () => LoadingState(
+            key: const Key('notifications_loading_state'),
+            message: l10n.notificationsLoading),
         error: (error, stack) => ErrorState(
+          key: const Key('notifications_error_state'),
           message: l10n.notificationsLoadError('$error'),
-          onRetry: () => ref.invalidate(notificationSettingsProvider),
+          onRetry: () =>
+              ref.read(notificationSettingsProvider.notifier).reload(),
         ),
         data: (value) {
           final theme = Theme.of(context);
@@ -170,11 +174,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   value: value.enabled,
                   title: Text(l10n.notificationsDailyTitle),
                   subtitle: Text(
-                    value.enabled
-                        ? value.hasPendingQaza
-                            ? l10n.notificationsOnAt(value.formattedTime)
-                            : l10n.notificationsOnPendingWait
-                        : l10n.notificationsOff,
+                    !value.enabled
+                        ? l10n.notificationsOff
+                        : !value.pendingCountKnown
+                            ? l10n.notificationsPendingUnknown
+                            : value.hasPendingQaza
+                                ? l10n.notificationsOnAt(value.formattedTime)
+                                : l10n.notificationsOnPendingWait,
                   ),
                   onChanged: _working ? null : _setEnabled,
                 ),
@@ -224,6 +230,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               const SizedBox(height: 12),
               Card(
                 child: ListTile(
+                  key: const Key('notification_schedule_status'),
                   leading: Icon(
                     value.enabled && value.hasPendingQaza
                         ? Icons.notifications_active_outlined
@@ -257,6 +264,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (!value.canSendNotifications) {
       return l10n.notificationsPermissionRequired;
     }
+    // Saying "nothing pending" when the ledger could not be read would be a
+    // guess presented as a fact.
+    if (!value.pendingCountKnown) return l10n.notificationsPendingUnknown;
     if (!value.hasPendingQaza) return l10n.notificationsNoPending;
     return l10n.notificationsScheduledAt(value.formattedTime);
   }

@@ -8,6 +8,7 @@ import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import '../domain/knowledge_language.dart';
 import 'knowledge_article_detail_page.dart';
+import 'prayer_rules_page.dart';
 import 'providers/knowledge_base_providers.dart';
 import 'widgets/knowledge_language_switcher.dart';
 
@@ -46,6 +47,18 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.knowledgeBaseTitle),
+        actions: [
+          // Prayer & Fiqh rules are reference material, so they live here
+          // with the Masail and Mugalat rather than in Settings.
+          IconButton(
+            key: const Key('knowledge_prayer_rules'),
+            tooltip: l10n.knowledgePrayerRulesTooltip,
+            icon: const Icon(Icons.rule_folder_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const FiqhScreen()),
+            ),
+          ),
+        ],
         bottom: const KnowledgeLanguageBar(),
       ),
       body: RefreshIndicator(

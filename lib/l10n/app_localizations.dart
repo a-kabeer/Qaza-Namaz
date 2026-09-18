@@ -122,6 +122,42 @@ abstract class AppLocalizations {
   /// **'Calculator'**
   String get navCalculator;
 
+  /// No description provided for @navKnowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge'**
+  String get navKnowledge;
+
+  /// No description provided for @settingsRemindersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get settingsRemindersSection;
+
+  /// No description provided for @settingsRemindersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder to complete your Qaza.'**
+  String get settingsRemindersSubtitle;
+
+  /// No description provided for @settingsBackupSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Data'**
+  String get settingsBackupSection;
+
+  /// No description provided for @settingsBackupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync, export and import.'**
+  String get settingsBackupSubtitle;
+
+  /// No description provided for @knowledgePrayerRulesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer & Fiqh Rules'**
+  String get knowledgePrayerRulesTooltip;
+
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:
@@ -433,6 +469,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Qaza Manually'**
   String get homeAddManually;
+
+  /// No description provided for @homeStatTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get homeStatTotal;
+
+  /// No description provided for @homeAddQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Qaza'**
+  String get homeAddQaza;
+
+  /// No description provided for @homeCompletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} completed'**
+  String homeCompletedCount(int count);
 
   /// No description provided for @homeProgressTitle.
   ///
@@ -1105,6 +1159,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification permission is required.'**
   String get notificationsPermissionRequired;
+
+  /// No description provided for @notificationsPendingUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Qaza could not be checked. Pull to retry.'**
+  String get notificationsPendingUnknown;
 
   /// No description provided for @notificationsNoPending.
   ///

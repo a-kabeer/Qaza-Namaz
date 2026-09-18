@@ -32,13 +32,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Settings is configuration only, in the documented order.
     for (final section in [
-      'Appearance',
-      'Language',
       'Account',
-      'Prayer',
-      'Notifications',
-      'Data & Storage',
+      'Language',
+      'Appearance',
+      'Reminders',
+      'Backup & Data',
       'About',
     ]) {
       expect(find.text(section), findsWidgets);
@@ -46,8 +46,13 @@ void main() {
 
     expect(find.byKey(const Key('settings_theme_mode')), findsOneWidget);
     expect(find.byKey(const Key('settings_language')), findsOneWidget);
-    expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
-    expect(find.text('Data & Cloud'), findsOneWidget);
+    // Backup & Data lists its three entries directly.
+    expect(find.text('Cloud Sync'), findsOneWidget);
+    expect(find.text('Export data'), findsOneWidget);
+    expect(find.text('Import data'), findsOneWidget);
+    // Reference material belongs to the Knowledge tab now.
+    expect(find.text('Prayer & Fiqh Rules'), findsNothing);
+    expect(find.text('Knowledge Base'), findsNothing);
     expect(find.text('General'), findsNothing);
   });
 }

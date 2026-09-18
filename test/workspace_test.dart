@@ -46,10 +46,12 @@ void main() {
     expect(find.text('Calculator'), findsOneWidget);
     expect(find.text('Qaza'), findsWidgets);
     expect(find.text('Settings'), findsOneWidget);
-    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
-    expect(find.text('Add Qaza Manually'), findsOneWidget);
+    // Home leads with the progress overview and its two quick actions.
+    expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
+    expect(find.byKey(const Key('home_calculate_qaza')), findsOneWidget);
+    expect(find.byKey(const Key('home_add_qaza')), findsOneWidget);
     await revealPrayerLedger(tester);
-    expect(find.text('Start Your Qaza Journey'), findsOneWidget);
+    expect(find.byKey(const Key('home_prayer_row_fajr')), findsOneWidget);
   });
 
   testWidgets('Home derives live totals from the aggregate repository summary',
@@ -75,9 +77,14 @@ void main() {
           updatedAt: now),
     ]);
     await pumpWorkspace(tester, repository);
-    expect(find.text('1 pending • 1 completed'), findsWidgets);
-    expect(find.text('50%'), findsOneWidget);
-    expect(find.text('1/1'), findsOneWidget);
+    // One pending, one completed: the overview counts and the overall ring
+    // both come from the aggregate summary.
+    expect(
+        tester.widget<Text>(find.byKey(const Key('home_pending_value'))).data,
+        '1');
+    expect(find.text('50%'), findsWidgets);
+    expect(find.text('Total'), findsOneWidget);
+    expect(find.text('Completed'), findsWidgets);
   });
 
   testWidgets(
@@ -96,7 +103,10 @@ void main() {
     await tester.tap(find.text('Settings').first);
     await _pumpNavigation(tester);
     expect(find.text('Account'), findsWidgets);
-    expect(find.text('Prayer & Fiqh Rules'), findsOneWidget);
+    // Prayer rules moved to the Knowledge tab; Settings is configuration only.
+    expect(find.text('Prayer & Fiqh Rules'), findsNothing);
+    expect(find.text('Reminders'), findsOneWidget);
+    expect(find.text('Backup & Data'), findsOneWidget);
   });
 
   testWidgets('Back from a non-root tab returns to Home instead of exiting',

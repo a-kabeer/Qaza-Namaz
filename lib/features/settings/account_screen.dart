@@ -85,17 +85,6 @@ class AccountScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(l10n.accountDeveloperContext,
-              style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          AppCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                  leading: const Icon(Icons.code_rounded),
-                  title: Text(l10n.accountFirebaseUid),
-                  subtitle: Text(
-                      user.id.isEmpty ? l10n.accountNotAvailable : user.id))),
           const SizedBox(height: 24),
           AppCard(
             color: scheme.errorContainer.withValues(alpha: .35),

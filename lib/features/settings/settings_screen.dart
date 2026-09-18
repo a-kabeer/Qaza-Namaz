@@ -13,7 +13,6 @@ import '../../data/sync/sync_state.dart' as sync_models;
 import '../../domain/entities/app_user.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import '../knowledge_base/presentation/knowledge_base_page.dart';
 import 'account_screen.dart';
 import 'notifications_screen.dart';
 import 'qaza_reset_controller.dart';
@@ -40,33 +39,13 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           SettingsSection(
-            title: l10n.settingsAppearance,
-            subtitle: l10n.settingsAppearanceSubtitle,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SegmentedButton<AppThemeMode>(
-                key: const Key('settings_theme_mode'),
-                segments: [
-                  ButtonSegment(
-                      value: AppThemeMode.system,
-                      icon: const Icon(Icons.brightness_6_outlined),
-                      label: Text(l10n.settingsThemeSystem)),
-                  ButtonSegment(
-                      value: AppThemeMode.light,
-                      icon: const Icon(Icons.light_mode_outlined),
-                      label: Text(l10n.settingsThemeLight)),
-                  ButtonSegment(
-                      value: AppThemeMode.dark,
-                      icon: const Icon(Icons.dark_mode_outlined),
-                      label: Text(l10n.settingsThemeDark)),
-                ],
-                selected: {themeMode},
-                onSelectionChanged: (value) {
-                  final selected = value.first;
-                  if (selected != themeMode)
-                    ref.read(themeModeProvider.notifier).set(selected);
-                },
-              ),
+            title: l10n.settingsAccountSection,
+            subtitle: l10n.settingsAccountSubtitle,
+            child: SettingsNavRow(
+              icon: Icons.account_circle_outlined,
+              title: l10n.settingsAccountSection,
+              subtitle: _accountSubtitle(l10n, account),
+              onTap: () => open(const AccountScreen()),
             ),
           ),
           const SizedBox(height: 16),
@@ -108,41 +87,39 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           SettingsSection(
-            title: l10n.settingsAccountSection,
-            subtitle: l10n.settingsAccountSubtitle,
-            child: SettingsNavRow(
-              icon: Icons.account_circle_outlined,
-              title: l10n.settingsAccountSection,
-              subtitle: _accountSubtitle(l10n, account),
-              onTap: () => open(const AccountScreen()),
+            title: l10n.settingsAppearance,
+            subtitle: l10n.settingsAppearanceSubtitle,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SegmentedButton<AppThemeMode>(
+                key: const Key('settings_theme_mode'),
+                segments: [
+                  ButtonSegment(
+                      value: AppThemeMode.system,
+                      icon: const Icon(Icons.brightness_6_outlined),
+                      label: Text(l10n.settingsThemeSystem)),
+                  ButtonSegment(
+                      value: AppThemeMode.light,
+                      icon: const Icon(Icons.light_mode_outlined),
+                      label: Text(l10n.settingsThemeLight)),
+                  ButtonSegment(
+                      value: AppThemeMode.dark,
+                      icon: const Icon(Icons.dark_mode_outlined),
+                      label: Text(l10n.settingsThemeDark)),
+                ],
+                selected: {themeMode},
+                onSelectionChanged: (value) {
+                  final selected = value.first;
+                  if (selected != themeMode)
+                    ref.read(themeModeProvider.notifier).set(selected);
+                },
+              ),
             ),
           ),
           const SizedBox(height: 16),
           SettingsSection(
-            title: l10n.settingsPrayerSection,
-            subtitle: l10n.settingsPrayerSubtitle,
-            child: Column(
-              children: [
-                SettingsNavRow(
-                  icon: Icons.menu_book_outlined,
-                  title: l10n.settingsPrayerRules,
-                  subtitle: l10n.settingsPrayerRulesSubtitle,
-                  onTap: () => open(const FiqhScreen()),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.library_books_outlined,
-                  title: l10n.knowledgeBaseTitle,
-                  subtitle: l10n.settingsKnowledgeBaseSubtitle,
-                  onTap: () => open(const KnowledgeBasePage()),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.notificationsTitle,
-            subtitle: l10n.settingsNotificationsSubtitle,
+            title: l10n.settingsRemindersSection,
+            subtitle: l10n.settingsRemindersSubtitle,
             child: SettingsNavRow(
               icon: Icons.notifications_none,
               title: l10n.notificationsTitle,
@@ -152,13 +129,33 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           SettingsSection(
-            title: l10n.settingsDataSection,
-            subtitle: l10n.settingsDataSubtitle,
-            child: SettingsNavRow(
-              icon: Icons.cloud_outlined,
-              title: l10n.settingsDataCloud,
-              subtitle: l10n.settingsDataCloudSubtitle,
-              onTap: () => open(const DataCloudScreen()),
+            title: l10n.settingsBackupSection,
+            subtitle: l10n.settingsBackupSubtitle,
+            child: Column(
+              children: [
+                SettingsNavRow(
+                  icon: Icons.cloud_outlined,
+                  title: l10n.cloudSyncTitle,
+                  subtitle: l10n.settingsDataCloudSubtitle,
+                  onTap: () => open(const DataCloudScreen()),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                // Export and Import are two entries onto the one screen that
+                // performs both, rather than a second copy of that flow.
+                SettingsNavRow(
+                  icon: Icons.file_upload_outlined,
+                  title: l10n.dataExportTitle,
+                  subtitle: l10n.dataExportBody,
+                  onTap: () => open(const QazaDataManagementScreen()),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SettingsNavRow(
+                  icon: Icons.file_download_outlined,
+                  title: l10n.dataImportTitle,
+                  subtitle: l10n.dataImportBody,
+                  onTap: () => open(const QazaDataManagementScreen()),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -228,32 +225,6 @@ class _ResetQazaCounterRow extends ConsumerWidget {
                   ? l10n.settingsResetCounterDone
                   : l10n.settingsResetCounterFailed(error ?? ''))));
       },
-    );
-  }
-}
-
-class FiqhScreen extends StatelessWidget {
-  const FiqhScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AppScaffold(
-      title: l10n.settingsPrayerRules,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ListTile(
-              title: Text(l10n.rulesCalculationMethod),
-              subtitle: Text(l10n.rulesCalculationMethodSubtitle)),
-          ListTile(
-              title: Text(l10n.rulesBaligh),
-              subtitle: Text(l10n.rulesBalighSubtitle)),
-          ListTile(
-              title: Text(l10n.rulesWitr),
-              subtitle: Text(l10n.rulesWitrSubtitle)),
-        ],
-      ),
     );
   }
 }

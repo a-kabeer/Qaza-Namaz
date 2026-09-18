@@ -21,6 +21,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get navCalculator => 'کیلکولیٹر';
 
   @override
+  String get navKnowledge => 'معلومات';
+
+  @override
+  String get settingsRemindersSection => 'یاد دہانیاں';
+
+  @override
+  String get settingsRemindersSubtitle => 'قضا مکمل کرنے کی روزانہ یاد دہانی۔';
+
+  @override
+  String get settingsBackupSection => 'بیک اپ اور ڈیٹا';
+
+  @override
+  String get settingsBackupSubtitle => 'کلاؤڈ سنک، برآمد اور درآمد۔';
+
+  @override
+  String get knowledgePrayerRulesTooltip => 'نماز اور فقہی احکام';
+
+  @override
   String get navSettings => 'ترتیبات';
 
   @override
@@ -186,6 +204,17 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeAddManually => 'دستی طور پر قضا شامل کریں';
+
+  @override
+  String get homeStatTotal => 'کل';
+
+  @override
+  String get homeAddQaza => 'قضا شامل کریں';
+
+  @override
+  String homeCompletedCount(int count) {
+    return '$count مکمل';
+  }
 
   @override
   String get homeProgressTitle => 'آپ کی پیش رفت';
@@ -605,6 +634,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get notificationsPermissionRequired => 'اطلاعات کی اجازت درکار ہے۔';
+
+  @override
+  String get notificationsPendingUnknown =>
+      'باقی قضا کی جانچ نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
 
   @override
   String get notificationsNoPending =>

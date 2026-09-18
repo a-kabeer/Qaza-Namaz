@@ -102,6 +102,22 @@ class QazaTrackerState {
       );
 }
 
+/// A filter another screen wants the tracker to open with.
+///
+/// The controller is auto-disposed, so filters set on it before the Qaza tab
+/// is on screen would be thrown away with the instance. Requests are left
+/// here instead and applied by [QazaTrackerController.build], which makes the
+/// hand-off independent of when each screen builds.
+class QazaTrackerFilterRequest {
+  const QazaTrackerFilterRequest({this.prayer, this.status});
+
+  final PrayerType? prayer;
+  final QazaStatusFilter? status;
+}
+
+final qazaTrackerFilterRequestProvider =
+    StateProvider<QazaTrackerFilterRequest?>((ref) => null);
+
 /// Owns the Qaza workspace: filters, bounded paging, selection and bulk
 /// completion. Every read goes through [QazaService] with a page limit.
 class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
@@ -110,8 +126,17 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   @override
   QazaTrackerState build() {
     ref.watch(activeUserIdProvider);
+    final request = ref.read(qazaTrackerFilterRequestProvider);
     Future.microtask(refresh);
-    return const QazaTrackerState();
+    if (request == null) return const QazaTrackerState();
+    // A request is consumed once, so returning to the tab later shows the
+    // filters the user last chose rather than replaying the old hand-off.
+    Future.microtask(
+        () => ref.read(qazaTrackerFilterRequestProvider.notifier).state = null);
+    return QazaTrackerState(
+      statusFilter: request.status ?? QazaStatusFilter.pending,
+      prayerFilter: request.prayer,
+    );
   }
 
   Future<void> refresh() async {

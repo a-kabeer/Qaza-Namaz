@@ -21,6 +21,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCalculator => 'Calculator';
 
   @override
+  String get navKnowledge => 'Knowledge';
+
+  @override
+  String get settingsRemindersSection => 'Reminders';
+
+  @override
+  String get settingsRemindersSubtitle =>
+      'Daily reminder to complete your Qaza.';
+
+  @override
+  String get settingsBackupSection => 'Backup & Data';
+
+  @override
+  String get settingsBackupSubtitle => 'Cloud sync, export and import.';
+
+  @override
+  String get knowledgePrayerRulesTooltip => 'Prayer & Fiqh Rules';
+
+  @override
   String get navSettings => 'Settings';
 
   @override
@@ -186,6 +205,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeAddManually => 'Add Qaza Manually';
+
+  @override
+  String get homeStatTotal => 'Total';
+
+  @override
+  String get homeAddQaza => 'Add Qaza';
+
+  @override
+  String homeCompletedCount(int count) {
+    return '$count completed';
+  }
 
   @override
   String get homeProgressTitle => 'Your progress';
@@ -603,6 +633,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationsPermissionRequired =>
       'Notification permission is required.';
+
+  @override
+  String get notificationsPendingUnknown =>
+      'Pending Qaza could not be checked. Pull to retry.';
 
   @override
   String get notificationsNoPending =>

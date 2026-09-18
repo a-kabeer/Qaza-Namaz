@@ -31,6 +31,7 @@ class NotificationSettingsState {
     required this.minute,
     required this.permissionStatus,
     required this.hasPendingQaza,
+    this.pendingCountKnown = true,
   });
 
   final bool enabled;
@@ -38,6 +39,13 @@ class NotificationSettingsState {
   final int minute;
   final NotificationPermissionStatus permissionStatus;
   final bool hasPendingQaza;
+
+  /// False when the Qaza aggregate could not be read this load.
+  ///
+  /// The reminder then behaves as if nothing is pending — scheduling on a
+  /// guess would be worse — but the page says so rather than claiming the
+  /// ledger is empty.
+  final bool pendingCountKnown;
 
   bool get canSendNotifications =>
       permissionStatus == NotificationPermissionStatus.granted;
@@ -62,6 +70,7 @@ class NotificationSettingsState {
     int? minute,
     NotificationPermissionStatus? permissionStatus,
     bool? hasPendingQaza,
+    bool? pendingCountKnown,
   }) {
     return NotificationSettingsState(
       enabled: enabled ?? this.enabled,
@@ -69,6 +78,7 @@ class NotificationSettingsState {
       minute: minute ?? this.minute,
       permissionStatus: permissionStatus ?? this.permissionStatus,
       hasPendingQaza: hasPendingQaza ?? this.hasPendingQaza,
+      pendingCountKnown: pendingCountKnown ?? this.pendingCountKnown,
     );
   }
 }
@@ -103,6 +113,14 @@ class NotificationSettingsNotifier
     return '$baseKey:${userId ?? 'anonymous'}';
   }
 
+  /// Loads the page's data.
+  ///
+  /// The saved reminder settings are the only hard dependency: they are what
+  /// the page exists to show, so failing to read them is a real error. The
+  /// platform scheduler and the Qaza aggregate are both allowed to fail
+  /// without taking the page down — a device where notifications are
+  /// unavailable, or a ledger that cannot be read right now, still has
+  /// settings worth displaying and an explanation worth giving.
   @override
   Future<NotificationSettingsState> build() async {
     ref.listen<AsyncValue<QazaProgressSummary>>(
@@ -110,32 +128,80 @@ class NotificationSettingsNotifier
       (_, next) => _listenToQazaChanges(next),
     );
 
-    await _scheduler.initialize();
+    // Reading the stored preferences is the one step allowed to throw.
     final prefs = await SharedPreferences.getInstance();
     final requested =
         prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
-    final permissionGranted = await _scheduler.isPermissionGranted();
-    // Aggregate-only: reminders need to know whether anything is pending, not
-    // what the pending records are, so this never reads the ledger.
-    final summary = await ref.read(progressSummaryProvider.future);
-    final hasPendingQaza = summary.overall.pending > 0;
 
-    final permissionStatus = permissionGranted
-        ? NotificationPermissionStatus.granted
-        : requested
-            ? NotificationPermissionStatus.denied
-            : NotificationPermissionStatus.notRequested;
+    final schedulerReady = await _initializeScheduler();
+    final permissionStatus = schedulerReady
+        ? await _resolvePermissionStatus(requested: requested)
+        // The platform layer never came up, so no permission state can be
+        // trusted. This is the case the `unavailable` status exists for.
+        : NotificationPermissionStatus.unavailable;
+
+    final pending = await _readPendingQaza();
 
     final settings = NotificationSettingsState(
       enabled: prefs.getBool(_scopedKey(_enabledKey)) ?? false,
       hour: prefs.getInt(_scopedKey(_hourKey)) ?? _defaultReminderHour,
       minute: prefs.getInt(_scopedKey(_minuteKey)) ?? _defaultReminderMinute,
       permissionStatus: permissionStatus,
-      hasPendingQaza: hasPendingQaza,
+      hasPendingQaza: pending ?? false,
+      pendingCountKnown: pending != null,
     );
 
     await _reconcile(settings);
     return settings;
+  }
+
+  /// Reloads everything behind the page, for the Retry action.
+  ///
+  /// The failed dependency has to be invalidated too: a cached error in the
+  /// Qaza aggregate would otherwise be replayed into every rebuild, which is
+  /// what made Retry look like it did nothing.
+  Future<void> reload() async {
+    state = const AsyncLoading();
+    ref.invalidate(progressSummaryProvider);
+    state = await AsyncValue.guard(build);
+  }
+
+  Future<bool> _initializeScheduler() async {
+    try {
+      await _scheduler.initialize();
+      return true;
+    } catch (_) {
+      // Timezone lookup and channel creation both fail on some devices.
+      return false;
+    }
+  }
+
+  Future<NotificationPermissionStatus> _resolvePermissionStatus({
+    required bool requested,
+  }) async {
+    try {
+      if (await _scheduler.isPermissionGranted()) {
+        return NotificationPermissionStatus.granted;
+      }
+    } catch (_) {
+      return NotificationPermissionStatus.unavailable;
+    }
+    return requested
+        ? NotificationPermissionStatus.denied
+        : NotificationPermissionStatus.notRequested;
+  }
+
+  /// Whether anything is pending, or null when the ledger could not be read.
+  ///
+  /// Aggregate-only: reminders need to know whether anything is pending, not
+  /// what the pending records are, so this never reads the ledger itself.
+  Future<bool?> _readPendingQaza() async {
+    try {
+      final summary = await ref.read(progressSummaryProvider.future);
+      return summary.overall.pending > 0;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> refreshPermissionStatus() async {
@@ -242,21 +308,31 @@ class NotificationSettingsNotifier
 
     final updated = current.copyWith(
       hasPendingQaza: summary.overall.pending > 0,
+      pendingCountKnown: true,
     );
     state = AsyncData(updated);
     _reconcile(updated);
   }
 
+  /// Brings the platform schedule in line with [value].
+  ///
+  /// Reconciliation is a side effect of loading, so it must not be able to
+  /// fail the load: on a device where the scheduler is unavailable there is
+  /// nothing to reconcile and nothing the reader can do about it here.
   Future<void> _reconcile(NotificationSettingsState value) async {
-    switch (value.scheduleStatus) {
-      case NotificationScheduleStatus.disabled:
-      case NotificationScheduleStatus.permissionRequired:
-      case NotificationScheduleStatus.noPendingQaza:
-        await _scheduler.cancelDaily();
-        return;
-      case NotificationScheduleStatus.scheduled:
-        await _scheduler.scheduleDaily(
-            hour: value.hour, minute: value.minute, content: _content());
+    try {
+      switch (value.scheduleStatus) {
+        case NotificationScheduleStatus.disabled:
+        case NotificationScheduleStatus.permissionRequired:
+        case NotificationScheduleStatus.noPendingQaza:
+          await _scheduler.cancelDaily();
+          return;
+        case NotificationScheduleStatus.scheduled:
+          await _scheduler.scheduleDaily(
+              hour: value.hour, minute: value.minute, content: _content());
+      }
+    } catch (_) {
+      // Left as-is; the page already reports the scheduler as unavailable.
     }
   }
 
