@@ -4,6 +4,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../l10n/app_localizations.dart';
 import 'calendar_controller.dart';
+import 'year_selector.dart';
 
 class CalendarPicker extends ConsumerStatefulWidget {
   const CalendarPicker({
@@ -52,13 +53,39 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   bool _hasExistingQaza(DateTime date) =>
       widget.qazaDates.any((item) => _sameDay(item, date));
 
+  /// The latest month the calendar may show: the current one.
+  DateTime get _lastMonth => DateTime(today.year, today.month, 1);
+
   void _moveMonth(int delta) {
-    final next = DateTime(month.year, month.month + delta, 1);
-    final min = DateTime(1950);
-    final max = DateTime(today.year, today.month, 1);
-    if (next.isBefore(min) || next.isAfter(max)) return;
+    _goToMonth(DateTime(month.year, month.month + delta, 1));
+  }
+
+  /// Moves to [next] and reloads availability, if it is inside the bounds.
+  ///
+  /// Every navigation — arrows and the year selector alike — lands here, so
+  /// there is one place that enforces the range and one place that notifies
+  /// [CalendarPicker.onMonthChanged].
+  void _goToMonth(DateTime next) {
+    if (next.isBefore(calendarFirstDate) || next.isAfter(_lastMonth)) return;
+    if (next.year == month.year && next.month == month.month) return;
     setState(() => month = next);
     widget.onMonthChanged?.call(next);
+  }
+
+  Future<void> _pickYear() async {
+    final year = await showCalendarYearSelector(
+      context,
+      selectedYear: month.year,
+      firstYear: calendarFirstYear,
+      lastYear: today.year,
+    );
+    if (year == null || !mounted) return;
+    // Months after the current one do not exist yet, so jumping into the
+    // current year from a later month lands on the current month instead of
+    // being silently refused.
+    final clampedMonth =
+        year == today.year ? month.month.clamp(1, today.month) : month.month;
+    _goToMonth(DateTime(year, clampedMonth, 1));
   }
 
   String _hijriLabel(DateTime date) => DateFormatters.hijriLabel(date);
@@ -68,11 +95,10 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final state = ref.watch(calendarControllerProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final min = DateTime(1950);
     final selected = state.selectedDates;
     final currentMonth = DateTime(month.year, month.month, 1);
-    final canPrevious = currentMonth.isAfter(min);
-    final canNext = currentMonth.isBefore(DateTime(today.year, today.month, 1));
+    final canPrevious = currentMonth.isAfter(calendarFirstDate);
+    final canNext = currentMonth.isBefore(_lastMonth);
 
     return Column(
       children: [
@@ -84,19 +110,45 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               icon: const Icon(Icons.chevron_left_rounded),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    MaterialLocalizations.of(context).formatMonthYear(month),
-                    key: const Key('calendar_month_header'),
-                    style: theme.textTheme.titleMedium,
+              // The header is the shortcut to a year: reaching 1950 by arrow
+              // would be several hundred taps.
+              child: Semantics(
+                button: true,
+                label: l10n.calendarSelectYear,
+                child: InkWell(
+                  key: const Key('calendar_month_header_button'),
+                  onTap: _pickYear,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                MaterialLocalizations.of(context)
+                                    .formatMonthYear(month),
+                                key: const Key('calendar_month_header'),
+                                style: theme.textTheme.titleMedium,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                          ],
+                        ),
+                        // Gregorian leads; the Hijri month stays secondary.
+                        Text(
+                          _hijriLabel(month),
+                          key: const Key('calendar_hijri_month_label'),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(
-                    _hijriLabel(month),
-                    key: const Key('calendar_hijri_month_label'),
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                ),
               ),
             ),
             IconButton(
@@ -251,7 +303,7 @@ class _Grid extends StatelessWidget {
 
     final date = DateTime(anchor.year, anchor.month, dayNumber);
     final isAvailable = !date.isAfter(today) &&
-        !date.isBefore(DateTime(1950)) &&
+        !date.isBefore(calendarFirstDate) &&
         available(date);
     final isSelected = _selected(date);
     final isRange = _inRange(date);

@@ -335,5 +335,11 @@ class _FailingRepository implements QazaRepository {
         userId: userId, recordIds: recordIds, completedAt: completedAt);
   }
 
+  @override
+  Future<void> resetUserRecords({required String userId}) {
+    if (failWrites) return Future.error(StateError('simulated remote outage'));
+    return _delegate.resetUserRecords(userId: userId);
+  }
+
   int get historyPageCalls => _delegate.historyPageCalls;
 }

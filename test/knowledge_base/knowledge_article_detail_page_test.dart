@@ -1,81 +1,56 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../support/test_app.dart';
 
-import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_text.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/knowledge_article_detail_page.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
-class _FakeRepository implements KnowledgeBaseRepository {
-  _FakeRepository(this.article);
-
-  final KnowledgeArticle article;
-
-  @override
-  Future<List<KnowledgeArticle>> getArticles() async => [article];
-
-  @override
-  Future<List<KnowledgeArticle>> getArticlesByCategory(
-    KnowledgeCategory category,
-  ) async =>
-      [article].where((item) => item.category == category).toList();
-
-  @override
-  Future<KnowledgeArticle?> getArticleById(String id) async =>
-      id == article.id ? article : null;
-}
+import '../support/test_app.dart';
+import 'support/knowledge_fixtures.dart';
 
 void main() {
-  final article = KnowledgeArticle(
-    id: 'sample-article',
-    slug: 'sample-article',
+  final article = knowledgeArticle(
+    id: 'masala_001',
     category: KnowledgeCategory.masail,
-    sortOrder: 1,
-    title: const KnowledgeLocalizedText(
-      ur: 'نمونہ عنوان',
-      en: 'Sample title',
-    ),
-    summary: const KnowledgeLocalizedText(
-      ur: 'نمونہ خلاصہ',
-      en: 'Sample summary',
-    ),
-    body: const KnowledgeLocalizedText(
-      ur: 'نمونہ متن',
-      en: 'Sample body',
-    ),
-    tags: const ['sample'],
+    topicId: 'sleep_forgetfulness',
+    titleEn: 'Sample title',
+    titleUr: 'نمونہ عنوان',
+    summaryEn: 'Sample summary',
+    summaryUr: 'نمونہ خلاصہ',
+    bodyEn: 'Sample body',
+    bodyUr: 'نمونہ متن',
     references: const [
       KnowledgeReference(
-        source: 'Sample source',
-        citation: 'Sample citation',
+        sourceName: 'Quran.com',
+        bookName: "The Qur'an",
+        author: 'Sample author',
       ),
     ],
-    relatedArticleIds: const [],
   );
 
-  testWidgets('renders English then Urdu and references', (tester) async {
+  Future<void> pumpDetail(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           knowledgeBaseRepositoryProvider.overrideWithValue(
-            _FakeRepository(article),
+            InMemoryKnowledgeBaseRepository([article]),
           ),
         ],
         child: const TestApp(
-          home: KnowledgeArticleDetailPage(articleId: 'sample-article'),
+          home: KnowledgeArticleDetailPage(articleId: 'masala_001'),
         ),
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('renders English then Urdu', (tester) async {
+    await pumpDetail(tester);
 
     expect(find.text('Sample title'), findsOneWidget);
     expect(find.text('Sample summary'), findsOneWidget);
     expect(find.text('Sample body'), findsOneWidget);
-    expect(find.text('Sample source'), findsOneWidget);
 
     await tester.tap(find.text('اردو'));
     await tester.pump();
@@ -83,5 +58,15 @@ void main() {
     expect(find.text('نمونہ عنوان'), findsOneWidget);
     expect(find.text('نمونہ خلاصہ'), findsOneWidget);
     expect(find.text('نمونہ متن'), findsOneWidget);
+  });
+
+  testWidgets('shows the section, the topic and the full reference',
+      (tester) async {
+    await pumpDetail(tester);
+
+    expect(find.text('Masail'), findsOneWidget);
+    expect(find.text('Sleep & forgetfulness'), findsOneWidget);
+    expect(find.text("The Qur'an"), findsOneWidget);
+    expect(find.text('Sample author • Quran.com'), findsOneWidget);
   });
 }

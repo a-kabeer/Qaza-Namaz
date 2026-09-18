@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -35,8 +36,8 @@ class WelcomeScreen extends StatelessWidget {
                       textAlign: TextAlign.center),
                   const SizedBox(height: 4),
                   Text('قضاء نماز',
-                      style: Theme.of(context)
-                          .textTheme
+                      style: AppTypography.of(context)
+                          .urdu
                           .titleMedium
                           ?.copyWith(color: scheme.secondary)),
                   const SizedBox(height: 28),

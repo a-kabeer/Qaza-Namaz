@@ -275,6 +275,13 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     for (final record in records) await into(qazaRecords).insert(record);
   }
 
+  /// Deletes every row owned by [userId] and returns how many were removed.
+  ///
+  /// Rows belonging to other users are left untouched: the whole statement is
+  /// scoped by the userId predicate.
+  Future<int> deleteAllForUser({required String userId}) =>
+      (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
+
   Future<int> count(
       {required String userId, String? prayerType, String? status}) async {
     final query = selectOnly(qazaRecords)

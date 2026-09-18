@@ -56,6 +56,8 @@ class DestructiveActionRow extends StatelessWidget {
     required this.confirmationMessage,
     required this.confirmLabel,
     required this.onConfirm,
+    this.acknowledgeLabel,
+    this.enabled = true,
   });
 
   final IconData icon;
@@ -66,27 +68,48 @@ class DestructiveActionRow extends StatelessWidget {
   final String confirmLabel;
   final Future<void> Function() onConfirm;
 
+  /// When set, the confirmation cannot be completed until this is ticked.
+  final String? acknowledgeLabel;
+
+  /// A disabled row is inert and reads as inert: nothing to tap by accident
+  /// when there is nothing to destroy, or while a previous run is in flight.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final accent = enabled ? scheme.error : scheme.onSurfaceVariant;
+    final acknowledge = acknowledgeLabel;
+    Future<void> confirm() async {
+      final confirmed = acknowledge == null
+          ? await confirmDestructive(
+              context,
+              title: confirmationTitle,
+              message: confirmationMessage,
+              confirmLabel: confirmLabel,
+            )
+          : await confirmDestructiveWithAcknowledgement(
+              context,
+              title: confirmationTitle,
+              message: confirmationMessage,
+              acknowledgeLabel: acknowledge,
+              confirmLabel: confirmLabel,
+            );
+      if (confirmed) await onConfirm();
+    }
+
     return AppCard(
-      color: scheme.errorContainer.withValues(alpha: .35),
+      color: enabled
+          ? scheme.errorContainer.withValues(alpha: .35)
+          : scheme.surfaceContainerHighest.withValues(alpha: .35),
       padding: EdgeInsets.zero,
-      onTap: () async {
-        if (await confirmDestructive(
-          context,
-          title: confirmationTitle,
-          message: confirmationMessage,
-          confirmLabel: confirmLabel,
-        )) {
-          await onConfirm();
-        }
-      },
+      onTap: enabled ? confirm : null,
       child: ListTile(
-        leading: Icon(icon, color: scheme.error),
+        enabled: enabled,
+        leading: Icon(icon, color: accent),
         title: Text(
           label,
-          style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600),
+          style: TextStyle(color: accent, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(description),
       ),

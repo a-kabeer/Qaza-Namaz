@@ -38,4 +38,12 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
-    - assets/knowledge_base/content/articles.json
+    - assets/knowledge_base/content/qaza_masail_mugalat_en.json
+    - assets/knowledge_base/content/qaza_masail_mugalat_ur.json
+  fonts:
+    # Noto Nastaliq Urdu, SIL Open Font License 1.1 (assets/fonts/OFL.txt).
+    # A single variable file covering wght 400-700; the theme selects a weight
+    # with FontVariation rather than shipping four static cuts.
+    - family: Noto Nastaliq Urdu
+      fonts:
+        - asset: assets/fonts/NotoNastaliqUrdu-VariableFont_wght.ttf

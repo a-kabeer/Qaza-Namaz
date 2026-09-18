@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/services.dart';
-
 import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import '../domain/knowledge_localized_text.dart';
@@ -16,113 +14,151 @@ class KnowledgeBaseParseException implements Exception {
   String toString() => 'KnowledgeBaseParseException: $message';
 }
 
+/// Turns the two shipped datasets into [KnowledgeArticle] records.
+///
+/// The Urdu and English content are authored and shipped as separate files, so
+/// the parser reads both and joins them on `id`. Everything the files agree on
+/// — `type`, `categoryId`, `sortOrder`, `isPublished`, `references` — must
+/// actually agree: a mismatch means the two translations have drifted apart,
+/// and failing loudly here beats showing a reader an Urdu answer under an
+/// English question.
 class KnowledgeBaseParser {
   const KnowledgeBaseParser();
 
-  Future<List<KnowledgeArticle>> loadAsset(String assetPath) async {
-    final raw = await rootBundle.loadString(assetPath);
-    return parse(raw, source: assetPath);
-  }
+  List<KnowledgeArticle> parsePair({
+    required String english,
+    required String urdu,
+    String englishSource = 'english dataset',
+    String urduSource = 'urdu dataset',
+  }) {
+    final englishEntries = _entriesById(english, englishSource);
+    final urduEntries = _entriesById(urdu, urduSource);
 
-  List<KnowledgeArticle> parse(String raw, {String source = 'dataset'}) {
-    final decoded = _decodeObject(raw, source);
-    final version = decoded['schemaVersion'];
-    if (version != 1) {
+    final missingUrdu = englishEntries.keys.toSet()
+      ..removeAll(urduEntries.keys);
+    if (missingUrdu.isNotEmpty) {
       throw KnowledgeBaseParseException(
-        '$source: unsupported schemaVersion "$version"; expected 1.',
-      );
+          '$urduSource: missing entries for ${_sample(missingUrdu)}.');
+    }
+    final missingEnglish = urduEntries.keys.toSet()
+      ..removeAll(englishEntries.keys);
+    if (missingEnglish.isNotEmpty) {
+      throw KnowledgeBaseParseException(
+          '$englishSource: missing entries for ${_sample(missingEnglish)}.');
     }
 
-    final articles = decoded['articles'];
-    if (articles is! List) {
-      throw KnowledgeBaseParseException(
-          '$source: "articles" must be an array.');
-    }
-
-    return [
-      for (var index = 0; index < articles.length; index++)
-        _parseArticle(articles[index], source: source, index: index),
+    final articles = [
+      for (final id in englishEntries.keys)
+        _merge(englishEntries[id]!, urduEntries[id]!, id),
     ];
+    _rejectDuplicateOrder(articles);
+    return articles;
   }
 
-  Map<String, dynamic> _decodeObject(String raw, String source) {
+  Map<String, Map<String, dynamic>> _entriesById(String raw, String source) {
+    final decoded = _decodeList(raw, source);
+    final result = <String, Map<String, dynamic>>{};
+    for (var index = 0; index < decoded.length; index++) {
+      final value = decoded[index];
+      if (value is! Map) {
+        throw KnowledgeBaseParseException(
+            '$source: entry[$index] must be an object.');
+      }
+      final entry = Map<String, dynamic>.from(value);
+      final id = _requiredString(entry, 'id', '$source: entry[$index]');
+      if (result.containsKey(id)) {
+        throw KnowledgeBaseParseException('$source: duplicate id "$id".');
+      }
+      result[id] = entry;
+    }
+    return result;
+  }
+
+  List<Object?> _decodeList(String raw, String source) {
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! Map) {
-        throw const FormatException('root must be an object');
+      if (decoded is! List) {
+        throw const FormatException('root must be an array of entries');
       }
-      return Map<String, dynamic>.from(decoded);
+      return decoded;
     } on FormatException catch (error) {
       throw KnowledgeBaseParseException(
           '$source: invalid JSON (${error.message}).');
     }
   }
 
-  KnowledgeArticle _parseArticle(
-    Object value, {
-    required String source,
-    required int index,
-  }) {
-    if (value is! Map) {
-      throw KnowledgeBaseParseException(
-          '$source: article[$index] must be an object.');
-    }
-    final map = Map<String, dynamic>.from(value);
-    final prefix = '$source: article[$index]';
+  KnowledgeArticle _merge(
+    Map<String, dynamic> english,
+    Map<String, dynamic> urdu,
+    String id,
+  ) {
+    final prefix = 'entry "$id"';
 
-    final id = _requiredString(map, 'id', prefix);
-    final slug = _requiredString(map, 'slug', prefix);
-    final categoryValue = _requiredString(map, 'category', prefix);
-    final sortOrder = _requiredInt(map, 'sortOrder', prefix);
-
-    if (!_kebabCase.hasMatch(id) || !_kebabCase.hasMatch(slug)) {
-      throw KnowledgeBaseParseException(
-          '$prefix: id and slug must use kebab-case.');
+    final typeValue = _requiredString(english, 'type', prefix);
+    final category = KnowledgeCategory.fromDatasetType(typeValue);
+    if (category == null) {
+      throw KnowledgeBaseParseException('$prefix: unknown type "$typeValue".');
     }
+    final topicId = _requiredString(english, 'categoryId', prefix);
+    final sortOrder = _requiredInt(english, 'sortOrder', prefix);
     if (sortOrder < 0) {
       throw KnowledgeBaseParseException(
           '$prefix: sortOrder must be non-negative.');
     }
+    final isPublished = _requiredBool(english, 'isPublished', prefix);
 
-    final category = KnowledgeCategory.values.where(
-      (item) => item.name == categoryValue,
-    );
-    if (category.length != 1) {
+    _requireSame(prefix, 'type', typeValue, urdu['type']);
+    _requireSame(prefix, 'categoryId', topicId, urdu['categoryId']);
+    _requireSame(prefix, 'sortOrder', sortOrder, urdu['sortOrder']);
+    _requireSame(prefix, 'isPublished', isPublished, urdu['isPublished']);
+
+    final englishReferences = _parseReferences(english['references'], prefix);
+    final urduReferences = _parseReferences(urdu['references'], prefix);
+    // References carry bibliographic metadata rather than prose, so the two
+    // files ship them identically; treating a divergence as an error keeps a
+    // silently half-updated citation from reaching a reader.
+    if (englishReferences.length != urduReferences.length ||
+        !_sameReferences(englishReferences, urduReferences)) {
       throw KnowledgeBaseParseException(
-          '$prefix: invalid category "$categoryValue".');
+          '$prefix: references differ between the two datasets.');
     }
 
     return KnowledgeArticle(
       id: id,
-      slug: slug,
-      category: category.single,
+      category: category,
+      topicId: topicId,
       sortOrder: sortOrder,
-      title: _parseLocalizedText(map['title'], 'title', prefix),
-      summary: _parseLocalizedText(map['summary'], 'summary', prefix),
-      body: _parseLocalizedText(map['body'], 'body', prefix),
-      tags: _parseStringList(map['tags'], 'tags', prefix, unique: true),
-      references: _parseReferences(map['references'], prefix),
-      relatedArticleIds: _parseStringList(
-        map['relatedArticleIds'],
-        'relatedArticleIds',
-        prefix,
+      isPublished: isPublished,
+      title: _pair(english, urdu, 'title', prefix),
+      question: _pair(english, urdu, 'question', prefix),
+      summary: _pair(english, urdu, 'summary', prefix),
+      body: _pair(english, urdu, 'content', prefix),
+      keywords: KnowledgeLocalizedKeywords(
+        en: _stringList(english, 'keywordsEn', prefix),
+        ur: _stringList(urdu, 'keywordsUr', prefix),
       ),
+      references: List.unmodifiable(englishReferences),
     );
   }
 
-  KnowledgeLocalizedText _parseLocalizedText(
-    Object? value,
+  /// Reads `<field>En` from the English entry and `<field>Ur` from the Urdu one.
+  KnowledgeLocalizedText _pair(
+    Map<String, dynamic> english,
+    Map<String, dynamic> urdu,
     String field,
     String prefix,
-  ) {
-    if (value is! Map) {
-      throw KnowledgeBaseParseException('$prefix: "$field" must be an object.');
+  ) =>
+      KnowledgeLocalizedText(
+        en: _requiredString(english, '${field}En', prefix),
+        ur: _requiredString(urdu, '${field}Ur', prefix),
+      );
+
+  bool _sameReferences(
+      List<KnowledgeReference> english, List<KnowledgeReference> urdu) {
+    for (var index = 0; index < english.length; index++) {
+      if (english[index] != urdu[index]) return false;
     }
-    final map = Map<String, dynamic>.from(value);
-    return KnowledgeLocalizedText(
-      ur: _requiredString(map, 'ur', '$prefix.$field'),
-      en: _requiredString(map, 'en', '$prefix.$field'),
-    );
+    return true;
   }
 
   List<KnowledgeReference> _parseReferences(Object? value, String prefix) {
@@ -141,39 +177,42 @@ class KnowledgeBaseParser {
       throw KnowledgeBaseParseException('$prefix must be an object.');
     }
     final map = Map<String, dynamic>.from(value);
-    final url = map['url'];
-    if (url != null && url is! String) {
-      throw KnowledgeBaseParseException(
-          '$prefix.url must be a string or null.');
-    }
-    final citation = map['citation'];
-    if (citation != null && citation is! String) {
-      throw KnowledgeBaseParseException(
-          '$prefix.citation must be a string or null.');
-    }
     return KnowledgeReference(
-      source: _requiredString(map, 'source', prefix),
-      citation: citation as String?,
-      url: url as String?,
+      sourceName: _requiredString(map, 'sourceName', prefix),
+      bookName: _requiredString(map, 'bookName', prefix),
+      author: _requiredString(map, 'author', prefix),
     );
   }
 
-  List<String> _parseStringList(
-    Object? value,
-    String field,
-    String prefix, {
-    bool unique = false,
-  }) {
+  List<String> _stringList(
+      Map<String, dynamic> map, String field, String prefix) {
+    final value = map[field];
     if (value is! List || value.any((item) => item is! String)) {
       throw KnowledgeBaseParseException(
           '$prefix: "$field" must be an array of strings.');
     }
-    final result = List<String>.from(value);
-    if (unique && result.toSet().length != result.length) {
-      throw KnowledgeBaseParseException(
-          '$prefix: "$field" must contain unique values.');
+    return List.unmodifiable(value.cast<String>());
+  }
+
+  void _rejectDuplicateOrder(List<KnowledgeArticle> articles) {
+    final seen = <String>{};
+    for (final article in articles) {
+      final key = '${article.category.name}/${article.sortOrder}';
+      if (!seen.add(key)) {
+        throw KnowledgeBaseParseException(
+            'sortOrder ${article.sortOrder} is used twice in '
+            '${article.category.name}.');
+      }
     }
-    return result;
+  }
+
+  void _requireSame(
+      String prefix, String field, Object expected, Object? actual) {
+    if (actual != expected) {
+      throw KnowledgeBaseParseException(
+          '$prefix: "$field" is "$actual" in the Urdu dataset but "$expected" '
+          'in the English one.');
+    }
   }
 
   String _requiredString(
@@ -195,5 +234,18 @@ class KnowledgeBaseParser {
     return value;
   }
 
-  static final RegExp _kebabCase = RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$');
+  bool _requiredBool(Map<String, dynamic> map, String field, String prefix) {
+    final value = map[field];
+    if (value is! bool) {
+      throw KnowledgeBaseParseException('$prefix: "$field" must be a boolean.');
+    }
+    return value;
+  }
+
+  String _sample(Iterable<String> ids) {
+    final sorted = ids.toList()..sort();
+    return sorted.length <= 3
+        ? sorted.join(', ')
+        : '${sorted.take(3).join(', ')} and ${sorted.length - 3} more';
+  }
 }

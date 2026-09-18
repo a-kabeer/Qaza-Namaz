@@ -36,6 +36,18 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     return (await query.getSingle()).read(syncOutbox.id.count()) ?? 0;
   }
 
+  /// True when an operation of [type] is still queued for [userId].
+  ///
+  /// Bounded to a single row so startup never materializes the outbox.
+  Future<bool> hasPending(
+      {required String userId, required String type}) async {
+    final row = await (select(syncOutbox)
+          ..where((row) => row.userId.equals(userId) & row.type.equals(type))
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   Future<void> put(SyncOutboxCompanion entry) async {
     await into(syncOutbox).insertOnConflictUpdate(entry);
   }

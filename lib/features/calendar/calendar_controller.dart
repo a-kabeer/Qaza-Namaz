@@ -1,5 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Earliest year the Qaza calendar will navigate to.
+///
+/// Single-sourced here because the month arrows, the day grid and the year
+/// selector all have to agree on the boundary.
+const int calendarFirstYear = 1950;
+
+/// The first day the calendar allows.
+DateTime get calendarFirstDate => DateTime(calendarFirstYear);
+
 final calendarTodayProvider = Provider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day);

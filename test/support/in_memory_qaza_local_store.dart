@@ -134,6 +134,13 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     );
   }
 
+  /// Bounded like the Drift store's override, so `loadCalls` keeps measuring
+  /// full-snapshot reads rather than counting this probe as one.
+  @override
+  Future<bool> hasPendingReset(String userId) async =>
+      (_outboxByUser[userId] ?? const <PendingSyncOp>[])
+          .any((op) => op.type == SyncOpType.reset);
+
   @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     _recordsByUser[userId] = List<QazaRecord>.of(records);

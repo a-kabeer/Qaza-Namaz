@@ -49,6 +49,29 @@ extension KnowledgeCategoryL10n on KnowledgeCategory {
       };
 }
 
+/// Labels for the dataset's `categoryId` topics.
+///
+/// The ids stay verbatim in the data; only the label is localized. An id the
+/// content adds later still renders — humanized from the id — rather than
+/// crashing or showing a blank chip.
+String localizedKnowledgeTopic(String topicId, AppLocalizations l10n) =>
+    switch (topicId) {
+      'basic' => l10n.knowledgeTopicBasic,
+      'prayer_units' => l10n.knowledgeTopicPrayerUnits,
+      'sleep_forgetfulness' => l10n.knowledgeTopicSleepForgetfulness,
+      'intentional_omission' => l10n.knowledgeTopicIntentionalOmission,
+      'friday' => l10n.knowledgeTopicFriday,
+      'menstruation' => l10n.knowledgeTopicMenstruation,
+      'nifas' => l10n.knowledgeTopicNifas,
+      'menstruation_nifas' => l10n.knowledgeTopicMenstruationNifas,
+      'misconceptions' => l10n.knowledgeTopicMisconceptions,
+      _ => topicId
+          .split('_')
+          .where((word) => word.isNotEmpty)
+          .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+          .join(' '),
+    };
+
 extension QazaStatusFilterL10n on QazaStatusFilter {
   String localizedLabel(AppLocalizations l10n) => switch (this) {
         QazaStatusFilter.all => l10n.filterAll,

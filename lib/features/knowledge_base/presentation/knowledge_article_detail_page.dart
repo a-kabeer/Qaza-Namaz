@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/prayer_type_l10n.dart';
 import '../domain/knowledge_category.dart';
 import 'providers/knowledge_base_providers.dart';
+import 'widgets/knowledge_language_switcher.dart';
 
-class KnowledgeArticleDetailPage extends ConsumerStatefulWidget {
+/// One article, rendered in the Knowledge Base reading language.
+///
+/// The language is not page state: it comes from the same provider the list
+/// uses, so opening an article never resets what the reader chose.
+class KnowledgeArticleDetailPage extends ConsumerWidget {
   const KnowledgeArticleDetailPage({
     super.key,
     required this.articleId,
@@ -14,29 +21,24 @@ class KnowledgeArticleDetailPage extends ConsumerStatefulWidget {
   final String articleId;
 
   @override
-  ConsumerState<KnowledgeArticleDetailPage> createState() =>
-      _KnowledgeArticleDetailPageState();
-}
-
-class _KnowledgeArticleDetailPageState
-    extends ConsumerState<KnowledgeArticleDetailPage> {
-  bool _showUrdu = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final articleAsync = ref.watch(knowledgeArticleProvider(widget.articleId));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final articleAsync = ref.watch(knowledgeArticleProvider(articleId));
     final relatedAsync = ref.watch(
-      knowledgeRelatedArticlesProvider(widget.articleId),
+      knowledgeRelatedArticlesProvider(articleId),
     );
+    final language = ref.watch(knowledgeLanguageProvider);
+    final showUrdu = language.isUrdu;
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(AppLocalizations.of(context).knowledgeArticleTitle)),
+        title: Text(AppLocalizations.of(context).knowledgeArticleTitle),
+        bottom: const KnowledgeLanguageBar(),
+      ),
       body: articleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _DetailErrorState(
           onRetry: () => ref.invalidate(
-            knowledgeArticleProvider(widget.articleId),
+            knowledgeArticleProvider(articleId),
           ),
         ),
         data: (article) {
@@ -44,11 +46,15 @@ class _KnowledgeArticleDetailPageState
             return const _MissingArticleState();
           }
 
-          final title = _showUrdu ? article.title.ur : article.title.en;
-          final body = _showUrdu ? article.body.ur : article.body.en;
-          final summary = _showUrdu ? article.summary.ur : article.summary.en;
-          final direction = _showUrdu ? TextDirection.rtl : TextDirection.ltr;
-          final textAlign = _showUrdu ? TextAlign.right : TextAlign.left;
+          final title = showUrdu ? article.title.ur : article.title.en;
+          final body = showUrdu ? article.body.ur : article.body.en;
+          final summary = showUrdu ? article.summary.ur : article.summary.en;
+          final direction = language.direction;
+          final textAlign = language.textAlign;
+          // The article's language is independent of the interface language,
+          // so the scale is chosen from the content rather than the locale.
+          final typography = AppTypography.of(context);
+          final type = typography.forScript(urduScript: showUrdu);
 
           return CustomScrollView(
             slivers: [
@@ -58,51 +64,28 @@ class _KnowledgeArticleDetailPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Semantics(
-                        label: AppLocalizations.of(context)
-                            .knowledgeArticleLanguage,
-                        child: SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment<bool>(
-                              value: false,
-                              icon: Icon(Icons.language),
-                              label: Text('English'),
-                            ),
-                            ButtonSegment<bool>(
-                              value: true,
-                              label: Text('اردو'),
-                            ),
-                          ],
-                          selected: {_showUrdu},
-                          onSelectionChanged: (selection) => setState(() {
-                            _showUrdu = selection.single;
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
                       Text(
                         title,
                         textDirection: direction,
                         textAlign: textAlign,
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        style: type.headlineSmall,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         summary,
                         textDirection: direction,
                         textAlign: textAlign,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        style: type.bodyLarge,
                       ),
                       const SizedBox(height: 20),
-                      _CategoryBadge(category: article.category),
+                      _CategoryBadge(
+                          category: article.category, topicId: article.topicId),
                       const SizedBox(height: 20),
                       SelectableText(
                         body,
                         textDirection: direction,
                         textAlign: textAlign,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              height: 1.7,
-                            ),
+                        style: typography.readingBody(urduScript: showUrdu),
                       ),
                       if (article.references.isNotEmpty) ...[
                         const SizedBox(height: 28),
@@ -111,17 +94,16 @@ class _KnowledgeArticleDetailPageState
                               .knowledgeArticleReferences,
                           textDirection: direction,
                           textAlign: textAlign,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: type.titleLarge,
                         ),
                         const SizedBox(height: 8),
                         ...article.references.map(
                           (reference) => Card(
                             child: ListTile(
                               leading: const Icon(Icons.menu_book_outlined),
-                              title: Text(reference.source),
-                              subtitle: reference.citation == null
-                                  ? null
-                                  : Text(reference.citation!),
+                              title: Text(reference.bookName),
+                              subtitle: Text(
+                                  '${reference.author} • ${reference.sourceName}'),
                             ),
                           ),
                         ),
@@ -151,7 +133,7 @@ class _KnowledgeArticleDetailPageState
                                 .knowledgeArticleRelated,
                             textDirection: direction,
                             textAlign: textAlign,
-                            style: Theme.of(context).textTheme.titleLarge,
+                            style: type.titleLarge,
                           ),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
@@ -159,7 +141,7 @@ class _KnowledgeArticleDetailPageState
                           itemCount: related.length,
                           itemBuilder: (context, index) {
                             final relatedArticle = related[index];
-                            final relatedTitle = _showUrdu
+                            final relatedTitle = showUrdu
                                 ? relatedArticle.title.ur
                                 : relatedArticle.title.en;
                             return Semantics(
@@ -172,6 +154,7 @@ class _KnowledgeArticleDetailPageState
                                     relatedTitle,
                                     textDirection: direction,
                                     textAlign: textAlign,
+                                    style: type.bodyLarge,
                                   ),
                                   trailing: const Icon(Icons.chevron_right),
                                   onTap: () =>
@@ -202,23 +185,30 @@ class _KnowledgeArticleDetailPageState
 }
 
 class _CategoryBadge extends StatelessWidget {
-  const _CategoryBadge({required this.category});
+  const _CategoryBadge({required this.category, required this.topicId});
 
   final KnowledgeCategory category;
+  final String topicId;
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (category) {
-      KnowledgeCategory.masail =>
-        AppLocalizations.of(context).knowledgeCategoryMasail,
-      KnowledgeCategory.mugalat =>
-        AppLocalizations.of(context).knowledgeCategoryMugalat,
+    final l10n = AppLocalizations.of(context);
+    final section = switch (category) {
+      KnowledgeCategory.masail => l10n.knowledgeCategoryMasail,
+      KnowledgeCategory.mugalat => l10n.knowledgeCategoryMugalat,
     };
     return Align(
       alignment: AlignmentDirectional.centerStart,
-      child: Chip(
-        avatar: const Icon(Icons.category_outlined, size: 18),
-        label: Text(label),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          Chip(
+            avatar: const Icon(Icons.category_outlined, size: 18),
+            label: Text(section),
+          ),
+          Chip(label: Text(localizedKnowledgeTopic(topicId, l10n))),
+        ],
       ),
     );
   }

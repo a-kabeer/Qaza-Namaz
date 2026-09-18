@@ -1,135 +1,123 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_text.dart';
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
-class _FakeKnowledgeBaseRepository implements KnowledgeBaseRepository {
-  _FakeKnowledgeBaseRepository(this._articles);
-
-  final List<KnowledgeArticle> _articles;
-
-  @override
-  Future<List<KnowledgeArticle>> getArticles() async =>
-      List.unmodifiable(_articles);
-
-  @override
-  Future<List<KnowledgeArticle>> getArticlesByCategory(
-    KnowledgeCategory category,
-  ) async {
-    return List.unmodifiable(
-      _articles.where((article) => article.category == category),
-    );
-  }
-
-  @override
-  Future<KnowledgeArticle?> getArticleById(String id) async {
-    for (final article in _articles) {
-      if (article.id == id) return article;
-    }
-    return null;
-  }
-}
-
-KnowledgeArticle _article({
-  required String id,
-  required KnowledgeCategory category,
-  required String title,
-  List<String> tags = const [],
-  List<String> relatedArticleIds = const [],
-}) {
-  return KnowledgeArticle(
-    id: id,
-    slug: id,
-    category: category,
-    sortOrder: 0,
-    title: KnowledgeLocalizedText(ur: title, en: title),
-    summary: KnowledgeLocalizedText(ur: 'خلاصہ', en: 'Summary'),
-    body: KnowledgeLocalizedText(ur: 'متن', en: 'Body'),
-    tags: tags,
-    references: const <KnowledgeReference>[],
-    relatedArticleIds: relatedArticleIds,
-  );
-}
+import 'support/knowledge_fixtures.dart';
 
 void main() {
   final articles = [
-    _article(
-      id: 'masail-fasting',
-      category: KnowledgeCategory.masail,
-      title: 'Fasting Rules',
-      tags: ['fasting', 'masail'],
-      relatedArticleIds: ['mugalat-fasting'],
+    knowledgeArticle(
+      id: 'masala_001',
+      topicId: 'sleep_forgetfulness',
+      titleEn: 'Sleeping through Fajr',
+      titleUr: 'فجر میں نیند',
+      keywordsEn: const ['sleep'],
+      keywordsUr: const ['نیند'],
+      relatedArticleIds: const ['mugalata_001'],
     ),
-    _article(
-      id: 'mugalat-fasting',
+    knowledgeArticle(
+      id: 'mugalata_001',
       category: KnowledgeCategory.mugalat,
-      title: 'Fasting Misconceptions',
-      tags: ['fasting', 'mugalat'],
+      topicId: 'misconceptions',
+      titleEn: 'Sleep excuses qaza',
+      titleUr: 'نیند قضا کا عذر ہے',
+      keywordsEn: const ['sleep'],
+    ),
+    knowledgeArticle(
+      id: 'masala_002',
+      topicId: 'friday',
+      sortOrder: 2,
+      titleEn: 'Missing Jumuah',
+      titleUr: 'جمعہ چھوٹ جانا',
+      keywordsEn: const ['friday'],
     ),
   ];
 
   ProviderContainer buildContainer() {
-    return ProviderContainer(
-      overrides: [
-        knowledgeBaseRepositoryProvider.overrideWithValue(
-          _FakeKnowledgeBaseRepository(articles),
-        ),
-      ],
-    );
+    final container = ProviderContainer(overrides: [
+      knowledgeBaseRepositoryProvider
+          .overrideWithValue(InMemoryKnowledgeBaseRepository(articles)),
+    ]);
+    addTearDown(container.dispose);
+    return container;
   }
 
-  test('exposes both knowledge categories', () {
+  test('exposes both sections and the topics present in the content', () async {
     final container = buildContainer();
-    addTearDown(container.dispose);
 
-    expect(container.read(knowledgeBaseCategoriesProvider), [
-      KnowledgeCategory.masail,
-      KnowledgeCategory.mugalat,
-    ]);
+    expect(container.read(knowledgeBaseCategoriesProvider),
+        [KnowledgeCategory.masail, KnowledgeCategory.mugalat]);
+    expect(await container.read(knowledgeTopicIdsProvider.future),
+        ['sleep_forgetfulness', 'misconceptions', 'friday']);
   });
 
-  test('filters articles by category and search query', () async {
+  test('gathers the three controls into one query', () {
     final container = buildContainer();
-    addTearDown(container.dispose);
 
-    expect(
-      await container.read(knowledgeFilteredArticlesProvider.future),
-      hasLength(2),
-    );
+    expect(container.read(knowledgeQueryProvider).isEmpty, isTrue);
+
+    container.read(knowledgeSearchQueryProvider.notifier).state = 'sleep';
+    container.read(knowledgeCategoryFilterProvider.notifier).state =
+        KnowledgeCategory.masail;
+    container.read(knowledgeTopicFilterProvider.notifier).state = 'friday';
+
+    final query = container.read(knowledgeQueryProvider);
+    expect(query.text, 'sleep');
+    expect(query.category, KnowledgeCategory.masail);
+    expect(query.topicId, 'friday');
+  });
+
+  test('filters by section, topic and free text', () async {
+    final container = buildContainer();
+
+    expect(await container.read(knowledgeFilteredArticlesProvider.future),
+        hasLength(3));
 
     container.read(knowledgeCategoryFilterProvider.notifier).state =
         KnowledgeCategory.masail;
     expect(
-      await container.read(knowledgeFilteredArticlesProvider.future),
-      hasLength(1),
-    );
+        (await container.read(knowledgeFilteredArticlesProvider.future))
+            .map((article) => article.id),
+        ['masala_001', 'masala_002']);
 
-    container.read(knowledgeSearchQueryProvider.notifier).state = 'fasting';
+    container.read(knowledgeTopicFilterProvider.notifier).state = 'friday';
     expect(
-      await container.read(knowledgeFilteredArticlesProvider.future),
-      hasLength(1),
-    );
+        (await container.read(knowledgeFilteredArticlesProvider.future))
+            .map((article) => article.id),
+        ['masala_002']);
+
+    container.read(knowledgeTopicFilterProvider.notifier).state = null;
+    container.read(knowledgeSearchQueryProvider.notifier).state = 'sleep';
+    expect(
+        (await container.read(knowledgeFilteredArticlesProvider.future))
+            .map((article) => article.id),
+        ['masala_001']);
   });
 
-  test('loads selected article and related articles', () async {
+  test('search matches Urdu text as well as English', () async {
     final container = buildContainer();
-    addTearDown(container.dispose);
+
+    container.read(knowledgeSearchQueryProvider.notifier).state = 'نیند';
+    expect(
+        (await container.read(knowledgeFilteredArticlesProvider.future))
+            .map((article) => article.id),
+        ['masala_001', 'mugalata_001']);
+  });
+
+  test('loads the selected article and its related articles', () async {
+    final container = buildContainer();
 
     container.read(knowledgeSelectedArticleIdProvider.notifier).state =
-        'masail-fasting';
+        'masala_001';
 
-    final selected =
-        await container.read(selectedKnowledgeArticleProvider.future);
-    expect(selected?.id, 'masail-fasting');
-
-    final related = await container.read(
-      knowledgeRelatedArticlesProvider('masail-fasting').future,
-    );
-    expect(related.map((article) => article.id), ['mugalat-fasting']);
+    expect((await container.read(selectedKnowledgeArticleProvider.future))?.id,
+        'masala_001');
+    expect(
+        (await container
+                .read(knowledgeRelatedArticlesProvider('masala_001').future))
+            .map((article) => article.id),
+        ['mugalata_001']);
   });
 }

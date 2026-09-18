@@ -136,6 +136,10 @@ class _CountingRepository implements QazaRepository {
         recordIds: recordIds,
         completedAt: completedAt,
       );
+
+  @override
+  Future<void> resetUserRecords({required String userId}) =>
+      delegate.resetUserRecords(userId: userId);
 }
 
 const _userId = 'scale-user';

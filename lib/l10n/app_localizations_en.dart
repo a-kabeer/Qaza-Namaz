@@ -501,6 +501,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get calendarSelectYear => 'Select year';
+
+  @override
   String get calendarSelectHint => 'Tap an available date to select it.';
 
   @override
@@ -1127,6 +1130,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeCategoryMugalat => 'Mugalat';
 
   @override
+  String get knowledgeBaseTopicAll => 'All topics';
+
+  @override
+  String get knowledgeTopicBasic => 'Basics';
+
+  @override
+  String get knowledgeTopicPrayerUnits => 'Prayer units';
+
+  @override
+  String get knowledgeTopicSleepForgetfulness => 'Sleep & forgetfulness';
+
+  @override
+  String get knowledgeTopicIntentionalOmission => 'Intentional omission';
+
+  @override
+  String get knowledgeTopicFriday => 'Friday';
+
+  @override
+  String get knowledgeTopicMenstruation => 'Menstruation';
+
+  @override
+  String get knowledgeTopicNifas => 'Nifas';
+
+  @override
+  String get knowledgeTopicMenstruationNifas => 'Menstruation & Nifas';
+
+  @override
+  String get knowledgeTopicMisconceptions => 'Misconceptions';
+
+  @override
   String get knowledgeBaseEmptyTitle => 'No articles found';
 
   @override
@@ -1136,10 +1169,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeBaseLoadError => 'Knowledge Base could not be loaded.';
 
   @override
-  String get knowledgeArticleTitle => 'Article';
+  String get knowledgeBaseLanguage => 'Knowledge Base language';
 
   @override
-  String get knowledgeArticleLanguage => 'Article language';
+  String get knowledgeArticleTitle => 'Article';
 
   @override
   String get knowledgeArticleReferences => 'References';
@@ -1215,6 +1248,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDataCloudSubtitle => 'Sync, export and import status';
+
+  @override
+  String get settingsResetCounterTitle => 'Reset Qaza Counter';
+
+  @override
+  String get settingsResetCounterSubtitle =>
+      'Delete every recorded Qaza and start the count again from zero.';
+
+  @override
+  String get settingsResetCounterEmpty => 'There are no Qaza records to reset.';
+
+  @override
+  String get settingsResetCounterDialogTitle => 'Reset Qaza Counter?';
+
+  @override
+  String get settingsResetCounterDialogMessage =>
+      'This permanently deletes every Qaza record on this account — pending and completed — from this device and from your cloud backup.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.';
+
+  @override
+  String settingsResetCounterAcknowledge(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'I understand that $count Qaza records will be permanently deleted',
+      one: 'I understand that 1 Qaza record will be permanently deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsResetCounterConfirm => 'Reset counter';
+
+  @override
+  String get settingsResetCounterDone => 'Qaza counter reset.';
+
+  @override
+  String settingsResetCounterFailed(String error) {
+    return 'Could not reset the Qaza counter: $error';
+  }
 
   @override
   String get settingsAboutSection => 'About';

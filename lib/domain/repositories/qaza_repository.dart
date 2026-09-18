@@ -81,4 +81,12 @@ abstract interface class QazaRepository {
     required List<String> recordIds,
     required DateTime completedAt,
   });
+
+  /// Permanently deletes every Qaza record belonging to [userId], resetting
+  /// that user's Qaza counter to zero.
+  ///
+  /// Pending and completed records are both removed; records belonging to any
+  /// other user are never touched. Implementations must be idempotent so a
+  /// replayed reset is harmless.
+  Future<void> resetUserRecords({required String userId});
 }

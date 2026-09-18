@@ -2,111 +2,60 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qaza-namaz.local/schemas/knowledge-base-content.schema.json",
   "title": "Qaza Namaz Knowledge Base Content",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["schemaVersion", "articles"],
-  "properties": {
-    "schemaVersion": {
-      "type": "integer",
-      "const": 1
-    },
-    "articles": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/article"
-      }
-    }
+  "description": "One language file of the Masail/Mugalat content. The English and Urdu files share every non-language field and are joined on id at load time.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/entry"
   },
   "$defs": {
-    "localizedText": {
+    "entry": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["ur", "en"],
+      "required": ["id", "type", "categoryId", "references", "sortOrder", "isPublished"],
       "properties": {
-        "ur": {"type": "string", "minLength": 1},
-        "en": {"type": "string", "minLength": 1}
-      }
+        "id": {"type": "string", "minLength": 1},
+        "type": {"enum": ["masala", "mugalata"]},
+        "categoryId": {"type": "string", "minLength": 1},
+        "sortOrder": {"type": "integer", "minimum": 0},
+        "isPublished": {"type": "boolean"},
+        "titleEn": {"$ref": "#/$defs/text"},
+        "questionEn": {"$ref": "#/$defs/text"},
+        "summaryEn": {"$ref": "#/$defs/text"},
+        "contentEn": {"$ref": "#/$defs/text"},
+        "keywordsEn": {"$ref": "#/$defs/keywords"},
+        "titleUr": {"$ref": "#/$defs/text"},
+        "questionUr": {"$ref": "#/$defs/text"},
+        "summaryUr": {"$ref": "#/$defs/text"},
+        "contentUr": {"$ref": "#/$defs/text"},
+        "keywordsUr": {"$ref": "#/$defs/keywords"},
+        "references": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/reference"}
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["titleEn", "questionEn", "summaryEn", "contentEn", "keywordsEn"],
+          "not": {"required": ["titleUr"]}
+        },
+        {
+          "required": ["titleUr", "questionUr", "summaryUr", "contentUr", "keywordsUr"],
+          "not": {"required": ["titleEn"]}
+        }
+      ]
+    },
+    "text": {"type": "string", "minLength": 1},
+    "keywords": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
     },
     "reference": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source"],
+      "required": ["sourceName", "bookName", "author"],
       "properties": {
-        "source": {"type": "string", "minLength": 1},
-        "citation": {"type": ["string", "null"], "minLength": 1},
-        "url": {"type": ["string", "null"], "format": "uri"}
-      }
-    },
-    "article": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "slug",
-        "category",
-        "sortOrder",
-        "title",
-        "summary",
-        "body",
-        "tags",
-        "references",
-        "relatedArticleIds"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-          "minLength": 3,
-          "maxLength": 80
-        },
-        "slug": {
-          "type": "string",
-          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-          "minLength": 3,
-          "maxLength": 120
-        },
-        "category": {
-          "type": "string",
-          "enum": ["masail", "mugalat"]
-        },
-        "sortOrder": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "title": {
-          "$ref": "#/$defs/localizedText"
-        },
-        "summary": {
-          "$ref": "#/$defs/localizedText"
-        },
-        "body": {
-          "$ref": "#/$defs/localizedText"
-        },
-        "tags": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 60
-          }
-        },
-        "references": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/reference"
-          }
-        },
-        "relatedArticleIds": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-            "minLength": 3,
-            "maxLength": 80
-          }
-        }
+        "sourceName": {"type": "string", "minLength": 1},
+        "bookName": {"type": "string", "minLength": 1},
+        "author": {"type": "string", "minLength": 1}
       }
     }
   }

@@ -84,7 +84,14 @@ class OfflineFirstQazaRepository implements QazaRepository {
       final probe = await _localStore.getPage(userId: userId, limit: 1);
       if (generation != _sessionGeneration || userId != _activeUserId) return;
 
-      final needsHydration = probe.records.isEmpty && _isOnline;
+      // An empty ledger with a queued reset is empty by intent, not by
+      // absence: hydrating it would restore exactly the records the reset is
+      // about to delete remotely.
+      final resetQueued = probe.records.isEmpty
+          ? await _localStore.hasPendingReset(userId)
+          : false;
+      if (generation != _sessionGeneration || userId != _activeUserId) return;
+      final needsHydration = probe.records.isEmpty && _isOnline && !resetQueued;
       if (needsHydration) {
         _emit(SyncState(
           status: SyncStatus.hydrating,
@@ -356,6 +363,33 @@ class OfflineFirstQazaRepository implements QazaRepository {
     unawaited(_syncInBackground());
   }
 
+  @override
+  Future<void> resetUserRecords({required String userId}) async {
+    if (userId != _activeUserId)
+      throw StateError('Cannot reset Qaza records for a non-active user.');
+    final generation = _sessionGeneration;
+    await _ensureLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId)
+      throw StateError(
+          'Authentication session changed while loading Qaza data.');
+    _records.clear();
+    // Queued adds and completions name records that no longer exist, so the
+    // reset replaces the outbox instead of joining the back of it. Anything
+    // queued after this point is a genuinely new record and still flushes in
+    // order, behind the reset.
+    _outbox = [
+      PendingSyncOp(
+          id: 'reset_$userId',
+          type: SyncOpType.reset,
+          userId: userId,
+          queuedAt: _now())
+    ];
+    await _persistSnapshot();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+    _emitPending();
+    unawaited(_syncInBackground());
+  }
+
   Future<void> syncNow() async {
     if (_activeUserId == null) return;
     await _ensureLoaded();
@@ -440,6 +474,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
                 userId: userId,
                 recordId: op.targetRecordId!,
                 completedAt: op.completedAt ?? _now());
+            break;
+          case SyncOpType.reset:
+            await _remote.resetUserRecords(userId: userId);
             break;
         }
       } catch (error) {

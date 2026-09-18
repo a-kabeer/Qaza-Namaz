@@ -132,6 +132,10 @@ class _BlockingRemote implements QazaRepository {
         recordIds: recordIds,
         completedAt: completedAt,
       );
+
+  @override
+  Future<void> resetUserRecords({required String userId}) =>
+      delegate.resetUserRecords(userId: userId);
 }
 
 void main() {

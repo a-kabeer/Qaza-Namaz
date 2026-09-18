@@ -155,6 +155,11 @@ class DriftQazaRepository implements QazaRepository {
     });
   }
 
+  @override
+  Future<void> resetUserRecords({required String userId}) async {
+    await database.qazaRecordsDao.deleteAllForUser(userId: userId);
+  }
+
   QazaRecordsCompanion _toCompanion(QazaRecord r) =>
       QazaRecordsCompanion.insert(
           id: r.id,

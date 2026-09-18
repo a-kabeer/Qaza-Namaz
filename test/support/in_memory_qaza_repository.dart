@@ -169,6 +169,11 @@ class InMemoryQazaRepository implements QazaRepository {
     }
   }
 
+  @override
+  Future<void> resetUserRecords({required String userId}) async {
+    _records.removeWhere((_, record) => record.userId == userId);
+  }
+
   bool _sameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 }

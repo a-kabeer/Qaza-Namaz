@@ -1,57 +1,75 @@
 # Knowledge Base Content Contract
 
-This directory contains the human-editable source for bundled Knowledge Base articles.
+This directory contains the human-editable source for the bundled Masā'il and
+Mugalāṭāt content.
 
 ## Source format
 
-The published dataset uses a single UTF-8 JSON document with this top-level shape:
+The content ships as **two UTF-8 JSON files, one per language**:
 
-```json
-{
-  "schemaVersion": 1,
-  "articles": []
-}
-```
+- `qaza_masail_mugalat_en.json`
+- `qaza_masail_mugalat_ur.json`
 
-The machine-readable contract is `content.schema.json`.
+Each file is a JSON **array** of entries. The two files describe the same
+entries: they are joined on `id` at load time, so every `id` must appear in
+both. The machine-readable contract is `content.schema.json`.
 
-## Article fields
+## Entry fields
 
-Each article must provide:
+Shared by both files, and required to be identical in both:
 
-- `id`: stable kebab-case identifier; do not change it when editing an existing article.
-- `slug`: stable kebab-case navigation identifier.
-- `category`: `masail` or `mugalat`.
-- `sortOrder`: non-negative display order within the category.
-- `title`: object containing non-empty `ur` and `en` strings.
-- `summary`: object containing non-empty `ur` and `en` strings.
-- `body`: object containing non-empty `ur` and `en` strings.
-- `tags`: unique plain-text search tags.
-- `references`: structured source entries with a required `source` and optional `citation`/`url`.
-- `relatedArticleIds`: unique article IDs; all IDs must resolve to published articles during validation.
+- `id`: stable identifier (for example `masala_001`); never change it when
+  editing an existing entry.
+- `type`: `masala` (a ruling) or `mugalata` (a misconception being corrected).
+  This is the section the entry appears under.
+- `categoryId`: topic within the section, for example `sleep_forgetfulness`.
+  New topics may be added; an unknown topic renders with a label derived from
+  the id rather than failing to load.
+- `sortOrder`: display order **within its `type`**. Each section numbers from
+  1, so the same number appears once per section and never twice.
+- `isPublished`: `false` keeps an entry in the file and out of the app.
+- `references`: array of `{sourceName, bookName, author}`, all required. These
+  are bibliographic, not prose, so they must match byte for byte across the two
+  files.
+
+Language-specific, suffixed by language:
+
+- `titleEn` / `titleUr`
+- `questionEn` / `questionUr`
+- `summaryEn` / `summaryUr`
+- `contentEn` / `contentUr`
+- `keywordsEn` / `keywordsUr`: search vocabulary for that language. These are
+  not translations of each other; each language gets the terms its readers
+  would actually type.
 
 ## Authoring rules
 
-Content authors should edit JSON content only. Do not add article text to Dart widgets, providers, repositories, or other application code.
+Edit JSON content only. Do not put article text in Dart widgets, providers,
+repositories, or any other application code.
 
-Keep IDs stable. Keep both Urdu and English fields populated. Use `sortOrder` for presentation order instead of relying on JSON file order.
-
-References should identify the source clearly. URLs are optional and should only be used when a stable public URL is available.
+Keep ids stable. Keep both files in step: adding an entry to one file without
+the other is a load-time error, and so is changing `type`, `categoryId`,
+`sortOrder`, `isPublished` or `references` in one file only. Use `sortOrder`
+for presentation order rather than relying on the order of the array.
 
 ## Data-model mapping
 
-The application maps the JSON contract into these typed models:
+| JSON | Model |
+| --- | --- |
+| entry | `KnowledgeArticle` |
+| `type` | `KnowledgeCategory` (`masail` / `mugalat`) |
+| `categoryId` | `KnowledgeArticle.topicId`, kept verbatim |
+| `titleEn` + `titleUr` (and question/summary/content) | `KnowledgeLocalizedText` |
+| `keywordsEn` + `keywordsUr` | `KnowledgeLocalizedKeywords` |
+| `references[]` | `KnowledgeReference` |
 
-`KnowledgeArticle` → article record
-
-`KnowledgeLocalizedText` → Urdu/English text pair
-
-`KnowledgeReference` → structured source reference
-
-`KnowledgeCategory` → `masail` / `mugalat`
-
-The parser and validator are responsible for converting raw JSON into these models in a later implementation part. This Part 2 change defines the contract only; it does not embed content or parsing logic.
+`KnowledgeBaseParser` joins the two files and validates them;
+`BundledKnowledgeBaseRepository` loads, filters unpublished entries, orders by
+section then `sortOrder`, and answers queries. Searching and filtering go
+through `KnowledgeQuery`, so the presentation layer never restates the rules.
 
 ## Compatibility
 
-`schemaVersion` is mandatory and currently fixed at `1`. Future incompatible changes must introduce a new schema version and an explicit migration/compatibility decision rather than silently changing the meaning of existing fields.
+The schema is defined by the field set above. A future incompatible change
+must be an explicit migration — both files and the parser together — rather
+than a silent change to the meaning of an existing field.

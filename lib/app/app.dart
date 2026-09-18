@@ -11,6 +11,11 @@ import '../l10n/app_localizations.dart';
 /// Locale and theme both come from persisted Riverpod state. Text direction is
 /// not set here: Flutter derives it from the active locale, so Urdu renders
 /// right to left without any per-widget handling.
+///
+/// The locale is also handed to the theme, which is what switches the whole
+/// type scale to Noto Nastaliq Urdu: every screen, dialog, button, label and
+/// form field reads its style from `ThemeData.textTheme`, so none of them
+/// needs to know about the font.
 class QazaNamazApp extends ConsumerWidget {
   const QazaNamazApp({super.key});
 
@@ -20,8 +25,8 @@ class QazaNamazApp extends ConsumerWidget {
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(locale: locale),
+      darkTheme: AppTheme.dark(locale: locale),
       themeMode: ref.watch(themeModeProvider).materialMode,
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

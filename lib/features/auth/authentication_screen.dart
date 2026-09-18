@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
 class AuthenticationScreen extends ConsumerStatefulWidget {
@@ -133,8 +134,8 @@ class _BrandHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 2),
         Text('قضاء نماز',
-            style: Theme.of(context)
-                .textTheme
+            style: AppTypography.of(context)
+                .urdu
                 .bodyMedium
                 ?.copyWith(color: scheme.secondary)),
         const SizedBox(height: 2),

@@ -158,6 +158,15 @@ class QazaService {
           required DateTime completedAt}) =>
       repository.completeRecords(
           userId: userId, recordIds: recordIds, completedAt: completedAt);
+
+  /// Resets the Qaza counter for [userId] by deleting the entire ledger.
+  ///
+  /// Both pending and completed records go, which is what makes this
+  /// destructive: the counter returns to zero and the completion history that
+  /// produced it is gone with it.
+  Future<void> resetQazaCounter({required String userId}) =>
+      repository.resetUserRecords(userId: userId);
+
   Future<void> recordQaza(
           {required String userId,
           required PrayerType prayerType,

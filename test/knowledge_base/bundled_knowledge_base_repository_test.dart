@@ -1,75 +1,124 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
 import 'package:qaza_namaz/features/knowledge_base/data/bundled_knowledge_base_repository.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
 
-class _MemoryAssetBundle extends CachingAssetBundle {
-  _MemoryAssetBundle(this._assets);
-
-  final Map<String, String> _assets;
-
-  @override
-  Future<ByteData> load(String key) async {
-    final value = _assets[key];
-    if (value == null) {
-      throw FlutterError('Missing test asset: $key');
-    }
-    final bytes = Uint8List.fromList(utf8.encode(value));
-    return ByteData.sublistView(bytes);
-  }
-}
+import 'support/knowledge_fixtures.dart';
 
 void main() {
-  test('loads, sorts, filters, and caches bundled articles', () async {
-    final bundle = _MemoryAssetBundle({
-      BundledKnowledgeBaseRepository.assetPath: jsonEncode({
-        'schemaVersion': 1,
-        'articles': [
-          {
-            'id': 'masail-two',
-            'slug': 'masail-two',
-            'category': 'masail',
-            'sortOrder': 2,
-            'title': {'ur': 'دو', 'en': 'Two'},
-            'summary': {'ur': 'خلاصہ', 'en': 'Summary'},
-            'body': {'ur': 'متن', 'en': 'Body'},
-            'tags': ['two'],
-            'references': [],
-            'relatedArticleIds': [],
-          },
-          {
-            'id': 'masail-one',
-            'slug': 'masail-one',
-            'category': 'masail',
-            'sortOrder': 1,
-            'title': {'ur': 'ایک', 'en': 'One'},
-            'summary': {'ur': 'خلاصہ', 'en': 'Summary'},
-            'body': {'ur': 'متن', 'en': 'Body'},
-            'tags': ['one'],
-            'references': [],
-            'relatedArticleIds': [],
-          },
-        ],
-      }),
-    });
+  List<Map<String, dynamic>> entries(String language) => [
+        datasetEntry(
+            id: 'masala_002',
+            language: language,
+            sortOrder: 2,
+            categoryId: 'friday'),
+        datasetEntry(id: 'masala_001', language: language, sortOrder: 1),
+        datasetEntry(
+          id: 'mugalata_001',
+          language: language,
+          type: 'mugalata',
+          categoryId: 'misconceptions',
+          sortOrder: 1,
+        ),
+      ];
 
-    final repository = BundledKnowledgeBaseRepository(bundle: bundle);
+  BundledKnowledgeBaseRepository repositoryFor(
+          {List<Map<String, dynamic>>? english,
+          List<Map<String, dynamic>>? urdu}) =>
+      BundledKnowledgeBaseRepository(
+        bundle: datasetBundle(
+          english: english ?? entries('en'),
+          urdu: urdu ?? entries('ur'),
+        ),
+      );
 
-    final articles = await repository.getArticles();
-    expect(articles.map((article) => article.id), ['masail-one', 'masail-two']);
+  test('orders by section, then by the order the dataset gives', () async {
+    final articles = await repositoryFor().getArticles();
 
-    final filtered = await repository.getArticlesByCategory(
-      KnowledgeCategory.masail,
+    // Each section numbers from 1, so mugalata_001 must not sort alongside
+    // masala_001 — sections stay whole.
+    expect(articles.map((article) => article.id),
+        ['masala_001', 'masala_002', 'mugalata_001']);
+  });
+
+  test('filters by section', () async {
+    final repository = repositoryFor();
+
+    expect(
+        (await repository.getArticlesByCategory(KnowledgeCategory.masail))
+            .map((article) => article.id),
+        ['masala_001', 'masala_002']);
+    expect(
+        (await repository.getArticlesByCategory(KnowledgeCategory.mugalat))
+            .map((article) => article.id),
+        ['mugalata_001']);
+  });
+
+  test('looks an article up by its dataset id', () async {
+    final repository = repositoryFor();
+
+    expect((await repository.getArticleById('mugalata_001'))?.topicId,
+        'misconceptions');
+    expect(await repository.getArticleById('masala_999'), isNull);
+  });
+
+  test('withholds an unpublished entry from readers', () async {
+    final repository = repositoryFor(
+      english: [
+        datasetEntry(id: 'masala_001', language: 'en'),
+        datasetEntry(id: 'masala_002', language: 'en', sortOrder: 2)
+          ..['isPublished'] = false,
+      ],
+      urdu: [
+        datasetEntry(id: 'masala_001', language: 'ur'),
+        datasetEntry(id: 'masala_002', language: 'ur', sortOrder: 2)
+          ..['isPublished'] = false,
+      ],
     );
-    expect(filtered.length, 2);
-    expect(await repository.getArticleById('masail-one'), isNotNull);
-    expect(await repository.getArticleById('missing'), isNull);
 
-    expect(identical(articles, await repository.getArticles()), isFalse);
+    expect((await repository.getArticles()).map((article) => article.id),
+        ['masala_001']);
+    expect(await repository.getArticleById('masala_002'), isNull);
+  });
+
+  test('lists only topics that have articles', () async {
+    expect(await repositoryFor().getTopicIds(),
+        ['basic', 'friday', 'misconceptions']);
+  });
+
+  test('searches across both languages and both filters', () async {
+    final repository = repositoryFor();
+
+    expect(await repository.search(KnowledgeQuery.none), hasLength(3));
+    expect(
+        (await repository.search(
+                const KnowledgeQuery(category: KnowledgeCategory.mugalat)))
+            .map((article) => article.id),
+        ['mugalata_001']);
+    expect(
+        (await repository.search(const KnowledgeQuery(topicId: 'friday')))
+            .map((article) => article.id),
+        ['masala_002']);
+    expect(
+        (await repository.search(const KnowledgeQuery(text: 'masala_001')))
+            .map((article) => article.id),
+        ['masala_001']);
+    // Urdu text finds the same record the English text does.
+    expect(await repository.search(const KnowledgeQuery(text: 'متن')),
+        hasLength(3));
+    expect(
+        await repository.search(const KnowledgeQuery(
+            text: 'masala_001', category: KnowledgeCategory.mugalat)),
+        isEmpty);
+  });
+
+  test('parses the datasets once and serves the cache after that', () async {
+    final repository = repositoryFor();
+
+    final first = await repository.getArticles();
+    final second = await repository.getArticles();
+
+    expect(identical(first, second), isTrue);
   });
 }

@@ -2,7 +2,11 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 
-enum SyncOpType { add, complete }
+/// Remote operations the outbox can replay.
+///
+/// [reset] carries no payload: it deletes the whole remote ledger for its
+/// user, so it supersedes every operation queued before it.
+enum SyncOpType { add, complete, reset }
 
 class PendingSyncOp {
   const PendingSyncOp(
@@ -188,6 +192,17 @@ abstract class QazaLocalStore {
     final snapshot = await load();
     return QazaProgressSummary.fromRecords(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
+  }
+
+  /// True when a [SyncOpType.reset] is still queued for [userId].
+  ///
+  /// Bootstrap consults this before hydrating: an empty local ledger that is
+  /// empty *because the user reset it* must not be refilled from the cloud
+  /// copy the queued reset is about to delete.
+  Future<bool> hasPendingReset(String userId) async {
+    final snapshot = await load();
+    return (snapshot.outboxByUser[userId] ?? const <PendingSyncOp>[])
+        .any((op) => op.type == SyncOpType.reset);
   }
 
   Future<void> saveRecordsAndOutbox(

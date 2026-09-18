@@ -932,6 +932,12 @@ abstract class AppLocalizations {
   /// **'Could not add the estimate: {error}'**
   String calcAddError(String error);
 
+  /// No description provided for @calendarSelectYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Select year'**
+  String get calendarSelectYear;
+
   /// No description provided for @calendarSelectHint.
   ///
   /// In en, this message translates to:
@@ -1988,6 +1994,66 @@ abstract class AppLocalizations {
   /// **'Mugalat'**
   String get knowledgeCategoryMugalat;
 
+  /// No description provided for @knowledgeBaseTopicAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All topics'**
+  String get knowledgeBaseTopicAll;
+
+  /// No description provided for @knowledgeTopicBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basics'**
+  String get knowledgeTopicBasic;
+
+  /// No description provided for @knowledgeTopicPrayerUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer units'**
+  String get knowledgeTopicPrayerUnits;
+
+  /// No description provided for @knowledgeTopicSleepForgetfulness.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep & forgetfulness'**
+  String get knowledgeTopicSleepForgetfulness;
+
+  /// No description provided for @knowledgeTopicIntentionalOmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Intentional omission'**
+  String get knowledgeTopicIntentionalOmission;
+
+  /// No description provided for @knowledgeTopicFriday.
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get knowledgeTopicFriday;
+
+  /// No description provided for @knowledgeTopicMenstruation.
+  ///
+  /// In en, this message translates to:
+  /// **'Menstruation'**
+  String get knowledgeTopicMenstruation;
+
+  /// No description provided for @knowledgeTopicNifas.
+  ///
+  /// In en, this message translates to:
+  /// **'Nifas'**
+  String get knowledgeTopicNifas;
+
+  /// No description provided for @knowledgeTopicMenstruationNifas.
+  ///
+  /// In en, this message translates to:
+  /// **'Menstruation & Nifas'**
+  String get knowledgeTopicMenstruationNifas;
+
+  /// No description provided for @knowledgeTopicMisconceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Misconceptions'**
+  String get knowledgeTopicMisconceptions;
+
   /// No description provided for @knowledgeBaseEmptyTitle.
   ///
   /// In en, this message translates to:
@@ -2006,17 +2072,17 @@ abstract class AppLocalizations {
   /// **'Knowledge Base could not be loaded.'**
   String get knowledgeBaseLoadError;
 
+  /// No description provided for @knowledgeBaseLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Knowledge Base language'**
+  String get knowledgeBaseLanguage;
+
   /// No description provided for @knowledgeArticleTitle.
   ///
   /// In en, this message translates to:
   /// **'Article'**
   String get knowledgeArticleTitle;
-
-  /// No description provided for @knowledgeArticleLanguage.
-  ///
-  /// In en, this message translates to:
-  /// **'Article language'**
-  String get knowledgeArticleLanguage;
 
   /// No description provided for @knowledgeArticleReferences.
   ///
@@ -2155,6 +2221,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync, export and import status'**
   String get settingsDataCloudSubtitle;
+
+  /// No description provided for @settingsResetCounterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Qaza Counter'**
+  String get settingsResetCounterTitle;
+
+  /// No description provided for @settingsResetCounterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete every recorded Qaza and start the count again from zero.'**
+  String get settingsResetCounterSubtitle;
+
+  /// No description provided for @settingsResetCounterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no Qaza records to reset.'**
+  String get settingsResetCounterEmpty;
+
+  /// No description provided for @settingsResetCounterDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Qaza Counter?'**
+  String get settingsResetCounterDialogTitle;
+
+  /// No description provided for @settingsResetCounterDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes every Qaza record on this account — pending and completed — from this device and from your cloud backup.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.'**
+  String get settingsResetCounterDialogMessage;
+
+  /// No description provided for @settingsResetCounterAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{I understand that 1 Qaza record will be permanently deleted} other{I understand that {count} Qaza records will be permanently deleted}}'**
+  String settingsResetCounterAcknowledge(int count);
+
+  /// No description provided for @settingsResetCounterConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset counter'**
+  String get settingsResetCounterConfirm;
+
+  /// No description provided for @settingsResetCounterDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza counter reset.'**
+  String get settingsResetCounterDone;
+
+  /// No description provided for @settingsResetCounterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reset the Qaza counter: {error}'**
+  String settingsResetCounterFailed(String error);
 
   /// No description provided for @settingsAboutSection.
   ///

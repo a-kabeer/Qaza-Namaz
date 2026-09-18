@@ -169,6 +169,23 @@ class FirestoreQazaRepository implements QazaRepository {
     }
   }
 
+  @override
+  Future<void> resetUserRecords({required String userId}) async {
+    final collection = _recordsCollection(userId);
+    // Firestore has no collection-level delete, and a write batch is capped at
+    // 500 operations, so the ledger is drained page by page.
+    while (true) {
+      final snapshot = await collection.limit(_deleteBatchSize).get();
+      if (snapshot.docs.isEmpty) return;
+      final batch = _firestore.batch();
+      for (final document in snapshot.docs) batch.delete(document.reference);
+      await batch.commit();
+      if (snapshot.docs.length < _deleteBatchSize) return;
+    }
+  }
+
+  static const int _deleteBatchSize = 400;
+
   Map<String, dynamic> _toMap(QazaRecord record) => {
         'userId': record.userId,
         'prayerType': record.prayerType.name,

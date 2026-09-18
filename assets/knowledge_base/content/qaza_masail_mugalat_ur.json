@@ -1,0 +1,1904 @@
+[
+  {
+    "id": "masala_001",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا پانچ وقت کی نماز فرض ہے؟",
+    "questionUr": "کیا پانچ وقت کی نماز فرض ہے؟",
+    "summaryUr": "جی ہاں۔ پانچ وقت کی فرض نماز ہر مکلف مسلمان پر شرعی فرض ہے.",
+    "contentUr": "جی ہاں۔ پانچ وقت کی فرض نماز ہر مکلف مسلمان پر شرعی فرض ہے.",
+    "keywordsUr": [
+      "بنیادی اصول",
+      "فرضیت/ذمہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "masala_002",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا نماز کے اوقات مقرر ہیں؟",
+    "questionUr": "کیا نماز کے اوقات مقرر ہیں؟",
+    "summaryUr": "جی ہاں۔ فرض نمازیں مقررہ اوقات میں ادا کی جاتی ہیں؛ وقت گزرنے کے بعد فوت شدہ نماز قضا کے باب میں آتی ہے.",
+    "contentUr": "جی ہاں۔ فرض نمازیں مقررہ اوقات میں ادا کی جاتی ہیں؛ وقت گزرنے کے بعد فوت شدہ نماز قضا کے باب میں آتی ہے.",
+    "keywordsUr": [
+      "وقت",
+      "قضا کی تعریف"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "masala_003",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "قضا نماز سے کیا مراد ہے؟",
+    "questionUr": "قضا نماز سے کیا مراد ہے؟",
+    "summaryUr": "فوت شدہ فرض نماز کو اس کے مقررہ وقت گزرنے کے بعد ادا کرنا قضا ہے.",
+    "contentUr": "فوت شدہ فرض نماز کو اس کے مقررہ وقت گزرنے کے بعد ادا کرنا قضا ہے.",
+    "keywordsUr": [
+      "تعریف"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "masala_004",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا وقت گزرنے سے فوت شدہ فرض نماز ساقط ہوجاتی ہے؟",
+    "questionUr": "کیا وقت گزرنے سے فوت شدہ فرض نماز ساقط ہوجاتی ہے؟",
+    "summaryUr": "نہیں۔ فوت شدہ فرض نماز کا ذمہ باقی رہتا ہے اور اسے قضا کیا جاتا ہے.",
+    "contentUr": "نہیں۔ فوت شدہ فرض نماز کا ذمہ باقی رہتا ہے اور اسے قضا کیا جاتا ہے.",
+    "keywordsUr": [
+      "فرضیت/ذمہ",
+      "باقی نمازیں"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "masala_005",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا قضا ادا کرنے سے فوت شدہ نماز کا ذمہ ادا ہوجاتا ہے؟",
+    "questionUr": "کیا قضا ادا کرنے سے فوت شدہ نماز کا ذمہ ادا ہوجاتا ہے؟",
+    "summaryUr": "جی ہاں۔ قضا اسی فوت شدہ فرض نماز کو ادا کرنے کا شرعی طریقہ ہے.",
+    "contentUr": "جی ہاں۔ قضا اسی فوت شدہ فرض نماز کو ادا کرنے کا شرعی طریقہ ہے.",
+    "keywordsUr": [
+      "ذمہ کی ادائیگی"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "masala_006",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا قضا نماز اور وقت پر ادا کی جانے والی نماز ایک ہی چیز ہیں؟",
+    "questionUr": "کیا قضا نماز اور وقت پر ادا کی جانے والی نماز ایک ہی چیز ہیں؟",
+    "summaryUr": "فعلِ نماز اپنی جگہ وہی ہے، لیکن قضا اس نماز کی تکمیل ہے جو اپنے مقررہ وقت میں ادا نہ ہوسکی.",
+    "contentUr": "فعلِ نماز اپنی جگہ وہی ہے، لیکن قضا اس نماز کی تکمیل ہے جو اپنے مقررہ وقت میں ادا نہ ہوسکی.",
+    "keywordsUr": [
+      "ادا",
+      "قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "masala_007",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "اگر کئی سال کی نمازیں رہ گئی ہوں تو کیا وہ بالکل ختم ہوجاتی ہیں؟",
+    "questionUr": "اگر کئی سال کی نمازیں رہ گئی ہوں تو کیا وہ بالکل ختم ہوجاتی ہیں؟",
+    "summaryUr": "نہیں۔ وقت گزرنے یا برس گزرنے سے ذمہ ختم نہیں ہوتا؛ فوت شدہ فرض نمازوں کی قضا باقی رہتی ہے.",
+    "contentUr": "نہیں۔ وقت گزرنے یا برس گزرنے سے ذمہ ختم نہیں ہوتا؛ فوت شدہ فرض نمازوں کی قضا باقی رہتی ہے.",
+    "keywordsUr": [
+      "طویل عرصے کی قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "masala_008",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا محض صدقہ دینے سے فوت شدہ فرض نماز کی قضا ہوجاتی ہے؟",
+    "questionUr": "کیا محض صدقہ دینے سے فوت شدہ فرض نماز کی قضا ہوجاتی ہے؟",
+    "summaryUr": "چاروں مذاہب کے منقول اصول کے مطابق فوت شدہ فرض نماز کی قضا باقی رہتی ہے؛ صدقہ اس نماز کی قضا کا بدل نہیں بنایا گیا.",
+    "contentUr": "چاروں مذاہب کے منقول اصول کے مطابق فوت شدہ فرض نماز کی قضا باقی رہتی ہے؛ صدقہ اس نماز کی قضا کا بدل نہیں بنایا گیا.",
+    "keywordsUr": [
+      "صدقہ",
+      "بدل"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "masala_009",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا ہر فوت شدہ فرض نماز الگ ذمہ ہے؟",
+    "questionUr": "کیا ہر فوت شدہ فرض نماز الگ ذمہ ہے؟",
+    "summaryUr": "جی ہاں۔ ہر فوت شدہ فرض نماز اپنی نماز کی حیثیت رکھتی ہے، اس لیے اسے الگ شمار اور قضا کیا جاسکتا ہے.",
+    "contentUr": "جی ہاں۔ ہر فوت شدہ فرض نماز اپنی نماز کی حیثیت رکھتی ہے، اس لیے اسے الگ شمار اور قضا کیا جاسکتا ہے.",
+    "keywordsUr": [
+      "حساب/ریکارڈ",
+      "انفرادی"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "masala_010",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleUr": "کیا قضا کرنے کے باوجود موجودہ پانچ وقت کی نمازیں بھی ضروری ہیں؟",
+    "questionUr": "کیا قضا کرنے کے باوجود موجودہ پانچ وقت کی نمازیں بھی ضروری ہیں؟",
+    "summaryUr": "جی ہاں۔ قضا کا مطلب موجودہ فرض نمازوں کو چھوڑ دینا نہیں؛ موجودہ نمازیں بھی اپنے اوقات میں ادا کی جاتی ہیں.",
+    "contentUr": "جی ہاں۔ قضا کا مطلب موجودہ فرض نمازوں کو چھوڑ دینا نہیں؛ موجودہ نمازیں بھی اپنے اوقات میں ادا کی جاتی ہیں.",
+    "keywordsUr": [
+      "موجودہ نماز",
+      "باقی نمازیں"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "masala_011",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "اگر نیند کی وجہ سے نماز رہ جائے تو کیا حکم ہے؟",
+    "questionUr": "اگر نیند کی وجہ سے نماز رہ جائے تو کیا حکم ہے؟",
+    "summaryUr": "نیند کی وجہ سے رہ جانے والی نماز قضا کی جائے گی.",
+    "contentUr": "نیند کی وجہ سے رہ جانے والی نماز قضا کی جائے گی.",
+    "keywordsUr": [
+      "نیند"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "masala_012",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "اگر نماز بھول جائے تو کیا کرنا ہے؟",
+    "questionUr": "اگر نماز بھول جائے تو کیا کرنا ہے؟",
+    "summaryUr": "جب نماز یاد آئے تو اسے پڑھا جائے.",
+    "contentUr": "جب نماز یاد آئے تو اسے پڑھا جائے.",
+    "keywordsUr": [
+      "بھول"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "masala_013",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "بھولی ہوئی نماز کب قضا کی جائے؟",
+    "questionUr": "بھولی ہوئی نماز کب قضا کی جائے؟",
+    "summaryUr": "جیسے ہی یاد آئے، نماز ادا کی جائے.",
+    "contentUr": "جیسے ہی یاد آئے، نماز ادا کی جائے.",
+    "keywordsUr": [
+      "فوراً"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "masala_014",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "کیا بھولی ہوئی نماز کی الگ کفارہ بھی ہے؟",
+    "questionUr": "کیا بھولی ہوئی نماز کی الگ کفارہ بھی ہے؟",
+    "summaryUr": "صحیح حدیث میں آیا ہے کہ بھولی ہوئی نماز کا کفارہ یہی ہے کہ اسے یاد آنے پر پڑھا جائے.",
+    "contentUr": "صحیح حدیث میں آیا ہے کہ بھولی ہوئی نماز کا کفارہ یہی ہے کہ اسے یاد آنے پر پڑھا جائے.",
+    "keywordsUr": [
+      "کفارہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "masala_015",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "کیا صرف یہ کہہ دینا کافی ہے کہ نماز نیند یا بھول سے رہ گئی تھی؟",
+    "questionUr": "کیا صرف یہ کہہ دینا کافی ہے کہ نماز نیند یا بھول سے رہ گئی تھی؟",
+    "summaryUr": "نہیں۔ شرعی حکم نماز کو ادا کرنے کا ہے؛ صرف معذرت یا دعویٰ سے قضا ادا نہیں ہوتی.",
+    "contentUr": "نہیں۔ شرعی حکم نماز کو ادا کرنے کا ہے؛ صرف معذرت یا دعویٰ سے قضا ادا نہیں ہوتی.",
+    "keywordsUr": [
+      "تکمیل"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "masala_016",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "اگر کوئی نماز کے وقت سویا اور نماز فوت ہوگئی تو کیا فوت شدہ نماز اب بھی باقی ہے؟",
+    "questionUr": "اگر کوئی نماز کے وقت سویا اور نماز فوت ہوگئی تو کیا فوت شدہ نماز اب بھی باقی ہے؟",
+    "summaryUr": "جی ہاں۔ نماز قضا کی جائے گی؛ نیند کی وجہ سے وقت گزر جانا قضا کے حکم کو ختم نہیں کرتا.",
+    "contentUr": "جی ہاں۔ نماز قضا کی جائے گی؛ نیند کی وجہ سے وقت گزر جانا قضا کے حکم کو ختم نہیں کرتا.",
+    "keywordsUr": [
+      "نیند",
+      "فرضیت/ذمہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "masala_017",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "اگر نماز بھول جانے کے بعد بہت دیر سے یاد آئے تو کیا پھر بھی قضا لازم ہے؟",
+    "questionUr": "اگر نماز بھول جانے کے بعد بہت دیر سے یاد آئے تو کیا پھر بھی قضا لازم ہے؟",
+    "summaryUr": "جی ہاں۔ یاد آنے پر اسے پڑھا جائے گا.",
+    "contentUr": "جی ہاں۔ یاد آنے پر اسے پڑھا جائے گا.",
+    "keywordsUr": [
+      "دیر سے یاد آنا"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "masala_018",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "کیا نیند یا بھول سے رہ جانے والی نماز کے لیے نیا شرعی وقت مقرر کیا گیا ہے؟",
+    "questionUr": "کیا نیند یا بھول سے رہ جانے والی نماز کے لیے نیا شرعی وقت مقرر کیا گیا ہے؟",
+    "summaryUr": "نہیں۔ بنیادی حکم یہ ہے کہ یاد آنے یا بیدار ہونے پر اسے ادا کیا جائے.",
+    "contentUr": "نہیں۔ بنیادی حکم یہ ہے کہ یاد آنے یا بیدار ہونے پر اسے ادا کیا جائے.",
+    "keywordsUr": [
+      "اوقات"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "masala_019",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "کیا نیند یا بھول سے رہنے والی نماز صرف اسی دن قضا ہوسکتی ہے؟",
+    "questionUr": "کیا نیند یا بھول سے رہنے والی نماز صرف اسی دن قضا ہوسکتی ہے؟",
+    "summaryUr": "نہیں۔ صحیح حدیث کا حکم وقت کو ایک مخصوص دن تک محدود نہیں کرتا؛ اصل حکم یاد آنے پر ادا کرنا ہے.",
+    "contentUr": "نہیں۔ صحیح حدیث کا حکم وقت کو ایک مخصوص دن تک محدود نہیں کرتا؛ اصل حکم یاد آنے پر ادا کرنا ہے.",
+    "keywordsUr": [
+      "صرف اگلے دن والی غلط فہمی"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "masala_020",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleUr": "کیا قضا کی نماز کو جان بوجھ کر مزید مؤخر کرنا حدیث کے مطابق مطلوب ہے؟",
+    "questionUr": "کیا قضا کی نماز کو جان بوجھ کر مزید مؤخر کرنا حدیث کے مطابق مطلوب ہے؟",
+    "summaryUr": "نہیں۔ حدیث کا اصل حکم یاد آنے پر اسے ادا کرنا ہے، اس لیے بلا وجہ مؤخر کرنے کو اصل حکم نہیں کہا جائے گا.",
+    "contentUr": "نہیں۔ حدیث کا اصل حکم یاد آنے پر اسے ادا کرنا ہے، اس لیے بلا وجہ مؤخر کرنے کو اصل حکم نہیں کہا جائے گا.",
+    "keywordsUr": [
+      "تاخیر"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  },
+  {
+    "id": "masala_021",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا بلا عذر جان بوجھ کر نماز چھوڑنا گناہ ہے؟",
+    "questionUr": "کیا بلا عذر جان بوجھ کر نماز چھوڑنا گناہ ہے؟",
+    "summaryUr": "جی ہاں۔ مقررہ وقت پر فرض نماز ادا نہ کرنا بلا عذر تقصیر اور گناہ ہے.",
+    "contentUr": "جی ہاں۔ مقررہ وقت پر فرض نماز ادا نہ کرنا بلا عذر تقصیر اور گناہ ہے.",
+    "keywordsUr": [
+      "جان بوجھ کر ترک",
+      "گناہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 21,
+    "isPublished": true
+  },
+  {
+    "id": "masala_022",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا جان بوجھ کر چھوڑی ہوئی نماز کے بارے میں بھی قضا کا حکم ہے؟",
+    "questionUr": "کیا جان بوجھ کر چھوڑی ہوئی نماز کے بارے میں بھی قضا کا حکم ہے؟",
+    "summaryUr": "چاروں معروف سنی مذاہب کے بارے میں دار الافتاء مصر نے فوت شدہ فرض نمازوں کی قضا کو لازم قرار دینے پر اتفاق نقل کیا ہے، جس میں دانستہ چھوڑی گئی نمازیں بھی شامل کی گئی ہیں.",
+    "contentUr": "چاروں معروف سنی مذاہب کے بارے میں دار الافتاء مصر نے فوت شدہ فرض نمازوں کی قضا کو لازم قرار دینے پر اتفاق نقل کیا ہے، جس میں دانستہ چھوڑی گئی نمازیں بھی شامل کی گئی ہیں.",
+    "keywordsUr": [
+      "جان بوجھ کر ترک",
+      "قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 22,
+    "isPublished": true
+  },
+  {
+    "id": "masala_023",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا صرف توبہ کرلینے سے جان بوجھ کر چھوڑی ہوئی نماز کی قضا ختم ہوجاتی ہے؟",
+    "questionUr": "کیا صرف توبہ کرلینے سے جان بوجھ کر چھوڑی ہوئی نماز کی قضا ختم ہوجاتی ہے؟",
+    "summaryUr": "چاروں مذاہب کے منقول اصول کے مطابق توبہ کے ساتھ فوت شدہ فرض نمازوں کی قضا بھی کی جائے گی.",
+    "contentUr": "چاروں مذاہب کے منقول اصول کے مطابق توبہ کے ساتھ فوت شدہ فرض نمازوں کی قضا بھی کی جائے گی.",
+    "keywordsUr": [
+      "توبہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 23,
+    "isPublished": true
+  },
+  {
+    "id": "masala_024",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا جان بوجھ کر نماز چھوڑنے والے کو توبہ بھی کرنی چاہیے؟",
+    "questionUr": "کیا جان بوجھ کر نماز چھوڑنے والے کو توبہ بھی کرنی چاہیے؟",
+    "summaryUr": "جی ہاں۔ جان بوجھ کر ترک کی صورت میں توبہ ضروری ہے، اور فوت شدہ فرض نماز کی قضا الگ ذمہ ہے.",
+    "contentUr": "جی ہاں۔ جان بوجھ کر ترک کی صورت میں توبہ ضروری ہے، اور فوت شدہ فرض نماز کی قضا الگ ذمہ ہے.",
+    "keywordsUr": [
+      "توبہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 24,
+    "isPublished": true
+  },
+  {
+    "id": "masala_025",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا توبہ اور قضا ایک ہی چیز ہیں؟",
+    "questionUr": "کیا توبہ اور قضا ایک ہی چیز ہیں؟",
+    "summaryUr": "نہیں۔ توبہ گناہ سے رجوع ہے اور قضا فوت شدہ فرض نماز ادا کرنا ہے؛ دونوں کا الگ تعلق ہے.",
+    "contentUr": "نہیں۔ توبہ گناہ سے رجوع ہے اور قضا فوت شدہ فرض نماز ادا کرنا ہے؛ دونوں کا الگ تعلق ہے.",
+    "keywordsUr": [
+      "توبہ",
+      "فرق"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 25,
+    "isPublished": true
+  },
+  {
+    "id": "masala_026",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا طویل عرصے کی نمازوں کے لیے بھی قضا کا اصول وہی رہتا ہے؟",
+    "questionUr": "کیا طویل عرصے کی نمازوں کے لیے بھی قضا کا اصول وہی رہتا ہے؟",
+    "summaryUr": "جی ہاں۔ طویل مدت کی فوت شدہ فرض نمازوں کی قضا بھی کی جائے گی؛ مقدار اور عملی ترتیب کے طریقے الگ مسئلہ ہیں.",
+    "contentUr": "جی ہاں۔ طویل مدت کی فوت شدہ فرض نمازوں کی قضا بھی کی جائے گی؛ مقدار اور عملی ترتیب کے طریقے الگ مسئلہ ہیں.",
+    "keywordsUr": [
+      "طویل عرصے کی قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 26,
+    "isPublished": true
+  },
+  {
+    "id": "masala_027",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا کئی سال کی قضا نمازوں کے لیے کوئی 'میعاد ختم ہونے' کا اصول ہے؟",
+    "questionUr": "کیا کئی سال کی قضا نمازوں کے لیے کوئی 'میعاد ختم ہونے' کا اصول ہے؟",
+    "summaryUr": "نہیں۔ فوت شدہ فرض نمازیں محض وقت گزرنے سے ساقط نہیں ہوتیں.",
+    "contentUr": "نہیں۔ فوت شدہ فرض نمازیں محض وقت گزرنے سے ساقط نہیں ہوتیں.",
+    "keywordsUr": [
+      "وقت کا گزرنا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 27,
+    "isPublished": true
+  },
+  {
+    "id": "masala_028",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا قضا کا بوجھ موجود ہونے کے باوجود موجودہ فرض نماز چھوڑ سکتے ہیں؟",
+    "questionUr": "کیا قضا کا بوجھ موجود ہونے کے باوجود موجودہ فرض نماز چھوڑ سکتے ہیں؟",
+    "summaryUr": "نہیں۔ قضا کا بوجھ موجودہ فرض نمازوں کو ترک کرنے کا جواز نہیں بنتا.",
+    "contentUr": "نہیں۔ قضا کا بوجھ موجودہ فرض نمازوں کو ترک کرنے کا جواز نہیں بنتا.",
+    "keywordsUr": [
+      "موجودہ نماز"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 28,
+    "isPublished": true
+  },
+  {
+    "id": "masala_029",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا قضا صرف ایک خاص تعداد تک محدود ہے؟",
+    "questionUr": "کیا قضا صرف ایک خاص تعداد تک محدود ہے؟",
+    "summaryUr": "نہیں۔ بہت سی نمازیں فوت ہوئی ہوں تو ان کی قضا باقی رہتی ہے؛ البتہ ترتیب اور اوقات کی بعض تفصیلات میں مذاہب کا اختلاف ہے.",
+    "contentUr": "نہیں۔ بہت سی نمازیں فوت ہوئی ہوں تو ان کی قضا باقی رہتی ہے؛ البتہ ترتیب اور اوقات کی بعض تفصیلات میں مذاہب کا اختلاف ہے.",
+    "keywordsUr": [
+      "مقدار",
+      "باقی نمازیں"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 7962: Making up missed prayers at disliked times",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 29,
+    "isPublished": true
+  },
+  {
+    "id": "masala_030",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleUr": "کیا قضا شروع کرنے کے لیے کئی سال کی نمازیں پہلے الگ الگ جمع کرنا ضروری ہے؟",
+    "questionUr": "کیا قضا شروع کرنے کے لیے کئی سال کی نمازیں پہلے الگ الگ جمع کرنا ضروری ہے؟",
+    "summaryUr": "نہیں۔ عملی طور پر معلوم یا مناسب طور پر متعین ذمہ کے مطابق قضا شروع کی جاسکتی ہے؛ مکمل حساب کا طریقہ الگ عملی مسئلہ ہے.",
+    "contentUr": "نہیں۔ عملی طور پر معلوم یا مناسب طور پر متعین ذمہ کے مطابق قضا شروع کی جاسکتی ہے؛ مکمل حساب کا طریقہ الگ عملی مسئلہ ہے.",
+    "keywordsUr": [
+      "تخمینہ",
+      "آغاز"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 30,
+    "isPublished": true
+  },
+  {
+    "id": "masala_031",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "فجر کی فرض قضا کتنی رکعت ہے؟",
+    "questionUr": "فجر کی فرض قضا کتنی رکعت ہے؟",
+    "summaryUr": "فجر کی فرض نماز دو رکعت ہے، لہذا اس کی قضا بھی دو رکعت ہے.",
+    "contentUr": "فجر کی فرض نماز دو رکعت ہے، لہذا اس کی قضا بھی دو رکعت ہے.",
+    "keywordsUr": [
+      "فجر",
+      "2 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 31,
+    "isPublished": true
+  },
+  {
+    "id": "masala_032",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "ظہر کی فرض قضا کتنی رکعت ہے؟",
+    "questionUr": "ظہر کی فرض قضا کتنی رکعت ہے؟",
+    "summaryUr": "ظہر کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "contentUr": "ظہر کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "keywordsUr": [
+      "ظہر",
+      "4 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 32,
+    "isPublished": true
+  },
+  {
+    "id": "masala_033",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "عصر کی فرض قضا کتنی رکعت ہے؟",
+    "questionUr": "عصر کی فرض قضا کتنی رکعت ہے؟",
+    "summaryUr": "عصر کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "contentUr": "عصر کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "keywordsUr": [
+      "عصر",
+      "4 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 33,
+    "isPublished": true
+  },
+  {
+    "id": "masala_034",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "مغرب کی فرض قضا کتنی رکعت ہے؟",
+    "questionUr": "مغرب کی فرض قضا کتنی رکعت ہے؟",
+    "summaryUr": "مغرب کی فرض نماز تین رکعت ہے، لہذا اس کی قضا تین رکعت ہے.",
+    "contentUr": "مغرب کی فرض نماز تین رکعت ہے، لہذا اس کی قضا تین رکعت ہے.",
+    "keywordsUr": [
+      "مغرب",
+      "3 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 34,
+    "isPublished": true
+  },
+  {
+    "id": "masala_035",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "عشاء کی فرض قضا کتنی رکعت ہے؟",
+    "questionUr": "عشاء کی فرض قضا کتنی رکعت ہے؟",
+    "summaryUr": "عشاء کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "contentUr": "عشاء کی فرض نماز چار رکعت ہے، لہذا اس کی قضا چار رکعت ہے.",
+    "keywordsUr": [
+      "عشاء",
+      "4 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 35,
+    "isPublished": true
+  },
+  {
+    "id": "masala_036",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "پانچ فرض نمازوں میں مجموعی فرض رکعتیں کتنی ہیں؟",
+    "questionUr": "پانچ فرض نمازوں میں مجموعی فرض رکعتیں کتنی ہیں؟",
+    "summaryUr": "فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4؛ مجموعہ 17 فرض رکعتیں بنتی ہیں.",
+    "contentUr": "فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4؛ مجموعہ 17 فرض رکعتیں بنتی ہیں.",
+    "keywordsUr": [
+      "17 رکعت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 36,
+    "isPublished": true
+  },
+  {
+    "id": "masala_037",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا قضا میں اصل نماز ہی کی رکعتوں کی تعداد رکھی جاتی ہے؟",
+    "questionUr": "کیا قضا میں اصل نماز ہی کی رکعتوں کی تعداد رکھی جاتی ہے؟",
+    "summaryUr": "جی ہاں۔ قضا اسی فرض نماز کو ادا کرتی ہے؛ فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4.",
+    "contentUr": "جی ہاں۔ قضا اسی فرض نماز کو ادا کرتی ہے؛ فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4.",
+    "keywordsUr": [
+      "اسی نماز"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 37,
+    "isPublished": true
+  },
+  {
+    "id": "masala_038",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا فجر کی قضا چار رکعت پڑھنا لازم ہے؟",
+    "questionUr": "کیا فجر کی قضا چار رکعت پڑھنا لازم ہے؟",
+    "summaryUr": "نہیں۔ فجر کے فرض کی قضا دو رکعت ہے.",
+    "contentUr": "نہیں۔ فجر کے فرض کی قضا دو رکعت ہے.",
+    "keywordsUr": [
+      "فجر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 38,
+    "isPublished": true
+  },
+  {
+    "id": "masala_039",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا ظہر کی قضا ہمیشہ دو رکعت ہوتی ہے؟",
+    "questionUr": "کیا ظہر کی قضا ہمیشہ دو رکعت ہوتی ہے؟",
+    "summaryUr": "عام اصل میں ظہر کے فرض کی قضا چار رکعت ہے۔ سفر کی حالت سے متعلق بعض الگ فقہی تفصیلات ہیں، اس لیے انہیں چاروں مذاہب کا یکساں حکم بنا کر پیش نہ کیا جائے.",
+    "contentUr": "عام اصل میں ظہر کے فرض کی قضا چار رکعت ہے۔ سفر کی حالت سے متعلق بعض الگ فقہی تفصیلات ہیں، اس لیے انہیں چاروں مذاہب کا یکساں حکم بنا کر پیش نہ کیا جائے.",
+    "keywordsUr": [
+      "ظہر",
+      "سفر سے متعلق نوٹ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 21959: How to make up prayer regarding audible/silent recitation",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 39,
+    "isPublished": true
+  },
+  {
+    "id": "masala_040",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا عصر کی قضا کی بنیادی تعداد چار رکعت ہے؟",
+    "questionUr": "کیا عصر کی قضا کی بنیادی تعداد چار رکعت ہے؟",
+    "summaryUr": "جی ہاں۔ اصل حالت میں عصر کے فرض کی چار رکعت ہیں، اور اس کی قضا بھی چار رکعت ہے.",
+    "contentUr": "جی ہاں۔ اصل حالت میں عصر کے فرض کی چار رکعت ہیں، اور اس کی قضا بھی چار رکعت ہے.",
+    "keywordsUr": [
+      "عصر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 40,
+    "isPublished": true
+  },
+  {
+    "id": "masala_041",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا مغرب کی قضا کی بنیادی تعداد تین رکعت ہے؟",
+    "questionUr": "کیا مغرب کی قضا کی بنیادی تعداد تین رکعت ہے؟",
+    "summaryUr": "جی ہاں۔ مغرب کے فرض کی تین رکعت ہیں اور اس کی قضا بھی تین رکعت ہے.",
+    "contentUr": "جی ہاں۔ مغرب کے فرض کی تین رکعت ہیں اور اس کی قضا بھی تین رکعت ہے.",
+    "keywordsUr": [
+      "مغرب"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 41,
+    "isPublished": true
+  },
+  {
+    "id": "masala_042",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleUr": "کیا عشاء کی فرض قضا تین رکعت ہے؟",
+    "questionUr": "کیا عشاء کی فرض قضا تین رکعت ہے؟",
+    "summaryUr": "نہیں۔ عشاء کے فرض کی قضا چار رکعت ہے۔ وتر الگ نماز ہے اور اس کا حکم الگ مسئلہ ہے.",
+    "contentUr": "نہیں۔ عشاء کے فرض کی قضا چار رکعت ہے۔ وتر الگ نماز ہے اور اس کا حکم الگ مسئلہ ہے.",
+    "keywordsUr": [
+      "عشاء",
+      "وتر الگ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 42,
+    "isPublished": true
+  },
+  {
+    "id": "masala_043",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleUr": "کیا حیض کے دنوں میں رہ جانے والی نمازوں کی قضا ہے؟",
+    "questionUr": "کیا حیض کے دنوں میں رہ جانے والی نمازوں کی قضا ہے؟",
+    "summaryUr": "نہیں۔ حیض کے دوران فوت ہونے والی نمازوں کی قضا نہیں کی جاتی.",
+    "contentUr": "نہیں۔ حیض کے دوران فوت ہونے والی نمازوں کی قضا نہیں کی جاتی.",
+    "keywordsUr": [
+      "حیض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 43,
+    "isPublished": true
+  },
+  {
+    "id": "masala_044",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleUr": "حیض کی نمازوں کی قضا نہ کرنے کی اصل دلیل کیا ہے؟",
+    "questionUr": "حیض کی نمازوں کی قضا نہ کرنے کی اصل دلیل کیا ہے؟",
+    "summaryUr": "حضرت عائشہ رضی اللہ عنہا کی صحیح روایت ہے کہ حیض کی وجہ سے رہ جانے والی نمازوں کی قضا کا حکم نہیں دیا جاتا تھا.",
+    "contentUr": "حضرت عائشہ رضی اللہ عنہا کی صحیح روایت ہے کہ حیض کی وجہ سے رہ جانے والی نمازوں کی قضا کا حکم نہیں دیا جاتا تھا.",
+    "keywordsUr": [
+      "دلیل",
+      "عشاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 44,
+    "isPublished": true
+  },
+  {
+    "id": "masala_045",
+    "type": "masala",
+    "categoryId": "nifas",
+    "titleUr": "کیا نفاس کے دنوں میں رہ جانے والی فرض نمازوں کی قضا ہے؟",
+    "questionUr": "کیا نفاس کے دنوں میں رہ جانے والی فرض نمازوں کی قضا ہے؟",
+    "summaryUr": "نہیں۔ نفاس کے دوران نماز کا مکلفانہ ادا نہ ہونا حیض کی طرح قضا کے دائرے میں نہیں آتا.",
+    "contentUr": "نہیں۔ نفاس کے دوران نماز کا مکلفانہ ادا نہ ہونا حیض کی طرح قضا کے دائرے میں نہیں آتا.",
+    "keywordsUr": [
+      "نفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 45,
+    "isPublished": true
+  },
+  {
+    "id": "masala_046",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleUr": "کیا حیض اور نفاس کی وجہ سے رہ جانے والی نمازوں کے لیے بعد میں فرض قضا بن جاتی ہے؟",
+    "questionUr": "کیا حیض اور نفاس کی وجہ سے رہ جانے والی نمازوں کے لیے بعد میں فرض قضا بن جاتی ہے؟",
+    "summaryUr": "ان مخصوص ایام کی نمازیں بعد میں قضا نہیں کی جاتیں.",
+    "contentUr": "ان مخصوص ایام کی نمازیں بعد میں قضا نہیں کی جاتیں.",
+    "keywordsUr": [
+      "خواتین کے مخصوص احکام"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 46,
+    "isPublished": true
+  },
+  {
+    "id": "masala_047",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleUr": "کیا حیض کے نماز نہ پڑھنے کو عام 'فوت شدہ نماز' سمجھ کر قضا لیجر میں شامل کرنا درست ہے؟",
+    "questionUr": "کیا حیض کے نماز نہ پڑھنے کو عام 'فوت شدہ نماز' سمجھ کر قضا لیجر میں شامل کرنا درست ہے؟",
+    "summaryUr": "نہیں۔ حیض کے دوران جن نمازوں کی شریعت نے قضا مقرر نہیں کی، انہیں عام قضا ذمہ میں شمار نہیں کیا جائے گا.",
+    "contentUr": "نہیں۔ حیض کے دوران جن نمازوں کی شریعت نے قضا مقرر نہیں کی، انہیں عام قضا ذمہ میں شمار نہیں کیا جائے گا.",
+    "keywordsUr": [
+      "ایپ ریکارڈ",
+      "حیض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 47,
+    "isPublished": true
+  },
+  {
+    "id": "masala_048",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleUr": "کیا نفاس کے ایام کو عام قضا کے دنوں میں شمار کرنا چاہیے؟",
+    "questionUr": "کیا نفاس کے ایام کو عام قضا کے دنوں میں شمار کرنا چاہیے؟",
+    "summaryUr": "نہیں۔ نفاس کے دوران رہ جانے والی نمازوں کی قضا نہیں ہوتی.",
+    "contentUr": "نہیں۔ نفاس کے دوران رہ جانے والی نمازوں کی قضا نہیں ہوتی.",
+    "keywordsUr": [
+      "ایپ ریکارڈ",
+      "نفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 48,
+    "isPublished": true
+  },
+  {
+    "id": "masala_049",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleUr": "حیض میں نماز اور روزے کے قضا حکم میں کیا فرق ہے؟",
+    "questionUr": "حیض میں نماز اور روزے کے قضا حکم میں کیا فرق ہے؟",
+    "summaryUr": "حیض میں فوت ہونے والے روزوں کی قضا کی جاتی ہے، جبکہ فوت ہونے والی نمازوں کی قضا نہیں کی جاتی.",
+    "contentUr": "حیض میں فوت ہونے والے روزوں کی قضا کی جاتی ہے، جبکہ فوت ہونے والی نمازوں کی قضا نہیں کی جاتی.",
+    "keywordsUr": [
+      "روزہ اور نماز کا فرق"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 49,
+    "isPublished": true
+  },
+  {
+    "id": "masala_050",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleUr": "کیا حیض و نفاس کی وجہ سے رہ جانے والی نمازیں چاروں مذاہب میں قضا کے لیے عام قاعدہ بن سکتی ہیں؟",
+    "questionUr": "کیا حیض و نفاس کی وجہ سے رہ جانے والی نمازیں چاروں مذاہب میں قضا کے لیے عام قاعدہ بن سکتی ہیں؟",
+    "summaryUr": "نہیں۔ چاروں مذاہب کے بنیادی مشترک حکم کے مطابق ان مخصوص ایام کی نمازیں قضا نہیں کی جاتیں.",
+    "contentUr": "نہیں۔ چاروں مذاہب کے بنیادی مشترک حکم کے مطابق ان مخصوص ایام کی نمازیں قضا نہیں کی جاتیں.",
+    "keywordsUr": [
+      "چاروں مذاہب",
+      "خواتین"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 50,
+    "isPublished": true
+  },
+  {
+    "id": "masala_051",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleUr": "اگر جمعہ کی نماز رہ جائے تو کیا دو رکعت جمعہ کی نیت سے قضا کی جائے گی؟",
+    "questionUr": "اگر جمعہ کی نماز رہ جائے تو کیا دو رکعت جمعہ کی نیت سے قضا کی جائے گی؟",
+    "summaryUr": "نہیں۔ جمعہ فوت ہونے کے بعد اس کی جگہ ظہر کی چار رکعت ادا کی جاتی ہیں.",
+    "contentUr": "نہیں۔ جمعہ فوت ہونے کے بعد اس کی جگہ ظہر کی چار رکعت ادا کی جاتی ہیں.",
+    "keywordsUr": [
+      "جمعہ",
+      "ظہر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 51,
+    "isPublished": true
+  },
+  {
+    "id": "masala_052",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleUr": "جمعہ کی قضا کا صحیح بدل کیا ہے؟",
+    "questionUr": "جمعہ کی قضا کا صحیح بدل کیا ہے؟",
+    "summaryUr": "ظہر کی چار رکعت فرض نماز ادا کی جائے گی.",
+    "contentUr": "ظہر کی چار رکعت فرض نماز ادا کی جائے گی.",
+    "keywordsUr": [
+      "جمعہ",
+      "بدل"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 52,
+    "isPublished": true
+  },
+  {
+    "id": "masala_053",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleUr": "کیا وقت گزرنے کے بعد گھر میں دو رکعت جمعہ قائم کیا جاسکتا ہے؟",
+    "questionUr": "کیا وقت گزرنے کے بعد گھر میں دو رکعت جمعہ قائم کیا جاسکتا ہے؟",
+    "summaryUr": "نہیں۔ فوت شدہ جمعہ کی قضا جمعہ کی حیثیت سے نہیں بلکہ ظہر کی چار رکعت کے طور پر ہوتی ہے.",
+    "contentUr": "نہیں۔ فوت شدہ جمعہ کی قضا جمعہ کی حیثیت سے نہیں بلکہ ظہر کی چار رکعت کے طور پر ہوتی ہے.",
+    "keywordsUr": [
+      "جمعہ",
+      "گھر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 53,
+    "isPublished": true
+  },
+  {
+    "id": "masala_054",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleUr": "اگر کسی شرعی عذر کی وجہ سے جمعہ رہ جائے تو کیا پھر بھی دو رکعت جمعہ پڑھنی ہوگی؟",
+    "questionUr": "اگر کسی شرعی عذر کی وجہ سے جمعہ رہ جائے تو کیا پھر بھی دو رکعت جمعہ پڑھنی ہوگی؟",
+    "summaryUr": "نہیں۔ شرعی عذر کے باعث جمعہ نہ ملنے کی صورت میں ظہر کی چار رکعت پڑھی جاتی ہیں.",
+    "contentUr": "نہیں۔ شرعی عذر کے باعث جمعہ نہ ملنے کی صورت میں ظہر کی چار رکعت پڑھی جاتی ہیں.",
+    "keywordsUr": [
+      "جمعہ",
+      "عذر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 54,
+    "isPublished": true
+  },
+  {
+    "id": "masala_055",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleUr": "اگر کوئی بلا عذر جمعہ چھوڑ دے تو کیا بعد میں دو رکعت جمعہ قضا کرسکتا ہے؟",
+    "questionUr": "اگر کوئی بلا عذر جمعہ چھوڑ دے تو کیا بعد میں دو رکعت جمعہ قضا کرسکتا ہے؟",
+    "summaryUr": "نہیں۔ جمعہ کی قضا دو رکعت جمعہ کے طور پر نہیں؛ ظہر کی چار رکعت ادا کی جائیں گی۔ بلا عذر ترکِ جمعہ گناہ کا باعث ہے.",
+    "contentUr": "نہیں۔ جمعہ کی قضا دو رکعت جمعہ کے طور پر نہیں؛ ظہر کی چار رکعت ادا کی جائیں گی۔ بلا عذر ترکِ جمعہ گناہ کا باعث ہے.",
+    "keywordsUr": [
+      "جمعہ",
+      "بلاعذر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 55,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_001",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "نیند میں نماز رہ جائے تو قضا نہیں ہوتی。",
+    "questionUr": "نیند میں نماز رہ جائے تو قضا نہیں ہوتی。",
+    "summaryUr": "غلط۔ نیند کی وجہ سے رہ جانے والی نماز جاگنے پر قضا کی جاتی ہے۔",
+    "contentUr": "غلط۔ نیند کی وجہ سے رہ جانے والی نماز جاگنے پر قضا کی جاتی ہے۔",
+    "keywordsUr": [
+      "نیند"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_002",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "نماز بھول جائے تو بس معافی مانگ لینا کافی ہے۔",
+    "questionUr": "نماز بھول جائے تو بس معافی مانگ لینا کافی ہے۔",
+    "summaryUr": "غلط۔ یاد آنے پر نماز ادا کرنا حدیث کا واضح حکم ہے۔",
+    "contentUr": "غلط۔ یاد آنے پر نماز ادا کرنا حدیث کا واضح حکم ہے۔",
+    "keywordsUr": [
+      "بھول"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_003",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "توبہ کرلی تو پچھلی فرض نمازوں کی قضا ختم ہوگئی۔",
+    "questionUr": "توبہ کرلی تو پچھلی فرض نمازوں کی قضا ختم ہوگئی۔",
+    "summaryUr": "غلط۔ چاروں مذاہب کے بارے میں منقول موقف کے مطابق قضا بھی باقی رہتی ہے۔",
+    "contentUr": "غلط۔ چاروں مذاہب کے بارے میں منقول موقف کے مطابق قضا بھی باقی رہتی ہے۔",
+    "keywordsUr": [
+      "توبہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_004",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "فوت شدہ نماز کے بدلے صرف صدقہ دے دینا کافی ہے۔",
+    "questionUr": "فوت شدہ نماز کے بدلے صرف صدقہ دے دینا کافی ہے۔",
+    "summaryUr": "غلط۔ فوت شدہ فرض نمازوں کی قضا باقی رہتی ہے۔",
+    "contentUr": "غلط۔ فوت شدہ فرض نمازوں کی قضا باقی رہتی ہے۔",
+    "keywordsUr": [
+      "صدقہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_005",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "کئی سال گزر جائیں تو پرانی نمازیں خود بخود ختم ہوجاتی ہیں۔",
+    "questionUr": "کئی سال گزر جائیں تو پرانی نمازیں خود بخود ختم ہوجاتی ہیں۔",
+    "summaryUr": "غلط۔ وقت گزرنے سے قضا کا ذمہ ختم نہیں ہوتا۔",
+    "contentUr": "غلط۔ وقت گزرنے سے قضا کا ذمہ ختم نہیں ہوتا۔",
+    "keywordsUr": [
+      "وقت کا گزرنا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_006",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "قضا صرف ایک دن کے اندر کی نمازوں تک ہوتی ہے۔",
+    "questionUr": "قضا صرف ایک دن کے اندر کی نمازوں تک ہوتی ہے۔",
+    "summaryUr": "غلط۔ طویل عرصے کی فوت شدہ فرض نمازوں کی قضا کا بھی حکم ہے۔",
+    "contentUr": "غلط۔ طویل عرصے کی فوت شدہ فرض نمازوں کی قضا کا بھی حکم ہے۔",
+    "keywordsUr": [
+      "طویل عرصے کی قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_007",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "ہر قضا نماز کو صرف دو رکعت پڑھنا کافی ہے۔",
+    "questionUr": "ہر قضا نماز کو صرف دو رکعت پڑھنا کافی ہے۔",
+    "summaryUr": "غلط۔ رکعتیں اصل فرض نماز کے مطابق ہیں: فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4۔",
+    "contentUr": "غلط۔ رکعتیں اصل فرض نماز کے مطابق ہیں: فجر 2، ظہر 4، عصر 4، مغرب 3، عشاء 4۔",
+    "keywordsUr": [
+      "رکعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_008",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "فجر کی قضا چار رکعت ہے۔",
+    "questionUr": "فجر کی قضا چار رکعت ہے۔",
+    "summaryUr": "غلط۔ فجر کے فرض کی قضا دو رکعت ہے۔",
+    "contentUr": "غلط۔ فجر کے فرض کی قضا دو رکعت ہے۔",
+    "keywordsUr": [
+      "فجر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_009",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "مغرب کی قضا دو رکعت ہے۔",
+    "questionUr": "مغرب کی قضا دو رکعت ہے۔",
+    "summaryUr": "غلط۔ مغرب کے فرض کی قضا تین رکعت ہے۔",
+    "contentUr": "غلط۔ مغرب کے فرض کی قضا تین رکعت ہے۔",
+    "keywordsUr": [
+      "مغرب"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_010",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "عشاء کی فرض قضا تین رکعت ہے کیونکہ وتر بھی رات کی نماز ہے۔",
+    "questionUr": "عشاء کی فرض قضا تین رکعت ہے کیونکہ وتر بھی رات کی نماز ہے۔",
+    "summaryUr": "غلط۔ عشاء کے فرض کی قضا چار رکعت ہے؛ وتر الگ نماز ہے۔",
+    "contentUr": "غلط۔ عشاء کے فرض کی قضا چار رکعت ہے؛ وتر الگ نماز ہے۔",
+    "keywordsUr": [
+      "عشاء",
+      "witr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_011",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "جمعہ رہ جائے تو گھر میں دو رکعت جمعہ قضا ہوسکتا ہے۔",
+    "questionUr": "جمعہ رہ جائے تو گھر میں دو رکعت جمعہ قضا ہوسکتا ہے۔",
+    "summaryUr": "غلط۔ فوت شدہ جمعہ کی قضا ظہر کی چار رکعت کے طور پر ہوتی ہے۔",
+    "contentUr": "غلط۔ فوت شدہ جمعہ کی قضا ظہر کی چار رکعت کے طور پر ہوتی ہے۔",
+    "keywordsUr": [
+      "جمعہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_012",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "جمعہ رہ جائے تو کوئی نماز نہیں پڑھنی۔",
+    "questionUr": "جمعہ رہ جائے تو کوئی نماز نہیں پڑھنی۔",
+    "summaryUr": "غلط۔ فوت شدہ جمعہ کی جگہ ظہر کی چار رکعت پڑھی جاتی ہیں۔",
+    "contentUr": "غلط۔ فوت شدہ جمعہ کی جگہ ظہر کی چار رکعت پڑھی جاتی ہیں۔",
+    "keywordsUr": [
+      "جمعہ"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_013",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "حیض میں رہ جانے والی نمازیں رمضان کے روزوں کی طرح قضا ہوں گی۔",
+    "questionUr": "حیض میں رہ جانے والی نمازیں رمضان کے روزوں کی طرح قضا ہوں گی۔",
+    "summaryUr": "غلط۔ صحیح مسلم میں حضرت عائشہ رضی اللہ عنہا کی روایت کے مطابق حیض کی چھوٹی ہوئی نمازوں کی قضا کا حکم نہیں دیا گیا۔",
+    "contentUr": "غلط۔ صحیح مسلم میں حضرت عائشہ رضی اللہ عنہا کی روایت کے مطابق حیض کی چھوٹی ہوئی نمازوں کی قضا کا حکم نہیں دیا گیا۔",
+    "keywordsUr": [
+      "حیض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_014",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "نفاس کے بعد جتنی نمازیں رہیں سب قضا کرنی ہوں گی۔",
+    "questionUr": "نفاس کے بعد جتنی نمازیں رہیں سب قضا کرنی ہوں گی۔",
+    "summaryUr": "غلط۔ نفاس کے دوران رہ جانے والی نمازوں کی قضا نہیں کی جاتی۔",
+    "contentUr": "غلط۔ نفاس کے دوران رہ جانے والی نمازوں کی قضا نہیں کی جاتی۔",
+    "keywordsUr": [
+      "نفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_015",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "حیض کے دنوں کو قضا نمازوں کی تعداد میں شامل کرنا چاہیے۔",
+    "questionUr": "حیض کے دنوں کو قضا نمازوں کی تعداد میں شامل کرنا چاہیے۔",
+    "summaryUr": "غلط۔ حیض کے مخصوص ایام میں رہ جانے والی نمازوں کی قضا نہیں، اس لیے انہیں قضا ذمہ میں شمار نہیں کیا جائے گا۔",
+    "contentUr": "غلط۔ حیض کے مخصوص ایام میں رہ جانے والی نمازوں کی قضا نہیں، اس لیے انہیں قضا ذمہ میں شمار نہیں کیا جائے گا۔",
+    "keywordsUr": [
+      "ایپ ریکارڈ"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_016",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "قضا کا مطلب صرف اگلے دن وہی نماز پڑھ لینا ہے؛ پرانی قضا نہیں ہوتی۔",
+    "questionUr": "قضا کا مطلب صرف اگلے دن وہی نماز پڑھ لینا ہے؛ پرانی قضا نہیں ہوتی۔",
+    "summaryUr": "غلط۔ accumulated یعنی طویل مدت کی فوت شدہ نمازوں کی قضا کا بھی حکم ہے۔",
+    "contentUr": "غلط۔ accumulated یعنی طویل مدت کی فوت شدہ نمازوں کی قضا کا بھی حکم ہے۔",
+    "keywordsUr": [
+      "جمع شدہ قضا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_017",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "قضا شروع کرنے کے لیے پہلے ساری پرانی نمازوں کی مکمل فہرست ہاتھ سے تیار کرنا لازمی ہے۔",
+    "questionUr": "قضا شروع کرنے کے لیے پہلے ساری پرانی نمازوں کی مکمل فہرست ہاتھ سے تیار کرنا لازمی ہے۔",
+    "summaryUr": "غلط۔ قضا شروع کی جاسکتی ہے؛ مکمل حساب اور اندازہ لگانے کی عملی تفصیل الگ مسئلہ ہے۔",
+    "contentUr": "غلط۔ قضا شروع کی جاسکتی ہے؛ مکمل حساب اور اندازہ لگانے کی عملی تفصیل الگ مسئلہ ہے۔",
+    "keywordsUr": [
+      "حساب رکھنا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_018",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "چاروں مذاہب میں فوت شدہ نمازوں کی ترتیب بالکل یکساں اور ہر صورت میں واجب ہے۔",
+    "questionUr": "چاروں مذاہب میں فوت شدہ نمازوں کی ترتیب بالکل یکساں اور ہر صورت میں واجب ہے۔",
+    "summaryUr": "غلط۔ ترتیب کے حکم اور اس کی شرائط میں چاروں مذاہب کے درمیان اختلاف موجود ہے۔ ایپ میں اسے متفق علیہ نہ لکھا جائے۔",
+    "contentUr": "غلط۔ ترتیب کے حکم اور اس کی شرائط میں چاروں مذاہب کے درمیان اختلاف موجود ہے۔ ایپ میں اسے متفق علیہ نہ لکھا جائے۔",
+    "keywordsUr": [
+      "ترتیب",
+      "اختلاف"
+    ],
+    "references": [
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_019",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "قضا صرف ایک نماز روزانہ کرنے تک محدود ہے۔",
+    "questionUr": "قضا صرف ایک نماز روزانہ کرنے تک محدود ہے۔",
+    "summaryUr": "غلط فہمی۔ طویل قضا کے لیے ایسی واحد چاروں مذاہب کی حد مقرر نہیں؛ عملی شیڈول اور ترتیب کے جزئیات الگ ہیں۔",
+    "contentUr": "غلط فہمی۔ طویل قضا کے لیے ایسی واحد چاروں مذاہب کی حد مقرر نہیں؛ عملی شیڈول اور ترتیب کے جزئیات الگ ہیں۔",
+    "keywordsUr": [
+      "روز ایک نماز"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_020",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleUr": "قضا کی بہت ساری نمازیں ایک ہی نیت سے ایک نماز بن جاتی ہیں۔",
+    "questionUr": "قضا کی بہت ساری نمازیں ایک ہی نیت سے ایک نماز بن جاتی ہیں۔",
+    "summaryUr": "غلط۔ ہر فوت شدہ فرض نماز اپنی نماز ہے؛ انہیں الگ الگ قضا کیا جاتا ہے۔",
+    "contentUr": "غلط۔ ہر فوت شدہ فرض نماز اپنی نماز ہے؛ انہیں الگ الگ قضا کیا جاتا ہے۔",
+    "keywordsUr": [
+      "نیت",
+      "انفرادی"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  }
+]

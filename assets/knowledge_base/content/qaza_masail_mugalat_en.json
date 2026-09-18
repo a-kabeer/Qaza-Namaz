@@ -1,0 +1,1904 @@
+[
+  {
+    "id": "masala_001",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Are the five daily prayers obligatory?",
+    "questionEn": "Are the five daily prayers obligatory?",
+    "summaryEn": "Yes. The five daily obligatory prayers are prescribed for accountable Muslims.",
+    "contentEn": "Yes. The five daily obligatory prayers are prescribed for accountable Muslims.",
+    "keywordsEn": [
+      "fundamentals",
+      "obligation"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "masala_002",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Are the prayer times fixed?",
+    "questionEn": "Are the prayer times fixed?",
+    "summaryEn": "Yes. Obligatory prayers have prescribed times; once the time has passed, a missed prayer falls under qaza.",
+    "contentEn": "Yes. Obligatory prayers have prescribed times; once the time has passed, a missed prayer falls under qaza.",
+    "keywordsEn": [
+      "time",
+      "qaza definition"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "masala_003",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "What does qaza prayer mean?",
+    "questionEn": "What does qaza prayer mean?",
+    "summaryEn": "Qaza means performing a missed obligatory prayer after its prescribed time has ended.",
+    "contentEn": "Qaza means performing a missed obligatory prayer after its prescribed time has ended.",
+    "keywordsEn": [
+      "definition"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "masala_004",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Does a missed obligatory prayer disappear simply because its time has passed?",
+    "questionEn": "Does a missed obligatory prayer disappear simply because its time has passed?",
+    "summaryEn": "No. The missed obligatory prayer remains due and is made up through qaza.",
+    "contentEn": "No. The missed obligatory prayer remains due and is made up through qaza.",
+    "keywordsEn": [
+      "obligation",
+      "backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "masala_005",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Does performing qaza discharge the missed prayer obligation?",
+    "questionEn": "Does performing qaza discharge the missed prayer obligation?",
+    "summaryEn": "Yes. Qaza is the prescribed way of discharging the missed obligatory prayer.",
+    "contentEn": "Yes. Qaza is the prescribed way of discharging the missed obligatory prayer.",
+    "keywordsEn": [
+      "discharge"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "masala_006",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Is qaza the same as praying within its prescribed time?",
+    "questionEn": "Is qaza the same as praying within its prescribed time?",
+    "summaryEn": "The prayer itself remains the same prescribed act, but qaza is its make-up after the prescribed time.",
+    "contentEn": "The prayer itself remains the same prescribed act, but qaza is its make-up after the prescribed time.",
+    "keywordsEn": [
+      "ada",
+      "qaza"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "masala_007",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Do missed prayers disappear if many years have passed?",
+    "questionEn": "Do missed prayers disappear if many years have passed?",
+    "summaryEn": "No. The passage of years does not by itself discharge the obligation; missed obligatory prayers remain to be made up.",
+    "contentEn": "No. The passage of years does not by itself discharge the obligation; missed obligatory prayers remain to be made up.",
+    "keywordsEn": [
+      "long backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "masala_008",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Can charity by itself replace qaza of a missed obligatory prayer?",
+    "questionEn": "Can charity by itself replace qaza of a missed obligatory prayer?",
+    "summaryEn": "Under the four-school position reported on missed prayers, qaza remains due; charity is not presented as a substitute for the missed prayer.",
+    "contentEn": "Under the four-school position reported on missed prayers, qaza remains due; charity is not presented as a substitute for the missed prayer.",
+    "keywordsEn": [
+      "charity",
+      "substitute"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "masala_009",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Is each missed obligatory prayer a separate obligation to track?",
+    "questionEn": "Is each missed obligatory prayer a separate obligation to track?",
+    "summaryEn": "Yes. Each missed obligatory prayer is a distinct missed prayer and can be tracked and made up separately.",
+    "contentEn": "Yes. Each missed obligatory prayer is a distinct missed prayer and can be tracked and made up separately.",
+    "keywordsEn": [
+      "ledger",
+      "individual"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "masala_010",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleEn": "Must current daily prayers continue while making up missed prayers?",
+    "questionEn": "Must current daily prayers continue while making up missed prayers?",
+    "summaryEn": "Yes. A qaza program does not replace the current daily prayers; current prayers remain due in their prescribed times.",
+    "contentEn": "Yes. A qaza program does not replace the current daily prayers; current prayers remain due in their prescribed times.",
+    "keywordsEn": [
+      "current prayer",
+      "backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "masala_011",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "What if prayer is missed because of sleep?",
+    "questionEn": "What if prayer is missed because of sleep?",
+    "summaryEn": "A prayer missed because of sleep is to be made up.",
+    "contentEn": "A prayer missed because of sleep is to be made up.",
+    "keywordsEn": [
+      "sleep"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "masala_012",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "What should one do if a prayer is forgotten?",
+    "questionEn": "What should one do if a prayer is forgotten?",
+    "summaryEn": "When the prayer is remembered, it should be prayed.",
+    "contentEn": "When the prayer is remembered, it should be prayed.",
+    "keywordsEn": [
+      "forgetfulness"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "masala_013",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "When should a forgotten prayer be made up?",
+    "questionEn": "When should a forgotten prayer be made up?",
+    "summaryEn": "As soon as it is remembered, the prayer should be performed.",
+    "contentEn": "As soon as it is remembered, the prayer should be performed.",
+    "keywordsEn": [
+      "immediate"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "masala_014",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "Is there a separate expiation in addition to making up a forgotten prayer?",
+    "questionEn": "Is there a separate expiation in addition to making up a forgotten prayer?",
+    "summaryEn": "The authentic hadith states that its expiation is to perform the missed prayer when remembered.",
+    "contentEn": "The authentic hadith states that its expiation is to perform the missed prayer when remembered.",
+    "keywordsEn": [
+      "expiation"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "masala_015",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "Is merely saying that the prayer was missed through sleep or forgetfulness enough?",
+    "questionEn": "Is merely saying that the prayer was missed through sleep or forgetfulness enough?",
+    "summaryEn": "No. The ruling requires performing the missed prayer; an explanation alone does not discharge it.",
+    "contentEn": "No. The ruling requires performing the missed prayer; an explanation alone does not discharge it.",
+    "keywordsEn": [
+      "completion"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "masala_016",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "If someone slept and missed the prayer time, does the prayer remain due?",
+    "questionEn": "If someone slept and missed the prayer time, does the prayer remain due?",
+    "summaryEn": "Yes. The prayer is still made up; the passage of the time during sleep does not remove the qaza obligation.",
+    "contentEn": "Yes. The prayer is still made up; the passage of the time during sleep does not remove the qaza obligation.",
+    "keywordsEn": [
+      "sleep",
+      "obligation"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "masala_017",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "If a forgotten prayer is remembered much later, is qaza still required?",
+    "questionEn": "If a forgotten prayer is remembered much later, is qaza still required?",
+    "summaryEn": "Yes. It should be performed when remembered, even if the remembrance occurs later.",
+    "contentEn": "Yes. It should be performed when remembered, even if the remembrance occurs later.",
+    "keywordsEn": [
+      "late recall"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "masala_018",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "Is a new special time prescribed for a prayer missed through sleep or forgetfulness?",
+    "questionEn": "Is a new special time prescribed for a prayer missed through sleep or forgetfulness?",
+    "summaryEn": "No. The basic prophetic instruction is to perform it upon remembering or waking.",
+    "contentEn": "No. The basic prophetic instruction is to perform it upon remembering or waking.",
+    "keywordsEn": [
+      "timing"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "masala_019",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "Can a sleep/forgetfulness qaza be performed only on the same day?",
+    "questionEn": "Can a sleep/forgetfulness qaza be performed only on the same day?",
+    "summaryEn": "No. The authentic instruction is not limited to the same calendar day; the rule is to pray when remembered.",
+    "contentEn": "No. The authentic instruction is not limited to the same calendar day; the rule is to pray when remembered.",
+    "keywordsEn": [
+      "same-day myth"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "masala_020",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleEn": "Does the hadith encourage intentionally postponing a qaza prayer after remembering it?",
+    "questionEn": "Does the hadith encourage intentionally postponing a qaza prayer after remembering it?",
+    "summaryEn": "No. The hadith's instruction is to perform it upon remembering, so unnecessary delay should not be treated as the basic rule.",
+    "contentEn": "No. The hadith's instruction is to perform it upon remembering, so unnecessary delay should not be treated as the basic rule.",
+    "keywordsEn": [
+      "delay"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  },
+  {
+    "id": "masala_021",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Is deliberately missing an obligatory prayer without a valid excuse sinful?",
+    "questionEn": "Is deliberately missing an obligatory prayer without a valid excuse sinful?",
+    "summaryEn": "Yes. Deliberately failing to perform an obligatory prayer in its prescribed time without a valid excuse is sinful.",
+    "contentEn": "Yes. Deliberately failing to perform an obligatory prayer in its prescribed time without a valid excuse is sinful.",
+    "keywordsEn": [
+      "intentional omission",
+      "sin"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 21,
+    "isPublished": true
+  },
+  {
+    "id": "masala_022",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Does qaza also apply to deliberately missed prayers?",
+    "questionEn": "Does qaza also apply to deliberately missed prayers?",
+    "summaryEn": "Egypt's Dar al-Ifta reports the four-school position that missed obligatory prayers must be made up, including deliberately missed prayers.",
+    "contentEn": "Egypt's Dar al-Ifta reports the four-school position that missed obligatory prayers must be made up, including deliberately missed prayers.",
+    "keywordsEn": [
+      "intentional omission",
+      "qaza"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 22,
+    "isPublished": true
+  },
+  {
+    "id": "masala_023",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Does repentance alone remove the qaza obligation for deliberately missed prayers?",
+    "questionEn": "Does repentance alone remove the qaza obligation for deliberately missed prayers?",
+    "summaryEn": "Under the four-school position reported by Dar al-Ifta, repentance does not replace making up the missed obligatory prayers.",
+    "contentEn": "Under the four-school position reported by Dar al-Ifta, repentance does not replace making up the missed obligatory prayers.",
+    "keywordsEn": [
+      "repentance"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 23,
+    "isPublished": true
+  },
+  {
+    "id": "masala_024",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Should someone who deliberately missed prayer also repent?",
+    "questionEn": "Should someone who deliberately missed prayer also repent?",
+    "summaryEn": "Yes. Deliberate neglect requires repentance, while the missed obligatory prayer remains to be made up.",
+    "contentEn": "Yes. Deliberate neglect requires repentance, while the missed obligatory prayer remains to be made up.",
+    "keywordsEn": [
+      "repentance"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 24,
+    "isPublished": true
+  },
+  {
+    "id": "masala_025",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Are repentance and qaza the same thing?",
+    "questionEn": "Are repentance and qaza the same thing?",
+    "summaryEn": "No. Repentance is turning back from the sin, while qaza is performing the missed obligatory prayer.",
+    "contentEn": "No. Repentance is turning back from the sin, while qaza is performing the missed obligatory prayer.",
+    "keywordsEn": [
+      "repentance",
+      "distinction"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 25,
+    "isPublished": true
+  },
+  {
+    "id": "masala_026",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Does the qaza principle remain the same for a long period of missed prayers?",
+    "questionEn": "Does the qaza principle remain the same for a long period of missed prayers?",
+    "summaryEn": "Yes. The obligation to make up long-term missed obligatory prayers remains; practical estimation and ordering are separate details.",
+    "contentEn": "Yes. The obligation to make up long-term missed obligatory prayers remains; practical estimation and ordering are separate details.",
+    "keywordsEn": [
+      "long backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 26,
+    "isPublished": true
+  },
+  {
+    "id": "masala_027",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Is there an expiration period for years of missed prayers?",
+    "questionEn": "Is there an expiration period for years of missed prayers?",
+    "summaryEn": "No. The missed obligatory prayers do not expire merely because time passes.",
+    "contentEn": "No. The missed obligatory prayers do not expire merely because time passes.",
+    "keywordsEn": [
+      "expiration"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 27,
+    "isPublished": true
+  },
+  {
+    "id": "masala_028",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "May a person stop current obligatory prayers because of a qaza backlog?",
+    "questionEn": "May a person stop current obligatory prayers because of a qaza backlog?",
+    "summaryEn": "No. A qaza backlog is not a justification for abandoning current obligatory prayers.",
+    "contentEn": "No. A qaza backlog is not a justification for abandoning current obligatory prayers.",
+    "keywordsEn": [
+      "current prayer"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 28,
+    "isPublished": true
+  },
+  {
+    "id": "masala_029",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Is qaza limited to a fixed maximum number?",
+    "questionEn": "Is qaza limited to a fixed maximum number?",
+    "summaryEn": "No. A large backlog remains due; some details of ordering and timing are subject to madhhab differences.",
+    "contentEn": "No. A large backlog remains due; some details of ordering and timing are subject to madhhab differences.",
+    "keywordsEn": [
+      "quantity",
+      "backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 7962: Making up missed prayers at disliked times",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 29,
+    "isPublished": true
+  },
+  {
+    "id": "masala_030",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleEn": "Must someone first prepare a complete manual list of all years of missed prayers before starting qaza?",
+    "questionEn": "Must someone first prepare a complete manual list of all years of missed prayers before starting qaza?",
+    "summaryEn": "No. Qaza can be started based on the known or reasonably established obligation; exact backlog-estimation methods are a separate practical issue.",
+    "contentEn": "No. Qaza can be started based on the known or reasonably established obligation; exact backlog-estimation methods are a separate practical issue.",
+    "keywordsEn": [
+      "estimation",
+      "start"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 30,
+    "isPublished": true
+  },
+  {
+    "id": "masala_031",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many rak'ahs is qaza of Fajr fard?",
+    "questionEn": "How many rak'ahs is qaza of Fajr fard?",
+    "summaryEn": "Fajr fard is two rak'ahs, so its qaza is two rak'ahs.",
+    "contentEn": "Fajr fard is two rak'ahs, so its qaza is two rak'ahs.",
+    "keywordsEn": [
+      "Fajr",
+      "2 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 31,
+    "isPublished": true
+  },
+  {
+    "id": "masala_032",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many rak'ahs is qaza of Dhuhr fard?",
+    "questionEn": "How many rak'ahs is qaza of Dhuhr fard?",
+    "summaryEn": "Dhuhr fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "contentEn": "Dhuhr fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "keywordsEn": [
+      "Dhuhr",
+      "4 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 32,
+    "isPublished": true
+  },
+  {
+    "id": "masala_033",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many rak'ahs is qaza of Asr fard?",
+    "questionEn": "How many rak'ahs is qaza of Asr fard?",
+    "summaryEn": "Asr fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "contentEn": "Asr fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "keywordsEn": [
+      "Asr",
+      "4 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 33,
+    "isPublished": true
+  },
+  {
+    "id": "masala_034",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many rak'ahs is qaza of Maghrib fard?",
+    "questionEn": "How many rak'ahs is qaza of Maghrib fard?",
+    "summaryEn": "Maghrib fard is three rak'ahs, so its qaza is three rak'ahs.",
+    "contentEn": "Maghrib fard is three rak'ahs, so its qaza is three rak'ahs.",
+    "keywordsEn": [
+      "Maghrib",
+      "3 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 34,
+    "isPublished": true
+  },
+  {
+    "id": "masala_035",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many rak'ahs is qaza of Isha fard?",
+    "questionEn": "How many rak'ahs is qaza of Isha fard?",
+    "summaryEn": "Isha fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "contentEn": "Isha fard is four rak'ahs, so its qaza is four rak'ahs.",
+    "keywordsEn": [
+      "Isha",
+      "4 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 35,
+    "isPublished": true
+  },
+  {
+    "id": "masala_036",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "How many obligatory rak'ahs are there in the five daily prayers?",
+    "questionEn": "How many obligatory rak'ahs are there in the five daily prayers?",
+    "summaryEn": "Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4: 17 obligatory rak'ahs in total.",
+    "contentEn": "Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4: 17 obligatory rak'ahs in total.",
+    "keywordsEn": [
+      "17 rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 36,
+    "isPublished": true
+  },
+  {
+    "id": "masala_037",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Does qaza use the same rak'ah count as the original fard prayer?",
+    "questionEn": "Does qaza use the same rak'ah count as the original fard prayer?",
+    "summaryEn": "Yes. Qaza is for the same fard prayer: Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4.",
+    "contentEn": "Yes. Qaza is for the same fard prayer: Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4.",
+    "keywordsEn": [
+      "same prayer"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 37,
+    "isPublished": true
+  },
+  {
+    "id": "masala_038",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Is four rak'ahs required for qaza of Fajr?",
+    "questionEn": "Is four rak'ahs required for qaza of Fajr?",
+    "summaryEn": "No. Qaza of Fajr fard is two rak'ahs.",
+    "contentEn": "No. Qaza of Fajr fard is two rak'ahs.",
+    "keywordsEn": [
+      "Fajr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 38,
+    "isPublished": true
+  },
+  {
+    "id": "masala_039",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Is qaza of Dhuhr always two rak'ahs?",
+    "questionEn": "Is qaza of Dhuhr always two rak'ahs?",
+    "summaryEn": "The normal original form of Dhuhr fard is four rak'ahs. Travel-related qaza details have separate juristic discussion and should not be presented as a single four-school rule.",
+    "contentEn": "The normal original form of Dhuhr fard is four rak'ahs. Travel-related qaza details have separate juristic discussion and should not be presented as a single four-school rule.",
+    "keywordsEn": [
+      "Dhuhr",
+      "travel note"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 21959: How to make up prayer regarding audible/silent recitation",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 39,
+    "isPublished": true
+  },
+  {
+    "id": "masala_040",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Is the basic qaza count for Asr fard four rak'ahs?",
+    "questionEn": "Is the basic qaza count for Asr fard four rak'ahs?",
+    "summaryEn": "Yes. In its normal form, Asr fard is four rak'ahs, and its qaza is four rak'ahs.",
+    "contentEn": "Yes. In its normal form, Asr fard is four rak'ahs, and its qaza is four rak'ahs.",
+    "keywordsEn": [
+      "Asr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 40,
+    "isPublished": true
+  },
+  {
+    "id": "masala_041",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Is the basic qaza count for Maghrib fard three rak'ahs?",
+    "questionEn": "Is the basic qaza count for Maghrib fard three rak'ahs?",
+    "summaryEn": "Yes. Maghrib fard is three rak'ahs, and its qaza is three rak'ahs.",
+    "contentEn": "Yes. Maghrib fard is three rak'ahs, and its qaza is three rak'ahs.",
+    "keywordsEn": [
+      "Maghrib"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 41,
+    "isPublished": true
+  },
+  {
+    "id": "masala_042",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleEn": "Is qaza of Isha fard three rak'ahs?",
+    "questionEn": "Is qaza of Isha fard three rak'ahs?",
+    "summaryEn": "No. Isha fard qaza is four rak'ahs. Witr is a separate prayer with separate juristic details.",
+    "contentEn": "No. Isha fard qaza is four rak'ahs. Witr is a separate prayer with separate juristic details.",
+    "keywordsEn": [
+      "Isha",
+      "Witr separate"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 42,
+    "isPublished": true
+  },
+  {
+    "id": "masala_043",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleEn": "Must prayers missed during menstruation be made up?",
+    "questionEn": "Must prayers missed during menstruation be made up?",
+    "summaryEn": "No. Prayers missed during menstruation are not made up.",
+    "contentEn": "No. Prayers missed during menstruation are not made up.",
+    "keywordsEn": [
+      "menstruation"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 43,
+    "isPublished": true
+  },
+  {
+    "id": "masala_044",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleEn": "What is the basis for not making up menstrual prayers?",
+    "questionEn": "What is the basis for not making up menstrual prayers?",
+    "summaryEn": "Aisha's authentic report states that menstruating women were not ordered to make up the prayers they missed.",
+    "contentEn": "Aisha's authentic report states that menstruating women were not ordered to make up the prayers they missed.",
+    "keywordsEn": [
+      "evidence",
+      "Isha"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 44,
+    "isPublished": true
+  },
+  {
+    "id": "masala_045",
+    "type": "masala",
+    "categoryId": "nifas",
+    "titleEn": "Must obligatory prayers missed during nifas be made up?",
+    "questionEn": "Must obligatory prayers missed during nifas be made up?",
+    "summaryEn": "No. Prayers missed during nifas are likewise not made up.",
+    "contentEn": "No. Prayers missed during nifas are likewise not made up.",
+    "keywordsEn": [
+      "nifas"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 45,
+    "isPublished": true
+  },
+  {
+    "id": "masala_046",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleEn": "Do menstrual and nifas prayer absences later become qaza obligations?",
+    "questionEn": "Do menstrual and nifas prayer absences later become qaza obligations?",
+    "summaryEn": "The prayers specifically missed during these periods are not subsequently made up.",
+    "contentEn": "The prayers specifically missed during these periods are not subsequently made up.",
+    "keywordsEn": [
+      "women exemption"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 46,
+    "isPublished": true
+  },
+  {
+    "id": "masala_047",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleEn": "Should menstrual prayer non-performance be entered in a normal qaza ledger?",
+    "questionEn": "Should menstrual prayer non-performance be entered in a normal qaza ledger?",
+    "summaryEn": "No. Those prayer periods are not entered into the normal qaza obligation because no qaza is due for them.",
+    "contentEn": "No. Those prayer periods are not entered into the normal qaza obligation because no qaza is due for them.",
+    "keywordsEn": [
+      "app-ledger",
+      "menstruation"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 47,
+    "isPublished": true
+  },
+  {
+    "id": "masala_048",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleEn": "Should nifas days be counted as normal qaza days?",
+    "questionEn": "Should nifas days be counted as normal qaza days?",
+    "summaryEn": "No. Prayers missed during nifas are not made up.",
+    "contentEn": "No. Prayers missed during nifas are not made up.",
+    "keywordsEn": [
+      "app-ledger",
+      "nifas"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 48,
+    "isPublished": true
+  },
+  {
+    "id": "masala_049",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleEn": "What is the difference between prayer and fasting qaza during menstruation?",
+    "questionEn": "What is the difference between prayer and fasting qaza during menstruation?",
+    "summaryEn": "Missed Ramadan fasts are made up, whereas prayers missed during menstruation are not.",
+    "contentEn": "Missed Ramadan fasts are made up, whereas prayers missed during menstruation are not.",
+    "keywordsEn": [
+      "fast vs prayer"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 49,
+    "isPublished": true
+  },
+  {
+    "id": "masala_050",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleEn": "Can menstrual/nifas prayer absences be treated as ordinary qaza across all four schools?",
+    "questionEn": "Can menstrual/nifas prayer absences be treated as ordinary qaza across all four schools?",
+    "summaryEn": "No. The common rule across the four schools is that prayers specifically missed during menstruation/nifas are not made up.",
+    "contentEn": "No. The common rule across the four schools is that prayers specifically missed during menstruation/nifas are not made up.",
+    "keywordsEn": [
+      "four madhhabs",
+      "women"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 50,
+    "isPublished": true
+  },
+  {
+    "id": "masala_051",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleEn": "If Jumu'ah is missed, should it be made up as two rak'ahs of Jumu'ah?",
+    "questionEn": "If Jumu'ah is missed, should it be made up as two rak'ahs of Jumu'ah?",
+    "summaryEn": "No. When Jumu'ah is missed, it is made up as four rak'ahs of Dhuhr.",
+    "contentEn": "No. When Jumu'ah is missed, it is made up as four rak'ahs of Dhuhr.",
+    "keywordsEn": [
+      "Jumu'ah",
+      "Dhuhr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 51,
+    "isPublished": true
+  },
+  {
+    "id": "masala_052",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleEn": "What is the correct substitute when Jumu'ah is missed?",
+    "questionEn": "What is the correct substitute when Jumu'ah is missed?",
+    "summaryEn": "Four rak'ahs of Dhuhr fard are performed.",
+    "contentEn": "Four rak'ahs of Dhuhr fard are performed.",
+    "keywordsEn": [
+      "Jumu'ah",
+      "substitute"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 52,
+    "isPublished": true
+  },
+  {
+    "id": "masala_053",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleEn": "Can two rak'ahs of Jumu'ah be reconstructed at home after its time has passed?",
+    "questionEn": "Can two rak'ahs of Jumu'ah be reconstructed at home after its time has passed?",
+    "summaryEn": "No. Missed Jumu'ah is not reconstructed as Jumu'ah; it is made up as four-rak'ah Dhuhr.",
+    "contentEn": "No. Missed Jumu'ah is not reconstructed as Jumu'ah; it is made up as four-rak'ah Dhuhr.",
+    "keywordsEn": [
+      "Jumu'ah",
+      "home"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 53,
+    "isPublished": true
+  },
+  {
+    "id": "masala_054",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleEn": "If Jumu'ah is missed for a valid excuse, must two rak'ahs of Jumu'ah still be performed?",
+    "questionEn": "If Jumu'ah is missed for a valid excuse, must two rak'ahs of Jumu'ah still be performed?",
+    "summaryEn": "No. If there is a valid excuse for missing Jumu'ah, four rak'ahs of Dhuhr are performed.",
+    "contentEn": "No. If there is a valid excuse for missing Jumu'ah, four rak'ahs of Dhuhr are performed.",
+    "keywordsEn": [
+      "Jumu'ah",
+      "excuse"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 54,
+    "isPublished": true
+  },
+  {
+    "id": "masala_055",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleEn": "If someone misses Jumu'ah without an excuse, can they later make it up as two-rak'ah Jumu'ah?",
+    "questionEn": "If someone misses Jumu'ah without an excuse, can they later make it up as two-rak'ah Jumu'ah?",
+    "summaryEn": "No. It is not made up as two-rak'ah Jumu'ah; four rak'ahs of Dhuhr are performed. Missing Jumu'ah without a valid excuse is sinful.",
+    "contentEn": "No. It is not made up as two-rak'ah Jumu'ah; four rak'ahs of Dhuhr are performed. Missing Jumu'ah without a valid excuse is sinful.",
+    "keywordsEn": [
+      "Jumu'ah",
+      "no excuse"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 55,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_001",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "If prayer is missed during sleep, no qaza is needed.",
+    "questionEn": "If prayer is missed during sleep, no qaza is needed.",
+    "summaryEn": "False. A prayer missed due to sleep is made up after waking.",
+    "contentEn": "False. A prayer missed due to sleep is made up after waking.",
+    "keywordsEn": [
+      "sleep"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_002",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "If a prayer is forgotten, simply asking forgiveness is enough.",
+    "questionEn": "If a prayer is forgotten, simply asking forgiveness is enough.",
+    "summaryEn": "False. The hadith explicitly instructs the person to pray it when remembered.",
+    "contentEn": "False. The hadith explicitly instructs the person to pray it when remembered.",
+    "keywordsEn": [
+      "forgetfulness"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_003",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Once I repent, my previous missed prayers are automatically cleared.",
+    "questionEn": "Once I repent, my previous missed prayers are automatically cleared.",
+    "summaryEn": "False. The four-school position reported by Dar al-Ifta keeps the qaza obligation in place.",
+    "contentEn": "False. The four-school position reported by Dar al-Ifta keeps the qaza obligation in place.",
+    "keywordsEn": [
+      "repentance"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_004",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Charity alone is enough instead of qaza.",
+    "questionEn": "Charity alone is enough instead of qaza.",
+    "summaryEn": "False. The missed obligatory prayers remain to be made up.",
+    "contentEn": "False. The missed obligatory prayers remain to be made up.",
+    "keywordsEn": [
+      "charity"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_005",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Years of delay automatically erase missed prayers.",
+    "questionEn": "Years of delay automatically erase missed prayers.",
+    "summaryEn": "False. Passage of time does not by itself remove the qaza obligation.",
+    "contentEn": "False. Passage of time does not by itself remove the qaza obligation.",
+    "keywordsEn": [
+      "expiration"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_006",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Qaza only applies to prayers missed within the same day.",
+    "questionEn": "Qaza only applies to prayers missed within the same day.",
+    "summaryEn": "False. Long-term accumulated missed obligatory prayers are also subject to qaza.",
+    "contentEn": "False. Long-term accumulated missed obligatory prayers are also subject to qaza.",
+    "keywordsEn": [
+      "long backlog"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_007",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Every qaza prayer can simply be two rak'ahs.",
+    "questionEn": "Every qaza prayer can simply be two rak'ahs.",
+    "summaryEn": "False. Qaza follows the original fard rak'ah count: Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4.",
+    "contentEn": "False. Qaza follows the original fard rak'ah count: Fajr 2, Dhuhr 4, Asr 4, Maghrib 3, Isha 4.",
+    "keywordsEn": [
+      "rakats"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_008",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Fajr qaza is four rak'ahs.",
+    "questionEn": "Fajr qaza is four rak'ahs.",
+    "summaryEn": "False. Fajr fard qaza is two rak'ahs.",
+    "contentEn": "False. Fajr fard qaza is two rak'ahs.",
+    "keywordsEn": [
+      "Fajr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_009",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Maghrib qaza is two rak'ahs.",
+    "questionEn": "Maghrib qaza is two rak'ahs.",
+    "summaryEn": "False. Maghrib fard qaza is three rak'ahs.",
+    "contentEn": "False. Maghrib fard qaza is three rak'ahs.",
+    "keywordsEn": [
+      "Maghrib"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_010",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Isha fard qaza is three rak'ahs because Witr is also a night prayer.",
+    "questionEn": "Isha fard qaza is three rak'ahs because Witr is also a night prayer.",
+    "summaryEn": "False. Isha fard qaza is four rak'ahs; Witr is a separate prayer.",
+    "contentEn": "False. Isha fard qaza is four rak'ahs; Witr is a separate prayer.",
+    "keywordsEn": [
+      "Isha",
+      "witr"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_011",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "If Jumu'ah is missed, two-rak'ah Jumu'ah can be made up at home.",
+    "questionEn": "If Jumu'ah is missed, two-rak'ah Jumu'ah can be made up at home.",
+    "summaryEn": "False. Missed Jumu'ah is made up as four-rak'ah Dhuhr.",
+    "contentEn": "False. Missed Jumu'ah is made up as four-rak'ah Dhuhr.",
+    "keywordsEn": [
+      "Jumu'ah"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_012",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "If Jumu'ah is missed, no prayer is needed afterward.",
+    "questionEn": "If Jumu'ah is missed, no prayer is needed afterward.",
+    "summaryEn": "False. Four rak'ahs of Dhuhr are performed in place of the missed Jumu'ah.",
+    "contentEn": "False. Four rak'ahs of Dhuhr are performed in place of the missed Jumu'ah.",
+    "keywordsEn": [
+      "Jumu'ah"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_013",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Menstrual missed prayers must be made up just like Ramadan fasts.",
+    "questionEn": "Menstrual missed prayers must be made up just like Ramadan fasts.",
+    "summaryEn": "False. Sahih Muslim reports that menstruating women were not ordered to make up missed prayers.",
+    "contentEn": "False. Sahih Muslim reports that menstruating women were not ordered to make up missed prayers.",
+    "keywordsEn": [
+      "menstruation"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_014",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "All prayers missed during nifas must be made up after postpartum bleeding ends.",
+    "questionEn": "All prayers missed during nifas must be made up after postpartum bleeding ends.",
+    "summaryEn": "False. Prayers missed during nifas are not made up.",
+    "contentEn": "False. Prayers missed during nifas are not made up.",
+    "keywordsEn": [
+      "nifas"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_015",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Menstrual days should be counted as qaza days in the tracker.",
+    "questionEn": "Menstrual days should be counted as qaza days in the tracker.",
+    "summaryEn": "False. Those prayer periods are not a qaza obligation and should not be counted in the qaza ledger.",
+    "contentEn": "False. Those prayer periods are not a qaza obligation and should not be counted in the qaza ledger.",
+    "keywordsEn": [
+      "app-ledger"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_016",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Qaza only means praying yesterday's missed prayer the next day; old missed prayers do not count.",
+    "questionEn": "Qaza only means praying yesterday's missed prayer the next day; old missed prayers do not count.",
+    "summaryEn": "False. The four-school position reported by Dar al-Ifta includes accumulated long-term missed prayers.",
+    "contentEn": "False. The four-school position reported by Dar al-Ifta includes accumulated long-term missed prayers.",
+    "keywordsEn": [
+      "accumulated"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_017",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "You must first create a complete hand-written list of all missed prayers before any qaza can start.",
+    "questionEn": "You must first create a complete hand-written list of all missed prayers before any qaza can start.",
+    "summaryEn": "False. Qaza can be started; exact backlog calculation is a separate practical detail.",
+    "contentEn": "False. Qaza can be started; exact backlog calculation is a separate practical detail.",
+    "keywordsEn": [
+      "tracking"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_018",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "All four schools unanimously require exactly the same qaza order in every situation.",
+    "questionEn": "All four schools unanimously require exactly the same qaza order in every situation.",
+    "summaryEn": "False. There are madhhab differences concerning qaza order and its conditions; the app should not label it universally agreed.",
+    "contentEn": "False. There are madhhab differences concerning qaza order and its conditions; the app should not label it universally agreed.",
+    "keywordsEn": [
+      "tartib/order",
+      "difference"
+    ],
+    "references": [
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_019",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Qaza is limited to one missed prayer per day.",
+    "questionEn": "Qaza is limited to one missed prayer per day.",
+    "summaryEn": "Misconception. There is no single four-school rule limiting qaza to one missed prayer per day; scheduling and ordering details are separate.",
+    "contentEn": "Misconception. There is no single four-school rule limiting qaza to one missed prayer per day; scheduling and ordering details are separate.",
+    "keywordsEn": [
+      "one per day"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_020",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleEn": "Many missed prayers can all be turned into one prayer by making one general intention.",
+    "questionEn": "Many missed prayers can all be turned into one prayer by making one general intention.",
+    "summaryEn": "False. Each missed obligatory prayer is a distinct prayer and is made up separately.",
+    "contentEn": "False. Each missed obligatory prayer is a distinct prayer and is made up separately.",
+    "keywordsEn": [
+      "intention",
+      "individual"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  }
+]

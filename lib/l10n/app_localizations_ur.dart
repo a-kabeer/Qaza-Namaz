@@ -502,6 +502,9 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get calendarSelectYear => 'سال منتخب کریں';
+
+  @override
   String get calendarSelectHint =>
       'منتخب کرنے کے لیے دستیاب تاریخ پر ٹیپ کریں۔';
 
@@ -1127,6 +1130,36 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeCategoryMugalat => 'مغالطے';
 
   @override
+  String get knowledgeBaseTopicAll => 'تمام موضوعات';
+
+  @override
+  String get knowledgeTopicBasic => 'بنیادی باتیں';
+
+  @override
+  String get knowledgeTopicPrayerUnits => 'رکعات';
+
+  @override
+  String get knowledgeTopicSleepForgetfulness => 'نیند اور بھول';
+
+  @override
+  String get knowledgeTopicIntentionalOmission => 'جان بوجھ کر ترک';
+
+  @override
+  String get knowledgeTopicFriday => 'جمعہ';
+
+  @override
+  String get knowledgeTopicMenstruation => 'حیض';
+
+  @override
+  String get knowledgeTopicNifas => 'نفاس';
+
+  @override
+  String get knowledgeTopicMenstruationNifas => 'حیض و نفاس';
+
+  @override
+  String get knowledgeTopicMisconceptions => 'مغالطے';
+
+  @override
   String get knowledgeBaseEmptyTitle => 'کوئی مضمون نہیں ملا';
 
   @override
@@ -1136,10 +1169,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeBaseLoadError => 'معلومات لوڈ نہیں ہو سکیں۔';
 
   @override
-  String get knowledgeArticleTitle => 'مضمون';
+  String get knowledgeBaseLanguage => 'نولج بیس کی زبان';
 
   @override
-  String get knowledgeArticleLanguage => 'مضمون کی زبان';
+  String get knowledgeArticleTitle => 'مضمون';
 
   @override
   String get knowledgeArticleReferences => 'حوالہ جات';
@@ -1215,6 +1248,47 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsDataCloudSubtitle => 'سنک، برآمد اور درآمد کی حالت';
+
+  @override
+  String get settingsResetCounterTitle => 'قضا کاؤنٹر ری سیٹ کریں';
+
+  @override
+  String get settingsResetCounterSubtitle =>
+      'درج شدہ تمام قضا نمازیں حذف کرکے گنتی دوبارہ صفر سے شروع کریں۔';
+
+  @override
+  String get settingsResetCounterEmpty =>
+      'ری سیٹ کرنے کے لیے کوئی قضا ریکارڈ موجود نہیں۔';
+
+  @override
+  String get settingsResetCounterDialogTitle => 'کیا قضا کاؤنٹر ری سیٹ کریں؟';
+
+  @override
+  String get settingsResetCounterDialogMessage =>
+      'اس اکاؤنٹ کے تمام قضا ریکارڈز — باقی اور مکمل دونوں — اس ڈیوائس اور آپ کے کلاؤڈ بیک اپ سے ہمیشہ کے لیے حذف ہو جائیں گے۔\n\nآپ کا کاؤنٹر صفر پر آ جائے گا اور اب تک کی گئی پیش رفت ضائع ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔ اگر دوبارہ ضرورت پڑ سکتی ہے تو پہلے اپنا ڈیٹا برآمد کر لیں۔';
+
+  @override
+  String settingsResetCounterAcknowledge(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'میں سمجھتا/سمجھتی ہوں کہ $count قضا ریکارڈز ہمیشہ کے لیے حذف ہو جائیں گے',
+      one: 'میں سمجھتا/سمجھتی ہوں کہ 1 قضا ریکارڈ ہمیشہ کے لیے حذف ہو جائے گا',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsResetCounterConfirm => 'کاؤنٹر ری سیٹ کریں';
+
+  @override
+  String get settingsResetCounterDone => 'قضا کاؤنٹر ری سیٹ ہو گیا۔';
+
+  @override
+  String settingsResetCounterFailed(String error) {
+    return 'قضا کاؤنٹر ری سیٹ نہیں ہو سکا: $error';
+  }
 
   @override
   String get settingsAboutSection => 'تعارف';

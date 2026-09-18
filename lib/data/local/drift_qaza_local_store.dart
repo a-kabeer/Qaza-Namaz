@@ -166,6 +166,10 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<bool> hasPendingReset(String userId) => _database.syncOutboxDao
+      .hasPending(userId: userId, type: SyncOpType.reset.name);
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {
     _lastSyncByUser[userId] = lastSync;
   }
