@@ -21,11 +21,18 @@ class _FakeScheduler implements NotificationScheduler {
   int testCalls = 0;
   bool permissionGranted = true;
   bool permissionGrantedForStatus = true;
+  bool throwOnInitialize = false;
+  bool throwOnPermissionStatus = false;
   int? lastHour;
   int? lastMinute;
 
   @override
-  Future<void> initialize() async => initializeCalls++;
+  Future<void> initialize() async {
+    initializeCalls++;
+    if (throwOnInitialize) {
+      throw StateError('notification platform unavailable');
+    }
+  }
 
   @override
   Future<bool> requestPermission() async {
@@ -36,6 +43,9 @@ class _FakeScheduler implements NotificationScheduler {
   @override
   Future<bool> isPermissionGranted() async {
     permissionStatusCalls++;
+    if (throwOnPermissionStatus) {
+      throw StateError('notification permission check failed');
+    }
     return permissionGrantedForStatus;
   }
 
@@ -109,6 +119,34 @@ void main() {
     addTearDown(container.dispose);
     return container;
   }
+
+  test(
+      'notification platform failure keeps settings in a recoverable data state',
+      () async {
+    final scheduler = _FakeScheduler()..throwOnInitialize = true;
+    final container = createContainer(scheduler);
+
+    final state = await container.read(notificationSettingsProvider.future);
+
+    expect(state.enabled, isFalse);
+    expect(state.permissionStatus, NotificationPermissionStatus.unavailable);
+    expect(state.scheduleStatus, NotificationScheduleStatus.disabled);
+  });
+
+  test(
+      'permission refresh converts platform failure into unavailable state',
+      () async {
+    final scheduler = _FakeScheduler();
+    final container = createContainer(scheduler);
+    final notifier = container.read(notificationSettingsProvider.notifier);
+    await container.read(notificationSettingsProvider.future);
+
+    scheduler.throwOnPermissionStatus = true;
+    await notifier.refreshPermissionStatus();
+
+    final state = container.read(notificationSettingsProvider).requireValue;
+    expect(state.permissionStatus, NotificationPermissionStatus.unavailable);
+  });
 
   test('loads safe defaults and permission status', () async {
     final scheduler = _FakeScheduler();
