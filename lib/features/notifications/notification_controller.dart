@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -110,31 +112,50 @@ class NotificationSettingsNotifier
       (_, next) => _listenToQazaChanges(next),
     );
 
-    await _scheduler.initialize();
     final prefs = await SharedPreferences.getInstance();
-    final requested =
-        prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
-    final permissionGranted = await _scheduler.isPermissionGranted();
+
+    NotificationPermissionStatus permissionStatus;
+    try {
+      await _scheduler.initialize();
+      final requested =
+          prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
+      final permissionGranted = await _scheduler.isPermissionGranted();
+
+      permissionStatus = permissionGranted
+          ? NotificationPermissionStatus.granted
+          : requested
+              ? NotificationPermissionStatus.denied
+              : NotificationPermissionStatus.notRequested;
+    } catch (_) {
+      // Platform notification failures must not blank the settings screen.
+      // Keep the page usable and expose a recoverable unavailable state.
+      permissionStatus = NotificationPermissionStatus.unavailable;
+    }
+
     // Aggregate-only: reminders need to know whether anything is pending, not
     // what the pending records are, so this never reads the ledger.
     final summary = await ref.read(progressSummaryProvider.future);
-    final hasPendingQaza = summary.overall.pending > 0;
-
-    final permissionStatus = permissionGranted
-        ? NotificationPermissionStatus.granted
-        : requested
-            ? NotificationPermissionStatus.denied
-            : NotificationPermissionStatus.notRequested;
 
     final settings = NotificationSettingsState(
       enabled: prefs.getBool(_scopedKey(_enabledKey)) ?? false,
       hour: prefs.getInt(_scopedKey(_hourKey)) ?? _defaultReminderHour,
       minute: prefs.getInt(_scopedKey(_minuteKey)) ?? _defaultReminderMinute,
       permissionStatus: permissionStatus,
-      hasPendingQaza: hasPendingQaza,
+      hasPendingQaza: summary.overall.pending > 0,
     );
 
-    await _reconcile(settings);
+    if (permissionStatus == NotificationPermissionStatus.unavailable) {
+      return settings;
+    }
+
+    try {
+      await _reconcile(settings);
+    } catch (_) {
+      return settings.copyWith(
+        permissionStatus: NotificationPermissionStatus.unavailable,
+      );
+    }
+
     return settings;
   }
 
@@ -142,6 +163,7 @@ class NotificationSettingsNotifier
     final current = state.valueOrNull;
     if (current == null) return;
     try {
+      await _scheduler.initialize();
       final granted = await _scheduler.isPermissionGranted();
       final prefs = await SharedPreferences.getInstance();
       final requested =
@@ -153,9 +175,22 @@ class NotificationSettingsNotifier
               : NotificationPermissionStatus.notRequested;
       final next = current.copyWith(permissionStatus: permissionStatus);
       state = AsyncData(next);
-      await _reconcile(next);
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
+
+      try {
+        await _reconcile(next);
+      } catch (_) {
+        state = AsyncData(
+          next.copyWith(
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+      }
+    } catch (_) {
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
     }
   }
 
@@ -170,18 +205,34 @@ class NotificationSettingsNotifier
         await _persist(next, permissionRequested: null);
         state = AsyncData(next);
         return true;
-      } catch (error, stack) {
-        state = AsyncError(error, stack);
+      } catch (_) {
+        state = AsyncData(
+          current.copyWith(
+            enabled: false,
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
         return false;
       }
     }
 
     if (current.enabled && current.canSendNotifications) {
-      await _reconcile(current);
-      return true;
+      try {
+        await _reconcile(current);
+        return true;
+      } catch (_) {
+        state = AsyncData(
+          current.copyWith(
+            enabled: false,
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+        return false;
+      }
     }
 
     try {
+      await _scheduler.initialize();
       final granted =
           current.canSendNotifications || await _scheduler.requestPermission();
       if (!granted) {
@@ -200,10 +251,28 @@ class NotificationSettingsNotifier
       );
       await _persist(next, permissionRequested: true);
       state = AsyncData(next);
-      await _reconcile(next);
+      try {
+        await _reconcile(next);
+      } catch (_) {
+        final unavailable = next.copyWith(
+          enabled: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        );
+        await _persist(unavailable, permissionRequested: true);
+        state = AsyncData(unavailable);
+        return false;
+      }
+
       return true;
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
+    } catch (_) {
+      final unavailable = current.copyWith(
+        enabled: false,
+        permissionStatus: NotificationPermissionStatus.unavailable,
+      );
+      try {
+        await _persist(unavailable, permissionRequested: true);
+      } catch (_) {}
+      state = AsyncData(unavailable);
       return false;
     }
   }
@@ -219,9 +288,21 @@ class NotificationSettingsNotifier
     try {
       await _persist(next, permissionRequested: null);
       state = AsyncData(next);
-      await _reconcile(next);
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
+      try {
+        await _reconcile(next);
+      } catch (_) {
+        state = AsyncData(
+          next.copyWith(
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+      }
+    } catch (_) {
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
     }
   }
 
@@ -244,7 +325,21 @@ class NotificationSettingsNotifier
       hasPendingQaza: summary.overall.pending > 0,
     );
     state = AsyncData(updated);
-    _reconcile(updated);
+    unawaited(_reconcileSafely(updated));
+  }
+
+  Future<void> _reconcileSafely(NotificationSettingsState value) async {
+    try {
+      await _reconcile(value);
+    } catch (_) {
+      final current = state.valueOrNull;
+      if (current == null) return;
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+    }
   }
 
   Future<void> _reconcile(NotificationSettingsState value) async {
