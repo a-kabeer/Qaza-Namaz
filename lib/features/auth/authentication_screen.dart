@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/providers.dart';
+import 'guest_session.dart';
+import 'guest_upgrade_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -22,14 +23,19 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
       loading = true;
       notice = null;
     });
-    try {
-      await ref.read(authRepositoryProvider).signInWithGoogle();
-    } catch (_) {
-      if (mounted)
-        setState(() => notice = AppLocalizations.of(context).authFailed);
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
+    final ok = await ref
+        .read(guestUpgradeControllerProvider.notifier)
+        .signInAndMigrate();
+    if (!mounted) return;
+    setState(() {
+      loading = false;
+      notice = ok ? null : AppLocalizations.of(context).authFailed;
+    });
+  }
+
+  Future<void> _continueAsGuest() async {
+    if (loading) return;
+    await ref.read(guestSessionProvider.notifier).start();
   }
 
   @override
@@ -89,6 +95,18 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
                           : l10n.authContinueWithGoogle),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  // Everything in the app works without an account; signing in
+                  // adds a backup, it is not an entry requirement.
+                  TextButton(
+                    key: const Key('auth_continue_as_guest'),
+                    onPressed: loading ? null : _continueAsGuest,
+                    child: Text(l10n.authContinueAsGuest),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(l10n.authGuestNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall),
                   const SizedBox(height: 18),
                   Text(l10n.authProviderNote,
                       textAlign: TextAlign.center,

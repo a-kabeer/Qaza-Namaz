@@ -4,8 +4,14 @@ import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({required this.onGetStarted, super.key});
+  const WelcomeScreen({
+    required this.onGetStarted,
+    required this.onContinueAsGuest,
+    super.key,
+  });
+
   final VoidCallback onGetStarted;
+  final VoidCallback onContinueAsGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +71,11 @@ class WelcomeScreen extends StatelessWidget {
                   TextButton(
                       onPressed: onGetStarted,
                       child: Text(AppLocalizations.of(context).welcomeSignIn)),
+                  TextButton(
+                      key: const Key('welcome_continue_as_guest'),
+                      onPressed: onContinueAsGuest,
+                      child: Text(
+                          AppLocalizations.of(context).authContinueAsGuest)),
                   const SizedBox(height: 18),
                   Text(AppLocalizations.of(context).welcomeTagline,
                       style: Theme.of(context).textTheme.bodySmall),

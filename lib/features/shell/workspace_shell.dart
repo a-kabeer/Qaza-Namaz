@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth/backup_prompt.dart';
 import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
@@ -115,6 +116,16 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
+    // A guest who has just recorded their first Qaza is offered a backup,
+    // once. Shown from here so it reaches them wherever they added it.
+    ref.listen<bool>(shouldOfferBackupProvider, (_, offer) {
+      if (!offer || !mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showBackupPrompt(context, ref);
+      });
+    });
+
     final destination = ref.watch(workspaceDestinationProvider);
     final index = destination.index;
     // A destination stays mounted once visited, so returning to it keeps its

@@ -23,6 +23,7 @@ import '../domain/entities/app_user.dart';
 import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
+import '../features/auth/guest_session.dart';
 import '../domain/services/qaza_service.dart';
 
 final firestoreProvider =
@@ -52,8 +53,10 @@ final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
       remote: ref.watch(remoteQazaRepositoryProvider),
       localStore: ref.watch(qazaLocalStoreProvider),
       connectivityChanges: ref.watch(connectivityChangesProvider));
-  ref.listen<AsyncValue<AppUser?>>(authStateProvider,
-      (_, next) => repository.setActiveUser(next.valueOrNull?.id),
+  // Follows the active ledger rather than the account directly, so a guest
+  // session opens their local records the same way an account opens theirs.
+  ref.listen<String?>(
+      activeUserIdProvider, (_, next) => repository.setActiveUser(next),
       fireImmediately: true);
   ref.onDispose(repository.dispose);
   return repository;
@@ -67,8 +70,24 @@ final authStateProvider = StreamProvider<AppUser?>(
     (ref) => ref.watch(authRepositoryProvider).authStateChanges());
 final currentUserProvider =
     Provider<AppUser?>((ref) => ref.watch(authStateProvider).valueOrNull);
-final activeUserIdProvider =
-    Provider<String?>((ref) => ref.watch(currentUserProvider)?.id);
+
+/// True while the app is being used without an account.
+///
+/// A signed-in account always wins: signing in ends guest mode, and this
+/// reports the account from that moment on.
+final isGuestProvider = Provider<bool>((ref) =>
+    ref.watch(currentUserProvider) == null && ref.watch(guestSessionProvider));
+
+/// Whose ledger is on screen: an account id, the reserved guest id, or none.
+///
+/// Everything downstream — the repository, the aggregates, notification
+/// preferences — is scoped by this, so guest data is isolated by the same
+/// mechanism that isolates one account from another.
+final activeUserIdProvider = Provider<String?>((ref) {
+  final signedIn = ref.watch(currentUserProvider)?.id;
+  if (signedIn != null) return signedIn;
+  return ref.watch(isGuestProvider) ? guestUserId : null;
+});
 final requiredUserIdProvider = Provider<String>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null)

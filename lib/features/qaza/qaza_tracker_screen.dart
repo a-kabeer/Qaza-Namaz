@@ -33,6 +33,15 @@ class QazaTrackerScreen extends ConsumerWidget {
             _StatusFilterBar(state: state, controller: controller),
             _PrayerFilterBar(state: state, controller: controller),
             _DateFilterBar(state: state, controller: controller),
+            // Subtle, in place, and reserving its own height so the list
+            // never jumps when a filter changes.
+            SizedBox(
+              height: 3,
+              child: state.refreshing
+                  ? const LinearProgressIndicator(
+                      key: Key('qaza_tracker_refreshing'), minHeight: 3)
+                  : null,
+            ),
             Expanded(child: _TrackerBody(state: state, controller: controller)),
             if (state.selected.isNotEmpty)
               _BulkCompletionBar(state: state, controller: controller),
@@ -234,7 +243,11 @@ class _TrackerBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    if (state.loading) return LoadingState(message: l10n.qazaLoading);
+    // The full state belongs to the first load only; a filter change keeps
+    // the page that is already there.
+    if (state.loading && state.records.isEmpty) {
+      return LoadingState(message: l10n.qazaLoading);
+    }
     if (state.error != null) {
       return ErrorState(
         key: const Key('qaza_tracker_error'),

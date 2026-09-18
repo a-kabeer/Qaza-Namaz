@@ -191,14 +191,27 @@ class QazaService {
       recordQazaForDates(
           userId: userId, dates: [originalDate], prayerTypes: [prayerType]);
 
-  Future<void> recordQazaForDates(
+  /// Records every missing Qaza across [dates], returning how many were added.
+  ///
+  /// The duplicate analysis is unchanged and still runs once, over the whole
+  /// request, before anything is written. Only the write is chunked: a twenty
+  /// year estimate is tens of thousands of rows, and one write of that size
+  /// leaves the caller with nothing to show for several seconds. [onProgress]
+  /// is called after each batch with the running count and the total.
+  Future<int> recordQazaForDates(
       {required String userId,
       required Iterable<DateTime> dates,
       required Iterable<PrayerType> prayerTypes,
-      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{}}) async {
+      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+      int batchSize = 500,
+      void Function(int processed, int total)? onProgress}) async {
+    if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
-    if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return;
+    if (normalizedDates.isEmpty || selectedPrayers.isEmpty) {
+      onProgress?.call(0, 0);
+      return 0;
+    }
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
     final analysis = availability.analyze(
@@ -207,19 +220,32 @@ class QazaService {
         prayerTypes: selectedPrayers,
         existingRecords: existing,
         prayedKeys: prayedKeys);
-    if (analysis.newCandidates.isEmpty) return;
+    final candidates = analysis.newCandidates.toList(growable: false);
+    final total = candidates.length;
+    // Reported even when there is nothing to do, so a caller showing progress
+    // starts from a real total rather than a guess.
+    onProgress?.call(0, total);
+    if (total == 0) return 0;
+
     final now = DateTime.now();
-    await repository.addRecords([
-      for (final candidate in analysis.newCandidates)
-        QazaRecord(
-            id: candidate.value,
-            userId: userId,
-            prayerType: candidate.prayerType,
-            originalDate: candidate.date,
-            status: QazaStatus.pending,
-            createdAt: now,
-            updatedAt: now)
-    ]);
+    var processed = 0;
+    for (var start = 0; start < total; start += batchSize) {
+      final end = start + batchSize < total ? start + batchSize : total;
+      await repository.addRecords([
+        for (final candidate in candidates.sublist(start, end))
+          QazaRecord(
+              id: candidate.value,
+              userId: userId,
+              prayerType: candidate.prayerType,
+              originalDate: candidate.date,
+              status: QazaStatus.pending,
+              createdAt: now,
+              updatedAt: now)
+      ]);
+      processed = end;
+      onProgress?.call(processed, total);
+    }
+    return total;
   }
 
   Future<bool> completeOldestPending(

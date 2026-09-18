@@ -509,6 +509,28 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get calcAddingTitle => 'قضا آپ کے ٹریکر میں شامل کی جا رہی ہے';
+
+  @override
+  String calcAddingProgress(String processed, String total) {
+    return '$total میں سے $processed ریکارڈز';
+  }
+
+  @override
+  String calcAddedResult(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ریکارڈز آپ کے ٹریکر میں شامل ہو گئے۔',
+      zero: 'شامل کرنے کو کچھ نیا نہیں تھا۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get calcAddFailedTitle => 'ٹریکر میں شامل نہیں ہو سکا';
+
+  @override
   String get calcEstimateAdded => 'اندازہ شامل ہو گیا';
 
   @override
@@ -1214,6 +1236,48 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String settingsResetCounterFailed(String error) {
     return 'قضا کاؤنٹر ری سیٹ نہیں ہو سکا: $error';
+  }
+
+  @override
+  String get authContinueAsGuest => 'مہمان کے طور پر جاری رکھیں';
+
+  @override
+  String get authGuestNote =>
+      'اپنی پیش رفت کا بیک اپ لینے کے لیے بعد میں سائن ان کر سکتے ہیں۔';
+
+  @override
+  String get backupPromptTitle => 'اپنی پیش رفت محفوظ رکھیں';
+
+  @override
+  String get backupPromptBody =>
+      'آپ کی قضا پیش رفت اس ڈیوائس پر محفوظ ہے۔ بیک اپ لینے اور دوسرے ڈیوائس پر بحال کرنے کے لیے سائن ان کریں۔';
+
+  @override
+  String get backupPromptConfirm => 'میری پیش رفت کا بیک اپ لیں';
+
+  @override
+  String get backupPromptDismiss => 'ابھی نہیں';
+
+  @override
+  String get settingsBackupSignIn => 'بیک اپ / سائن ان';
+
+  @override
+  String get settingsBackupSignInSubtitle =>
+      'آپ مہمان کے طور پر ایپ استعمال کر رہے ہیں۔ قضا کا بیک اپ لینے کے لیے سائن ان کریں۔';
+
+  @override
+  String get backupSignInFailed =>
+      'سائن ان ناکام رہا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String backupMigrationDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سائن ان ہو گیا۔ $count ریکارڈز آپ کے اکاؤنٹ میں شامل ہوئے۔',
+      zero: 'سائن ان ہو گیا۔ آپ کی پیش رفت کا بیک اپ لی لیا گیا ہے۔',
+    );
+    return '$_temp0';
   }
 
   @override

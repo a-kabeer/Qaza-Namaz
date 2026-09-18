@@ -146,6 +146,47 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     _recordsByUser[userId] = List<QazaRecord>.of(records);
   }
 
+  /// Targeted like the Drift store's override, so `saveRecords` keeps
+  /// counting whole-ledger rewrites and nothing else.
+  @override
+  Future<List<String>> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    final records = _recordsByUser[userId];
+    if (records == null) return const <String>[];
+    final wanted = recordIds.toSet();
+    final changed = <String>[];
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      if (!wanted.contains(record.id) ||
+          record.status == QazaStatus.completed) {
+        continue;
+      }
+      records[index] = record.copyWith(
+          status: QazaStatus.completed,
+          completedAt: completedAt,
+          updatedAt: completedAt);
+      changed.add(record.id);
+    }
+    return changed;
+  }
+
+  @override
+  Future<void> appendRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final existing = _recordsByUser.putIfAbsent(userId, () => <QazaRecord>[]);
+    final known = {for (final record in existing) record.id};
+    for (final record in records) {
+      if (known.add(record.id)) existing.add(record);
+    }
+  }
+
+  @override
+  Future<List<PendingSyncOp>> loadOutbox(String userId) async =>
+      List<PendingSyncOp>.of(_outboxByUser[userId] ?? const <PendingSyncOp>[]);
+
   @override
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
     _outboxByUser[userId] = List<PendingSyncOp>.of(ops);

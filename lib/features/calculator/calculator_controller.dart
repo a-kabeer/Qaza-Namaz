@@ -30,6 +30,9 @@ class CalculatorState {
     this.keptAsEstimate = false,
     this.restoring = true,
     this.addingToTracker = false,
+    this.addProcessed = 0,
+    this.addTotal = 0,
+    this.addedCount,
     this.loadingPreflight = false,
     this.preflight,
     this.error,
@@ -48,7 +51,26 @@ class CalculatorState {
   final bool keptAsEstimate;
   final bool restoring;
   final bool addingToTracker;
+
+  /// Records written so far in the current insert.
+  final int addProcessed;
+
+  /// Records the current insert will write in total.
+  final int addTotal;
+
+  /// How many were added by the last successful insert, or null before one.
+  final int? addedCount;
+
   final bool loadingPreflight;
+
+  /// Fraction written, 0 until a total is known.
+  ///
+  /// Determinate on purpose: the total comes from the preflight analysis
+  /// before any row is written, so the bar never has to guess.
+  double get addProgress =>
+      addTotal <= 0 ? 0 : (addProcessed / addTotal).clamp(0, 1).toDouble();
+
+  bool get hasAddResult => addedCount != null;
 
   /// Shared preflight for `Add to Tracker`, or null before it has been run.
   final QazaAvailabilityAnalysis? preflight;
@@ -150,6 +172,10 @@ class CalculatorState {
     bool? keptAsEstimate,
     bool? restoring,
     bool? addingToTracker,
+    int? addProcessed,
+    int? addTotal,
+    int? addedCount,
+    bool clearAddResult = false,
     bool? loadingPreflight,
     QazaAvailabilityAnalysis? preflight,
     String? error,
@@ -176,6 +202,9 @@ class CalculatorState {
         keptAsEstimate: keptAsEstimate ?? this.keptAsEstimate,
         restoring: restoring ?? this.restoring,
         addingToTracker: addingToTracker ?? this.addingToTracker,
+        addProcessed: addProcessed ?? this.addProcessed,
+        addTotal: addTotal ?? this.addTotal,
+        addedCount: clearAddResult ? null : addedCount ?? this.addedCount,
         loadingPreflight: loadingPreflight ?? this.loadingPreflight,
         preflight: clearPreflight ? null : preflight ?? this.preflight,
         error: clearError ? null : error ?? this.error,
@@ -425,24 +454,40 @@ class CalculatorController extends Notifier<CalculatorState> {
     }
   }
 
-  /// Creates the new records. Repeat taps are rejected while in flight, and the
-  /// service re-analyses at save time, so the operation is idempotent.
+  /// Creates the new records, reporting progress as it goes.
+  ///
+  /// Repeat taps are rejected while in flight, and the service re-analyses at
+  /// save time, so the operation stays idempotent. A twenty year estimate is
+  /// written in batches so the screen can show real movement rather than
+  /// sitting still until the whole thing lands.
   Future<bool> addToTracker() async {
     final calculation = state.calculation;
     if (calculation == null || state.addingToTracker) return false;
-    state = state.copyWith(addingToTracker: true, clearError: true);
+    state = state.copyWith(
+      addingToTracker: true,
+      addProcessed: 0,
+      addTotal: 0,
+      clearAddResult: true,
+      clearError: true,
+    );
     try {
-      await ref.read(qazaServiceProvider).recordQazaForDates(
+      final added = await ref.read(qazaServiceProvider).recordQazaForDates(
             userId: ref.read(requiredUserIdProvider),
             dates: trackerDates(calculation),
             prayerTypes:
                 trackerPrayerTypes(includeWitr: calculation.includeWitr),
+            onProgress: (processed, total) {
+              state = state.copyWith(addProcessed: processed, addTotal: total);
+            },
           );
       state = state.copyWith(
         addingToTracker: false,
+        addedCount: added,
         keptAsEstimate: false,
         clearPreflight: true,
       );
+      // Home reads the aggregate, which has just changed underneath it.
+      ref.invalidate(progressSummaryProvider);
       _persist();
       return true;
     } catch (error) {
@@ -453,6 +498,9 @@ class CalculatorController extends Notifier<CalculatorState> {
       return false;
     }
   }
+
+  /// Clears a finished insert's result, for leaving the success state.
+  void dismissAddResult() => state = state.copyWith(clearAddResult: true);
 }
 
 final calculatorControllerProvider =

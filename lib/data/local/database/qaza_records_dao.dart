@@ -282,6 +282,36 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<int> deleteAllForUser({required String userId}) =>
       (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
 
+  /// Marks the given ids completed, returning the ids actually changed.
+  ///
+  /// One statement per id inside a single transaction, scoped by userId and
+  /// by pending status, so a record already completed keeps its original
+  /// timestamp and no other row in the ledger is touched.
+  Future<List<String>> completeByIds({
+    required String userId,
+    required List<String> ids,
+    required DateTime completedAt,
+  }) async {
+    if (ids.isEmpty) return const <String>[];
+    return transaction(() async {
+      final changed = <String>[];
+      for (final id in ids) {
+        final updated = await (update(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) &
+                  row.id.equals(id) &
+                  row.status.equals(QazaStatus.pending.name)))
+            .write(QazaRecordsCompanion(
+          status: Value(QazaStatus.completed.name),
+          completedAt: Value(completedAt),
+          updatedAt: Value(completedAt),
+        ));
+        if (updated > 0) changed.add(id);
+      }
+      return changed;
+    });
+  }
+
   Future<int> count(
       {required String userId, String? prayerType, String? status}) async {
     final query = selectOnly(qazaRecords)

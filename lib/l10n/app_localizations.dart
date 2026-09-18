@@ -956,6 +956,30 @@ abstract class AppLocalizations {
   /// **'Add {count} to Qaza Tracker'**
   String calcAddCountToTracker(String count);
 
+  /// No description provided for @calcAddingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding Qaza to your tracker'**
+  String get calcAddingTitle;
+
+  /// No description provided for @calcAddingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{processed} of {total} records'**
+  String calcAddingProgress(String processed, String total);
+
+  /// No description provided for @calcAddedResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing new to add — your tracker already had these.} =1{1 record added to your tracker.} other{{count} records added to your tracker.}}'**
+  String calcAddedResult(int count);
+
+  /// No description provided for @calcAddFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add to your tracker'**
+  String get calcAddFailedTitle;
+
   /// No description provided for @calcEstimateAdded.
   ///
   /// In en, this message translates to:
@@ -2143,6 +2167,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not reset the Qaza counter: {error}'**
   String settingsResetCounterFailed(String error);
+
+  /// No description provided for @authContinueAsGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as Guest'**
+  String get authContinueAsGuest;
+
+  /// No description provided for @authGuestNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can sign in later to back up your progress.'**
+  String get authGuestNote;
+
+  /// No description provided for @backupPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your progress safe'**
+  String get backupPromptTitle;
+
+  /// No description provided for @backupPromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.'**
+  String get backupPromptBody;
+
+  /// No description provided for @backupPromptConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Back Up My Progress'**
+  String get backupPromptConfirm;
+
+  /// No description provided for @backupPromptDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Now'**
+  String get backupPromptDismiss;
+
+  /// No description provided for @settingsBackupSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up / Sign in'**
+  String get settingsBackupSignIn;
+
+  /// No description provided for @settingsBackupSignInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You are using the app as a guest. Sign in to back up your Qaza.'**
+  String get settingsBackupSignInSubtitle;
+
+  /// No description provided for @backupSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Your progress is still on this device.'**
+  String get backupSignInFailed;
+
+  /// No description provided for @backupMigrationDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Signed in. Your progress is backed up.} =1{Signed in. 1 record was added to your account.} other{Signed in. {count} records were added to your account.}}'**
+  String backupMigrationDone(int count);
 
   /// No description provided for @settingsAboutSection.
   ///

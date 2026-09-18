@@ -13,6 +13,7 @@ import '../../data/sync/sync_state.dart' as sync_models;
 import '../../domain/entities/app_user.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
+import '../auth/backup_prompt.dart';
 import 'account_screen.dart';
 import 'notifications_screen.dart';
 import 'qaza_reset_controller.dart';
@@ -38,6 +39,20 @@ class SettingsScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
+          if (ref.watch(isGuestProvider)) ...[
+            SettingsSection(
+              title: l10n.settingsBackupSection,
+              subtitle: l10n.settingsBackupSubtitle,
+              child: SettingsNavRow(
+                key: const Key('settings_backup_sign_in'),
+                icon: Icons.cloud_upload_outlined,
+                title: l10n.settingsBackupSignIn,
+                subtitle: l10n.settingsBackupSignInSubtitle,
+                onTap: () => startBackupSignIn(context, ref),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           SettingsSection(
             title: l10n.settingsAccountSection,
             subtitle: l10n.settingsAccountSubtitle,

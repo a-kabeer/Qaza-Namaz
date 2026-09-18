@@ -36,6 +36,7 @@ class QazaTrackerState {
     this.records = const <QazaRecord>[],
     this.hasMore = false,
     this.loading = true,
+    this.refreshing = false,
     this.loadingMore = false,
     this.completing = false,
     this.error,
@@ -48,7 +49,16 @@ class QazaTrackerState {
   final DateTime? to;
   final List<QazaRecord> records;
   final bool hasMore;
+
+  /// True only while there is nothing to show yet.
   final bool loading;
+
+  /// True while a page is being fetched over content already on screen.
+  ///
+  /// Switching a filter does not blank the list: the previous page stays
+  /// visible under a thin progress bar until the new one arrives.
+  final bool refreshing;
+
   final bool loadingMore;
   final bool completing;
   final String? error;
@@ -78,6 +88,7 @@ class QazaTrackerState {
     List<QazaRecord>? records,
     bool? hasMore,
     bool? loading,
+    bool? refreshing,
     bool? loadingMore,
     bool? completing,
     String? error,
@@ -95,6 +106,7 @@ class QazaTrackerState {
         records: records ?? this.records,
         hasMore: hasMore ?? this.hasMore,
         loading: loading ?? this.loading,
+        refreshing: refreshing ?? this.refreshing,
         loadingMore: loadingMore ?? this.loadingMore,
         completing: completing ?? this.completing,
         error: clearError ? null : error ?? this.error,
@@ -183,13 +195,18 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         records: const <QazaRecord>[],
         hasMore: false,
         loading: false,
+        refreshing: false,
         selected: const <String>{},
         clearError: true,
       );
       return;
     }
+    // A full loading state only when there is nothing to keep: otherwise the
+    // current page stays put and the bar does the talking.
+    final initial = state.records.isEmpty;
     state = state.copyWith(
-      loading: true,
+      loading: initial,
+      refreshing: !initial,
       clearError: true,
       selected: const <String>{},
     );
@@ -206,10 +223,12 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         records: page.records,
         hasMore: page.hasMore,
         loading: false,
+        refreshing: false,
       );
     } catch (error) {
       state = state.copyWith(
         loading: false,
+        refreshing: false,
         records: const <QazaRecord>[],
         hasMore: false,
         error: error.toString(),

@@ -8,6 +8,7 @@ import '../onboarding/splash_screen.dart';
 import '../onboarding/welcome_screen.dart';
 import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
+import 'guest_session.dart';
 
 /// Decides what the app shows at startup.
 ///
@@ -55,6 +56,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     if (auth.isLoading && !auth.hasValue) return const SplashScreen();
 
     final user = auth.valueOrNull;
+    // A guest reaches the workspace on the same footing as an account: the
+    // ledger is local, but every screen works.
+    if (user == null && ref.watch(guestSessionProvider)) {
+      return const WorkspaceShell();
+    }
+
     if (user == null) {
       // Signing out returns to the welcome entry. This only fires on the
       // signed-in -> signed-out transition, so tapping "Get Started" and then
@@ -72,6 +79,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       return showWelcome
           ? WelcomeScreen(
               onGetStarted: () => setState(() => showWelcome = false),
+              onContinueAsGuest: () =>
+                  ref.read(guestSessionProvider.notifier).start(),
             )
           : const AuthenticationScreen();
     }

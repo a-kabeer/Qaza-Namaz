@@ -28,6 +28,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   String? _activeUserId;
   bool _isOnline = true;
   bool _loaded = false;
+  bool _outboxLoaded = false;
   bool _hydrated = false;
   Future<void>? _hydrationFuture;
   int _sessionGeneration = 0;
@@ -50,6 +51,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     }
     _records.clear();
     _outbox = [];
+    _outboxLoaded = false;
     _lastSyncAt = null;
     if (generation != _sessionGeneration) return;
     _activeUserId = userId;
@@ -145,6 +147,23 @@ class OfflineFirstQazaRepository implements QazaRepository {
     }
   }
 
+  /// Brings the outbox up to date without reading the ledger.
+  ///
+  /// Mutations append to the queue, so it has to hold whatever a previous
+  /// session left behind before anything is added — but a completion has no
+  /// reason to page in ten thousand records to discover that.
+  Future<void> _ensureOutboxLoaded() async {
+    if (_loaded || _outboxLoaded || _activeUserId == null) return;
+    final generation = _sessionGeneration;
+    final userId = _activeUserId!;
+    final stored = await _localStore.loadOutbox(userId);
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+    if (!_loaded && !_outboxLoaded) {
+      _outbox = [...stored, ..._outbox];
+      _outboxLoaded = true;
+    }
+  }
+
   Future<void> _ensureLoaded() async {
     if (_loaded || _activeUserId == null) return;
     final generation = _sessionGeneration;
@@ -159,6 +178,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outbox = List.of(snapshot.outboxByUser[userId] ?? const []);
     _lastSyncAt = snapshot.lastSyncByUser[userId];
     _loaded = true;
+    _outboxLoaded = true;
   }
 
   @override
@@ -293,6 +313,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
       fresh.add(r);
     }
     if (fresh.isEmpty) return;
+    // Appended, not rewritten: a large import must not delete and reinsert
+    // everything already stored.
+    await _localStore.appendRecords(userId, fresh);
     final queuedAt = _now();
     _outbox.addAll([
       for (final r in fresh)
@@ -303,7 +326,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
             queuedAt: queuedAt,
             record: r)
     ]);
-    await _persistSnapshot();
+    await _persistOutbox();
     if (generation != _sessionGeneration || userId != _activeUserId) return;
     _emitPending();
     unawaited(_syncInBackground());
@@ -316,6 +339,13 @@ class OfflineFirstQazaRepository implements QazaRepository {
           required DateTime completedAt}) =>
       completeRecords(
           userId: userId, recordIds: [recordId], completedAt: completedAt);
+
+  /// Completes records with a targeted local write.
+  ///
+  /// Never loads or rewrites the ledger: on a 10,000 record account marking
+  /// one prayer done touches one row. The in-memory cache is kept in step
+  /// only where it already holds the record, so nothing is paged in for the
+  /// sake of the write.
   @override
   Future<void> completeRecords(
       {required String userId,
@@ -323,24 +353,29 @@ class OfflineFirstQazaRepository implements QazaRepository {
       required DateTime completedAt}) async {
     if (recordIds.isEmpty || userId != _activeUserId) return;
     final generation = _sessionGeneration;
-    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    final changed = (await _localStore.completeRecords(
+      userId: userId,
+      recordIds: recordIds.toSet().toList(growable: false),
+      completedAt: completedAt,
+    ))
+        .toSet();
     if (generation != _sessionGeneration || userId != _activeUserId) return;
-    final now = _now();
-    final changed = <String>{};
-    for (final id in recordIds.toSet()) {
-      final r = _records[id];
-      if (r == null || r.userId != userId || r.status == QazaStatus.completed)
-        continue;
-      _records[id] = r.copyWith(
-          status: QazaStatus.completed,
-          completedAt:
-              r.completedAt == null || completedAt.isBefore(r.completedAt!)
-                  ? completedAt
-                  : r.completedAt,
-          updatedAt: now);
-      changed.add(id);
-    }
     if (changed.isEmpty) return;
+
+    final now = _now();
+    for (final id in changed) {
+      final cached = _records[id];
+      if (cached == null) continue;
+      _records[id] = cached.copyWith(
+          status: QazaStatus.completed,
+          completedAt: cached.completedAt == null ||
+                  completedAt.isBefore(cached.completedAt!)
+              ? completedAt
+              : cached.completedAt,
+          updatedAt: now);
+    }
+
     final queuedAt = _now();
     final queued = {
       for (final op in _outbox)
@@ -357,7 +392,8 @@ class OfflineFirstQazaRepository implements QazaRepository {
               targetRecordId: id,
               completedAt: completedAt)
     ]);
-    await _persistSnapshot();
+    // Only the queue is written back; the records are already saved.
+    await _persistOutbox();
     if (generation != _sessionGeneration || userId != _activeUserId) return;
     _emitPending();
     unawaited(_syncInBackground());
@@ -393,15 +429,21 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<void> syncNow() async {
     if (_activeUserId == null) return;
     await _ensureLoaded();
-    await _syncInBackground();
+    // An explicit sync is the moment to reconcile with the cloud.
+    await _syncInBackground(pullRemote: true);
   }
 
-  Future<void> _syncInBackground() async {
+  /// Flushes the outbox, and pulls the remote ledger only when asked.
+  ///
+  /// A pull is a full read of the account's cloud records, so it belongs to
+  /// startup, an explicit sync and coming back online — not to every single
+  /// completion the reader makes.
+  Future<void> _syncInBackground({bool pullRemote = false}) async {
     final existing = _syncFuture;
     if (existing != null) return existing;
-    if (!_loaded || _activeUserId == null) return;
+    if (_activeUserId == null) return;
     final generation = _sessionGeneration;
-    final future = _runSync(generation);
+    final future = _runSync(generation, pullRemote: pullRemote);
     _syncFuture = future;
     try {
       await future;
@@ -410,7 +452,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     }
   }
 
-  Future<void> _runSync(int generation) async {
+  Future<void> _runSync(int generation, {bool pullRemote = false}) async {
     final userId = _activeUserId;
     if (userId == null || generation != _sessionGeneration) return;
     if (!_isOnline) {
@@ -427,8 +469,10 @@ class OfflineFirstQazaRepository implements QazaRepository {
     try {
       await _flushOutbox(userId, generation);
       if (generation != _sessionGeneration || userId != _activeUserId) return;
-      await _pullRemote(userId, generation);
-      if (generation != _sessionGeneration || userId != _activeUserId) return;
+      if (pullRemote) {
+        await _pullRemote(userId, generation);
+        if (generation != _sessionGeneration || userId != _activeUserId) return;
+      }
       _lastSyncAt = _now();
       await _localStore.saveLastSync(userId, _lastSyncAt);
       _emit(SyncState(
@@ -569,7 +613,17 @@ class OfflineFirstQazaRepository implements QazaRepository {
           status: SyncStatus.offline,
           lastSyncAt: _lastSyncAt,
           pendingCount: _outbox.length));
-    else if (_loaded) unawaited(_syncInBackground());
+    // Back online is a reconciliation point, so this one pulls. It no longer
+    // waits for the ledger to have been paged in: a queued completion must
+    // flush whether or not anything has read the records this session.
+    else if (_activeUserId != null) {
+      unawaited(_reconcileAfterReconnect());
+    }
+  }
+
+  Future<void> _reconcileAfterReconnect() async {
+    await _ensureOutboxLoaded();
+    await _syncInBackground(pullRemote: true);
   }
 
   void dispose() {

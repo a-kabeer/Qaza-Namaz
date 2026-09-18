@@ -205,6 +205,63 @@ abstract class QazaLocalStore {
         .any((op) => op.type == SyncOpType.reset);
   }
 
+  /// The queued operations for one user.
+  ///
+  /// Separate from [load] so a completion can bring the queue up to date
+  /// without reading the ledger it is deliberately not touching.
+  Future<List<PendingSyncOp>> loadOutbox(String userId) async {
+    final snapshot = await load();
+    return List<PendingSyncOp>.of(
+        snapshot.outboxByUser[userId] ?? const <PendingSyncOp>[]);
+  }
+
+  /// Marks records completed without touching the rest of the ledger.
+  ///
+  /// Returns the ids actually changed: one already completed is left alone.
+  /// The default implementation is correct but reads the snapshot; stores
+  /// backed by a database override it with a targeted update.
+  Future<List<String>> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+        snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
+    final wanted = recordIds.toSet();
+    final changed = <String>[];
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      if (!wanted.contains(record.id) ||
+          record.status == QazaStatus.completed) {
+        continue;
+      }
+      records[index] = record.copyWith(
+          status: QazaStatus.completed,
+          completedAt: completedAt,
+          updatedAt: completedAt);
+      changed.add(record.id);
+    }
+    if (changed.isNotEmpty) await saveRecords(userId, records);
+    return changed;
+  }
+
+  /// Adds records without removing anything already stored.
+  ///
+  /// The default rewrites the user's rows because a plain store has no other
+  /// way; database-backed stores override it with an insert.
+  Future<void> appendRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final snapshot = await load();
+    final existing = List<QazaRecord>.of(
+        snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
+    final known = {for (final record in existing) record.id};
+    for (final record in records) {
+      if (known.add(record.id)) existing.add(record);
+    }
+    await saveRecords(userId, existing);
+  }
+
   Future<void> saveRecordsAndOutbox(
       String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
     await saveRecords(userId, records);

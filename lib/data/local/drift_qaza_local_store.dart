@@ -166,6 +166,40 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<List<PendingSyncOp>> loadOutbox(String userId) async {
+    final rows = await _database.syncOutboxDao.getPending(userId: userId);
+    return rows.map(_toDomainOp).toList(growable: false);
+  }
+
+  /// One indexed UPDATE per id in a single transaction: no snapshot read and
+  /// no rewrite of the user's rows.
+  @override
+  Future<List<String>> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) =>
+      _database.qazaRecordsDao.completeByIds(
+        userId: userId,
+        ids: recordIds,
+        completedAt: completedAt,
+      );
+
+  /// Inserts only the new rows; existing ones are left untouched.
+  @override
+  Future<void> appendRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    await _database.qazaRecordsDao.insertRecords(
+      records.map(_toCompanion).toList(growable: false),
+    );
+  }
+
+  @override
   Future<bool> hasPendingReset(String userId) => _database.syncOutboxDao
       .hasPending(userId: userId, type: SyncOpType.reset.name);
 

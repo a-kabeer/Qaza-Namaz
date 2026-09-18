@@ -509,6 +509,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get calcAddingTitle => 'Adding Qaza to your tracker';
+
+  @override
+  String calcAddingProgress(String processed, String total) {
+    return '$processed of $total records';
+  }
+
+  @override
+  String calcAddedResult(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records added to your tracker.',
+      one: '1 record added to your tracker.',
+      zero: 'Nothing new to add — your tracker already had these.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get calcAddFailedTitle => 'Could not add to your tracker';
+
+  @override
   String get calcEstimateAdded => 'Estimate added';
 
   @override
@@ -1213,6 +1236,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String settingsResetCounterFailed(String error) {
     return 'Could not reset the Qaza counter: $error';
+  }
+
+  @override
+  String get authContinueAsGuest => 'Continue as Guest';
+
+  @override
+  String get authGuestNote => 'You can sign in later to back up your progress.';
+
+  @override
+  String get backupPromptTitle => 'Keep your progress safe';
+
+  @override
+  String get backupPromptBody =>
+      'Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.';
+
+  @override
+  String get backupPromptConfirm => 'Back Up My Progress';
+
+  @override
+  String get backupPromptDismiss => 'Not Now';
+
+  @override
+  String get settingsBackupSignIn => 'Back up / Sign in';
+
+  @override
+  String get settingsBackupSignInSubtitle =>
+      'You are using the app as a guest. Sign in to back up your Qaza.';
+
+  @override
+  String get backupSignInFailed =>
+      'Sign-in failed. Your progress is still on this device.';
+
+  @override
+  String backupMigrationDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Signed in. $count records were added to your account.',
+      one: 'Signed in. 1 record was added to your account.',
+      zero: 'Signed in. Your progress is backed up.',
+    );
+    return '$_temp0';
   }
 
   @override

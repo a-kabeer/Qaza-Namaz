@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/prayer_types.dart';
@@ -55,6 +56,14 @@ class CalculatorScreen extends ConsumerWidget {
                 },
               ),
             ),
+            // Persistent, in place, and determinate: a large estimate takes
+            // seconds, and the screen has to keep saying so.
+            if (state.step == 2)
+              _AddStatusPanel(
+                state: state,
+                onRetry: () => _addToTracker(context, ref),
+                onDismiss: controller.dismissAddResult,
+              ),
             _StepActions(
               step: state.step,
               canContinue: canContinue,
@@ -639,6 +648,145 @@ class _ResultStep extends StatelessWidget {
 }
 
 /// Shows the shared preflight result before anything is written.
+/// Progress, success and failure for the tracker insert, in the page itself.
+class _AddStatusPanel extends StatelessWidget {
+  const _AddStatusPanel({
+    required this.state,
+    required this.onRetry,
+    required this.onDismiss,
+  });
+
+  final CalculatorState state;
+  final VoidCallback onRetry;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final numbers =
+        NumberFormat.decimalPattern(Localizations.localeOf(context).toString());
+
+    if (state.addingToTracker) {
+      return _Panel(
+        key: const Key('calc_add_progress'),
+        background: scheme.surfaceContainerHighest,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.calcAddingTitle,
+                      style: theme.textTheme.titleSmall),
+                ),
+                Text('${(state.addProgress * 100).round()}%',
+                    key: const Key('calc_add_percent'),
+                    style: theme.textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                key: const Key('calc_add_bar'),
+                value: state.addProgress,
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.calcAddingProgress(
+                numbers.format(state.addProcessed),
+                numbers.format(state.addTotal),
+              ),
+              key: const Key('calc_add_counts'),
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.hasAddResult) {
+      return _Panel(
+        key: const Key('calc_add_success'),
+        background: scheme.tertiaryContainer,
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                color: scheme.onTertiaryContainer),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(l10n.calcAddedResult(state.addedCount!),
+                  style: TextStyle(color: scheme.onTertiaryContainer)),
+            ),
+            TextButton(
+              key: const Key('calc_add_success_dismiss'),
+              onPressed: onDismiss,
+              child: Text(l10n.commonClose),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final error = state.error;
+    if (error == null) return const SizedBox.shrink();
+    return _Panel(
+      key: const Key('calc_add_error'),
+      background: scheme.errorContainer,
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded, color: scheme.onErrorContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.calcAddFailedTitle,
+                    style: TextStyle(
+                        color: scheme.onErrorContainer,
+                        fontWeight: FontWeight.w600)),
+                Text(error,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: scheme.onErrorContainer)),
+              ],
+            ),
+          ),
+          TextButton(
+            key: const Key('calc_add_retry'),
+            onPressed: onRetry,
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Panel extends StatelessWidget {
+  const _Panel({super.key, required this.child, required this.background});
+
+  final Widget child;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: child,
+        ),
+      );
+}
+
 class _PreflightDialog extends StatelessWidget {
   const _PreflightDialog({required this.preflight});
 
