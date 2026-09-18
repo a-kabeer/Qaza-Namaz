@@ -134,14 +134,22 @@ class NotificationSettingsNotifier
 
     // Aggregate-only: reminders need to know whether anything is pending, not
     // what the pending records are, so this never reads the ledger.
-    final summary = await ref.read(progressSummaryProvider.future);
+    // The notification settings page must remain usable even if the optional
+    // Qaza summary read fails; the listener will reconcile again when it recovers.
+    var hasPendingQaza = false;
+    try {
+      final summary = await ref.read(progressSummaryProvider.future);
+      hasPendingQaza = summary.overall.pending > 0;
+    } catch (_) {
+      hasPendingQaza = false;
+    }
 
     final settings = NotificationSettingsState(
       enabled: prefs.getBool(_scopedKey(_enabledKey)) ?? false,
       hour: prefs.getInt(_scopedKey(_hourKey)) ?? _defaultReminderHour,
       minute: prefs.getInt(_scopedKey(_minuteKey)) ?? _defaultReminderMinute,
       permissionStatus: permissionStatus,
-      hasPendingQaza: summary.overall.pending > 0,
+      hasPendingQaza: hasPendingQaza,
     );
 
     if (permissionStatus == NotificationPermissionStatus.unavailable) {
@@ -206,12 +214,14 @@ class NotificationSettingsNotifier
         state = AsyncData(next);
         return true;
       } catch (_) {
-        state = AsyncData(
-          current.copyWith(
-            enabled: false,
-            permissionStatus: NotificationPermissionStatus.unavailable,
-          ),
+        final next = current.copyWith(
+          enabled: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
         );
+        try {
+          await _persist(next, permissionRequested: null);
+        } catch (_) {}
+        state = AsyncData(next);
         return false;
       }
     }
@@ -221,12 +231,14 @@ class NotificationSettingsNotifier
         await _reconcile(current);
         return true;
       } catch (_) {
-        state = AsyncData(
-          current.copyWith(
-            enabled: false,
-            permissionStatus: NotificationPermissionStatus.unavailable,
-          ),
+        final next = current.copyWith(
+          enabled: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
         );
+        try {
+          await _persist(next, permissionRequested: null);
+        } catch (_) {}
+        state = AsyncData(next);
         return false;
       }
     }
