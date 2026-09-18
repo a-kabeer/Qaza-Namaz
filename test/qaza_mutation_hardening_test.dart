@@ -52,7 +52,9 @@ void main() {
     expect(stored.single.completedAt, isNull);
   });
 
-  test('duplicate date/prayer add with a different id is rejected by the unique key', () async {
+  test(
+      'duplicate date/prayer add with a different id is rejected by the unique key',
+      () async {
     await repository.addRecord(record(id: 'first'));
     await repository.addRecord(record(id: 'second'));
 
@@ -71,7 +73,9 @@ void main() {
     );
   });
 
-  test('repeated completion is idempotent and keeps the earliest completion time', () async {
+  test(
+      'repeated completion is idempotent and keeps the earliest completion time',
+      () async {
     await repository.addRecord(record());
     final firstCompletion = DateTime(2026, 2, 2);
     final laterCompletion = DateTime(2026, 2, 3);

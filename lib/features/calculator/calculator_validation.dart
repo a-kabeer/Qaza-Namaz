@@ -51,4 +51,5 @@ CalculatorValidationResult validateCalculatorDates({
   return const CalculatorValidationResult.valid();
 }
 
-DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);

@@ -20,19 +20,19 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final button = secondary
         ? (icon == null
-              ? OutlinedButton(onPressed: onPressed, child: Text(label))
-              : OutlinedButton.icon(
-                  onPressed: onPressed,
-                  icon: Icon(icon),
-                  label: Text(label),
-                ))
+            ? OutlinedButton(onPressed: onPressed, child: Text(label))
+            : OutlinedButton.icon(
+                onPressed: onPressed,
+                icon: Icon(icon),
+                label: Text(label),
+              ))
         : (icon == null
-              ? FilledButton(onPressed: onPressed, child: Text(label))
-              : FilledButton.icon(
-                  onPressed: onPressed,
-                  icon: Icon(icon),
-                  label: Text(label),
-                ));
+            ? FilledButton(onPressed: onPressed, child: Text(label))
+            : FilledButton.icon(
+                onPressed: onPressed,
+                icon: Icon(icon),
+                label: Text(label),
+              ));
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }

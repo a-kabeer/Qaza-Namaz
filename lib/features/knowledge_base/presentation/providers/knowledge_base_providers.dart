@@ -29,7 +29,8 @@ final knowledgeSelectedArticleIdProvider = StateProvider<String?>(
   (ref) => null,
 );
 
-final knowledgeFilteredArticlesProvider = FutureProvider<List<KnowledgeArticle>>(
+final knowledgeFilteredArticlesProvider =
+    FutureProvider<List<KnowledgeArticle>>(
   (ref) async {
     final items = await ref.watch(knowledgeArticlesProvider.future);
     final category = ref.watch(knowledgeCategoryFilterProvider);

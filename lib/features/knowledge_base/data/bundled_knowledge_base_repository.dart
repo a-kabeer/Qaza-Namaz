@@ -12,8 +12,7 @@ class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
   })  : _parser = parser,
         _bundle = bundle;
 
-  static const String assetPath =
-      'assets/knowledge_base/content/articles.json';
+  static const String assetPath = 'assets/knowledge_base/content/articles.json';
 
   final KnowledgeBaseParser _parser;
   final AssetBundle? _bundle;

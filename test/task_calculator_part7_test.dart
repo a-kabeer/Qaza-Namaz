@@ -14,14 +14,17 @@ void main() {
     final result = calculation();
 
     expect(trackerDates(result).length, result.totalDays);
-    expect(trackerPrayerTypes(includeWitr: false), containsAll([
-      PrayerType.fajr,
-      PrayerType.zuhr,
-      PrayerType.asr,
-      PrayerType.maghrib,
-      PrayerType.isha,
-    ]));
-    expect(trackerPrayerTypes(includeWitr: false), isNot(contains(PrayerType.witr)));
+    expect(
+        trackerPrayerTypes(includeWitr: false),
+        containsAll([
+          PrayerType.fajr,
+          PrayerType.zuhr,
+          PrayerType.asr,
+          PrayerType.maghrib,
+          PrayerType.isha,
+        ]));
+    expect(trackerPrayerTypes(includeWitr: false),
+        isNot(contains(PrayerType.witr)));
     expect(trackerRecordCount(result), result.totalPrayers);
   });
 

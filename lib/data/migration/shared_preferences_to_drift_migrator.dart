@@ -221,16 +221,14 @@ class SharedPreferencesToDriftMigrator {
             'recordsByUser.${entry.key} must be a JSON array.',
           );
         }
-        recordsByUser[entry.key] = (entry.value as List<dynamic>)
-            .map((item) {
-              if (item is! Map<String, dynamic>) {
-                throw const FormatException(
-                  'A Qaza record must be a JSON object.',
-                );
-              }
-              return QazaRecord.fromJson(item);
-            })
-            .toList(growable: false);
+        recordsByUser[entry.key] = (entry.value as List<dynamic>).map((item) {
+          if (item is! Map<String, dynamic>) {
+            throw const FormatException(
+              'A Qaza record must be a JSON object.',
+            );
+          }
+          return QazaRecord.fromJson(item);
+        }).toList(growable: false);
       }
       return OfflineSnapshot(recordsByUser: recordsByUser);
     } catch (error) {

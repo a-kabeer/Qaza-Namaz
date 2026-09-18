@@ -17,14 +17,17 @@ void main() {
     expect(contract, contains('completeRecord'));
   });
 
-  test('completion refresh invalidates bounded oldest and aggregate progress', () {
+  test('completion refresh invalidates bounded oldest and aggregate progress',
+      () {
     const invalidations = <String>{
       'oldestPendingProvider',
       'progressSummaryProvider',
     };
-    expect(invalidations, containsAll(<String>{
-      'oldestPendingProvider',
-      'progressSummaryProvider',
-    }));
+    expect(
+        invalidations,
+        containsAll(<String>{
+          'oldestPendingProvider',
+          'progressSummaryProvider',
+        }));
   });
 }

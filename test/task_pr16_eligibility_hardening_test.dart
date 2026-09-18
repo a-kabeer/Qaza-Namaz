@@ -9,7 +9,8 @@ QazaRecord _record({
   required PrayerType prayer,
   required DateTime date,
   QazaStatus status = QazaStatus.pending,
-}) => QazaRecord(
+}) =>
+    QazaRecord(
       id: '${userId}_${prayer.name}_${date.year}-${date.month}-${date.day}',
       userId: userId,
       prayerType: prayer,
@@ -62,7 +63,8 @@ void main() {
     );
   });
 
-  test('Witr remains independently eligible when other prayers are recorded', () {
+  test('Witr remains independently eligible when other prayers are recorded',
+      () {
     final records = [
       for (final prayer in [
         PrayerType.fajr,
@@ -88,7 +90,9 @@ void main() {
     );
   });
 
-  test('duplicate input dates and prayers produce one candidate per combination', () {
+  test(
+      'duplicate input dates and prayers produce one candidate per combination',
+      () {
     final analysis = service.analyze(
       userId: 'u1',
       dates: [
@@ -108,7 +112,8 @@ void main() {
     expect(analysis.newCount, 4);
   });
 
-  test('date is unavailable only when all configured prayers are unavailable', () {
+  test('date is unavailable only when all configured prayers are unavailable',
+      () {
     final records = [
       for (final prayer in PrayerType.values)
         _record(

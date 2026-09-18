@@ -153,11 +153,13 @@ class QazaDataTransferService {
     try {
       decoded = jsonDecode(jsonText);
     } catch (_) {
-      throw const QazaDataTransferException('The selected file is not valid JSON.');
+      throw const QazaDataTransferException(
+          'The selected file is not valid JSON.');
     }
 
     if (decoded is! Map<String, dynamic>) {
-      throw const QazaDataTransferException('The export root must be a JSON object.');
+      throw const QazaDataTransferException(
+          'The export root must be a JSON object.');
     }
     if (decoded['schemaVersion'] != qazaExportSchemaVersion) {
       throw QazaDataTransferException(
@@ -170,12 +172,14 @@ class QazaDataTransferService {
     }
     if (decoded['appVersion'] is! String ||
         (decoded['appVersion'] as String).trim().isEmpty) {
-      throw const QazaDataTransferException('The app version is missing or invalid.');
+      throw const QazaDataTransferException(
+          'The app version is missing or invalid.');
     }
 
     final rawRecords = decoded['records'];
     if (rawRecords is! List<dynamic>) {
-      throw const QazaDataTransferException('The records field must be a JSON array.');
+      throw const QazaDataTransferException(
+          'The records field must be a JSON array.');
     }
 
     final records = <QazaRecord>[];
@@ -185,7 +189,8 @@ class QazaDataTransferService {
     for (var index = 0; index < rawRecords.length; index++) {
       final raw = rawRecords[index];
       if (raw is! Map<String, dynamic>) {
-        throw QazaDataTransferException('Record ${index + 1} is not an object.');
+        throw QazaDataTransferException(
+            'Record ${index + 1} is not an object.');
       }
 
       final record = _decodeRecord(raw, userId, index + 1);
@@ -225,9 +230,12 @@ class QazaDataTransferService {
     requiredString('userId');
     final prayerName = requiredString('prayerType');
     final statusName = requiredString('status');
-    final originalDate = _parseRequiredDate(raw['originalDate'], 'originalDate', position);
-    final createdAt = _parseRequiredDate(raw['createdAt'], 'createdAt', position);
-    final updatedAt = _parseRequiredDate(raw['updatedAt'], 'updatedAt', position);
+    final originalDate =
+        _parseRequiredDate(raw['originalDate'], 'originalDate', position);
+    final createdAt =
+        _parseRequiredDate(raw['createdAt'], 'createdAt', position);
+    final updatedAt =
+        _parseRequiredDate(raw['updatedAt'], 'updatedAt', position);
 
     PrayerType? prayerType;
     for (final candidate in PrayerType.values) {
@@ -300,11 +308,13 @@ class QazaDataTransferService {
 
   DateTime _parseRequiredDate(Object? value, String field, int position) {
     if (value is! String) {
-      throw QazaDataTransferException('Record $position has an invalid $field.');
+      throw QazaDataTransferException(
+          'Record $position has an invalid $field.');
     }
     final parsed = _tryParseDate(value);
     if (parsed == null) {
-      throw QazaDataTransferException('Record $position has an invalid $field.');
+      throw QazaDataTransferException(
+          'Record $position has an invalid $field.');
     }
     return parsed;
   }

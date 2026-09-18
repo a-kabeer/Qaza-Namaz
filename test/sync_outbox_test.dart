@@ -36,7 +36,8 @@ void main() {
     );
   }
 
-  test('outbox survives as structured SQLite rows and remains user-scoped', () async {
+  test('outbox survives as structured SQLite rows and remains user-scoped',
+      () async {
     final store = DriftQazaLocalStore(database: database);
     final ops = [addOp('op-1'), addOp('op-2')];
 

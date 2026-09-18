@@ -35,7 +35,8 @@ class KnowledgeBaseParser {
 
     final articles = decoded['articles'];
     if (articles is! List) {
-      throw KnowledgeBaseParseException('$source: "articles" must be an array.');
+      throw KnowledgeBaseParseException(
+          '$source: "articles" must be an array.');
     }
 
     return [
@@ -52,7 +53,8 @@ class KnowledgeBaseParser {
       }
       return Map<String, dynamic>.from(decoded);
     } on FormatException catch (error) {
-      throw KnowledgeBaseParseException('$source: invalid JSON (${error.message}).');
+      throw KnowledgeBaseParseException(
+          '$source: invalid JSON (${error.message}).');
     }
   }
 
@@ -62,7 +64,8 @@ class KnowledgeBaseParser {
     required int index,
   }) {
     if (value is! Map) {
-      throw KnowledgeBaseParseException('$source: article[$index] must be an object.');
+      throw KnowledgeBaseParseException(
+          '$source: article[$index] must be an object.');
     }
     final map = Map<String, dynamic>.from(value);
     final prefix = '$source: article[$index]';
@@ -73,17 +76,20 @@ class KnowledgeBaseParser {
     final sortOrder = _requiredInt(map, 'sortOrder', prefix);
 
     if (!_kebabCase.hasMatch(id) || !_kebabCase.hasMatch(slug)) {
-      throw KnowledgeBaseParseException('$prefix: id and slug must use kebab-case.');
+      throw KnowledgeBaseParseException(
+          '$prefix: id and slug must use kebab-case.');
     }
     if (sortOrder < 0) {
-      throw KnowledgeBaseParseException('$prefix: sortOrder must be non-negative.');
+      throw KnowledgeBaseParseException(
+          '$prefix: sortOrder must be non-negative.');
     }
 
     final category = KnowledgeCategory.values.where(
       (item) => item.name == categoryValue,
     );
     if (category.length != 1) {
-      throw KnowledgeBaseParseException('$prefix: invalid category "$categoryValue".');
+      throw KnowledgeBaseParseException(
+          '$prefix: invalid category "$categoryValue".');
     }
 
     return KnowledgeArticle(
@@ -121,7 +127,8 @@ class KnowledgeBaseParser {
 
   List<KnowledgeReference> _parseReferences(Object? value, String prefix) {
     if (value is! List) {
-      throw KnowledgeBaseParseException('$prefix: "references" must be an array.');
+      throw KnowledgeBaseParseException(
+          '$prefix: "references" must be an array.');
     }
     return [
       for (var index = 0; index < value.length; index++)
@@ -136,11 +143,13 @@ class KnowledgeBaseParser {
     final map = Map<String, dynamic>.from(value);
     final url = map['url'];
     if (url != null && url is! String) {
-      throw KnowledgeBaseParseException('$prefix.url must be a string or null.');
+      throw KnowledgeBaseParseException(
+          '$prefix.url must be a string or null.');
     }
     final citation = map['citation'];
     if (citation != null && citation is! String) {
-      throw KnowledgeBaseParseException('$prefix.citation must be a string or null.');
+      throw KnowledgeBaseParseException(
+          '$prefix.citation must be a string or null.');
     }
     return KnowledgeReference(
       source: _requiredString(map, 'source', prefix),
@@ -156,19 +165,23 @@ class KnowledgeBaseParser {
     bool unique = false,
   }) {
     if (value is! List || value.any((item) => item is! String)) {
-      throw KnowledgeBaseParseException('$prefix: "$field" must be an array of strings.');
+      throw KnowledgeBaseParseException(
+          '$prefix: "$field" must be an array of strings.');
     }
     final result = List<String>.from(value);
     if (unique && result.toSet().length != result.length) {
-      throw KnowledgeBaseParseException('$prefix: "$field" must contain unique values.');
+      throw KnowledgeBaseParseException(
+          '$prefix: "$field" must contain unique values.');
     }
     return result;
   }
 
-  String _requiredString(Map<String, dynamic> map, String field, String prefix) {
+  String _requiredString(
+      Map<String, dynamic> map, String field, String prefix) {
     final value = map[field];
     if (value is! String || value.trim().isEmpty) {
-      throw KnowledgeBaseParseException('$prefix: "$field" must be a non-empty string.');
+      throw KnowledgeBaseParseException(
+          '$prefix: "$field" must be a non-empty string.');
     }
     return value.trim();
   }
@@ -176,7 +189,8 @@ class KnowledgeBaseParser {
   int _requiredInt(Map<String, dynamic> map, String field, String prefix) {
     final value = map[field];
     if (value is! int) {
-      throw KnowledgeBaseParseException('$prefix: "$field" must be an integer.');
+      throw KnowledgeBaseParseException(
+          '$prefix: "$field" must be an integer.');
     }
     return value;
   }

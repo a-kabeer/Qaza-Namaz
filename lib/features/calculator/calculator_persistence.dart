@@ -47,7 +47,8 @@ class CalculatorSnapshot {
   factory CalculatorSnapshot.fromJson(Map<String, dynamic> json) {
     final version = (json['schemaVersion'] as num?)?.toInt() ?? 1;
     if (version != 1) {
-      throw StateError('Unsupported calculator snapshot schema version $version.');
+      throw StateError(
+          'Unsupported calculator snapshot schema version $version.');
     }
     DateTime? parseDate(Object? value) =>
         value == null ? null : DateTime.parse(value as String);
@@ -77,12 +78,14 @@ class CalculatorPersistence {
   String keyForUser(String? userId) =>
       '${storagePrefix}_${userId == null || userId.isEmpty ? 'anonymous' : userId}';
 
-  Future<CalculatorSnapshot?> load({String? userId, SharedPreferences? preferences}) async {
+  Future<CalculatorSnapshot?> load(
+      {String? userId, SharedPreferences? preferences}) async {
     final prefs = preferences ?? await SharedPreferences.getInstance();
     final raw = prefs.getString(keyForUser(userId));
     if (raw == null || raw.isEmpty) return null;
     try {
-      return CalculatorSnapshot.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return CalculatorSnapshot.fromJson(
+          jsonDecode(raw) as Map<String, dynamic>);
     } on StateError {
       rethrow;
     } catch (_) {

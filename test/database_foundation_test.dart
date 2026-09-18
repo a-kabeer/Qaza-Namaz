@@ -21,17 +21,19 @@ void main() {
 
     addTearDown(database.close);
 
-    final rows = await database.customSelect(
-      "SELECT name FROM sqlite_master "
-      "WHERE type = 'index' AND name IN ("
-      "'qaza_records_user_date_idx',"
-      "'qaza_records_user_prayer_date_idx',"
-      "'qaza_records_user_prayer_status_date_idx',"
-      "'qaza_records_user_status_completed_idx',"
-      "'sync_outbox_user_queued_idx',"
-      "'sync_outbox_user_type_idx'"
-      ') ORDER BY name',
-    ).get();
+    final rows = await database
+        .customSelect(
+          "SELECT name FROM sqlite_master "
+          "WHERE type = 'index' AND name IN ("
+          "'qaza_records_user_date_idx',"
+          "'qaza_records_user_prayer_date_idx',"
+          "'qaza_records_user_prayer_status_date_idx',"
+          "'qaza_records_user_status_completed_idx',"
+          "'sync_outbox_user_queued_idx',"
+          "'sync_outbox_user_type_idx'"
+          ') ORDER BY name',
+        )
+        .get();
 
     expect(
       rows.map((row) => row.read<String>('name')).toList(),

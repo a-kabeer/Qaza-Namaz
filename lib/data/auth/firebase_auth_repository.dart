@@ -18,8 +18,7 @@ class FirebaseAuthRepository implements AuthRepository {
   AppUser? get currentUser => _mapUser(_auth.currentUser);
 
   @override
-  Stream<AppUser?> authStateChanges() =>
-      _auth.authStateChanges().map(_mapUser);
+  Stream<AppUser?> authStateChanges() => _auth.authStateChanges().map(_mapUser);
 
   @override
   Future<AppUser> signInWithGoogle() async {

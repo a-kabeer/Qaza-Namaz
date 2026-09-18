@@ -39,7 +39,8 @@ class QazaDate {
   static DateTime fromRecordId(String recordId) {
     final match = RegExp(r'(\d{4}-\d{2}-\d{2})$').firstMatch(recordId);
     if (match == null) {
-      throw FormatException('Qaza record ID does not contain a date: $recordId');
+      throw FormatException(
+          'Qaza record ID does not contain a date: $recordId');
     }
     return parseKey(match.group(1)!);
   }

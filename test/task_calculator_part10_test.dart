@@ -25,7 +25,8 @@ void main() {
     );
 
     await persistence.save(snapshot, userId: 'user-a', preferences: prefs);
-    final restored = await persistence.load(userId: 'user-a', preferences: prefs);
+    final restored =
+        await persistence.load(userId: 'user-a', preferences: prefs);
 
     expect(restored, isNotNull);
     expect(restored!.step, 2);
@@ -57,14 +58,17 @@ void main() {
 
     await persistence.save(snapshot, userId: 'user-a', preferences: prefs);
 
-    expect(await persistence.load(userId: 'user-a', preferences: prefs), isNotNull);
-    expect(await persistence.load(userId: 'user-b', preferences: prefs), isNull);
+    expect(await persistence.load(userId: 'user-a', preferences: prefs),
+        isNotNull);
+    expect(
+        await persistence.load(userId: 'user-b', preferences: prefs), isNull);
   });
 
   test('missing and malformed stored values fail safely', () async {
     final prefs = await SharedPreferences.getInstance();
     const persistence = CalculatorPersistence();
-    expect(await persistence.load(userId: 'missing', preferences: prefs), isNull);
+    expect(
+        await persistence.load(userId: 'missing', preferences: prefs), isNull);
 
     await prefs.setString(
       persistence.keyForUser('bad'),

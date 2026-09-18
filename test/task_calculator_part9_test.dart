@@ -58,7 +58,8 @@ void main() {
 
   test('allows a zero-day period and keeps all totals zero', () {
     final date = DateTime(2026, 1, 1);
-    final result = calculateQaza(startDate: date, endDate: date, includeWitr: true);
+    final result =
+        calculateQaza(startDate: date, endDate: date, includeWitr: true);
 
     expect(result.totalDays, 0);
     expect(result.totalPrayers, 0);
