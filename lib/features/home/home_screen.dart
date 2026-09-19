@@ -59,6 +59,7 @@ class HomeScreen extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       // The workspace FAB floats over this list, so the last prayer needs
       // room to scroll clear of it.
+      // No FAB is present in the empty state, so no FAB clearance is needed.
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
         Center(
@@ -69,7 +70,7 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 _ProgressOverview(progress: overall),
                 const SizedBox(height: 20),
-                // The Complete Qaza page's own section, not a copy of it.
+                // Keep the reusable completion section on Home.
                 const CompleteQazaSection(keyPrefix: 'home_complete'),
                 const SizedBox(height: 20),
                 Text(
