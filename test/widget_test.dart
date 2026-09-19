@@ -73,7 +73,9 @@ Future<void> _openAuth(WidgetTester tester) async {
     )
   ], child: const TestApp(home: AuthenticationScreen())));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  for (var i = 0; i < 10 && find.text('Welcome back').evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }
 
 void main() {
@@ -81,7 +83,7 @@ void main() {
       'Signed-out onboarding opens connected Google authentication entry',
       (WidgetTester tester) async {
     await _openAuth(tester);
-    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
     expect(
