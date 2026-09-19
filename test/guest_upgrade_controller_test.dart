@@ -445,7 +445,9 @@ void main() {
         child: const TestApp(home: AuthenticationScreen()),
       ),
     );
-    await tester.pump();
+    // The authentication screen can schedule its provider restoration on the first frame.
+    // Advance a bounded amount of fake time instead of settling indefinitely.
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Guest progress found'), findsOneWidget);
     expect(find.text('Merge Data'), findsOneWidget);
