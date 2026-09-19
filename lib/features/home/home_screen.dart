@@ -209,7 +209,7 @@ class _ProgressOverview extends StatelessWidget {
               key: const Key('home_progress_bar'),
               value: progress.percentage,
               minHeight: 6,
-              backgroundColor: scheme.onPrimaryContainer.withValues(alpha: .18),
+              backgroundColor: scheme.surfaceContainerHighest,
               color: scheme.primary,
             ),
           ),
