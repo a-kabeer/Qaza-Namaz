@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'google_auth_flow.dart';
+import 'google_auth_config.dart';
 
 class AuthenticationException implements Exception {
   const AuthenticationException({
@@ -42,7 +43,8 @@ class FirebaseAuthRepository implements AuthRepository {
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
   })  : _auth = auth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+        _googleSignIn =
+            googleSignIn ?? GoogleSignIn(serverClientId: googleServerClientId);
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
