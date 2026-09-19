@@ -61,6 +61,8 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<AppUser> signInWithGoogle() async {
     try {
+      _validateFirebaseConfiguration();
+
       final account = await GoogleAuthFlow(
         beginGoogleSignIn: () async {
           final googleUser = await _googleSignIn.signIn();
@@ -94,6 +96,8 @@ class FirebaseAuthRepository implements AuthRepository {
       return account;
     } on GoogleAuthFlowCancelledException {
       throw const AuthenticationCancelledException();
+    } on AuthenticationException {
+      rethrow;
     } on FirebaseAuthException catch (error, stack) {
       _debugLog(error, stack);
       throw AuthenticationException(
@@ -124,6 +128,30 @@ class FirebaseAuthRepository implements AuthRepository {
         message: error.toString(),
         cause: error,
         stackTrace: stack,
+      );
+    }
+  }
+
+  void _validateFirebaseConfiguration() {
+    final options = Firebase.app().options;
+
+    if (options.projectId != googleFirebaseProjectId) {
+      throw AuthenticationException(
+        source: 'firebase-config',
+        code: 'project-mismatch',
+        message:
+            'Firebase project mismatch: expected ${googleFirebaseProjectId} '
+            'but the app is using ${options.projectId}.',
+      );
+    }
+
+    if (options.appId != googleFirebaseAndroidAppId) {
+      throw AuthenticationException(
+        source: 'firebase-config',
+        code: 'android-app-mismatch',
+        message:
+            'Firebase Android app mismatch: expected ${googleFirebaseAndroidAppId} '
+            'but the app is using ${options.appId}.',
       );
     }
   }
