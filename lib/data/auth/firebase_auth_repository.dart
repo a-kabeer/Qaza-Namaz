@@ -73,8 +73,7 @@ class FirebaseAuthRepository implements AuthRepository {
             );
           }
 
-          final credential =
-              GoogleAuthProvider.credential(idToken: idToken);
+          final credential = GoogleAuthProvider.credential(idToken: idToken);
           final result = await _auth.signInWithCredential(credential);
           final user = result.user;
           if (user == null) {
