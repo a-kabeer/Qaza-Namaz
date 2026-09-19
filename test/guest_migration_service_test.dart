@@ -349,7 +349,8 @@ void main() {
       completedAt: stamp,
     );
 
-    expect(retry.added, 0);
+    // The failed atomic write persists nothing; the successful retry adds the guest record.
+    expect(retry.added, 1);
     expect(local.recordsByUser[accountId], hasLength(1));
     expect(local.outboxByUser[accountId], hasLength(1));
 
