@@ -63,7 +63,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     // Firebase can become authenticated before the guest data decision is
     // complete. Keep the user on the auth/decision surface until that state is
     // resolved rather than entering the account workspace early.
-    if (upgrade.running || upgrade.awaitingDecision) {
+    if (upgrade.running ||
+        upgrade.awaitingDecision ||
+        (upgrade.error != null && ref.watch(guestSessionProvider))) {
       return const AuthenticationScreen();
     }
     // A guest reaches the workspace on the same footing as an account: the
