@@ -28,7 +28,10 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
 
     if (!mounted || ok) return;
     final error = ref.read(guestUpgradeControllerProvider).error;
-    setState(() => notice = error ?? AppLocalizations.of(context).authFailed);
+    // Genuine Google cancellation is intentionally silent. Configuration,
+    // Firebase, and platform failures still carry their diagnostic error.
+    if (error == null) return;
+    setState(() => notice = error);
   }
 
   Future<void> _continueAsGuest() async {
