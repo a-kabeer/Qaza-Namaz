@@ -199,8 +199,8 @@ void main() {
       () async {
     SharedPreferences.setMockInitialValues({
       'qaza_daily_notification_enabled:restore-user': true,
-      'qaza_daily_notification_hour:6,
-      'qaza_daily_notification_minute:30,
+      'qaza_daily_notification_hour:restore-user': 6,
+      'qaza_daily_notification_minute:restore-user': 30,
       'qaza_notification_permission_requested:restore-user': true,
     });
     final scheduler = _FakeScheduler();
