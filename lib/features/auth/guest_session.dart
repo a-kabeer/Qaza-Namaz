@@ -11,7 +11,7 @@ const String guestUserId = 'guest';
 ///
 /// Persisted, so a guest who closes the app comes back to their ledger rather
 /// than to the welcome screen. Signing in ends it; the guest's records are
-/// migrated first and are never deleted by it.
+/// migrated or explicitly retired after the user's decision.
 class GuestSessionNotifier extends Notifier<bool> {
   static const String storageKey = 'qaza_guest_mode';
 
@@ -32,7 +32,8 @@ class GuestSessionNotifier extends Notifier<bool> {
 
   Future<void> start() => _set(true);
 
-  /// Ends guest mode. Local guest records stay where they are.
+  /// Ends guest mode. Local guest records stay where they are until an explicit
+  /// migration/retirement action has completed.
   Future<void> end() => _set(false);
 
   Future<void> _set(bool value) async {
