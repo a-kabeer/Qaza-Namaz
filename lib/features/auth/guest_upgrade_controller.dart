@@ -24,6 +24,7 @@ final guestMigrationServiceProvider = Provider<GuestMigrationService>(
 /// keeps the normal app ledger on the guest namespace.
 class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   static const _pendingDecisionKey = 'qaza_guest_upgrade_decision';
+  bool _userActionStarted = false;
 
   @override
   GuestUpgradeState build() {
@@ -33,6 +34,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
   Future<void> _restorePendingDecision() async {
     try {
+      if (_userActionStarted) return;
       final prefs = await SharedPreferences.getInstance();
       final marker = prefs.getString(_pendingDecisionKey);
       // Wait for Firebase's initial auth emission before deciding whether a
@@ -47,6 +49,8 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       if (guestPersisted) {
         await ref.read(guestSessionProvider.notifier).ensureRestored();
       }
+
+      if (_userActionStarted) return;
 
       if (marker == null || !guestPersisted || currentUser == null) {
         if (marker != null) {
@@ -82,6 +86,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   /// before the explicit data decision.
   Future<bool> signInAndMigrate() async {
     if (state.running || state.pendingAccount != null) return false;
+    _userActionStarted = true;
 
     // Resolve persisted guest mode before starting Firebase auth. Otherwise a
     // cold-start tap can authenticate directly into the account namespace and
