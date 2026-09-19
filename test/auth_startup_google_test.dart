@@ -15,11 +15,12 @@ import 'support/in_memory_qaza_repository.dart';
 import 'support/test_app.dart';
 
 class StartupAuthRepository implements AuthRepository {
-  StartupAuthRepository(this.account);
+  StartupAuthRepository(this.account, {this.signInFailure});
 
   final AppUser account;
   final controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
+  final Object? signInFailure;
 
   @override
   AppUser? get currentUser => _current;
@@ -32,6 +33,7 @@ class StartupAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser> signInWithGoogle() async {
+    if (signInFailure != null) throw signInFailure!;
     _current = account;
     controller.add(account);
     return account;
@@ -88,6 +90,24 @@ void main() {
 
     expect(find.byType(WorkspaceShell), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
+  });
+
+  testWidgets('startup Google failure shows the real diagnostic', (tester) async {
+    final auth = StartupAuthRepository(
+      const AppUser(id: 'failed-user', email: 'failed@example.com'),
+      signInFailure: StateError('firebase-auth/operation-not-allowed'),
+    );
+    addTearDown(auth.dispose);
+
+    await pumpStartup(tester, auth.account, auth);
+    await tester.tap(find.text('Get Started'));
+    await tester.pump();
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.textContaining('firebase-auth/operation-not-allowed'),
+        findsOneWidget);
   });
 
   testWidgets('startup Google sign-in creates a new account through Firebase',
