@@ -15,6 +15,12 @@ void main() {
         RegExp(r'applicationId\s*=\s*"([^"]+)"').firstMatch(gradle);
     expect(applicationMatch, isNotNull);
     final applicationId = applicationMatch!.group(1)!;
+    expect(
+      gradle,
+      isNot(contains('signingConfig = signingConfigs.debug')),
+      reason: 'Release builds must never silently use the debug signing key.',
+    );
+    expect(gradle, contains('assembleRelease'));
 
     final clients =
         (json['client'] as List<dynamic>).cast<Map<String, dynamic>>();
