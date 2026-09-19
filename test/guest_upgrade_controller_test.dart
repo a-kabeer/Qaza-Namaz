@@ -6,6 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
+
+import 'support/in_memory_qaza_repository.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
