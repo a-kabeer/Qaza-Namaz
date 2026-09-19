@@ -128,3 +128,5 @@ void main() {
     expect(find.text('Home'), findsWidgets);
   });
 }
+
+// CI verification marker.
