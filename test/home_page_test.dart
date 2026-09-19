@@ -83,59 +83,34 @@ void main() {
       tester.widget<Text>(find.byKey(key)).data!;
 
   group('progress overview', () {
-    testWidgets('shows total, pending, completed and the overall percentage',
+    testWidgets('shows the compact summary and horizontal progress bar',
         (tester) async {
       await pumpHome(tester, await ledger());
 
       expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
-      expect(textOf(tester, const Key('home_pending_value')), '2');
-      expect(find.text('Total'), findsOneWidget);
-      expect(find.text('6'), findsOneWidget); // total
-      expect(find.text('4'), findsWidgets); // completed
-      // 4 of 6 completed.
-      expect(find.text('67%'), findsOneWidget);
-      expect(find.byKey(const Key('home_progress_ring')), findsOneWidget);
+      expect(find.byKey(const Key('home_progress_summary')), findsOneWidget);
+      expect(textOf(tester, const Key('home_progress_summary')),
+          '4 of 6 completed · 67%');
+
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_progress_bar')),
+      );
+      expect(bar.value, closeTo(4 / 6, 0.0001));
+      expect(bar.minHeight, 6);
+      expect(find.byKey(const Key('home_progress_ring')), findsNothing);
+      expect(find.byKey(const Key('home_pending_value')), findsNothing);
+      expect(find.text('Total'), findsNothing);
     });
 
-    testWidgets('the ring leads, with the counts under it', (tester) async {
+    testWidgets('summary sits above the horizontal bar', (tester) async {
       await pumpHome(tester, await ledger());
 
-      final ring = tester.getRect(find.byKey(const Key('home_progress_ring')));
-      final pending =
-          tester.getRect(find.byKey(const Key('home_pending_value')));
+      final summary =
+          tester.getRect(find.byKey(const Key('home_progress_summary')));
+      final bar = tester.getRect(find.byKey(const Key('home_progress_bar')));
 
-      expect(ring.bottom, lessThanOrEqualTo(pending.top));
-      // The ring is the card's largest element.
-      expect(ring.width, greaterThan(pending.width));
-    });
-
-    testWidgets('the three counts share one row, in order', (tester) async {
-      await pumpHome(tester, await ledger());
-
-      final total = tester.getRect(find.text('Total'));
-      final pendingLabel = tester.getRect(find.text('Pending'));
-      final completed = tester.getRect(find.text('Completed').first);
-
-      // Left to right: Total, Pending, Completed.
-      expect(total.center.dx, lessThan(pendingLabel.center.dx));
-      expect(pendingLabel.center.dx, lessThan(completed.center.dx));
-      // Total and Completed are the same size, so their labels line up;
-      // Pending's sits lower because its count is drawn larger.
-      expect(total.top, completed.top);
-      expect(pendingLabel.top, greaterThan(total.top));
-      // All three are still one row: each overlaps the others vertically.
-      expect(pendingLabel.top, lessThan(total.bottom + 24));
-    });
-
-    testWidgets('pending is the most prominent number', (tester) async {
-      await pumpHome(tester, await ledger());
-
-      final pending =
-          tester.widget<Text>(find.byKey(const Key('home_pending_value')));
-      final theme = Theme.of(tester.element(find.byType(HomeScreen)));
-      expect(pending.style!.fontSize, theme.textTheme.displaySmall!.fontSize);
-      expect(pending.style!.fontSize,
-          greaterThan(theme.textTheme.titleLarge!.fontSize!));
+      expect(summary.bottom, lessThanOrEqualTo(bar.top));
+      expect(bar.width, greaterThan(0));
     });
 
     testWidgets('a fully completed ledger reads 100%', (tester) async {
@@ -146,8 +121,14 @@ void main() {
       ]);
       await pumpHome(tester, repository);
 
-      expect(textOf(tester, const Key('home_pending_value')), '0');
-      expect(find.text('100%'), findsWidgets);
+      expect(
+        textOf(tester, const Key('home_progress_summary')),
+        '2 of 2 completed · 100%',
+      );
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_progress_bar')),
+      );
+      expect(bar.value, 1);
     });
   });
 
