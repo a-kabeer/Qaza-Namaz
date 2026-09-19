@@ -137,6 +137,28 @@ void main() {
     expect(local.recordsByUser[accountId]!.single.status, QazaStatus.pending);
   });
 
+
+  test('deduplication uses normalized original calendar date', () async {
+    local.recordsByUser[guestId] = [
+      record(guestId, PrayerType.fajr, '2026-02-10'),
+    ];
+    local.recordsByUser[guestId]!.first.copyWith(
+      originalDate: DateTime(2026, 2, 10, 23, 45),
+    );
+
+    local.recordsByUser[accountId] = [
+      record(accountId, PrayerType.fajr, '2026-02-10'),
+    ];
+
+    await service.migrate(
+      guestUserId: guestId,
+      accountUserId: accountId,
+      completedAt: stamp,
+    );
+
+    expect(local.recordsByUser[accountId], hasLength(1));
+  });
+
   test('completed guest wins over pending account and stays completed',
       () async {
     local.recordsByUser[guestId] = [
