@@ -158,8 +158,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     final confirmed = await _confirm(
       context,
       title: 'Merge guest progress?',
-      body:
-          'Your guest and Google account Qaza records will be combined. '
+      body: 'Your guest and Google account Qaza records will be combined. '
           'A matching prayer/date is kept only once, and a completed record '
           'always wins over a pending record. Your guest records are retired '
           'only after the account migration succeeds.',
@@ -174,8 +173,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     final confirmed = await _confirm(
       context,
       title: 'Use account data?',
-      body:
-          'Your existing Google account Qaza ledger will be kept unchanged. '
+      body: 'Your existing Google account Qaza ledger will be kept unchanged. '
           'Your guest records will be permanently retired from this device '
           'after you confirm. This choice does not merge guest records.',
       confirmLabel: 'Use Account Data',
@@ -267,8 +265,7 @@ class _GuestAccountChoice extends StatelessWidget {
             const SizedBox(height: 20),
             _DecisionCard(
               title: 'Merge Data',
-              description:
-                  'Combine guest and account records. Duplicate '
+              description: 'Combine guest and account records. Duplicate '
                   'prayer/date combinations become one record; completed '
                   'always wins over pending. Guest data is retired only '
                   'after a successful migration.',
