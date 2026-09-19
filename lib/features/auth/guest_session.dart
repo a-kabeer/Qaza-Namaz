@@ -73,6 +73,7 @@ final guestSessionProvider =
 /// continue to expose the guest ledger until merge/use-account/cancel finishes.
 class GuestUpgradePendingNotifier extends Notifier<bool> {
   static const String storageKey = 'qaza_guest_upgrade_pending';
+  bool _explicitStateSet = false;
 
   @override
   bool build() {
@@ -83,13 +84,16 @@ class GuestUpgradePendingNotifier extends Notifier<bool> {
   Future<void> restore() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      state = prefs.getBool(storageKey) ?? false;
+      if (!_explicitStateSet) {
+        state = prefs.getBool(storageKey) ?? false;
+      }
     } catch (_) {
       // An unreadable marker leaves the normal session behavior intact.
     }
   }
 
   Future<void> setPending(bool value) async {
+    _explicitStateSet = true;
     state = value;
     try {
       final prefs = await SharedPreferences.getInstance();
