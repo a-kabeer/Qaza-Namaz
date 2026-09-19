@@ -1,4 +1,3 @@
-import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
