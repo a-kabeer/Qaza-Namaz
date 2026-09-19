@@ -104,8 +104,59 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Build debug APK
         run: flutter build apk --debug
+
+      - name: Audit debug APK OAuth certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk | tee /tmp/qaza-debug-cert.txt
+
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          build_gradle = Path("android/app/build.gradle").read_text()
+          match = re.search(r'applicationId\s*=\s*"([^"]+)"', build_gradle)
+          if not match:
+              raise SystemExit("Could not determine Android applicationId.")
+          package_name = match.group(1)
+
+          config = json.loads(Path("android/app/google-services.json").read_text())
+          registered = set()
+          for client in config.get("client", []):
+              info = client.get("client_info", {})
+              android = info.get("android_client_info", {})
+              if android.get("package_name") != package_name:
+                  continue
+              for oauth in client.get("oauth_client", []):
+                  android_info = oauth.get("android_info", {})
+                  if oauth.get("client_type") == 1 and android_info.get("package_name") == package_name:
+                      value = android_info.get("certificate_hash")
+                      if value:
+                          registered.add(value.replace(":", "").lower())
+
+          report = Path("/tmp/qaza-debug-cert.txt").read_text()
+          sha1 = re.search(r"certificate SHA-1 digest:\s*([0-9A-Fa-f:]+)", report)
+          if not sha1:
+              raise SystemExit("Could not read the debug APK SHA-1 certificate from apksigner.")
+
+          actual = sha1.group(1).replace(":", "").lower()
+          print(f"CI debug signing SHA-1: {sha1.group(1)}")
+          print(f"Firebase registered Android SHA-1 count: {len(registered)}")
+          if actual not in registered:
+              raise SystemExit(
+                  "CI debug signing certificate is not registered in Firebase "
+                  f"for {package_name}. Register this SHA-1 and regenerate "
+                  "android/app/google-services.json."
+              )
+          print("CI debug signing certificate matches Firebase OAuth configuration.")
+
       - name: Build release APK
         run: flutter build apk --release
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
