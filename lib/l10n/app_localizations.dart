@@ -236,18 +236,6 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get stateErrorTitle;
 
-  /// No description provided for @progressNoRecords.
-  ///
-  /// In en, this message translates to:
-  /// **'No records yet'**
-  String get progressNoRecords;
-
-  /// No description provided for @progressPercentCompleted.
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}% completed'**
-  String progressPercentCompleted(int percent);
-
   /// No description provided for @prayerRakatFajr.
   ///
   /// In en, this message translates to:

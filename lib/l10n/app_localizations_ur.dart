@@ -78,14 +78,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get stateErrorTitle => 'کچھ غلط ہو گیا';
 
   @override
-  String get progressNoRecords => 'ابھی کوئی ریکارڈ نہیں';
-
-  @override
-  String progressPercentCompleted(int percent) {
-    return '$percent% مکمل';
-  }
-
-  @override
   String get prayerRakatFajr => 'فجر • 2 رکعت فرض';
 
   @override

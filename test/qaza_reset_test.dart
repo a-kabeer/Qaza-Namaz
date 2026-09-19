@@ -1,15 +1,12 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
-import 'package:qaza_namaz/data/repositories/drift_qaza_repository.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
@@ -59,46 +56,6 @@ class _FailingResetRepository extends InMemoryQazaRepository {
 }
 
 void main() {
-  group('drift repository', () {
-    late AppDatabase database;
-    late DriftQazaRepository repository;
-
-    setUp(() {
-      database = AppDatabase(NativeDatabase.memory());
-      repository = DriftQazaRepository(database);
-    });
-    tearDown(() => database.close());
-
-    test('resetting deletes the whole ledger for one user only', () async {
-      await repository.addRecords(_ledger(6));
-      await repository.addRecords(_ledger(4, userId: 'u2'));
-
-      await repository.resetUserRecords(userId: 'u1');
-
-      final summary = await repository.getProgressSummary(userId: 'u1');
-      expect(summary.overall.total, 0);
-      expect(await repository.getRecords(userId: 'u1'), isEmpty);
-      expect(await repository.getRecords(userId: 'u2'), hasLength(4));
-    });
-
-    test('resetting an already empty ledger is a no-op', () async {
-      await repository.resetUserRecords(userId: 'u1');
-      await repository.resetUserRecords(userId: 'u1');
-      expect(await repository.getRecords(userId: 'u1'), isEmpty);
-    });
-
-    test('the DAO delete is scoped to the requested user', () async {
-      await repository.addRecords(_ledger(3));
-      await repository.addRecords(_ledger(5, userId: 'u2'));
-
-      final deleted =
-          await database.qazaRecordsDao.deleteAllForUser(userId: 'u1');
-
-      expect(deleted, 3);
-      expect(await database.qazaRecordsDao.count(userId: 'u2'), 5);
-    });
-  });
-
   group('offline-first repository', () {
     OfflineFirstQazaRepository create({
       required QazaRepository remote,

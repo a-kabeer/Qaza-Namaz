@@ -79,14 +79,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stateErrorTitle => 'Something went wrong';
 
   @override
-  String get progressNoRecords => 'No records yet';
-
-  @override
-  String progressPercentCompleted(int percent) {
-    return '$percent% completed';
-  }
-
-  @override
   String get prayerRakatFajr => 'Fajr • 2 Rakat Fard';
 
   @override

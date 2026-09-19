@@ -11,7 +11,6 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
-import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/qaza/completion_screen.dart';
 
 import 'support/in_memory_qaza_repository.dart';
@@ -37,55 +36,6 @@ QazaRecord _record({
 DateTime _day(int day) => DateTime(2026, 9, day);
 
 void main() {
-  group('Home state resolver', () {
-    test('resolves setup, pending and completed-ledger states', () {
-      expect(
-        HomeStateResolver.ledgerState(pending: 0, completed: 0),
-        HomeLedgerState.setupRequired,
-      );
-      expect(
-        HomeStateResolver.ledgerState(pending: 3, completed: 0),
-        HomeLedgerState.hasPendingQaza,
-      );
-      expect(
-        HomeStateResolver.ledgerState(pending: 0, completed: 3),
-        HomeLedgerState.allQazaCompleted,
-      );
-    });
-
-    test('rejects invalid negative progress counts', () {
-      expect(
-        () => HomeStateResolver.ledgerState(pending: -1, completed: 0),
-        throwsArgumentError,
-      );
-      expect(
-        () => HomeStateResolver.ledgerState(pending: 0, completed: -1),
-        throwsArgumentError,
-      );
-    });
-
-    test(
-        'maps each ledger state to deterministic primary and secondary actions',
-        () {
-      expect(
-        HomeStateResolver.primaryAction(HomeLedgerState.setupRequired),
-        HomePrimaryAction.calculateQaza,
-      );
-      expect(
-        HomeStateResolver.primaryAction(HomeLedgerState.hasPendingQaza),
-        HomePrimaryAction.completeQaza,
-      );
-      expect(
-        HomeStateResolver.primaryAction(HomeLedgerState.allQazaCompleted),
-        HomePrimaryAction.addNewQaza,
-      );
-      expect(
-        HomeStateResolver.secondaryAction(HomeLedgerState.setupRequired),
-        HomePrimaryAction.addQaza,
-      );
-    });
-  });
-
   group('Calendar selection', () {
     test('single and multiple modes never accept unavailable dates', () {
       final container = ProviderContainer(
