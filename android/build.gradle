@@ -19,31 +19,34 @@ subprojects {
 
 // AGP 8.11+ wires JavaCompile compatibility from `android.compileOptions`
 // during each subproject's own evaluation, which overrides rules registered
-// earlier from the root project. Enforce JVM target 11 for every Android
+// earlier from the root project. Enforce JVM target 17 for every Android
 // plugin module after all projects are evaluated (but before any task runs)
 // so the Java and Kotlin tasks always agree on the same JVM target.
+//
+// 17 rather than 11 because that is what plugins built for AGP 9 compile at,
+// and because built-in Kotlin takes its own target from `compileOptions`.
 gradle.projectsEvaluated {
     subprojects.each { sub ->
-        sub.plugins.withId("org.jetbrains.kotlin.android") {
-            sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                // `kotlinOptions` is gone in Kotlin 2.3; the same setting
-                // lives on `compilerOptions` now.
-                compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-                }
+        // Covers both ways a module's Kotlin can be compiled: its own Kotlin
+        // Gradle Plugin, and AGP's built-in Kotlin, which uses the same task
+        // type. `kotlinOptions` is gone in Kotlin 2.3; the same setting lives
+        // on `compilerOptions` now.
+        sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            compilerOptions {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             }
         }
 
         if (sub.extensions.findByName("android") != null) {
             sub.android.compileOptions {
-                sourceCompatibility JavaVersion.VERSION_11
-                targetCompatibility JavaVersion.VERSION_11
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
             }
         }
 
         sub.tasks.withType(JavaCompile).configureEach {
-            sourceCompatibility = JavaVersion.VERSION_11.toString()
-            targetCompatibility = JavaVersion.VERSION_11.toString()
+            sourceCompatibility = JavaVersion.VERSION_17.toString()
+            targetCompatibility = JavaVersion.VERSION_17.toString()
         }
     }
 }

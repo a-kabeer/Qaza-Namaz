@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -36,14 +35,15 @@ class _QazaDataManagementScreenState
           .read(qazaDataTransferServiceProvider)
           .exportJson(userId: userId, appVersion: appVersion);
       final bytes = Uint8List.fromList(json.codeUnits);
-      final savedPath = await FilePicker.platform.saveFile(
+      final savedUri = await FilePicker.saveFile(
           dialogTitle: AppLocalizations.of(context).dataExportDialogTitle,
           fileName: 'qaza_namaz_export_v1.json',
+          mimeType: 'application/json',
           type: FileType.custom,
           allowedExtensions: const ['json'],
           bytes: bytes);
       if (!mounted) return;
-      _showMessage(savedPath == null || savedPath.isEmpty
+      _showMessage(savedUri == null
           ? AppLocalizations.of(context).dataExportCanceled
           : AppLocalizations.of(context).dataExportSaved);
     } catch (error) {
@@ -63,19 +63,17 @@ class _QazaDataManagementScreenState
     }
     setState(() => _busy = true);
     try {
-      final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: const ['json'],
-          withData: true);
-      if (result == null || result.files.isEmpty) {
+      final picked = await FilePicker.pickFile(
+          type: FileType.custom, allowedExtensions: const ['json']);
+      if (picked == null) {
         if (mounted)
           _showMessage(AppLocalizations.of(context).dataImportCanceled);
         return;
       }
-      final picked = result.files.single;
-      final bytes = picked.bytes ??
-          (picked.path == null ? null : await File(picked.path!).readAsBytes());
-      if (bytes == null || bytes.isEmpty)
+      // The picker reads the file for us, wherever it lives: a local path, a
+      // content URI or a web blob.
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty)
         throw const FormatException(
             'The selected file is empty or unreadable.');
       final analysis = await ref
