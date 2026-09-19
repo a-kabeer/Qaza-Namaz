@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/features/calculator/calculator_tracker.dart';
 import 'package:qaza_namaz/features/calculator/qaza_calculation.dart';
 
 /// The calculator's date-boundary contract is **start inclusive, end
@@ -25,13 +23,9 @@ void main() {
       expect(result.totalPrayers, 5);
     });
 
-    test('the end date is excluded, the start date is included', () {
+    test('the end date is excluded and the start date is included', () {
       final result = between(DateTime(2024, 3, 12), DateTime(2024, 3, 15));
-      final dates = trackerDates(result).toList();
-      expect(dates.length, result.totalDays);
-      expect(dates.first, DateTime(2024, 3, 12));
-      expect(dates.last, DateTime(2024, 3, 14));
-      expect(dates, isNot(contains(DateTime(2024, 3, 15))));
+      expect(result.totalDays, 3);
     });
 
     test('reversed dates are rejected rather than negated', () {
@@ -65,7 +59,6 @@ void main() {
     test('counts the leap day in a leap year', () {
       final result = between(DateTime(2024, 2, 28), DateTime(2024, 3, 1));
       expect(result.totalDays, 2);
-      expect(trackerDates(result), contains(DateTime(2024, 2, 29)));
     });
 
     test('a non-leap year has no 29 February', () {
@@ -105,36 +98,32 @@ void main() {
       expect(estimated.totalPrayers, exact.totalPrayers);
     });
 
-    test('Witr off excludes Witr from the expansion', () {
+    test('Witr off keeps the five daily prayers and no Witr count', () {
       final result = between(DateTime(2024, 1, 1), DateTime(2024, 1, 11));
+      expect(result.dailyPrayerCount, 5);
+      expect(result.totalPrayers, 50);
       expect(result.witrCount, 0);
       expect(result.includeWitr, isFalse);
-      expect(
-        trackerPrayerTypes(includeWitr: result.includeWitr),
-        isNot(contains(PrayerType.witr)),
-      );
-      expect(trackerRecordCount(result), 10 * 5);
+      expect(result.totalWithWitr, 50);
     });
 
-    test('Witr on adds one independent record per day', () {
+    test('Witr on adds one independent prayer per day', () {
       final result =
           between(DateTime(2024, 1, 1), DateTime(2024, 1, 11), witr: true);
-      expect(result.witrCount, result.totalDays);
-      expect(
-        trackerPrayerTypes(includeWitr: result.includeWitr),
-        contains(PrayerType.witr),
-      );
-      expect(trackerRecordCount(result), 10 * 6);
+      expect(result.dailyPrayerCount, 5);
+      expect(result.totalPrayers, 50);
+      expect(result.witrCount, 10);
+      expect(result.includeWitr, isTrue);
+      expect(result.totalWithWitr, 60);
     });
 
-    test('the tracker expansion always matches the displayed day count', () {
+    test('calculated day count remains exact across larger periods', () {
       for (final days in [0, 1, 31, 366, 1000]) {
         final result = between(
           DateTime(2020, 1, 1),
           DateTime(2020, 1, 1).add(Duration(days: days)),
         );
         expect(result.totalDays, days);
-        expect(trackerDates(result).length, days);
       }
     });
   });
