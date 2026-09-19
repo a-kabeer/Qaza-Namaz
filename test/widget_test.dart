@@ -9,6 +9,7 @@ import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/data/notifications/local_notification_service.dart';
 import 'package:qaza_namaz/features/notifications/notification_controller.dart';
+import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'support/in_memory_qaza_repository.dart';
 
 class _TestNotificationScheduler implements NotificationScheduler {
@@ -71,11 +72,9 @@ Future<void> _openAuth(WidgetTester tester) async {
     notificationSchedulerProvider.overrideWithValue(
       _TestNotificationScheduler(),
     )
-  ], child: const QazaNamazApp()));
-  await tester.pump(const Duration(milliseconds: 700));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Get Started'));
-  await tester.pumpAndSettle();
+  ], child: const TestApp(home: AuthenticationScreen())));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 void main() {
