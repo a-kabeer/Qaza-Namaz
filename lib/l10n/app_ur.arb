@@ -9,7 +9,7 @@
   "navKnowledge": "معلومات",
   "settingsRemindersSection": "یاد دہانیاں",
   "settingsRemindersSubtitle": "قضا مکمل کرنے کی روزانہ یاد دہانی۔",
-  "settingsBackupSection": "بیک اپ اور ڈیٹا",
+  "settingsBackupSection": "ڈیٹا اور اسٹوریج",
   "settingsBackupSubtitle": "کلاؤڈ سنک، برآمد اور درآمد۔",
   "navSettings": "ترتیبات",
 
@@ -408,6 +408,8 @@
   "cloudSyncProblem": "سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
 
   "settingsTitle": "ترتیبات",
+  "settingsPreferences": "ترجیحات",
+  "settingsPreferencesSubtitle": "زبان اور ظاہری شکل کی ترتیبات۔",
   "settingsAppearance": "ظاہری شکل",
   "settingsAppearanceSubtitle": "منتخب کریں کہ ایپ اس ڈیوائس پر کیسی نظر آئے۔",
   "settingsThemeSystem": "سسٹم",
