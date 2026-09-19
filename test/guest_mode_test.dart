@@ -244,10 +244,12 @@ void main() {
         SharedPreferences.setMockInitialValues(
             {GuestSessionNotifier.storageKey: true});
       }
+      final effectiveAuth = auth ?? _FakeAuthRepository();
+      if (auth == null) addTearDown(effectiveAuth.dispose);
       await tester.pumpWidget(ProviderScope(
         overrides: [
           qazaRepositoryProvider.overrideWithValue(repository),
-          if (auth != null) authRepositoryProvider.overrideWithValue(auth),
+          authRepositoryProvider.overrideWithValue(effectiveAuth),
         ],
         child: const TestApp(home: AuthGate()),
       ));
