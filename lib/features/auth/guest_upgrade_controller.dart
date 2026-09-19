@@ -120,6 +120,15 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       await _persistPendingDecision(account.id);
       state = GuestUpgradeState(pendingAccount: account);
       return true;
+    } on AuthenticationCancelledException {
+      if (wasGuest) {
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        await _clearPendingDecision();
+      }
+      // A user cancellation is not an authentication/configuration failure.
+      // Keep the current session exactly where it was before the attempt.
+      state = const GuestUpgradeState();
+      return false;
     } catch (error) {
       // A guest must never be left partially switched into an authenticated
       // account after a failed sign-in/preflight operation.
@@ -136,15 +145,6 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       }
 
       state = GuestUpgradeState(error: error.toString());
-      return false;
-    } on AuthenticationCancelledException {
-      if (wasGuest) {
-        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
-        await _clearPendingDecision();
-      }
-      // A user cancellation is not an authentication/configuration failure.
-      // Keep the current session exactly where it was before the attempt.
-      state = const GuestUpgradeState();
       return false;
     }
   }
