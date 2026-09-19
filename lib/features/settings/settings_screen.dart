@@ -40,9 +40,8 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           if (ref.watch(isGuestProvider)) ...[
-            SettingsSection(
-              title: l10n.settingsBackupSection,
-              subtitle: l10n.settingsBackupSubtitle,
+            AppCard(
+              padding: EdgeInsets.zero,
               child: SettingsNavRow(
                 key: const Key('settings_backup_sign_in'),
                 icon: Icons.cloud_upload_outlined,
@@ -53,10 +52,10 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
           ],
-          SettingsSection(
-            title: l10n.settingsAccountSection,
-            subtitle: l10n.settingsAccountSubtitle,
+          AppCard(
+            padding: EdgeInsets.zero,
             child: SettingsNavRow(
+              key: const Key('settings_account'),
               icon: Icons.account_circle_outlined,
               title: l10n.settingsAccountSection,
               subtitle: _accountSubtitle(l10n, account),
@@ -65,77 +64,102 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           SettingsSection(
-            title: l10n.settingsLanguage,
-            subtitle: l10n.settingsLanguageSubtitle,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SegmentedButton<String>(
-                    key: const Key('settings_language'),
-                    segments: [
-                      ButtonSegment(
-                        value: 'en',
-                        icon: const Icon(Icons.language_outlined),
-                        label: Text(l10n.languageEnglish),
+            title: l10n.settingsPreferences,
+            subtitle: l10n.settingsPreferencesSubtitle,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.settingsLanguage,
+                        style: theme.textTheme.titleMedium,
                       ),
-                      ButtonSegment(
-                        value: 'ur',
-                        label: Text(l10n.languageUrdu),
+                      const SizedBox(height: 8),
+                      SegmentedButton<String>(
+                        key: const Key('settings_language'),
+                        segments: [
+                          ButtonSegment(
+                            value: 'en',
+                            icon: const Icon(Icons.language_outlined),
+                            label: Text(l10n.languageEnglish),
+                          ),
+                          ButtonSegment(
+                            value: 'ur',
+                            label: Text(l10n.languageUrdu),
+                          ),
+                        ],
+                        selected: {locale.languageCode},
+                        onSelectionChanged: (value) {
+                          final selected = value.first;
+                          if (selected != locale.languageCode) {
+                            ref
+                                .read(localeProvider.notifier)
+                                .set(Locale(selected));
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.settingsLanguageNote,
+                        style: theme.textTheme.bodySmall,
                       ),
                     ],
-                    selected: {locale.languageCode},
-                    onSelectionChanged: (value) {
-                      final selected = value.first;
-                      if (selected != locale.languageCode) {
-                        ref.read(localeProvider.notifier).set(Locale(selected));
-                      }
-                    },
                   ),
-                  const SizedBox(height: 8),
-                  Text(l10n.settingsLanguageNote,
-                      style: theme.textTheme.bodySmall),
-                ],
-              ),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.settingsAppearance,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<AppThemeMode>(
+                        key: const Key('settings_theme_mode'),
+                        segments: [
+                          ButtonSegment(
+                            value: AppThemeMode.system,
+                            icon: const Icon(Icons.brightness_6_outlined),
+                            label: Text(l10n.settingsThemeSystem),
+                          ),
+                          ButtonSegment(
+                            value: AppThemeMode.light,
+                            icon: const Icon(Icons.light_mode_outlined),
+                            label: Text(l10n.settingsThemeLight),
+                          ),
+                          ButtonSegment(
+                            value: AppThemeMode.dark,
+                            icon: const Icon(Icons.dark_mode_outlined),
+                            label: Text(l10n.settingsThemeDark),
+                          ),
+                        ],
+                        selected: {themeMode},
+                        onSelectionChanged: (value) {
+                          final selected = value.first;
+                          if (selected != themeMode) {
+                            ref
+                                .read(themeModeProvider.notifier)
+                                .set(selected);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.settingsAppearance,
-            subtitle: l10n.settingsAppearanceSubtitle,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SegmentedButton<AppThemeMode>(
-                key: const Key('settings_theme_mode'),
-                segments: [
-                  ButtonSegment(
-                      value: AppThemeMode.system,
-                      icon: const Icon(Icons.brightness_6_outlined),
-                      label: Text(l10n.settingsThemeSystem)),
-                  ButtonSegment(
-                      value: AppThemeMode.light,
-                      icon: const Icon(Icons.light_mode_outlined),
-                      label: Text(l10n.settingsThemeLight)),
-                  ButtonSegment(
-                      value: AppThemeMode.dark,
-                      icon: const Icon(Icons.dark_mode_outlined),
-                      label: Text(l10n.settingsThemeDark)),
-                ],
-                selected: {themeMode},
-                onSelectionChanged: (value) {
-                  final selected = value.first;
-                  if (selected != themeMode)
-                    ref.read(themeModeProvider.notifier).set(selected);
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.settingsRemindersSection,
-            subtitle: l10n.settingsRemindersSubtitle,
+          AppCard(
+            padding: EdgeInsets.zero,
             child: SettingsNavRow(
+              key: const Key('settings_notifications'),
               icon: Icons.notifications_none,
               title: l10n.notificationsTitle,
               subtitle: l10n.settingsNotificationsRowSubtitle,
@@ -146,40 +170,21 @@ class SettingsScreen extends ConsumerWidget {
           SettingsSection(
             title: l10n.settingsBackupSection,
             subtitle: l10n.settingsBackupSubtitle,
-            child: Column(
-              children: [
-                SettingsNavRow(
-                  icon: Icons.cloud_outlined,
-                  title: l10n.cloudSyncTitle,
-                  subtitle: l10n.settingsDataCloudSubtitle,
-                  onTap: () => open(const DataCloudScreen()),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                // Export and Import are two entries onto the one screen that
-                // performs both, rather than a second copy of that flow.
-                SettingsNavRow(
-                  icon: Icons.file_upload_outlined,
-                  title: l10n.dataExportTitle,
-                  subtitle: l10n.dataExportBody,
-                  onTap: () => open(const QazaDataManagementScreen()),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                SettingsNavRow(
-                  icon: Icons.file_download_outlined,
-                  title: l10n.dataImportTitle,
-                  subtitle: l10n.dataImportBody,
-                  onTap: () => open(const QazaDataManagementScreen()),
-                ),
-              ],
+            child: SettingsNavRow(
+              key: const Key('settings_data_cloud'),
+              icon: Icons.cloud_outlined,
+              title: l10n.settingsDataCloud,
+              subtitle: l10n.settingsDataCloudSubtitle,
+              onTap: () => open(const DataCloudScreen()),
             ),
           ),
           const SizedBox(height: 12),
           const _ResetQazaCounterRow(),
           const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.settingsAboutSection,
-            subtitle: l10n.settingsAboutSubtitle,
+          AppCard(
+            padding: EdgeInsets.zero,
             child: SettingsNavRow(
+              key: const Key('settings_about'),
               icon: Icons.info_outline,
               title: l10n.settingsAboutSection,
               subtitle: l10n.settingsAboutRowSubtitle(appDisplayVersion),
@@ -190,7 +195,6 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
-
   String _accountSubtitle(AppLocalizations l10n, AppUser? account) {
     if (account == null || account.email.isEmpty) {
       return l10n.settingsGoogleSignIn;
