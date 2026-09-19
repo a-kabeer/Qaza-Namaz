@@ -50,7 +50,6 @@ class GuestSessionNotifier extends Notifier<bool> {
 final guestSessionProvider =
     NotifierProvider<GuestSessionNotifier, bool>(GuestSessionNotifier.new);
 
-
 /// Blocks the normal account ledger while a guest-to-account upgrade is
 /// awaiting the user's explicit data decision.
 ///
