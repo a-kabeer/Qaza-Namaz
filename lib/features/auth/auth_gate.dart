@@ -53,9 +53,18 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     if (splash) return const SplashScreen();
 
     final auth = ref.watch(authStateProvider);
+    final upgrade = ref.watch(guestUpgradeControllerProvider);
     if (auth.isLoading && !auth.hasValue) return const SplashScreen();
+    if (upgrade.restoring) return const SplashScreen();
 
     final user = auth.valueOrNull;
+
+    // Firebase can become authenticated before the guest data decision is
+    // complete. Keep the user on the auth/decision surface until that state is
+    // resolved rather than entering the account workspace early.
+    if (upgrade.running || upgrade.awaitingDecision) {
+      return const AuthenticationScreen();
+    }
     // A guest reaches the workspace on the same footing as an account: the
     // ledger is local, but every screen works.
     if (user == null && ref.watch(guestSessionProvider)) {
