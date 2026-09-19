@@ -10,7 +10,7 @@
   "navKnowledge": "Knowledge",
   "settingsRemindersSection": "Reminders",
   "settingsRemindersSubtitle": "Daily reminder to complete your Qaza.",
-  "settingsBackupSection": "Backup & Data",
+  "settingsBackupSection": "Data & Storage",
   "settingsBackupSubtitle": "Cloud sync, export and import.",
   "navSettings": "Settings",
 
@@ -481,6 +481,8 @@
   "cloudSyncProblem": "Sync problem — your data is safe on this device.",
 
   "settingsTitle": "Settings",
+  "settingsPreferences": "Preferences",
+  "settingsPreferencesSubtitle": "Language and appearance settings.",
   "settingsAppearance": "Appearance",
   "settingsAppearanceSubtitle": "Choose how the app looks on this device.",
   "settingsThemeSystem": "System",
