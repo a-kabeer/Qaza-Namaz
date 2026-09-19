@@ -357,7 +357,7 @@ class _AboutYouStep extends StatelessWidget {
                     if (state.balighMode == BalighInputMode.age)
                       DropdownButtonFormField<int>(
                         key: const Key('calculator_baligh_age'),
-                        value: state.balighAge,
+                        initialValue: state.balighAge,
                         decoration:
                             InputDecoration(labelText: l10n.calcBalighAgeLabel),
                         items: [
@@ -503,7 +503,7 @@ class _PrayerHistoryStep extends StatelessWidget {
                         DropdownButtonFormField<int>(
                           key: const Key('calculator_prayer_start_age'),
                           // Never before Baligh, never beyond today's age.
-                          value: state.prayerStartAge
+                          initialValue: state.prayerStartAge
                               .clamp(state.prayerStartAgeMin!,
                                   state.prayerStartAgeMax!)
                               .toInt(),

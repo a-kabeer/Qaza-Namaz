@@ -29,9 +29,10 @@ class InMemoryQazaRepository implements QazaRepository {
       DateTime? afterOriginalDate,
       String? afterId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null))
+    if ((afterOriginalDate == null) != (afterId == null)) {
       throw ArgumentError(
           'afterOriginalDate and afterId must be provided together');
+    }
     final records = _records.values
         .where((r) => r.userId == userId)
         .where((r) => prayerType == null || r.prayerType == prayerType)
@@ -131,13 +132,17 @@ class InMemoryQazaRepository implements QazaRepository {
     if (_records.values.any((r) =>
         r.userId == record.userId &&
         r.prayerType == record.prayerType &&
-        _sameDate(r.originalDate, record.originalDate))) return;
+        _sameDate(r.originalDate, record.originalDate))) {
+      return;
+    }
     _records[record.id] = record;
   }
 
   @override
   Future<void> addRecords(List<QazaRecord> records) async {
-    for (final record in records) await addRecord(record);
+    for (final record in records) {
+      await addRecord(record);
+    }
   }
 
   @override

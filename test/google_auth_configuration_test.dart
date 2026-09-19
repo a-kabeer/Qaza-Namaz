@@ -45,7 +45,9 @@ void main() {
       clientInfo['mobilesdk_app_id'],
       '1:895430705174:android:1e8d352d65428a4a3c7537',
     );
-    expect(androidOauth['certificate_hash'], isNotEmpty);
+    final androidInfo =
+        androidOauth['android_info'] as Map<String, dynamic>;
+    expect(androidInfo['certificate_hash'], isNotEmpty);
     final firebaseOptions =
         File('lib/firebase_options.dart').readAsStringSync();
     expect(firebaseOptions, contains(clientInfo['mobilesdk_app_id'] as String));

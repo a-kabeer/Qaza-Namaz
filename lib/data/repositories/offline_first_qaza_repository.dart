@@ -76,7 +76,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   /// interrupted account switch abandons the run, and the next one supersedes
   /// it through [_sessionGeneration].
   Future<void> _bootstrap(String userId, int generation) async {
-    _emit(SyncState(status: SyncStatus.bootstrapping, pendingCount: 0));
+    _emit(const SyncState(status: SyncStatus.bootstrapping, pendingCount: 0));
     try {
       // Emptiness is probed with a single-record page, never by materializing
       // the local snapshot: startup must stay bounded on a 10,000-record
@@ -209,8 +209,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
       DateTime? to,
       DateTime? afterOriginalDate,
       String? afterId}) async {
-    if (userId != _activeUserId)
+    if (userId != _activeUserId) {
       return const QazaPage(records: [], hasMore: false);
+    }
     await ensureHydrated();
     final generation = _sessionGeneration;
     final page = await _localStore.getPage(
@@ -222,8 +223,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
         to: to,
         afterOriginalDate: afterOriginalDate,
         afterId: afterId);
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       return const QazaPage(records: [], hasMore: false);
+    }
     return QazaPage(records: page.records, hasMore: page.hasMore);
   }
 
@@ -235,8 +237,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final generation = _sessionGeneration;
     final record = await _localStore.getOldestPending(
         userId: userId, prayerType: prayerType);
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       return null;
+    }
     return record;
   }
 
@@ -250,8 +253,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
       DateTime? to,
       DateTime? beforeOriginalDate,
       String? beforeId}) async {
-    if (userId != _activeUserId)
+    if (userId != _activeUserId) {
       return const QazaHistoryPage(records: [], hasMore: false);
+    }
     await ensureHydrated();
     final generation = _sessionGeneration;
     final page = await _localStore.getHistoryPage(
@@ -263,8 +267,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
         to: to,
         beforeOriginalDate: beforeOriginalDate,
         beforeId: beforeId);
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       return const QazaHistoryPage(records: [], hasMore: false);
+    }
     return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
   }
 
@@ -275,15 +280,17 @@ class OfflineFirstQazaRepository implements QazaRepository {
     await ensureHydrated();
     final generation = _sessionGeneration;
     final result = await _localStore.getProgressSummary(userId: userId);
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       return QazaProgressSummary.empty();
+    }
     return result;
   }
 
   @override
   Future<void> addRecord(QazaRecord record) async {
-    if (record.userId != _activeUserId)
+    if (record.userId != _activeUserId) {
       throw StateError('Cannot add a Qaza record for a non-active user.');
+    }
     await addRecords([record]);
   }
 
@@ -291,13 +298,15 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<void> addRecords(List<QazaRecord> records) async {
     if (records.isEmpty) return;
     final userId = _activeUserId;
-    if (userId == null)
+    if (userId == null) {
       throw StateError('Cannot add Qaza records while signed out.');
+    }
     final generation = _sessionGeneration;
     await _ensureLoaded();
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       throw StateError(
           'Authentication session changed while loading Qaza data.');
+    }
     final keys = {
       for (final r in _records.values)
         '${r.prayerType.name}|${r.originalDate.year}-${r.originalDate.month}-${r.originalDate.day}'
@@ -307,8 +316,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
       if (r.userId != userId ||
           _records.containsKey(r.id) ||
           !keys.add(
-              '${r.prayerType.name}|${r.originalDate.year}-${r.originalDate.month}-${r.originalDate.day}'))
+              '${r.prayerType.name}|${r.originalDate.year}-${r.originalDate.month}-${r.originalDate.day}')) {
         continue;
+      }
       _records[r.id] = r;
       fresh.add(r);
     }
@@ -401,13 +411,15 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
   @override
   Future<void> resetUserRecords({required String userId}) async {
-    if (userId != _activeUserId)
+    if (userId != _activeUserId) {
       throw StateError('Cannot reset Qaza records for a non-active user.');
+    }
     final generation = _sessionGeneration;
     await _ensureLoaded();
-    if (generation != _sessionGeneration || userId != _activeUserId)
+    if (generation != _sessionGeneration || userId != _activeUserId) {
       throw StateError(
           'Authentication session changed while loading Qaza data.');
+    }
     _records.clear();
     // Queued adds and completions name records that no longer exist, so the
     // reset replaces the outbox instead of joining the back of it. Anything
@@ -494,8 +506,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     while (_outbox.isNotEmpty) {
       if (generation != _sessionGeneration || userId != _activeUserId) return;
       final op = _outbox.first;
-      if (op.userId != userId)
+      if (op.userId != userId) {
         throw StateError('Outbox contains an operation for a different user.');
+      }
       try {
         switch (op.type) {
           case SyncOpType.add:
@@ -504,8 +517,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
               await _persistOutbox();
               continue;
             }
-            if (op.record!.userId != userId)
+            if (op.record!.userId != userId) {
               throw StateError('Outbox add operation user mismatch.');
+            }
             await _remote.addRecord(op.record!);
             break;
           case SyncOpType.complete:
@@ -543,8 +557,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     };
     final now = _now();
     for (final remote in remoteRecords) {
-      if (remote.userId != userId)
+      if (remote.userId != userId) {
         throw StateError('Remote returned a Qaza record for a different user.');
+      }
       final local = _records[remote.id];
       if (local == null) {
         _records[remote.id] = remote;
@@ -583,14 +598,17 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
   Future<void> _persistSnapshot() async {
     final userId = _activeUserId;
-    if (userId != null)
+    if (userId != null) {
       await _localStore.saveRecordsAndOutbox(
           userId, _records.values.toList(), _outbox);
+    }
   }
 
   Future<void> _persistOutbox() async {
     final userId = _activeUserId;
-    if (userId != null) await _localStore.saveOutbox(userId, _outbox);
+    if (userId != null) {
+      await _localStore.saveOutbox(userId, _outbox);
+    }
   }
 
   void _emit(SyncState state) {
@@ -599,20 +617,22 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   void _emitPending() {
-    if (_activeUserId != null)
+    if (_activeUserId != null) {
       _emit(SyncState(
           status: _isOnline ? SyncStatus.pendingSync : SyncStatus.offline,
           lastSyncAt: _lastSyncAt,
           pendingCount: _outbox.length));
+    }
   }
 
   void _onConnectivityChanged(bool online) {
     _isOnline = online;
-    if (!online)
+    if (!online) {
       _emit(SyncState(
           status: SyncStatus.offline,
           lastSyncAt: _lastSyncAt,
           pendingCount: _outbox.length));
+    }
     // Back online is a reconciliation point, so this one pulls. It no longer
     // waits for the ledger to have been paged in: a queued completion must
     // flush whether or not anything has read the records this session.

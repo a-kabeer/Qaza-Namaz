@@ -30,7 +30,7 @@ class WelcomeScreen extends StatelessWidget {
                     width: 84,
                     height: 84,
                     decoration: BoxDecoration(
-                      color: scheme.primary.withOpacity(.10),
+                      color: scheme.primary.withValues(alpha: .10),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(Icons.mosque_rounded,

@@ -14,6 +14,7 @@ const String guestUserId = 'guest';
 /// migrated or explicitly retired after the user's decision.
 class GuestSessionNotifier extends Notifier<bool> {
   static const String storageKey = 'qaza_guest_mode';
+  bool _explicitStateSet = false;
 
   @override
   bool build() {
@@ -24,7 +25,11 @@ class GuestSessionNotifier extends Notifier<bool> {
   Future<bool> restore() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      state = prefs.getBool(storageKey) ?? false;
+      // A startup restore can race an explicit start/end action. Never let a
+      // stale persisted value overwrite a state the user has just chosen.
+      if (!_explicitStateSet) {
+        state = prefs.getBool(storageKey) ?? false;
+      }
     } catch (_) {
       // An unreadable store simply starts at the welcome screen.
     }
@@ -46,6 +51,7 @@ class GuestSessionNotifier extends Notifier<bool> {
   Future<void> end() => _set(false);
 
   Future<void> _set(bool value) async {
+    _explicitStateSet = true;
     state = value;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -67,6 +73,7 @@ final guestSessionProvider =
 /// continue to expose the guest ledger until merge/use-account/cancel finishes.
 class GuestUpgradePendingNotifier extends Notifier<bool> {
   static const String storageKey = 'qaza_guest_upgrade_pending';
+  bool _explicitStateSet = false;
 
   @override
   bool build() {
@@ -77,13 +84,16 @@ class GuestUpgradePendingNotifier extends Notifier<bool> {
   Future<void> restore() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      state = prefs.getBool(storageKey) ?? false;
+      if (!_explicitStateSet) {
+        state = prefs.getBool(storageKey) ?? false;
+      }
     } catch (_) {
       // An unreadable marker leaves the normal session behavior intact.
     }
   }
 
   Future<void> setPending(bool value) async {
+    _explicitStateSet = true;
     state = value;
     try {
       final prefs = await SharedPreferences.getInstance();

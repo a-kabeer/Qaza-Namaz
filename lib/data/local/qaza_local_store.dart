@@ -118,11 +118,13 @@ abstract class QazaLocalStore {
       DateTime? afterOriginalDate,
       String? afterId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null))
+    if ((afterOriginalDate == null) != (afterId == null)) {
       throw ArgumentError(
           'afterOriginalDate and afterId must be provided together');
-    if (from != null && to != null && from.isAfter(to))
+    }
+    if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
+    }
     final snapshot = await load();
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
@@ -134,13 +136,14 @@ abstract class QazaLocalStore {
         final d = a.originalDate.compareTo(b.originalDate);
         return d != 0 ? d : a.id.compareTo(b.id);
       });
-    if (afterOriginalDate != null)
+    if (afterOriginalDate != null) {
       records = records
           .where((r) =>
               r.originalDate.isAfter(afterOriginalDate) ||
               (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
                   r.id.compareTo(afterId!) > 0))
           .toList();
+    }
     final hasMore = records.length > limit;
     return LocalQazaPage(
         records: records.take(limit).toList(growable: false), hasMore: hasMore);
@@ -166,11 +169,13 @@ abstract class QazaLocalStore {
       DateTime? beforeOriginalDate,
       String? beforeId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((beforeOriginalDate == null) != (beforeId == null))
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
       throw ArgumentError(
           'beforeOriginalDate and beforeId must be provided together');
-    if (from != null && to != null && from.isAfter(to))
+    }
+    if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
+    }
     final snapshot = await load();
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
@@ -182,13 +187,14 @@ abstract class QazaLocalStore {
         final d = b.originalDate.compareTo(a.originalDate);
         return d != 0 ? d : b.id.compareTo(a.id);
       });
-    if (beforeOriginalDate != null)
+    if (beforeOriginalDate != null) {
       records = records
           .where((r) =>
               r.originalDate.isBefore(beforeOriginalDate) ||
               (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
                   r.id.compareTo(beforeId!) < 0))
           .toList();
+    }
     final hasMore = records.length > limit;
     return LocalQazaHistoryPage(
         records: records.take(limit).toList(growable: false), hasMore: hasMore);

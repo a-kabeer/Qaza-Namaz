@@ -434,13 +434,17 @@ void main() {
         .read(guestUpgradeControllerProvider.notifier)
         .signInAndMigrate();
 
+    expect(
+      container.read(guestUpgradeControllerProvider).pendingAccount,
+      isNotNull,
+    );
+
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: const TestApp(home: AuthenticationScreen()),
       ),
     );
-    await tester.pump();
 
     expect(find.text('Guest progress found'), findsOneWidget);
     expect(find.text('Merge Data'), findsOneWidget);

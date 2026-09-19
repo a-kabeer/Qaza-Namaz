@@ -20,8 +20,9 @@ class FirestoreQazaRepository implements QazaRepository {
       PrayerType? prayerType,
       QazaStatus? status}) async {
     Query<Map<String, dynamic>> query = _recordsCollection(userId);
-    if (prayerType != null)
+    if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
+    }
     if (status != null) query = query.where('status', isEqualTo: status.name);
     final records = (await query.get()).docs.map(_fromDocument).toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
@@ -39,25 +40,31 @@ class FirestoreQazaRepository implements QazaRepository {
       DateTime? afterOriginalDate,
       String? afterId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null))
+    if ((afterOriginalDate == null) != (afterId == null)) {
       throw ArgumentError(
           'afterOriginalDate and afterId must be provided together');
-    if (from != null && to != null && from.isAfter(to))
+    }
+    if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
+    }
     Query<Map<String, dynamic>> query = _recordsCollection(userId);
-    if (prayerType != null)
+    if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
+    }
     if (status != null) query = query.where('status', isEqualTo: status.name);
-    if (from != null)
+    if (from != null) {
       query = query.where('originalDate',
           isGreaterThanOrEqualTo: QazaDate.key(QazaDate.normalize(from)));
-    if (to != null)
+    }
+    if (to != null) {
       query = query.where('originalDate',
           isLessThanOrEqualTo: QazaDate.key(QazaDate.normalize(to)));
+    }
     query = query.orderBy('originalDate').orderBy(FieldPath.documentId);
-    if (afterOriginalDate != null)
+    if (afterOriginalDate != null) {
       query = query.startAfter(
           [QazaDate.key(QazaDate.normalize(afterOriginalDate)), afterId]);
+    }
     final snapshot = await query.limit(limit + 1).get();
     final hasMore = snapshot.docs.length > limit;
     final docs = hasMore ? snapshot.docs.take(limit) : snapshot.docs;
@@ -88,27 +95,33 @@ class FirestoreQazaRepository implements QazaRepository {
       DateTime? beforeOriginalDate,
       String? beforeId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if (from != null && to != null && from.isAfter(to))
+    if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
-    if ((beforeOriginalDate == null) != (beforeId == null))
+    }
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
       throw ArgumentError(
           'beforeOriginalDate and beforeId must be provided together');
+    }
     Query<Map<String, dynamic>> query = _recordsCollection(userId);
-    if (prayerType != null)
+    if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
+    }
     if (status != null) query = query.where('status', isEqualTo: status.name);
-    if (from != null)
+    if (from != null) {
       query = query.where('originalDate',
           isGreaterThanOrEqualTo: QazaDate.key(QazaDate.normalize(from)));
-    if (to != null)
+    }
+    if (to != null) {
       query = query.where('originalDate',
           isLessThanOrEqualTo: QazaDate.key(QazaDate.normalize(to)));
+    }
     query = query
         .orderBy('originalDate', descending: true)
         .orderBy(FieldPath.documentId, descending: true);
-    if (beforeOriginalDate != null)
+    if (beforeOriginalDate != null) {
       query = query.startAfter(
           [QazaDate.key(QazaDate.normalize(beforeOriginalDate)), beforeId]);
+    }
     final snapshot = await query.limit(limit + 1).get();
     final hasMore = snapshot.docs.length > limit;
     final docs = hasMore ? snapshot.docs.take(limit) : snapshot.docs;
@@ -133,7 +146,9 @@ class FirestoreQazaRepository implements QazaRepository {
 
   @override
   Future<void> addRecords(List<QazaRecord> records) async {
-    for (final record in records) await addRecord(record);
+    for (final record in records) {
+      await addRecord(record);
+    }
   }
 
   @override
@@ -159,7 +174,9 @@ class FirestoreQazaRepository implements QazaRepository {
         final existingCompletedAt = record.completedAt;
         if (record.status == QazaStatus.completed &&
             existingCompletedAt != null &&
-            !completedAt.isBefore(existingCompletedAt)) return;
+            !completedAt.isBefore(existingCompletedAt)) {
+          return;
+        }
         transaction.update(reference, {
           'status': QazaStatus.completed.name,
           'completedAt': Timestamp.fromDate(completedAt),
@@ -178,7 +195,9 @@ class FirestoreQazaRepository implements QazaRepository {
       final snapshot = await collection.limit(_deleteBatchSize).get();
       if (snapshot.docs.isEmpty) return;
       final batch = _firestore.batch();
-      for (final document in snapshot.docs) batch.delete(document.reference);
+      for (final document in snapshot.docs) {
+        batch.delete(document.reference);
+      }
       await batch.commit();
       if (snapshot.docs.length < _deleteBatchSize) return;
     }
@@ -200,8 +219,9 @@ class FirestoreQazaRepository implements QazaRepository {
 
   QazaRecord _fromDocument(DocumentSnapshot<Map<String, dynamic>> document) {
     final data = document.data();
-    if (data == null)
+    if (data == null) {
       throw StateError('Qaza record ${document.id} has no data.');
+    }
     final prayerType = PrayerType.values.firstWhere(
         (value) => value.name == data['prayerType'],
         orElse: () =>

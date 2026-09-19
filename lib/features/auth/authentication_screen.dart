@@ -388,7 +388,7 @@ class _BrandHeader extends StatelessWidget {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: scheme.primary.withOpacity(.10),
+            color: scheme.primary.withValues(alpha: .10),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Icon(

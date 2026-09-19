@@ -60,11 +60,7 @@ class NotificationSettingsState {
   String get formattedTime {
     final displayHour = hour % 12 == 0 ? 12 : hour % 12;
     final suffix = hour >= 12 ? 'PM' : 'AM';
-    return displayHour.toString() +
-        ':' +
-        minute.toString().padLeft(2, '0') +
-        ' ' +
-        suffix;
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
   }
 
   NotificationSettingsState copyWith({
@@ -109,7 +105,7 @@ class NotificationSettingsNotifier
 
   String _scopedKey(String baseKey) {
     final userId = ref.read(activeUserIdProvider);
-    return '$baseKey:' + (userId ?? 'anonymous');
+    return '$baseKey:${userId ?? 'anonymous'}';
   }
 
   @override
@@ -473,10 +469,7 @@ class NotificationSettingsNotifier
   void _logPlatformFailure(String operation, Object error, StackTrace stack) {
     if (kDebugMode) {
       debugPrint(
-        '[notifications] $operation failed: ' +
-            error.runtimeType.toString() +
-            ': ' +
-            error.toString(),
+        '[notifications] $operation failed: ${error.runtimeType}: $error',
       );
       debugPrintStack(stackTrace: stack);
     }
