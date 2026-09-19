@@ -62,8 +62,10 @@ class LocalNotificationService implements NotificationScheduler {
     if (_initialized) return;
 
     tz_data.initializeTimeZones();
+    // The IANA identifier is what the timezone database is keyed by; the
+    // localized name this also carries is for display, not lookup.
     final timezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezone));
+    tz.setLocalLocation(tz.getLocation(timezone.identifier));
 
     const android = AndroidInitializationSettings('@drawable/ic_stat_qaza');
     const settings = InitializationSettings(

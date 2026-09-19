@@ -3,8 +3,9 @@ plugins {
     // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
-    id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin plugins.
+    // No Kotlin Gradle Plugin: `android.builtInKotlin=true` means AGP 9
+    // compiles this module's Kotlin itself.
+    // The Flutter Gradle Plugin must be applied after the Android plugin.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -43,17 +44,9 @@ android {
     ndkVersion = "28.2.13676358"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
-    }
-
-    kotlin {
-        compilerOptions {
-            // Matches compileOptions above; `kotlinOptions` was removed in
-            // Kotlin 2.3.
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
     }
 
     defaultConfig {
@@ -89,6 +82,15 @@ android {
                 signingConfig = signingConfigs.debug
             }
         }
+    }
+}
+
+// Built-in Kotlin configures itself through the top-level `kotlin` extension
+// AGP registers, not through a block inside `android`. It has to agree with
+// `compileOptions` above or AGP rejects the mismatch.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
