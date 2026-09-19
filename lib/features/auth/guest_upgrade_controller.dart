@@ -137,6 +137,15 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       state = GuestUpgradeState(error: error.toString());
       return false;
+    } on AuthenticationCancelledException {
+      if (wasGuest) {
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        await _clearPendingDecision();
+      }
+      // A user cancellation is not an authentication/configuration failure.
+      // Keep the current session exactly where it was before the attempt.
+      state = const GuestUpgradeState();
+      return false;
     }
   }
 
@@ -194,15 +203,6 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       state = const GuestUpgradeState();
       return true;
-    } on AuthenticationCancelledException {
-      if (wasGuest) {
-        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
-        await _clearPendingDecision();
-      }
-      // A user cancellation is not an authentication/configuration failure.
-      // Keep the current session exactly where it was before the attempt.
-      state = const GuestUpgradeState();
-      return false;
     } catch (error) {
       state = GuestUpgradeState(
         pendingAccount: account,
