@@ -18,10 +18,11 @@ import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository({this.account = const AppUser(
-    id: 'account-1',
-    email: 'account@example.com',
-  )});
+  FakeAuthRepository(
+      {this.account = const AppUser(
+        id: 'account-1',
+        email: 'account@example.com',
+      )});
 
   final AppUser account;
   final controller = StreamController<AppUser?>.broadcast();
@@ -59,12 +60,10 @@ class NoopLocalStore extends QazaLocalStore {
   Future<OfflineCacheSnapshot> load() async => const OfflineCacheSnapshot();
 
   @override
-  Future<void> saveRecords(
-      String userId, List<QazaRecord> records) async {}
+  Future<void> saveRecords(String userId, List<QazaRecord> records) async {}
 
   @override
-  Future<void> saveOutbox(
-      String userId, List<PendingSyncOp> ops) async {}
+  Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {}
 
   @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {}
@@ -155,8 +154,7 @@ void main() {
 
   test('guest sign-in with empty ledger ends guest mode without migration',
       () async {
-    final (container, auth, migration) =
-        await makeContainer(guestData: false);
+    final (container, auth, migration) = await makeContainer(guestData: false);
     final controller = container.read(guestUpgradeControllerProvider.notifier);
 
     expect(await controller.signInAndMigrate(), isTrue);
@@ -166,7 +164,6 @@ void main() {
     expect(container.read(isGuestProvider), isFalse);
     expect(container.read(activeUserIdProvider), auth.account.id);
   });
-
 
   test('guest Google authentication failure keeps guest mode and diagnostic',
       () async {
@@ -189,8 +186,7 @@ void main() {
 
   test('guest sign-in with data pauses on an explicit choice and stays guest',
       () async {
-    final (container, auth, migration) =
-        await makeContainer(guestData: true);
+    final (container, auth, migration) = await makeContainer(guestData: true);
     final controller = container.read(guestUpgradeControllerProvider.notifier);
 
     expect(await controller.signInAndMigrate(), isTrue);
@@ -206,8 +202,7 @@ void main() {
   });
 
   test('Merge Data migrates then retires guest data', () async {
-    final (container, auth, migration) =
-        await makeContainer(guestData: true);
+    final (container, auth, migration) = await makeContainer(guestData: true);
     final controller = container.read(guestUpgradeControllerProvider.notifier);
 
     await controller.signInAndMigrate();
@@ -221,8 +216,7 @@ void main() {
   });
 
   test('Use Account Data retires guest data without migration', () async {
-    final (container, auth, migration) =
-        await makeContainer(guestData: true);
+    final (container, auth, migration) = await makeContainer(guestData: true);
     final controller = container.read(guestUpgradeControllerProvider.notifier);
 
     await controller.signInAndMigrate();
@@ -235,8 +229,7 @@ void main() {
   });
 
   test('Cancel signs out and keeps guest records untouched', () async {
-    final (container, auth, migration) =
-        await makeContainer(guestData: true);
+    final (container, auth, migration) = await makeContainer(guestData: true);
     final controller = container.read(guestUpgradeControllerProvider.notifier);
 
     await controller.signInAndMigrate();
@@ -271,11 +264,9 @@ void main() {
     expect(migration.guestData, isFalse);
   });
 
-
   testWidgets('pending guest upgrade shows all three explicit choices',
       (tester) async {
-    final (container, _, migration) =
-        await makeContainer(guestData: true);
+    final (container, _, migration) = await makeContainer(guestData: true);
 
     await container
         .read(guestUpgradeControllerProvider.notifier)
