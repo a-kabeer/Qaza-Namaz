@@ -52,9 +52,7 @@ void main() {
 
       controller.select(_day(10), isDateSelectable: selectable);
       expect(
-        container.read(calendarControllerProvider).selectedDates,
-        [_day(10)],
-      );
+          container.read(calendarControllerProvider).selectedDates, [_day(10)]);
     });
 
     test('range mode rejects a range containing an unavailable day', () {
@@ -72,13 +70,10 @@ void main() {
       controller.select(_day(15), isDateSelectable: selectable);
 
       expect(
-        container.read(calendarControllerProvider).selectedDates,
-        [_day(10)],
-      );
+          container.read(calendarControllerProvider).selectedDates, [_day(10)]);
     });
 
-    test(
-        'range mode accepts a fully eligible range and expands it for storage',
+    test('range mode accepts a fully eligible range and expands it for storage',
         () {
       final container = ProviderContainer(
         overrides: [
@@ -168,9 +163,7 @@ void main() {
         ).formatMediumDate(DateTime(2026, 1, 1));
         expect(find.text(localizedDate), findsOneWidget);
         expect(
-          find.byKey(const Key('complete_oldest_pending')),
-          findsOneWidget,
-        );
+            find.byKey(const Key('complete_oldest_pending')), findsOneWidget);
         expect(
           tester
               .widget<AppButton>(
