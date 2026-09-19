@@ -64,63 +64,70 @@ void main() {
     );
   });
 
-  test('migrates records, deduplicates by prayer/date, and is idempotent',
-      () async {
-    final pending = record('pending-id');
-    final completed = record('completed-id',
+  test(
+    'migrates records, deduplicates by prayer/date, and is idempotent',
+    () async {
+      final pending = record('pending-id');
+      final completed = record(
+        'completed-id',
         status: QazaStatus.completed,
         originalDate: DateTime.utc(2020, 1, 2),
-        completedAt: DateTime.utc(2026, 1, 1));
-    final duplicatePending = pending.copyWith(id: 'duplicate-id');
-    final duplicateCompleted = completed.copyWith(id: 'duplicate-completed-id');
-    final prefs = await prefsWith({
-      'user-a': [
-        pending.toJson(),
-        duplicatePending.toJson(),
-        completed.toJson(),
-        duplicateCompleted.toJson()
-      ]
-    });
-    final migrator = SharedPreferencesToDriftMigrator(
-      database: db,
-      preferences: prefs,
-    );
-    final first = await migrator.migrate();
-    final second = await migrator.migrate();
-    expect(first.sourceRecordCount, 4);
-    expect(first.migratedRecordCount, 2);
-    expect(first.duplicateRecordCount, 2);
-    expect(second.alreadyComplete, true);
-    expect(
-      await db.qazaRecordsDao.getAll(userId: 'user-a'),
-      hasLength(2),
-    );
-  });
+        completedAt: DateTime.utc(2026, 1, 1),
+      );
+      final duplicatePending = pending.copyWith(id: 'duplicate-id');
+      final duplicateCompleted =
+          completed.copyWith(id: 'duplicate-completed-id');
+      final prefs = await prefsWith({
+        'user-a': [
+          pending.toJson(),
+          duplicatePending.toJson(),
+          completed.toJson(),
+          duplicateCompleted.toJson(),
+        ],
+      });
+      final migrator = SharedPreferencesToDriftMigrator(
+        database: db,
+        preferences: prefs,
+      );
+      final first = await migrator.migrate();
+      final second = await migrator.migrate();
+      expect(first.sourceRecordCount, 4);
+      expect(first.migratedRecordCount, 2);
+      expect(first.duplicateRecordCount, 2);
+      expect(second.alreadyComplete, true);
+      expect(
+        await db.qazaRecordsDao.getAll(userId: 'user-a'),
+        hasLength(2),
+      );
+    },
+  );
 
   test(
-      'canonicalizes timezone-aware legacy dates as calendar dates before deduplication',
-      () async {
-    final first =
-        record('date-a', originalDate: DateTime(2026, 4, 10, 23, 30));
-    final sameCalendarDate =
-        record('date-b', originalDate: DateTime.utc(2026, 4, 10, 2));
-    final prefs = await prefsWith({
-      'user-a': [first.toJson(), sameCalendarDate.toJson()]
-    });
-    final result = await SharedPreferencesToDriftMigrator(
-      database: db,
-      preferences: prefs,
-    ).migrate();
-    final rows = await db.qazaRecordsDao.getAll(userId: 'user-a');
-    expect(result.sourceRecordCount, 2);
-    expect(result.migratedRecordCount, 1);
-    expect(rows, hasLength(1));
-    expect(rows.single.originalDate, DateTime(2026, 4, 10));
-  });
+    'canonicalizes timezone-aware legacy dates as calendar dates before deduplication',
+    () async {
+      final first =
+          record('date-a', originalDate: DateTime(2026, 4, 10, 23, 30));
+      final sameCalendarDate =
+          record('date-b', originalDate: DateTime.utc(2026, 4, 10, 2));
+      final prefs = await prefsWith({
+        'user-a': [first.toJson(), sameCalendarDate.toJson()],
+      });
+      final result = await SharedPreferencesToDriftMigrator(
+        database: db,
+        preferences: prefs,
+      ).migrate();
+      final rows = await db.qazaRecordsDao.getAll(userId: 'user-a');
+      expect(result.sourceRecordCount, 2);
+      expect(result.migratedRecordCount, 1);
+      expect(rows, hasLength(1));
+      expect(rows.single.originalDate, DateTime(2026, 4, 10));
+    },
+  );
 
   test('malformed legacy JSON does not set completion marker', () async {
-    SharedPreferences.setMockInitialValues(
-        {SharedPreferencesToDriftMigrator.legacyStorageKey: '{invalid-json'});
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesToDriftMigrator.legacyStorageKey: '{invalid-json',
+    });
     final prefs = await SharedPreferences.getInstance();
     expect(
       () => SharedPreferencesToDriftMigrator(
@@ -135,25 +142,27 @@ void main() {
     );
   });
 
-  test('user isolation mismatch aborts migration without marking complete',
-      () async {
-    final mismatched = record('record-a', userId: 'user-b');
-    final prefs = await prefsWith({
-      'user-a': [mismatched.toJson()]
-    });
-    expect(
-      () => SharedPreferencesToDriftMigrator(
-        database: db,
-        preferences: prefs,
-      ).migrate(),
-      throwsStateError,
-    );
-    expect(
-      prefs.getBool(SharedPreferencesToDriftMigrator.migrationKey),
-      isNot(true),
-    );
-    expect(await db.qazaRecordsDao.getAll(userId: 'user-a'), isEmpty);
-  });
+  test(
+    'user isolation mismatch aborts migration without marking complete',
+    () async {
+      final mismatched = record('record-a', userId: 'user-b');
+      final prefs = await prefsWith({
+        'user-a': [mismatched.toJson()],
+      });
+      expect(
+        () => SharedPreferencesToDriftMigrator(
+          database: db,
+          preferences: prefs,
+        ).migrate(),
+        throwsStateError,
+      );
+      expect(
+        prefs.getBool(SharedPreferencesToDriftMigrator.migrationKey),
+        isNot(true),
+      );
+      expect(await db.qazaRecordsDao.getAll(userId: 'user-a'), isEmpty);
+    },
+  );
 
   test('conflicting existing row aborts before completion marker', () async {
     await db.qazaRecordsDao.insertRecord(
@@ -170,7 +179,7 @@ void main() {
     final conflicting =
         record('conflict').copyWith(status: QazaStatus.completed);
     final prefs = await prefsWith({
-      'user-a': [conflicting.toJson()]
+      'user-a': [conflicting.toJson()],
     });
     expect(
       () => SharedPreferencesToDriftMigrator(
@@ -188,7 +197,7 @@ void main() {
   test('unsupported completed marker version is rejected', () async {
     SharedPreferences.setMockInitialValues({
       SharedPreferencesToDriftMigrator.migrationKey: true,
-      SharedPreferencesToDriftMigrator.migrationVersionKey: 999
+      SharedPreferencesToDriftMigrator.migrationVersionKey: 999,
     });
     final prefs = await SharedPreferences.getInstance();
     expect(
@@ -200,22 +209,27 @@ void main() {
     );
   });
 
-  test('concurrent migration calls serialize and only one performs the import',
-      () async {
-    final prefs = await prefsWith({
-      'user-a': [record('concurrent').toJson()]
-    });
-    final migrator = SharedPreferencesToDriftMigrator(
-      database: db,
-      preferences: prefs,
-    );
-    final results = await Future.wait(
-        [migrator.migrate(), migrator.migrate(), migrator.migrate()]);
-    expect(results.where((result) => !result.alreadyComplete), hasLength(1));
-    expect(results.where((result) => result.alreadyComplete), hasLength(2));
-    expect(
-      await db.qazaRecordsDao.getAll(userId: 'user-a'),
-      hasLength(1),
-    );
-  });
+  test(
+    'concurrent migration calls serialize and only one performs the import',
+    () async {
+      final prefs = await prefsWith({
+        'user-a': [record('concurrent').toJson()],
+      });
+      final migrator = SharedPreferencesToDriftMigrator(
+        database: db,
+        preferences: prefs,
+      );
+      final results = await Future.wait([
+        migrator.migrate(),
+        migrator.migrate(),
+        migrator.migrate(),
+      ]);
+      expect(results.where((result) => !result.alreadyComplete), hasLength(1));
+      expect(results.where((result) => result.alreadyComplete), hasLength(2));
+      expect(
+        await db.qazaRecordsDao.getAll(userId: 'user-a'),
+        hasLength(1),
+      );
+    },
+  );
 }
