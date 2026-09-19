@@ -10,7 +10,9 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 
 import 'support/in_memory_qaza_repository.dart';
+import 'support/test_app.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
+import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
@@ -245,6 +247,31 @@ void main() {
     expect(migration.migrateCalls, 2);
     expect(migration.retireCalls, 1);
     expect(migration.guestData, isFalse);
+  });
+
+
+  testWidgets('pending guest upgrade shows all three explicit choices',
+      (tester) async {
+    final (container, _, migration) =
+        await makeContainer(guestData: true);
+
+    await container
+        .read(guestUpgradeControllerProvider.notifier)
+        .signInAndMigrate();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(home: AuthenticationScreen()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Guest progress found'), findsOneWidget);
+    expect(find.text('Merge Data'), findsOneWidget);
+    expect(find.text('Use Account Data'), findsOneWidget);
+    expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
+    expect(migration.migrateCalls, 0);
   });
 
   test('retirement failure does not end the guest session', () async {
