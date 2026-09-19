@@ -40,6 +40,10 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       final guestPersisted =
           prefs.getBool(GuestSessionNotifier.storageKey) ?? false;
 
+      if (guestPersisted) {
+        await ref.read(guestSessionProvider.notifier).ensureRestored();
+      }
+
       if (marker == null || !guestPersisted || currentUser == null) {
         if (marker != null) {
           await prefs.remove(_pendingDecisionKey);
@@ -75,7 +79,12 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   Future<bool> signInAndMigrate() async {
     if (state.running || state.pendingAccount != null) return false;
 
-    final wasGuest = ref.read(guestSessionProvider);
+    // Resolve persisted guest mode before starting Firebase auth. Otherwise a
+    // cold-start tap can authenticate directly into the account namespace and
+    // leave the guest ledger stranded on the device.
+    final wasGuest = await ref
+        .read(guestSessionProvider.notifier)
+        .ensureRestored();
     state = GuestUpgradeState(running: true);
 
     if (wasGuest) {
