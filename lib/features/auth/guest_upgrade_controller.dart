@@ -217,9 +217,9 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     if (ref.read(authRepositoryProvider).currentUser == null) {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
       await _clearPendingDecision();
-      state = GuestUpgradeState(
-        error: signOutError?.toString(),
-      );
+      // Firebase is definitely signed out; keep the guest workspace as the
+      // final state even if the Google SDK reported a secondary sign-out issue.
+      state = const GuestUpgradeState();
       return true;
     }
 
