@@ -2,96 +2,113 @@
 
 Date: 2026-09-19
 Branch: `chore/production-cleanup-audit`
-Baseline: `83a0f33e29e2668d0d9de7d170eec7beeb33f0ef`
-Cleanup head: `3e0aa7032031eeda6d47b24c335fdbbe3001ecbd`
+Base: `main` at `83a0f33e29e2668d0d9de7d170eec7beeb33f0ef`
 
 ## Scope
 
 Audited the repository structure, production Dart layering, navigation composition, state/providers, persistence and migration paths, assets/localization declarations, Android configuration, dependencies, tests, and CI workflow.
 
-Current tree inventory at cleanup head: 263 tracked files, 97 Dart files under `lib/`, and 85 Dart test files.
+Final branch diff contains 6 code/artifact deletions plus one focused regression-test cleanup. No runtime feature, UI redesign, database schema, dependency, asset, or platform integration was removed.
 
-## Cleanup performed
-
-### Definitely dead production files removed
+## Definitely dead items removed
 
 - `dummy` — empty placeholder file with no content or references.
 - `lib/core/widgets/metric_tile.dart` — no production or test references.
-- `lib/core/widgets/progress_overview_card.dart` — no production or test references; superseded by the current Home-specific progress overview.
+- `lib/core/widgets/progress_overview_card.dart` — no production or test references; current Home uses its own canonical progress overview.
 - `lib/core/widgets/section_header.dart` — no production or test references.
-- `lib/features/calculator/calculator_persistence.dart` — no production references; the current calculator no longer persists/restores calculator snapshots and the latest calculator flow removed the associated estimate/source state.
-- `lib/features/calculator/calculator_tracker.dart` — no production references; current calculator uses the calculation domain object directly.
-- `lib/features/home/home_state.dart` — no production references; current Home derives its state from the live progress summary and action conditions.
+- `lib/features/home/home_state.dart` — no production references; Home currently derives actions/content directly from the live progress summary and current flow conditions.
 
-### Obsolete tests removed or consolidated
+These were verified against the production import graph and test references before deletion.
 
-- `test/task_calculator_part10_test.dart` — tested the removed calculator snapshot persistence layer.
-- `test/task_calculator_part7_test.dart` — tested the removed calculator tracker helper layer.
-- `test/calculator_date_boundary_contract_test.dart` — retained all boundary and Witr coverage while removing dependency on the deleted tracker helper.
-- `test/task_calculator_part12_test.dart` — removed obsolete persistence/tracker regression sections and retained current calculator domain + three-step UI regression coverage.
-- `test/task9_test_reconciliation.dart` — removed obsolete HomeStateResolver tests and kept calendar/completion regression coverage.
+## Regression-test cleanup
+
+- `test/task9_test_reconciliation.dart` no longer imports or tests the deleted HomeStateResolver. Its calendar selection, calendar availability, and bounded Complete Qaza coverage remains intact.
+
+No calculator implementation or calculator regression coverage was removed.
+
+## Explicit false-positive correction
+
+During PR verification, the first deletion pass incorrectly classified:
+
+- `lib/features/calculator/calculator_persistence.dart`
+- `lib/features/calculator/calculator_tracker.dart`
+
+as dead because they had no inbound references in the initial limited production scan.
+
+PR CI then proved the missing dependency path: `lib/features/calculator/calculator_controller.dart` imports both files and calls their APIs. Both files and their related tests were restored before the final branch diff was produced.
+
+This was a deliberate evidence-based correction: analyzer/build output was used to strengthen the reference graph rather than weakening the deletion rule.
 
 ## Intentionally retained
 
+### Calculator persistence and tracker helpers
+
+Active production controller dependencies. They must remain until the calculator implementation itself is intentionally refactored and its persisted-data compatibility is addressed.
+
 ### Test-only `DriftQazaRepository`
 
-`lib/data/repositories/drift_qaza_repository.dart` has no production import path because the application composes `OfflineFirstQazaRepository` over `DriftQazaLocalStore` + Firestore. It is still used by multiple database/bounded-read/reset/regression tests.
+`lib/data/repositories/drift_qaza_repository.dart` has no production import path because the application composes `OfflineFirstQazaRepository` over `DriftQazaLocalStore` + Firestore. It remains used by multiple repository/database/bounded-read/reset regression tests, so it is retained as test infrastructure rather than deleted without replacing those guarantees.
 
-It was intentionally retained in this cleanup instead of deleting the test seam without replacing its coverage. This is classified as **probably obsolete / test-only infrastructure**, not active production wiring.
+### SharedPreferences and migrations
 
-### SharedPreferences migration
+SharedPreferences remains required for local user preferences and the one-time legacy-to-Drift migration. No persisted Qaza records or migration logic was removed.
 
-`SharedPreferences` remains required for the one-time legacy-to-Drift migration and for local theme/language preferences. The legacy Qaza ledger migration path was not removed.
+### Knowledge-base assets/localization
 
-### Knowledge-base assets
+English and Urdu knowledge-base JSON/content, schema, localization files, and the Noto Nastaliq font remain because they are active runtime assets/content.
 
-Both English and Urdu knowledge-base JSON files remain declared and are loaded by the bundled repository. They are not hardcoded widget content.
+### Notifications and Android integration
 
-### Notification platform integration
-
-Android notification permissions, scheduled/boot receivers, timezone packages, and the notification-settings MethodChannel remain because the notification feature references them.
+Notification permissions, scheduled/boot receivers, timezone support, and the Android notification-settings MethodChannel remain because the notification feature uses them.
 
 ### Android toolchain
 
-The current AGP/Kotlin/Gradle configuration remains untouched by cleanup. NDK is still exactly:
+No Android build configuration was removed or redesigned. NDK remains exactly:
 
 `28.2.13676358`
 
-## Performance audit findings
+## Dependency and plugin audit
 
-The current architecture already contains the major evidence-backed performance safeguards:
+No dependency/plugin was removed. The declared packages have active roles across Firebase/Auth, Google Sign-In, Drift/SQLite, connectivity, Riverpod, file import/export, notifications/timezone, Hijri conversion, localization, and application support.
 
-- keyset pagination for large ledgers;
-- targeted completion updates instead of full-ledger rewrite;
-- append-only local inserts for large additions;
-- database-backed aggregate counts;
+Because the user requested evidence-based deletion, no package was removed solely due to lack of an obvious direct Dart import.
+
+## Performance audit
+
+The existing implementation already contains the major evidence-backed large-ledger safeguards:
+
+- keyset pagination;
 - bounded oldest-pending lookup;
-- outbox reads separated from ledger reads;
-- remote re-pull limited to startup, explicit sync, and reconnect rather than every mutation.
+- targeted completion updates;
+- append-only local inserts for bulk additions;
+- database-backed aggregate counts;
+- separated outbox reads;
+- remote reconciliation only at startup/explicit-sync/reconnect.
 
-No speculative micro-optimizations were introduced.
+No speculative micro-optimizations were added.
 
-## Dependency/configuration audit
+## Navigation / flow audit
 
-The declared runtime dependencies all have active architectural or feature use in the inspected codebase, including Firebase/Auth, Google Sign-In, Drift/SQLite, connectivity, Riverpod, file picker, notifications, timezone handling, Hijri conversion, and localization.
+The startup path and reachable feature composition were traced through `AuthGate`, `WelcomeScreen`, `AuthenticationScreen`, `WorkspaceShell`, and the feature screens/routes. Active flows reviewed include authentication/guest mode, Home, Qaza tracker, Add Qaza, Complete Qaza, calculator, calendar selection, knowledge base, settings/account, notifications, sync, and data management.
 
-Android manifest receivers/permissions and the Firebase Google-services plugin were retained because they are tied to active integrations.
+The application has no iOS project directory, so Android is the active native platform in this repository.
 
-## Verification baseline
+## Verification
 
-The latest `main` CI run before cleanup was green:
+Latest `main` CI before cleanup was green for:
 
-- Analyze: success
-- Linux tests: success
-- Windows tests: success
-- Android debug APK: success
-- Android release APK: success
+- Analyze
+- Linux tests
+- Windows tests
+- Android debug APK
+- Android release APK
 
-That run corresponded to the baseline commit listed above.
+The cleanup PR also executed its own CI. One initial run caught the calculator false-positive and stopped at analyzer errors; those files/tests were restored. A subsequent run confirmed the formatting stage succeeds before analyzer completion, and the final branch verification is still dependent on the latest PR run completing after the restored calculator files and final report update.
 
-The cleanup branch has not yet been treated as verified until its own CI run completes. Manual device/emulator navigation could not be performed from the GitHub-only execution environment, so navigation confidence is based on static route/flow tracing plus the existing widget/regression test suite and CI build coverage.
+The GitHub-only execution environment does not expose a physical Android emulator/device, so manual device navigation could not be performed. Static route/flow tracing plus widget/regression coverage and Android CI builds were used instead; this is explicitly not represented as manual device verification.
 
 ## Remaining technical debt
 
-- `DriftQazaRepository` remains as a test-only repository implementation and could be retired later by migrating its remaining regression tests directly to the production local-store/repository composition.
-- Historical root/docs/archive status files remain intentionally because they are documentation/history rather than runtime artifacts.
+- `DriftQazaRepository` is test-only infrastructure that could be retired later if its remaining regression coverage is migrated to a different test seam.
+- Historical root/docs/archive status documents remain intentionally; they are documentation/history, not runtime dead code.
+- CI still reports numerous pre-existing analyzer *info* lints/deprecations; they were not broadened into this cleanup because they are unrelated to dead-code removal and would create a larger refactor surface.
