@@ -142,7 +142,7 @@ void main() {
     local.recordsByUser[guestId] = [
       record(guestId, PrayerType.fajr, '2026-02-10'),
     ];
-    local.recordsByUser[guestId]!.first.copyWith(
+    local.recordsByUser[guestId]![0] = local.recordsByUser[guestId]![0].copyWith(
       originalDate: DateTime(2026, 2, 10, 23, 45),
     );
 
