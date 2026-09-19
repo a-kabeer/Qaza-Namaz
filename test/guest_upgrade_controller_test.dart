@@ -1,0 +1,261 @@
+import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
+import 'package:qaza_namaz/features/auth/guest_session.dart';
+import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
+import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
+
+class FakeAuthRepository implements AuthRepository {
+  FakeAuthRepository({this.account = const AppUser(
+    id: 'account-1',
+    email: 'account@example.com',
+  )});
+
+  final AppUser account;
+  final controller = StreamController<AppUser?>.broadcast();
+  AppUser? _current;
+  Object? signInFailure;
+
+  @override
+  AppUser? get currentUser => _current;
+
+  @override
+  Stream<AppUser?> authStateChanges() async* {
+    yield _current;
+    yield* controller.stream;
+  }
+
+  @override
+  Future<AppUser> signInWithGoogle() async {
+    if (signInFailure != null) throw signInFailure!;
+    _current = account;
+    controller.add(account);
+    return account;
+  }
+
+  @override
+  Future<void> signOut() async {
+    _current = null;
+    controller.add(null);
+  }
+
+  Future<void> dispose() => controller.close();
+}
+
+class NoopLocalStore extends QazaLocalStore {
+  @override
+  Future<OfflineCacheSnapshot> load() async => const OfflineCacheSnapshot();
+
+  @override
+  Future<void> saveRecords(
+      String userId, List<QazaRecord> records) async {}
+
+  @override
+  Future<void> saveOutbox(
+      String userId, List<PendingSyncOp> ops) async {}
+
+  @override
+  Future<void> saveLastSync(String userId, DateTime? lastSync) async {}
+
+  @override
+  Future<void> retireUserData({required String userId}) async {}
+}
+
+class FakeGuestMigrationService extends GuestMigrationService {
+  FakeGuestMigrationService({
+    required this.guestData,
+    this.failMigration = false,
+    this.failRetire = false,
+  }) : super(
+          localStore: NoopLocalStore(),
+          remoteRepository: InMemoryQazaRepository(),
+        );
+
+  bool guestData;
+  bool failMigration;
+  bool failRetire;
+  int migrateCalls = 0;
+  int retireCalls = 0;
+  int hasGuestDataCalls = 0;
+
+  @override
+  Future<bool> hasGuestData({required String guestUserId}) async {
+    hasGuestDataCalls++;
+    return guestData;
+  }
+
+  @override
+  Future<GuestMigrationResult> migrate({
+    required String guestUserId,
+    required String accountUserId,
+    DateTime? completedAt,
+  }) async {
+    migrateCalls++;
+    if (failMigration) throw StateError('simulated migration failure');
+    return const GuestMigrationResult(examined: 2, added: 1, completed: 1);
+  }
+
+  @override
+  Future<void> retireGuestData({required String guestUserId}) async {
+    retireCalls++;
+    if (failRetire) throw StateError('simulated retirement failure');
+    guestData = false;
+  }
+}
+
+void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  Future<(ProviderContainer, FakeAuthRepository, FakeGuestMigrationService)>
+      makeContainer({
+    required bool guestData,
+    bool? failMigration,
+    bool? failRetire,
+  }) async {
+    final auth = FakeAuthRepository();
+    final migration = FakeGuestMigrationService(
+      guestData: guestData,
+      failMigration: failMigration ?? false,
+      failRetire: failRetire ?? false,
+    );
+
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        guestMigrationServiceProvider.overrideWithValue(migration),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(auth.dispose);
+
+    container.listen(guestSessionProvider, (_, __) {});
+    container.listen(guestUpgradePendingProvider, (_, __) {});
+    container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+    await container.read(guestSessionProvider.notifier).start();
+    await Future<void>.delayed(Duration.zero);
+    return (container, auth, migration);
+  }
+
+  test('guest sign-in with empty ledger ends guest mode without migration',
+      () async {
+    final (container, auth, migration) =
+        await makeContainer(guestData: false);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    expect(await controller.signInAndMigrate(), isTrue);
+    expect(migration.migrateCalls, 0);
+    expect(migration.retireCalls, 0);
+    expect(auth.currentUser, isNotNull);
+    expect(container.read(isGuestProvider), isFalse);
+    expect(container.read(activeUserIdProvider), auth.account.id);
+  });
+
+  test('guest sign-in with data pauses on an explicit choice and stays guest',
+      () async {
+    final (container, auth, migration) =
+        await makeContainer(guestData: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    expect(await controller.signInAndMigrate(), isTrue);
+    await container.read(authStateProvider.future);
+
+    final state = container.read(guestUpgradeControllerProvider);
+    expect(state.pendingAccount?.id, auth.account.id);
+    expect(migration.hasGuestDataCalls, 1);
+    expect(migration.migrateCalls, 0);
+    expect(migration.retireCalls, 0);
+    expect(container.read(activeUserIdProvider), guestUserId);
+    expect(container.read(isGuestProvider), isFalse);
+  });
+
+  test('Merge Data migrates then retires guest data', () async {
+    final (container, auth, migration) =
+        await makeContainer(guestData: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    await controller.signInAndMigrate();
+    expect(await controller.mergeData(), isTrue);
+
+    expect(migration.migrateCalls, 1);
+    expect(migration.retireCalls, 1);
+    expect(container.read(guestSessionProvider), isFalse);
+    expect(container.read(guestUpgradePendingProvider), isFalse);
+    expect(container.read(activeUserIdProvider), auth.account.id);
+  });
+
+  test('Use Account Data retires guest data without migration', () async {
+    final (container, auth, migration) =
+        await makeContainer(guestData: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    await controller.signInAndMigrate();
+    expect(await controller.useAccountData(), isTrue);
+
+    expect(migration.migrateCalls, 0);
+    expect(migration.retireCalls, 1);
+    expect(container.read(guestSessionProvider), isFalse);
+    expect(container.read(activeUserIdProvider), auth.account.id);
+  });
+
+  test('Cancel signs out and keeps guest records untouched', () async {
+    final (container, auth, migration) =
+        await makeContainer(guestData: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    await controller.signInAndMigrate();
+    expect(await controller.cancelAndKeepGuest(), isTrue);
+
+    expect(auth.currentUser, isNull);
+    expect(migration.migrateCalls, 0);
+    expect(migration.retireCalls, 0);
+    expect(migration.guestData, isTrue);
+    expect(container.read(guestSessionProvider), isTrue);
+    expect(container.read(activeUserIdProvider), guestUserId);
+    expect(container.read(guestUpgradePendingProvider), isFalse);
+  });
+
+  test('migration failure leaves guest data and decision active for retry',
+      () async {
+    final (container, _, migration) =
+        await makeContainer(guestData: true, failMigration: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    await controller.signInAndMigrate();
+    expect(await controller.mergeData(), isFalse);
+    expect(migration.retireCalls, 0);
+    expect(migration.guestData, isTrue);
+    expect(container.read(guestUpgradeControllerProvider).pendingAccount,
+        isNotNull);
+
+    migration.failMigration = false;
+    expect(await controller.mergeData(), isTrue);
+    expect(migration.migrateCalls, 2);
+    expect(migration.retireCalls, 1);
+    expect(migration.guestData, isFalse);
+  });
+
+  test('retirement failure does not end the guest session', () async {
+    final (container, _, migration) =
+        await makeContainer(guestData: true, failRetire: true);
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    await controller.signInAndMigrate();
+    expect(await controller.mergeData(), isFalse);
+
+    expect(migration.migrateCalls, 1);
+    expect(migration.retireCalls, 1);
+    expect(container.read(guestSessionProvider), isTrue);
+    expect(container.read(guestUpgradePendingProvider), isTrue);
+    expect(container.read(guestUpgradeControllerProvider).pendingAccount,
+        isNotNull);
+  });
+}
