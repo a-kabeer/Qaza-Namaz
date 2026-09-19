@@ -122,7 +122,9 @@ void main() {
       await pumpHome(tester, repository);
 
       expect(
-          textOf(tester, const Key('home_progress_summary')), '2 of 2 completed · 100%');
+        textOf(tester, const Key('home_progress_summary')),
+        '2 of 2 completed · 100%',
+      );
       final bar = tester.widget<LinearProgressIndicator>(
         find.byKey(const Key('home_progress_bar')),
       );
