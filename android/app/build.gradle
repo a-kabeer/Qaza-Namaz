@@ -75,11 +75,11 @@ android {
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.release
             } else {
-                logger.warn(
-                    "WARNING: android/key.properties not found. Signing the " +
-                    "release build with the DEBUG key. This APK cannot be " +
-                    "distributed. See android/key.properties.example.")
-                signingConfig = signingConfigs.debug
+                throw new GradleException(
+                    "Release signing is not configured. Provide android/key.properties " +
+                    "and the production keystore; refusing to sign a release APK " +
+                    "with the debug key."
+                )
             }
         }
     }
