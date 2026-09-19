@@ -204,6 +204,14 @@ class DriftQazaLocalStore extends QazaLocalStore {
       .hasPending(userId: userId, type: SyncOpType.reset.name);
 
   @override
+  Future<void> retireUserData({required String userId}) async {
+    await _database.transaction(() async {
+      await _database.qazaRecordsDao.deleteAllForUser(userId: userId);
+      await _database.syncOutboxDao.removeAll(userId: userId);
+    });
+  }
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {
     _lastSyncByUser[userId] = lastSync;
   }
