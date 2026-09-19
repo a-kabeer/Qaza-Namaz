@@ -48,3 +48,44 @@ class GuestSessionNotifier extends Notifier<bool> {
 
 final guestSessionProvider =
     NotifierProvider<GuestSessionNotifier, bool>(GuestSessionNotifier.new);
+
+
+/// Blocks the normal account ledger while a guest-to-account upgrade is
+/// awaiting the user's explicit data decision.
+///
+/// Firebase may report the newly authenticated account before the migration
+/// choice is made. Keeping this barrier true makes [activeUserIdProvider]
+/// continue to expose the guest ledger until merge/use-account/cancel finishes.
+class GuestUpgradePendingNotifier extends Notifier<bool> {
+  static const String storageKey = 'qaza_guest_upgrade_pending';
+
+  @override
+  bool build() {
+    Future.microtask(restore);
+    return false;
+  }
+
+  Future<void> restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = prefs.getBool(storageKey) ?? false;
+    } catch (_) {
+      // An unreadable marker leaves the normal session behavior intact.
+    }
+  }
+
+  Future<void> setPending(bool value) async {
+    state = value;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(storageKey, value);
+    } catch (_) {
+      // The in-memory barrier remains active even if persistence fails.
+    }
+  }
+}
+
+final guestUpgradePendingProvider =
+    NotifierProvider<GuestUpgradePendingNotifier, bool>(
+  GuestUpgradePendingNotifier.new,
+);
