@@ -163,7 +163,9 @@ void main() {
       ]) {
         container.read(workspaceDestinationProvider.notifier).state =
             destination;
-        await tester.pumpAndSettle();
+        // Calculator/other workspace pages can contain ongoing framework
+        // animations, so this test only needs one settled navigation frame.
+        await tester.pump(const Duration(milliseconds: 500));
         expect(find.byKey(const Key('add_actions_fab')), findsNothing,
             reason: destination.name);
         expect(find.byKey(const Key('complete_qaza_fab')), findsNothing,
