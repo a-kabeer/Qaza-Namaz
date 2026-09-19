@@ -125,8 +125,10 @@ void main() {
     required bool guestData,
     bool? failMigration,
     bool? failRetire,
+    Object? signInFailure,
   }) async {
     final auth = FakeAuthRepository();
+    auth.signInFailure = signInFailure;
     final migration = FakeGuestMigrationService(
       guestData: guestData,
       failMigration: failMigration ?? false,
@@ -163,6 +165,26 @@ void main() {
     expect(auth.currentUser, isNotNull);
     expect(container.read(isGuestProvider), isFalse);
     expect(container.read(activeUserIdProvider), auth.account.id);
+  });
+
+
+  test('guest Google authentication failure keeps guest mode and diagnostic',
+      () async {
+    final (container, auth, migration) = await makeContainer(
+      guestData: true,
+      signInFailure: StateError('firebase-auth/operation-not-allowed'),
+    );
+    final controller = container.read(guestUpgradeControllerProvider.notifier);
+
+    expect(await controller.signInAndMigrate(), isFalse);
+    expect(auth.currentUser, isNull);
+    expect(migration.migrateCalls, 0);
+    expect(container.read(guestSessionProvider), isTrue);
+    expect(container.read(activeUserIdProvider), guestUserId);
+    expect(
+      container.read(guestUpgradeControllerProvider).error,
+      contains('firebase-auth/operation-not-allowed'),
+    );
   });
 
   test('guest sign-in with data pauses on an explicit choice and stays guest',
