@@ -8,6 +8,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_screen.dart';
+import 'support/complete_qaza_host.dart';
 import 'support/in_memory_qaza_repository.dart';
 
 QazaRecord record(
@@ -43,6 +44,12 @@ Future<void> settleAuth(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> pumpComplete(
+    WidgetTester tester, InMemoryQazaRepository repository) async {
+  await tester.pumpWidget(scoped(const CompleteQazaHost(), repository));
+  await settleAuth(tester);
+}
+
 Future<void> pumpTracker(
     WidgetTester tester, InMemoryQazaRepository repository) async {
   tester.view.physicalSize = const Size(800, 1600);
@@ -54,6 +61,52 @@ Future<void> pumpTracker(
 }
 
 void main() {
+  testWidgets('Complete flow presents the latest pending Fajr record',
+      (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      record(
+          id: 'fajr_new',
+          prayer: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 10)),
+      record(
+          id: 'fajr_old',
+          prayer: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 2))
+    ]);
+    await pumpComplete(tester, repository);
+    expect(find.text('Latest pending record'), findsOneWidget);
+    expect(find.text('10 Sep 2026'), findsOneWidget);
+    expect(find.text('Complete latest pending'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Completing the latest pending preserves its date and reduces pending records',
+      (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      record(
+          id: 'fajr_old',
+          prayer: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 2)),
+      record(
+          id: 'fajr_new',
+          prayer: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 10))
+    ]);
+    await pumpComplete(tester, repository);
+    await tester.tap(find.text('Complete latest pending'));
+    await tester.pumpAndSettle();
+    final records = await repository.getRecords(userId: 'test-user');
+    final completed = records.singleWhere((r) => r.id == 'fajr_new');
+    final pending =
+        records.where((r) => r.status == QazaStatus.pending).toList();
+    expect(completed.status, QazaStatus.completed);
+    expect(completed.originalDate, DateTime(2026, 9, 10));
+    expect(completed.completedAt, isNotNull);
+    expect(pending.map((r) => r.id), contains('fajr_old'));
+  });
+
   testWidgets('Qaza workspace offers every prayer as a filter', (tester) async {
     final repository = InMemoryQazaRepository();
     await repository.addRecords([
