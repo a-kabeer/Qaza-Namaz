@@ -35,3 +35,5 @@ Useful failure codes are no longer hidden by the app. Examples:
 - Missing Google ID token: check the Android OAuth configuration and Firebase Google provider setup.
 
 The regression suite checks that the Android application ID, Firebase Android client, OAuth package, and generated Firebase app ID remain internally consistent.
+
+CI verification branch for the authentication audit.
