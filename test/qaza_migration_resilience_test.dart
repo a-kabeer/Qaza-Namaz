@@ -84,7 +84,7 @@ void main() {
     expect(first.migratedRecordCount, 2);
     expect(first.duplicateRecordCount, 2);
     expect(second.alreadyComplete, true);
-    expect(await db.qazaRecordsDao.getRecords(userId: 'user-a'),
+    expect(await db.qazaRecordsDao.getAll(userId: 'user-a'),
         hasLength(2));
   });
 
@@ -100,7 +100,7 @@ void main() {
     final result =
         await SharedPreferencesToDriftMigrator(database: db, preferences: prefs)
             .migrate();
-    final rows = await db.qazaRecordsDao.getRecords(userId: 'user-a');
+    final rows = await db.qazaRecordsDao.getAll(userId: 'user-a');
     expect(result.sourceRecordCount, 2);
     expect(result.migratedRecordCount, 1);
     expect(rows, hasLength(1));
@@ -131,7 +131,7 @@ void main() {
         throwsStateError);
     expect(prefs.getBool(SharedPreferencesToDriftMigrator.migrationKey),
         isNot(true));
-    expect(await db.qazaRecordsDao.getRecords(userId: 'user-a'), isEmpty);
+    expect(await db.qazaRecordsDao.getAll(userId: 'user-a'), isEmpty);
   });
 
   test('conflicting existing row aborts before completion marker', () async {
