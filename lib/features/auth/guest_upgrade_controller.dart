@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
+import '../../data/auth/firebase_auth_repository.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/services/guest_migration_service.dart';
 import '../qaza/qaza_tracker_controller.dart';
@@ -193,6 +194,15 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       state = const GuestUpgradeState();
       return true;
+    } on AuthenticationCancelledException {
+      if (wasGuest) {
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        await _clearPendingDecision();
+      }
+      // A user cancellation is not an authentication/configuration failure.
+      // Keep the current session exactly where it was before the attempt.
+      state = const GuestUpgradeState();
+      return false;
     } catch (error) {
       state = GuestUpgradeState(
         pendingAccount: account,
