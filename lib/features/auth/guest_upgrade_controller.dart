@@ -35,9 +35,12 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       final prefs = await SharedPreferences.getInstance();
       final marker = prefs.getString(_pendingDecisionKey);
       final currentUser = ref.read(authRepositoryProvider).currentUser;
-      final guest = ref.read(guestSessionProvider);
+      // Read the persisted guest flag directly so restoration cannot race the
+      // async GuestSessionNotifier restore during cold start.
+      final guestPersisted =
+          prefs.getBool(GuestSessionNotifier.storageKey) ?? false;
 
-      if (marker == null || !guest || currentUser == null) {
+      if (marker == null || !guestPersisted || currentUser == null) {
         if (marker != null) {
           await prefs.remove(_pendingDecisionKey);
         }
