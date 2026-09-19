@@ -1,4 +1,4 @@
-name: Temporary auth format
+name: Temporary auth verification
 
 on:
   push:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  format-auth:
+  verify-auth:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,10 +17,23 @@ jobs:
           channel: stable
           flutter-version: '3.47.4'
       - run: flutter pub get
-      - run: dart format lib/data/auth/firebase_auth_repository.dart lib/data/auth/google_auth_flow.dart lib/features/auth/authentication_screen.dart lib/features/auth/guest_session.dart lib/features/auth/guest_upgrade_controller.dart test/auth_startup_google_test.dart test/google_auth_configuration_test.dart test/guest_migration_service_test.dart test/guest_upgrade_controller_test.dart
-      - run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/data/auth/firebase_auth_repository.dart lib/data/auth/google_auth_flow.dart lib/features/auth/authentication_screen.dart lib/features/auth/guest_session.dart lib/features/auth/guest_upgrade_controller.dart test/auth_startup_google_test.dart test/google_auth_configuration_test.dart test/guest_migration_service_test.dart test/guest_upgrade_controller_test.dart
-          git diff --cached --quiet || git commit -m "chore: format auth audit files"
-          git push
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: >
+          dart format --set-exit-if-changed
+          lib/data/auth/firebase_auth_repository.dart
+          lib/data/auth/google_auth_flow.dart
+          lib/features/auth/authentication_screen.dart
+          lib/features/auth/guest_session.dart
+          lib/features/auth/guest_upgrade_controller.dart
+          test/auth_startup_google_test.dart
+          test/google_auth_configuration_test.dart
+          test/guest_migration_service_test.dart
+          test/guest_upgrade_controller_test.dart
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: >
+          flutter test
+          test/google_auth_flow_test.dart
+          test/google_auth_configuration_test.dart
+          test/auth_startup_google_test.dart
+          test/guest_migration_service_test.dart
+          test/guest_upgrade_controller_test.dart
