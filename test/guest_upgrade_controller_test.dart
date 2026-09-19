@@ -18,11 +18,13 @@ import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository(
-      {this.account = const AppUser(
-        id: 'account-1',
-        email: 'account@example.com',
-      )});
+  FakeAuthRepository({
+    this.account = const AppUser(
+      id: 'account-1',
+      email: 'account@example.com',
+    ),
+    AppUser? currentUser,
+  }) : _current = currentUser;
 
   final AppUser account;
   final controller = StreamController<AppUser?>.broadcast();
@@ -151,6 +153,85 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     return (container, auth, migration);
   }
+
+  test(
+    'cold-start Google upgrade waits for persisted guest restoration',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        GuestSessionNotifier.storageKey: true,
+      });
+
+      final auth = FakeAuthRepository();
+      final migration = FakeGuestMigrationService(guestData: true);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isTrue);
+      expect(
+        container.read(guestUpgradeControllerProvider).pendingAccount?.id,
+        auth.account.id,
+      );
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
+      expect(migration.migrateCalls, 0);
+      expect(migration.retireCalls, 0);
+    },
+  );
+
+  test(
+    'pending guest decision is restored with the guest ledger barrier',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        GuestSessionNotifier.storageKey: true,
+        'qaza_guest_upgrade_decision':
+            '{"accountId":"account-1"}',
+      });
+
+      final auth = FakeAuthRepository(
+        currentUser: const AppUser(
+          id: 'account-1',
+          email: 'account@example.com',
+        ),
+      );
+      final migration = FakeGuestMigrationService(guestData: true);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      final state = container.read(guestUpgradeControllerProvider);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(guestUpgradeControllerProvider).pendingAccount?.id,
+        'account-1',
+      );
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(guestUpgradePendingProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
+    },
+  );
 
   test('guest sign-in with empty ledger ends guest mode without migration',
       () async {
