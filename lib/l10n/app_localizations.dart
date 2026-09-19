@@ -2372,6 +2372,18 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @settingsPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferences;
+
+  /// No description provided for @settingsPreferencesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language and appearance settings.'**
+  String get settingsPreferencesSubtitle;
+
   /// No description provided for @settingsAppearance.
   ///
   /// In en, this message translates to:
