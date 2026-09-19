@@ -35,7 +35,10 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final marker = prefs.getString(_pendingDecisionKey);
-      final currentUser = ref.read(authRepositoryProvider).currentUser;
+      // Wait for Firebase's initial auth emission before deciding whether a
+      // persisted upgrade marker is stale. This prevents a cold-start auth
+      // restoration from racing the pending-decision restoration.
+      final currentUser = await ref.read(authStateProvider.future);
       // Read the persisted guest flag directly so restoration cannot race the
       // async GuestSessionNotifier restore during cold start.
       final guestPersisted =
