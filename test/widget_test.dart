@@ -9,6 +9,7 @@ import 'package:qaza_namaz/data/notifications/local_notification_service.dart';
 import 'package:qaza_namaz/features/notifications/notification_controller.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'support/in_memory_qaza_repository.dart';
+import 'support/test_app.dart';
 
 class _TestNotificationScheduler implements NotificationScheduler {
   @override
