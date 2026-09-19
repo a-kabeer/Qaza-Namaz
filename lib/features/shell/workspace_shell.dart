@@ -68,16 +68,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
 
   final Set<int> _mounted = {0};
 
-  Timer? _fabCollapseTimer;
-  bool _fabVisible = false;
-  bool _fabExtended = true;
-
-  @override
-  void dispose() {
-    _fabCollapseTimer?.cancel();
-    super.dispose();
-  }
-
   /// Starts the collapse countdown when the action first appears.
   ///
   /// Keyed on the action becoming visible, not on every build, so scrolling
