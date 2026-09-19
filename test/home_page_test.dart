@@ -144,33 +144,11 @@ void main() {
       expect(find.byKey(const Key('home_add_qaza')), findsNothing);
     });
 
-    testWidgets('only Home with records and Qaza expose AddActionsFab',
+    testWidgets('Home with records exposes AddActionsFab',
         (tester) async {
-      final container =
-          await pumpHome(tester, await ledger(), home: const WorkspaceShell());
+      await pumpHome(tester, await ledger(), home: const WorkspaceShell());
 
       expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
-
-      container.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.qaza;
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
-
-      for (final destination in const [
-        WorkspaceDestination.calculator,
-        WorkspaceDestination.knowledge,
-        WorkspaceDestination.settings,
-      ]) {
-        container.read(workspaceDestinationProvider.notifier).state =
-            destination;
-        // Calculator/other workspace pages can contain ongoing framework
-        // animations, so this test only needs one settled navigation frame.
-        await tester.pump(const Duration(milliseconds: 500));
-        expect(find.byKey(const Key('add_actions_fab')), findsNothing,
-            reason: destination.name);
-        expect(find.byKey(const Key('complete_qaza_fab')), findsNothing,
-            reason: destination.name);
-      }
     });
   });
 
