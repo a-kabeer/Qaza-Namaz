@@ -283,11 +283,14 @@ class _TrackerBody extends StatelessWidget {
         child: ListView.builder(
           key: const Key('qaza_tracker_list'),
           physics: const AlwaysScrollableScrollPhysics(),
+          // Keep the final prayer row (including Witr) above the
+          // workspace FAB. AppSpacing.fabClearance matches the FAB's
+          // occupied footprint and keeps the last row fully reachable.
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
             0,
             AppSpacing.lg,
-            AppSpacing.xl,
+            AppSpacing.fabClearance,
           ),
           itemCount: state.records.length + (state.hasMore ? 1 : 0),
           itemBuilder: (context, index) {
