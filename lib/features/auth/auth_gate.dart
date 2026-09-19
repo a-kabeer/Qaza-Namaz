@@ -9,6 +9,7 @@ import '../onboarding/welcome_screen.dart';
 import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
 import 'guest_session.dart';
+import 'guest_upgrade_controller.dart';
 
 /// Decides what the app shows at startup.
 ///
