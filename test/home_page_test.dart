@@ -133,71 +133,42 @@ void main() {
   });
 
   group('actions', () {
-    testWidgets('the two quick actions share a row at equal width',
-        (tester) async {
-      await pumpHome(tester, await ledger());
-
-      final calculate =
-          tester.getRect(find.byKey(const Key('home_calculate_qaza')));
-      final add = tester.getRect(find.byKey(const Key('home_add_qaza')));
-
-      expect(calculate.width, add.width);
-      expect(calculate.top, add.top);
-    });
-
-    testWidgets('quick actions use secondary styling', (tester) async {
-      await pumpHome(tester, await ledger());
-
-      for (final key in const [
-        Key('home_calculate_qaza'),
-        Key('home_add_qaza')
-      ]) {
-        expect(
-            find.descendant(
-                of: find.byKey(key), matching: find.byType(OutlinedButton)),
-            findsOneWidget);
-      }
-    });
-
-    testWidgets('Complete Qaza is the shell action, not a Home button',
+    testWidgets('Home with records keeps completion and shows AddActionsFab',
         (tester) async {
       await pumpHome(tester, await ledger(), home: const WorkspaceShell());
 
-      // The action belongs to the shell so Home and Qaza share one button.
-      expect(find.byKey(const Key('home_complete_qaza')), findsNothing);
-      expect(find.byKey(const Key('complete_qaza_fab')), findsOneWidget);
-      expect(find.byType(FloatingActionButton), findsOneWidget);
-      expect(find.text('Complete Qaza'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
-    });
-
-    testWidgets('the action is absent when nothing is pending', (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository
-          .addRecords([_record(PrayerType.fajr, 1, QazaStatus.completed)]);
-      await pumpHome(tester, repository, home: const WorkspaceShell());
-
+      expect(find.byType(CompleteQazaSection), findsOneWidget);
+      expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
+      expect(find.byKey(const Key('home_calculate_qaza')), findsNothing);
+      expect(find.byKey(const Key('home_add_qaza')), findsNothing);
     });
 
-    testWidgets('completing belongs to Home and adding to the Qaza tab',
+    testWidgets('only Home with records and Qaza expose AddActionsFab',
         (tester) async {
       final container =
           await pumpHome(tester, await ledger(), home: const WorkspaceShell());
-      expect(find.byKey(const Key('complete_qaza_fab')), findsOneWidget);
+
+      expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
 
       container.read(workspaceDestinationProvider.notifier).state =
           WorkspaceDestination.qaza;
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
       expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
 
-      // Configuration screens carry neither.
-      container.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.settings;
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
-      expect(find.byKey(const Key('add_actions_fab')), findsNothing);
+      for (final destination in const [
+        WorkspaceDestination.calculator,
+        WorkspaceDestination.knowledge,
+        WorkspaceDestination.settings,
+      ]) {
+        container.read(workspaceDestinationProvider.notifier).state =
+            destination;
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('add_actions_fab')), findsNothing,
+            reason: destination.name);
+        expect(find.byKey(const Key('complete_qaza_fab')), findsNothing,
+            reason: destination.name);
+      }
     });
   });
 
@@ -239,11 +210,14 @@ void main() {
       expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
     });
 
-    testWidgets('the Complete Qaza action is hidden', (tester) async {
+    testWidgets('empty Home keeps both actions and has no FAB', (tester) async {
       await pumpHome(tester, InMemoryQazaRepository(),
           home: const WorkspaceShell());
 
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_calculate')), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_add')), findsOneWidget);
+      expect(find.byKey(const Key('add_actions_fab')), findsNothing);
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
     });
 
@@ -304,12 +278,12 @@ void main() {
           tester.getRect(find.byKey(const Key('home_complete_prayer_pills')));
       final complete =
           tester.getRect(find.byKey(const Key('home_complete_oldest_pending')));
-      final quickActions =
-          tester.getRect(find.byKey(const Key('home_calculate_qaza')));
+      final prayerProgress =
+          tester.getRect(find.byKey(const Key('home_prayer_row_fajr')));
 
       expect(overview.bottom, lessThanOrEqualTo(pills.top));
       expect(pills.bottom, lessThanOrEqualTo(complete.top));
-      expect(complete.bottom, lessThanOrEqualTo(quickActions.top));
+      expect(complete.bottom, lessThanOrEqualTo(prayerProgress.top));
     });
 
     testWidgets('carries the whole section, pills through button',
@@ -357,12 +331,18 @@ void main() {
       await repository
           .addRecords([_record(PrayerType.fajr, 2, QazaStatus.pending)]);
       await pumpHome(tester, repository);
-      expect(textOf(tester, const Key('home_pending_value')), '1');
+      expect(
+        textOf(tester, const Key('home_progress_summary')),
+        '0 of 1 completed · 0%',
+      );
 
       await tester.tap(find.byKey(const Key('home_complete_oldest_pending')));
       await tester.pumpAndSettle();
 
-      expect(textOf(tester, const Key('home_pending_value')), '0');
+      expect(
+        textOf(tester, const Key('home_progress_summary')),
+        '1 of 1 completed · 100%',
+      );
       expect(find.text('No pending Qaza for this prayer.'), findsOneWidget);
     });
   });

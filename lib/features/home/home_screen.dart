@@ -47,8 +47,7 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final overall = summary.overall;
 
-    // Nothing recorded at all: the dashboard would be six zeroes and a
-    // progress ring at 0%, so the page offers the two ways in instead.
+    // Nothing recorded at all: the page offers the two ways in instead.
     if (overall.total == 0) {
       return _EmptyLedger(
         onCalculate: () => _open(context, ref, const CalculatorScreen()),
@@ -60,7 +59,8 @@ class HomeScreen extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       // The workspace FAB floats over this list, so the last prayer needs
       // room to scroll clear of it.
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
+      // No FAB is present in the empty state, so no FAB clearance is needed.
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
         Center(
           child: ConstrainedBox(
@@ -70,14 +70,8 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 _ProgressOverview(progress: overall),
                 const SizedBox(height: 20),
-                // The Complete Qaza page's own section, not a copy of it.
+                // Keep the reusable completion section on Home.
                 const CompleteQazaSection(keyPrefix: 'home_complete'),
-                const SizedBox(height: 20),
-                _QuickActions(
-                  onCalculate: () =>
-                      _open(context, ref, const CalculatorScreen()),
-                  onAdd: () => _open(context, ref, const AddQazaScreen()),
-                ),
                 const SizedBox(height: 20),
                 Text(
                   l10n.homeProgressTitle,
@@ -229,40 +223,3 @@ class _ProgressOverview extends StatelessWidget {
   }
 }
 
-/// Calculate and Add, side by side at equal width.
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.onCalculate, required this.onAdd});
-
-  final VoidCallback onCalculate;
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: AppButton(
-            key: const Key('home_calculate_qaza'),
-            expand: true,
-            secondary: true,
-            icon: Icons.calculate_outlined,
-            label: l10n.homeCalculateQaza,
-            onPressed: onCalculate,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: AppButton(
-            key: const Key('home_add_qaza'),
-            expand: true,
-            secondary: true,
-            icon: Icons.add_rounded,
-            label: l10n.homeAddQaza,
-            onPressed: onAdd,
-          ),
-        ),
-      ],
-    );
-  }
-}

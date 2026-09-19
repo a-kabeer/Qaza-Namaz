@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,7 +9,6 @@ import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
-import '../qaza/completion_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -45,16 +42,10 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     SettingsScreen(),
   ];
 
-  /// The destinations that carry the Complete Qaza action.
-  ///
-  /// It lives on the shell rather than inside each page, so the two screens
-  /// share one button and one rule about when it appears.
-  static const _completeQazaDestinations = {WorkspaceDestination.home};
-
   /// The destinations the bottom bar offers.
   ///
   /// Qaza and Calculator stay part of the workspace — Home's prayer rows open
-  /// the tracker, and its quick action opens the calculator — they are simply
+  /// the tracker, and Home's action menu opens Add/Calculate — they are simply
   /// not bar destinations any more.
   static const _barDestinations = [
     WorkspaceDestination.home,
@@ -62,36 +53,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     WorkspaceDestination.settings,
   ];
 
-  /// How long the Complete Qaza action names itself before collapsing to its
-  /// icon.
-  static const _fabLabelDuration = Duration(seconds: 5);
-
   final Set<int> _mounted = {0};
-
-  Timer? _fabCollapseTimer;
-  bool _fabVisible = false;
-  bool _fabExtended = true;
-
-  @override
-  void dispose() {
-    _fabCollapseTimer?.cancel();
-    super.dispose();
-  }
-
-  /// Starts the collapse countdown when the action first appears.
-  ///
-  /// Keyed on the action becoming visible, not on every build, so scrolling
-  /// and unrelated rebuilds never hold the label open.
-  void _syncFabLabel({required bool visible}) {
-    if (visible == _fabVisible) return;
-    _fabVisible = visible;
-    _fabCollapseTimer?.cancel();
-    if (!visible) return;
-    _fabExtended = true;
-    _fabCollapseTimer = Timer(_fabLabelDuration, () {
-      if (mounted) setState(() => _fabExtended = false);
-    });
-  }
 
   void _selectDestination(int value) {
     ref.read(workspaceDestinationProvider.notifier).state =
@@ -102,8 +64,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     ref.read(workspaceDestinationProvider.notifier).state =
         WorkspaceDestination.home;
   }
-
-  Future<void> _openCompleteQaza() => _push(const CompleteQazaScreen());
 
   Future<void> _push(Widget page) async {
     await Navigator.push<void>(
@@ -137,12 +97,8 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     final barIndex = _barDestinations.indexOf(destination);
     final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
 
-    // Nothing pending means nothing to complete, so the action is absent
-    // rather than present and inert.
-    final pending = ref.watch(progressSummaryProvider).valueOrNull?.overall;
-    final showCompleteQaza = _completeQazaDestinations.contains(destination) &&
-        (pending?.pending ?? 0) > 0;
-    _syncFabLabel(visible: showCompleteQaza);
+    final overall = ref.watch(progressSummaryProvider).valueOrNull?.overall;
+    final hasQazaRecords = (overall?.total ?? 0) > 0;
 
     return PopScope<void>(
       canPop: destination == WorkspaceDestination.home,
@@ -157,21 +113,15 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
               if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
           ],
         ),
-        // The Qaza page's action is adding; Home's is completing.
-        floatingActionButton: destination == WorkspaceDestination.qaza
-            ? AddActionsFab(
-                onAddQaza: () => _push(const AddQazaScreen()),
-                onCalculateQaza: () => _push(const CalculatorScreen()),
-              )
-            : showCompleteQaza
-                ? FloatingActionButton.extended(
-                    key: const Key('complete_qaza_fab'),
-                    onPressed: _openCompleteQaza,
-                    // Material animates the label away on its own; the icon
-                    // and the button's behaviour are untouched either way.
-                    isExtended: _fabExtended,
-                    icon: const Icon(Icons.check_circle_outline_rounded),
-                    label: Text(l10n.homeCompleteQaza),
+        // Home exposes Add/Calculate only when Qaza records exist.
+        // Completion remains in the embedded Home section. Qaza keeps the
+        // same Add/Calculate action menu.
+        floatingActionButton:
+            destination == WorkspaceDestination.qaza ||
+                    (destination == WorkspaceDestination.home && hasQazaRecords)
+                ? AddActionsFab(
+                    onAddQaza: () => _push(const AddQazaScreen()),
+                    onCalculateQaza: () => _push(const CalculatorScreen()),
                   )
                 : null,
         bottomNavigationBar: NavigationBar(
