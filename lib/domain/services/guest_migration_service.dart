@@ -240,7 +240,7 @@ class GuestMigrationService {
   /// Retires only the guest namespace. Call this only after [migrate] has
   /// completed successfully or after the user explicitly chose account data.
   Future<void> retireGuestData({required String guestUserId}) =>
-      _localStore.retireUserData(guestUserId);
+      _localStore.retireUserData(userId: guestUserId);
 
   Future<List<QazaRecord>> _allLocalRecords(String userId) async {
     final result = <QazaRecord>[];
