@@ -21,13 +21,22 @@ class GuestSessionNotifier extends Notifier<bool> {
     return false;
   }
 
-  Future<void> restore() async {
+  Future<bool> restore() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(storageKey) ?? false) state = true;
+      state = prefs.getBool(storageKey) ?? false;
     } catch (_) {
       // An unreadable store simply starts at the welcome screen.
     }
+    return state;
+  }
+
+  /// Makes the persisted guest decision authoritative before a protected
+  /// operation starts. This closes the cold-start race where a user can tap
+  /// Google before the async notifier restoration has completed.
+  Future<bool> ensureRestored() async {
+    if (state) return true;
+    return restore();
   }
 
   Future<void> start() => _set(true);
