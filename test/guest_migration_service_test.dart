@@ -29,14 +29,12 @@ class FakeLocalStore extends QazaLocalStore {
       );
 
   @override
-  Future<void> saveRecords(
-      String userId, List<QazaRecord> records) async {
+  Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     recordsByUser[userId] = List<QazaRecord>.of(records);
   }
 
   @override
-  Future<void> saveOutbox(
-      String userId, List<PendingSyncOp> ops) async {
+  Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
     if (failNextOutboxSave) {
       failNextOutboxSave = false;
       throw StateError('simulated outbox write failure');
@@ -137,12 +135,12 @@ void main() {
     expect(local.recordsByUser[accountId]!.single.status, QazaStatus.pending);
   });
 
-
   test('deduplication uses normalized original calendar date', () async {
     local.recordsByUser[guestId] = [
       record(guestId, PrayerType.fajr, '2026-02-10'),
     ];
-    local.recordsByUser[guestId]![0] = local.recordsByUser[guestId]![0].copyWith(
+    local.recordsByUser[guestId]![0] =
+        local.recordsByUser[guestId]![0].copyWith(
       originalDate: DateTime(2026, 2, 10, 23, 45),
     );
 
@@ -209,8 +207,7 @@ void main() {
       completedAt: stamp,
     );
 
-    expect(local.recordsByUser[accountId]!.single.status,
-        QazaStatus.completed);
+    expect(local.recordsByUser[accountId]!.single.status, QazaStatus.completed);
     expect(local.outboxByUser[accountId], isEmpty);
   });
 
@@ -307,8 +304,7 @@ void main() {
       accountUserId: accountId,
       completedAt: stamp,
     );
-    final firstOutbox =
-        List<PendingSyncOp>.of(local.outboxByUser[accountId]!);
+    final firstOutbox = List<PendingSyncOp>.of(local.outboxByUser[accountId]!);
 
     await service.migrate(
       guestUserId: guestId,
