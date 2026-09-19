@@ -101,6 +101,13 @@ abstract class QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
 
+  /// Retires all local records and pending sync operations owned by [userId].
+  ///
+  /// This is intentionally user-scoped and atomic in database-backed stores.
+  /// It is only called after an explicit destructive choice or a successful
+  /// guest migration.
+  Future<void> retireUserData({required String userId});
+
   Future<LocalQazaPage> getPage(
       {required String userId,
       int limit = 50,
