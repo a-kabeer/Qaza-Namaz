@@ -83,8 +83,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     }
 
     try {
-      final account =
-          await ref.read(authRepositoryProvider).signInWithGoogle();
+      final account = await ref.read(authRepositoryProvider).signInWithGoogle();
 
       if (!wasGuest) {
         state = const GuestUpgradeState();
@@ -99,9 +98,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         // End guest mode before lowering the barrier so activeUserIdProvider
         // changes directly from the reserved guest ledger to the account.
         await ref.read(guestSessionProvider.notifier).end();
-        await ref
-            .read(guestUpgradePendingProvider.notifier)
-            .setPending(false);
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
         _refreshDerivedState();
         state = const GuestUpgradeState(
@@ -124,9 +121,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         } catch (_) {
           // Keep the original authentication/preflight error for diagnostics.
         }
-        await ref
-            .read(guestUpgradePendingProvider.notifier)
-            .setPending(false);
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
 
