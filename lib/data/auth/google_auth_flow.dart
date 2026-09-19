@@ -14,8 +14,8 @@ class GoogleAuthFlowCancelledException implements Exception {
 }
 
 typedef BeginGoogleSignIn = Future<GoogleIdentityTokens?> Function();
-typedef FirebaseGoogleSignIn =
-    Future<AppUser> Function(GoogleIdentityTokens tokens);
+typedef FirebaseGoogleSignIn = Future<AppUser> Function(
+    GoogleIdentityTokens tokens);
 
 /// Platform-independent Google -> Firebase authentication handshake.
 ///

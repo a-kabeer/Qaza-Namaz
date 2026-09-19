@@ -92,7 +92,8 @@ void main() {
     expect(find.text('Home'), findsWidgets);
   });
 
-  testWidgets('startup Google failure shows the real diagnostic', (tester) async {
+  testWidgets('startup Google failure shows the real diagnostic',
+      (tester) async {
     final auth = StartupAuthRepository(
       const AppUser(id: 'failed-user', email: 'failed@example.com'),
       signInFailure: StateError('firebase-auth/operation-not-allowed'),

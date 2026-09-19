@@ -16,8 +16,8 @@ void main() {
     expect(applicationMatch, isNotNull);
     final applicationId = applicationMatch!.group(1)!;
 
-    final clients = (json['client'] as List<dynamic>)
-        .cast<Map<String, dynamic>>();
+    final clients =
+        (json['client'] as List<dynamic>).cast<Map<String, dynamic>>();
     final matching = clients.firstWhere(
       (client) =>
           (client['client_info'] as Map<String, dynamic>)['android_client_info']
@@ -26,8 +26,8 @@ void main() {
     );
 
     final clientInfo = matching['client_info'] as Map<String, dynamic>;
-    final oauthClients =
-        (matching['oauth_client'] as List<dynamic>).cast<Map<String, dynamic>>();
+    final oauthClients = (matching['oauth_client'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();
     final androidOauth = oauthClients.firstWhere(
       (oauth) =>
           oauth['client_type'] == 1 &&
