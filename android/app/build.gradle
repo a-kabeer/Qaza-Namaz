@@ -72,13 +72,25 @@ android {
 
     buildTypes {
         release {
+            // Never fall back to the debug key. Release signing is attached only
+            // when the production keystore is explicitly configured below.
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.release
-            } else {
+            }
+        }
+    }
+
+    // Fail only when a release artifact is actually requested. This keeps
+    // debug/test builds usable on fresh clones while preventing production
+    // artifacts from silently using the debug certificate.
+    tasks.matching {
+        it.name == "assembleRelease" || it.name == "bundleRelease"
+    }.configureEach {
+        doFirst {
+            if (!hasReleaseKeystore) {
                 throw new GradleException(
                     "Release signing is not configured. Provide android/key.properties " +
-                    "and the production keystore; refusing to sign a release APK " +
-                    "with the debug key."
+                    "and the production keystore; refusing to build a release artifact."
                 )
             }
         }
