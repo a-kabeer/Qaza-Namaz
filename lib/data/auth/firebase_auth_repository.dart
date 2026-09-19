@@ -36,6 +36,9 @@ class AuthenticationCancelledException extends AuthenticationException {
           code: 'cancelled',
           message: 'Google Sign-In was cancelled by the user.',
         );
+
+  @override
+  String toString() => message;
 }
 
 class FirebaseAuthRepository implements AuthRepository {
