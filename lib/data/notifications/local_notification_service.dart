@@ -1,14 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// What the platform layer needs in order to show a notification.
-///
-/// Notification text is resolved by the caller for the active locale and
-/// passed in: the scheduler runs without a widget tree, so it must never
-/// build user-facing strings of its own.
 class NotificationContent {
   const NotificationContent({
     required this.title,
@@ -23,16 +19,31 @@ class NotificationContent {
   final String channelDescription;
 }
 
+class NotificationPermissionInfo {
+  const NotificationPermissionInfo({
+    required this.granted,
+    required this.canRequest,
+    required this.permanentlyDenied,
+    required this.supported,
+    required this.sdkInt,
+    required this.shouldShowRationale,
+  });
+
+  final bool granted;
+  final bool canRequest;
+  final bool permanentlyDenied;
+  final bool supported;
+  final int sdkInt;
+  final bool shouldShowRationale;
+}
+
 abstract interface class NotificationScheduler {
   Future<void> initialize();
   Future<bool> requestPermission();
+  Future<NotificationPermissionInfo> getPermissionInfo({
+    required bool permissionRequested,
+  });
   Future<bool> isPermissionGranted();
-
-  /// Opens the platform's notification settings for this app.
-  ///
-  /// Once notifications are blocked the app can no longer ask for them, so
-  /// this is the only way back; returns false when the screen cannot be
-  /// opened.
   Future<bool> openSystemNotificationSettings();
   Future<void> scheduleDaily({
     required int hour,
@@ -49,55 +60,136 @@ class LocalNotificationService implements NotificationScheduler {
 
   static const int _notificationId = 3001;
   static const int _testNotificationId = 3002;
-  static const String _channelId = 'qaza_daily_reminder';
+
+  static const String _channelId = 'qaza_daily_reminder_v2';
+  static const String _legacyChannelId = 'qaza_daily_reminder';
   static const String _channelName = 'Qaza daily reminder';
   static const String _channelDescription =
       'Daily reminder to continue completing Qaza prayers.';
 
+  static const MethodChannel _settingsChannel =
+      MethodChannel('qaza_namaz/notification_settings');
+
   final FlutterLocalNotificationsPlugin _plugin;
   bool _initialized = false;
+
+  void _log(String message) {
+    if (kDebugMode) debugPrint('[notifications] $message');
+  }
 
   @override
   Future<void> initialize() async {
     if (_initialized) return;
 
+    _log('initialize: starting');
+
     tz_data.initializeTimeZones();
-    // The IANA identifier is what the timezone database is keyed by; the
-    // localized name this also carries is for display, not lookup.
     final timezone = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(timezone.identifier));
+    _log('timezone=' + timezone.identifier);
 
     const android = AndroidInitializationSettings('@drawable/ic_stat_qaza');
     const settings = InitializationSettings(
       android: android,
       iOS: DarwinInitializationSettings(),
     );
-    await _plugin.initialize(settings);
 
-    const channel = AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      description: _channelDescription,
-      importance: Importance.defaultImportance,
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _handleNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
+
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.createNotificationChannel(channel);
+    if (androidPlugin != null) {
+      await _ensureChannel(androidPlugin);
+    }
+
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      _log(
+        'cold-start notification tap detected payload=' +
+            (launchDetails?.notificationResponse?.payload ?? ''),
+      );
+    }
 
     _initialized = true;
+    _log('initialize: complete');
   }
 
-  static const MethodChannel _settingsChannel =
-      MethodChannel('qaza_namaz/notification_settings');
+  Future<void> _ensureChannel(
+    AndroidFlutterLocalNotificationsPlugin androidPlugin,
+  ) async {
+    final existingChannels = await androidPlugin.getNotificationChannels() ??
+        <AndroidNotificationChannel>[];
+
+    AndroidNotificationChannel? current;
+    AndroidNotificationChannel? legacy;
+    for (final channel in existingChannels) {
+      if (channel.id == _channelId) current = channel;
+      if (channel.id == _legacyChannelId) legacy = channel;
+    }
+
+    if (current == null) {
+      const channel = AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: _channelDescription,
+        importance: Importance.defaultImportance,
+      );
+      await androidPlugin.createNotificationChannel(channel);
+      _log(
+        'channel created id=' +
+            _channelId +
+            ' importance=' +
+            Importance.defaultImportance.value.toString(),
+      );
+    } else {
+      _log(
+        'channel exists id=' +
+            _channelId +
+            ' importance=' +
+            current.importance.value.toString(),
+      );
+      if (current.importance == Importance.none) {
+        throw StateError(
+          'Notification channel "' +
+              _channelId +
+              '" is blocked by Android. Open system notification settings '
+              'and enable it.',
+        );
+      }
+    }
+
+    if (legacy != null) {
+      _log(
+        'legacy channel found id=' +
+            _legacyChannelId +
+            ' importance=' +
+            legacy.importance.value.toString() +
+            '; using ' +
+            _channelId,
+      );
+    }
+  }
+
+  Future<void> _requireUsableChannel() async {
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin == null) return;
+    await _ensureChannel(androidPlugin);
+  }
 
   @override
   Future<bool> openSystemNotificationSettings() async {
     try {
       final opened =
           await _settingsChannel.invokeMethod<bool>('openNotificationSettings');
+      _log('open notification settings result=' + opened.toString());
       return opened ?? false;
-    } catch (_) {
-      // No channel on this platform; the caller falls back to explaining.
+    } catch (error, stack) {
+      _log('open notification settings failed: $error\n$stack');
       return false;
     }
   }
@@ -107,17 +199,81 @@ class LocalNotificationService implements NotificationScheduler {
     await initialize();
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await android?.requestNotificationsPermission();
-    return granted ?? true;
+    if (android == null) return true;
+
+    final granted = await android.requestNotificationsPermission() ?? false;
+    _log('permission request result=' + granted.toString());
+    return granted;
+  }
+
+  @override
+  Future<NotificationPermissionInfo> getPermissionInfo({
+    required bool permissionRequested,
+  }) async {
+    await initialize();
+
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) {
+      return const NotificationPermissionInfo(
+        granted: true,
+        canRequest: false,
+        permanentlyDenied: false,
+        supported: false,
+        sdkInt: -1,
+        shouldShowRationale: false,
+      );
+    }
+
+    final granted = await android.areNotificationsEnabled() ?? false;
+    var sdkInt = -1;
+    var runtimePermission = false;
+    var shouldShowRationale = false;
+
+    try {
+      final result = await _settingsChannel
+          .invokeMethod<Map<dynamic, dynamic>>('getNotificationPermissionState');
+      sdkInt = (result?['sdkInt'] as num?)?.toInt() ?? -1;
+      runtimePermission = result?['runtimePermission'] == true;
+      shouldShowRationale = result?['shouldShowRationale'] == true;
+    } catch (error) {
+      _log('permission diagnostics unavailable: $error');
+    }
+
+    final permanentlyDenied = !granted &&
+        permissionRequested &&
+        (runtimePermission ? !shouldShowRationale : sdkInt >= 0);
+
+    final info = NotificationPermissionInfo(
+      granted: granted,
+      canRequest: runtimePermission && !permanentlyDenied,
+      permanentlyDenied: permanentlyDenied,
+      supported: true,
+      sdkInt: sdkInt,
+      shouldShowRationale: shouldShowRationale,
+    );
+
+    _log(
+      'permission status granted=' +
+          info.granted.toString() +
+          ' requested=' +
+          permissionRequested.toString() +
+          ' canRequest=' +
+          info.canRequest.toString() +
+          ' permanentlyDenied=' +
+          info.permanentlyDenied.toString() +
+          ' sdk=' +
+          info.sdkInt.toString() +
+          ' rationale=' +
+          info.shouldShowRationale.toString(),
+    );
+    return info;
   }
 
   @override
   Future<bool> isPermissionGranted() async {
-    await initialize();
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await android?.areNotificationsEnabled();
-    return granted ?? true;
+    final info = await getPermissionInfo(permissionRequested: true);
+    return info.granted;
   }
 
   @override
@@ -129,7 +285,19 @@ class LocalNotificationService implements NotificationScheduler {
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
       throw ArgumentError('Invalid reminder time.');
     }
+
     await initialize();
+    await _requireUsableChannel();
+
+    final permission =
+        await getPermissionInfo(permissionRequested: true);
+    if (!permission.granted) {
+      throw StateError(
+        'Cannot schedule notification: Android notification permission '
+        'is not granted.',
+      );
+    }
+
     await _plugin.cancel(_notificationId);
 
     final now = tz.TZDateTime.now(tz.local);
@@ -145,35 +313,131 @@ class LocalNotificationService implements NotificationScheduler {
       next = next.add(const Duration(days: 1));
     }
 
-    final details = _detailsFor(content);
+    _log(
+      'schedule id=' +
+          _notificationId.toString() +
+          ' next=' +
+          next.toString() +
+          ' mode=inexactAllowWhileIdle channel=' +
+          _channelId,
+    );
 
     await _plugin.zonedSchedule(
       _notificationId,
       content.title,
       content.body,
       next,
-      details,
+      _detailsFor(content),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
+
+    final pending = await _plugin.pendingNotificationRequests();
+    final exists = pending.any((request) => request.id == _notificationId);
+    _log(
+      'schedule result id=' +
+          _notificationId.toString() +
+          ' pendingConfirmed=' +
+          exists.toString(),
+    );
+    if (!exists) {
+      throw StateError(
+        'Android accepted the schedule call but did not report the '
+        'daily reminder as pending.',
+      );
+    }
   }
 
   @override
   Future<void> cancelDaily() async {
     await initialize();
     await _plugin.cancel(_notificationId);
+
+    final pending = await _plugin.pendingNotificationRequests();
+    final stillPending =
+        pending.any((request) => request.id == _notificationId);
+    _log(
+      'cancel id=' +
+          _notificationId.toString() +
+          ' pendingAfterCancel=' +
+          stillPending.toString(),
+    );
+    if (stillPending) {
+      throw StateError('Failed to cancel the daily notification schedule.');
+    }
   }
 
   @override
   Future<void> showTestNotification(NotificationContent content) async {
     await initialize();
-    await _plugin.show(
-      _testNotificationId,
-      content.title,
-      content.body,
-      _detailsFor(content),
+    await _requireUsableChannel();
+
+    final permission =
+        await getPermissionInfo(permissionRequested: true);
+    if (!permission.granted) {
+      throw StateError(
+        'Cannot post test notification: Android notification permission '
+        'is not granted.',
+      );
+    }
+
+    _log(
+      'post test notification id=' +
+          _testNotificationId.toString() +
+          ' channel=' +
+          _channelId,
+    );
+
+    try {
+      await _plugin.show(
+        _testNotificationId,
+        content.title,
+        content.body,
+        _detailsFor(content),
+        payload: 'qaza://notification/test',
+      );
+    } on PlatformException catch (error, stack) {
+      _log(
+        'test notification failed id=' +
+            _testNotificationId.toString() +
+            ' code=' +
+            error.code +
+            ' message=' +
+            (error.message ?? '') +
+            '\n' +
+            stack.toString(),
+      );
+      rethrow;
+    } catch (error, stack) {
+      _log(
+        'test notification failed id=' +
+            _testNotificationId.toString() +
+            ' type=' +
+            error.runtimeType.toString() +
+            ' message=' +
+            error.toString() +
+            '\n' +
+            stack.toString(),
+      );
+      rethrow;
+    }
+
+    _log(
+      'test notification show() completed id=' +
+          _testNotificationId.toString(),
+    );
+  }
+
+  void _handleNotificationResponse(NotificationResponse response) {
+    _log(
+      'notification tapped id=' +
+          response.id.toString() +
+          ' payload=' +
+          (response.payload ?? '') +
+          ' action=' +
+          (response.actionId ?? ''),
     );
   }
 
@@ -181,12 +445,24 @@ class LocalNotificationService implements NotificationScheduler {
       NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
-          content.channelName,
-          channelDescription: content.channelDescription,
+          _channelName,
+          channelDescription: _channelDescription,
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
           icon: '@drawable/ic_stat_qaza',
         ),
-        iOS: const DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(),
       );
+}
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) {
+  if (kDebugMode) {
+    debugPrint(
+      '[notifications] background notification response id=' +
+          response.id.toString() +
+          ' payload=' +
+          (response.payload ?? ''),
+    );
+  }
 }

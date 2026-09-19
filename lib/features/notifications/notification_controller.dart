@@ -1,10 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../data/notifications/local_notification_service.dart';
-import '../../l10n/app_localizations.dart';
 import '../../domain/entities/qaza_progress.dart';
+import '../../l10n/app_localizations.dart';
 
 const _defaultReminderHour = 20;
 const _defaultReminderMinute = 0;
@@ -13,6 +16,7 @@ enum NotificationPermissionStatus {
   notRequested,
   granted,
   denied,
+  permanentlyDenied,
   unavailable,
   restricted,
 }
@@ -39,12 +43,6 @@ class NotificationSettingsState {
   final int minute;
   final NotificationPermissionStatus permissionStatus;
   final bool hasPendingQaza;
-
-  /// False when the Qaza aggregate could not be read this load.
-  ///
-  /// The reminder then behaves as if nothing is pending — scheduling on a
-  /// guess would be worse — but the page says so rather than claiming the
-  /// ledger is empty.
   final bool pendingCountKnown;
 
   bool get canSendNotifications =>
@@ -52,8 +50,9 @@ class NotificationSettingsState {
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
-    if (!canSendNotifications)
+    if (!canSendNotifications) {
       return NotificationScheduleStatus.permissionRequired;
+    }
     if (!hasPendingQaza) return NotificationScheduleStatus.noPendingQaza;
     return NotificationScheduleStatus.scheduled;
   }
@@ -61,7 +60,11 @@ class NotificationSettingsState {
   String get formattedTime {
     final displayHour = hour % 12 == 0 ? 12 : hour % 12;
     final suffix = hour >= 12 ? 'PM' : 'AM';
-    return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
+    return displayHour.toString() +
+        ':' +
+        minute.toString().padLeft(2, '0') +
+        ' ' +
+        suffix;
   }
 
   NotificationSettingsState copyWith({
@@ -94,10 +97,6 @@ class NotificationSettingsNotifier
   NotificationScheduler get _scheduler =>
       ref.read(notificationSchedulerProvider);
 
-  /// Notification text for the language the user has chosen.
-  ///
-  /// The scheduler runs without a widget tree, so the strings are resolved here
-  /// from the same generated resources the UI uses.
   NotificationContent _content({bool test = false}) {
     final l10n = lookupAppLocalizations(ref.read(localeProvider));
     return NotificationContent(
@@ -110,17 +109,9 @@ class NotificationSettingsNotifier
 
   String _scopedKey(String baseKey) {
     final userId = ref.read(activeUserIdProvider);
-    return '$baseKey:${userId ?? 'anonymous'}';
+    return '$baseKey:' + (userId ?? 'anonymous');
   }
 
-  /// Loads the page's data.
-  ///
-  /// The saved reminder settings are the only hard dependency: they are what
-  /// the page exists to show, so failing to read them is a real error. The
-  /// platform scheduler and the Qaza aggregate are both allowed to fail
-  /// without taking the page down — a device where notifications are
-  /// unavailable, or a ledger that cannot be read right now, still has
-  /// settings worth displaying and an explanation worth giving.
   @override
   Future<NotificationSettingsState> build() async {
     ref.listen<AsyncValue<QazaProgressSummary>>(
@@ -128,7 +119,6 @@ class NotificationSettingsNotifier
       (_, next) => _listenToQazaChanges(next),
     );
 
-    // Reading the stored preferences is the one step allowed to throw.
     final prefs = await SharedPreferences.getInstance();
     final requested =
         prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
@@ -136,8 +126,6 @@ class NotificationSettingsNotifier
     final schedulerReady = await _initializeScheduler();
     final permissionStatus = schedulerReady
         ? await _resolvePermissionStatus(requested: requested)
-        // The platform layer never came up, so no permission state can be
-        // trusted. This is the case the `unavailable` status exists for.
         : NotificationPermissionStatus.unavailable;
 
     final pending = await _readPendingQaza();
@@ -151,15 +139,14 @@ class NotificationSettingsNotifier
       pendingCountKnown: pending != null,
     );
 
-    await _reconcile(settings);
+    try {
+      await _reconcile(settings);
+    } catch (error, stack) {
+      _logPlatformFailure('startup reconciliation', error, stack);
+    }
     return settings;
   }
 
-  /// Reloads everything behind the page, for the Retry action.
-  ///
-  /// The failed dependency has to be invalidated too: a cached error in the
-  /// Qaza aggregate would otherwise be replayed into every rebuild, which is
-  /// what made Retry look like it did nothing.
   Future<void> reload() async {
     state = const AsyncLoading();
     ref.invalidate(progressSummaryProvider);
@@ -170,8 +157,8 @@ class NotificationSettingsNotifier
     try {
       await _scheduler.initialize();
       return true;
-    } catch (_) {
-      // Timezone lookup and channel creation both fail on some devices.
+    } catch (error, stack) {
+      _logPlatformFailure('initialization', error, stack);
       return false;
     }
   }
@@ -180,47 +167,55 @@ class NotificationSettingsNotifier
     required bool requested,
   }) async {
     try {
-      if (await _scheduler.isPermissionGranted()) {
-        return NotificationPermissionStatus.granted;
+      final info =
+          await _scheduler.getPermissionInfo(permissionRequested: requested);
+      if (!info.supported) return NotificationPermissionStatus.granted;
+      if (info.granted) return NotificationPermissionStatus.granted;
+      if (!requested) return NotificationPermissionStatus.notRequested;
+      if (info.permanentlyDenied) {
+        return NotificationPermissionStatus.permanentlyDenied;
       }
-    } catch (_) {
+      return NotificationPermissionStatus.denied;
+    } catch (error, stack) {
+      _logPlatformFailure('permission status check', error, stack);
       return NotificationPermissionStatus.unavailable;
     }
-    return requested
-        ? NotificationPermissionStatus.denied
-        : NotificationPermissionStatus.notRequested;
   }
 
-  /// Whether anything is pending, or null when the ledger could not be read.
-  ///
-  /// Aggregate-only: reminders need to know whether anything is pending, not
-  /// what the pending records are, so this never reads the ledger itself.
   Future<bool?> _readPendingQaza() async {
     try {
       final summary = await ref.read(progressSummaryProvider.future);
       return summary.overall.pending > 0;
-    } catch (_) {
+    } catch (error, stack) {
+      _logPlatformFailure('pending Qaza check', error, stack);
       return null;
     }
   }
 
-  /// Re-reads the platform permission, after a trip to system settings or a
-  /// return to the foreground.
-  ///
-  /// A permission that has just been granted enables the reminder the reader
-  /// already asked for, so coming back from settings finishes the job instead
-  /// of making them tap the toggle again.
   Future<void> refreshPermissionStatus() async {
     final current = state.valueOrNull;
     if (current == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    final requested =
-        prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
-    final permissionStatus =
-        await _resolvePermissionStatus(requested: requested);
-    final next = current.copyWith(permissionStatus: permissionStatus);
-    state = AsyncData(next);
-    await _reconcile(next);
+
+    try {
+      final requested = await _readPermissionRequestState();
+      final permissionStatus =
+          await _resolvePermissionStatus(requested: requested);
+      final next = current.copyWith(permissionStatus: permissionStatus);
+      state = AsyncData(next);
+
+      try {
+        await _reconcile(next);
+      } catch (error, stack) {
+        _logPlatformFailure('foreground reconciliation', error, stack);
+      }
+    } catch (error, stack) {
+      _logPlatformFailure('foreground permission refresh', error, stack);
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+    }
   }
 
   Future<bool> setEnabled(bool enabled) async {
@@ -228,8 +223,6 @@ class NotificationSettingsNotifier
     if (current == null) return false;
 
     if (!enabled) {
-      // Turning off must always succeed from the reader's point of view: the
-      // preference is theirs even if the platform call fails.
       await _cancelQuietly();
       final next = current.copyWith(enabled: false);
       await _persist(next, permissionRequested: null);
@@ -238,24 +231,44 @@ class NotificationSettingsNotifier
     }
 
     if (current.enabled && current.canSendNotifications) {
-      await _reconcile(current);
-      return true;
+      try {
+        await _reconcile(current);
+        return true;
+      } catch (error, stack) {
+        _logPlatformFailure('existing reminder reconciliation', error, stack);
+        state = AsyncData(
+          current.copyWith(
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+        return false;
+      }
     }
 
-    // A refused or failed request leaves the reader on this page with the
-    // permission card explaining what to do, never on an error screen.
-    bool granted;
+    if (current.permissionStatus ==
+        NotificationPermissionStatus.permanentlyDenied) {
+      return false;
+    }
+
+    late final bool granted;
     try {
-      granted =
-          current.canSendNotifications || await _scheduler.requestPermission();
-    } catch (_) {
-      granted = false;
+      granted = await _requestPermissionForAction();
+    } catch (error, stack) {
+      _logPlatformFailure('permission request', error, stack);
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+      return false;
     }
 
     if (!granted) {
+      final requested = await _readPermissionRequestState();
+      final status = await _resolvePermissionStatus(requested: requested);
       final next = current.copyWith(
         enabled: false,
-        permissionStatus: NotificationPermissionStatus.denied,
+        permissionStatus: status,
       );
       await _persist(next, permissionRequested: true);
       state = AsyncData(next);
@@ -268,19 +281,49 @@ class NotificationSettingsNotifier
     );
     await _persist(next, permissionRequested: true);
     state = AsyncData(next);
-    await _reconcile(next);
-    return true;
+
+    try {
+      await _reconcile(next);
+      return true;
+    } catch (error, stack) {
+      _logPlatformFailure('enable reconciliation', error, stack);
+      state = AsyncData(
+        next.copyWith(
+          enabled: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+      return false;
+    }
   }
 
-  /// Opens the system notification settings, for a permission the app can no
-  /// longer request itself.
-  ///
-  /// Returns false when the platform has no such screen, so the caller can
-  /// say so rather than appearing to do nothing.
+  Future<bool> _requestPermissionForAction() async {
+    await _scheduler.initialize();
+    try {
+      final granted = await _scheduler.requestPermission();
+      await _persistPermissionRequested(true);
+      return granted;
+    } catch (error, stack) {
+      _logPlatformFailure('permission request', error, stack);
+      rethrow;
+    }
+  }
+
+  Future<void> _persistPermissionRequested(bool requested) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_scopedKey(_permissionRequestedKey), requested);
+  }
+
+  Future<bool> _readPermissionRequestState() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_scopedKey(_permissionRequestedKey)) ?? false;
+  }
+
   Future<bool> openSystemSettings() async {
     try {
       return await _scheduler.openSystemNotificationSettings();
-    } catch (_) {
+    } catch (error, stack) {
+      _logPlatformFailure('open system settings', error, stack);
       return false;
     }
   }
@@ -288,8 +331,8 @@ class NotificationSettingsNotifier
   Future<void> _cancelQuietly() async {
     try {
       await _scheduler.cancelDaily();
-    } catch (_) {
-      // The page already reports an unusable scheduler.
+    } catch (error, stack) {
+      _logPlatformFailure('cancel daily reminder', error, stack);
     }
   }
 
@@ -303,19 +346,75 @@ class NotificationSettingsNotifier
     final next = current.copyWith(hour: hour, minute: minute);
     await _persist(next, permissionRequested: null);
     state = AsyncData(next);
-    // _reconcile already swallows scheduler failures; the saved time stands
-    // either way.
-    await _reconcile(next);
+
+    try {
+      await _reconcile(next);
+    } catch (error, stack) {
+      _logPlatformFailure('time-change reconciliation', error, stack);
+      state = AsyncData(
+        next.copyWith(
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+    }
   }
 
   Future<void> sendTestNotification() async {
     final current = state.valueOrNull;
-    if (current == null)
+    if (current == null) {
       throw StateError('Notification settings are not loaded.');
-    if (!current.canSendNotifications) {
-      throw StateError('Notification permission is required first.');
     }
-    await _scheduler.showTestNotification(_content(test: true));
+
+    var permissionStatus = current.permissionStatus;
+    if (permissionStatus != NotificationPermissionStatus.granted) {
+      if (permissionStatus ==
+          NotificationPermissionStatus.permanentlyDenied) {
+        throw StateError(
+          'Notification permission is permanently denied. '
+          'Open system notification settings and enable notifications.',
+        );
+      }
+
+      try {
+        final granted = await _requestPermissionForAction();
+        if (!granted) {
+          final requested = await _readPermissionRequestState();
+          permissionStatus =
+              await _resolvePermissionStatus(requested: requested);
+          state =
+              AsyncData(current.copyWith(permissionStatus: permissionStatus));
+          throw StateError(
+            permissionStatus ==
+                    NotificationPermissionStatus.permanentlyDenied
+                ? 'Notification permission is permanently denied. '
+                    'Open system notification settings and enable notifications.'
+                : 'Notification permission was not granted.',
+          );
+        }
+      } catch (error, stack) {
+        _logPlatformFailure('test permission request', error, stack);
+        if (error is StateError) rethrow;
+        state = AsyncData(
+          current.copyWith(
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+        rethrow;
+      }
+
+      state = AsyncData(
+        current.copyWith(
+          permissionStatus: NotificationPermissionStatus.granted,
+        ),
+      );
+    }
+
+    try {
+      await _scheduler.showTestNotification(_content(test: true));
+    } catch (error, stack) {
+      _logPlatformFailure('test notification', error, stack);
+      rethrow;
+    }
   }
 
   void _listenToQazaChanges(AsyncValue<QazaProgressSummary> next) {
@@ -328,28 +427,30 @@ class NotificationSettingsNotifier
       pendingCountKnown: true,
     );
     state = AsyncData(updated);
-    _reconcile(updated);
+    unawaited(_reconcileSafely(updated));
   }
 
-  /// Brings the platform schedule in line with [value].
-  ///
-  /// Reconciliation is a side effect of loading, so it must not be able to
-  /// fail the load: on a device where the scheduler is unavailable there is
-  /// nothing to reconcile and nothing the reader can do about it here.
-  Future<void> _reconcile(NotificationSettingsState value) async {
+  Future<void> _reconcileSafely(NotificationSettingsState value) async {
     try {
-      switch (value.scheduleStatus) {
-        case NotificationScheduleStatus.disabled:
-        case NotificationScheduleStatus.permissionRequired:
-        case NotificationScheduleStatus.noPendingQaza:
-          await _scheduler.cancelDaily();
-          return;
-        case NotificationScheduleStatus.scheduled:
-          await _scheduler.scheduleDaily(
-              hour: value.hour, minute: value.minute, content: _content());
-      }
-    } catch (_) {
-      // Left as-is; the page already reports the scheduler as unavailable.
+      await _reconcile(value);
+    } catch (error, stack) {
+      _logPlatformFailure('background reconciliation', error, stack);
+    }
+  }
+
+  Future<void> _reconcile(NotificationSettingsState value) async {
+    switch (value.scheduleStatus) {
+      case NotificationScheduleStatus.disabled:
+      case NotificationScheduleStatus.permissionRequired:
+      case NotificationScheduleStatus.noPendingQaza:
+        await _scheduler.cancelDaily();
+        return;
+      case NotificationScheduleStatus.scheduled:
+        await _scheduler.scheduleDaily(
+          hour: value.hour,
+          minute: value.minute,
+          content: _content(),
+        );
     }
   }
 
@@ -363,7 +464,21 @@ class NotificationSettingsNotifier
     await prefs.setInt(_scopedKey(_minuteKey), value.minute);
     if (permissionRequested != null) {
       await prefs.setBool(
-          _scopedKey(_permissionRequestedKey), permissionRequested);
+        _scopedKey(_permissionRequestedKey),
+        permissionRequested,
+      );
+    }
+  }
+
+  void _logPlatformFailure(String operation, Object error, StackTrace stack) {
+    if (kDebugMode) {
+      debugPrint(
+        '[notifications] $operation failed: ' +
+            error.runtimeType.toString() +
+            ': ' +
+            error.toString(),
+      );
+      debugPrintStack(stackTrace: stack);
     }
   }
 }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_scaffold.dart';
-import '../../l10n/app_localizations.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../l10n/app_localizations.dart';
 import '../notifications/notification_controller.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -46,11 +46,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           .read(notificationSettingsProvider.notifier)
           .setEnabled(enabled);
       if (!mounted || ok || !enabled) return;
+
       final value = ref.read(notificationSettingsProvider).valueOrNull;
-      final message =
-          value?.permissionStatus == NotificationPermissionStatus.denied
-              ? l10n.notificationsBlockedDetail
-              : l10n.notificationsEnableFailed;
+      final message = switch (value?.permissionStatus) {
+        NotificationPermissionStatus.denied =>
+          l10n.notificationsBlockedDetail,
+        NotificationPermissionStatus.permanentlyDenied =>
+          l10n.notificationsEnableInSettings,
+        NotificationPermissionStatus.unavailable =>
+          l10n.notificationsUnavailableDetail,
+        _ => l10n.notificationsEnableFailed,
+      };
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
@@ -77,12 +83,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     }
   }
 
-  /// Sends the reader to the system screen, the only place a blocked
-  /// permission can be undone.
-  ///
-  /// Returning to the app re-checks the permission through the lifecycle
-  /// observer above, so a permission granted there takes effect without
-  /// another tap.
   Future<void> _openSystemSettings() async {
     if (_working) return;
     final l10n = AppLocalizations.of(context);
@@ -110,14 +110,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(AppLocalizations.of(context).notificationsTestSent)),
+          content: Text(AppLocalizations.of(context).notificationsTestSent),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(AppLocalizations.of(context)
-                .notificationsTestFailed('$error'))),
+          content: Text(
+            AppLocalizations.of(context).notificationsTestFailed('$error'),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _working = false);
@@ -128,12 +131,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final settings = ref.watch(notificationSettingsProvider);
+
     return AppScaffold(
       title: l10n.notificationsTitle,
       body: settings.when(
         loading: () => LoadingState(
-            key: const Key('notifications_loading_state'),
-            message: l10n.notificationsLoading),
+          key: const Key('notifications_loading_state'),
+          message: l10n.notificationsLoading,
+        ),
         error: (error, stack) => ErrorState(
           key: const Key('notifications_error_state'),
           message: l10n.notificationsLoadError('$error'),
@@ -143,28 +148,35 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         data: (value) {
           final theme = Theme.of(context);
           final permission = value.permissionStatus;
+
           final permissionTitle = switch (permission) {
             NotificationPermissionStatus.granted => l10n.notificationsAllowed,
             NotificationPermissionStatus.notRequested =>
               l10n.notificationsPermissionNeeded,
             NotificationPermissionStatus.denied => l10n.notificationsBlocked,
+            NotificationPermissionStatus.permanentlyDenied =>
+              l10n.notificationsBlocked,
             NotificationPermissionStatus.unavailable =>
               l10n.notificationsUnavailable,
             NotificationPermissionStatus.restricted =>
               l10n.notificationsRestricted,
           };
+
           final permissionMessage = switch (permission) {
             NotificationPermissionStatus.granted =>
               l10n.notificationsDeviceCanDeliver,
             NotificationPermissionStatus.notRequested =>
               l10n.notificationsAllowPrompt,
             NotificationPermissionStatus.denied =>
+              l10n.notificationsAllowPrompt,
+            NotificationPermissionStatus.permanentlyDenied =>
               l10n.notificationsEnableInSettings,
             NotificationPermissionStatus.unavailable =>
               l10n.notificationsUnavailableDetail,
             NotificationPermissionStatus.restricted =>
               l10n.notificationsRestrictedDetail,
           };
+
           final permissionIcon = switch (permission) {
             NotificationPermissionStatus.granted =>
               Icons.check_circle_outline_rounded,
@@ -172,19 +184,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               Icons.notifications_active_outlined,
             NotificationPermissionStatus.denied =>
               Icons.notifications_off_outlined,
+            NotificationPermissionStatus.permanentlyDenied =>
+              Icons.notifications_off_outlined,
             NotificationPermissionStatus.unavailable =>
               Icons.error_outline_rounded,
             NotificationPermissionStatus.restricted =>
               Icons.lock_outline_rounded,
           };
+
           final reminderEnabled = value.enabled && !_working;
-          final testEnabled = value.canSendNotifications && !_working;
+          final testEnabled =
+              permission != NotificationPermissionStatus.unavailable &&
+                  permission != NotificationPermissionStatus.restricted &&
+                  !_working;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             children: [
-              Text(l10n.notificationsDailyToggle,
-                  style: theme.textTheme.headlineSmall),
+              Text(
+                l10n.notificationsDailyToggle,
+                style: theme.textTheme.headlineSmall,
+              ),
               const SizedBox(height: 4),
               Text(
                 l10n.notificationsDailySubtitle,
@@ -242,9 +262,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                         onPressed: _working ? null : () => _setEnabled(true),
                         child: Text(l10n.notificationsAllow),
                       ),
-                    // Asking again would be refused without a prompt, so the
-                    // reader is taken where the choice can be changed.
                     NotificationPermissionStatus.denied => TextButton(
+                        key: const Key('notification_permission_retry'),
+                        onPressed: _working ? null : () => _setEnabled(true),
+                        child: Text(l10n.notificationsTryAgain),
+                      ),
+                    NotificationPermissionStatus.permanentlyDenied =>
+                      TextButton(
                         key: const Key('notification_open_settings'),
                         onPressed: _working ? null : _openSystemSettings,
                         child: Text(l10n.notificationsOpenSettings),
@@ -290,8 +314,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (!value.canSendNotifications) {
       return l10n.notificationsPermissionRequired;
     }
-    // Saying "nothing pending" when the ledger could not be read would be a
-    // guess presented as a fact.
     if (!value.pendingCountKnown) return l10n.notificationsPendingUnknown;
     if (!value.hasPendingQaza) return l10n.notificationsNoPending;
     return l10n.notificationsScheduledAt(value.formattedTime);

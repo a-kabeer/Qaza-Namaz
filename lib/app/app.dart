@@ -1,26 +1,47 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'providers.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/auth_gate.dart';
+import '../features/notifications/notification_controller.dart';
 import '../l10n/app_localizations.dart';
+import 'providers.dart';
 
-/// Root widget for the application shell.
-///
-/// Locale and theme both come from persisted Riverpod state. Text direction is
-/// not set here: Flutter derives it from the active locale, so Urdu renders
-/// right to left without any per-widget handling.
-///
-/// The locale is also handed to the theme, which is what switches the whole
-/// type scale to Noto Nastaliq Urdu: every screen, dialog, button, label and
-/// form field reads its style from `ThemeData.textTheme`, so none of them
-/// needs to know about the font.
-class QazaNamazApp extends ConsumerWidget {
+class QazaNamazApp extends ConsumerStatefulWidget {
   const QazaNamazApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<QazaNamazApp> createState() => _QazaNamazAppState();
+}
+
+class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_initializeNotifications());
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      await ref.read(notificationSchedulerProvider).initialize();
+    } catch (error, stack) {
+      if (kDebugMode) {
+        debugPrint(
+          '[notifications] app-start initialization failed: ' +
+              error.runtimeType.toString() +
+              ': ' +
+              error.toString(),
+        );
+        debugPrintStack(stackTrace: stack);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

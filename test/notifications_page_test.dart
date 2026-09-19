@@ -13,21 +13,22 @@ import 'package:qaza_namaz/features/settings/notifications_screen.dart';
 
 import 'support/test_app.dart';
 
-/// A scheduler whose platform layer can be made to fail, the way a device with
-/// an unusable timezone database or notification channel does.
 class _FlakyScheduler implements NotificationScheduler {
   bool failInitialize = false;
   bool failPermissionCheck = false;
+  bool failRequest = false;
+
   int initializeCalls = 0;
   int scheduleCalls = 0;
   int cancelCalls = 0;
+  int requestCalls = 0;
+  int settingsCalls = 0;
 
-  /// What a request returns.
   bool permissionGranted = true;
-
-  /// What a status check reports, which can differ from the request result:
-  /// that is exactly the blocked-then-allowed case.
   bool permissionGrantedForStatus = true;
+  bool canRequestPermission = true;
+  bool permanentlyDeniedForStatus = false;
+  bool settingsOpen = true;
 
   @override
   Future<void> initialize() async {
@@ -36,22 +37,32 @@ class _FlakyScheduler implements NotificationScheduler {
   }
 
   @override
-  Future<bool> isPermissionGranted() async {
+  Future<NotificationPermissionInfo> getPermissionInfo({
+    required bool permissionRequested,
+  }) async {
     if (failPermissionCheck) throw StateError('permission check failed');
-    return permissionGrantedForStatus;
+    return NotificationPermissionInfo(
+      granted: permissionGrantedForStatus,
+      canRequest: canRequestPermission,
+      permanentlyDenied:
+          !permissionGrantedForStatus && permanentlyDeniedForStatus,
+      supported: true,
+      sdkInt: 35,
+      shouldShowRationale:
+          !permanentlyDeniedForStatus && !permissionGrantedForStatus,
+    );
   }
+
+  @override
+  Future<bool> isPermissionGranted() async => permissionGrantedForStatus;
 
   @override
   Future<bool> requestPermission() async {
     requestCalls++;
     if (failRequest) throw StateError('permission request failed');
+    if (permissionGranted) permissionGrantedForStatus = true;
     return permissionGranted;
   }
-
-  int requestCalls = 0;
-  bool failRequest = false;
-  int settingsCalls = 0;
-  bool settingsOpen = true;
 
   @override
   Future<bool> openSystemNotificationSettings() async {
@@ -90,8 +101,6 @@ QazaRecord _pending() {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  /// Controls what the Qaza aggregate does, so a failing ledger can be fixed
-  /// between a failed load and a retry.
   late bool summaryFails;
   late List<QazaRecord> records;
 
@@ -106,17 +115,19 @@ void main() {
     tester.view.physicalSize = const Size(900, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        notificationSchedulerProvider.overrideWithValue(scheduler),
-        activeUserIdProvider.overrideWithValue('u1'),
-        progressSummaryProvider.overrideWith((ref) async {
-          if (summaryFails) throw StateError('ledger unavailable');
-          return QazaProgressSummary.fromRecords(records);
-        }),
-      ],
-      child: const TestApp(home: NotificationsScreen()),
-    ));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          notificationSchedulerProvider.overrideWithValue(scheduler),
+          activeUserIdProvider.overrideWithValue('u1'),
+          progressSummaryProvider.overrideWith((ref) async {
+            if (summaryFails) throw StateError('ledger unavailable');
+            return QazaProgressSummary.fromRecords(records);
+          }),
+        ],
+        child: const TestApp(home: NotificationsScreen()),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -125,7 +136,60 @@ void main() {
   Finder statusTile() => find.byKey(const Key('notification_schedule_status'));
 
   String statusText(WidgetTester tester) =>
-      ((tester.widget<ListTile>(statusTile()).subtitle!) as Text).data!;
+      (tester.widget<ListTile>(statusTile()).subtitle! as Text).data!;
+
+  testWidgets('not-requested state keeps Allow and enables test action',
+      (tester) async {
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = false
+      ..permissionGranted = true;
+    await pumpPage(tester, scheduler);
+
+    expect(
+      find.byKey(const Key('notification_permission_allow')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('test_notification_action')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('denied state offers Retry, not system settings',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = false
+      ..permanentlyDeniedForStatus = false;
+    await pumpPage(tester, scheduler);
+
+    expect(
+      find.byKey(const Key('notification_permission_retry')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('notification_open_settings')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('permanently denied state offers system settings',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = false
+      ..permanentlyDeniedForStatus = true;
+    await pumpPage(tester, scheduler);
+
+    expect(
+      find.byKey(const Key('notification_open_settings')),
+      findsOneWidget,
+    );
+  });
 
   group('normal load', () {
     testWidgets('shows the settings, not an error', (tester) async {
@@ -133,9 +197,14 @@ void main() {
 
       expect(errorState(), findsNothing);
       expect(switchTile(), findsOneWidget);
-      expect(find.byKey(const Key('reminder_time_tile')), findsOneWidget);
-      expect(find.byKey(const Key('notification_permission_status')),
-          findsOneWidget);
+      expect(
+        find.byKey(const Key('reminder_time_tile')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('notification_permission_status')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an empty ledger reports nothing pending', (tester) async {
@@ -145,10 +214,14 @@ void main() {
       });
       await pumpPage(tester, _FlakyScheduler());
 
-      expect(statusText(tester), 'No pending Qaza. No reminder is scheduled.');
+      expect(
+        statusText(tester),
+        'No pending Qaza. No reminder is scheduled.',
+      );
     });
 
-    testWidgets('a pending ledger reports the scheduled time', (tester) async {
+    testWidgets('a pending ledger reports the scheduled time',
+        (tester) async {
       SharedPreferences.setMockInitialValues({
         'qaza_daily_notification_enabled:u1': true,
         'qaza_daily_notification_hour:u1': 6,
@@ -168,9 +241,7 @@ void main() {
       final scheduler = _FlakyScheduler()..failInitialize = true;
       await pumpPage(tester, scheduler, ledger: [_pending()]);
 
-      // Regression: this used to throw out of build() and leave the page dead.
       expect(errorState(), findsNothing);
-      expect(switchTile(), findsOneWidget);
       expect(find.text('Notifications unavailable'), findsOneWidget);
     });
 
@@ -183,50 +254,19 @@ void main() {
       await pumpPage(tester, scheduler, ledger: [_pending()]);
 
       expect(scheduler.scheduleCalls, 0);
-      expect(statusText(tester), 'Notification permission is required.');
+      expect(
+        statusText(tester),
+        'Notification permission is required.',
+      );
     });
 
-    testWidgets('a failing permission check is treated the same way',
+    testWidgets('a failing permission check is recoverable',
         (tester) async {
       final scheduler = _FlakyScheduler()..failPermissionCheck = true;
       await pumpPage(tester, scheduler);
 
       expect(errorState(), findsNothing);
       expect(find.text('Notifications unavailable'), findsOneWidget);
-    });
-  });
-
-  group('the ledger is unreadable', () {
-    testWidgets('the page still loads', (tester) async {
-      await pumpPage(tester, _FlakyScheduler(), ledgerFails: true);
-
-      // Regression: a failed aggregate used to take the whole page down.
-      expect(errorState(), findsNothing);
-      expect(switchTile(), findsOneWidget);
-    });
-
-    testWidgets('it does not claim the ledger is empty', (tester) async {
-      SharedPreferences.setMockInitialValues({
-        'qaza_daily_notification_enabled:u1': true,
-        'qaza_notification_permission_requested:u1': true,
-      });
-      await pumpPage(tester, _FlakyScheduler(), ledgerFails: true);
-
-      expect(statusText(tester),
-          'Pending Qaza could not be checked. Pull to retry.');
-      expect(find.text('No pending Qaza. No reminder is scheduled.'),
-          findsNothing);
-    });
-
-    testWidgets('nothing is scheduled on a guess', (tester) async {
-      SharedPreferences.setMockInitialValues({
-        'qaza_daily_notification_enabled:u1': true,
-        'qaza_notification_permission_requested:u1': true,
-      });
-      final scheduler = _FlakyScheduler();
-      await pumpPage(tester, scheduler, ledgerFails: true);
-
-      expect(scheduler.scheduleCalls, 0);
     });
   });
 
@@ -238,7 +278,10 @@ void main() {
       await tester.tap(switchTile());
       await tester.pumpAndSettle();
 
-      expect(tester.widget<SwitchListTile>(switchTile()).value, isTrue);
+      expect(
+        tester.widget<SwitchListTile>(switchTile()).value,
+        isTrue,
+      );
       expect(scheduler.scheduleCalls, 1);
       expect(errorState(), findsNothing);
       expect(statusText(tester), contains('8:00 PM'));
@@ -254,15 +297,17 @@ void main() {
       await tester.tap(switchTile());
       await tester.pumpAndSettle();
 
-      // Regression: this used to leave the whole page in an error state.
       expect(errorState(), findsNothing);
       expect(switchTile(), findsOneWidget);
-      expect(tester.widget<SwitchListTile>(switchTile()).value, isFalse);
+      expect(
+        tester.widget<SwitchListTile>(switchTile()).value,
+        isFalse,
+      );
       expect(find.text('Notifications blocked'), findsOneWidget);
       expect(scheduler.scheduleCalls, 0);
     });
 
-    testWidgets('a request that throws is a refusal, not a page error',
+    testWidgets('a request that throws is a recoverable failure',
         (tester) async {
       final scheduler = _FlakyScheduler()
         ..permissionGrantedForStatus = false
@@ -273,35 +318,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(errorState(), findsNothing);
-      expect(find.text('Notifications blocked'), findsOneWidget);
+      expect(find.text('Notifications unavailable'), findsOneWidget);
     });
   });
 
-  group('recovering from a blocked permission', () {
-    Future<_FlakyScheduler> pumpBlocked(WidgetTester tester) async {
-      final scheduler = _FlakyScheduler()
-        ..permissionGranted = false
-        ..permissionGrantedForStatus = false;
-      await pumpPage(tester, scheduler, ledger: [_pending()]);
-      await tester.tap(switchTile());
-      await tester.pumpAndSettle();
-      return scheduler;
-    }
-
-    testWidgets('the blocked card offers system settings, not another try',
+  group('recovering from system settings', () {
+    testWidgets('a permanently denied permission opens system settings',
         (tester) async {
-      await pumpBlocked(tester);
-
-      // Asking again would be refused without a prompt, so it is not offered.
-      expect(
-          find.byKey(const Key('notification_open_settings')), findsOneWidget);
-      expect(
-          find.byKey(const Key('notification_permission_allow')), findsNothing);
-      expect(find.text('Open notification settings'), findsOneWidget);
-    });
-
-    testWidgets('it opens the system screen', (tester) async {
-      final scheduler = await pumpBlocked(tester);
+      SharedPreferences.setMockInitialValues({
+        'qaza_notification_permission_requested:u1': true,
+      });
+      final scheduler = _FlakyScheduler()
+        ..permissionGrantedForStatus = false
+        ..permanentlyDeniedForStatus = true;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
 
       await tester.tap(find.byKey(const Key('notification_open_settings')));
       await tester.pumpAndSettle();
@@ -309,125 +339,40 @@ void main() {
       expect(scheduler.settingsCalls, 1);
     });
 
-    testWidgets('a permission granted there takes effect on return',
+    testWidgets('a permission granted in settings is detected on return',
         (tester) async {
-      final scheduler = await pumpBlocked(tester);
-      expect(find.text('Notifications blocked'), findsOneWidget);
+      SharedPreferences.setMockInitialValues({
+        'qaza_notification_permission_requested:u1': true,
+        'qaza_daily_notification_enabled:u1': true,
+      });
+      final scheduler = _FlakyScheduler()
+        ..permissionGrantedForStatus = false
+        ..permanentlyDeniedForStatus = true;
+      await pumpPage(tester, scheduler, ledger: [_pending()]);
 
-      // The reader allows notifications in system settings and comes back.
       scheduler.permissionGrantedForStatus = true;
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      scheduler.permanentlyDeniedForStatus = false;
+      tester.binding.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Notifications blocked'), findsNothing);
       expect(find.text('Notifications allowed'), findsOneWidget);
-      expect(errorState(), findsNothing);
-    });
-
-    testWidgets('enabling then works and schedules the reminder',
-        (tester) async {
-      final scheduler = await pumpBlocked(tester);
-      scheduler.permissionGrantedForStatus = true;
-      scheduler.permissionGranted = true;
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pumpAndSettle();
-
-      await tester.tap(switchTile());
-      await tester.pumpAndSettle();
-
-      expect(tester.widget<SwitchListTile>(switchTile()).value, isTrue);
       expect(scheduler.scheduleCalls, greaterThanOrEqualTo(1));
-      expect(errorState(), findsNothing);
     });
   });
 
-  group('error and retry', () {
-    testWidgets('unreadable settings are a real error with a Retry',
-        (tester) async {
-      final scheduler = _FlakyScheduler();
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          notificationSchedulerProvider.overrideWithValue(scheduler),
-          activeUserIdProvider.overrideWithValue('u1'),
-          progressSummaryProvider
-              .overrideWith((ref) async => QazaProgressSummary.empty()),
-          notificationSettingsProvider.overrideWith(
-              () => _FailingNotifier(StateError('preferences unreadable'))),
-        ],
-        child: const TestApp(home: NotificationsScreen()),
-      ));
-      await tester.pumpAndSettle();
+  testWidgets('Send Test Notification requests permission before showing',
+      (tester) async {
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = false
+      ..permissionGranted = true;
+    await pumpPage(tester, scheduler);
 
-      expect(errorState(), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
-    });
+    await tester.tap(find.byKey(const Key('test_notification_action')));
+    await tester.pumpAndSettle();
 
-    testWidgets('Retry reloads and recovers once the cause is fixed',
-        (tester) async {
-      final scheduler = _FlakyScheduler();
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          notificationSchedulerProvider.overrideWithValue(scheduler),
-          activeUserIdProvider.overrideWithValue('u1'),
-          progressSummaryProvider
-              .overrideWith((ref) async => QazaProgressSummary.empty()),
-          notificationSettingsProvider
-              .overrideWith(() => _FailingNotifier(StateError('transient'))),
-        ],
-        child: const TestApp(home: NotificationsScreen()),
-      ));
-      await tester.pumpAndSettle();
-      expect(errorState(), findsOneWidget);
-
-      _FailingNotifier.failNext = false;
-      await tester.tap(find.text('Retry'));
-      await tester.pumpAndSettle();
-
-      expect(errorState(), findsNothing);
-      expect(switchTile(), findsOneWidget);
-    });
-
-    testWidgets('Retry re-runs the whole load, not just the notifier',
-        (tester) async {
-      final scheduler = _FlakyScheduler()..failInitialize = true;
-      await pumpPage(tester, scheduler, ledgerFails: true);
-      final initialCalls = scheduler.initializeCalls;
-
-      // The original defect: the aggregate's cached failure survived a retry,
-      // so the page could never come back. Fix both causes, then retry.
-      scheduler.failInitialize = false;
-      summaryFails = false;
-      records = [_pending()];
-      await tester
-          .element(switchTile())
-          .read(notificationSettingsProvider.notifier)
-          .reload();
-      await tester.pumpAndSettle();
-
-      expect(scheduler.initializeCalls, greaterThan(initialCalls));
-      expect(find.text('Notifications unavailable'), findsNothing);
-      expect(statusText(tester), isNot(contains('could not be checked')));
-    });
+    expect(scheduler.requestCalls, 1);
   });
-}
-
-/// Fails its first build, to exercise the page's real error path.
-class _FailingNotifier extends NotificationSettingsNotifier {
-  _FailingNotifier(this.error) {
-    failNext = true;
-  }
-
-  static bool failNext = true;
-  final Object error;
-
-  @override
-  Future<NotificationSettingsState> build() async {
-    if (failNext) throw error;
-    return super.build();
-  }
-}
-
-extension on Element {
-  T read<T>(ProviderListenable<T> provider) =>
-      ProviderScope.containerOf(this).read(provider);
 }

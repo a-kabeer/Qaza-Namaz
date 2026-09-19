@@ -1,6 +1,8 @@
 package com.example.qaza_namaz_task1_flutter
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -18,14 +20,33 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    // Once the user has blocked notifications, the app can no
-                    // longer ask: only the system settings screen can undo it.
                     "openNotificationSettings" -> {
                         result.success(openNotificationSettings())
                     }
+
+                    "getNotificationPermissionState" -> {
+                        result.success(getNotificationPermissionState())
+                    }
+
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun getNotificationPermissionState(): Map<String, Any> {
+        val runtimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val shouldShowRationale = runtimePermission &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED &&
+            shouldShowRequestPermissionRationale(
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+
+        return mapOf(
+            "sdkInt" to Build.VERSION.SDK_INT,
+            "runtimePermission" to runtimePermission,
+            "shouldShowRationale" to shouldShowRationale,
+        )
     }
 
     private fun openNotificationSettings(): Boolean = try {
