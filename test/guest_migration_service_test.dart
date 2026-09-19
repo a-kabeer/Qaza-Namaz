@@ -45,6 +45,20 @@ class FakeLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<void> saveRecordsAndOutbox(
+    String userId,
+    List<QazaRecord> records,
+    List<PendingSyncOp> ops,
+  ) async {
+    if (failNextOutboxSave) {
+      failNextOutboxSave = false;
+      throw StateError('simulated atomic write failure');
+    }
+    recordsByUser[userId] = List<QazaRecord>.of(records);
+    outboxByUser[userId] = List<PendingSyncOp>.of(ops);
+  }
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {}
 
   @override
@@ -309,7 +323,7 @@ void main() {
     );
 
     expect(local.recordsByUser[guestId], hasLength(1));
-    expect(local.recordsByUser[accountId], hasLength(1));
+    expect(local.recordsByUser[accountId], isNull);
 
     final retry = await service.migrate(
       guestUserId: guestId,
