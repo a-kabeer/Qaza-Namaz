@@ -30,10 +30,7 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
     } catch (error, stack) {
       if (kDebugMode) {
         debugPrint(
-          '[notifications] app-start initialization failed: ' +
-              error.runtimeType.toString() +
-              ': ' +
-              error.toString(),
+          '[notifications] app-start initialization failed: ${error.runtimeType}: $error',
         );
         debugPrintStack(stackTrace: stack);
       }

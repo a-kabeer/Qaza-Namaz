@@ -95,8 +95,9 @@ final activeUserIdProvider = Provider<String?>((ref) {
 });
 final requiredUserIdProvider = Provider<String>((ref) {
   final userId = ref.watch(activeUserIdProvider);
-  if (userId == null)
+  if (userId == null) {
     throw StateError('This action requires a signed-in account.');
+  }
   return userId;
 });
 

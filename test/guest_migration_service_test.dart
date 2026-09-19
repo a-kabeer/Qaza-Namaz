@@ -75,7 +75,7 @@ QazaRecord record(
 }) {
   final originalDate = DateTime.parse(date);
   return QazaRecord(
-    id: userId + '_' + prayer.name + '_' + date,
+    id: '${userId}_${prayer.name}_$date',
     userId: userId,
     prayerType: prayer,
     originalDate: originalDate,

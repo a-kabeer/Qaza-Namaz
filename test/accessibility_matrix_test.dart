@@ -150,9 +150,9 @@ void main() {
       ]) {
         final size = tester.getSize(finder);
         expect(size.width, greaterThanOrEqualTo(48.0),
-            reason: 'width of ${finder.description}');
+            reason: 'width of ${finder.describeMatch(Plurality.one)}');
         expect(size.height, greaterThanOrEqualTo(48.0),
-            reason: 'height of ${finder.description}');
+            reason: 'height of ${finder.describeMatch(Plurality.one)}');
       }
     });
 

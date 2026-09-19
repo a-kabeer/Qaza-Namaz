@@ -214,7 +214,7 @@ class _MissingArticleState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(AppLocalizations.of(context).knowledgeArticleNotFound),
         ),
       );

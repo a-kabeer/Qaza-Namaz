@@ -29,6 +29,7 @@ class _QazaDataManagementScreenState
       _showMessage(AppLocalizations.of(context).dataExportSignInRequired);
       return;
     }
+    final dialogTitle = AppLocalizations.of(context).dataExportDialogTitle;
     setState(() => _busy = true);
     try {
       final json = await ref
@@ -36,7 +37,7 @@ class _QazaDataManagementScreenState
           .exportJson(userId: userId, appVersion: appVersion);
       final bytes = Uint8List.fromList(json.codeUnits);
       final savedUri = await FilePicker.saveFile(
-          dialogTitle: AppLocalizations.of(context).dataExportDialogTitle,
+          dialogTitle: dialogTitle,
           fileName: 'qaza_namaz_export_v1.json',
           mimeType: 'application/json',
           type: FileType.custom,
@@ -66,16 +67,18 @@ class _QazaDataManagementScreenState
       final picked = await FilePicker.pickFile(
           type: FileType.custom, allowedExtensions: const ['json']);
       if (picked == null) {
-        if (mounted)
+        if (mounted) {
           _showMessage(AppLocalizations.of(context).dataImportCanceled);
+        }
         return;
       }
       // The picker reads the file for us, wherever it lives: a local path, a
       // content URI or a web blob.
       final bytes = await picked.readAsBytes();
-      if (bytes.isEmpty)
+      if (bytes.isEmpty) {
         throw const FormatException(
             'The selected file is empty or unreadable.');
+      }
       final analysis = await ref
           .read(qazaDataTransferServiceProvider)
           .analyzeImport(jsonText: String.fromCharCodes(bytes), userId: userId);
@@ -85,12 +88,14 @@ class _QazaDataManagementScreenState
       final applied =
           await ref.read(qazaDataTransferServiceProvider).applyImport(analysis);
       ref.invalidate(progressSummaryProvider);
-      if (mounted)
+      if (mounted) {
         _showMessage(
             'Import complete: ${applied.addedCount} added, ${applied.completedCount} completed, ${applied.unchangedCount} unchanged.');
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         _showMessage(AppLocalizations.of(context).dataImportRejected('$error'));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

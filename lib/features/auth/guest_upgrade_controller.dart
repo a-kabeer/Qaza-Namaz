@@ -89,7 +89,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     final wasGuest = await ref
         .read(guestSessionProvider.notifier)
         .ensureRestored();
-    state = GuestUpgradeState(running: true);
+    state = const GuestUpgradeState(running: true);
 
     if (wasGuest) {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);

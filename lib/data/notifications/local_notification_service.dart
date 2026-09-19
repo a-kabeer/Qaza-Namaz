@@ -86,7 +86,7 @@ class LocalNotificationService implements NotificationScheduler {
     tz_data.initializeTimeZones();
     final timezone = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(timezone.identifier));
-    _log('timezone=' + timezone.identifier);
+    _log('timezone=${timezone.identifier}');
 
     const android = AndroidInitializationSettings('@drawable/ic_stat_qaza');
     const settings = InitializationSettings(
@@ -109,8 +109,7 @@ class LocalNotificationService implements NotificationScheduler {
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       _log(
-        'cold-start notification tap detected payload=' +
-            (launchDetails?.notificationResponse?.payload ?? ''),
+        'cold-start notification tap detected payload=${launchDetails?.notificationResponse?.payload ?? ''}',
       );
     }
 
@@ -140,23 +139,15 @@ class LocalNotificationService implements NotificationScheduler {
       );
       await androidPlugin.createNotificationChannel(channel);
       _log(
-        'channel created id=' +
-            _channelId +
-            ' importance=' +
-            Importance.defaultImportance.value.toString(),
+        'channel created id=$_channelId importance=${Importance.defaultImportance.value}',
       );
     } else {
       _log(
-        'channel exists id=' +
-            _channelId +
-            ' importance=' +
-            current.importance.value.toString(),
+        'channel exists id=$_channelId importance=${current.importance.value}',
       );
       if (current.importance == Importance.none) {
         throw StateError(
-          'Notification channel "' +
-              _channelId +
-              '" is blocked by Android. Open system notification settings '
+          'Notification channel "$_channelId" is blocked by Android. Open system notification settings '
               'and enable it.',
         );
       }
@@ -164,12 +155,7 @@ class LocalNotificationService implements NotificationScheduler {
 
     if (legacy != null) {
       _log(
-        'legacy channel found id=' +
-            _legacyChannelId +
-            ' importance=' +
-            legacy.importance.value.toString() +
-            '; using ' +
-            _channelId,
+        'legacy channel found id=$_legacyChannelId importance=${legacy.importance.value}; using $_channelId',
       );
     }
   }
@@ -186,7 +172,7 @@ class LocalNotificationService implements NotificationScheduler {
     try {
       final opened =
           await _settingsChannel.invokeMethod<bool>('openNotificationSettings');
-      _log('open notification settings result=' + opened.toString());
+      _log('open notification settings result=$opened');
       return opened ?? false;
     } catch (error, stack) {
       _log('open notification settings failed: $error\n$stack');
@@ -202,7 +188,7 @@ class LocalNotificationService implements NotificationScheduler {
     if (android == null) return true;
 
     final granted = await android.requestNotificationsPermission() ?? false;
-    _log('permission request result=' + granted.toString());
+    _log('permission request result=$granted');
     return granted;
   }
 
@@ -254,18 +240,7 @@ class LocalNotificationService implements NotificationScheduler {
     );
 
     _log(
-      'permission status granted=' +
-          info.granted.toString() +
-          ' requested=' +
-          permissionRequested.toString() +
-          ' canRequest=' +
-          info.canRequest.toString() +
-          ' permanentlyDenied=' +
-          info.permanentlyDenied.toString() +
-          ' sdk=' +
-          info.sdkInt.toString() +
-          ' rationale=' +
-          info.shouldShowRationale.toString(),
+      'permission status granted=${info.granted} requested=$permissionRequested canRequest=${info.canRequest} permanentlyDenied=${info.permanentlyDenied} sdk=${info.sdkInt} rationale=${info.shouldShowRationale}',
     );
     return info;
   }
@@ -314,12 +289,7 @@ class LocalNotificationService implements NotificationScheduler {
     }
 
     _log(
-      'schedule id=' +
-          _notificationId.toString() +
-          ' next=' +
-          next.toString() +
-          ' mode=inexactAllowWhileIdle channel=' +
-          _channelId,
+      'schedule id=$_notificationId next=$next mode=inexactAllowWhileIdle channel=$_channelId',
     );
 
     await _plugin.zonedSchedule(
@@ -337,10 +307,7 @@ class LocalNotificationService implements NotificationScheduler {
     final pending = await _plugin.pendingNotificationRequests();
     final exists = pending.any((request) => request.id == _notificationId);
     _log(
-      'schedule result id=' +
-          _notificationId.toString() +
-          ' pendingConfirmed=' +
-          exists.toString(),
+      'schedule result id=$_notificationId pendingConfirmed=$exists',
     );
     if (!exists) {
       throw StateError(
@@ -359,10 +326,7 @@ class LocalNotificationService implements NotificationScheduler {
     final stillPending =
         pending.any((request) => request.id == _notificationId);
     _log(
-      'cancel id=' +
-          _notificationId.toString() +
-          ' pendingAfterCancel=' +
-          stillPending.toString(),
+      'cancel id=$_notificationId pendingAfterCancel=$stillPending',
     );
     if (stillPending) {
       throw StateError('Failed to cancel the daily notification schedule.');
@@ -384,10 +348,7 @@ class LocalNotificationService implements NotificationScheduler {
     }
 
     _log(
-      'post test notification id=' +
-          _testNotificationId.toString() +
-          ' channel=' +
-          _channelId,
+      'post test notification id=$_testNotificationId channel=$_channelId',
     );
 
     try {
@@ -400,49 +361,29 @@ class LocalNotificationService implements NotificationScheduler {
       );
     } on PlatformException catch (error, stack) {
       _log(
-        'test notification failed id=' +
-            _testNotificationId.toString() +
-            ' code=' +
-            error.code +
-            ' message=' +
-            (error.message ?? '') +
-            '\n' +
-            stack.toString(),
+        'test notification failed id=$_testNotificationId code=${error.code} message=${error.message ?? ''}\n$stack',
       );
       rethrow;
     } catch (error, stack) {
       _log(
-        'test notification failed id=' +
-            _testNotificationId.toString() +
-            ' type=' +
-            error.runtimeType.toString() +
-            ' message=' +
-            error.toString() +
-            '\n' +
-            stack.toString(),
+        'test notification failed id=$_testNotificationId type=${error.runtimeType} message=$error\n$stack',
       );
       rethrow;
     }
 
     _log(
-      'test notification show() completed id=' +
-          _testNotificationId.toString(),
+      'test notification show() completed id=$_testNotificationId',
     );
   }
 
   void _handleNotificationResponse(NotificationResponse response) {
     _log(
-      'notification tapped id=' +
-          response.id.toString() +
-          ' payload=' +
-          (response.payload ?? '') +
-          ' action=' +
-          (response.actionId ?? ''),
+      'notification tapped id=${response.id} payload=${response.payload ?? ''} action=${response.actionId ?? ''}',
     );
   }
 
   NotificationDetails _detailsFor(NotificationContent content) =>
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,
@@ -459,10 +400,7 @@ class LocalNotificationService implements NotificationScheduler {
 void notificationTapBackground(NotificationResponse response) {
   if (kDebugMode) {
     debugPrint(
-      '[notifications] background notification response id=' +
-          response.id.toString() +
-          ' payload=' +
-          (response.payload ?? ''),
+      '[notifications] background notification response id=${response.id} payload=${response.payload ?? ''}',
     );
   }
 }

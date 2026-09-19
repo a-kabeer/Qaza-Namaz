@@ -80,23 +80,28 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       String? afterId}) async {
     _validatePage(limit, 0);
     _validateRange(from, to);
-    if ((afterOriginalDate == null) != (afterId == null))
+    if ((afterOriginalDate == null) != (afterId == null)) {
       throw ArgumentError(
           'afterOriginalDate and afterId must be provided together');
+    }
     final query = select(qazaRecords)
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
-        if (prayerType != null)
+        if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
+        }
         if (status != null) predicates.add(row.status.equals(status));
-        if (from != null)
+        if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        if (to != null)
+        }
+        if (to != null) {
           predicates.add(row.originalDate.isSmallerOrEqualValue(to));
-        if (afterOriginalDate != null)
+        }
+        if (afterOriginalDate != null) {
           predicates.add(row.originalDate.isBiggerThanValue(afterOriginalDate) |
               (row.originalDate.equals(afterOriginalDate) &
                   row.id.isBiggerThanValue(afterId!)));
+        }
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
@@ -123,24 +128,29 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       String? beforeId}) async {
     _validatePage(limit, 0);
     _validateRange(from, to);
-    if ((beforeOriginalDate == null) != (beforeId == null))
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
       throw ArgumentError(
           'beforeOriginalDate and beforeId must be provided together');
+    }
     final query = select(qazaRecords)
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
-        if (prayerType != null)
+        if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
+        }
         if (status != null) predicates.add(row.status.equals(status));
-        if (from != null)
+        if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        if (to != null)
+        }
+        if (to != null) {
           predicates.add(row.originalDate.isSmallerOrEqualValue(to));
-        if (beforeOriginalDate != null)
+        }
+        if (beforeOriginalDate != null) {
           predicates.add(
               row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                   (row.originalDate.equals(beforeOriginalDate) &
                       row.id.isSmallerThanValue(beforeId!)));
+        }
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
@@ -197,13 +207,16 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final query = select(qazaRecords)
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
-        if (prayerType != null)
+        if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
+        }
         if (status != null) predicates.add(row.status.equals(status));
-        if (from != null)
+        if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        if (to != null)
+        }
+        if (to != null) {
           predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        }
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
@@ -268,11 +281,15 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<void> replaceUserRecords(
       {required String userId,
       required List<QazaRecordsCompanion> records}) async {
-    for (final record in records)
-      if (record.userId.value != userId)
+    for (final record in records) {
+      if (record.userId.value != userId) {
         throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
-    for (final record in records) await into(qazaRecords).insert(record);
+    for (final record in records) {
+      await into(qazaRecords).insert(record);
+    }
   }
 
   /// Deletes every row owned by [userId] and returns how many were removed.
@@ -317,8 +334,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final query = selectOnly(qazaRecords)
       ..addColumns([qazaRecords.id.count()])
       ..where(qazaRecords.userId.equals(userId));
-    if (prayerType != null)
+    if (prayerType != null) {
       query.where(qazaRecords.prayerType.equals(prayerType));
+    }
     if (status != null) query.where(qazaRecords.status.equals(status));
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
@@ -379,13 +397,15 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           createdAt: record.createdAt,
           updatedAt: record.updatedAt);
   void _validatePage(int limit, int offset) {
-    if (limit < 1 || limit > maxPageSize)
+    if (limit < 1 || limit > maxPageSize) {
       throw ArgumentError.value(limit, 'limit');
+    }
     if (offset < 0) throw ArgumentError.value(offset, 'offset');
   }
 
   void _validateRange(DateTime? from, DateTime? to) {
-    if (from != null && to != null && from.isAfter(to))
+    if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
+    }
   }
 }
