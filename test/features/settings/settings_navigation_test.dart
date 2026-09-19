@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/features/settings/settings_screen.dart';
+import 'package:qaza_namaz/core/widgets/settings_components.dart';
 
 import '../../support/in_memory_qaza_repository.dart';
 import '../../support/test_app.dart';
