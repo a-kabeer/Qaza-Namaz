@@ -7,7 +7,6 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_progress_row.dart';
-import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
@@ -165,10 +164,7 @@ class _EmptyLedger extends StatelessWidget {
   }
 }
 
-/// The overall completed share, with the counts behind it underneath.
-///
-/// Sits on `primaryContainer`, which is what [ProgressRing] draws its own
-/// colours against, and makes the overview the page's visual anchor.
+/// The overall completed share, presented as one compact summary row and bar.
 class _ProgressOverview extends StatelessWidget {
   const _ProgressOverview({required this.progress});
 
@@ -176,95 +172,49 @@ class _ProgressOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context);
+    final percent = (progress.percentage * 100).round();
 
     return AppCard(
       key: const Key('home_progress_overview'),
       color: scheme.primaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // The completed share leads the card at its full size.
-          ProgressRing(
-            key: const Key('home_progress_ring'),
-            progress: progress.percentage,
-            size: 132,
-            strokeWidth: 10,
+          Text(
+            l10n.homeProgressTitle,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          const SizedBox(height: 20),
-          // Three counts under it. Pending is what the reader acts on, so it
-          // carries the weight; Total and Completed are the context for it.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _Stat(label: l10n.homeStatTotal, value: progress.total),
-              ),
-              Expanded(
-                child: _Stat(
-                  label: l10n.statusPending,
-                  value: progress.pending,
-                  valueKey: const Key('home_pending_value'),
-                  emphasis: true,
-                ),
-              ),
-              Expanded(
-                child: _Stat(
-                  label: l10n.statusCompleted,
-                  value: progress.completed,
-                ),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            '${progress.completed} of ${progress.total} ${l10n.statusCompleted.toLowerCase()} · $percent%',
+            key: const Key('home_progress_summary'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              key: const Key('home_progress_bar'),
+              value: progress.percentage,
+              minHeight: 6,
+              backgroundColor: scheme.onPrimaryContainer.withValues(alpha: .18),
+              color: scheme.primary,
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.label,
-    required this.value,
-    this.valueKey,
-    this.emphasis = false,
-  });
-
-  final String label;
-  final int value;
-  final Key? valueKey;
-
-  /// Draws the count at display size instead of title size.
-  final bool emphasis;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colour = theme.colorScheme.onPrimaryContainer;
-    final valueStyle =
-        emphasis ? theme.textTheme.displaySmall : theme.textTheme.titleLarge;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            '$value',
-            key: valueKey,
-            style: valueStyle?.copyWith(
-                color: colour, fontWeight: FontWeight.w700),
-          ),
-        ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colour.withValues(alpha: emphasis ? 1 : .80),
-            fontWeight: emphasis ? FontWeight.w600 : null,
-          ),
-        ),
-      ],
     );
   }
 }
