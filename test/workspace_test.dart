@@ -59,10 +59,11 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     // Qaza and Calculator are reached from Home, not from the bar.
     expect(find.text('Calculator'), findsNothing);
-    // Home leads with the progress overview and its two quick actions.
+    // Home leads with the compact progress overview; Add/Calculate live in
+    // the workspace action menu rather than separate Home buttons.
     expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
-    expect(find.byKey(const Key('home_calculate_qaza')), findsOneWidget);
-    expect(find.byKey(const Key('home_add_qaza')), findsOneWidget);
+    expect(find.byKey(const Key('home_progress_summary')), findsOneWidget);
+    expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
     await revealPrayerLedger(tester);
     expect(find.byKey(const Key('home_prayer_row_fajr')), findsOneWidget);
   });
@@ -90,14 +91,15 @@ void main() {
           updatedAt: now),
     ]);
     await pumpWorkspace(tester, repository);
-    // One pending, one completed: the overview counts and the overall ring
-    // both come from the aggregate summary.
+    // One pending, one completed: the compact summary comes from the
+    // aggregate repository state.
     expect(
-        tester.widget<Text>(find.byKey(const Key('home_pending_value'))).data,
-        '1');
-    expect(find.text('50%'), findsWidgets);
-    expect(find.text('Total'), findsOneWidget);
-    expect(find.text('Completed'), findsWidgets);
+      tester.widget<Text>(
+        find.byKey(const Key('home_progress_summary')),
+      ).data,
+      '1 of 2 completed · 50%',
+    );
+    expect(find.text('Total'), findsNothing);
   });
 
   testWidgets('Selecting Knowledge and Settings preserves destination state',
@@ -112,8 +114,8 @@ void main() {
     expect(find.text('Account'), findsWidgets);
     // Prayer rules moved to the Knowledge tab; Settings is configuration only.
     expect(find.text('Prayer & Fiqh Rules'), findsNothing);
-    expect(find.text('Reminders'), findsOneWidget);
-    expect(find.text('Backup & Data'), findsOneWidget);
+    expect(find.text('Notifications'), findsOneWidget);
+    expect(find.text('Data & Storage'), findsOneWidget);
   });
 
   testWidgets('Back from a non-root tab returns to Home instead of exiting',
