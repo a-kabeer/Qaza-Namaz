@@ -40,13 +40,30 @@ void main() {
       '1:895430705174:android:1e8d352d65428a4a3c7537',
     );
     expect(androidOauth['certificate_hash'], isNotEmpty);
+    final firebaseOptions =
+        File('lib/firebase_options.dart').readAsStringSync();
+    expect(firebaseOptions, contains(clientInfo['mobilesdk_app_id'] as String));
+    expect(firebaseOptions, contains("projectId: 'qaza-nmz'"));
+
+    final webOauth =
+        oauthClients.where((oauth) => oauth['client_type'] == 3).toList();
+    expect(webOauth, isNotEmpty);
     expect(
-      File('lib/firebase_options.dart').readAsStringSync(),
-      contains(clientInfo['mobilesdk_app_id'] as String),
+      webOauth.map((oauth) => oauth['client_id']),
+      contains(
+        '895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com',
+      ),
     );
+
+    final authConfig =
+        File('lib/data/auth/google_auth_config.dart').readAsStringSync();
+    expect(authConfig, contains("googleFirebaseProjectId = 'qaza-nmz'"));
+    expect(authConfig, contains('com.example.qaza_namaz_task1_flutter'));
     expect(
-      File('lib/firebase_options.dart').readAsStringSync(),
-      contains('projectId: \'qaza-nmz\''),
+      authConfig,
+      contains(
+        '895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com',
+      ),
     );
   });
 }
