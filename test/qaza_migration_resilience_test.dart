@@ -175,7 +175,6 @@ void main() {
         [migrator.migrate(), migrator.migrate(), migrator.migrate()]);
     expect(results.where((result) => !result.alreadyComplete), hasLength(1));
     expect(results.where((result) => result.alreadyComplete), hasLength(2));
-    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'),
-        hasLength(1));
+    expect(await db.qazaRecordsDao.getAll(userId: 'user-a'), hasLength(1));
   });
 }
