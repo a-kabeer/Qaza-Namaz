@@ -27,6 +27,13 @@ Future<void> _calculateDefaultResult(WidgetTester tester) async {
   await settleCalculator(tester);
 }
 
+/// The step's own heading, told apart from the same name on the step
+/// indicator above it.
+Finder stepHeading(String text) => find.descendant(
+      of: find.byType(ListView),
+      matching: find.text(text),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -37,7 +44,7 @@ void main() {
         const ProviderScope(child: TestApp(home: CalculatorScreen())));
     await settleCalculator(tester);
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     expect(find.text('Step 1 of 3'), findsOneWidget);
     expect(find.byKey(const Key('calculator_continue')), findsOneWidget);
 
@@ -50,7 +57,7 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
     expect(find.text('Step 2 of 3'), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
     expect(find.byKey(const Key('calculator_back')), findsOneWidget);
@@ -58,23 +65,23 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_calculate')));
     await settleCalculator(tester);
 
-    expect(find.text('Result'), findsOneWidget);
+    expect(stepHeading('Result'), findsOneWidget);
     expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(find.byKey(const Key('calculator_add_to_tracker')), findsOneWidget);
     expect(find.byKey(const Key('calculator_back')), findsOneWidget);
 
-    expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
-    expect(find.byKey(const Key('calculator_edit_prayer_history')),
-        findsOneWidget);
+    // The Result step carries no edit buttons; the stepper is the way back.
+    expect(find.byKey(const Key('calculator_edit_about')), findsNothing);
+    expect(
+        find.byKey(const Key('calculator_edit_prayer_history')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('calculator_edit_prayer_history')));
+    await tester.tap(find.byKey(const Key('calculator_step_tab_1')));
     await settleCalculator(tester);
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);
   });
 
-  testWidgets(
-      'calculator edit actions return to the relevant step and recalculate',
+  testWidgets('the stepper returns to the relevant step and recalculates',
       (tester) async {
     await tester.pumpWidget(
         const ProviderScope(child: TestApp(home: CalculatorScreen())));
@@ -82,24 +89,24 @@ void main() {
 
     await _calculateDefaultResult(tester);
 
-    await tester.tap(find.byKey(const Key('calculator_edit_about')));
+    await tester.tap(find.byKey(const Key('calculator_step_tab_0')));
     await settleCalculator(tester);
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     expect(find.byKey(const Key('calculator_dob_picker')), findsOneWidget);
     expect(find.text('Current age'), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsNothing);
 
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calculator_calculate')));
     await settleCalculator(tester);
-    expect(find.text('Result'), findsOneWidget);
+    expect(stepHeading('Result'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('calculator_edit_prayer_history')));
+    await tester.tap(find.byKey(const Key('calculator_step_tab_1')));
     await settleCalculator(tester);
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
     expect(
         find.byKey(const Key('calculator_prayer_start_age')), findsOneWidget);
     expect(find.byKey(const Key('calculator_calculate')), findsOneWidget);

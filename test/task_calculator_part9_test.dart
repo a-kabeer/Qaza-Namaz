@@ -26,14 +26,17 @@ void main() {
     expect(result.error, 'Baligh date cannot be before your date of birth.');
   });
 
-  test('rejects future Baligh date', () {
+  test('rejects a Baligh date outside the nine-to-eighteen window', () {
     final result = validateCalculatorDates(
       today: today,
       dob: DateTime(2000, 5, 10),
       balighDate: DateTime(2027, 5, 10),
       prayerStartDate: DateTime(2027, 5, 10),
     );
-    expect(result.error, 'Baligh date cannot be in the future.');
+    expect(
+        result.error,
+        'Baligh date must be between 01/01/2009 and '
+        '31/12/2018.');
   });
 
   test('rejects prayer start before Baligh', () {

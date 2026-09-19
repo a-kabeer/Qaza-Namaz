@@ -11,6 +11,13 @@ Future<void> settleCalculator(WidgetTester tester,
   await tester.pump();
 }
 
+/// The step's own heading, told apart from the same name on the step
+/// indicator above it.
+Finder stepHeading(String text) => find.descendant(
+      of: find.byType(ListView),
+      matching: find.text(text),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -36,7 +43,7 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
     expect(find.text('Regular prayer start'), findsOneWidget);
     expect(find.textContaining('Estimated prayer-start date:'), findsOneWidget);
     await tester.scrollUntilVisible(

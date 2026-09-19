@@ -254,14 +254,14 @@ void main() {
               .then((records) => records.length));
     });
 
-    test('the result can be dismissed', () async {
+    test('the result is left behind by starting over', () async {
       final scope = container(InMemoryQazaRepository());
       final controller =
           await withEstimate(scope, prayerStart: DateTime(2002, 1, 11));
       await controller.addToTracker();
       expect(scope.read(calculatorControllerProvider).hasAddResult, isTrue);
 
-      controller.dismissAddResult();
+      controller.startNewCalculation();
 
       expect(scope.read(calculatorControllerProvider).hasAddResult, isFalse);
     });

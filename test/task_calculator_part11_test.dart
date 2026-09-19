@@ -10,6 +10,13 @@ Future<void> settleCalculator(WidgetTester tester,
   await tester.pump();
 }
 
+/// The step's own heading, told apart from the same name on the step
+/// indicator above it.
+Finder stepHeading(String text) => find.descendant(
+      of: find.byType(ListView),
+      matching: find.text(text),
+    );
+
 void main() {
   testWidgets('calculator uses dark theme tokens', (tester) async {
     final theme = ThemeData.from(
@@ -41,7 +48,7 @@ void main() {
     );
     await settleCalculator(tester);
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

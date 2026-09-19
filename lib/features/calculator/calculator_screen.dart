@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../domain/services/qaza_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
+import '../shell/workspace_shell.dart';
 import 'calculator_controller.dart';
+import 'calculator_validation.dart';
 
 /// Step names in display order, resolved for the active locale.
 List<String> calculatorStepNames(AppLocalizations l10n) => [
@@ -30,6 +33,16 @@ class CalculatorScreen extends ConsumerWidget {
     final controller = ref.read(calculatorControllerProvider.notifier);
     final l10n = AppLocalizations.of(context);
 
+    // Nothing is left to do on Step 3 once the estimate has been added.
+    final done = state.step == 2 && state.addCompleted;
+
+    // The Result step's action says how many records it will actually add,
+    // which is the preflight's count and nothing else.
+    final newCount = state.preflight?.newCount;
+    final addLabel = newCount == null
+        ? l10n.calcAddToTracker
+        : l10n.calcAddQazaCount(DateFormatters.formatCount(newCount));
+
     final canContinue = !state.restoring &&
         switch (state.step) {
           0 => state.step1Valid,
@@ -44,7 +57,11 @@ class CalculatorScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _ProgressIndicator(step: state.step),
+            _ProgressIndicator(
+              step: state.step,
+              canOpen: state.canOpenStep,
+              onSelect: controller.goToStep,
+            ),
             if (state.restoring) const LinearProgressIndicator(minHeight: 2),
             Expanded(
               child: AnimatedSwitcher(
@@ -52,26 +69,34 @@ class CalculatorScreen extends ConsumerWidget {
                 child: switch (state.step) {
                   0 => _AboutYouStep(state: state, controller: controller),
                   1 => _PrayerHistoryStep(state: state, controller: controller),
-                  _ => _ResultStep(state: state, controller: controller),
+                  _ => done
+                      ? _AddedStep(
+                          addedCount: state.addedCount!,
+                          onCalculateAgain: controller.startNewCalculation,
+                          onDone: () => _finish(context, ref),
+                        )
+                      : _ResultStep(state: state),
                 },
               ),
             ),
             // Persistent, in place, and determinate: a large estimate takes
             // seconds, and the screen has to keep saying so.
-            if (state.step == 2)
+            if (state.step == 2 && !done)
               _AddStatusPanel(
                 state: state,
                 onRetry: () => _addToTracker(context, ref),
-                onDismiss: controller.dismissAddResult,
               ),
-            _StepActions(
-              step: state.step,
-              canContinue: canContinue,
-              onBack: state.step == 0 ? null : controller.back,
-              onContinue: state.step == 2
-                  ? () => _addToTracker(context, ref)
-                  : controller.next,
-            ),
+            // The finished state carries its own two actions.
+            if (!done)
+              _StepActions(
+                step: state.step,
+                addLabel: addLabel,
+                canContinue: canContinue,
+                onBack: state.step == 0 ? null : controller.back,
+                onContinue: state.step == 2
+                    ? () => _addToTracker(context, ref)
+                    : controller.next,
+              ),
           ],
         ),
       ),
@@ -84,7 +109,8 @@ class CalculatorScreen extends ConsumerWidget {
     final controller = ref.read(calculatorControllerProvider.notifier);
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
-    final preflight = await controller.loadPreflight();
+    final preflight = ref.read(calculatorControllerProvider).preflight ??
+        await controller.loadPreflight();
     if (!context.mounted) return;
 
     if (preflight == null) {
@@ -109,25 +135,86 @@ class CalculatorScreen extends ConsumerWidget {
       messenger.showSnackBar(
         SnackBar(content: Text(error ?? l10n.calcAddErrorShort)),
       );
-      return;
     }
+    // Success speaks for itself: the step is now the success state, which
+    // stays on screen with the count and the two ways out of it.
+  }
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.calcEstimateAdded),
-        content: Text(
-          l10n.calcEstimateAddedMessage(
-            DateFormatters.formatCount(preflight.newCount),
-          ),
+  /// `Done`: finish with this calculation and go back to Home, whose progress
+  /// is re-read on the way in.
+  void _finish(BuildContext context, WidgetRef ref) {
+    ref.read(calculatorControllerProvider.notifier).startNewCalculation();
+    ref.invalidate(progressSummaryProvider);
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      // Reached as a workspace page rather than a pushed route.
+      ref.read(workspaceDestinationProvider.notifier).state =
+          WorkspaceDestination.home;
+    }
+  }
+}
+
+/// Step 3, after a successful add: what was written, and the two ways on.
+class _AddedStep extends StatelessWidget {
+  const _AddedStep({
+    required this.addedCount,
+    required this.onCalculateAgain,
+    required this.onDone,
+  });
+
+  final int addedCount;
+  final VoidCallback onCalculateAgain;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+
+    return ListView(
+      key: const Key('calc_add_success'),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      children: [
+        Icon(Icons.check_circle_rounded, size: 64, color: scheme.primary),
+        const SizedBox(height: 16),
+        Text(
+          l10n.calcEstimateAdded,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonDone),
-          ),
-        ],
-      ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.calcAddedResult(addedCount),
+          key: const Key('calc_add_success_count'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.calcAddedDoneHint,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 28),
+        FilledButton.icon(
+          key: const Key('calculator_done'),
+          onPressed: onDone,
+          icon: const Icon(Icons.home_outlined),
+          label: Text(l10n.commonDone),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          key: const Key('calculator_calculate_again'),
+          onPressed: onCalculateAgain,
+          icon: const Icon(Icons.refresh_rounded),
+          label: Text(l10n.calcCalculateAgain),
+        ),
+      ],
     );
   }
 }
@@ -157,18 +244,23 @@ class _AboutYouStep extends StatelessWidget {
   Future<void> _pickBalighDate(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final dob = state.dob;
-    if (dob == null) return;
-    final today = CalculatorState.today;
-    final current = state.balighDate;
-    final initial =
-        current != null && !current.isBefore(dob) && !current.isAfter(today)
-            ? current
-            : dob;
+    final first = state.balighDateMin;
+    final last = state.balighDateMax;
+    if (dob == null || first == null || last == null) return;
+    // The picker offers exactly the range the rules allow, which reaches into
+    // the future for anyone whose Baligh years have not passed yet.
+    final current = state.balighDate ??
+        DateTime(dob.year + state.balighAge, dob.month, dob.day);
+    final initial = current.isBefore(first)
+        ? first
+        : current.isAfter(last)
+            ? last
+            : current;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: dob,
-      lastDate: today,
+      firstDate: first,
+      lastDate: last,
       helpText: l10n.calcSelectBalighHelp,
     );
     if (date != null) controller.setBalighDate(date);
@@ -269,7 +361,9 @@ class _AboutYouStep extends StatelessWidget {
                         decoration:
                             InputDecoration(labelText: l10n.calcBalighAgeLabel),
                         items: [
-                          for (var value = 9; value <= 18; value++)
+                          for (var value = CalculatorBounds.minBalighAge;
+                              value <= CalculatorBounds.maxBalighAge;
+                              value++)
                             DropdownMenuItem(
                                 value: value, child: Text('$value years')),
                         ],
@@ -329,19 +423,20 @@ class _PrayerHistoryStep extends StatelessWidget {
 
   Future<void> _pickPrayerStartDate(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
-    final baligh = state.effectiveBalighDate;
-    final today = CalculatorState.today;
-    if (baligh == null || baligh.isAfter(today)) return;
+    final first = state.prayerStartDateMin;
+    final last = state.prayerStartDateMax;
+    // Never before Baligh, never after today.
+    if (first == null || first.isAfter(last)) return;
     final current = state.prayerStartDate;
     final initial =
-        current != null && !current.isBefore(baligh) && !current.isAfter(today)
+        current != null && !current.isBefore(first) && !current.isAfter(last)
             ? current
-            : baligh;
+            : first;
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: baligh,
-      lastDate: today,
+      firstDate: first,
+      lastDate: last,
       helpText: l10n.calcSelectPrayerStartHelp,
     );
     if (date != null) controller.setPrayerStartDate(date);
@@ -404,27 +499,40 @@ class _PrayerHistoryStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     if (state.prayerStartMode == PrayerStartInputMode.age)
-                      DropdownButtonFormField<int>(
-                        key: const Key('calculator_prayer_start_age'),
-                        value: state.prayerStartAge,
-                        decoration: InputDecoration(
-                          labelText: l10n.calcPrayerStartAgeLabel,
-                        ),
-                        items: [
-                          for (var value = 12; value <= 60; value++)
-                            DropdownMenuItem(
-                                value: value, child: Text('$value years')),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            controller.setPrayerStartAge(value);
-                          }
-                        },
-                      )
+                      if (state.hasPrayerStartAgeRange)
+                        DropdownButtonFormField<int>(
+                          key: const Key('calculator_prayer_start_age'),
+                          // Never before Baligh, never beyond today's age.
+                          value: state.prayerStartAge
+                              .clamp(state.prayerStartAgeMin!,
+                                  state.prayerStartAgeMax!)
+                              .toInt(),
+                          decoration: InputDecoration(
+                            labelText: l10n.calcPrayerStartAgeLabel,
+                          ),
+                          items: [
+                            for (var value = state.prayerStartAgeMin!;
+                                value <= state.prayerStartAgeMax!;
+                                value++)
+                              DropdownMenuItem(
+                                  value: value, child: Text('$value years')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              controller.setPrayerStartAge(value);
+                            }
+                          },
+                        )
+                      else
+                        Text(
+                          l10n.calcPrayerStartAgeUnavailable,
+                          key: const Key('calculator_prayer_start_age_empty'),
+                          style: TextStyle(color: theme.colorScheme.error),
+                        )
                     else
                       OutlinedButton.icon(
                         key: const Key('calculator_prayer_start_date_picker'),
-                        onPressed: baligh == null
+                        onPressed: state.prayerStartDateMin == null
                             ? null
                             : () => _pickPrayerStartDate(context),
                         icon: const Icon(Icons.event_rounded),
@@ -516,10 +624,9 @@ class _PrayerHistoryStep extends StatelessWidget {
 
 /// Step 3 — the result. Read-only; the Witr rule belongs to Step 2.
 class _ResultStep extends StatelessWidget {
-  const _ResultStep({required this.state, required this.controller});
+  const _ResultStep({required this.state});
 
   final CalculatorState state;
-  final CalculatorController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -531,26 +638,11 @@ class _ResultStep extends StatelessWidget {
     }
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final busy = state.addingToTracker || state.loadingPreflight;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 380;
         final pad = compact ? 16.0 : 20.0;
-        final editButtons = [
-          OutlinedButton.icon(
-            key: const Key('calculator_edit_about'),
-            onPressed: busy ? null : () => controller.editStep(0),
-            icon: const Icon(Icons.edit_outlined),
-            label: Text(l10n.calcEditAboutYou),
-          ),
-          OutlinedButton.icon(
-            key: const Key('calculator_edit_prayer_history'),
-            onPressed: busy ? null : () => controller.editStep(1),
-            icon: const Icon(Icons.edit_calendar_outlined),
-            label: Text(l10n.calcEditPrayerHistory),
-          ),
-        ];
 
         return ListView(
           key: const ValueKey('calculator_step_2'),
@@ -559,24 +651,6 @@ class _ResultStep extends StatelessWidget {
             Text(l10n.calcStepOf(3), style: theme.textTheme.labelLarge),
             const SizedBox(height: 6),
             Text(l10n.calcStepResult, style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            _SourceChip(exact: state.usesExactDates),
-            if (state.keptAsEstimate)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Chip(label: Text(l10n.calcKeptAsEstimate)),
-                ),
-              ),
-            const SizedBox(height: 10),
-            if (compact)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: editButtons,
-              )
-            else
-              Wrap(spacing: 8, runSpacing: 8, children: editButtons),
             const SizedBox(height: 14),
             Card(
               child: Padding(
@@ -634,12 +708,6 @@ class _ResultStep extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('calculator_keep_estimate'),
-              onPressed: busy ? null : controller.keepAsEstimate,
-              child: Text(l10n.calcKeepAsEstimate),
-            ),
           ],
         );
       },
@@ -650,15 +718,10 @@ class _ResultStep extends StatelessWidget {
 /// Shows the shared preflight result before anything is written.
 /// Progress, success and failure for the tracker insert, in the page itself.
 class _AddStatusPanel extends StatelessWidget {
-  const _AddStatusPanel({
-    required this.state,
-    required this.onRetry,
-    required this.onDismiss,
-  });
+  const _AddStatusPanel({required this.state, required this.onRetry});
 
   final CalculatorState state;
   final VoidCallback onRetry;
-  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -703,29 +766,6 @@ class _AddStatusPanel extends StatelessWidget {
               ),
               key: const Key('calc_add_counts'),
               style: theme.textTheme.bodySmall,
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (state.hasAddResult) {
-      return _Panel(
-        key: const Key('calc_add_success'),
-        background: scheme.tertiaryContainer,
-        child: Row(
-          children: [
-            Icon(Icons.check_circle_outline_rounded,
-                color: scheme.onTertiaryContainer),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(l10n.calcAddedResult(state.addedCount!),
-                  style: TextStyle(color: scheme.onTertiaryContainer)),
-            ),
-            TextButton(
-              key: const Key('calc_add_success_dismiss'),
-              onPressed: onDismiss,
-              child: Text(l10n.commonClose),
             ),
           ],
         ),
@@ -912,27 +952,6 @@ class _DateInfoBox extends StatelessWidget {
   }
 }
 
-class _SourceChip extends StatelessWidget {
-  const _SourceChip({required this.exact});
-  final bool exact;
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Chip(
-        avatar: Icon(
-          exact ? Icons.event_available_rounded : Icons.auto_awesome_rounded,
-          color: colors.onSecondaryContainer,
-        ),
-        label: Text(exact ? 'Based on exact dates' : 'Estimated calculation'),
-        backgroundColor: colors.secondaryContainer,
-        labelStyle: TextStyle(color: colors.onSecondaryContainer),
-      ),
-    );
-  }
-}
-
 class _ResultMetric extends StatelessWidget {
   const _ResultMetric({
     required this.label,
@@ -961,48 +980,131 @@ class _ResultMetric extends StatelessWidget {
       );
 }
 
+/// The 1-2-3 step indicator, and the primary way to move between steps.
+///
+/// Every dot is a button: the ones whose requirements are met can be opened,
+/// the rest are inert and say so to assistive technology. The row is laid out
+/// with `Row`, so it mirrors with the text direction.
 class _ProgressIndicator extends StatelessWidget {
-  const _ProgressIndicator({required this.step});
+  const _ProgressIndicator({
+    required this.step,
+    required this.canOpen,
+    required this.onSelect,
+  });
+
   final int step;
+  final bool Function(int index) canOpen;
+  final ValueChanged<int> onSelect;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-      child: Row(children: [
-        for (var index = 0; index < 3; index++) ...[
-          if (index > 0)
-            Expanded(
-              child: Container(
-                height: 2,
-                color: index <= step ? colors.primary : colors.outlineVariant,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var index = 0; index < 3; index++) ...[
+            if (index > 0)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 17),
+                  child: Container(
+                    height: 2,
+                    color:
+                        index <= step ? colors.primary : colors.outlineVariant,
+                  ),
+                ),
               ),
+            _StepDot(
+              index: index,
+              current: step,
+              enabled: canOpen(index),
+              onTap: () => onSelect(index),
             ),
-          Semantics(
-            label: AppLocalizations.of(context).calcStepSemantics(
-              index + 1,
-              calculatorStepNames(AppLocalizations.of(context))[index],
-            ),
-            selected: index == step,
-            child: CircleAvatar(
-              radius: 13,
-              backgroundColor: index <= step
-                  ? colors.primary
-                  : colors.surfaceContainerHighest,
-              child: Text(
-                '${index + 1}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: index <= step
-                          ? colors.onPrimary
-                          : colors.onSurfaceVariant,
-                      fontWeight: FontWeight.w700,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One numbered step: a button that opens it when its rules are satisfied.
+class _StepDot extends StatelessWidget {
+  const _StepDot({
+    required this.index,
+    required this.current,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final int index;
+  final int current;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final name = calculatorStepNames(l10n)[index];
+    final selected = index == current;
+    final reached = index <= current;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      label: l10n.calcStepSemantics(index + 1, name),
+      child: InkWell(
+        key: Key('calculator_step_tab_$index'),
+        onTap: enabled && !selected ? onTap : null,
+        borderRadius: BorderRadius.circular(14),
+        child: ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: SizedBox(
+              width: 78,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 13,
+                    backgroundColor: reached
+                        ? colors.primary
+                        : colors.surfaceContainerHighest,
+                    child: Text(
+                      '${index + 1}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: reached
+                            ? colors.onPrimary
+                            : colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: enabled
+                          ? (selected
+                              ? colors.primary
+                              : colors.onSurfaceVariant)
+                          : colors.onSurfaceVariant.withValues(alpha: 0.45),
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          if (index < 2) const SizedBox(width: 6),
-        ],
-      ]),
+        ),
+      ),
     );
   }
 }
@@ -1010,11 +1112,15 @@ class _ProgressIndicator extends StatelessWidget {
 class _StepActions extends StatelessWidget {
   const _StepActions({
     required this.step,
+    required this.addLabel,
     required this.canContinue,
     required this.onBack,
     required this.onContinue,
   });
   final int step;
+
+  /// The Result step's primary label, which carries the count to be added.
+  final String addLabel;
   final bool canContinue;
   final VoidCallback? onBack;
   final VoidCallback onContinue;
@@ -1042,7 +1148,7 @@ class _StepActions extends StatelessWidget {
                   ? 'Continue'
                   : step == 1
                       ? 'Calculate'
-                      : 'Add to Tracker'),
+                      : addLabel),
             ),
           ),
         ]),

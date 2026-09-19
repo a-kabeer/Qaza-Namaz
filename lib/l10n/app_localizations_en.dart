@@ -373,6 +373,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calcRegularPrayerStart => 'Regular prayer start';
 
   @override
+  String get calcPrayerStartAgeUnavailable =>
+      'You are younger than the Baligh age you selected, so there is no prayer-start age to choose. Adjust your date of birth or Baligh information.';
+
+  @override
   String get calcPrayerStartAgeLabel => 'Regular prayer start age (years)';
 
   @override
@@ -434,12 +438,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Witr is not included. Change this on Prayer History.';
 
   @override
-  String get calcEditAboutYou => 'Edit About You';
-
-  @override
-  String get calcEditPrayerHistory => 'Edit Prayer History';
-
-  @override
   String get calcPreflightErrorShort => 'Could not check existing records.';
 
   @override
@@ -474,16 +472,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calcAddToTracker => 'Add to Tracker';
 
   @override
-  String get calcKeepAsEstimate => 'Keep as Estimate';
-
-  @override
-  String get calcKeptAsEstimate => 'Kept as estimate';
-
-  @override
-  String get calcEstimated => 'Estimated calculation';
-
-  @override
-  String get calcBasedOnExactDates => 'Based on exact dates';
+  String calcAddQazaCount(String count) {
+    return 'Add $count Qaza';
+  }
 
   @override
   String get calcPreflightTitle => 'Add to Qaza Tracker';
@@ -530,6 +521,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calcAddFailedTitle => 'Could not add to your tracker';
+
+  @override
+  String get calcAddedDoneHint =>
+      'Your tracker is up to date. Your date of birth and prayer settings are saved for next time.';
+
+  @override
+  String get calcCalculateAgain => 'Calculate Again';
 
   @override
   String get calcEstimateAdded => 'Estimate added';
@@ -921,6 +919,44 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get addQazaAvailabilityNote =>
       'A date is disabled only when no prayer remains eligible.';
+
+  @override
+  String get addQazaStepNameDates => 'Select Dates';
+
+  @override
+  String get addQazaStepNamePrayers => 'Missed Prayers';
+
+  @override
+  String get addQazaStepNameReview => 'Review';
+
+  @override
+  String addQazaStepSemantics(int step, String name) {
+    return 'Step $step: $name';
+  }
+
+  @override
+  String addQazaPartialAvailability(int available, int total) {
+    return 'Available on $available of $total dates';
+  }
+
+  @override
+  String get addQazaAvailableEveryDate => 'Available on every selected date';
+
+  @override
+  String get addQazaEligibleOnlyNote =>
+      'Only eligible date + prayer combinations are added. Anything already recorded is skipped.';
+
+  @override
+  String addQazaAddCount(String count) {
+    return 'Add $count Qaza';
+  }
+
+  @override
+  String get addQazaNothingNew =>
+      'Nothing new to add — these combinations are already recorded.';
+
+  @override
+  String get addQazaChecking => 'Checking your ledger...';
 
   @override
   String get addQazaNextPrayers => 'Next: Review & Add';

@@ -28,7 +28,33 @@ class DateFormatters {
     'Sun',
   ];
 
+  static const List<String> gregorianMonthsFull = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
   static String gregorianMonthName(int month) => gregorianMonths[month - 1];
+
+  static String gregorianMonthFullName(int month) =>
+      gregorianMonthsFull[month - 1];
+
+  /// The complete Gregorian date — day, month and year — e.g.
+  /// `1 September 2026`.
+  ///
+  /// The single primary-date format for anything that shows a Hijri date
+  /// underneath it; a date shown to be acted on always carries its year.
+  static String formatGregorianFull(DateTime date) =>
+      '${date.day} ${gregorianMonthFullName(date.month)} ${date.year}';
 
   static String formatGregorianDatePadded(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')} ${gregorianMonthName(date.month)} ${date.year}';

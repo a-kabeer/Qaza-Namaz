@@ -26,6 +26,13 @@ Future<void> _reachResult(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// The step's own heading, told apart from the same name on the step
+/// indicator above it.
+Finder stepHeading(String text) => find.descendant(
+      of: find.byType(ListView),
+      matching: find.text(text),
+    );
+
 void main() {
   group('calculator domain regression', () {
     test('five prayers are represented exactly once and Witr is separate', () {
@@ -107,7 +114,6 @@ void main() {
         prayerStartDate: null,
         includeWitr: true,
         hasCalculation: true,
-        keptAsEstimate: false,
       );
 
       await persistence.save(snapshot,
@@ -128,13 +134,12 @@ void main() {
         const ProviderScope(child: TestApp(home: CalculatorScreen())));
     await tester.pumpAndSettle();
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     await _reachResult(tester);
     expect(find.text('Step 3 of 3'), findsOneWidget);
-    expect(find.text('Result'), findsOneWidget);
-    expect(find.byKey(const Key('calculator_edit_about')), findsOneWidget);
-    expect(find.byKey(const Key('calculator_edit_prayer_history')),
-        findsOneWidget);
+    expect(stepHeading('Result'), findsOneWidget);
+    expect(find.byKey(const Key('calculator_step_tab_0')), findsOneWidget);
+    expect(find.byKey(const Key('calculator_step_tab_1')), findsOneWidget);
     expect(find.byType(Scaffold), findsOneWidget);
   });
 }

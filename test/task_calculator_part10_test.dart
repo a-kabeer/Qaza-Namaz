@@ -21,7 +21,6 @@ void main() {
       prayerStartDate: DateTime(2020, 5, 6),
       includeWitr: true,
       hasCalculation: true,
-      keptAsEstimate: false,
     );
 
     await persistence.save(snapshot, userId: 'user-a', preferences: prefs);
@@ -53,7 +52,6 @@ void main() {
       prayerStartDate: null,
       includeWitr: false,
       hasCalculation: false,
-      keptAsEstimate: false,
     );
 
     await persistence.save(snapshot, userId: 'user-a', preferences: prefs);

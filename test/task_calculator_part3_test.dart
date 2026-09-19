@@ -11,6 +11,13 @@ Future<void> settleCalculator(WidgetTester tester,
   await tester.pump();
 }
 
+/// The step's own heading, told apart from the same name on the step
+/// indicator above it.
+Finder stepHeading(String text) => find.descendant(
+      of: find.byType(ListView),
+      matching: find.text(text),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -32,7 +39,7 @@ void main() {
   testWidgets('About You shows DOB and default Baligh age', (tester) async {
     await pumpCalculator(tester);
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     expect(find.text('Date of birth'), findsOneWidget);
     expect(find.text('Baligh information'), findsOneWidget);
     expect(find.text('Baligh age (years)'), findsOneWidget);
@@ -86,11 +93,11 @@ void main() {
     await tester.tap(find.byKey(const Key('calculator_continue')));
     await settleCalculator(tester);
 
-    expect(find.text('Prayer History'), findsOneWidget);
+    expect(stepHeading('Prayer History'), findsOneWidget);
     await tester.tap(find.byKey(const Key('calculator_back')));
     await settleCalculator(tester);
 
-    expect(find.text('About You'), findsOneWidget);
+    expect(stepHeading('About You'), findsOneWidget);
     expect(find.textContaining('Estimated Baligh date:'), findsOneWidget);
   });
 }

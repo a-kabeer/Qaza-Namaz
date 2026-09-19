@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/test_app.dart';
 
+import 'package:qaza_namaz/core/utils/date_formatters.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/calendar/calendar_picker.dart';
 
@@ -45,11 +46,8 @@ void main() {
         ),
       );
 
-  String mediumDate(WidgetTester tester, DateTime date) {
-    final context =
-        tester.element(find.byKey(const Key('calendar_selected_summary')));
-    return MaterialLocalizations.of(context).formatMediumDate(date);
-  }
+  /// The complete Gregorian date the summary shows, year included.
+  String fullDate(DateTime date) => DateFormatters.formatGregorianFull(date);
 
   testWidgets('single selection shows Gregorian and Hijri date summary',
       (tester) async {
@@ -64,8 +62,7 @@ void main() {
     expect(find.textContaining('1 date selected'), findsOneWidget);
     expect(
         find.descendant(
-            of: summary,
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 15)))),
+            of: summary, matching: find.text(fullDate(DateTime(2027, 3, 15)))),
         findsOneWidget);
   });
 
@@ -84,13 +81,11 @@ void main() {
     expect(find.textContaining('2 dates selected'), findsOneWidget);
     expect(
         find.descendant(
-            of: summary,
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 10)))),
+            of: summary, matching: find.text(fullDate(DateTime(2027, 3, 10)))),
         findsOneWidget);
     expect(
         find.descendant(
-            of: summary,
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))),
+            of: summary, matching: find.text(fullDate(DateTime(2027, 3, 12)))),
         findsOneWidget);
   });
 
@@ -109,13 +104,11 @@ void main() {
     expect(find.textContaining('2 dates selected'), findsOneWidget);
     expect(
         find.descendant(
-            of: summary,
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 10)))),
+            of: summary, matching: find.text(fullDate(DateTime(2027, 3, 10)))),
         findsOneWidget);
     expect(
         find.descendant(
-            of: summary,
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))),
+            of: summary, matching: find.text(fullDate(DateTime(2027, 3, 12)))),
         findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calendar_day_2027-03-10')));
@@ -124,7 +117,7 @@ void main() {
     expect(
         find.descendant(
             of: find.byKey(const Key('calendar_selected_summary')),
-            matching: find.text(mediumDate(tester, DateTime(2027, 3, 12)))),
+            matching: find.text(fullDate(DateTime(2027, 3, 12)))),
         findsOneWidget);
   });
 }

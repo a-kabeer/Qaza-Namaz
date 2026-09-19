@@ -14,7 +14,6 @@ class CalculatorSnapshot {
     required this.prayerStartDate,
     required this.includeWitr,
     required this.hasCalculation,
-    required this.keptAsEstimate,
   });
 
   final int step;
@@ -27,7 +26,6 @@ class CalculatorSnapshot {
   final DateTime? prayerStartDate;
   final bool includeWitr;
   final bool hasCalculation;
-  final bool keptAsEstimate;
 
   Map<String, dynamic> toJson() => {
         'schemaVersion': 1,
@@ -41,7 +39,6 @@ class CalculatorSnapshot {
         'prayerStartDate': prayerStartDate?.toIso8601String(),
         'includeWitr': includeWitr,
         'hasCalculation': hasCalculation,
-        'keptAsEstimate': keptAsEstimate,
       };
 
   factory CalculatorSnapshot.fromJson(Map<String, dynamic> json) {
@@ -64,7 +61,6 @@ class CalculatorSnapshot {
       prayerStartDate: parseDate(json['prayerStartDate']),
       includeWitr: json['includeWitr'] as bool? ?? false,
       hasCalculation: json['hasCalculation'] as bool? ?? false,
-      keptAsEstimate: json['keptAsEstimate'] as bool? ?? false,
     );
   }
 }

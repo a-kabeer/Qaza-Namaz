@@ -716,6 +716,12 @@ abstract class AppLocalizations {
   /// **'Regular prayer start'**
   String get calcRegularPrayerStart;
 
+  /// No description provided for @calcPrayerStartAgeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You are younger than the Baligh age you selected, so there is no prayer-start age to choose. Adjust your date of birth or Baligh information.'**
+  String get calcPrayerStartAgeUnavailable;
+
   /// No description provided for @calcPrayerStartAgeLabel.
   ///
   /// In en, this message translates to:
@@ -818,18 +824,6 @@ abstract class AppLocalizations {
   /// **'Witr is not included. Change this on Prayer History.'**
   String get calcWitrNotIncluded;
 
-  /// No description provided for @calcEditAboutYou.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit About You'**
-  String get calcEditAboutYou;
-
-  /// No description provided for @calcEditPrayerHistory.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit Prayer History'**
-  String get calcEditPrayerHistory;
-
   /// No description provided for @calcPreflightErrorShort.
   ///
   /// In en, this message translates to:
@@ -890,29 +884,11 @@ abstract class AppLocalizations {
   /// **'Add to Tracker'**
   String get calcAddToTracker;
 
-  /// No description provided for @calcKeepAsEstimate.
+  /// No description provided for @calcAddQazaCount.
   ///
   /// In en, this message translates to:
-  /// **'Keep as Estimate'**
-  String get calcKeepAsEstimate;
-
-  /// No description provided for @calcKeptAsEstimate.
-  ///
-  /// In en, this message translates to:
-  /// **'Kept as estimate'**
-  String get calcKeptAsEstimate;
-
-  /// No description provided for @calcEstimated.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimated calculation'**
-  String get calcEstimated;
-
-  /// No description provided for @calcBasedOnExactDates.
-  ///
-  /// In en, this message translates to:
-  /// **'Based on exact dates'**
-  String get calcBasedOnExactDates;
+  /// **'Add {count} Qaza'**
+  String calcAddQazaCount(String count);
 
   /// No description provided for @calcPreflightTitle.
   ///
@@ -979,6 +955,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not add to your tracker'**
   String get calcAddFailedTitle;
+
+  /// No description provided for @calcAddedDoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tracker is up to date. Your date of birth and prayer settings are saved for next time.'**
+  String get calcAddedDoneHint;
+
+  /// No description provided for @calcCalculateAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate Again'**
+  String get calcCalculateAgain;
 
   /// No description provided for @calcEstimateAdded.
   ///
@@ -1645,6 +1633,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A date is disabled only when no prayer remains eligible.'**
   String get addQazaAvailabilityNote;
+
+  /// No description provided for @addQazaStepNameDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Dates'**
+  String get addQazaStepNameDates;
+
+  /// No description provided for @addQazaStepNamePrayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed Prayers'**
+  String get addQazaStepNamePrayers;
+
+  /// No description provided for @addQazaStepNameReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get addQazaStepNameReview;
+
+  /// No description provided for @addQazaStepSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step}: {name}'**
+  String addQazaStepSemantics(int step, String name);
+
+  /// No description provided for @addQazaPartialAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Available on {available} of {total} dates'**
+  String addQazaPartialAvailability(int available, int total);
+
+  /// No description provided for @addQazaAvailableEveryDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Available on every selected date'**
+  String get addQazaAvailableEveryDate;
+
+  /// No description provided for @addQazaEligibleOnlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only eligible date + prayer combinations are added. Anything already recorded is skipped.'**
+  String get addQazaEligibleOnlyNote;
+
+  /// No description provided for @addQazaAddCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {count} Qaza'**
+  String addQazaAddCount(String count);
+
+  /// No description provided for @addQazaNothingNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new to add — these combinations are already recorded.'**
+  String get addQazaNothingNew;
+
+  /// No description provided for @addQazaChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your ledger...'**
+  String get addQazaChecking;
 
   /// No description provided for @addQazaNextPrayers.
   ///

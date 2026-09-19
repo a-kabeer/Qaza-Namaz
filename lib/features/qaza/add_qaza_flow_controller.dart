@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../calendar/calendar_controller.dart';
+import 'add_qaza_validation.dart';
 
 /// The three steps of the Add Qaza workflow.
 enum AddQazaStep { selectDates, selectMissedPrayers, reviewAndAdd }
@@ -18,7 +19,8 @@ class AddQazaFlowState {
   const AddQazaFlowState({
     this.step = AddQazaStep.selectDates,
     this.prayers = const <PrayerType>{},
-    this.prayerAvailability = const <PrayerType, bool>{},
+    this.prayerAvailableDates = const <PrayerType, int>{},
+    this.selectedDateCount = 0,
     this.existingCount = 0,
     this.newCount = 0,
     this.checking = false,
@@ -28,10 +30,16 @@ class AddQazaFlowState {
   final AddQazaStep step;
   final Set<PrayerType> prayers;
 
-  /// Per date + prayer availability across the selected dates. A prayer is
-  /// selectable when it remains available on at least one selected date;
-  /// unavailable combinations are skipped by creation, not by other prayers.
-  final Map<PrayerType, bool> prayerAvailability;
+  /// How many of the selected dates still have each prayer eligible.
+  ///
+  /// A prayer is selectable while that count is above zero; a count between
+  /// one and [selectedDateCount] is a partial availability the user is told
+  /// about rather than silently given. Unavailable combinations are skipped
+  /// by creation, never by excluding the whole prayer.
+  final Map<PrayerType, int> prayerAvailableDates;
+
+  /// The number of dates the counts above were measured against.
+  final int selectedDateCount;
 
   final int existingCount;
   final int newCount;
@@ -39,17 +47,43 @@ class AddQazaFlowState {
   final bool saving;
 
   bool get hasPrayers => prayers.isNotEmpty;
+
+  /// Whether [prayer] is still eligible on at least one selected date.
+  bool isPrayerAvailable(PrayerType prayer) =>
+      (prayerAvailableDates[prayer] ?? 1) > 0;
+
+  /// How many selected dates still have [prayer] eligible.
+  int availableDateCount(PrayerType prayer) =>
+      prayerAvailableDates[prayer] ?? selectedDateCount;
+
+  /// True when a prayer is eligible on some, but not all, selected dates.
+  bool isPartiallyAvailable(PrayerType prayer) {
+    final available = availableDateCount(prayer);
+    return available > 0 && available < selectedDateCount;
+  }
+
+  /// Kept as a view over the counts so availability has one source.
+  Map<PrayerType, bool> get prayerAvailability => {
+        for (final entry in prayerAvailableDates.entries)
+          entry.key: entry.value > 0,
+      };
+
+  /// The same rule the save path applies, one step earlier.
   bool get canAdd =>
       step == AddQazaStep.reviewAndAdd &&
-      hasPrayers &&
-      !checking &&
-      !saving &&
-      newCount > 0;
+      AddQazaValidation.canSave(
+        datesValid: selectedDateCount > 0,
+        prayers: prayers,
+        newCount: newCount,
+        checking: checking,
+        saving: saving,
+      );
 
   AddQazaFlowState copyWith({
     AddQazaStep? step,
     Set<PrayerType>? prayers,
-    Map<PrayerType, bool>? prayerAvailability,
+    Map<PrayerType, int>? prayerAvailableDates,
+    int? selectedDateCount,
     int? existingCount,
     int? newCount,
     bool? checking,
@@ -58,7 +92,8 @@ class AddQazaFlowState {
       AddQazaFlowState(
         step: step ?? this.step,
         prayers: prayers ?? this.prayers,
-        prayerAvailability: prayerAvailability ?? this.prayerAvailability,
+        prayerAvailableDates: prayerAvailableDates ?? this.prayerAvailableDates,
+        selectedDateCount: selectedDateCount ?? this.selectedDateCount,
         existingCount: existingCount ?? this.existingCount,
         newCount: newCount ?? this.newCount,
         checking: checking ?? this.checking,
@@ -85,6 +120,42 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
       .datesForStorage
       .toList(growable: false);
 
+  DateTime get _today => ref.read(calendarTodayProvider);
+
+  static AddQazaStepRequirement _requirement(AddQazaStep step) =>
+      switch (step) {
+        AddQazaStep.selectDates => AddQazaStepRequirement.dates,
+        AddQazaStep.selectMissedPrayers => AddQazaStepRequirement.prayers,
+        AddQazaStep.reviewAndAdd => AddQazaStepRequirement.review,
+      };
+
+  /// Whether [target] may be opened right now.
+  ///
+  /// The step indicator asks this before it offers a step, and [goToStep]
+  /// asks again before it moves, so a tap can never step over a rule.
+  bool canOpenStep(AddQazaStep target) =>
+      target == state.step ||
+      AddQazaValidation.canOpenStep(
+        _requirement(target),
+        dates: _selectedDates(),
+        prayers: state.prayers,
+        today: _today,
+      );
+
+  /// Moves to [target] when its own requirements are met, refreshing whatever
+  /// that step shows. Selections are never discarded on the way.
+  Future<void> goToStep(AddQazaStep target) async {
+    if (target == state.step || !canOpenStep(target)) return;
+    switch (target) {
+      case AddQazaStep.selectDates:
+        state = state.copyWith(step: target);
+      case AddQazaStep.selectMissedPrayers:
+        await openPrayersStep();
+      case AddQazaStep.reviewAndAdd:
+        await openReviewStep();
+    }
+  }
+
   void back() {
     final previous = switch (state.step) {
       AddQazaStep.reviewAndAdd => AddQazaStep.selectMissedPrayers,
@@ -97,7 +168,9 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
   /// Advances from Select Dates to Select Missed Prayers, refreshing the
   /// per date + prayer availability and the preview counts for the selection.
   Future<void> openPrayersStep() async {
-    if (_selectedDates().isEmpty) return;
+    if (!AddQazaValidation.hasValidDates(_selectedDates(), today: _today)) {
+      return;
+    }
     state = state.copyWith(step: AddQazaStep.selectMissedPrayers);
     await _loadPrayerAvailability();
     await refreshCounts();
@@ -105,22 +178,33 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
 
   /// Advances to the read-only review step with a fresh preview.
   Future<void> openReviewStep() async {
-    if (!state.hasPrayers) return;
+    if (!AddQazaValidation.canOpenStep(
+      AddQazaStepRequirement.review,
+      dates: _selectedDates(),
+      prayers: state.prayers,
+      today: _today,
+    )) {
+      return;
+    }
     state = state.copyWith(step: AddQazaStep.reviewAndAdd);
     await refreshCounts();
   }
 
   Future<void> _loadPrayerAvailability() async {
     final token = ++_request;
+    final dates = _selectedDates();
     final map = await ref.read(qazaServiceProvider).getAvailablePrayersByDate(
           userId: ref.read(requiredUserIdProvider),
-          dates: _selectedDates(),
+          dates: dates,
         );
     if (token != _request) return;
     state = state.copyWith(
-      prayerAvailability: {
+      selectedDateCount: dates.length,
+      prayerAvailableDates: {
         for (final prayer in PrayerType.values)
-          prayer: map.values.any((available) => available.contains(prayer)),
+          prayer: map.values
+              .where((available) => available.contains(prayer))
+              .length,
       },
     );
   }
@@ -171,7 +255,7 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
   Future<void> selectAll() async {
     final prayers = <PrayerType>{
       for (final prayer in PrayerType.values)
-        if (state.prayerAvailability[prayer] ?? true) prayer,
+        if (state.isPrayerAvailable(prayer)) prayer,
     };
     if (prayers.isEmpty) return;
     state = state.copyWith(prayers: prayers);
@@ -196,15 +280,43 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
   /// or double taps cannot create duplicates.
   Future<int> addQaza() async {
     if (!state.canAdd) return 0;
-    final expected = state.newCount;
+    final dates = _selectedDates();
+    final prayers = state.prayers;
     state = state.copyWith(saving: true);
     try {
-      await ref.read(qazaServiceProvider).recordQazaForDates(
+      // The preview may be a minute old and another device may have written
+      // in the meantime, so the selection is judged once more against the
+      // ledger as it is now — and the rules say whether to go on.
+      final analysis = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
-            dates: _selectedDates(),
-            prayerTypes: state.prayers,
+            dates: dates,
+            prayerTypes: prayers,
           );
-      return expected;
+      if (!AddQazaValidation.canSave(
+        datesValid: AddQazaValidation.hasValidDates(dates, today: _today),
+        prayers: prayers,
+        newCount: analysis.newCount,
+        checking: false,
+        saving: false,
+      )) {
+        state = state.copyWith(
+          existingCount: analysis.unavailableCount,
+          newCount: analysis.newCount,
+        );
+        return 0;
+      }
+
+      final created = await ref.read(qazaServiceProvider).recordQazaForDates(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: prayers,
+          );
+      // Everything asked for now exists, whoever wrote it.
+      state = state.copyWith(
+        existingCount: analysis.unavailableCount + created,
+        newCount: 0,
+      );
+      return created;
     } finally {
       if (state.saving) state = state.copyWith(saving: false);
     }

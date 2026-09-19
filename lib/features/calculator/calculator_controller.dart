@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/services/qaza_service.dart';
 import 'calculator_persistence.dart';
+import 'calculator_validation.dart';
 import 'calculator_tracker.dart';
 import 'qaza_calculation.dart';
 
@@ -27,7 +30,6 @@ class CalculatorState {
     this.prayerStartDate,
     this.includeWitr = false,
     this.calculation,
-    this.keptAsEstimate = false,
     this.restoring = true,
     this.addingToTracker = false,
     this.addProcessed = 0,
@@ -48,7 +50,6 @@ class CalculatorState {
   final DateTime? prayerStartDate;
   final bool includeWitr;
   final QazaCalculation? calculation;
-  final bool keptAsEstimate;
   final bool restoring;
   final bool addingToTracker;
 
@@ -72,6 +73,10 @@ class CalculatorState {
 
   bool get hasAddResult => addedCount != null;
 
+  /// True once an estimate has been added and the calculator has nothing
+  /// left to do with it: the result is gone, only the outcome remains.
+  bool get addCompleted => hasAddResult && calculation == null;
+
   /// Shared preflight for `Add to Tracker`, or null before it has been run.
   final QazaAvailabilityAnalysis? preflight;
   final String? error;
@@ -93,6 +98,14 @@ class CalculatorState {
     return DateTime(birth.year + balighAge, birth.month, birth.day);
   }
 
+  /// The earliest and latest an exact Baligh date may fall, from the central
+  /// rules. Null until a date of birth is known.
+  DateTime? get balighDateMin =>
+      dob == null ? null : CalculatorBounds.balighDateMin(dob!);
+
+  DateTime? get balighDateMax =>
+      dob == null ? null : CalculatorBounds.balighDateMax(dob!);
+
   DateTime? get effectiveBalighDate => balighMode == BalighInputMode.exactDate
       ? balighDate
       : estimatedBalighDate;
@@ -110,45 +123,47 @@ class CalculatorState {
           ? prayerStartDate
           : estimatedPrayerStartDate;
 
-  /// True when at least one boundary came from an exact date rather than an age.
-  bool get usesExactDates =>
-      balighMode == BalighInputMode.exactDate ||
-      prayerStartMode == PrayerStartInputMode.exactDate;
-
-  String? get dobError {
-    final birth = dob;
-    if (birth == null) return 'Select your date of birth.';
-    if (birth.isAfter(today)) return 'Date of birth cannot be in the future.';
-    return null;
-  }
-
-  String? get balighError {
-    final date = balighDate;
-    final birth = dob;
-    if (balighMode == BalighInputMode.age || birth == null || date == null) {
-      return null;
-    }
-    if (date.isBefore(birth)) {
-      return 'Baligh date cannot be before your date of birth.';
-    }
-    if (date.isAfter(today)) return 'Baligh date cannot be in the future.';
-    return null;
-  }
-
-  String? get prayerStartError {
+  /// The age the effective Baligh boundary falls on, whichever way it was
+  /// given. This is the floor for everything on Step 2.
+  int? get effectiveBalighAge {
     final birth = dob;
     final baligh = effectiveBalighDate;
-    final start = effectivePrayerStartDate;
-    if (birth == null || baligh == null || start == null) return null;
-    if (start.isBefore(baligh)) {
-      return 'Prayer start cannot be before the Baligh date.';
-    }
-    if (start.isAfter(today)) return 'Prayer start cannot be in the future.';
-    if (start.isBefore(birth)) {
-      return 'Prayer start cannot be before your date of birth.';
-    }
-    return null;
+    if (birth == null || baligh == null) return null;
+    return CalculatorBounds.completedYears(birth, baligh);
   }
+
+  /// Prayer can only have started between Baligh and today.
+  DateTime? get prayerStartDateMin {
+    final baligh = effectiveBalighDate;
+    return baligh == null ? null : CalculatorBounds.prayerStartDateMin(baligh);
+  }
+
+  DateTime get prayerStartDateMax => CalculatorBounds.prayerStartDateMax(today);
+
+  int? get prayerStartAgeMin => effectiveBalighAge;
+
+  int? get prayerStartAgeMax => currentAge;
+
+  /// True when there is at least one prayer-start age to choose from — a
+  /// child younger than their own Baligh boundary has none.
+  bool get hasPrayerStartAgeRange {
+    final min = prayerStartAgeMin;
+    final max = prayerStartAgeMax;
+    return min != null && max != null && max >= min;
+  }
+
+  String? get dobError => validateDob(dob: dob, today: today);
+
+  String? get balighError => balighMode == BalighInputMode.age
+      ? validateBalighAge(balighAge)
+      : validateBalighDate(dob: dob, balighDate: balighDate);
+
+  String? get prayerStartError => validatePrayerStart(
+        dob: dob,
+        effectiveBalighDate: effectiveBalighDate,
+        prayerStartDate: effectivePrayerStartDate,
+        today: today,
+      );
 
   bool get step1Valid =>
       dobError == null && balighError == null && effectiveBalighDate != null;
@@ -157,6 +172,21 @@ class CalculatorState {
       step1Valid &&
       effectivePrayerStartDate != null &&
       prayerStartError == null;
+
+  /// Which steps the indicator may open.
+  ///
+  /// A step is reachable once everything it depends on is valid; the step the
+  /// user is on is always reachable, and nothing ahead of the work done so
+  /// far ever is.
+  bool canOpenStep(int index) {
+    if (index == step) return true;
+    return switch (index) {
+      0 => true,
+      1 => step1Valid,
+      2 => step1Valid && step2Valid && calculation != null,
+      _ => false,
+    };
+  }
 
   CalculatorState copyWith({
     int? step,
@@ -169,7 +199,6 @@ class CalculatorState {
     DateTime? prayerStartDate,
     bool? includeWitr,
     QazaCalculation? calculation,
-    bool? keptAsEstimate,
     bool? restoring,
     bool? addingToTracker,
     int? addProcessed,
@@ -199,7 +228,6 @@ class CalculatorState {
             : prayerStartDate ?? this.prayerStartDate,
         includeWitr: includeWitr ?? this.includeWitr,
         calculation: clearCalculation ? null : calculation ?? this.calculation,
-        keptAsEstimate: keptAsEstimate ?? this.keptAsEstimate,
         restoring: restoring ?? this.restoring,
         addingToTracker: addingToTracker ?? this.addingToTracker,
         addProcessed: addProcessed ?? this.addProcessed,
@@ -221,10 +249,13 @@ class CalculatorController extends Notifier<CalculatorState> {
 
   String? _userId;
   Future<void> _saveQueue = Future<void>.value();
+  bool _disposed = false;
 
   @override
   CalculatorState build() {
     _userId = ref.watch(activeUserIdProvider);
+    // Work started for one account must not land on the next one.
+    ref.onDispose(() => _disposed = true);
     Future.microtask(restore);
     return const CalculatorState();
   }
@@ -232,6 +263,7 @@ class CalculatorController extends Notifier<CalculatorState> {
   Future<void> restore() async {
     try {
       final snapshot = await _persistence.load(userId: _userId);
+      if (_disposed) return;
       if (snapshot == null) {
         state = state.copyWith(restoring: false);
         return;
@@ -280,7 +312,7 @@ class CalculatorController extends Notifier<CalculatorState> {
         }
       }
 
-      state = CalculatorState(
+      state = _normalized(CalculatorState(
         step: calculation != null
             ? snapshot.step.clamp(0, 2)
             : snapshot.step.clamp(0, 1),
@@ -293,9 +325,8 @@ class CalculatorController extends Notifier<CalculatorState> {
         prayerStartDate: prayerStartDate,
         includeWitr: snapshot.includeWitr,
         calculation: calculation,
-        keptAsEstimate: snapshot.keptAsEstimate && calculation != null,
         restoring: false,
-      );
+      ));
     } catch (_) {
       state = state.copyWith(restoring: false);
     }
@@ -303,8 +334,10 @@ class CalculatorController extends Notifier<CalculatorState> {
 
   void _persist() {
     if (state.restoring) return;
+    // An added estimate is finished business. Its inputs are worth keeping;
+    // its Step 3 is not, so the snapshot records the start of the flow.
     final snapshot = CalculatorSnapshot(
-      step: state.step,
+      step: state.addCompleted ? 0 : state.step,
       dob: state.dob,
       balighMode: state.balighMode.name,
       balighAge: state.balighAge,
@@ -314,20 +347,57 @@ class CalculatorController extends Notifier<CalculatorState> {
       prayerStartDate: state.prayerStartDate,
       includeWitr: state.includeWitr,
       hasCalculation: state.calculation != null,
-      keptAsEstimate: state.keptAsEstimate,
     );
     final userId = _userId;
     _saveQueue =
         _saveQueue.then((_) => _persistence.save(snapshot, userId: userId));
   }
 
-  /// Any input change invalidates a previous result and its preflight.
+  /// Brings every dependent input back inside the central boundaries.
+  ///
+  /// Ages are corrected to the nearest allowed value and out-of-range dates
+  /// are dropped, so changing a date of birth or a Baligh boundary can never
+  /// leave a stale selection behind it.
+  CalculatorState _normalized(CalculatorState input) {
+    var next = input.copyWith(
+      balighAge: CalculatorBounds.clampBalighAge(input.balighAge),
+    );
+
+    final balighMin = next.balighDateMin;
+    final balighMax = next.balighDateMax;
+    final baligh = next.balighDate;
+    if (baligh != null && balighMin != null && balighMax != null) {
+      if (baligh.isBefore(balighMin) || baligh.isAfter(balighMax)) {
+        next = next.copyWith(clearBalighDate: true);
+      }
+    }
+
+    if (next.hasPrayerStartAgeRange) {
+      next = next.copyWith(
+        prayerStartAge: next.prayerStartAge
+            .clamp(next.prayerStartAgeMin!, next.prayerStartAgeMax!)
+            .toInt(),
+      );
+    }
+
+    final start = next.prayerStartDate;
+    final startMin = next.prayerStartDateMin;
+    if (start != null &&
+        ((startMin != null && start.isBefore(startMin)) ||
+            start.isAfter(next.prayerStartDateMax))) {
+      next = next.copyWith(clearPrayerStartDate: true);
+    }
+
+    return next;
+  }
+
+  /// Any input change invalidates a previous result and its preflight, and is
+  /// re-checked against every rule that depends on it.
   void _applyInput(CalculatorState next) {
-    state = next.copyWith(
+    state = _normalized(next.copyWith(
       clearCalculation: true,
       clearPreflight: true,
-      keptAsEstimate: false,
-    );
+    ));
     _persist();
   }
 
@@ -340,7 +410,8 @@ class CalculatorController extends Notifier<CalculatorState> {
             : state.copyWith(balighMode: mode),
       );
 
-  void setBalighAge(int age) => _applyInput(state.copyWith(balighAge: age));
+  void setBalighAge(int age) => _applyInput(
+      state.copyWith(balighAge: CalculatorBounds.clampBalighAge(age)));
 
   void setBalighDate(DateTime date) =>
       _applyInput(state.copyWith(balighDate: QazaDate.normalize(date)));
@@ -363,7 +434,6 @@ class CalculatorController extends Notifier<CalculatorState> {
     final existing = state.calculation;
     state = state.copyWith(
       includeWitr: value,
-      keptAsEstimate: false,
       clearPreflight: true,
       calculation: existing == null
           ? null
@@ -379,8 +449,7 @@ class CalculatorController extends Notifier<CalculatorState> {
   void next() {
     if (state.step == 0) {
       if (!state.step1Valid) return;
-      state = state.copyWith(step: 1);
-      _persist();
+      goToStep(1);
       return;
     }
     if (state.step == 1 && state.step2Valid) calculate();
@@ -388,19 +457,41 @@ class CalculatorController extends Notifier<CalculatorState> {
 
   void back() {
     if (state.step == 0) return;
-    state = state.copyWith(step: state.step - 1);
-    _persist();
+    goToStep(state.step - 1);
   }
 
-  void editStep(int target) {
-    if (target < 0 || target > 1) return;
-    state = state.copyWith(
-      step: target,
-      clearCalculation: true,
-      clearPreflight: true,
-      keptAsEstimate: false,
-    );
+  /// The one way steps change hands: the indicator, the Back button and the
+  /// Result step's edit actions all come through here, so a step can only
+  /// ever be opened when its own rules allow it.
+  ///
+  /// Navigating away from a result does not discard it — only editing an
+  /// input does — so a step already reached stays reachable.
+  void goToStep(int target) {
+    if (target == state.step || !state.canOpenStep(target)) return;
+    state = state.addCompleted
+        ? state.copyWith(
+            step: target,
+            addProcessed: 0,
+            addTotal: 0,
+            clearAddResult: true,
+          )
+        : state.copyWith(step: target);
     _persist();
+    if (target == 2) _ensurePreflight();
+  }
+
+  /// Starts the preflight the Result step needs to name its own action.
+  ///
+  /// Only for a signed-in or guest account — with no account there is nothing
+  /// to check against, and the step still works without the count.
+  void _ensurePreflight() {
+    if (_userId == null ||
+        state.calculation == null ||
+        state.preflight != null ||
+        state.loadingPreflight) {
+      return;
+    }
+    unawaited(loadPreflight());
   }
 
   void calculate() {
@@ -414,19 +505,14 @@ class CalculatorController extends Notifier<CalculatorState> {
           endDate: end,
           includeWitr: state.includeWitr,
         ),
-        keptAsEstimate: false,
         clearPreflight: true,
         step: 2,
       );
       _persist();
+      _ensurePreflight();
     } on ArgumentError {
       // Validation already blocks this; leave the previous state untouched.
     }
-  }
-
-  void keepAsEstimate() {
-    state = state.copyWith(keptAsEstimate: true);
-    _persist();
   }
 
   /// Runs the shared preflight engine so the user sees what will actually be
@@ -443,9 +529,11 @@ class CalculatorController extends Notifier<CalculatorState> {
               includeWitr: calculation.includeWitr,
             ),
           );
+      if (_disposed) return null;
       state = state.copyWith(preflight: analysis, loadingPreflight: false);
       return analysis;
     } catch (error) {
+      if (_disposed) return null;
       state = state.copyWith(
         loadingPreflight: false,
         error: 'Could not check your existing records: $error',
@@ -477,13 +565,17 @@ class CalculatorController extends Notifier<CalculatorState> {
             prayerTypes:
                 trackerPrayerTypes(includeWitr: calculation.includeWitr),
             onProgress: (processed, total) {
+              if (_disposed) return;
               state = state.copyWith(addProcessed: processed, addTotal: total);
             },
           );
+      if (_disposed) return false;
+      // The estimate has been consumed. Clearing it here is what turns
+      // Step 3 into a success state rather than a form inviting a second add.
       state = state.copyWith(
         addingToTracker: false,
         addedCount: added,
-        keptAsEstimate: false,
+        clearCalculation: true,
         clearPreflight: true,
       );
       // Home reads the aggregate, which has just changed underneath it.
@@ -491,6 +583,7 @@ class CalculatorController extends Notifier<CalculatorState> {
       _persist();
       return true;
     } catch (error) {
+      if (_disposed) return false;
       state = state.copyWith(
         addingToTracker: false,
         error: 'Could not add the estimate: $error',
@@ -499,8 +592,23 @@ class CalculatorController extends Notifier<CalculatorState> {
     }
   }
 
-  /// Clears a finished insert's result, for leaving the success state.
-  void dismissAddResult() => state = state.copyWith(clearAddResult: true);
+  /// Leaves the success state and starts over from Step 1.
+  ///
+  /// Behind both `Calculate Again` and `Done`: the finished calculation, its
+  /// preflight and its result are cleared, while the answers the user gave
+  /// about themselves are kept so a fresh calculation is a step away.
+  void startNewCalculation() {
+    state = state.copyWith(
+      step: 0,
+      addProcessed: 0,
+      addTotal: 0,
+      clearCalculation: true,
+      clearPreflight: true,
+      clearAddResult: true,
+      clearError: true,
+    );
+    _persist();
+  }
 }
 
 final calculatorControllerProvider =

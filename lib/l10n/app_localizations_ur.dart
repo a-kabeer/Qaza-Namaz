@@ -372,6 +372,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get calcRegularPrayerStart => 'باقاعدہ نماز کا آغاز';
 
   @override
+  String get calcPrayerStartAgeUnavailable =>
+      'آپ کی عمر منتخب کردہ بالغ عمر سے کم ہے، اس لیے نماز شروع کرنے کی کوئی عمر دستیاب نہیں۔ اپنی تاریخ پیدائش یا بالغ معلومات درست کریں۔';
+
+  @override
   String get calcPrayerStartAgeLabel => 'باقاعدہ نماز شروع کرنے کی عمر (سال)';
 
   @override
@@ -434,12 +438,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'وتر شامل نہیں ہے۔ اسے نماز کی تاریخ والے مرحلے میں تبدیل کریں۔';
 
   @override
-  String get calcEditAboutYou => 'آپ کے بارے میں ترمیم کریں';
-
-  @override
-  String get calcEditPrayerHistory => 'نماز کی تاریخ میں ترمیم کریں';
-
-  @override
   String get calcPreflightErrorShort => 'موجودہ ریکارڈ کی جانچ نہیں ہو سکی۔';
 
   @override
@@ -474,16 +472,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get calcAddToTracker => 'ٹریکر میں شامل کریں';
 
   @override
-  String get calcKeepAsEstimate => 'اندازے کے طور پر رکھیں';
-
-  @override
-  String get calcKeptAsEstimate => 'اندازے کے طور پر محفوظ';
-
-  @override
-  String get calcEstimated => 'اندازاً حساب';
-
-  @override
-  String get calcBasedOnExactDates => 'اصل تاریخوں کی بنیاد پر';
+  String calcAddQazaCount(String count) {
+    return '$count قضا شامل کریں';
+  }
 
   @override
   String get calcPreflightTitle => 'قضا ٹریکر میں شامل کریں';
@@ -529,6 +520,13 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get calcAddFailedTitle => 'ٹریکر میں شامل نہیں ہو سکا';
+
+  @override
+  String get calcAddedDoneHint =>
+      'آپ کا ٹریکر اپ ڈیٹ ہو گیا۔ آپ کی تاریخ پیدائش اور نماز کی ترتیبات اگلی بار کے لیے محفوظ ہیں۔';
+
+  @override
+  String get calcCalculateAgain => 'دوبارہ حساب کریں';
 
   @override
   String get calcEstimateAdded => 'اندازہ شامل ہو گیا';
@@ -921,6 +919,44 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get addQazaAvailabilityNote =>
       'کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔';
+
+  @override
+  String get addQazaStepNameDates => 'تاریخیں منتخب کریں';
+
+  @override
+  String get addQazaStepNamePrayers => 'قضا نمازیں';
+
+  @override
+  String get addQazaStepNameReview => 'جائزہ';
+
+  @override
+  String addQazaStepSemantics(int step, String name) {
+    return 'مرحلہ $step: $name';
+  }
+
+  @override
+  String addQazaPartialAvailability(int available, int total) {
+    return '$total میں سے $available تاریخوں پر دستیاب';
+  }
+
+  @override
+  String get addQazaAvailableEveryDate => 'ہر منتخب تاریخ پر دستیاب';
+
+  @override
+  String get addQazaEligibleOnlyNote =>
+      'صرف اہل تاریخ اور نماز کے مجموعے شامل کیے جائیں گے۔ پہلے سے ریکارڈ شدہ چھوڑ دیے جائیں گے۔';
+
+  @override
+  String addQazaAddCount(String count) {
+    return '$count قضا شامل کریں';
+  }
+
+  @override
+  String get addQazaNothingNew =>
+      'شامل کرنے کو کچھ نیا نہیں — یہ مجموعے پہلے سے ریکارڈ ہیں۔';
+
+  @override
+  String get addQazaChecking => 'آپ کا لیڈجر جانچا جا رہا ہے...';
 
   @override
   String get addQazaNextPrayers => 'اگلا: جائزہ اور اضافہ';

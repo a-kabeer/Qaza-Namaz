@@ -4,6 +4,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../l10n/app_localizations.dart';
 import 'calendar_controller.dart';
+import 'calendar_day_colors.dart';
 import 'year_selector.dart';
 
 class CalendarPicker extends ConsumerStatefulWidget {
@@ -13,12 +14,25 @@ class CalendarPicker extends ConsumerStatefulWidget {
     this.availablePrayersByDate,
     this.availabilityLoading = false,
     this.onMonthChanged,
+    this.resolveAvailability,
   });
 
   final Set<DateTime> qazaDates;
+
+  /// Availability for the month on screen.
   final Map<DateTime, Set<PrayerType>>? availablePrayersByDate;
   final bool availabilityLoading;
   final ValueChanged<DateTime>? onMonthChanged;
+
+  /// Availability for an arbitrary span, for a range that reaches past the
+  /// month on screen.
+  ///
+  /// A range is checked date by date before it is accepted, and the month's
+  /// own map knows nothing about the months either side of it. Without this
+  /// the check fails for every date it has not heard of, which is what made
+  /// ranges look like they could not leave the visible month.
+  final Future<Map<DateTime, Set<PrayerType>>> Function(
+      DateTime start, DateTime end)? resolveAvailability;
 
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
@@ -26,6 +40,9 @@ class CalendarPicker extends ConsumerStatefulWidget {
 
 class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   late DateTime month;
+
+  /// True while a multi-month range is being checked.
+  bool checkingRange = false;
 
   DateTime get today => ref.read(calendarTodayProvider);
 
@@ -41,13 +58,65 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     });
   }
 
-  bool _isDateAvailable(DateTime date) {
-    final availability = widget.availablePrayersByDate;
-    if (availability == null || widget.availabilityLoading) return true;
+  bool _isDateAvailable(DateTime date) =>
+      _availableIn(widget.availablePrayersByDate, date);
+
+  /// Days can only be tapped once their availability is known.
+  ///
+  /// While a month is loading the picker has nothing to judge a date by, and
+  /// acting on availability it cannot vouch for is worse than a short wait —
+  /// the progress bar above the grid says why.
+  bool get _canSelect => !widget.availabilityLoading && !checkingRange;
+
+  /// Whether [date] still has a prayer left to record, according to
+  /// [availability]. An absent map means nothing is known to be unavailable.
+  static bool _availableIn(
+    Map<DateTime, Set<PrayerType>>? availability,
+    DateTime date,
+  ) {
+    if (availability == null) return true;
     for (final entry in availability.entries) {
-      if (_sameDay(entry.key, date)) return entry.value.isNotEmpty;
+      if (entry.key.year == date.year &&
+          entry.key.month == date.month &&
+          entry.key.day == date.day) {
+        return entry.value.isNotEmpty;
+      }
     }
     return false;
+  }
+
+  /// Handles a tap on a day.
+  ///
+  /// Completing a range is the one case that needs to know about dates the
+  /// visible month has never loaded, so it asks for the whole span first and
+  /// judges every date in it against that answer. Eligibility still applies to
+  /// every date in the range — it is simply now applied with the facts.
+  Future<void> _selectDate(DateTime date) async {
+    final controller = ref.read(calendarControllerProvider.notifier);
+    final selection = ref.read(calendarControllerProvider);
+    final start = selection.startDate;
+    final resolve = widget.resolveAvailability;
+    final completesRange = selection.selectionMode == DateSelectionMode.range &&
+        start != null &&
+        !selection.isRangeComplete &&
+        date.isAfter(start);
+
+    if (!completesRange || resolve == null) {
+      controller.select(date, isDateSelectable: _isDateAvailable);
+      return;
+    }
+
+    setState(() => checkingRange = true);
+    try {
+      final span = await resolve(start, date);
+      if (!mounted) return;
+      controller.select(
+        date,
+        isDateSelectable: (day) => _availableIn(span, day),
+      );
+    } finally {
+      if (mounted) setState(() => checkingRange = false);
+    }
   }
 
   bool _hasExistingQaza(DateTime date) =>
@@ -158,7 +227,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
             ),
           ],
         ),
-        if (widget.availabilityLoading)
+        if (widget.availabilityLoading || checkingRange)
           const LinearProgressIndicator(minHeight: 2),
         const SizedBox(height: 8),
         Text(
@@ -171,10 +240,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         _Grid(
           anchor: month,
           today: today,
+          enabled: _canSelect,
           state: state,
-          onTap: (date) => ref
-              .read(calendarControllerProvider.notifier)
-              .select(date, isDateSelectable: _isDateAvailable),
+          onTap: _selectDate,
           available: _isDateAvailable,
           qaza: _hasExistingQaza,
           hijri: _hijriLabel,
@@ -187,9 +255,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                 ...selected.map(
                   (date) => ListTile(
                     dense: true,
-                    title: Text(
-                      MaterialLocalizations.of(context).formatMediumDate(date),
-                    ),
+                    // Day, month and year: a date acted on is never partial.
+                    title: Text(DateFormatters.formatGregorianFull(date)),
                     subtitle: Text(_hijriLabel(date)),
                   ),
                 ),
@@ -211,6 +278,7 @@ class _Grid extends StatelessWidget {
   const _Grid({
     required this.anchor,
     required this.today,
+    required this.enabled,
     required this.state,
     required this.onTap,
     required this.available,
@@ -220,6 +288,9 @@ class _Grid extends StatelessWidget {
 
   final DateTime anchor;
   final DateTime today;
+
+  /// False while availability is being fetched.
+  final bool enabled;
   final CalendarSelectionState state;
   final ValueChanged<DateTime> onTap;
   final bool Function(DateTime) available;
@@ -306,19 +377,27 @@ class _Grid extends StatelessWidget {
         !date.isBefore(calendarFirstDate) &&
         available(date);
     final isSelected = _selected(date);
-    final isRange = _inRange(date);
     final scheme = Theme.of(context).colorScheme;
+    final colors = CalendarDayColors.resolve(
+      scheme,
+      CalendarDayColors.statusFor(
+        selected: isSelected,
+        inRange: _inRange(date),
+        isToday: _sameDay(date, today),
+        available: isAvailable,
+      ),
+    );
     final key =
         '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
     return Semantics(
       label:
           '${MaterialLocalizations.of(context).formatMediumDate(date)}, ${hijri(date)}${isAvailable ? '' : ', unavailable'}',
-      button: isAvailable,
+      button: isAvailable && enabled,
       selected: isSelected,
       child: InkWell(
         key: Key('calendar_day_$key'),
-        onTap: isAvailable ? () => onTap(date) : null,
+        onTap: isAvailable && enabled ? () => onTap(date) : null,
         borderRadius: BorderRadius.circular(22),
         child: Stack(
           alignment: Alignment.center,
@@ -328,26 +407,14 @@ class _Grid extends StatelessWidget {
               height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected
-                    ? scheme.primary
-                    : isRange
-                        ? scheme.primaryContainer
-                        : _sameDay(date, today) && isAvailable
-                            ? scheme.secondaryContainer
-                            : null,
+                color: colors.background,
               ),
               alignment: Alignment.center,
               child: Text(
                 '$dayNumber',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected
-                          ? scheme.onPrimary
-                          : isAvailable
-                              ? null
-                              : scheme.onSurfaceVariant.withValues(alpha: .45),
-                      fontWeight: isSelected || _sameDay(date, today)
-                          ? FontWeight.w700
-                          : null,
+                      color: colors.foreground,
+                      fontWeight: colors.bold ? FontWeight.w700 : null,
                     ),
               ),
             ),
