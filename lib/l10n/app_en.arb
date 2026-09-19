@@ -29,9 +29,6 @@
   "commonTotal": "Total",
   "commonVersion": "Version",
   "stateErrorTitle": "Something went wrong",
-  "progressNoRecords": "No records yet",
-  "progressPercentCompleted": "{percent}% completed",
-  "@progressPercentCompleted": { "placeholders": { "percent": {"type": "int"} } },
 
   "prayerRakatFajr": "Fajr • 2 Rakat Fard",
   "prayerRakatZuhr": "Zuhr • 4 Rakat Fard",
