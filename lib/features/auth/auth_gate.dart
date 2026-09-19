@@ -16,7 +16,7 @@ import 'guest_upgrade_controller.dart';
 /// The journey is deliberately short:
 ///
 /// ```text
-/// Splash -> Google authentication -> Home
+/// Splash -> Google authentication -> guest decision (when needed) -> Home
 /// ```
 ///
 /// There is no configuration step in the way. Theme defaults to System and
