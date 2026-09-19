@@ -278,7 +278,6 @@ void main() {
       container.listen(guestUpgradePendingProvider, (_, __) {});
       container.listen(guestUpgradeControllerProvider, (_, __) {});
 
-      final state = container.read(guestUpgradeControllerProvider);
       await Future<void>.delayed(Duration.zero);
 
       expect(
