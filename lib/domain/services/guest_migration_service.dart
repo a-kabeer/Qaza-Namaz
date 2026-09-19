@@ -63,14 +63,26 @@ class GuestMigrationService {
     final remoteAccountRecords =
         await _remoteRepository.getRecords(userId: accountUserId);
 
-    final localByKey = <String, QazaRecord>{
-      for (final record in localAccountRecords)
-        _key(record): _normalizeForUser(record, accountUserId),
-    };
-    final remoteByKey = <String, QazaRecord>{
-      for (final record in remoteAccountRecords)
-        _key(record): _normalizeForUser(record, accountUserId),
-    };
+    final localByKey = <String, QazaRecord>{};
+    for (final record in localAccountRecords) {
+      _preferCompleted(
+        localByKey,
+        _key(record),
+        _normalizeForUser(record, accountUserId),
+      );
+    }
+
+    // Firestore has no equivalent of the local SQLite unique constraint, so
+    // legacy data may contain multiple documents for the same prayer/date.
+    // Collapse those duplicates with completed status taking precedence.
+    final remoteByKey = <String, QazaRecord>{};
+    for (final record in remoteAccountRecords) {
+      _preferCompleted(
+        remoteByKey,
+        _key(record),
+        _normalizeForUser(record, accountUserId),
+      );
+    }
 
     final desiredByKey = <String, QazaRecord>{};
     for (final record in localAccountRecords) {
