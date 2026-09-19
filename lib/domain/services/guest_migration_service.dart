@@ -135,53 +135,41 @@ class GuestMigrationService {
       ...remoteByKey.keys,
     };
 
-    final toAppend = <QazaRecord>[];
-    final toCompleteLocally = <String>[];
-    for (final entry in desiredByKey.entries) {
-      final key = entry.key;
-      final desired = entry.value;
-      final local = localByKey[key];
-
-      if (local == null) {
-        toAppend.add(desired);
-        localByKey[key] = desired;
-      }
-
-      final effectiveLocal = localByKey[key]!;
-      if (desired.status == QazaStatus.completed &&
-          effectiveLocal.status == QazaStatus.pending) {
-        toCompleteLocally.add(effectiveLocal.id);
-      }
-    }
-
-    if (toAppend.isNotEmpty) {
-      await _localStore.appendRecords(accountUserId, toAppend);
-    }
-    if (toCompleteLocally.isNotEmpty) {
-      await _localStore.completeRecords(
-        userId: accountUserId,
-        recordIds: toCompleteLocally,
-        completedAt: now,
-      );
-    }
-
-    // Re-read the account rows after local writes. This makes recovery safe if
-    // the process dies between the local record write and outbox persistence.
-    final refreshedLocal = await _allLocalRecords(accountUserId);
-    final refreshedByKey = <String, QazaRecord>{
-      for (final record in refreshedLocal)
-        _key(record): _normalizeForUser(record, accountUserId),
-    };
-
     final existingOutbox = await _localStore.loadOutbox(accountUserId);
     final outbox = <String, PendingSyncOp>{
       for (final op in existingOutbox) op.id: op,
     };
 
+    // Build the entire target account ledger before writing anything. The
+    // production Drift store persists records and outbox in one transaction,
+    // so a failed migration cannot leave a partially imported account.
+    final finalLocalByKey = <String, QazaRecord>{
+      for (final entry in localByKey.entries) entry.key: entry.value,
+    };
+
     for (final entry in desiredByKey.entries) {
       final key = entry.key;
       final desired = entry.value;
-      final local = refreshedByKey[key] ?? desired;
+      final existingLocal = finalLocalByKey[key];
+
+      if (existingLocal == null) {
+        finalLocalByKey[key] = desired;
+      } else if (desired.status == QazaStatus.completed &&
+          existingLocal.status == QazaStatus.pending) {
+        finalLocalByKey[key] = existingLocal.copyWith(
+          status: QazaStatus.completed,
+          completedAt: desired.completedAt ?? now,
+          updatedAt: now,
+        );
+      }
+    }
+
+    final finalLocalRecords = finalLocalByKey.values.toList(growable: false);
+
+    for (final entry in desiredByKey.entries) {
+      final key = entry.key;
+      final desired = entry.value;
+      final local = finalLocalByKey[key] ?? desired;
       final remote = remoteByKey[key];
 
       if (remote == null) {
@@ -204,7 +192,8 @@ class GuestMigrationService {
 
       if (desired.status == QazaStatus.completed &&
           remote.status == QazaStatus.pending) {
-        // The remote document ID is authoritative when local/remote IDs differ.
+        // The remote document ID is authoritative when local and remote IDs
+        // differ, so the queued completion is always safe to replay.
         final id = 'complete_' + remote.id;
         final existing = outbox[id];
         outbox[id] = PendingSyncOp(
@@ -220,8 +209,9 @@ class GuestMigrationService {
       }
     }
 
-    await _localStore.saveOutbox(
+    await _localStore.saveRecordsAndOutbox(
       accountUserId,
+      finalLocalRecords,
       outbox.values.toList(growable: false),
     );
 
