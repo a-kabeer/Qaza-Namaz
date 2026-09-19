@@ -16,6 +16,7 @@ import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
+import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({
@@ -230,6 +231,30 @@ void main() {
       expect(container.read(guestSessionProvider), isTrue);
       expect(container.read(guestUpgradePendingProvider), isTrue);
       expect(container.read(activeUserIdProvider), guestUserId);
+    },
+  );
+
+  test(
+    'Google cancellation keeps guest mode and does not show an auth failure',
+    () async {
+      final (container, auth, migration) = await makeContainer(
+        guestData: true,
+        signInFailure: const AuthenticationCancelledException(),
+      );
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isFalse);
+      expect(auth.currentUser, isNull);
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
+      expect(container.read(guestUpgradePendingProvider), isFalse);
+      expect(
+        container.read(guestUpgradeControllerProvider).error,
+        isNull,
+      );
+      expect(migration.migrateCalls, 0);
+      expect(migration.retireCalls, 0);
     },
   );
 
