@@ -25,9 +25,11 @@ class FakeAuthRepository implements AuthRepository {
       email: 'account@example.com',
     ),
     AppUser? currentUser,
+    this.waitForInitialAuth,
   }) : _current = currentUser;
 
   final AppUser account;
+  final Future<void>? waitForInitialAuth;
   final controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
   Object? signInFailure;
@@ -37,6 +39,7 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Stream<AppUser?> authStateChanges() async* {
+    if (waitForInitialAuth != null) await waitForInitialAuth;
     yield _current;
     yield* controller.stream;
   }
@@ -189,6 +192,60 @@ void main() {
       expect(container.read(activeUserIdProvider), guestUserId);
       expect(migration.migrateCalls, 0);
       expect(migration.retireCalls, 0);
+    },
+  );
+
+  test(
+    'pending decision restoration waits for the initial Firebase auth state',
+    () async {
+      final authReady = Completer<void>();
+      SharedPreferences.setMockInitialValues({
+        GuestSessionNotifier.storageKey: true,
+        'qaza_guest_upgrade_decision':
+            '{"accountId":"account-1"}',
+      });
+
+      final auth = FakeAuthRepository(
+        currentUser: const AppUser(
+          id: 'account-1',
+          email: 'account@example.com',
+        ),
+        waitForInitialAuth: authReady.future,
+      );
+      final migration = FakeGuestMigrationService(guestData: true);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      final initial = container.read(guestUpgradeControllerProvider);
+      expect(initial.restoring, isTrue);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(guestUpgradeControllerProvider).pendingAccount,
+        isNull,
+      );
+
+      authReady.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(guestUpgradeControllerProvider).pendingAccount?.id,
+        'account-1',
+      );
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(guestUpgradePendingProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
     },
   );
 
