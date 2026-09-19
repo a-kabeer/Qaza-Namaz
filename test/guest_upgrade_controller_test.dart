@@ -440,7 +440,7 @@ void main() {
         child: const TestApp(home: AuthenticationScreen()),
       ),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Guest progress found'), findsOneWidget);
     expect(find.text('Merge Data'), findsOneWidget);
