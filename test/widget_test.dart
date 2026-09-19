@@ -7,7 +7,50 @@ import 'package:qaza_namaz/app/app.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
+import 'package:qaza_namaz/data/notifications/local_notification_service.dart';
+import 'package:qaza_namaz/features/notifications/notification_controller.dart';
 import 'support/in_memory_qaza_repository.dart';
+
+class _TestNotificationScheduler implements NotificationScheduler {
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> requestPermission() async => true;
+
+  @override
+  Future<NotificationPermissionInfo> getPermissionInfo({
+    required bool permissionRequested,
+  }) async {
+    return const NotificationPermissionInfo(
+      granted: true,
+      canRequest: true,
+      permanentlyDenied: false,
+      supported: true,
+      sdkInt: 35,
+      shouldShowRationale: false,
+    );
+  }
+
+  @override
+  Future<bool> isPermissionGranted() async => true;
+
+  @override
+  Future<bool> openSystemNotificationSettings() async => true;
+
+  @override
+  Future<void> scheduleDaily({
+    required int hour,
+    required int minute,
+    required NotificationContent content,
+  }) async {}
+
+  @override
+  Future<void> cancelDaily() async {}
+
+  @override
+  Future<void> showTestNotification(NotificationContent content) async {}
+}
 
 class _FakeAuthRepository implements AuthRepository {
   @override
@@ -24,7 +67,10 @@ class _FakeAuthRepository implements AuthRepository {
 Future<void> _openAuth(WidgetTester tester) async {
   await tester.pumpWidget(ProviderScope(overrides: [
     authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
-    qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository())
+    qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
+    notificationSchedulerProvider.overrideWithValue(
+      _TestNotificationScheduler(),
+    )
   ], child: const QazaNamazApp()));
   await tester.pump(const Duration(milliseconds: 700));
   await tester.pumpAndSettle();
