@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/migration/shared_preferences_to_drift_migrator.dart';
-import 'package:qaza_namaz/data/repositories/drift_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 void main() {
@@ -85,7 +84,7 @@ void main() {
     expect(first.migratedRecordCount, 2);
     expect(first.duplicateRecordCount, 2);
     expect(second.alreadyComplete, true);
-    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'),
+    expect(await db.qazaRecordsDao.getRecords(userId: 'user-a'),
         hasLength(2));
   });
 
@@ -101,7 +100,7 @@ void main() {
     final result =
         await SharedPreferencesToDriftMigrator(database: db, preferences: prefs)
             .migrate();
-    final rows = await DriftQazaRepository(db).getRecords(userId: 'user-a');
+    final rows = await db.qazaRecordsDao.getRecords(userId: 'user-a');
     expect(result.sourceRecordCount, 2);
     expect(result.migratedRecordCount, 1);
     expect(rows, hasLength(1));
@@ -132,12 +131,14 @@ void main() {
         throwsStateError);
     expect(prefs.getBool(SharedPreferencesToDriftMigrator.migrationKey),
         isNot(true));
-    expect(await DriftQazaRepository(db).getRecords(userId: 'user-a'), isEmpty);
+    expect(await db.qazaRecordsDao.getRecords(userId: 'user-a'), isEmpty);
   });
 
   test('conflicting existing row aborts before completion marker', () async {
-    final repository = DriftQazaRepository(db);
-    await repository.addRecords([record('conflict')]);
+    await db.qazaRecordsDao.insertRecord(QazaRecordsCompanion.insert(
+      id: 'conflict', userId: 'user-a', prayerType: PrayerType.fajr.name,
+      originalDate: DateTime.utc(2020, 1, 1), status: QazaStatus.pending.name,
+      createdAt: DateTime.utc(2020, 1, 1), updatedAt: DateTime.utc(2020, 1, 1)));
     final conflicting =
         record('conflict').copyWith(status: QazaStatus.completed);
     final prefs = await prefsWith({
