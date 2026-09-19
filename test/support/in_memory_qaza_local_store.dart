@@ -193,6 +193,13 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<void> retireUserData({required String userId}) async {
+    _recordsByUser.remove(userId);
+    _outboxByUser.remove(userId);
+    _lastSyncByUser.remove(userId);
+  }
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {
     if (lastSync == null) {
       _lastSyncByUser.remove(userId);
