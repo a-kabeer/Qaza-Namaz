@@ -1378,6 +1378,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsTitle => 'ترتیبات';
 
   @override
+  String get settingsPreferences => 'ترجیحات';
+
+  @override
+  String get settingsPreferencesSubtitle => 'زبان اور ظاہری شکل کی ترتیبات۔';
+
+  @override
   String get settingsAppearance => 'ظاہری شکل';
 
   @override
