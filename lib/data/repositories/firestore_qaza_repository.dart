@@ -372,8 +372,7 @@ class FirestoreQazaRepository
       'generation': reset.generation,
       'createdAt': FieldValue.serverTimestamp(),
       'records': [
-        for (final record in records)
-          _toMap(record, serverUpdatedAt: true),
+        for (final record in records) _toMap(record),
       ],
     });
 
