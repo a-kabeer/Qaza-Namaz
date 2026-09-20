@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
 import 'prayer_times_provider.dart';
 
@@ -19,14 +21,17 @@ class AlAdhanProvider implements PrayerTimesProvider {
     _validateCoordinates(request.latitude, request.longitude);
 
     final dateKey =
-        '${request.date.year.toString().padLeft(4, '0')}-'
-        '${request.date.month.toString().padLeft(2, '0')}-'
-        '${request.date.day.toString().padLeft(2, '0')}';
+        '\${request.date.year.toString().padLeft(4, '0')}-'
+        '\${request.date.month.toString().padLeft(2, '0')}-'
+        '\${request.date.day.toString().padLeft(2, '0')}';
 
     final query = <String, String>{
       'latitude': request.latitude.toString(),
       'longitude': request.longitude.toString(),
       'school': request.asrMethod.apiValue.toString(),
+      // Keep high-latitude behavior deterministic while V1 intentionally
+      // exposes no user-facing astronomical adjustment controls.
+      'latitudeAdjustmentMethod': '3',
       'iso8601': 'true',
     };
 
@@ -35,13 +40,24 @@ class AlAdhanProvider implements PrayerTimesProvider {
       query['method'] = methodId.toString();
     }
 
-    final uri = Uri.parse('$baseUri/timings/$dateKey').replace(
+    final uri = Uri.parse('\$baseUri/timings/\$dateKey').replace(
       queryParameters: query,
     );
 
-    final response = await _client.get(uri).timeout(
-          const Duration(seconds: 12),
-        );
+    http.Response response;
+    try {
+      response = await _client.get(uri).timeout(
+            const Duration(seconds: 12),
+          );
+    } on TimeoutException {
+      throw const PrayerApiException(
+        'Prayer times service timed out. Please try again.',
+      );
+    } on http.ClientException {
+      throw const PrayerApiException(
+        'Prayer times service is unavailable. Please try again.',
+      );
+    }
 
     Map<String, dynamic> body;
     try {
@@ -56,7 +72,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
       final status = body['status'];
       throw PrayerApiException(
         status is String && status.isNotEmpty
-            ? 'Prayer times service returned: $status'
+            ? 'Prayer times service returned: \$status'
             : 'Prayer times service returned an error.',
       );
     }
@@ -80,7 +96,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
       final raw = timings[prayer.apiKey];
       if (raw is! String) {
         throw PrayerApiException(
-          'Prayer times response is missing ${prayer.apiKey}.',
+          'Prayer times response is missing \${prayer.apiKey}.',
         );
       }
       parsedTimes[prayer] = _parsePrayerTime(raw);
@@ -97,6 +113,14 @@ class AlAdhanProvider implements PrayerTimesProvider {
     }
 
     final timezone = meta['timezone'];
+    if (timezone is! String ||
+        timezone.trim().isEmpty ||
+        !PrayerSchedule.isKnownTimezone(timezone)) {
+      throw const PrayerApiException(
+        'Prayer times response is missing a valid timezone.',
+      );
+    }
+
     final resolvedMethod = meta['method'];
     final resolvedMethodName = resolvedMethod is Map
         ? resolvedMethod['name'] as String?
@@ -104,7 +128,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
 
     return PrayerDay(
       date: DateTime(request.date.year, request.date.month, request.date.day),
-      timezone: timezone is String && timezone.isNotEmpty ? timezone : 'UTC',
+      timezone: timezone.trim(),
       times: parsedTimes,
       hijriDate: HijriDate(
         day: _parseInt(hijri['day']),
@@ -144,7 +168,9 @@ class AlAdhanProvider implements PrayerTimesProvider {
     if (value is int) return value;
     if (value is num) return value.toInt();
     if (value is String) return int.parse(value);
-    throw const PrayerApiException('Prayer times response contains invalid data.');
+    throw const PrayerApiException(
+      'Prayer times response contains invalid data.',
+    );
   }
 
   void _validateCoordinates(double latitude, double longitude) {
