@@ -70,7 +70,10 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     if (entries.isEmpty) return;
     await transaction(() async {
       for (final entry in entries) {
-        await into(syncOutbox).insertOnConflictUpdate(entry);
+        await into(syncOutbox).insert(
+          entry,
+          mode: InsertMode.insertOrIgnore,
+        );
       }
     });
   }

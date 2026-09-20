@@ -200,6 +200,36 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<void> upsertRecordsAndOutbox({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    for (final op in ops) {
+      if (op.userId != userId) {
+        throw StateError('Cannot queue a sync operation for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      if (records.isNotEmpty) {
+        await _database.qazaRecordsDao.upsertRecords(
+          records.map(_toCompanion).toList(growable: false),
+        );
+      }
+      if (ops.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          ops.map(_toOpCompanion).toList(growable: false),
+        );
+      }
+    });
+  }
+
+  @override
   Future<void> appendRecordsAndOutbox(
       String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
     for (final record in records) {

@@ -272,6 +272,15 @@ abstract class QazaLocalStore {
     await saveOutbox(userId, remaining);
   }
 
+  Future<void> upsertRecordsAndOutbox({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    await upsertRecords(userId, records);
+    await appendRecordsAndOutbox(userId, const <QazaRecord>[], ops);
+  }
+
   Future<void> appendRecordsAndOutbox(
       String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
     await appendRecords(userId, records);

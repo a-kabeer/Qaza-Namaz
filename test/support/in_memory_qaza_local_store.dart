@@ -241,7 +241,24 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     await appendRecords(userId, records);
     if (ops.isEmpty) return;
     final current = _outboxByUser.putIfAbsent(userId, () => <PendingSyncOp>[]);
-    current.addAll(ops);
+    final existingIds = {for (final op in current) op.id};
+    for (final op in ops) {
+      if (existingIds.add(op.id)) current.add(op);
+    }
+  }
+
+  @override
+  Future<void> upsertRecordsAndOutbox({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    await upsertRecords(userId, records);
+    await appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      ops,
+    );
   }
 
   @override

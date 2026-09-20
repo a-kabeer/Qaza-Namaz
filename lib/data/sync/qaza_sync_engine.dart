@@ -298,8 +298,10 @@ class QazaSyncEngine {
           locallyCommittedChanges.clear();
           await _notifyLocalDataChanged();
         } else if (!locallyCommittedChanges.contains(change.cursor.id)) {
-          await _localStore.upsertRecords(userId, change.records);
-          await _notifyLocalDataChanged();
+          await _mergeRemoteRecords(
+            userId: userId,
+            records: change.records,
+          );
         }
 
         current = change.cursor;
@@ -308,6 +310,58 @@ class QazaSyncEngine {
 
       if (!page.hasMore) return current;
     }
+  }
+
+  Future<void> _mergeRemoteRecords({
+    required String userId,
+    required List<QazaRecord> records,
+  }) async {
+    if (records.isEmpty) return;
+
+    final existing = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: records.map((record) => record.id).toList(growable: false),
+    );
+    final byId = <String, QazaRecord>{
+      for (final record in existing) record.id: record,
+    };
+    final merged = <QazaRecord>[];
+    final recovery = <PendingSyncOp>[];
+
+    for (final remoteRecord in records) {
+      final localRecord = byId[remoteRecord.id];
+      var winner = remoteRecord;
+
+      if (localRecord != null &&
+          localRecord.status == QazaStatus.completed &&
+          localRecord.completedAt != null) {
+        if (remoteRecord.status != QazaStatus.completed ||
+            remoteRecord.completedAt == null ||
+            localRecord.completedAt!.isBefore(remoteRecord.completedAt!)) {
+          winner = localRecord;
+          recovery.add(
+            PendingSyncOp(
+              id: 'complete_' + localRecord.id,
+              type: SyncOpType.complete,
+              userId: userId,
+              queuedAt: localRecord.updatedAt,
+              targetRecordId: localRecord.id,
+              completedAt: localRecord.completedAt,
+              record: localRecord,
+            ),
+          );
+        }
+      }
+
+      merged.add(winner);
+    }
+
+    await _localStore.upsertRecordsAndOutbox(
+      userId: userId,
+      records: merged,
+      ops: recovery,
+    );
+    await _notifyLocalDataChanged();
   }
 
   Future<int> _maxAttemptForUser(String userId) async {
