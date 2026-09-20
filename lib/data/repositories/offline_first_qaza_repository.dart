@@ -573,7 +573,10 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _emitPending();
 
     if (_isOnline) {
-      unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
     }
   }
 
@@ -624,7 +627,10 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
     final userId = _activeUserId;
     if (userId != null) {
-      unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
     }
   }
 
