@@ -18,12 +18,12 @@ Future<void> main() async {
   );
 
   // App Check must be activated immediately after Firebase initialization and
-  // before any Firebase service is used. Debug builds use the Firebase debug
-  // provider; Android release builds use Play Integrity.
+  // before any Firebase service is used. The enum-style provider API is used
+  // here because the app remains on the Firebase Core 3.x dependency line.
+  // Debug builds use the Firebase debug provider; release builds use Play Integrity.
   await FirebaseAppCheck.instance.activate(
-    providerAndroid: kDebugMode
-        ? const AndroidDebugProvider()
-        : const AndroidPlayIntegrityProvider(),
+    androidProvider:
+        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
   );
 
   // Complete the legacy migration before any repository can read the local
