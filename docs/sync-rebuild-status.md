@@ -1,41 +1,55 @@
 # Qaza Namaz — Sync Rebuild & Hardening Status
 
 Branch: `rebuild/firestore-sync-hardening`
+PR: #40 — Rebuild Firebase sync for large Qaza ledgers
 
 ## Overall
-- [x] Scope locked to synchronization subsystem only
-- [ ] Firestore repository internals
-- [ ] Sync outbox
-- [ ] Sync engine
-- [ ] Remote incremental sync
-- [ ] Batch completion
-- [ ] Batch reset
-- [ ] Retry strategy
-- [ ] Sync state
-- [ ] Large-data stress testing
-- [ ] Final CI / cross-platform validation
 
-## Tracking
+The sync subsystem has been structurally rebuilt on a dedicated branch. The application/domain architecture outside synchronization has been left intact.
 
-| Phase | Status | Notes |
+| Phase | Status | Implementation |
 |---|---|---|
-| 1. Firestore repository internals | 🔄 In progress | Replacing single-record bulk transport with bounded WriteBatch operations |
-| 2. Sync outbox | ⏳ Pending | Replace whole-queue rewrites with bounded dequeue/delete |
-| 3. Sync engine | ⏳ Pending | Dedicated bounded batch processing and single-flight coordination |
-| 4. Remote incremental sync | ⏳ Pending | Add durable change-log based incremental reconciliation |
-| 5. Batch completion | ⏳ Pending | Completion snapshots synchronized in batches |
-| 6. Batch reset | ⏳ Pending | Reset barrier + resumable bounded deletion |
-| 7. Retry strategy | ⏳ Pending | Backoff, retry classification, durable failures |
-| 8. Sync state | ⏳ Pending | Accurate pending/processed/error/retry states |
-| 9. Large-data stress testing | ⏳ Pending | 1k / 5k / 13k / 20k / 50k scenarios |
+| 1. Firestore repository internals | ✅ Implemented | Bounded 400-op WriteBatch transport; change-log events; reset metadata |
+| 2. Sync outbox | ✅ Implemented | Bounded dequeue/remove APIs; transactional append + queue; durable retry metadata |
+| 3. Sync engine | ✅ Implemented | Dedicated single-flight sync engine; session-safe lifecycle; bounded processing |
+| 4. Remote incremental sync | ✅ Implemented | Cursor-based `qazaChanges` reconciliation; paginated change reads |
+| 5. Batch completion | ✅ Implemented | Completion snapshots flow through batched sync operations |
+| 6. Batch reset | ✅ Implemented | 400-op delete batches; resumable reset operation IDs; generation barrier |
+| 7. Retry strategy | ✅ Implemented | Firebase transient-error classification; exponential backoff; durable attempts/errors |
+| 8. Sync state | ✅ Implemented | Syncing/retrying/partial/synced/offline/error + progress counters |
+| 9. Large-data stress testing | 🔄 In progress | 13,000-record engine stress/regression coverage added; full CI validation pending |
+| 10. Final CI / cross-platform validation | 🔄 In progress | Flutter CI run active; Linux, Windows, Android and Analyze jobs present |
 
-## Success Criteria
-- Bulk cloud writes use bounded Firestore batches.
-- The outbox is never rewritten in full after every operation.
-- Sync survives restart and offline periods.
-- Normal synchronization consumes change-log pages instead of the full ledger.
-- Completion and reset are batch-based and idempotent.
-- Reset cannot resurrect stale local operations.
-- Failed batches remain durable and retry independently.
-- Sync state never reports success while cloud work remains.
-- Large-ledger stress tests cover at least 13,000 records and multi-user isolation.
+## Changes
+
+- `FirestoreQazaRepository` now sends normal bulk mutations through bounded Firestore write batches instead of record-by-record transactions.
+- `QazaSyncEngine` owns queue flushing, incremental reconciliation, retry scheduling, reset recovery, and sync progress.
+- `SyncOutboxDao` supports bounded reads/deletes instead of rebuilding the whole queue after each remote write.
+- `qazaChanges` provides a durable remote change stream per user.
+- `syncMetadata/state` carries reset generation/barrier information.
+- Firestore rules block record create/update operations while a reset is active.
+- Incremental-sync indexes are declared in `firestore.indexes.json`.
+- Existing guest migration completion operations now carry completed record snapshots so they use the new batched sync path.
+
+## Large-data target
+
+Test sizes:
+- 1,000
+- 5,000
+- 13,000+
+- 20,000
+- 50,000
+
+The added engine stress test verifies that 13,000 pending operations are processed in 400-operation batches, not as 13,000 individual network operations, and that the local outbox is drained without whole-queue persistence rewrites.
+
+## Remaining validation
+
+1. Flutter analyze
+2. Linux tests
+3. Windows tests
+4. Android debug/release build
+5. Drift code generation
+6. Full sync test suite
+7. Failure/restart/offline recovery
+8. Real Firebase 13,000-record smoke test
+9. Multi-user isolation test
