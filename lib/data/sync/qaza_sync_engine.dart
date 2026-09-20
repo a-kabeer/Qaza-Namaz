@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/qaza_record.dart';
 import '../local/qaza_local_store.dart';
+import 'sync_error_classifier.dart';
 import 'qaza_sync_remote_data_source.dart';
 import 'sync_state.dart';
 
@@ -225,7 +226,7 @@ class QazaSyncEngine {
           await _localStore.markOutboxBatchRetry(
             userId: userId,
             ids: ids,
-            error: error.toString(),
+            error: classifyPersistedSyncError(error),
           );
           rethrow;
         }
