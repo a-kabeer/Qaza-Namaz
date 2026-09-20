@@ -355,6 +355,15 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<int> insertRecord(QazaRecordsCompanion record) =>
       into(qazaRecords).insert(record, mode: InsertMode.insertOrIgnore);
 
+  Future<void> upsertRecords(List<QazaRecordsCompanion> records) async {
+    if (records.isEmpty) return;
+    await transaction(() async {
+      for (final record in records) {
+        await into(qazaRecords).insertOnConflictUpdate(record);
+      }
+    });
+  }
+
   /// Inserts records atomically. Each row is still constrained by its own
   /// userId in SQLite; callers that need a single-user transaction should use
   /// replaceUserRecords, which validates the namespace before replacing it.
