@@ -2,7 +2,8 @@
 
 Branch: `rebuild/firestore-sync-hardening`
 PR: #40 — Rebuild Firebase sync for large Qaza ledgers
-Latest implementation commit: `4bab785ebc139ac1c35cc8982216b2f2ab30fd71`
+Latest implementation commit: `8300617428391c0029ba0a2f0d250207a08fd73f`
+Latest CI run: #1382 (in progress)
 
 ## Overall
 
@@ -42,6 +43,17 @@ Test sizes:
 - 50,000
 
 The added engine stress test verifies that 13,000 pending operations are processed in 400-operation batches, not as 13,000 individual network operations, and that the local outbox is drained without whole-queue persistence rewrites.
+
+## Latest validation update
+
+CI run #1374 exposed these issues, which have now been corrected on the branch:
+- missing Drift row-to-domain mapper in the new ID lookup
+- retry-attempt type inference error
+- non-exhaustive `SyncStatus.idle` switches
+- malformed placement of the completion stress test
+- reset-generation protection was strengthened after the first validation pass
+
+CI run #1382 is now validating the corrected head across Android, Linux, Windows, and Analyze.
 
 ## Remaining validation
 
