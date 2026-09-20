@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
         key: key,
       );
 
-      return NativeDatabase(
+      return NativeDatabase.createInBackground(
         databaseFile,
         setup: (rawDb) {
           final cipher = rawDb.select('PRAGMA cipher;');
