@@ -160,6 +160,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             NotificationPermissionStatus.denied => l10n.notificationsBlocked,
             NotificationPermissionStatus.permanentlyDenied =>
               l10n.notificationsBlocked,
+            NotificationPermissionStatus.appNotificationsDisabled =>
+              l10n.notificationsAppDisabled,
+            NotificationPermissionStatus.reminderChannelDisabled =>
+              l10n.notificationsChannelDisabled,
             NotificationPermissionStatus.unavailable =>
               l10n.notificationsUnavailable,
             NotificationPermissionStatus.restricted =>
@@ -175,6 +179,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               l10n.notificationsAllowPrompt,
             NotificationPermissionStatus.permanentlyDenied =>
               l10n.notificationsEnableInSettings,
+            NotificationPermissionStatus.appNotificationsDisabled =>
+              l10n.notificationsAppDisabledDetail,
+            NotificationPermissionStatus.reminderChannelDisabled =>
+              l10n.notificationsChannelDisabledDetail,
             NotificationPermissionStatus.unavailable =>
               l10n.notificationsUnavailableDetail,
             NotificationPermissionStatus.restricted =>
@@ -190,6 +198,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               Icons.notifications_off_outlined,
             NotificationPermissionStatus.permanentlyDenied =>
               Icons.notifications_off_outlined,
+            NotificationPermissionStatus.appNotificationsDisabled =>
+              Icons.notifications_off_outlined,
+            NotificationPermissionStatus.reminderChannelDisabled =>
+              Icons.notifications_off_outlined,
             NotificationPermissionStatus.unavailable =>
               Icons.error_outline_rounded,
             NotificationPermissionStatus.restricted =>
@@ -197,11 +209,38 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           };
 
           final reminderEnabled = value.enabled && !_working;
+          final reminderSubtitle = !value.enabled
+              ? l10n.notificationsOff
+              : switch (permission) {
+                  NotificationPermissionStatus.granted =>
+                    !value.pendingCountKnown
+                        ? l10n.notificationsPendingUnknown
+                        : value.hasPendingQaza
+                            ? l10n.notificationsOnAt(value.formattedTime)
+                            : l10n.notificationsOnPendingWait,
+                  NotificationPermissionStatus.notRequested =>
+                    l10n.notificationsPermissionNeeded,
+                  NotificationPermissionStatus.denied =>
+                    l10n.notificationsBlocked,
+                  NotificationPermissionStatus.permanentlyDenied =>
+                    l10n.notificationsBlocked,
+                  NotificationPermissionStatus.appNotificationsDisabled =>
+                    l10n.notificationsAppDisabled,
+                  NotificationPermissionStatus.reminderChannelDisabled =>
+                    l10n.notificationsChannelDisabled,
+                  NotificationPermissionStatus.unavailable =>
+                    l10n.notificationsUnavailable,
+                  NotificationPermissionStatus.restricted =>
+                    l10n.notificationsRestricted,
+                };
+
           final testEnabled =
               value.schedulerAvailable &&
               permission != NotificationPermissionStatus.unavailable &&
               permission != NotificationPermissionStatus.restricted &&
               permission != NotificationPermissionStatus.permanentlyDenied &&
+              permission != NotificationPermissionStatus.appNotificationsDisabled &&
+              permission != NotificationPermissionStatus.reminderChannelDisabled &&
               !_working;
 
           return ListView(
@@ -222,15 +261,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   key: const Key('daily_notification_switch'),
                   value: value.enabled,
                   title: Text(l10n.notificationsDailyTitle),
-                  subtitle: Text(
-                    !value.enabled
-                        ? l10n.notificationsOff
-                        : !value.pendingCountKnown
-                            ? l10n.notificationsPendingUnknown
-                            : value.hasPendingQaza
-                                ? l10n.notificationsOnAt(value.formattedTime)
-                                : l10n.notificationsOnPendingWait,
-                  ),
+                  subtitle: Text(reminderSubtitle),
                   onChanged: _working ? null : _setEnabled,
                 ),
               ),
@@ -273,11 +304,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                         onPressed: _working ? null : () => _setEnabled(true),
                         child: Text(l10n.notificationsTryAgain),
                       ),
-                    NotificationPermissionStatus.permanentlyDenied =>
+                    NotificationPermissionStatus.permanentlyDenied ||
+                    NotificationPermissionStatus.appNotificationsDisabled ||
+                    NotificationPermissionStatus.reminderChannelDisabled =>
                       TextButton(
                         key: const Key('notification_open_settings'),
                         onPressed: _working ? null : _openSystemSettings,
-                        child: Text(l10n.notificationsOpenSettings),
+                        child: Text(
+                          permission ==
+                                  NotificationPermissionStatus.reminderChannelDisabled
+                              ? l10n.notificationsEnableReminderNotifications
+                              : l10n.notificationsOpenSettings,
+                        ),
                       ),
                     _ => null,
                   },
@@ -319,6 +357,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     if (!value.enabled) return l10n.notificationsOffStatus;
     if (!value.schedulerAvailable) {
       return l10n.notificationsUnavailableDetail;
+    }
+    switch (value.permissionStatus) {
+      case NotificationPermissionStatus.appNotificationsDisabled:
+        return l10n.notificationsAppDisabledDetail;
+      case NotificationPermissionStatus.reminderChannelDisabled:
+        return l10n.notificationsChannelDisabledDetail;
+      case NotificationPermissionStatus.permanentlyDenied:
+      case NotificationPermissionStatus.denied:
+      case NotificationPermissionStatus.notRequested:
+        return l10n.notificationsPermissionRequired;
+      case NotificationPermissionStatus.granted:
+      case NotificationPermissionStatus.unavailable:
+      case NotificationPermissionStatus.restricted:
+        break;
     }
     if (!value.canSendNotifications) {
       return l10n.notificationsPermissionRequired;

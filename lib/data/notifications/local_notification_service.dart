@@ -27,6 +27,9 @@ class NotificationPermissionInfo {
     required this.supported,
     required this.sdkInt,
     required this.shouldShowRationale,
+    required this.appNotificationsEnabled,
+    required this.reminderChannelEnabled,
+    required this.runtimePermissionGranted,
   });
 
   final bool granted;
@@ -35,6 +38,9 @@ class NotificationPermissionInfo {
   final bool supported;
   final int sdkInt;
   final bool shouldShowRationale;
+  final bool appNotificationsEnabled;
+  final bool reminderChannelEnabled;
+  final bool runtimePermissionGranted;
 }
 
 abstract interface class NotificationScheduler {
@@ -146,9 +152,8 @@ class LocalNotificationService implements NotificationScheduler {
         'channel exists id=$_channelId importance=${current.importance.value}',
       );
       if (current.importance == Importance.none) {
-        throw StateError(
-          'Notification channel "$_channelId" is blocked by Android. Open system notification settings '
-              'and enable it.',
+        _log(
+          'Notification channel is blocked by Android; keeping scheduler initialized so the UI can guide the user to settings.',
         );
       }
     }
@@ -208,35 +213,55 @@ class LocalNotificationService implements NotificationScheduler {
         supported: false,
         sdkInt: -1,
         shouldShowRationale: false,
+        appNotificationsEnabled: true,
+        reminderChannelEnabled: true,
+        runtimePermissionGranted: true,
       );
     }
 
-    final granted = await android.areNotificationsEnabled() ?? false;
+    final appNotificationsEnabled =
+        await android.areNotificationsEnabled() ?? false;
     var sdkInt = -1;
     var runtimePermission = false;
+    var runtimePermissionGranted = true;
     var shouldShowRationale = false;
+    var reminderChannelEnabled = true;
+
+    final channels =
+        await android.getNotificationChannels() ?? <AndroidNotificationChannel>[];
+    final channel = channels.where((candidate) => candidate.id == _channelId);
+    if (channel.isNotEmpty) {
+      reminderChannelEnabled = channel.first.importance != Importance.none;
+    }
 
     try {
       final result = await _settingsChannel
           .invokeMethod<Map<dynamic, dynamic>>('getNotificationPermissionState');
       sdkInt = (result?['sdkInt'] as num?)?.toInt() ?? -1;
       runtimePermission = result?['runtimePermission'] == true;
+      runtimePermissionGranted = result?['runtimePermissionGranted'] == true;
       shouldShowRationale = result?['shouldShowRationale'] == true;
     } catch (error) {
       _log('permission diagnostics unavailable: $error');
     }
 
-    final permanentlyDenied = !granted &&
+    final permanentlyDenied = runtimePermission &&
+        !runtimePermissionGranted &&
         permissionRequested &&
-        (runtimePermission ? !shouldShowRationale : sdkInt >= 0);
+        !shouldShowRationale;
 
     final info = NotificationPermissionInfo(
-      granted: granted,
-      canRequest: runtimePermission && !permanentlyDenied,
+      granted: appNotificationsEnabled && reminderChannelEnabled,
+      canRequest: runtimePermission
+          ? !permanentlyDenied
+          : appNotificationsEnabled && reminderChannelEnabled,
       permanentlyDenied: permanentlyDenied,
       supported: true,
       sdkInt: sdkInt,
       shouldShowRationale: shouldShowRationale,
+      appNotificationsEnabled: appNotificationsEnabled,
+      reminderChannelEnabled: reminderChannelEnabled,
+      runtimePermissionGranted: runtimePermissionGranted,
     );
 
     _log(

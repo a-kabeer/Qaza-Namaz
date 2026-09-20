@@ -1,6 +1,7 @@
 package com.example.qaza_namaz_task1_flutter
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,6 +14,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private companion object {
         const val CHANNEL = "qaza_namaz/notification_settings"
+        const val QAZA_REMINDER_CHANNEL_ID = "qaza_daily_reminder_v2"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -35,9 +37,11 @@ class MainActivity : FlutterActivity() {
 
     private fun getNotificationPermissionState(): Map<String, Any> {
         val runtimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val runtimePermissionGranted = !runtimePermission ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
         val shouldShowRationale = runtimePermission &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED &&
+            !runtimePermissionGranted &&
             shouldShowRequestPermissionRationale(
                 Manifest.permission.POST_NOTIFICATIONS,
             )
@@ -45,12 +49,36 @@ class MainActivity : FlutterActivity() {
         return mapOf(
             "sdkInt" to Build.VERSION.SDK_INT,
             "runtimePermission" to runtimePermission,
+            "runtimePermissionGranted" to runtimePermissionGranted,
             "shouldShowRationale" to shouldShowRationale,
         )
     }
 
     private fun openNotificationSettings(): Boolean = try {
         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager =
+                getSystemService(NotificationManager::class.java)
+            val channel = notificationManager?.getNotificationChannel(
+                QAZA_REMINDER_CHANNEL_ID,
+            )
+            val appNotificationsEnabled =
+                notificationManager?.areNotificationsEnabled() ?: true
+
+            if (appNotificationsEnabled &&
+                channel != null &&
+                channel.importance == NotificationManager.IMPORTANCE_NONE
+            ) {
+                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    .putExtra(
+                        Settings.EXTRA_CHANNEL_ID,
+                        QAZA_REMINDER_CHANNEL_ID,
+                    )
+            } else {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         } else {

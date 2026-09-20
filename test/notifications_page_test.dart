@@ -27,6 +27,9 @@ class _FlakyScheduler implements NotificationScheduler {
 
   bool permissionGranted = true;
   bool permissionGrantedForStatus = true;
+  bool runtimePermissionGranted = true;
+  bool appNotificationsEnabled = true;
+  bool reminderChannelEnabled = true;
   bool canRequestPermission = true;
   bool permanentlyDeniedForStatus = false;
   bool settingsOpen = true;
@@ -43,7 +46,10 @@ class _FlakyScheduler implements NotificationScheduler {
   }) async {
     if (failPermissionCheck) throw StateError('permission check failed');
     return NotificationPermissionInfo(
-      granted: permissionGrantedForStatus,
+      granted: permissionGrantedForStatus &&
+          appNotificationsEnabled &&
+          reminderChannelEnabled &&
+          runtimePermissionGranted,
       canRequest: canRequestPermission,
       permanentlyDenied:
           !permissionGrantedForStatus && permanentlyDeniedForStatus,
@@ -51,6 +57,10 @@ class _FlakyScheduler implements NotificationScheduler {
       sdkInt: 35,
       shouldShowRationale:
           !permanentlyDeniedForStatus && !permissionGrantedForStatus,
+      appNotificationsEnabled: appNotificationsEnabled,
+      reminderChannelEnabled: reminderChannelEnabled,
+      runtimePermissionGranted:
+          runtimePermissionGranted && permissionGrantedForStatus,
     );
   }
 
@@ -157,6 +167,52 @@ void main() {
       find.byKey(const Key('test_notification_action')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('app notifications disabled offers direct settings',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = true
+      ..runtimePermissionGranted = true
+      ..appNotificationsEnabled = false
+      ..reminderChannelEnabled = true;
+    await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+    expect(find.text('App notifications are turned off'), findsOneWidget);
+    expect(
+      find.byKey(const Key('notification_open_settings')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('notification_open_settings')));
+    await tester.pumpAndSettle();
+    expect(scheduler.settingsCalls, 1);
+  });
+
+  testWidgets('reminder channel disabled offers direct settings',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler()
+      ..permissionGrantedForStatus = true
+      ..runtimePermissionGranted = true
+      ..appNotificationsEnabled = true
+      ..reminderChannelEnabled = false;
+    await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+    expect(find.text('Reminder notifications are turned off'), findsOneWidget);
+    expect(
+      find.byKey(const Key('notification_open_settings')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('notification_open_settings')));
+    await tester.pumpAndSettle();
+    expect(scheduler.settingsCalls, 1);
   });
 
   testWidgets('denied state offers Retry, not system settings',
