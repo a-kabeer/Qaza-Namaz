@@ -242,6 +242,21 @@ class DriftQazaLocalStore extends QazaLocalStore {
         completedAt: completedAt,
       );
 
+  @override
+  Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      await _database.qazaRecordsDao.upsertRecords(
+        records.map(_toCompanion).toList(growable: false),
+      );
+    });
+  }
+
   /// Inserts only the new rows; existing ones are left untouched.
   @override
   Future<void> appendRecords(String userId, List<QazaRecord> records) async {
