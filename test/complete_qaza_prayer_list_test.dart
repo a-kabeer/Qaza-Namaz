@@ -166,9 +166,9 @@ void main() {
       ]);
       await pumpPage(tester, repository);
 
-      // Latest, not oldest: 10 Jan for Fajr.
-      expect(find.text('10 Jan 2026'), findsOneWidget);
-      expect(find.text('02 Jan 2026'), findsNothing);
+      // Oldest first: 02 Jan for Fajr.
+      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(find.text('10 Jan 2026'), findsNothing);
 
       await tester.tap(find.byKey(const Key('complete_prayer_pill_zuhr')));
       await tester.pumpAndSettle();
