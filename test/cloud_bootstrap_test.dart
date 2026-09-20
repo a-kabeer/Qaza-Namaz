@@ -57,17 +57,20 @@ class _BlockingRemote implements QazaRepository {
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
-  }) =>
-      delegate.getPage(
-        userId: userId,
-        limit: limit,
-        prayerType: prayerType,
-        status: status,
-        from: from,
-        to: to,
-        afterOriginalDate: afterOriginalDate,
-        afterId: afterId,
-      );
+  }) async {
+    await gate.future;
+    if (failPull) throw StateError('remote unavailable');
+    return delegate.getPage(
+      userId: userId,
+      limit: limit,
+      prayerType: prayerType,
+      status: status,
+      from: from,
+      to: to,
+      afterOriginalDate: afterOriginalDate,
+      afterId: afterId,
+    );
+  }
 
   @override
   Future<QazaRecord?> getOldestPending({
