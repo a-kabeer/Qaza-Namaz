@@ -200,6 +200,18 @@ abstract class QazaLocalStore {
         records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
 
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    final snapshot = await load();
+    final wanted = ids.toSet();
+    return [
+      for (final record in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        if (wanted.contains(record.id)) record,
+    ];
+  }
+
   Future<QazaProgressSummary> getProgressSummary(
       {required String userId}) async {
     final snapshot = await load();
