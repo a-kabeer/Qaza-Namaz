@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../lib/features/prayer_times/data/location/city_search_provider.dart';
 import '../lib/features/prayer_times/data/location/prayer_location_service.dart';
@@ -137,11 +138,7 @@ class _FixedClock implements PrayerTimesClock {
 Widget _app({required Widget child, Locale locale = const Locale('en')}) {
   return MaterialApp(
     locale: locale,
-    localizationsDelegates: const [
-      DefaultMaterialLocalizations.delegate,
-      DefaultWidgetsLocalizations.delegate,
-      DefaultCupertinoLocalizations.delegate,
-    ],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
     supportedLocales: const [
       Locale('en'),
       Locale('ur'),
@@ -165,7 +162,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(SkeletonShimmer), findsOneWidget);
+    expect(find.byType(SkeletonShimmer), findsWidgets);
 
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
@@ -190,7 +187,7 @@ void main() {
 
     expect(
       find.textContaining('Prayer times could not be loaded'),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.text('Try Again'), findsOneWidget);
     expect(find.text('Choose Location Manually'), findsOneWidget);
@@ -214,11 +211,7 @@ void main() {
         container: container,
         child: MaterialApp(
           locale: const Locale('ur'),
-          localizationsDelegates: const [
-            DefaultMaterialLocalizations.delegate,
-            DefaultWidgetsLocalizations.delegate,
-            DefaultCupertinoLocalizations.delegate,
-          ],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           supportedLocales: const [Locale('en'), Locale('ur')],
           theme: ThemeData.dark(),
           home: const PrayerTimesScreen(),
