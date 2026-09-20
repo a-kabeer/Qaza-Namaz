@@ -1,12 +1,18 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
+import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 
-class InMemoryQazaRepository implements QazaRepository {
+class InMemoryQazaRepository
+    implements QazaRepository, QazaSyncRemoteDataSource {
   final Map<String, QazaRecord> _records = {};
   int historyPageCalls = 0;
   int progressSummaryCalls = 0;
+  final Map<String, List<QazaRemoteChange>> _changesByUser = {};
+  final Map<String, int> _generations = {};
+  int _changeSequence = 0;
 
   @override
   Future<List<QazaRecord>> getRecords(
