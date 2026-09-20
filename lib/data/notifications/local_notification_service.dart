@@ -175,7 +175,6 @@ class LocalNotificationService implements NotificationScheduler {
   @override
   Future<bool> openSystemNotificationSettings() async {
     try {
-      await initialize();
       final opened =
           await _settingsChannel.invokeMethod<bool>('openNotificationSettings');
       _log('open notification settings result=$opened');
