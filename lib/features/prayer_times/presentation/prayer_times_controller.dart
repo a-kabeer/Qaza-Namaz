@@ -489,5 +489,5 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   }
 
   String _dateKey(DateTime date) =>
-      '\${date.year}-\${date.month}-\${date.day}';
+      '${date.year}-${date.month}-${date.day}';
 }
