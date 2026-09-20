@@ -2443,6 +2443,27 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'اردو'**
   String get languageUrdu;
+  String get settingsPrivacySecurity;
+  String get settingsPrivacySecuritySubtitle;
+  String get settingsAppLock;
+  String get settingsAppLockSubtitle;
+  String get settingsAppLockWhen;
+  String get settingsAppLockImmediate;
+  String get settingsAppLockOneMinute;
+  String get settingsAppLockFiveMinutes;
+  String get settingsAppLockNever;
+  String get settingsAppLockDeviceNote;
+  String get appLockEnableReason;
+  String get appLockDisableReason;
+  String get appLockAuthenticationReason;
+  String get appLockLockedTitle;
+  String get appLockLockedBody;
+  String get appLockUnlock;
+  String get appLockUnlocking;
+  String get appLockUnavailable;
+  String get appLockCanceled;
+  String get appLockTemporarilyLocked;
+  String get appLockFailed;
 }
 
 class _AppLocalizationsDelegate
