@@ -93,13 +93,13 @@ class QazaSyncEngine {
     try {
       final remoteReset = await _remote.getResetState(userId: userId);
       if (remoteReset.inProgress) {
-        await _remote.resetUserRecords(
+        final resetCursor = await _remote.resetUserRecordsForSync(
           userId: userId,
-          operationId: 'recovery_${userId}',
+          operationId: 'recovery_' + userId,
         );
         await _localStore.retireUserData(userId: userId);
-        cursor = null;
-        await primeCursor(userId: userId, cursor: null);
+        cursor = resetCursor;
+        await primeCursor(userId: userId, cursor: cursor);
         await _notifyLocalDataChanged();
       }
 
@@ -118,14 +118,14 @@ class QazaSyncEngine {
 
         final first = batch.first;
         if (first.type == SyncOpType.reset) {
-          await _remote.resetUserRecords(
+          final resetCursor = await _remote.resetUserRecordsForSync(
             userId: userId,
             operationId: first.id,
           );
           await _localStore.retireUserData(userId: userId);
           await _localStore.removeOutboxBatch(userId, [first.id]);
-          cursor = null;
-          await primeCursor(userId: userId, cursor: null);
+          cursor = resetCursor;
+          await primeCursor(userId: userId, cursor: cursor);
           processed += 1;
           await _notifyLocalDataChanged();
           continue;
@@ -142,13 +142,13 @@ class QazaSyncEngine {
         try {
           final remoteReset = await _remote.getResetState(userId: userId);
           if (remoteReset.inProgress) {
-            await _remote.resetUserRecords(
+            final resetCursor = await _remote.resetUserRecordsForSync(
               userId: userId,
-              operationId: 'recovery_${userId}',
+              operationId: 'recovery_' + userId,
             );
             await _localStore.retireUserData(userId: userId);
-            cursor = null;
-            await primeCursor(userId: userId, cursor: null);
+            cursor = resetCursor;
+            await primeCursor(userId: userId, cursor: cursor);
             await _notifyLocalDataChanged();
             continue;
           }
