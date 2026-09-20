@@ -55,8 +55,6 @@ final connectivityChangesProvider = Provider<Stream<bool>>((ref) =>
     Connectivity()
         .onConnectivityChanged
         .map((results) => results.any((r) => r != ConnectivityResult.none)));
-final remoteQazaRepositoryProvider = Provider<QazaRepository>(
-    (ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)));
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
   final repository = OfflineFirstQazaRepository(
