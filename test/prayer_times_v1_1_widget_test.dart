@@ -117,7 +117,7 @@ ProviderContainer _container(_Repo repo) {
     overrides: [
       prayerTimesRepositoryProvider.overrideWithValue(repo),
       prayerTimesClockProvider.overrideWithValue(
-        const _FixedClock(DateTime(2026, 9, 20, 12)),
+        _FixedClock(DateTime(2026, 9, 20, 12)),
       ),
       prayerLocationServiceProvider.overrideWithValue(_Location()),
       prayerCitySearchProvider.overrideWithValue(_Cities()),
