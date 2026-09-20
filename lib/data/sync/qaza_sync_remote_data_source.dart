@@ -70,6 +70,6 @@ abstract interface class QazaSyncRemoteDataSource {
 
   Future<void> resetUserRecords({
     required String userId,
-    required String operationId,
+    String? operationId,
   });
 }
