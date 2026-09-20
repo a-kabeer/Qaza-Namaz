@@ -66,89 +66,94 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
 
     final loading = upgrade.running;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: loading ? null : () => Navigator.maybePop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: Text(l10n.authTitle),
-        actions: [
-          IconButton(
-            onPressed: () => _showHelp(context),
-            tooltip: l10n.authHelpTooltip,
-            icon: const Icon(Icons.help_outline_rounded),
+    return PopScope<void>(
+      canPop: !loading,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: loading ? null : () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _BrandHeader(),
-                  const SizedBox(height: 28),
-                  Text(
-                    l10n.authWelcomeBack,
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.authSubtitle,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.45,
+          title: Text(l10n.authTitle),
+          actions: [
+            IconButton(
+              onPressed: () => _showHelp(context),
+              tooltip: l10n.authHelpTooltip,
+              icon: const Icon(Icons.help_outline_rounded),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _BrandHeader(),
+                    const SizedBox(height: 28),
+                    Text(
+                      l10n.authWelcomeBack,
+                      style: theme.textTheme.headlineMedium,
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  if (upgrade.error != null || notice != null) ...[
-                    _Notice(
-                      message: upgrade.error ?? notice!,
-                      onClose: () => setState(() => notice = null),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: loading ? null : _google,
-                      icon: loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.g_mobiledata_rounded),
-                      label: Text(
-                        loading
-                            ? l10n.authSigningIn
-                            : l10n.authContinueWithGoogle,
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.authSubtitle,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.45,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    key: const Key('auth_continue_as_guest'),
-                    onPressed: loading ? null : _continueAsGuest,
-                    child: Text(l10n.authContinueAsGuest),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.authGuestNote,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    l10n.authProviderNote,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    if (upgrade.error != null || notice != null) ...[
+                      _Notice(
+                        message: upgrade.error ?? notice!,
+                        onClose: () => setState(() => notice = null),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    SizedBox(
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: loading ? null : _google,
+                        icon: loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.g_mobiledata_rounded),
+                        label: Text(
+                          loading
+                              ? l10n.authSigningIn
+                              : l10n.authContinueWithGoogle,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      key: const Key('auth_continue_as_guest'),
+                      onPressed: loading ? null : _continueAsGuest,
+                      child: Text(l10n.authContinueAsGuest),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.authGuestNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      l10n.authProviderNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -246,69 +251,80 @@ class _GuestAccountChoice extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Choose what to do')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-          children: [
-            Text(
-              'Guest progress found',
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'You signed in as ${account.email}. Your guest Qaza records '
-              'are still on this device. Nothing has been merged or deleted.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-                height: 1.45,
+    return PopScope<void>(
+      canPop: !state.running,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed:
+                state.running ? null : () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: AppLocalizations.of(context).commonBack,
+          ),
+          title: const Text('Choose what to do'),
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            children: [
+              Text(
+                'Guest progress found',
+                style: theme.textTheme.headlineSmall,
               ),
-            ),
-            const SizedBox(height: 20),
-            _DecisionCard(
-              title: 'Merge Data',
-              description: 'Combine guest and account records. Duplicate '
-                  'prayer/date combinations become one record; completed '
-                  'always wins over pending. Guest data is retired only '
-                  'after a successful migration.',
-              buttonLabel: 'Merge Data',
-              icon: Icons.merge_type_rounded,
-              onPressed: state.running ? null : onMerge,
-              filled: true,
-            ),
-            const SizedBox(height: 12),
-            _DecisionCard(
-              title: 'Use Account Data',
-              description:
-                  'Keep the Google account ledger as-is. Guest records are '
-                  'discarded/retired only after you explicitly confirm.',
-              buttonLabel: 'Use Account Data',
-              icon: Icons.cloud_done_rounded,
-              onPressed: state.running ? null : onUseAccount,
-            ),
-            const SizedBox(height: 12),
-            _DecisionCard(
-              title: 'Keep Guest Data / Cancel Sign-In',
-              description:
-                  'Sign out of the Google account and continue in guest mode. '
-                  'Your guest records remain unchanged.',
-              buttonLabel: 'Keep Guest Data',
-              icon: Icons.undo_rounded,
-              onPressed: state.running ? null : onCancel,
-            ),
-            if (state.running) ...[
-              const SizedBox(height: 18),
-              const Center(child: CircularProgressIndicator()),
-            ],
-            if (state.error != null) ...[
-              const SizedBox(height: 18),
-              _Notice(
-                message: state.error!,
-                onClose: () {},
+              const SizedBox(height: 8),
+              Text(
+                'You signed in as ${account.email}. Your guest Qaza records '
+                'are still on this device. Nothing has been merged or deleted.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
               ),
+              const SizedBox(height: 20),
+              _DecisionCard(
+                title: 'Merge Data',
+                description: 'Combine guest and account records. Duplicate '
+                    'prayer/date combinations become one record; completed '
+                    'always wins over pending. Guest data is retired only '
+                    'after a successful migration.',
+                buttonLabel: 'Merge Data',
+                icon: Icons.merge_type_rounded,
+                onPressed: state.running ? null : onMerge,
+                filled: true,
+              ),
+              const SizedBox(height: 12),
+              _DecisionCard(
+                title: 'Use Account Data',
+                description:
+                    'Keep the Google account ledger as-is. Guest records are '
+                    'discarded/retired only after you explicitly confirm.',
+                buttonLabel: 'Use Account Data',
+                icon: Icons.cloud_done_rounded,
+                onPressed: state.running ? null : onUseAccount,
+              ),
+              const SizedBox(height: 12),
+              _DecisionCard(
+                title: 'Keep Guest Data / Cancel Sign-In',
+                description:
+                    'Sign out of the Google account and continue in guest mode. '
+                    'Your guest records remain unchanged.',
+                buttonLabel: 'Keep Guest Data',
+                icon: Icons.undo_rounded,
+                onPressed: state.running ? null : onCancel,
+              ),
+              if (state.running) ...[
+                const SizedBox(height: 18),
+                const Center(child: CircularProgressIndicator()),
+              ],
+              if (state.error != null) ...[
+                const SizedBox(height: 18),
+                _Notice(
+                  message: state.error!,
+                  onClose: () {},
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
