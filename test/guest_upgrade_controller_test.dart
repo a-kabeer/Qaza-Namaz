@@ -486,6 +486,14 @@ void main() {
       expect(find.text('Guest progress found'), findsOneWidget);
       expect(find.text('Merge Data'), findsNWidgets(2));
       expect(find.text('Use Account Data'), findsNWidgets(2));
+
+      // The third decision card is below the initial viewport of the lazy
+      // ListView on CI. Scroll it into view before asserting its contents.
+      await tester.scrollUntilVisible(
+        find.text('Keep Guest Data / Cancel Sign-In'),
+        300,
+      );
+      await tester.pump();
       expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
       expect(find.text('Keep Guest Data'), findsOneWidget);
     },
