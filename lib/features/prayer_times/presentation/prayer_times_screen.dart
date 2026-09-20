@@ -77,6 +77,14 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
   }
 
   Widget _buildBody(BuildContext context, PrayerTimesState state) {
+    if (state.hasData &&
+        (state.status == PrayerTimesStatus.loaded ||
+            state.status == PrayerTimesStatus.loading ||
+            state.status == PrayerTimesStatus.refreshing ||
+            state.status == PrayerTimesStatus.offlineWithCache)) {
+      return _PrayerTimesContent(state: state);
+    }
+
     switch (state.status) {
       case PrayerTimesStatus.noLocation:
         return _NoLocationState(
@@ -88,15 +96,10 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
       case PrayerTimesStatus.locating:
         return const _PrayerTimesLoadingSkeleton();
       case PrayerTimesStatus.loading:
-        if (!state.hasData) return const _PrayerTimesLoadingSkeleton();
-      case PrayerTimesStatus.loaded:
-      case PrayerTimesStatus.refreshing:
-      case PrayerTimesStatus.offlineWithCache:
-        if (state.hasData) return _PrayerTimesContent(state: state);
+        return const _PrayerTimesLoadingSkeleton();
       case PrayerTimesStatus.apiError:
         return _PrayerErrorState(
-          message:
-              state.message ?? PrayerTimesStrings.apiError(context),
+          message: state.message ?? PrayerTimesStrings.apiError(context),
           onRetry: () => ref
               .read(prayerTimesControllerProvider.notifier)
               .refresh(),
@@ -113,6 +116,10 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
               .read(prayerTimesControllerProvider.notifier)
               .openRelevantSettings(),
         );
+      case PrayerTimesStatus.loaded:
+      case PrayerTimesStatus.refreshing:
+      case PrayerTimesStatus.offlineWithCache:
+        return const _PrayerTimesLoadingSkeleton();
     }
 
     return _NoLocationState(
@@ -431,7 +438,7 @@ class _PrayerTimeRow extends StatelessWidget {
         PrayerName.fajr => Icons.nightlight_outlined,
         PrayerName.sunrise => Icons.wb_twilight_rounded,
         PrayerName.dhuhr => Icons.wb_sunny_outlined,
-        PrayerName.asr => Icons.sunny_snowing,
+        PrayerName.asr => Icons.wb_sunny_outlined,
         PrayerName.maghrib => Icons.wb_twilight,
         PrayerName.isha => Icons.dark_mode_outlined,
       };
