@@ -29,8 +29,7 @@ final prayerTimesProvider = Provider<PrayerTimesProvider>((ref) {
 });
 
 final prayerTimesCacheProvider = Provider<PrayerTimesCache>((ref) {
-  final cache = PrayerTimesCache(SharedPreferences.getInstance);
-  return cache;
+  return PrayerTimesCache(SharedPreferences.getInstance());
 });
 
 final prayerTimesRepositoryProvider = Provider<PrayerTimesRepository>((ref) {
