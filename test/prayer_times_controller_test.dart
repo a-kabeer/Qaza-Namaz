@@ -65,7 +65,7 @@ class _FakeRepository implements PrayerTimesRepository {
     settings = value;
   }
 
-
+}
 
 class _FakeLocationService implements PrayerLocationService {
   PrayerLocation? location;
