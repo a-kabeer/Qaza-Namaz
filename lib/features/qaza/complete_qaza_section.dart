@@ -90,9 +90,9 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
   QazaRecord? get selected => selectedState.valueOrNull;
 
   Future<void> refresh() async {
-    ref.invalidate(latestPendingProvider(prayer));
+    ref.invalidate(oldestPendingProvider(prayer));
     ref.invalidate(progressSummaryProvider);
-    await ref.read(latestPendingProvider(prayer).future);
+    await ref.read(oldestPendingProvider(prayer).future);
   }
 
   Future<void> _complete() async {
