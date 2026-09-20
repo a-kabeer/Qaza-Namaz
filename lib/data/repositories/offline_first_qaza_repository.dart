@@ -90,7 +90,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   ) {
     if (syncRemote != null) return syncRemote;
     if (remote is QazaSyncRemoteDataSource) {
-      return remote;
+      return remote as QazaSyncRemoteDataSource;
     }
     return _LegacyQazaSyncRemoteDataSource(remote);
   }
