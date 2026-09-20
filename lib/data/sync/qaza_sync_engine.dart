@@ -288,9 +288,11 @@ class QazaSyncEngine {
       limit: batchSize,
     );
     if (operations.isEmpty) return 0;
-    return operations
-        .map((operation) => operation.attempts)
-        .fold(0, (max, attempts) => attempts > max ? attempts : max);
+    var maximum = 0;
+    for (final operation in operations) {
+      if (operation.attempts > maximum) maximum = operation.attempts;
+    }
+    return maximum;
   }
 
   void _scheduleRetry(String userId, int retryCount) {
