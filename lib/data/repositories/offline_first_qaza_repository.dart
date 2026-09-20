@@ -560,7 +560,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    if (_isOnline) {
+      unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    }
   }
 
   Future<void> syncNow() async {
