@@ -6,7 +6,4 @@
         domain="database"
         path="qaza_namaz.sqlite"
         requireFlags="clientSideEncryption" />
-    <!-- Settings can include privacy/security preferences and are restored
-         only through the encrypted backup path above. -->
-    <exclude domain="sharedpref" path="." />
 </full-backup-content>
