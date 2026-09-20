@@ -4,7 +4,8 @@
 
 **Phase:** Notification access hardening  
 **Branch:** `rebuild/notification-access-hardening`  
-**Tracking state:** In progress
+**PR:** #41  
+**Tracking state:** CI verified; real-device smoke test pending
 
 ## Problem addressed
 
@@ -26,10 +27,13 @@ The daily Qaza reminder flow had multiple failure modes that could leave the use
 
 ## Remaining verification
 
-- [ ] Run `flutter analyze`.
-- [ ] Run the full Flutter test suite.
-- [ ] Build the Android debug/release artifact in CI.
-- [ ] Run Windows/Linux CI jobs and confirm they remain unaffected.
+- [x] Run `flutter analyze`.
+- [x] Run the full Flutter test suite on Linux.
+- [x] Build the Android debug APK in CI.
+- [x] Run Windows CI tests and confirm they remain unaffected.
+- [x] Run Linux CI tests and confirm they remain unaffected.
+
+**CI result:** Flutter CI run 1426 passed all four jobs: Analyze, Tests (Linux), Tests (Windows), and Android debug/release APK job. Production release signing is not configured, so the release APK step was skipped.
 - [ ] Real-device smoke test on Android 13+:
   - [ ] Fresh install and notification permission prompt.
   - [ ] Deny permission and confirm the app shows a usable recovery state.
