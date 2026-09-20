@@ -94,8 +94,32 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded
 
+  security_rules:
+    name: Firestore security rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Firebase emulator test dependencies
+        run: npm install --no-save --no-package-lock @firebase/rules-unit-testing firebase firebase-tools
+
+      - name: Run Firestore security rule tests
+        run: npx firebase emulators:exec --only firestore --project qaza-nmz "node tools/firestore_rules_smoke.mjs"
+
   build_android:
-    name: Android debug and release APK
+    name: Android debug and release AAB
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -172,6 +196,30 @@ jobs:
           print(f"Registered Android OAuth certificate count: {len(certificate_hashes)}")
           PY
 
+      - name: Verify Android release policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          build_gradle = Path("android/app/build.gradle").read_text()
+          target = re.search(r'targetSdk\s*=\s*(\d+)', build_gradle)
+          if target is None:
+              raise SystemExit("Could not determine targetSdk from android/app/build.gradle.")
+          target_sdk = int(target.group(1))
+          if target_sdk < 36:
+              raise SystemExit(
+                  f"targetSdk {target_sdk} is below the Android 16 / API 36 Play requirement."
+              )
+          if "signingConfig = signingConfigs.debug" in build_gradle:
+              raise SystemExit(
+                  "Release build must never use the debug signing configuration."
+              )
+          print(f"Android target SDK policy OK: {target_sdk}")
+          print("Release signing policy OK: no debug signing fallback.")
+
       - name: Detect release signing
         id: release_signing
         shell: bash
@@ -203,9 +251,9 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
-      - name: Build release APK
+      - name: Build release AAB
         if: steps.release_signing.outputs.configured == 'true'
-        run: flutter build apk --release
+        run: flutter build appbundle --release
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -213,9 +261,9 @@ jobs:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - name: Upload release APK
+      - name: Upload release AAB
         if: steps.release_signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab

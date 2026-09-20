@@ -25,9 +25,15 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     // Use the locally installed NDK (r28) instead of auto-installing r27.
     ndkVersion = "28.2.13676358"
 
@@ -42,16 +48,31 @@ android {
         applicationId = "com.example.qaza_namaz_task1_flutter"
         // Firebase Authentication requires Android API 23 or higher.
         minSdkVersion = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Google Play requires Android 16 / API 36+ for new apps and updates
+        // submitted from 31 August 2026 onward.
+        targetSdk = 36
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+                storeFile keystoreProperties["storeFile"] == null
+                    ? null
+                    : file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Use debug signing for local release APKs; no custom keystore required.
-            // Configure production signing before publishing to the Play Store.
-            signingConfig = signingConfigs.debug
+            // Never fall back to the debug key. A release build is either
+            // signed with the configured production keystore or fails clearly.
+            signingConfig = signingConfigs.release
         }
     }
 }
