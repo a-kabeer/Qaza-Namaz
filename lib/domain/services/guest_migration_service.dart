@@ -202,6 +202,11 @@ class GuestMigrationService {
           queuedAt: existing?.queuedAt ?? now,
           targetRecordId: remote.id,
           completedAt: desired.completedAt ?? now,
+          record: remote.copyWith(
+            status: QazaStatus.completed,
+            completedAt: desired.completedAt ?? now,
+            updatedAt: now,
+          ),
           attempts: existing?.attempts ?? 0,
           lastError: existing?.lastError,
         );
