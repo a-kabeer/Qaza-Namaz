@@ -1,3 +1,78 @@
+# Qaza Namaz — Master Improvement & Hardening Status
+
+> **Canonical execution tracker for the attached Complete Project Improvement & Hardening Plan.**
+> This section supersedes conflicting or point-in-time status notes later in this file.
+>
+> Updated: **2026-09-20**
+> Working branch: `hardening/security-release-baseline-20260920`
+> Baseline commit: `99f8c29762764d8ae05307bebc5fc01885525212`
+
+## Current implementation pass
+
+The highest-priority P0 security/release foundation has now been implemented on the working branch:
+
+- Firebase App Check activation added immediately after Firebase initialization.
+- Firestore rules now validate the Qaza record schema, ownership, allowed prayer/status values, completion consistency, timestamps, immutable fields, sync generation, change-log schema, and sync-state schema.
+- Positive/negative Firestore rules smoke tests added for cross-user access and malformed writes.
+- Android compile/target SDK is explicitly set to API 36.
+- Release signing no longer falls back to the debug key; CI can inject the production keystore through GitHub encrypted secrets.
+- Android CI now asserts the release policy and builds/uploads a release **AAB** when production signing secrets are configured.
+- Android backup/data-extraction policies are wired with client-side-encryption requirements for cloud backup and no silent device-to-device transfer of the local Qaza database.
+- The existing V2 architecture, offline-first data path, and completed Qaza UX work were preserved rather than rebuilt.
+
+## Master plan status
+
+| Task | Status | Tests | CI | Device QA | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Phase 0 — Baseline & audit lock | **Complete** | Repo/status reviewed | Pending final run | — | Baseline SHA recorded |
+| Firestore hardening | **Implemented** | Smoke suite added | Pending | — | P0; schema + ownership + immutable-field checks |
+| Firebase App Check | **Implemented** | Startup path added | Pending | **Required** | Firebase Console Play Integrity registration/enforcement remains |
+| Production release signing | **Implemented** | CI policy assertion | Pending | — | Keystore/GitHub secrets are release credentials and are not stored in repo |
+| Android target SDK policy | **Complete** | CI assertion added | Pending | — | API 36 selected |
+| Android backup/privacy rules | **Implemented** | Build validation pending | Pending | **Required** | Restore semantics require physical-device validation |
+| Local data encryption / App Lock | **Not started** | — | — | Required | Follow-on P0/P1 privacy work |
+| Account/data transparency | **Needs implementation/verification** | — | — | Required | Explicit cloud/data-management UX remains |
+| Primary Qaza navigation | **Complete in existing V2 stream** | Existing regression coverage | Pending | Recommended | Preserved during this pass |
+| Home daily-use improvements | **Partial** | Existing V2 coverage | Pending | Recommended | Core Home preserved; remaining plan items need verification |
+| Qaza tracker actions | **Partial** | Existing tracker tests | Pending | Recommended | Core tracker/pagination complete; edit/delete/undo need explicit verification |
+| Add Qaza flow | **Complete in existing V2 stream** | Existing regression coverage | Pending | Recommended | Shared availability/preflight preserved |
+| Calculator trust/localization | **Partial** | Existing calculator tests | Pending | Required | Explanation/methodology and remaining literals need completion |
+| Notifications | **Code complete; device QA pending** | Existing notification coverage | Pending | **Required** | Android permission/channel/reboot/device matrix still required |
+| Knowledge Base | **Architecture + content present** | Existing parser/search tests | Pending | Recommended | Content governance/source review remains |
+| Import/export & backup UX | **Partial** | Existing functionality needs release QA | Pending | Required | Preview/cancellation/recovery matrix remains |
+| Accessibility + localization certification | **Partial** | Existing accessibility matrix | Pending | **Required** | Full English/Urdu/RTL/large-text/TalkBack matrix remains |
+| Error/recovery UX | **Partial** | Existing feature tests | Pending | Recommended | Remaining technical errors need plain-language treatment |
+| Production observability | **Not started** | — | — | — | Crashlytics/non-sensitive diagnostics still pending |
+| Automated quality gates | **In progress** | Firestore rules gate added | Pending | — | Analyze, Linux, Windows, Android debug/release AAB are defined |
+| Performance certification | **Complete in existing V2 stream** | Existing large-dataset matrix | Pending | Recommended | 1k/5k/10k paths already covered |
+| End-to-end acceptance journeys | **Partial** | Regression coverage exists | Pending | **Required** | Device-only auth/notification/backup journeys remain |
+| Final release gate | **Blocked** | Awaiting full gate | Awaiting PR | **Required** | App Check enforcement, signing secrets, device QA, release smoke tests |
+
+## Definition of Done
+
+A task is marked **complete** only after implementation, regression tests, analyze, CI, required device QA, UX review, documentation, and merge criteria are satisfied. Security-sensitive work also requires both positive and negative security coverage plus production configuration verification.
+
+## Current blockers / external actions
+
+1. **Firebase Console:** register/configure Android Play Integrity for Firebase App Check and enable enforcement after validation.
+2. **GitHub repository secrets:** provide the production keystore and the four signing secrets required by the release workflow.
+3. **Physical Android QA:** validate App Check, notifications, backup/restore behavior, authentication, guest migration, cold start, reboot, and release AAB behavior.
+
+## Implementation commits in this pass
+
+- `450eebcb6cf95547cb349ee8fa8653aa89ee6e0a` — add Firebase App Check dependency
+- `4f719b00d7d93999e004d90791bf9552c3261b9f` — activate Firebase App Check
+- `291528ad5f945d246729f6b9b31232888fafb0df` — Android API 36 + production signing configuration
+- `0994f2d973cb900bf4dff7de6284331968e56452` — release policy assertion + AAB CI
+- `3ce2d9874762d4992099589c8bf0787b22e21368` — Firestore schema/security hardening
+- `e96a34218ff14fef6c639f646c1b921092f3d400` — Firestore rules smoke tests
+- `3daf420e0e336bd8b672d67ce0e49c899c006a68` — CI Firestore rules gate
+- `c44a04c9dcc9d7cdb074c687da3caed1143c42e3` — encrypted Android backup policy
+- `f1d0fdf33daa3855fd05ad391ae509049e1ea259` — Android manifest backup policy wiring
+- `df95e05028f63e301d31b899dc57e59e531d2f4f` — Android data extraction rules
+
+---
+
 # Qaza Namaz — Project Status
 
 Canonical status document. The V2 Master Plan's 21-step implementation order is
