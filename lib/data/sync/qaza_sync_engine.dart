@@ -28,6 +28,7 @@ class QazaSyncEngine {
   final Future<void> Function()? _onLocalDataChanged;
 
   Future<void>? _running;
+  bool _rerunRequested = false;
   Timer? _retryTimer;
   String? _retryUserId;
   bool _disposed = false;
@@ -36,12 +37,20 @@ class QazaSyncEngine {
     _retryTimer?.cancel();
     _retryTimer = null;
     final existing = _running;
-    if (existing != null) return existing;
+    if (existing != null) {
+      _rerunRequested = true;
+      return existing;
+    }
 
     final future = _run(userId);
     _running = future;
     return future.whenComplete(() {
-      if (!_disposed) _running = null;
+      if (_disposed) return;
+      _running = null;
+      if (_rerunRequested) {
+        _rerunRequested = false;
+        unawaited(synchronize(userId));
+      }
     });
   }
 
@@ -312,7 +321,8 @@ class QazaSyncEngine {
     final message = error.toString().toLowerCase();
     return message.contains('network') ||
         message.contains('timeout') ||
-        message.contains('temporarily unavailable');
+        message.contains('temporarily unavailable') ||
+        message.contains('reset is currently in progress');
   }
 
   String _keyPrefix(String userId) => 'qaza_sync_cursor_${userId}';
