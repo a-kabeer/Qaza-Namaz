@@ -182,9 +182,6 @@ void main() {
     expect(states.last.status, SyncStatus.synced);
     expect(remote.applyCalls, 2);
   });
-}
-
-
 test('1,000 completion operations sync in bounded batches', () async {
   final local = _FakeSyncStore();
   final remote = _FakeSyncRemote();
@@ -226,6 +223,9 @@ test('1,000 completion operations sync in bounded batches', () async {
   expect(remote.maximumBatchSize, 400);
   expect(local.outbox, isEmpty);
 });
+
+}
+
 
 class _FakeSyncRemote implements QazaSyncRemoteDataSource {
   List<QazaRemoteChange> changes = [];
