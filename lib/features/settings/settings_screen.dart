@@ -322,6 +322,9 @@ class DataCloudScreen extends ConsumerWidget {
       sync_models.SyncStatus.hydrating => l10n.cloudHydrating,
       sync_models.SyncStatus.synced => l10n.cloudSynced,
       sync_models.SyncStatus.syncing => l10n.cloudSyncing,
+      sync_models.SyncStatus.retrying => l10n.cloudSyncing,
+      sync_models.SyncStatus.partiallySynced =>
+        l10n.cloudPendingCount(state.pendingCount),
       sync_models.SyncStatus.offline => l10n.cloudOffline,
       sync_models.SyncStatus.pendingSync =>
         l10n.cloudPendingCount(state.pendingCount),
