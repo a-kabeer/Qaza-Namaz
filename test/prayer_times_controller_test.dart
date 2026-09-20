@@ -13,6 +13,9 @@ class _FakeRepository implements PrayerTimesRepository {
   PrayerSettings settings = const PrayerSettings();
   int fetchCount = 0;
 
+  PrayerDay? cachedDay;
+  Object? fetchError;
+
   final PrayerDay day = PrayerDay(
     date: DateTime(2026, 9, 20),
     timezone: 'Asia/Karachi',
@@ -30,7 +33,7 @@ class _FakeRepository implements PrayerTimesRepository {
 
   @override
   Future<PrayerDay?> getCachedPrayerTimes(PrayerTimesRequest request) async =>
-      null;
+      cachedDay;
 
   @override
   Future<PrayerDay> getPrayerTimes({
@@ -41,6 +44,8 @@ class _FakeRepository implements PrayerTimesRepository {
     required AsrMethod asrMethod,
   }) async {
     fetchCount++;
+    final error = fetchError;
+    if (error != null) throw error;
     return day;
   }
 
@@ -59,6 +64,51 @@ class _FakeRepository implements PrayerTimesRepository {
   Future<void> saveSettings(PrayerSettings value) async {
     settings = value;
   }
+
+  test('offline refresh keeps cached prayer times usable', () async {
+    final repository = _FakeRepository()
+      ..location = const PrayerLocation(
+        latitude: 24.8607,
+        longitude: 67.0011,
+        source: LocationSource.manualCoordinates,
+      )
+      ..cachedDay = PrayerDay(
+        date: DateTime(2026, 9, 20),
+        timezone: 'Asia/Karachi',
+        times: const {
+          PrayerName.fajr: PrayerTime(hour: 4, minute: 50),
+          PrayerName.sunrise: PrayerTime(hour: 6, minute: 8),
+          PrayerName.dhuhr: PrayerTime(hour: 12, minute: 20),
+          PrayerName.asr: PrayerTime(hour: 16, minute: 45),
+          PrayerName.maghrib: PrayerTime(hour: 18, minute: 28),
+          PrayerName.isha: PrayerTime(hour: 19, minute: 44),
+        },
+        hijriDate: HijriDate(
+          day: 18,
+          month: 'Rabi al-Thani',
+          year: 1448,
+        ),
+        fetchedAt: DateTime.utc(2026, 9, 20),
+      )
+      ..fetchError = StateError('offline');
+
+    final container = ProviderContainer(
+      overrides: [
+        prayerTimesRepositoryProvider.overrideWithValue(repository),
+        prayerLocationServiceProvider
+            .overrideWithValue(_FakeLocationService()),
+        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(prayerTimesControllerProvider.notifier).refresh();
+
+    final state = container.read(prayerTimesControllerProvider);
+    expect(state.status, PrayerTimesStatus.offlineWithCache);
+    expect(state.today, isNotNull);
+  });
+
 }
 
 class _FakeLocationService implements PrayerLocationService {
