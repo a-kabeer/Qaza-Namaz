@@ -210,8 +210,11 @@ void main() {
       );
       addTearDown(repository.dispose);
 
+      final hydrating = repository.syncState.firstWhere(
+        (state) => state.status == SyncStatus.hydrating,
+      );
       await repository.setActiveUser('cloud-user');
-      await Future<void>.delayed(Duration.zero);
+      await hydrating;
 
       expect(repository.currentState.status, SyncStatus.hydrating);
       expect(repository.currentState.isReady, isFalse);
