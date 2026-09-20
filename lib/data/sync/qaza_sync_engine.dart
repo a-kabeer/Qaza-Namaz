@@ -136,7 +136,7 @@ class QazaSyncEngine {
       if (remoteReset.inProgress) {
         final resetCursor = await _remote.resetUserRecordsForSync(
           userId: userId,
-          operationId: 'recovery_' + userId,
+          operationId: 'recovery_$userId',
         );
         await _localStore.retireUserData(userId: userId);
         cursor = resetCursor;
@@ -186,7 +186,7 @@ class QazaSyncEngine {
           if (remoteReset.inProgress) {
             final resetCursor = await _remote.resetUserRecordsForSync(
               userId: userId,
-              operationId: 'recovery_' + userId,
+              operationId: 'recovery_$userId',
             );
             await _localStore.retireUserData(userId: userId);
             cursor = resetCursor;
@@ -343,7 +343,7 @@ class QazaSyncEngine {
           winner = localRecord;
           recovery.add(
             PendingSyncOp(
-              id: 'complete_' + localRecord.id,
+              id: 'complete_${localRecord.id}',
               type: SyncOpType.complete,
               userId: userId,
               queuedAt: localRecord.updatedAt,
@@ -414,9 +414,9 @@ class QazaSyncEngine {
   String _keyPrefix(String userId) {
     final namespace = _cursorNamespace;
     if (namespace == null || namespace.isEmpty) {
-      return 'qaza_sync_cursor_' + userId;
+      return 'qaza_sync_cursor_$userId';
     }
-    return 'qaza_sync_cursor_' + namespace + '_' + userId;
+    return 'qaza_sync_cursor_${namespace}_$userId';
   }
 
   Future<void> _notifyLocalDataChanged() async {

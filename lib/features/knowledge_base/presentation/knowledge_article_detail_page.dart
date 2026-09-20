@@ -205,7 +205,7 @@ class _KnowledgeArticleSkeleton extends StatelessWidget {
                 ),
                 const SizedBox(height: 22),
                 for (var i = 0; i < 11; i++) ...[
-                  SkeletonText(width: double.infinity, height: 13),
+                  const SkeletonText(width: double.infinity, height: 13),
                   const SizedBox(height: 9),
                 ],
               ],
@@ -235,9 +235,9 @@ class _RelatedArticleSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: const ListTile(
+    return const Card(
+      margin: EdgeInsets.only(bottom: 8),
+      child: ListTile(
         leading: SkeletonCircle(size: 40),
         title: Padding(
           padding: EdgeInsets.symmetric(vertical: 4),

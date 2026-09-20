@@ -64,7 +64,7 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
 
     return QazaRemoteChangeCursor(
       at: DateTime.now().toUtc(),
-      id: 'legacy_' + operations.first.id,
+      id: 'legacy_${operations.first.id}',
       generation: 0,
     );
   }
@@ -77,7 +77,7 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
     await _remote.resetUserRecords(userId: userId);
     return QazaRemoteChangeCursor(
       at: DateTime.now().toUtc(),
-      id: 'legacy_reset_' + operationId,
+      id: 'legacy_reset_$operationId',
       generation: 0,
     );
   }
@@ -418,24 +418,12 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
     final keys = {
       for (final record in _records.values)
-        record.prayerType.name +
-            '|' +
-            record.originalDate.year.toString() +
-            '-' +
-            record.originalDate.month.toString() +
-            '-' +
-            record.originalDate.day.toString(),
+        '${record.prayerType.name}|${record.originalDate.year}-${record.originalDate.month}-${record.originalDate.day}',
     };
 
     final fresh = <QazaRecord>[];
     for (final record in records) {
-      final key = record.prayerType.name +
-          '|' +
-          record.originalDate.year.toString() +
-          '-' +
-          record.originalDate.month.toString() +
-          '-' +
-          record.originalDate.day.toString();
+      final key = '${record.prayerType.name}|${record.originalDate.year}-${record.originalDate.month}-${record.originalDate.day}';
 
       if (record.userId != userId ||
           _records.containsKey(record.id) ||
@@ -453,7 +441,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final operations = <PendingSyncOp>[
       for (final record in fresh)
         PendingSyncOp(
-          id: 'add_' + record.id,
+          id: 'add_${record.id}',
           type: SyncOpType.add,
           userId: userId,
           queuedAt: queuedAt,
@@ -513,7 +501,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final operations = <PendingSyncOp>[
       for (final record in changedRecords)
         PendingSyncOp(
-          id: 'complete_' + record.id,
+          id: 'complete_${record.id}',
           type: SyncOpType.complete,
           userId: userId,
           queuedAt: queuedAt,
@@ -551,7 +539,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     }
 
     final operation = PendingSyncOp(
-      id: 'reset_' + userId + '_' + DateTime.now().microsecondsSinceEpoch.toString(),
+      id: 'reset_${userId}_${DateTime.now().microsecondsSinceEpoch}',
       type: SyncOpType.reset,
       userId: userId,
       queuedAt: _now(),

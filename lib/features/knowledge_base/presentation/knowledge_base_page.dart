@@ -209,9 +209,9 @@ class _ArticleSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: const Padding(
+    return const Card(
+      margin: EdgeInsets.only(bottom: 10),
+      child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

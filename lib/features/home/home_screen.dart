@@ -116,11 +116,11 @@ class _HomeSkeleton extends StatelessWidget {
       children: [
         const _HomeSkeletonCard(height: 118),
         const SizedBox(height: 20),
-        Row(
+        const Row(
           children: [
-            const Expanded(child: SkeletonText(width: 180, height: 22)),
-            const SizedBox(width: 12),
-            const SkeletonText(width: 60, height: 14),
+            Expanded(child: SkeletonText(width: 180, height: 22)),
+            SizedBox(width: 12),
+            SkeletonText(width: 60, height: 14),
           ],
         ),
         const SizedBox(height: 12),
@@ -143,21 +143,21 @@ class _HomeSkeletonCard extends StatelessWidget {
     return Card(
       child: SizedBox(
         height: height,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Row(
+              Row(
                 children: [
                   Expanded(child: SkeletonText(width: 150, height: 18)),
                   SizedBox(width: 12),
                   SkeletonText(width: 84, height: 16),
                 ],
               ),
-              const Spacer(),
+              Spacer(),
               SkeletonBox(width: double.infinity, height: 8,
-                  borderRadius: const BorderRadius.all(Radius.circular(999))),
+                  borderRadius: BorderRadius.all(Radius.circular(999))),
             ],
           ),
         ),
@@ -171,14 +171,14 @@ class _HomePrayerSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            const SkeletonCircle(size: 40),
-            const SizedBox(width: 12),
-            const Expanded(
+            SkeletonCircle(size: 40),
+            SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -188,8 +188,8 @@ class _HomePrayerSkeleton extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            const SkeletonText(width: 52, height: 14),
+            SizedBox(width: 12),
+            SkeletonText(width: 52, height: 14),
           ],
         ),
       ),

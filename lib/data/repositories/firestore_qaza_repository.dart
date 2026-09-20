@@ -248,7 +248,7 @@ class FirestoreQazaRepository
   }) async {
     await resetUserRecordsWithOperation(
       userId: userId,
-      operationId: operationId ?? 'reset_' + userId + '_' + DateTime.now().microsecondsSinceEpoch.toString(),
+      operationId: operationId ?? 'reset_${userId}_${DateTime.now().microsecondsSinceEpoch}',
     );
   }
 
@@ -344,7 +344,7 @@ class FirestoreQazaRepository
       throw StateError('Remote reset is currently in progress.');
     }
 
-    final changeId = 'change_batch_' + _stableBatchHash(operations);
+    final changeId = 'change_batch_${_stableBatchHash(operations)}';
     final changeReference = _changesCollection(userId).doc(changeId);
     final batch = _firestore.batch();
     final records = <QazaRecord>[];
@@ -445,7 +445,7 @@ class FirestoreQazaRepository
 
     if (alreadyCompleted) {
       final changeReference =
-          _changesCollection(userId).doc('reset_' + operationId);
+          _changesCollection(userId).doc('reset_$operationId');
       final committed = await changeReference.get();
       if (!committed.exists) {
         throw StateError(
@@ -466,7 +466,7 @@ class FirestoreQazaRepository
       await batch.commit();
     }
 
-    final changeId = 'reset_${effectiveOperationId}';
+    final changeId = 'reset_$effectiveOperationId';
     final changeReference = _changesCollection(userId).doc(changeId);
     final finalBatch = _firestore.batch();
 
