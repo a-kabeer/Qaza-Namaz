@@ -45,24 +45,18 @@ class _NotificationsSkeleton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        const _NotificationSkeletonCard(width: 220, detailWidth: 285),
+        const _NotificationSkeletonCard(),
         const SizedBox(height: 12),
-        const _NotificationSkeletonCard(width: 200, detailWidth: 300),
+        const _NotificationSkeletonCard(),
         const SizedBox(height: 12),
-        const _NotificationSkeletonCard(width: 210, detailWidth: 270),
+        const _NotificationSkeletonCard(),
       ],
     );
   }
 }
 
 class _NotificationSkeletonCard extends StatelessWidget {
-  const _NotificationSkeletonCard({
-    required this.width,
-    required this.detailWidth,
-  });
-
-  final double width;
-  final double detailWidth;
+  const _NotificationSkeletonCard();
 
   @override
   Widget build(BuildContext context) {
