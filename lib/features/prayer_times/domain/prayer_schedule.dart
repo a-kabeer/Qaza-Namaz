@@ -1,4 +1,4 @@
-import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'prayer_times_models.dart';
@@ -26,12 +26,31 @@ class PrayerSchedule {
     _timezoneInitialized = true;
   }
 
-  static tz.TZDateTime now(String timezone) {
+  static tz.TZDateTime now(
+    String timezone, {
+    DateTime? instant,
+  }) {
+    ensureTimezoneDatabase();
+    final location = _location(timezone);
+    if (instant == null) return tz.TZDateTime.now(location);
+    return tz.TZDateTime.from(instant, location);
+  }
+
+  static DateTime localDate(
+    String timezone, {
+    DateTime? instant,
+  }) {
+    final local = now(timezone, instant: instant);
+    return DateTime(local.year, local.month, local.day);
+  }
+
+  static bool isKnownTimezone(String timezone) {
     ensureTimezoneDatabase();
     try {
-      return tz.TZDateTime.now(tz.getLocation(timezone));
+      tz.getLocation(timezone);
+      return true;
     } catch (_) {
-      return tz.TZDateTime.now(tz.UTC);
+      return false;
     }
   }
 

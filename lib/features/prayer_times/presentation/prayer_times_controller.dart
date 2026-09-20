@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/location/city_search_provider.dart';
@@ -84,6 +85,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   late final PrayerTimesRepository _repository;
   late final PrayerLocationService _locationService;
   late final CitySearchProvider _citySearchProvider;
+  late final PrayerTimesClock _clock;
 
   Timer? _citySearchDebounce;
   int _loadGeneration = 0;
@@ -95,6 +97,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     _repository = ref.read(prayerTimesRepositoryProvider);
     _locationService = ref.read(prayerLocationServiceProvider);
     _citySearchProvider = ref.read(prayerCitySearchProvider);
+    _clock = ref.read(prayerTimesClockProvider);
 
     ref.onDispose(() {
       _isMounted = false;
@@ -192,7 +195,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     await _loadToday();
   }
 
-  Future<void> useManualCoordinates(String latitudeText, String longitudeText) async {
+  Future<void> useManualCoordinates(
+    String latitudeText,
+    String longitudeText,
+  ) async {
     final latitude = double.tryParse(latitudeText.trim());
     final longitude = double.tryParse(longitudeText.trim());
 
@@ -318,7 +324,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     }
 
     if (state.tomorrow == null) {
-      final schedule = PrayerSchedule.evaluate(today: today);
+      final schedule = PrayerSchedule.evaluate(
+        today: today,
+        nowOverride: _clock.now(),
+      );
       if (schedule.next == null) {
         unawaited(_loadTomorrow(today));
       }
@@ -365,8 +374,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       );
     }
 
+    var locationDateCorrected = false;
+
     try {
-      final day = await _repository.getPrayerTimes(
+      var day = await _repository.getPrayerTimes(
         latitude: location.latitude,
         longitude: location.longitude,
         date: date,
@@ -374,8 +385,26 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
         asrMethod: settings.asrMethod,
       );
 
-      final updatedLocation = location.copyWith(timezone: day.timezone);
+      var updatedLocation = location.copyWith(timezone: day.timezone);
       await _repository.saveLocation(updatedLocation);
+
+      // Manual coordinates start without a timezone. AlAdhan resolves the
+      // timezone from the coordinates; if that changes the local calendar
+      // date, the first response is only a timezone probe and we fetch the
+      // actual local "today" before exposing it to the user.
+      final resolvedDate = _dateForLocation(updatedLocation);
+      if (_dateKey(resolvedDate) != _dateKey(date)) {
+        locationDateCorrected = true;
+        day = await _repository.getPrayerTimes(
+          latitude: updatedLocation.latitude,
+          longitude: updatedLocation.longitude,
+          date: resolvedDate,
+          method: settings.calculationMethod,
+          asrMethod: settings.asrMethod,
+        );
+        updatedLocation = updatedLocation.copyWith(timezone: day.timezone);
+        await _repository.saveLocation(updatedLocation);
+      }
 
       if (!_isMounted || generation != _loadGeneration) return;
 
@@ -387,10 +416,13 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       );
 
       await _loadTomorrowIfRequired(day);
-    } catch (error) {
+    } catch (_) {
       if (!_isMounted || generation != _loadGeneration) return;
 
-      if (cached != null) {
+      // If timezone resolution required a corrective request, the cached
+      // response may belong to a different local calendar date and must not
+      // be shown as today's data.
+      if (cached != null && !locationDateCorrected) {
         state = state.copyWith(
           today: cached,
           status: PrayerTimesStatus.offlineWithCache,
@@ -406,7 +438,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   }
 
   Future<void> _loadTomorrowIfRequired(PrayerDay day) async {
-    final schedule = PrayerSchedule.evaluate(today: day);
+    final schedule = PrayerSchedule.evaluate(
+      today: day,
+      nowOverride: _clock.now(),
+    );
     if (schedule.next != null) return;
     await _loadTomorrow(day);
   }
@@ -449,14 +484,16 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   DateTime _dateForLocation(PrayerLocation location) {
     final timezone = location.timezone;
     if (timezone != null && timezone.isNotEmpty) {
-      return PrayerSchedule.now(timezone);
+      return PrayerSchedule.localDate(
+        timezone,
+        instant: _clock.now(),
+      );
     }
 
-    final now = DateTime.now();
+    final now = _clock.now();
     return DateTime(now.year, now.month, now.day);
   }
 
   String _dateKey(DateTime date) =>
       '${date.year}-${date.month}-${date.day}';
-
 }

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
 import 'prayer_times_provider.dart';
 
@@ -27,6 +29,9 @@ class AlAdhanProvider implements PrayerTimesProvider {
       'latitude': request.latitude.toString(),
       'longitude': request.longitude.toString(),
       'school': request.asrMethod.apiValue.toString(),
+      // Keep high-latitude behavior deterministic while V1 intentionally
+      // exposes no user-facing astronomical adjustment controls.
+      'latitudeAdjustmentMethod': '3',
       'iso8601': 'true',
     };
 
@@ -39,9 +44,20 @@ class AlAdhanProvider implements PrayerTimesProvider {
       queryParameters: query,
     );
 
-    final response = await _client.get(uri).timeout(
-          const Duration(seconds: 12),
-        );
+    http.Response response;
+    try {
+      response = await _client.get(uri).timeout(
+            const Duration(seconds: 12),
+          );
+    } on TimeoutException {
+      throw const PrayerApiException(
+        'Prayer times service timed out. Please try again.',
+      );
+    } on http.ClientException {
+      throw const PrayerApiException(
+        'Prayer times service is unavailable. Please try again.',
+      );
+    }
 
     Map<String, dynamic> body;
     try {
@@ -97,6 +113,14 @@ class AlAdhanProvider implements PrayerTimesProvider {
     }
 
     final timezone = meta['timezone'];
+    if (timezone is! String ||
+        timezone.trim().isEmpty ||
+        !PrayerSchedule.isKnownTimezone(timezone)) {
+      throw const PrayerApiException(
+        'Prayer times response is missing a valid timezone.',
+      );
+    }
+
     final resolvedMethod = meta['method'];
     final resolvedMethodName = resolvedMethod is Map
         ? resolvedMethod['name'] as String?
@@ -104,7 +128,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
 
     return PrayerDay(
       date: DateTime(request.date.year, request.date.month, request.date.day),
-      timezone: timezone is String && timezone.isNotEmpty ? timezone : 'UTC',
+      timezone: timezone.trim(),
       times: parsedTimes,
       hijriDate: HijriDate(
         day: _parseInt(hijri['day']),
@@ -144,7 +168,9 @@ class AlAdhanProvider implements PrayerTimesProvider {
     if (value is int) return value;
     if (value is num) return value.toInt();
     if (value is String) return int.parse(value);
-    throw const PrayerApiException('Prayer times response contains invalid data.');
+    throw const PrayerApiException(
+      'Prayer times response contains invalid data.',
+    );
   }
 
   void _validateCoordinates(double latitude, double longitude) {

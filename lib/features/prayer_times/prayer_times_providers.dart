@@ -12,6 +12,21 @@ import 'data/prayer_times_repository_impl.dart';
 import 'domain/prayer_times_repository.dart';
 import 'presentation/prayer_times_controller.dart';
 
+abstract class PrayerTimesClock {
+  DateTime now();
+}
+
+class SystemPrayerTimesClock implements PrayerTimesClock {
+  const SystemPrayerTimesClock();
+
+  @override
+  DateTime now() => DateTime.now();
+}
+
+final prayerTimesClockProvider = Provider<PrayerTimesClock>((ref) {
+  return const SystemPrayerTimesClock();
+});
+
 final prayerTimesHttpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
   ref.onDispose(client.close);
