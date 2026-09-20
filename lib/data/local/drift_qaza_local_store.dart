@@ -166,6 +166,10 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<int> countPendingOutbox(String userId) =>
+      _database.syncOutboxDao.countPending(userId: userId);
+
+  @override
   Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
       {int limit = 400}) async {
     if (limit < 1 || limit > 500) {
