@@ -160,8 +160,10 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
     final changed = <String>[];
     for (var index = 0; index < records.length; index++) {
       final record = records[index];
-      if (!wanted.contains(record.id) ||
-          record.status == QazaStatus.completed) {
+      if (!wanted.contains(record.id)) continue;
+      if (record.status == QazaStatus.completed &&
+          record.completedAt != null &&
+          !completedAt.isBefore(record.completedAt!)) {
         continue;
       }
       records[index] = record.copyWith(
