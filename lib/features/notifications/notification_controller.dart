@@ -53,7 +53,8 @@ class NotificationSettingsState {
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
-    if (!schedulerAvailable) {
+    if (!schedulerAvailable ||
+        permissionStatus == NotificationPermissionStatus.unavailable) {
       return NotificationScheduleStatus.unavailable;
     }
     if (!canSendNotifications) {
@@ -262,7 +263,7 @@ class NotificationSettingsNotifier
         _logPlatformFailure('existing reminder reconciliation', error, stack);
         state = AsyncData(
           current.copyWith(
-            permissionStatus: NotificationPermissionStatus.unavailable,
+            schedulerAvailable: false,
           ),
         );
         return false;
@@ -314,7 +315,7 @@ class NotificationSettingsNotifier
       state = AsyncData(
         next.copyWith(
           enabled: false,
-          permissionStatus: NotificationPermissionStatus.unavailable,
+          schedulerAvailable: false,
         ),
       );
       return false;
@@ -374,7 +375,7 @@ class NotificationSettingsNotifier
       _logPlatformFailure('time-change reconciliation', error, stack);
       state = AsyncData(
         next.copyWith(
-          permissionStatus: NotificationPermissionStatus.unavailable,
+          schedulerAvailable: false,
         ),
       );
     }
@@ -417,7 +418,7 @@ class NotificationSettingsNotifier
         if (error is StateError) rethrow;
         state = AsyncData(
           current.copyWith(
-            permissionStatus: NotificationPermissionStatus.unavailable,
+            schedulerAvailable: false,
           ),
         );
         rethrow;
