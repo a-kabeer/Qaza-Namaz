@@ -4,18 +4,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/prayer_times_models.dart';
 
-class PrayerTimesCache {
-  PrayerTimesCache(this._preferences);
+class PrayerTimesCache(this._preferencesFuture);
 
   static const _locationKey = 'prayer_times_v1.location';
   static const _settingsKey = 'prayer_times_v1.settings';
   static const _daysKey = 'prayer_times_v1.days';
   static const _maxCachedDays = 30;
 
-  final SharedPreferences _preferences;
+  final Future<SharedPreferences> _preferencesFuture;
 
-  PrayerLocation? getLocation() {
-    final raw = _preferences.getString(_locationKey);
+  Future<PrayerLocation?> getLocation() async {
+    final preferences = await _preferencesFuture;
+    final raw = preferences.getString(_locationKey);
     if (raw == null) return null;
     try {
       return PrayerLocation.fromJson(
@@ -27,11 +27,13 @@ class PrayerTimesCache {
   }
 
   Future<void> saveLocation(PrayerLocation location) async {
-    await _preferences.setString(_locationKey, jsonEncode(location.toJson()));
+    final preferences = await _preferencesFuture;
+    await preferences.setString(_locationKey, jsonEncode(location.toJson()));
   }
 
-  PrayerSettings getSettings() {
-    final raw = _preferences.getString(_settingsKey);
+  Future<PrayerSettings> getSettings() async {
+    final preferences = await _preferencesFuture;
+    final raw = preferences.getString(_settingsKey);
     if (raw == null) return const PrayerSettings();
     try {
       return PrayerSettings.fromJson(
@@ -43,11 +45,13 @@ class PrayerTimesCache {
   }
 
   Future<void> saveSettings(PrayerSettings settings) async {
-    await _preferences.setString(_settingsKey, jsonEncode(settings.toJson()));
+    final preferences = await _preferencesFuture;
+    await preferences.setString(_settingsKey, jsonEncode(settings.toJson()));
   }
 
-  PrayerDay? getDay(PrayerTimesRequest request) {
-    final days = _readDays();
+  Future<PrayerDay?> getDay(PrayerTimesRequest request) async {
+    final preferences = await _preferencesFuture;
+    final days = _readDays(preferences);
     final raw = days[request.cacheKey];
     if (raw is! String) return null;
     try {
@@ -63,7 +67,8 @@ class PrayerTimesCache {
     PrayerTimesRequest request,
     PrayerDay day,
   ) async {
-    final days = _readDays();
+    final preferences = await _preferencesFuture;
+    final days = _readDays(preferences);
     days[request.cacheKey] = jsonEncode(day.toJson());
 
     final entries = days.entries.toList()
@@ -78,10 +83,10 @@ class PrayerTimesCache {
         entry.key: entry.value,
     };
 
-    await _preferences.setString(_daysKey, jsonEncode(retained));
+    await preferences.setString(_daysKey, jsonEncode(retained));
   }
 
-  Map<String, String> _readDays() {
+  Map<String, String> _readDays(SharedPreferences preferences) {
     final raw = _preferences.getString(_daysKey);
     if (raw == null) return <String, String>{};
     try {
