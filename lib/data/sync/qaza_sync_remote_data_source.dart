@@ -1,7 +1,7 @@
 import '../../domain/entities/qaza_record.dart';
 import '../local/qaza_local_store.dart';
 
-enum QazaRemoteChangeType { upsert, reset }
+enum QazaRemoteChangeType { upsert, complete, reset }
 
 class QazaRemoteChangeCursor {
   const QazaRemoteChangeCursor({
