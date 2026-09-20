@@ -299,7 +299,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   }
 
   Future<void> refresh() async {
-    if (state.location == null) return;
+    if (state.location == null) {
+      await _restore();
+      return;
+    }
     await _loadToday();
   }
 
