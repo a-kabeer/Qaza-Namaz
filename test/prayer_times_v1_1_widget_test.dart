@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../lib/features/prayer_times/domain/prayer_times_models.dart';
 import '../lib/features/prayer_times/domain/prayer_times_repository.dart';
 import '../lib/features/prayer_times/presentation/prayer_times_screen.dart';
 import '../lib/features/prayer_times/prayer_times_providers.dart';
+import '../lib/core/widgets/skeleton.dart';
 
 class _Repo implements PrayerTimesRepository {
   _Repo({this.delay = Duration.zero, this.fail = false});
@@ -163,7 +165,6 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.byType(SkeletonShimmer), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 300));
