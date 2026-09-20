@@ -21,9 +21,9 @@ class AlAdhanProvider implements PrayerTimesProvider {
     _validateCoordinates(request.latitude, request.longitude);
 
     final dateKey =
-        '\${request.date.year.toString().padLeft(4, '0')}-'
-        '\${request.date.month.toString().padLeft(2, '0')}-'
-        '\${request.date.day.toString().padLeft(2, '0')}';
+        '${request.date.year.toString().padLeft(4, '0')}-'
+        '${request.date.month.toString().padLeft(2, '0')}-'
+        '${request.date.day.toString().padLeft(2, '0')}';
 
     final query = <String, String>{
       'latitude': request.latitude.toString(),
@@ -40,7 +40,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
       query['method'] = methodId.toString();
     }
 
-    final uri = Uri.parse('\$baseUri/timings/\$dateKey').replace(
+    final uri = Uri.parse('$baseUri/timings/$dateKey').replace(
       queryParameters: query,
     );
 
@@ -72,7 +72,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
       final status = body['status'];
       throw PrayerApiException(
         status is String && status.isNotEmpty
-            ? 'Prayer times service returned: \$status'
+            ? 'Prayer times service returned: $status'
             : 'Prayer times service returned an error.',
       );
     }
@@ -96,7 +96,7 @@ class AlAdhanProvider implements PrayerTimesProvider {
       final raw = timings[prayer.apiKey];
       if (raw is! String) {
         throw PrayerApiException(
-          'Prayer times response is missing \${prayer.apiKey}.',
+          'Prayer times response is missing ${prayer.apiKey}.',
         );
       }
       parsedTimes[prayer] = _parsePrayerTime(raw);
