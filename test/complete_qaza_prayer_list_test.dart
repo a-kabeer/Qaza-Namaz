@@ -155,7 +155,7 @@ void main() {
       expect(pill(PrayerType.zuhr).selected, isTrue);
     });
 
-    testWidgets('selecting a prayer shows that prayer latest pending record',
+    testWidgets('selecting a prayer shows that prayer oldest pending record',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
@@ -173,8 +173,36 @@ void main() {
       await tester.tap(find.byKey(const Key('complete_prayer_pill_zuhr')));
       await tester.pumpAndSettle();
 
-      expect(find.text('20 Jan 2026'), findsOneWidget);
-      expect(find.text('05 Jan 2026'), findsNothing);
+      expect(find.text('05 Jan 2026'), findsOneWidget);
+      expect(find.text('20 Jan 2026'), findsNothing);
+    });
+
+    testWidgets('completing oldest pending loads the next oldest',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(PrayerType.fajr, 2, QazaStatus.pending),
+        _record(PrayerType.fajr, 10, QazaStatus.pending),
+        _record(PrayerType.fajr, 20, QazaStatus.pending),
+      ]);
+      await pumpPage(tester, repository);
+
+      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(find.text('10 Jan 2026'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('complete_oldest_pending')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('10 Jan 2026'), findsOneWidget);
+      expect(find.text('02 Jan 2026'), findsNothing);
+
+      final records = await repository.getRecords(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        status: QazaStatus.completed,
+      );
+      expect(records.map((record) => record.originalDate),
+          contains(DateTime(2026, 1, 2)));
     });
 
     testWidgets('the record shows Gregorian first, Hijri under it',
