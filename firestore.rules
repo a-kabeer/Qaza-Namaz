@@ -23,7 +23,7 @@ service cloud.firestore {
       allow create, update: if isOwner(userId)
         && !resetInProgress(userId)
         && request.resource.data.syncGeneration
-          == get(/databases/$(database)/documents/users/$(userId)/syncMetadata/state).data.generation;
+          == getAfter(/databases/$(database)/documents/users/$(userId)/syncMetadata/state).data.generation;
       allow delete: if isOwner(userId);
     }
 
