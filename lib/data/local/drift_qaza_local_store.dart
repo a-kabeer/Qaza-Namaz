@@ -166,6 +166,63 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
+      {int limit = 400}) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    final rows = await _database.syncOutboxDao.getPendingBatch(
+      userId: userId,
+      limit: limit,
+    );
+    return rows.map(_toDomainOp).toList(growable: false);
+  }
+
+  @override
+  Future<void> removeOutboxBatch(String userId, List<String> ids) =>
+      _database.syncOutboxDao.removeBatch(userId: userId, ids: ids);
+
+  @override
+  Future<void> appendRecordsAndOutbox(
+      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    for (final op in ops) {
+      if (op.userId != userId) {
+        throw StateError('Cannot queue a sync operation for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      if (records.isNotEmpty) {
+        await _database.qazaRecordsDao.insertRecords(
+          records.map(_toCompanion).toList(growable: false),
+        );
+      }
+      if (ops.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          ops.map(_toOpCompanion).toList(growable: false),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final rows = await _database.qazaRecordsDao.getByIds(
+      userId: userId,
+      ids: ids,
+    );
+    return rows.map(_toDomain).toList(growable: false);
+  }
+
+  @override
   Future<List<PendingSyncOp>> loadOutbox(String userId) async {
     final rows = await _database.syncOutboxDao.getPending(userId: userId);
     return rows.map(_toDomainOp).toList(growable: false);
