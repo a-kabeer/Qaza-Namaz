@@ -73,6 +73,46 @@ service cloud.firestore {
         !data.keys().hasAny(['lastCompletedResetOperationId'])
         || data.lastCompletedResetOperationId == null
         || data.lastCompletedResetOperationId is string
+      )
+      && (
+        (!data.resetInProgress
+          && (
+            !data.keys().hasAny(['resetOperationId'])
+            || data.resetOperationId == null
+          ))
+        || (data.resetInProgress
+          && data.keys().hasAny(['resetOperationId'])
+          && data.resetOperationId is string
+          && data.resetOperationId.size() > 0)
+      );
+    }
+
+    function validSyncStateTransition(before, after) {
+      return validSyncState(after)
+      && (
+        // Ordinary sync writes keep the current generation.
+        after.generation == before.generation
+        // A reset may advance the generation exactly once and must enter
+        // the explicit in-progress state with an operation id.
+        || (
+          !before.resetInProgress
+          && after.generation == before.generation + 1
+          && after.resetInProgress == true
+        )
+      )
+      && (
+        // Completing a reset must preserve the generation and bind the
+        // completion marker to the operation that started it.
+        !before.resetInProgress
+        || (
+          after.generation == before.generation
+          && after.resetInProgress == false
+          && after.keys().hasAny(['lastCompletedResetOperationId'])
+          && after.lastCompletedResetOperationId
+            == before.resetOperationId
+          && (!after.keys().hasAny(['resetOperationId'])
+              || after.resetOperationId == null)
+        )
       );
     }
 
@@ -153,9 +193,16 @@ service cloud.firestore {
 
     match /users/{userId}/syncMetadata/{documentId} {
       allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
+      allow create: if isOwner(userId)
         && documentId == 'state'
         && validSyncState(request.resource.data);
+
+      allow update: if isOwner(userId)
+        && documentId == 'state'
+        && validSyncStateTransition(
+          resource.data,
+          request.resource.data
+        );
       allow delete: if isOwner(userId)
         && documentId == 'state';
     }
