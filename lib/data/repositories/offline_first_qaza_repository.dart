@@ -91,7 +91,10 @@ class OfflineFirstQazaRepository implements QazaRepository {
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
   })  : _remote = remote,
-        _syncRemote = syncRemote ?? _LegacyQazaSyncRemoteDataSource(remote),
+        _syncRemote = syncRemote ??
+            (remote is QazaSyncRemoteDataSource
+                ? remote
+                : _LegacyQazaSyncRemoteDataSource(remote)),
         _localStore = localStore,
         _now = now ?? DateTime.now {
     _connectivitySubscription =
