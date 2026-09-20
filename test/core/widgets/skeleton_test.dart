@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../lib/core/widgets/skeleton.dart';
+import 'package:qaza_namaz/core/widgets/skeleton.dart';
 
 void main() {
   testWidgets('SkeletonBox renders with theme-aware shimmer surface', (tester) async {
