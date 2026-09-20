@@ -181,4 +181,139 @@ class InMemoryQazaRepository implements QazaRepository {
 
   bool _sameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+  @override
+  Future<QazaRemoteResetState> getResetState({
+    required String userId,
+  }) async =>
+      QazaRemoteResetState(
+        generation: _generations[userId] ?? 0,
+        inProgress: false,
+      );
+
+  @override
+  Future<QazaRemoteChangeCursor?> getLatestChange({
+    required String userId,
+  }) async {
+    final changes = _changesByUser[userId];
+    return changes == null || changes.isEmpty ? null : changes.last.cursor;
+  }
+
+  @override
+  Future<QazaRemoteChangePage> getChanges({
+    required String userId,
+    QazaRemoteChangeCursor? after,
+    int limit = 100,
+  }) async {
+    if (limit < 1) throw ArgumentError.value(limit, 'limit');
+    final changes = _changesByUser[userId] ?? const <QazaRemoteChange>[];
+    final filtered = [
+      for (final change in changes)
+        if (after == null || _cursorAfter(change.cursor, after)) change,
+    ];
+    return QazaRemoteChangePage(
+      changes: filtered.take(limit).toList(growable: false),
+      hasMore: filtered.length > limit,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    if (operations.isEmpty) {
+      throw ArgumentError('operations must not be empty');
+    }
+    for (final operation in operations) {
+      if (operation.userId != userId) {
+        throw StateError('operation belongs to another user');
+      }
+    }
+
+    final records = <QazaRecord>[];
+    switch (operations.first.type) {
+      case SyncOpType.add:
+        for (final operation in operations) {
+          final record = operation.record;
+          if (record == null) continue;
+          await addRecord(record);
+          final stored = _records[record.id];
+          if (stored != null) records.add(stored);
+        }
+      case SyncOpType.complete:
+        await completeRecords(
+          userId: userId,
+          recordIds: [
+            for (final operation in operations)
+              if (operation.targetRecordId != null) operation.targetRecordId!,
+          ],
+          completedAt: operations.first.completedAt ?? DateTime.now(),
+        );
+        for (final operation in operations) {
+          final id = operation.targetRecordId;
+          final record = id == null ? null : _records[id];
+          if (record != null) records.add(record);
+        }
+      case SyncOpType.reset:
+        throw ArgumentError('reset must use resetUserRecordsForSync');
+    }
+
+    return _recordChange(
+      userId: userId,
+      type: operations.first.type == SyncOpType.add
+          ? QazaRemoteChangeType.upsert
+          : QazaRemoteChangeType.complete,
+      records: records,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) async {
+    await resetUserRecords(userId: userId);
+    final generation = (_generations[userId] ?? 0) + 1;
+    _generations[userId] = generation;
+    return _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.reset,
+      records: const <QazaRecord>[],
+      generation: generation,
+      idPrefix: 'reset',
+    );
+  }
+
+  bool _cursorAfter(
+    QazaRemoteChangeCursor left,
+    QazaRemoteChangeCursor right,
+  ) {
+    final at = left.at.compareTo(right.at);
+    return at > 0 || (at == 0 && left.id.compareTo(right.id) > 0);
+  }
+
+  QazaRemoteChangeCursor _recordChange({
+    required String userId,
+    required QazaRemoteChangeType type,
+    required List<QazaRecord> records,
+    int? generation,
+    String idPrefix = 'change',
+  }) {
+    _changeSequence++;
+    final cursor = QazaRemoteChangeCursor(
+      at: DateTime.utc(2026, 1, 1).add(
+        Duration(microseconds: _changeSequence),
+      ),
+      id: '${idPrefix}-${_changeSequence.toString().padLeft(8, '0')}',
+      generation: generation ?? (_generations[userId] ?? 0),
+    );
+    final change = QazaRemoteChange(
+      type: type,
+      cursor: cursor,
+      records: List<QazaRecord>.unmodifiable(records),
+    );
+    (_changesByUser[userId] ??= <QazaRemoteChange>[]).add(change);
+    return cursor;
+  }
+
 }
