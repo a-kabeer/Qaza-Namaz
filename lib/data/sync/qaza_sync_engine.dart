@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/entities/qaza_record.dart';
 import '../local/qaza_local_store.dart';
 import 'qaza_sync_remote_data_source.dart';
 import 'sync_state.dart';
