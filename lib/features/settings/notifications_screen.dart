@@ -3,8 +3,98 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../l10n/app_localizations.dart';
 import '../notifications/notification_controller.dart';
+
+class _NotificationsSkeleton extends StatelessWidget {
+  const _NotificationsSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        const SkeletonText(width: 210, height: 28),
+        const SizedBox(height: 8),
+        const SkeletonText(width: 300, height: 14),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonText(width: 190, height: 17),
+                      SizedBox(height: 9),
+                      SkeletonText(width: 270, height: 13),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SkeletonBox(
+                  width: 52,
+                  height: 32,
+                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _NotificationSkeletonCard(width: 220, detailWidth: 285),
+        const SizedBox(height: 12),
+        const _NotificationSkeletonCard(width: 200, detailWidth: 300),
+        const SizedBox(height: 12),
+        const _NotificationSkeletonCard(width: 210, detailWidth: 270),
+      ],
+    );
+  }
+}
+
+class _NotificationSkeletonCard extends StatelessWidget {
+  const _NotificationSkeletonCard({
+    required this.width,
+    required this.detailWidth,
+  });
+
+  final double width;
+  final double detailWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SkeletonCircle(size: 34),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonText(width: 200, height: 16),
+                  SizedBox(height: 8),
+                  SkeletonText(width: 250, height: 13),
+                ],
+              ),
+            ),
+            SizedBox(width: 12),
+            SkeletonBox(
+              width: 20,
+              height: 20,
+              borderRadius: BorderRadius.all(Radius.circular(4)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -139,9 +229,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     return AppScaffold(
       title: l10n.notificationsTitle,
       body: settings.when(
-        loading: () => LoadingState(
-          key: const Key('notifications_loading_state'),
-          message: l10n.notificationsLoading,
+        loading: () => const _NotificationsSkeleton(
+          key: Key('notifications_loading_skeleton'),
         ),
         error: (error, stack) => ErrorState(
           key: const Key('notifications_error_state'),
