@@ -183,6 +183,19 @@ class DriftQazaLocalStore extends QazaLocalStore {
       _database.syncOutboxDao.removeBatch(userId: userId, ids: ids);
 
   @override
+  Future<void> markOutboxBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    await _database.syncOutboxDao.markBatchRetry(
+      userId: userId,
+      ids: ids,
+      error: error,
+    );
+  }
+
+  @override
   Future<void> appendRecordsAndOutbox(
       String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
     for (final record in records) {
