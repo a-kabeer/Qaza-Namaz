@@ -94,6 +94,30 @@ jobs:
       - name: Run tests
         run: flutter test --reporter expanded
 
+  security_rules:
+    name: Firestore security rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Firebase emulator test dependencies
+        run: npm install --no-save --no-package-lock @firebase/rules-unit-testing firebase firebase-tools
+
+      - name: Run Firestore security rule tests
+        run: npx firebase emulators:exec --only firestore --project qaza-nmz "node tools/firestore_rules_smoke.mjs"
+
   build_android:
     name: Android debug and release AAB
     runs-on: ubuntu-latest
