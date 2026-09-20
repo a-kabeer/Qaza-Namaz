@@ -33,6 +33,8 @@ class QazaSyncEngine {
   bool _disposed = false;
 
   Future<void> synchronize(String userId) {
+    _retryTimer?.cancel();
+    _retryTimer = null;
     final existing = _running;
     if (existing != null) return existing;
 
@@ -140,6 +142,7 @@ class QazaSyncEngine {
         }
 
         try {
+          if (_disposed) return;
           final remoteReset = await _remote.getResetState(userId: userId);
           if (remoteReset.inProgress) {
             final resetCursor = await _remote.resetUserRecordsForSync(
@@ -242,6 +245,7 @@ class QazaSyncEngine {
     var current = cursor;
 
     while (true) {
+      if (_disposed) return current;
       final page = await _remote.getChanges(
         userId: userId,
         after: current,
@@ -251,6 +255,7 @@ class QazaSyncEngine {
       if (page.changes.isEmpty) return current;
 
       for (final change in page.changes) {
+        if (_disposed) return current;
         if (change.type == QazaRemoteChangeType.reset) {
           await _localStore.retireUserData(userId: userId);
           locallyCommittedChanges.clear();
