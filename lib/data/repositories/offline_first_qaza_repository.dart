@@ -9,15 +9,89 @@ import '../sync/qaza_sync_engine.dart';
 import '../sync/qaza_sync_remote_data_source.dart';
 import '../sync/sync_state.dart';
 
+class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
+  const _LegacyQazaSyncRemoteDataSource(this._remote);
+
+  final QazaRepository _remote;
+
+  @override
+  Future<QazaRemoteResetState> getResetState({
+    required String userId,
+  }) async =>
+      const QazaRemoteResetState(generation: 0, inProgress: false);
+
+  @override
+  Future<QazaRemoteChangeCursor?> getLatestChange({
+    required String userId,
+  }) async =>
+      null;
+
+  @override
+  Future<QazaRemoteChangePage> getChanges({
+    required String userId,
+    QazaRemoteChangeCursor? after,
+    int limit = 100,
+  }) async =>
+      const QazaRemoteChangePage(changes: [], hasMore: false);
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    if (operations.isEmpty) {
+      throw ArgumentError('operations must not be empty');
+    }
+
+    final type = operations.first.type;
+    if (type == SyncOpType.add) {
+      await _remote.addRecords([
+        for (final operation in operations)
+          if (operation.record != null) operation.record!,
+      ]);
+    } else if (type == SyncOpType.complete) {
+      await _remote.completeRecords(
+        userId: userId,
+        recordIds: [
+          for (final operation in operations)
+            if (operation.targetRecordId != null) operation.targetRecordId!,
+        ],
+        completedAt: operations.first.completedAt ?? DateTime.now(),
+      );
+    } else {
+      throw ArgumentError('Reset must use resetUserRecordsForSync.');
+    }
+
+    return QazaRemoteChangeCursor(
+      at: DateTime.now().toUtc(),
+      id: 'legacy_' + operations.first.id,
+      generation: 0,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) async {
+    await _remote.resetUserRecords(userId: userId);
+    return QazaRemoteChangeCursor(
+      at: DateTime.now().toUtc(),
+      id: 'legacy_reset_' + operationId,
+      generation: 0,
+    );
+  }
+}
+
 class OfflineFirstQazaRepository implements QazaRepository {
   OfflineFirstQazaRepository({
     required QazaRepository remote,
-    required QazaSyncRemoteDataSource syncRemote,
+    QazaSyncRemoteDataSource? syncRemote,
     required QazaLocalStore localStore,
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
   })  : _remote = remote,
-        _syncRemote = syncRemote,
+        _syncRemote = syncRemote ?? _LegacyQazaSyncRemoteDataSource(remote),
         _localStore = localStore,
         _now = now ?? DateTime.now {
     _connectivitySubscription =
