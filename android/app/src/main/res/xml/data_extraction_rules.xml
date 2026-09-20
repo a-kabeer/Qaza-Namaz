@@ -4,7 +4,6 @@
         <include
             domain="database"
             path="qaza_namaz.sqlite" />
-        <exclude domain="sharedpref" path="." />
     </cloud-backup>
     <device-transfer>
         <!-- Do not silently transfer the local Qaza ledger to another device.
