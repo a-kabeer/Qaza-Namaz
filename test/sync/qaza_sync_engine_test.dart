@@ -184,6 +184,49 @@ void main() {
   });
 }
 
+
+test('1,000 completion operations sync in bounded batches', () async {
+  final local = _FakeSyncStore();
+  final remote = _FakeSyncRemote();
+  final engine = QazaSyncEngine(
+    localStore: local,
+    remote: remote,
+    onState: (_) {},
+  );
+  addTearDown(engine.dispose);
+
+  final now = DateTime.utc(2026, 1, 1);
+  for (var index = 0; index < 1000; index++) {
+    final record = QazaRecord(
+      id: 'u1_fajr_' + index.toString(),
+      userId: 'u1',
+      prayerType: PrayerType.fajr,
+      originalDate: now.add(Duration(days: index)),
+      status: QazaStatus.completed,
+      completedAt: now.add(const Duration(days: 2)),
+      createdAt: now,
+      updatedAt: now.add(const Duration(days: 2)),
+    );
+    local.records[record.id] = record;
+    local.outbox.add(
+      PendingSyncOp(
+        id: 'complete_' + record.id,
+        type: SyncOpType.complete,
+        userId: 'u1',
+        queuedAt: now,
+        completedAt: record.completedAt,
+        record: record,
+      ),
+    );
+  }
+
+  await engine.synchronize('u1');
+
+  expect(remote.applyCalls, 3);
+  expect(remote.maximumBatchSize, 400);
+  expect(local.outbox, isEmpty);
+});
+
 class _FakeSyncRemote implements QazaSyncRemoteDataSource {
   List<QazaRemoteChange> changes = [];
   final List<QazaRemoteChangeCursor?> observedCursors = [];
