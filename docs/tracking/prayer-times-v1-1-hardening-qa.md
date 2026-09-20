@@ -79,7 +79,7 @@ V1.1 labels this preset as **Automatic (AlAdhan)**. The API request intentionall
 
 ## Automated hardening checklist
 
-- [x] Upgrade timezone package to current V1.1 target and load full IANA timezone data.
+- [x] Use the published timezone 0.10.1 line compatible with the existing notification plugin and load its full IANA database variant.
 - [x] Add deterministic injectable clock for controller QA.
 - [x] Correct manual-coordinate date after timezone discovery.
 - [x] Reject invalid/missing API timezone metadata.
