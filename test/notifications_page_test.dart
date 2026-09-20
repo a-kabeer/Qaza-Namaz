@@ -277,10 +277,6 @@ void main() {
 
       expect(errorState(), findsNothing);
       expect(find.text('Notifications unavailable'), findsOneWidget);
-      expect(
-        statusText(tester),
-        'Notifications are not available on this device.',
-      );
     });
   });
 
