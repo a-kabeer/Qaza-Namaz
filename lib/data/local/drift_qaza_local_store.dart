@@ -236,7 +236,22 @@ class DriftQazaLocalStore extends QazaLocalStore {
       userId: userId,
       ids: ids,
     );
-    return rows.map(_toDomain).toList(growable: false);
+    return rows.map((row) => QazaRecord(
+          id: row.id,
+          userId: row.userId,
+          prayerType: PrayerType.values.firstWhere(
+            (value) => value.name == row.prayerType,
+            orElse: () => throw StateError('Unknown prayer type: ${row.prayerType}'),
+          ),
+          originalDate: row.originalDate,
+          status: QazaStatus.values.firstWhere(
+            (value) => value.name == row.status,
+            orElse: () => throw StateError('Unknown Qaza status: ${row.status}'),
+          ),
+          completedAt: row.completedAt,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+        )).toList(growable: false);
   }
 
   @override
