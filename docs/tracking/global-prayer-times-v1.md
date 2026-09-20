@@ -1,6 +1,6 @@
 # Global Prayer Times Module — V1 Tracking
 
-Status: **In progress — implementation complete, CI verification pending**
+Status: **Implementation complete — CI run #1487 pending**
 Branch: `feature/global-prayer-times-v1`
 Started: 2026-09-20
 Scope: Global Prayer Times only. This tracker is intentionally separate from all existing project/tracking documents.
@@ -47,15 +47,15 @@ Location services are kept behind module interfaces and are not coupled to Qaza 
 ## Implementation checklist
 
 ### 1. Architecture + models
-- [ ] PrayerLocation
-- [ ] PrayerDay
-- [ ] PrayerTime
-- [ ] Hijri date model
-- [ ] PrayerSettings
-- [ ] CalculationMethod
-- [ ] AsrMethod
-- [ ] Cache key/request model
-- [ ] Current/next prayer result
+- [x] PrayerLocation
+- [x] PrayerDay
+- [x] PrayerTime
+- [x] Hijri date model
+- [x] PrayerSettings
+- [x] CalculationMethod
+- [x] AsrMethod
+- [x] Cache key/request model
+- [x] Current/next prayer result
 
 ### 2. Location
 - [x] Foreground-only device location
@@ -164,7 +164,7 @@ The module is complete when the feature can be opened without touching Qaza busi
 ## Change log
 
 ### 2026-09-20
-- Latest verification: PR #48 CI run is queued/pending for the current branch head; previous superseded runs were automatically cancelled after fixes.
+- Latest verification: PR #48 CI run #1487 is pending for current head `522b76d700f0786db6568b5813fe27230c7f1987`. Earlier superseded runs were automatically cancelled after fixes.
 - The controller was checked for stale lifecycle/dead-code references; none remain.
 - Implemented the V1 application layers and dedicated tests on the isolated branch.
 - Added Prayer Times navigation without changing existing tracking documents.
@@ -174,6 +174,7 @@ The module is complete when the feature can be opened without touching Qaza busi
 
 ### 2026-09-20
 - Created isolated branch `feature/global-prayer-times-v1`.
+- CI requested through PR #48; latest workflow run is #1487 and remains pending in GitHub Actions.
 - Created this dedicated tracker.
 - Added foreground location and HTTP dependencies.
 - Added Android fine/coarse foreground location permissions only.
