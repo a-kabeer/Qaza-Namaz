@@ -153,8 +153,9 @@ class QazaService {
       for (final prayer in selectedPrayers) {
         final key =
             QazaPrayerKey(userId: userId, date: date, prayerType: prayer);
-        if (!prayedKeys.contains(key) && !recorded.contains(key))
+        if (!prayedKeys.contains(key) && !recorded.contains(key)) {
           available.add(prayer);
+        }
       }
       result[date] = Set.unmodifiable(available);
     }

@@ -60,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
       // The workspace FAB floats over this list, so the last prayer needs
       // room to scroll clear of it.
       // No FAB is present in the empty state, so no FAB clearance is needed.
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
       children: [
         Center(
           child: ConstrainedBox(

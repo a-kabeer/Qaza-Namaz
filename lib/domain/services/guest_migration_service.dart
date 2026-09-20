@@ -172,7 +172,7 @@ class GuestMigrationService {
       final remote = remoteByKey[key];
 
       if (remote == null) {
-        final id = 'add_' + local.id;
+        final id = 'add_${local.id}';
         final existing = outbox[id];
         final addRecord = existing?.record?.status == QazaStatus.completed
             ? existing!.record!
@@ -193,7 +193,7 @@ class GuestMigrationService {
           remote.status == QazaStatus.pending) {
         // The remote document ID is authoritative when local and remote IDs
         // differ, so the queued completion is always safe to replay.
-        final id = 'complete_' + remote.id;
+        final id = 'complete_${remote.id}';
         final existing = outbox[id];
         outbox[id] = PendingSyncOp(
           id: id,
@@ -260,7 +260,7 @@ class GuestMigrationService {
   }
 
   static String _key(QazaRecord record) =>
-      record.prayerType.name + '|' + QazaDate.key(record.originalDate);
+      '${record.prayerType.name}|${QazaDate.key(record.originalDate)}';
 
   static QazaRecord _normalizeForUser(QazaRecord record, String userId) =>
       record.copyWith(

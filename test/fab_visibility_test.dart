@@ -49,21 +49,20 @@ void main() {
     ]);
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(UncontrolledProviderScope(
-      container: container,
-      child: const TestApp(home: WorkspaceShell()),
-    ));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const TestApp(home: WorkspaceShell()),
+      ),
+    );
     await tester.pumpAndSettle();
     return container;
   }
 
-  Finder fab() => find.byKey(const Key('complete_qaza_fab'));
-
-  /// The Qaza page's own action button, which is the add menu.
-  Finder addFab() => find.byKey(const Key('add_actions_fab'));
-
-  bool isExtended(WidgetTester tester) =>
-      tester.widget<FloatingActionButton>(fab()).isExtended;
+  Finder fab() => find.byKey(const Key('add_actions_fab'));
+  Finder addAction() => find.byKey(const Key('fab_action_add_qaza'));
+  Finder calculateAction() =>
+      find.byKey(const Key('fab_action_calculate_qaza'));
 
   group('Home list clears the FAB', () {
     testWidgets('the list reserves room below its last item', (tester) async {
@@ -77,17 +76,25 @@ void main() {
       await pumpShell(tester, await ledger());
 
       final witr = find.byKey(const Key('home_prayer_row_witr'));
-      await tester.scrollUntilVisible(witr, 200,
-          scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        witr,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
-      // Scroll to the very end, where the overlap used to be.
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+      await tester.drag(
+        find.byType(Scrollable).first,
+        const Offset(0, -600),
+      );
       await tester.pumpAndSettle();
 
       final witrRect = tester.getRect(witr);
       final fabRect = tester.getRect(fab());
-      expect(witrRect.bottom, lessThanOrEqualTo(fabRect.top),
-          reason: 'Witr must clear the FAB, not sit under it');
+      expect(
+        witrRect.bottom,
+        lessThanOrEqualTo(fabRect.top),
+        reason: 'Witr must clear the FAB, not sit under it',
+      );
     });
   });
 
@@ -106,98 +113,81 @@ void main() {
       final container = await pumpShell(tester, await ledger());
       await selectFirstRecord(tester, container);
 
-      final complete = find.byKey(const Key('qaza_tracker_complete_selected'));
+      final complete = find.byKey(
+        const Key('qaza_tracker_complete_selected'),
+      );
       expect(complete, findsOneWidget);
-      expect(find.byKey(const Key('qaza_tracker_clear_selection')),
-          findsOneWidget);
+      expect(
+        find.byKey(const Key('qaza_tracker_clear_selection')),
+        findsOneWidget,
+      );
 
       final actionRect = tester.getRect(complete);
-      final fabRect = tester.getRect(addFab());
-      expect(actionRect.bottom, lessThanOrEqualTo(fabRect.top),
-          reason: 'the action row must not sit under the FAB');
+      final fabRect = tester.getRect(fab());
+      expect(
+        actionRect.bottom,
+        lessThanOrEqualTo(fabRect.top),
+        reason: 'the action row must not sit under the FAB',
+      );
     });
 
     testWidgets('selection and completion still work', (tester) async {
       final container = await pumpShell(tester, await ledger());
       await selectFirstRecord(tester, container);
       expect(
-          container.read(qazaTrackerControllerProvider).selected, hasLength(1));
+        container.read(qazaTrackerControllerProvider).selected,
+        hasLength(1),
+      );
 
-      await tester.tap(find.byKey(const Key('qaza_tracker_clear_selection')));
+      await tester.tap(
+        find.byKey(const Key('qaza_tracker_clear_selection')),
+      );
       await tester.pumpAndSettle();
 
-      expect(container.read(qazaTrackerControllerProvider).selected, isEmpty);
+      expect(
+        container.read(qazaTrackerControllerProvider).selected,
+        isEmpty,
+      );
     });
   });
 
-  group('FAB label collapses', () {
-    testWidgets('it starts with icon and text', (tester) async {
+  group('AddActionsFab menu', () {
+    testWidgets('starts closed with only the main action visible',
+        (tester) async {
       await pumpShell(tester, await ledger());
 
-      expect(isExtended(tester), isTrue);
-      expect(find.text('Complete Qaza'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
-      await tester.pump(const Duration(seconds: 6));
-    });
-
-    testWidgets('after five seconds only the icon remains', (tester) async {
-      await pumpShell(tester, await ledger());
-
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-
-      expect(isExtended(tester), isFalse);
-      // The icon never goes away.
-      expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
       expect(fab(), findsOneWidget);
+      expect(addAction(), findsNothing);
+      expect(calculateAction(), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
     });
 
-    testWidgets('rebuilds do not restart the countdown', (tester) async {
-      final container = await pumpShell(tester, await ledger());
-
-      await tester.pump(const Duration(seconds: 3));
-      // A rebuild that leaves the action visible must not extend its stay.
-      container.read(qazaTrackerFilterRequestProvider.notifier).state =
-          const QazaTrackerFilterRequest(prayer: PrayerType.fajr);
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
-      await tester.pumpAndSettle();
-
-      expect(isExtended(tester), isFalse);
-    });
-
-    testWidgets('it expands again the next time it appears', (tester) async {
-      final repository = await ledger();
-      final container = await pumpShell(tester, repository);
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-      expect(isExtended(tester), isFalse);
-
-      // Leaving for a destination without the action hides it...
-      container.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.settings;
-      await tester.pumpAndSettle();
-      expect(fab(), findsNothing);
-
-      // ...and coming back names it again.
-      container.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.home;
-      await tester.pumpAndSettle();
-      expect(isExtended(tester), isTrue);
-      await tester.pump(const Duration(seconds: 6));
-    });
-
-    testWidgets('a collapsed FAB still opens Complete Qaza', (tester) async {
+    testWidgets('opens both Add Qaza and Calculate Qaza actions',
+        (tester) async {
       await pumpShell(tester, await ledger());
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-      expect(isExtended(tester), isFalse);
 
       await tester.tap(fab());
       await tester.pumpAndSettle();
 
-      expect(find.text('Complete Qaza'), findsWidgets);
-      expect(find.byKey(const Key('complete_prayer_pills')), findsOneWidget);
+      expect(addAction(), findsOneWidget);
+      expect(calculateAction(), findsOneWidget);
+      expect(find.text('Add Qaza'), findsOneWidget);
+      expect(find.text('Calculate Qaza'), findsOneWidget);
+    });
+
+    testWidgets('closes the menu when the main action is tapped again',
+        (tester) async {
+      await pumpShell(tester, await ledger());
+
+      await tester.tap(fab());
+      await tester.pumpAndSettle();
+      expect(addAction(), findsOneWidget);
+
+      await tester.tap(fab());
+      await tester.pumpAndSettle();
+
+      expect(addAction(), findsNothing);
+      expect(calculateAction(), findsNothing);
     });
   });
 }

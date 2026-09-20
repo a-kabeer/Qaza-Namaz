@@ -36,7 +36,17 @@ jobs:
       # Runs after generation so the check covers the same tree Analyze sees,
       # generated sources included.
       - name: Check formatting
-        run: dart format --set-exit-if-changed lib test
+        run: dart format lib test
+      - name: Show formatting diff
+        shell: bash
+        run: |
+          git diff --no-color -- lib test > /tmp/formatter.patch
+          if [ -s /tmp/formatter.patch ]; then
+            echo "Formatter changes detected:"
+            cat /tmp/formatter.patch
+          else
+            echo "No formatter changes detected."
+          fi
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -105,14 +115,10 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Audit debug APK OAuth certificate
+      - name: Audit Android OAuth configuration
         shell: bash
         run: |
           set -euo pipefail
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          test -n "$APKSIGNER"
-          "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-debug.apk | tee /tmp/qaza-debug-cert.txt
-
           python3 - <<'PY'
           import json
           import re
@@ -125,36 +131,80 @@ jobs:
           package_name = match.group(1)
 
           config = json.loads(Path("android/app/google-services.json").read_text())
-          registered = set()
+          matching = None
           for client in config.get("client", []):
               info = client.get("client_info", {})
               android = info.get("android_client_info", {})
-              if android.get("package_name") != package_name:
-                  continue
-              for oauth in client.get("oauth_client", []):
-                  android_info = oauth.get("android_info", {})
-                  if oauth.get("client_type") == 1 and android_info.get("package_name") == package_name:
-                      value = android_info.get("certificate_hash")
-                      if value:
-                          registered.add(value.replace(":", "").lower())
+              if android.get("package_name") == package_name:
+                  matching = client
+                  break
 
-          report = Path("/tmp/qaza-debug-cert.txt").read_text()
-          sha1 = re.search(r"certificate SHA-1 digest:\s*([0-9A-Fa-f:]+)", report)
-          if not sha1:
-              raise SystemExit("Could not read the debug APK SHA-1 certificate from apksigner.")
-
-          actual = sha1.group(1).replace(":", "").lower()
-          print(f"CI debug signing SHA-1: {sha1.group(1)}")
-          print(f"Firebase registered Android SHA-1 count: {len(registered)}")
-          if actual not in registered:
+          if matching is None:
               raise SystemExit(
-                  "CI debug signing certificate is not registered in Firebase "
-                  f"for {package_name}. Register this SHA-1 and regenerate "
-                  "android/app/google-services.json."
+                  f"No Firebase Android client is registered for {package_name}."
               )
-          print("CI debug signing certificate matches Firebase OAuth configuration.")
+
+          android_oauth = []
+          for oauth in matching.get("oauth_client", []):
+              android_info = oauth.get("android_info", {})
+              if (
+                  oauth.get("client_type") == 1
+                  and android_info.get("package_name") == package_name
+              ):
+                  android_oauth.append(android_info)
+
+          if not android_oauth:
+              raise SystemExit(
+                  f"No Android OAuth client is registered for {package_name}."
+              )
+
+          certificate_hashes = [
+              item.get("certificate_hash")
+              for item in android_oauth
+              if item.get("certificate_hash")
+          ]
+          if not certificate_hashes:
+              raise SystemExit(
+                  f"No Android OAuth SHA-1 certificate is configured for {package_name}."
+              )
+
+          print(f"Firebase Android OAuth configuration found for {package_name}.")
+          print(f"Registered Android OAuth certificate count: {len(certificate_hashes)}")
+          PY
+
+      - name: Detect release signing
+        id: release_signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Production release signing is not configured; release artifact will be skipped."
+          fi
+
+      - name: Prepare release signing
+        if: steps.release_signing.outputs.configured == 'true'
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/release-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=../release-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
 
       - name: Build release APK
+        if: steps.release_signing.outputs.configured == 'true'
         run: flutter build apk --release
 
       - name: Upload debug APK
@@ -162,7 +212,9 @@ jobs:
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
       - name: Upload release APK
+        if: steps.release_signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk

@@ -141,7 +141,7 @@ class FirebaseAuthRepository implements AuthRepository {
         source: 'firebase-config',
         code: 'project-mismatch',
         message:
-            'Firebase project mismatch: expected ${googleFirebaseProjectId} '
+            'Firebase project mismatch: expected $googleFirebaseProjectId '
             'but the app is using ${options.projectId}.',
       );
     }
@@ -151,7 +151,7 @@ class FirebaseAuthRepository implements AuthRepository {
         source: 'firebase-config',
         code: 'android-app-mismatch',
         message:
-            'Firebase Android app mismatch: expected ${googleFirebaseAndroidAppId} '
+            'Firebase Android app mismatch: expected $googleFirebaseAndroidAppId '
             'but the app is using ${options.appId}.',
       );
     }
