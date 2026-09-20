@@ -189,7 +189,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearTomorrow: true,
       cityResults: const <CitySearchResult>[],
     );
-    await _loadToday(forceRefresh: true);
+    await _loadToday();
   }
 
   Future<void> useManualCoordinates(String latitudeText, String longitudeText) async {
@@ -223,7 +223,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearLocationErrorKind: true,
       clearTomorrow: true,
     );
-    await _loadToday(forceRefresh: true);
+    await _loadToday();
   }
 
   void searchCities(String query) {
@@ -287,7 +287,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearMessage: true,
       clearTomorrow: true,
     );
-    await _loadToday(forceRefresh: true);
+    await _loadToday();
   }
 
   Future<void> openRelevantSettings() async {
@@ -310,7 +310,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
     final currentDate = _dateForLocation(location);
     if (_dateKey(currentDate) != _dateKey(today.date)) {
-      unawaited(_loadToday(forceRefresh: true));
+      unawaited(_loadToday());
       return;
     }
 
@@ -390,10 +390,8 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       if (cached != null) {
         state = state.copyWith(
           today: cached,
-          status: _isNetworkFailure(error)
-              ? PrayerTimesStatus.offlineWithCache
-              : PrayerTimesStatus.offlineWithCache,
-          message: error.toString(),
+          status: PrayerTimesStatus.offlineWithCache,
+          clearMessage: true,
         );
       } else {
         state = state.copyWith(
