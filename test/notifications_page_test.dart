@@ -17,6 +17,7 @@ class _FlakyScheduler implements NotificationScheduler {
   bool failInitialize = false;
   bool failPermissionCheck = false;
   bool failRequest = false;
+  bool failCancel = false;
 
   int initializeCalls = 0;
   int scheduleCalls = 0;
@@ -80,7 +81,10 @@ class _FlakyScheduler implements NotificationScheduler {
   }
 
   @override
-  Future<void> cancelDaily() async => cancelCalls++;
+  Future<void> cancelDaily() async {
+    cancelCalls++;
+    if (failCancel) throw StateError('cancel failed');
+  }
 
   @override
   Future<void> showTestNotification(NotificationContent content) async {}
@@ -189,6 +193,12 @@ void main() {
       find.byKey(const Key('notification_open_settings')),
       findsOneWidget,
     );
+    expect(
+      tester.widget<ListTile>(
+        find.byKey(const Key('test_notification_action')),
+      ).enabled,
+      isFalse,
+    );
   });
 
   group('normal load', () {
@@ -256,7 +266,7 @@ void main() {
       expect(scheduler.scheduleCalls, 0);
       expect(
         statusText(tester),
-        'Notification permission is required.',
+        'Notifications are not available on this device.',
       );
     });
 
@@ -267,6 +277,10 @@ void main() {
 
       expect(errorState(), findsNothing);
       expect(find.text('Notifications unavailable'), findsOneWidget);
+      expect(
+        statusText(tester),
+        'Notifications are not available on this device.',
+      );
     });
   });
 
@@ -361,6 +375,48 @@ void main() {
       expect(find.text('Notifications allowed'), findsOneWidget);
       expect(scheduler.scheduleCalls, greaterThanOrEqualTo(1));
     });
+  });
+
+  testWidgets('successful disable cancels the daily reminder',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_daily_notification_enabled:u1': true,
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler();
+    await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+    await tester.tap(switchTile());
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<SwitchListTile>(switchTile()).value,
+      isFalse,
+    );
+    expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
+  });
+
+  testWidgets('failed disable keeps reminder enabled and reports unavailable',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'qaza_daily_notification_enabled:u1': true,
+      'qaza_notification_permission_requested:u1': true,
+    });
+    final scheduler = _FlakyScheduler()..failCancel = true;
+    await pumpPage(tester, scheduler, ledger: [_pending()]);
+
+    await tester.tap(switchTile());
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<SwitchListTile>(switchTile()).value,
+      isTrue,
+    );
+    expect(scheduler.cancelCalls, greaterThanOrEqualTo(1));
+    expect(
+      find.text('Notifications are not available on this device.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Send Test Notification requests permission before showing',

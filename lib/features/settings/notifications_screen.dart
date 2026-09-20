@@ -45,18 +45,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       final ok = await ref
           .read(notificationSettingsProvider.notifier)
           .setEnabled(enabled);
-      if (!mounted || ok || !enabled) return;
+      if (!mounted || ok) return;
 
       final value = ref.read(notificationSettingsProvider).valueOrNull;
-      final message = switch (value?.permissionStatus) {
-        NotificationPermissionStatus.denied =>
-          l10n.notificationsBlockedDetail,
-        NotificationPermissionStatus.permanentlyDenied =>
-          l10n.notificationsEnableInSettings,
-        NotificationPermissionStatus.unavailable =>
-          l10n.notificationsUnavailableDetail,
-        _ => l10n.notificationsEnableFailed,
-      };
+      final message = value?.schedulerAvailable == false
+          ? l10n.notificationsUnavailableDetail
+          : switch (value?.permissionStatus) {
+              NotificationPermissionStatus.denied =>
+                l10n.notificationsBlockedDetail,
+              NotificationPermissionStatus.permanentlyDenied =>
+                l10n.notificationsEnableInSettings,
+              NotificationPermissionStatus.unavailable =>
+                l10n.notificationsUnavailableDetail,
+              _ => l10n.notificationsEnableFailed,
+            };
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
@@ -194,9 +196,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
           final reminderEnabled = value.enabled && !_working;
           final testEnabled =
+              value.schedulerAvailable &&
               permission != NotificationPermissionStatus.unavailable &&
-                  permission != NotificationPermissionStatus.restricted &&
-                  !_working;
+              permission != NotificationPermissionStatus.restricted &&
+              permission != NotificationPermissionStatus.permanentlyDenied &&
+              !_working;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -311,6 +315,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   String _scheduleText(AppLocalizations l10n, NotificationSettingsState value) {
     if (!value.enabled) return l10n.notificationsOffStatus;
+    if (!value.schedulerAvailable) {
+      return l10n.notificationsUnavailableDetail;
+    }
     if (!value.canSendNotifications) {
       return l10n.notificationsPermissionRequired;
     }

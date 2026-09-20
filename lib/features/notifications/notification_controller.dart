@@ -23,6 +23,7 @@ enum NotificationPermissionStatus {
 
 enum NotificationScheduleStatus {
   disabled,
+  unavailable,
   permissionRequired,
   noPendingQaza,
   scheduled,
@@ -36,6 +37,7 @@ class NotificationSettingsState {
     required this.permissionStatus,
     required this.hasPendingQaza,
     this.pendingCountKnown = true,
+    this.schedulerAvailable = true,
   });
 
   final bool enabled;
@@ -44,12 +46,17 @@ class NotificationSettingsState {
   final NotificationPermissionStatus permissionStatus;
   final bool hasPendingQaza;
   final bool pendingCountKnown;
+  final bool schedulerAvailable;
 
   bool get canSendNotifications =>
       permissionStatus == NotificationPermissionStatus.granted;
 
   NotificationScheduleStatus get scheduleStatus {
     if (!enabled) return NotificationScheduleStatus.disabled;
+    if (!schedulerAvailable ||
+        permissionStatus == NotificationPermissionStatus.unavailable) {
+      return NotificationScheduleStatus.unavailable;
+    }
     if (!canSendNotifications) {
       return NotificationScheduleStatus.permissionRequired;
     }
@@ -70,6 +77,7 @@ class NotificationSettingsState {
     NotificationPermissionStatus? permissionStatus,
     bool? hasPendingQaza,
     bool? pendingCountKnown,
+    bool? schedulerAvailable,
   }) {
     return NotificationSettingsState(
       enabled: enabled ?? this.enabled,
@@ -78,6 +86,7 @@ class NotificationSettingsState {
       permissionStatus: permissionStatus ?? this.permissionStatus,
       hasPendingQaza: hasPendingQaza ?? this.hasPendingQaza,
       pendingCountKnown: pendingCountKnown ?? this.pendingCountKnown,
+      schedulerAvailable: schedulerAvailable ?? this.schedulerAvailable,
     );
   }
 }
@@ -133,6 +142,7 @@ class NotificationSettingsNotifier
       permissionStatus: permissionStatus,
       hasPendingQaza: pending ?? false,
       pendingCountKnown: pending != null,
+      schedulerAvailable: schedulerReady,
     );
 
     try {
@@ -192,11 +202,25 @@ class NotificationSettingsNotifier
     final current = state.valueOrNull;
     if (current == null) return;
 
+    final schedulerReady = await _initializeScheduler();
+    if (!schedulerReady) {
+      state = AsyncData(
+        current.copyWith(
+          schedulerAvailable: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+      return;
+    }
+
     try {
       final requested = await _readPermissionRequestState();
       final permissionStatus =
           await _resolvePermissionStatus(requested: requested);
-      final next = current.copyWith(permissionStatus: permissionStatus);
+      final next = current.copyWith(
+        schedulerAvailable: true,
+        permissionStatus: permissionStatus,
+      );
       state = AsyncData(next);
 
       try {
@@ -219,7 +243,12 @@ class NotificationSettingsNotifier
     if (current == null) return false;
 
     if (!enabled) {
-      await _cancelQuietly();
+      final cancelled = await _cancelQuietly();
+      if (!cancelled) {
+        state = AsyncData(current.copyWith(schedulerAvailable: false));
+        return false;
+      }
+
       final next = current.copyWith(enabled: false);
       await _persist(next, permissionRequested: null);
       state = AsyncData(next);
@@ -234,7 +263,7 @@ class NotificationSettingsNotifier
         _logPlatformFailure('existing reminder reconciliation', error, stack);
         state = AsyncData(
           current.copyWith(
-            permissionStatus: NotificationPermissionStatus.unavailable,
+            schedulerAvailable: false,
           ),
         );
         return false;
@@ -243,6 +272,16 @@ class NotificationSettingsNotifier
 
     if (current.permissionStatus ==
         NotificationPermissionStatus.permanentlyDenied) {
+      return false;
+    }
+
+    if (!await _initializeScheduler()) {
+      state = AsyncData(
+        current.copyWith(
+          schedulerAvailable: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
       return false;
     }
 
@@ -286,7 +325,7 @@ class NotificationSettingsNotifier
       state = AsyncData(
         next.copyWith(
           enabled: false,
-          permissionStatus: NotificationPermissionStatus.unavailable,
+          schedulerAvailable: false,
         ),
       );
       return false;
@@ -295,14 +334,9 @@ class NotificationSettingsNotifier
 
   Future<bool> _requestPermissionForAction() async {
     await _scheduler.initialize();
-    try {
-      final granted = await _scheduler.requestPermission();
-      await _persistPermissionRequested(true);
-      return granted;
-    } catch (error, stack) {
-      _logPlatformFailure('permission request', error, stack);
-      rethrow;
-    }
+    final granted = await _scheduler.requestPermission();
+    await _persistPermissionRequested(true);
+    return granted;
   }
 
   Future<void> _persistPermissionRequested(bool requested) async {
@@ -324,11 +358,13 @@ class NotificationSettingsNotifier
     }
   }
 
-  Future<void> _cancelQuietly() async {
+  Future<bool> _cancelQuietly() async {
     try {
       await _scheduler.cancelDaily();
+      return true;
     } catch (error, stack) {
       _logPlatformFailure('cancel daily reminder', error, stack);
+      return false;
     }
   }
 
@@ -349,7 +385,7 @@ class NotificationSettingsNotifier
       _logPlatformFailure('time-change reconciliation', error, stack);
       state = AsyncData(
         next.copyWith(
-          permissionStatus: NotificationPermissionStatus.unavailable,
+          schedulerAvailable: false,
         ),
       );
     }
@@ -369,6 +405,16 @@ class NotificationSettingsNotifier
           'Notification permission is permanently denied. '
           'Open system notification settings and enable notifications.',
         );
+      }
+
+      if (!await _initializeScheduler()) {
+        state = AsyncData(
+          current.copyWith(
+            schedulerAvailable: false,
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+        throw StateError('Notification scheduler is unavailable.');
       }
 
       try {
@@ -392,7 +438,7 @@ class NotificationSettingsNotifier
         if (error is StateError) rethrow;
         state = AsyncData(
           current.copyWith(
-            permissionStatus: NotificationPermissionStatus.unavailable,
+            schedulerAvailable: false,
           ),
         );
         rethrow;
@@ -436,6 +482,8 @@ class NotificationSettingsNotifier
 
   Future<void> _reconcile(NotificationSettingsState value) async {
     switch (value.scheduleStatus) {
+      case NotificationScheduleStatus.unavailable:
+        return;
       case NotificationScheduleStatus.disabled:
       case NotificationScheduleStatus.permissionRequired:
       case NotificationScheduleStatus.noPendingQaza:
