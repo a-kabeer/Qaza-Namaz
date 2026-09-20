@@ -135,13 +135,23 @@ class InMemoryQazaRepository
 
   @override
   Future<void> addRecord(QazaRecord record) async {
+    if (!_storeAddRecord(record)) return;
+    _recordChange(
+      userId: record.userId,
+      type: QazaRemoteChangeType.upsert,
+      records: [record],
+    );
+  }
+
+  bool _storeAddRecord(QazaRecord record) {
     if (_records.values.any((r) =>
         r.userId == record.userId &&
         r.prayerType == record.prayerType &&
         _sameDate(r.originalDate, record.originalDate))) {
-      return;
+      return false;
     }
     _records[record.id] = record;
+    return true;
   }
 
   @override
@@ -163,25 +173,50 @@ class InMemoryQazaRepository
       {required String userId,
       required List<String> recordIds,
       required DateTime completedAt}) async {
+    final changed = <QazaRecord>[];
     for (final id in recordIds) {
       final r = _records[id];
       if (r == null || r.userId != userId) continue;
       if (r.status == QazaStatus.completed) {
         if (r.completedAt == null || completedAt.isBefore(r.completedAt!)) {
-          _records[id] =
+          final updated =
               r.copyWith(completedAt: completedAt, updatedAt: completedAt);
+          _records[id] = updated;
+          changed.add(updated);
         }
         continue;
       }
-      _records[id] = r.copyWith(
-          status: QazaStatus.completed,
-          completedAt: completedAt,
-          updatedAt: completedAt);
+      final updated = r.copyWith(
+        status: QazaStatus.completed,
+        completedAt: completedAt,
+        updatedAt: completedAt,
+      );
+      _records[id] = updated;
+      changed.add(updated);
+    }
+    if (changed.isNotEmpty) {
+      _recordChange(
+        userId: userId,
+        type: QazaRemoteChangeType.complete,
+        records: changed,
+      );
     }
   }
 
   @override
   Future<void> resetUserRecords({required String userId}) async {
+    _resetWithoutChange(userId);
+    final generation = _generations[userId] ?? 0;
+    _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.reset,
+      records: const <QazaRecord>[],
+      generation: generation,
+      idPrefix: 'reset',
+    );
+  }
+
+  void _resetWithoutChange(String userId) {
     _records.removeWhere((_, record) => record.userId == userId);
   }
 
@@ -242,7 +277,7 @@ class InMemoryQazaRepository
         for (final operation in operations) {
           final record = operation.record;
           if (record == null) continue;
-          await addRecord(record);
+          _storeAddRecord(record);
           final stored = _records[record.id];
           if (stored != null) records.add(stored);
         }
@@ -278,7 +313,7 @@ class InMemoryQazaRepository
     required String userId,
     required String operationId,
   }) async {
-    await resetUserRecords(userId: userId);
+    _resetWithoutChange(userId);
     final generation = (_generations[userId] ?? 0) + 1;
     _generations[userId] = generation;
     return _recordChange(
