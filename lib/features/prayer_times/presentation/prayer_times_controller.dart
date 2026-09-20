@@ -89,6 +89,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   Timer? _citySearchDebounce;
   int _loadGeneration = 0;
+  bool _isMounted = true;
 
   @override
   PrayerTimesState build() {
@@ -97,6 +98,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     _citySearchProvider = ref.read(prayerCitySearchProvider);
 
     ref.onDispose(() {
+      _isMounted = false;
       _citySearchDebounce?.cancel();
     });
 
@@ -108,7 +110,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     final location = await _repository.getSavedLocation();
     final settings = await _repository.getSavedSettings();
 
-    if (!ref.mounted) return;
+    if (!_isMounted) return;
 
     if (location == null) {
       state = state.copyWith(
@@ -138,7 +140,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     try {
       final location = await _locationService.getCurrentLocation();
       await _repository.saveLocation(location);
-      if (!ref.mounted) return;
+      if (!_isMounted) return;
 
       state = state.copyWith(
         location: location,
@@ -149,14 +151,14 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       );
       await _loadToday(forceRefresh: true);
     } on PrayerLocationException catch (error) {
-      if (!ref.mounted) return;
+      if (!_isMounted) return;
       state = state.copyWith(
         status: PrayerTimesStatus.locationError,
         message: error.message,
         locationErrorKind: error.kind,
       );
     } catch (_) {
-      if (!ref.mounted) return;
+      if (!_isMounted) return;
       state = state.copyWith(
         status: PrayerTimesStatus.locationError,
         clearMessage: true,
@@ -178,7 +180,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     );
 
     await _repository.saveLocation(location);
-    if (!ref.mounted) return;
+    if (!_isMounted) return;
 
     state = state.copyWith(
       location: location,
@@ -213,7 +215,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     );
 
     await _repository.saveLocation(location);
-    if (!ref.mounted) return;
+    if (!_isMounted) return;
 
     state = state.copyWith(
       location: location,
@@ -252,14 +254,14 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   Future<void> _searchCities(String query) async {
     try {
       final results = await _citySearchProvider.search(query);
-      if (!ref.mounted) return;
+      if (!_isMounted) return;
       state = state.copyWith(
         cityResults: results,
         citySearchLoading: false,
         clearCitySearchError: true,
       );
     } catch (_) {
-      if (!ref.mounted) return;
+      if (!_isMounted) return;
       state = state.copyWith(
         cityResults: const <CitySearchResult>[],
         citySearchLoading: false,
@@ -278,7 +280,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   Future<void> saveSettings(PrayerSettings settings) async {
     await _repository.saveSettings(settings);
-    if (!ref.mounted) return;
+    if (!_isMounted) return;
 
     state = state.copyWith(
       settings: settings,
@@ -345,7 +347,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       cached = null;
     }
 
-    if (!ref.mounted || generation != _loadGeneration) return;
+    if (!_isMounted || generation != _loadGeneration) return;
 
     if (cached != null && !forceRefresh) {
       state = state.copyWith(
@@ -378,7 +380,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       final updatedLocation = location.copyWith(timezone: day.timezone);
       await _repository.saveLocation(updatedLocation);
 
-      if (!ref.mounted || generation != _loadGeneration) return;
+      if (!_isMounted || generation != _loadGeneration) return;
 
       state = state.copyWith(
         location: updatedLocation,
@@ -389,7 +391,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
       await _loadTomorrowIfRequired(day);
     } catch (error) {
-      if (!ref.mounted || generation != _loadGeneration) return;
+      if (!_isMounted || generation != _loadGeneration) return;
 
       if (cached != null) {
         state = state.copyWith(
@@ -440,7 +442,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
             asrMethod: settings.asrMethod,
           );
 
-      if (ref.mounted) {
+      if (_isMounted) {
         state = state.copyWith(tomorrow: tomorrow);
       }
     } catch (_) {
