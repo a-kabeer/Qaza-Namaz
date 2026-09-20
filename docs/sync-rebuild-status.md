@@ -66,3 +66,19 @@ CI run #1382 is now validating the corrected head across Android, Linux, Windows
 7. Failure/restart/offline recovery
 8. Real Firebase 13,000-record smoke test
 9. Multi-user isolation test
+
+
+## Follow-up: CI failure remediation (20 Sep 2026)
+
+CI run #1383 exposed two classes of failures:
+- `SyncStatus.retrying` and `SyncStatus.partiallySynced` were not handled in every status presentation switch.
+- Pure tests reached `SharedPreferences.getInstance()` through the durable sync cursor without a Flutter test binding, causing `Binding has not yet been initialized` and cascading sync/bootstrap failures.
+
+Fixes applied on 38cd040b37ae4bb688064e791499678997040666:
+- Added exhaustive UI handling for all `SyncStatus` values.
+- Added `test/flutter_test_config.dart` to initialize `TestWidgetsFlutterBinding` and reset mock `SharedPreferences` before each test.
+- Updated the in-memory repository test double to implement the incremental sync source and emit remote change-log events.
+- Updated performance/lazy-loading tests to assert bounded incremental reconciliation instead of the removed full-ledger sync path.
+- Reworked completion counting in performance tests to follow the batched completion API.
+
+Validation status: CI run #1392 is pending for this head. Final pass/fail is not yet available.
