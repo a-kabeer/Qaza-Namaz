@@ -34,6 +34,7 @@ void main() {
 
     expect(find.byKey(const Key('settings_account')), findsOneWidget);
     expect(find.byKey(const Key('settings_notifications')), findsOneWidget);
+    expect(find.byKey(const Key('settings_privacy_security')), findsOneWidget);
     expect(find.byKey(const Key('settings_data_cloud')), findsOneWidget);
     expect(find.byKey(const Key('settings_about')), findsOneWidget);
 
@@ -41,7 +42,7 @@ void main() {
     expect(find.text('Data & Storage'), findsOneWidget);
     expect(find.text('Export data'), findsNothing);
     expect(find.text('Import data'), findsNothing);
-    expect(find.byType(SettingsNavRow), findsNWidgets(4));
+    expect(find.byType(SettingsNavRow), findsNWidgets(5));
   });
 
   testWidgets('Data & Cloud owns the combined export/import destination',
