@@ -466,7 +466,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    if (_isOnline) {
+    if (_isOnline && _connectivityKnown) {
       unawaited(
         _syncEngine?.synchronize(userId, requestRerun: true) ??
             Future<void>.value(),
@@ -592,7 +592,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
       );
       return;
     }
-    await _syncEngine?.synchronize(userId);
+    await _syncEngine?.synchronize(userId, requestRerun: true);
   }
 
   void _emit(SyncState state) {
