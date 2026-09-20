@@ -209,6 +209,31 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           };
 
           final reminderEnabled = value.enabled && !_working;
+          final reminderSubtitle = !value.enabled
+              ? l10n.notificationsOff
+              : switch (permission) {
+                  NotificationPermissionStatus.granted =>
+                    !value.pendingCountKnown
+                        ? l10n.notificationsPendingUnknown
+                        : value.hasPendingQaza
+                            ? l10n.notificationsOnAt(value.formattedTime)
+                            : l10n.notificationsOnPendingWait,
+                  NotificationPermissionStatus.notRequested =>
+                    l10n.notificationsPermissionNeeded,
+                  NotificationPermissionStatus.denied =>
+                    l10n.notificationsBlocked,
+                  NotificationPermissionStatus.permanentlyDenied =>
+                    l10n.notificationsBlocked,
+                  NotificationPermissionStatus.appNotificationsDisabled =>
+                    l10n.notificationsAppDisabled,
+                  NotificationPermissionStatus.reminderChannelDisabled =>
+                    l10n.notificationsChannelDisabled,
+                  NotificationPermissionStatus.unavailable =>
+                    l10n.notificationsUnavailable,
+                  NotificationPermissionStatus.restricted =>
+                    l10n.notificationsRestricted,
+                };
+
           final testEnabled =
               value.schedulerAvailable &&
               permission != NotificationPermissionStatus.unavailable &&
@@ -236,15 +261,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   key: const Key('daily_notification_switch'),
                   value: value.enabled,
                   title: Text(l10n.notificationsDailyTitle),
-                  subtitle: Text(
-                    !value.enabled
-                        ? l10n.notificationsOff
-                        : !value.pendingCountKnown
-                            ? l10n.notificationsPendingUnknown
-                            : value.hasPendingQaza
-                                ? l10n.notificationsOnAt(value.formattedTime)
-                                : l10n.notificationsOnPendingWait,
-                  ),
+                  subtitle: Text(reminderSubtitle),
                   onChanged: _working ? null : _setEnabled,
                 ),
               ),
