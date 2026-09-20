@@ -7,6 +7,8 @@ import '../auth/backup_prompt.dart';
 import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
+import '../prayer_times/presentation/prayer_times_screen.dart';
+import '../prayer_times/presentation/prayer_times_localizations.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
@@ -16,7 +18,14 @@ import '../settings/settings_screen.dart';
 ///
 /// Not all of them are bottom-bar entries: Qaza and Calculator are reached
 /// from Home. See `_barDestinations` for what the bar offers.
-enum WorkspaceDestination { home, qaza, calculator, knowledge, settings }
+enum WorkspaceDestination {
+  home,
+  qaza,
+  calculator,
+  knowledge,
+  settings,
+  prayerTimes,
+}
 
 /// The selected destination.
 ///
@@ -40,6 +49,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     CalculatorScreen(),
     KnowledgeBasePage(),
     SettingsScreen(),
+    PrayerTimesScreen(),
   ];
 
   /// The destinations the bottom bar offers.
@@ -49,6 +59,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   /// not bar destinations any more.
   static const _barDestinations = [
     WorkspaceDestination.home,
+    WorkspaceDestination.prayerTimes,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -132,6 +143,10 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 icon: const Icon(Icons.mosque_outlined),
                 selectedIcon: const Icon(Icons.mosque_rounded),
                 label: l10n.navHome),
+            NavigationDestination(
+                icon: const Icon(Icons.schedule_outlined),
+                selectedIcon: const Icon(Icons.schedule_rounded),
+                label: PrayerTimesStrings.title(context)),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),

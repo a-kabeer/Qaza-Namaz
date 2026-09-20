@@ -1,0 +1,200 @@
+import 'package:flutter/widgets.dart';
+
+import '../domain/prayer_times_models.dart';
+
+class PrayerTimesStrings {
+  const PrayerTimesStrings._();
+
+  static bool _isUrdu(BuildContext context) =>
+      Localizations.localeOf(context).languageCode == 'ur';
+
+  static String title(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات' : 'Prayer Times';
+
+  static String locationUnavailable(BuildContext context) => _isUrdu(context)
+      ? 'نماز کے اوقات دیکھنے کے لیے مقام منتخب کریں۔'
+      : 'Choose a location to see prayer times.';
+
+  static String useMyLocation(BuildContext context) =>
+      _isUrdu(context) ? 'میرا مقام استعمال کریں' : 'Use My Location';
+
+  static String chooseManually(BuildContext context) =>
+      _isUrdu(context) ? 'مقام دستی منتخب کریں' : 'Choose Location Manually';
+
+  static String changeLocation(BuildContext context) =>
+      _isUrdu(context) ? 'مقام تبدیل کریں' : 'Change Location';
+
+  static String refresh(BuildContext context) =>
+      _isUrdu(context) ? 'تازہ کریں' : 'Refresh';
+
+  static String currentPrayer(BuildContext context) =>
+      _isUrdu(context) ? 'موجودہ نماز' : 'Current Prayer';
+
+  static String nextPrayer(BuildContext context) =>
+      _isUrdu(context) ? 'اگلی نماز' : 'Next Prayer';
+
+  static String calculation(BuildContext context) =>
+      _isUrdu(context) ? 'حساب کا طریقہ' : 'Calculation';
+
+  static String calculationMethod(BuildContext context) =>
+      _isUrdu(context) ? 'حساب کا طریقہ' : 'Calculation Method';
+
+  static String asrMethod(BuildContext context) =>
+      _isUrdu(context) ? 'عصر کا طریقہ' : 'Asr Method';
+
+  static String standard(BuildContext context) =>
+      _isUrdu(context) ? 'معمول' : 'Standard';
+
+  static String hanafi(BuildContext context) =>
+      _isUrdu(context) ? 'حنفی' : 'Hanafi';
+
+  static String recommended(BuildContext context) => _isUrdu(context)
+      ? 'آپ کے مقام کے لیے تجویز کردہ'
+      : 'Recommended for your location';
+
+  static String searchCity(BuildContext context) =>
+      _isUrdu(context) ? 'شہر تلاش کریں' : 'Search city';
+
+  static String manualCoordinates(BuildContext context) =>
+      _isUrdu(context) ? 'دستی نقاط' : 'Manual coordinates';
+
+  static String advanced(BuildContext context) =>
+      _isUrdu(context) ? 'ایڈوانسڈ' : 'Advanced';
+
+  static String latitude(BuildContext context) =>
+      _isUrdu(context) ? 'عرضِ بلد' : 'Latitude';
+
+  static String longitude(BuildContext context) =>
+      _isUrdu(context) ? 'طولِ بلد' : 'Longitude';
+
+  static String apply(BuildContext context) =>
+      _isUrdu(context) ? 'لاگو کریں' : 'Use Coordinates';
+
+  static String location(BuildContext context) =>
+      _isUrdu(context) ? 'مقام' : 'Location';
+
+  static String settings(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات کی ترتیبات' : 'Prayer Times Settings';
+
+  static String save(BuildContext context) =>
+      _isUrdu(context) ? 'محفوظ کریں' : 'Save';
+
+  static String offlineCached(BuildContext context) => _isUrdu(context)
+      ? 'آف لائن: محفوظ شدہ اوقات دکھائے جا رہے ہیں۔'
+      : 'Offline: showing saved prayer times.';
+
+  static String refreshing(BuildContext context) =>
+      _isUrdu(context) ? 'پس منظر میں تازہ کیا جا رہا ہے…' : 'Refreshing in background…';
+
+  static String apiError(BuildContext context) => _isUrdu(context)
+      ? 'اوقات لوڈ نہیں ہو سکے۔ اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔'
+      : 'Prayer times could not be loaded. Check your connection and try again.';
+
+  static String locationError(BuildContext context) => _isUrdu(context)
+      ? 'مقام حاصل نہیں ہو سکا۔ دوبارہ کوشش کریں یا دستی مقام منتخب کریں۔'
+      : 'Your location could not be obtained. Try again or choose a location manually.';
+
+  static String locationServiceDisabled(BuildContext context) =>
+      _isUrdu(context) ? 'مقام کی سروس بند ہے۔' : 'Location services are turned off.';
+
+  static String permissionDenied(BuildContext context) =>
+      _isUrdu(context) ? 'مقام کی اجازت مسترد کر دی گئی۔' : 'Location permission was denied.';
+
+  static String permissionPermanentlyDenied(BuildContext context) => _isUrdu(context)
+      ? 'مقام کی اجازت مستقل طور پر بند ہے۔ ایپ کی ترتیبات سے اسے فعال کریں۔'
+      : 'Location permission is permanently denied. Enable it in app settings.';
+
+  static String openSettings(BuildContext context) =>
+      _isUrdu(context) ? 'ترتیبات کھولیں' : 'Open Settings';
+
+  static String tryAgain(BuildContext context) =>
+      _isUrdu(context) ? 'دوبارہ کوشش کریں' : 'Try Again';
+
+  static String attribution(BuildContext context) => _isUrdu(context)
+      ? 'شہر کی تلاش کا ڈیٹا Open-Meteo / GeoNames سے ہے۔'
+      : 'City search data: Open-Meteo / GeoNames.';
+
+  static String privacyNote(BuildContext context) => _isUrdu(context)
+      ? 'مقام نماز کے اوقات کے لیے استعمال ہوتا ہے۔ اسے Firebase یا analytics میں محفوظ نہیں کیا جاتا۔'
+      : 'Location is used for prayer-time requests and is not stored in Firebase or analytics.';
+
+  static String approximateLocation(BuildContext context) =>
+      _isUrdu(context) ? 'تقریبی مقام' : 'Approximate location';
+
+  static String preciseLocation(BuildContext context) =>
+      _isUrdu(context) ? 'درست مقام' : 'Precise location';
+
+  static String noResults(BuildContext context) =>
+      _isUrdu(context) ? 'کوئی شہر نہیں ملا۔' : 'No cities found.';
+
+  static String invalidCoordinates(BuildContext context) =>
+      _isUrdu(context) ? 'درست latitude اور longitude درج کریں۔' : 'Enter valid latitude and longitude.';
+
+  static String settingsSaved(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات کی ترتیبات محفوظ ہو گئیں۔' : 'Prayer time settings saved.';
+
+  static String countdown(Duration duration) {
+    final seconds = duration.inSeconds;
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (hours > 0) return '${hours}h ${minutes}m';
+    if (minutes > 0) return '${minutes}m ${remainingSeconds}s';
+    return '${remainingSeconds}s';
+  }
+
+  static String prayerName(BuildContext context, PrayerName prayer) {
+    if (_isUrdu(context)) {
+      return switch (prayer) {
+        PrayerName.fajr => 'فجر',
+        PrayerName.sunrise => 'طلوعِ آفتاب',
+        PrayerName.dhuhr => 'ظہر',
+        PrayerName.asr => 'عصر',
+        PrayerName.maghrib => 'مغرب',
+        PrayerName.isha => 'عشاء',
+      };
+    }
+    return switch (prayer) {
+      PrayerName.fajr => 'Fajr',
+      PrayerName.sunrise => 'Sunrise',
+      PrayerName.dhuhr => 'Dhuhr',
+      PrayerName.asr => 'Asr',
+      PrayerName.maghrib => 'Maghrib',
+      PrayerName.isha => 'Isha',
+    };
+  }
+
+  static String methodName(BuildContext context, CalculationMethod method) {
+    final urdu = _isUrdu(context);
+    return switch (method) {
+      CalculationMethod.recommended =>
+        urdu ? 'آپ کے مقام کے لیے تجویز کردہ' : 'Recommended for your location',
+      CalculationMethod.jafari => 'Jafari',
+      CalculationMethod.karachi => urdu ? 'کراچی' : 'University of Islamic Sciences, Karachi',
+      CalculationMethod.isna => 'ISNA',
+      CalculationMethod.mwl => 'Muslim World League',
+      CalculationMethod.makkah => 'Umm Al-Qura University, Makkah',
+      CalculationMethod.egyptian => 'Egyptian General Authority of Survey',
+      CalculationMethod.tehran => 'University of Tehran',
+      CalculationMethod.gulf => 'Gulf Region',
+      CalculationMethod.kuwait => 'Kuwait',
+      CalculationMethod.qatar => 'Qatar',
+      CalculationMethod.singapore => 'Singapore (MUIS)',
+      CalculationMethod.france => 'Union Organization Islamic de France',
+      CalculationMethod.turkey => 'Diyanet, Turkey',
+      CalculationMethod.russia => 'Spiritual Administration of Muslims of Russia',
+      CalculationMethod.moonsighting => 'Moonsighting Committee Worldwide',
+      CalculationMethod.dubai => 'Dubai',
+      CalculationMethod.jakim => 'JAKIM, Malaysia',
+      CalculationMethod.tunisia => 'Tunisia',
+      CalculationMethod.algeria => 'Algeria',
+      CalculationMethod.kemenag => 'KEMENAG, Indonesia',
+      CalculationMethod.morocco => 'Morocco',
+      CalculationMethod.portugal => 'Islamic Community of Lisbon',
+      CalculationMethod.jordan => 'Jordan Ministry of Awqaf',
+    };
+  }
+
+  static String methodOption(BuildContext context, CalculationMethod method) =>
+      methodName(context, method);
+}
