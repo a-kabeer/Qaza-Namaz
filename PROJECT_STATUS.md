@@ -1,398 +1,485 @@
-# Qaza Namaz — Master Improvement & Hardening Status
+# Qaza-Namaz — Master Project Status
 
-> **Canonical execution tracker for the attached Complete Project Improvement & Hardening Plan.**
-> This section supersedes conflicting or point-in-time status notes later in this file.
+> **Fresh tracker generated from the Complete Project Improvement & Hardening Plan shared on 2026-09-20.**
+>
+> **Important:** This file intentionally does **not** inherit status values from any previous `PROJECT_STATUS.md`, V2 tracker, or point-in-time task status document. Previous documents are not used as the source of truth for the status below.
 >
 > Updated: **2026-09-20**
-> Working branch: `hardening/security-release-baseline-20260920`
-> Baseline commit: `99f8c29762764d8ae05307bebc5fc01885525212`
+> Baseline: `main` at `99f8c29762764d8ae05307bebc5fc01885525212`
+> Current working branch: `hardening/security-release-baseline-20260920`
+> Current branch head: `5ef351b64293cb1bafbabccbd98e785f88121aed`
+> Current PR: **#45 — security: harden production release baseline**
 
-## Current implementation pass
+## 1. Status rules
 
-The highest-priority P0 security/release foundation has now been implemented on the working branch:
+A task is **Complete** only when it satisfies the plan's Definition of Done:
 
-- Firebase App Check activation added immediately after Firebase initialization.
-- Firestore rules now validate the Qaza record schema, ownership, allowed prayer/status values, completion consistency, timestamps, immutable fields, sync generation, change-log schema, and sync-state schema.
-- Positive/negative Firestore rules smoke tests added for cross-user access and malformed writes.
-- Android compile/target SDK is explicitly set to API 36.
-- Release signing no longer falls back to the debug key; CI can inject the production keystore through GitHub encrypted secrets.
-- Android CI now asserts the release policy and builds/uploads a release **AAB** when production signing secrets are configured.
-- Android backup/data-extraction policies are wired with client-side-encryption requirements for cloud backup and no silent device-to-device transfer of the local Qaza database.
-- The existing V2 architecture, offline-first data path, and completed Qaza UX work were preserved rather than rebuilt.
+```
+Implementation
+    ↓
+Unit/widget tests
+    ↓
+Regression tests
+    ↓
+Analyze
+    ↓
+CI
+    ↓
+Device QA where required
+    ↓
+UX review
+    ↓
+Documentation
+    ↓
+Merge
+```
 
-## Master plan status
+Status meanings:
 
-| Task | Status | Tests | CI | Device QA | Notes |
-| --- | --- | --- | --- | --- | --- |
-| Phase 0 — Baseline & audit lock | **Complete** | Repo/status reviewed | Pending final run | — | Baseline SHA recorded |
-| Firestore hardening | **Implemented** | Smoke suite added | Pending | — | P0; schema + ownership + immutable-field checks |
-| Firebase App Check | **Implemented** | Startup path added | Pending | **Required** | Firebase Console Play Integrity registration/enforcement remains |
-| Production release signing | **Implemented** | CI policy assertion | Pending | — | Keystore/GitHub secrets are release credentials and are not stored in repo |
-| Android target SDK policy | **Complete** | CI assertion added | Pending | — | API 36 selected |
-| Android backup/privacy rules | **Implemented** | Build validation pending | Pending | **Required** | Restore semantics require physical-device validation |
-| Local data encryption / App Lock | **Not started** | — | — | Required | Follow-on P0/P1 privacy work |
-| Account/data transparency | **Needs implementation/verification** | — | — | Required | Explicit cloud/data-management UX remains |
-| Primary Qaza navigation | **Complete in existing V2 stream** | Existing regression coverage | Pending | Recommended | Preserved during this pass |
-| Home daily-use improvements | **Partial** | Existing V2 coverage | Pending | Recommended | Core Home preserved; remaining plan items need verification |
-| Qaza tracker actions | **Partial** | Existing tracker tests | Pending | Recommended | Core tracker/pagination complete; edit/delete/undo need explicit verification |
-| Add Qaza flow | **Complete in existing V2 stream** | Existing regression coverage | Pending | Recommended | Shared availability/preflight preserved |
-| Calculator trust/localization | **Partial** | Existing calculator tests | Pending | Required | Explanation/methodology and remaining literals need completion |
-| Notifications | **Code complete; device QA pending** | Existing notification coverage | Pending | **Required** | Android permission/channel/reboot/device matrix still required |
-| Knowledge Base | **Architecture + content present** | Existing parser/search tests | Pending | Recommended | Content governance/source review remains |
-| Import/export & backup UX | **Partial** | Existing functionality needs release QA | Pending | Required | Preview/cancellation/recovery matrix remains |
-| Accessibility + localization certification | **Partial** | Existing accessibility matrix | Pending | **Required** | Full English/Urdu/RTL/large-text/TalkBack matrix remains |
-| Error/recovery UX | **Partial** | Existing feature tests | Pending | Recommended | Remaining technical errors need plain-language treatment |
-| Production observability | **Not started** | — | — | — | Crashlytics/non-sensitive diagnostics still pending |
-| Automated quality gates | **In progress** | Firestore rules gate added | Pending | — | Analyze, Linux, Windows, Android debug/release AAB are defined |
-| Performance certification | **Complete in existing V2 stream** | Existing large-dataset matrix | Pending | Recommended | 1k/5k/10k paths already covered |
-| End-to-end acceptance journeys | **Partial** | Regression coverage exists | Pending | **Required** | Device-only auth/notification/backup journeys remain |
-| Final release gate | **Blocked** | Awaiting full gate | Awaiting PR | **Required** | App Check enforcement, signing secrets, device QA, release smoke tests |
+- **Complete** — all required gates satisfied.
+- **Implemented** — implementation exists, but one or more completion gates remain.
+- **In Progress** — actively being worked on.
+- **Not started** — no work has been counted for this fresh plan.
+- **Blocked** — cannot complete until an external prerequisite or failing gate is resolved.
+- **Deferred** — intentionally excluded from the current implementation scope.
+- **Preserved baseline** — existing architecture is retained; this is not counted as completion of the improvement task.
 
-## Definition of Done
+## 2. Fresh scope and guardrails
 
-A task is marked **complete** only after implementation, regression tests, analyze, CI, required device QA, UX review, documentation, and merge criteria are satisfied. Security-sensitive work also requires both positive and negative security coverage plus production configuration verification.
+The master plan requires the existing strengths to be preserved unless a specific defect requires redesign:
 
-## Current blockers / external actions
+- Drift / SQLite database
+- Offline-first repository
+- Sync outbox
+- Sync engine
+- Guest migration
+- Qaza availability service
+- Calculator state architecture
+- Determinate bulk insertion
+- Keyset pagination
+- Skeleton / shimmer system
+- Knowledge Base parser
+- Existing accessibility foundation
 
-1. **Firebase Console:** register/configure Android Play Integrity for Firebase App Check and enable enforcement after validation.
-2. **GitHub repository secrets:** provide the production keystore and the four signing secrets required by the release workflow.
-3. **Physical Android QA:** validate App Check, notifications, backup/restore behavior, authentication, guest migration, cold start, reboot, and release AAB behavior.
+Global implementation rules:
 
-## Implementation commits in this pass
+- Offline-first behavior must remain intact.
+- User data must never be silently deleted.
+- Destructive actions require explicit confirmation.
+- Large operations require determinate progress.
+- User-facing technical failures must use plain-language messages.
+- New user-facing strings must be localized.
+- Gregorian dates remain authoritative; Hijri is secondary.
+- New UI must support light/dark/RTL/accessibility.
+- Changes require regression coverage.
+- Production builds must be validated, not only debug builds.
 
-- `450eebcb6cf95547cb349ee8fa8653aa89ee6e0a` — add Firebase App Check dependency
-- `4f719b00d7d93999e004d90791bf9552c3261b9f` — activate Firebase App Check
-- `291528ad5f945d246729f6b9b31232888fafb0df` — Android API 36 + production signing configuration
-- `0994f2d973cb900bf4dff7de6284331968e56452` — release policy assertion + AAB CI
-- `3ce2d9874762d4992099589c8bf0787b22e21368` — Firestore schema/security hardening
-- `e96a34218ff14fef6c639f646c1b921092f3d400` — Firestore rules smoke tests
-- `3daf420e0e336bd8b672d67ce0e49c899c006a68` — CI Firestore rules gate
-- `c44a04c9dcc9d7cdb074c687da3caed1143c42e3` — encrypted Android backup policy
-- `f1d0fdf33daa3855fd05ad391ae509049e1ea259` — Android manifest backup policy wiring
-- `df95e05028f63e301d31b899dc57e59e531d2f4f` — Android data extraction rules
+**Home scope:** the Home page is explicitly treated as an accepted baseline for this execution stream. No Home UI redesign is to be introduced unless separately requested.
 
 ---
 
-# Qaza Namaz — Project Status
+# 3. Master plan tracker
 
-Canonical status document. The V2 Master Plan's 21-step implementation order is
-the current stream of work; the pre-V2 reconciliation history is summarised at
-the end.
+## Phase 0 — Baseline & Audit Lock
 
-## Baseline
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Freeze current main baseline | **Complete** | — | — | — | Baseline SHA recorded |
+| Record Flutter / Dart / Android toolchain | **In Progress** | — | — | — | Remaining baseline documentation |
+| Record package + Firebase configuration | **In Progress** | — | — | — | Configuration inventory still to be finalized |
+| Record test counts + CI state | **In Progress** | Current CI snapshot recorded | **Mixed** | — | Linux/Windows currently failing |
+| Establish canonical project status | **Complete** | — | — | — | This file is the fresh tracker |
+| Archive obsolete status documents | **Not started** | — | — | — | Separate documentation task |
+| Document physical-device limitations | **In Progress** | — | — | **Required** | Release/App Check/notification/auth/backup QA needs physical Android |
+| Phase 0 exit criteria | **Blocked** | — | **Blocked by Linux/Windows failures** | — | Cannot claim complete yet |
 
-- Local production source of truth: **Drift/SQLite**. SharedPreferences remains
-  only for settings and the one-shot legacy migration.
-- Production data path: `UI → Riverpod controller → QazaService → QazaRepository
-  → DAO → Drift`. Verified by import sweep: no widget imports the data layer.
-- Qaza identity everywhere: `userId + normalized Gregorian date + prayerType`.
-- Firebase/Google authentication and optional Firestore sync are unchanged.
+## Phase 1 — Production Security & Release Hardening (P0)
 
-## V2 implementation order — progress
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| 4.1 Firestore rules hardening | **Implemented** | Positive + negative smoke tests added | **Passed** | — | Ownership, schema, immutable fields, status, prayer, timestamps, sync generation/change state |
+| 4.2 Firebase App Check | **Implemented** | Startup activation added | **Passed in Analyze** | **Required** | Play Integrity registration/enforcement still external |
+| 4.3 Production release signing | **Implemented** | Release-policy assertion added | **AAB skipped** | Required for release smoke test | Production keystore / GitHub secrets still required |
+| 4.4 Android target / SDK verification | **Implemented** | CI assertion added | **Passed in Android job** | — | API 36 compile/target policy |
+| 4.5 Android backup / privacy hardening | **Implemented** | Configuration/build validation pending | **Android job passed** | **Required** | Fresh-install + restore/device-transfer verification required |
+| Phase 1 completion gate | **Blocked** | Security suite exists | **Blocked by Linux/Windows; release AAB skipped** | **Required** | Cannot claim P0 complete yet |
 
-| # | Step | Status |
-| --- | --- | --- |
-| 1 | Repository / Architecture Audit | **Complete** — `docs/V2_PART1_ARCHITECTURE_AUDIT.md` |
-| 2 | State Management Consolidation | **Complete** |
-| 3 | Shared Qaza Preflight / Availability | **Complete** |
-| 4 | Add Qaza 3-Step UX | **Complete** — `docs/ADD_QAZA_3_STEP_FLOW_STATUS.md` |
-| 5 | Add Qaza Review + Batch Save | **Complete** |
-| 6 | Calculator Reconciliation | **Complete** |
-| 7 | Qaza Tracker UX | **Complete** |
-| 8 | Home Consolidation | **Complete** |
-| 9 | Dashboard Removal | **Complete** |
-| 10 | Authentication / Startup Simplification | **Complete** |
-| 11 | Localization (English / Urdu / Arabic-ready) | **Architecture complete** — primary surfaces translated, some screens still literal |
-| 12 | RTL / Accessibility | Partial — RTL verified, accessibility labels pending on older screens |
-| 13 | Theme Persistence | **Complete** |
-| 14 | Data & Cloud / Bootstrap hydration | **Complete** |
-| 15 | Notifications Finalization | **Complete** |
-| 16 | Knowledge Base Finalization | **Architecture complete** — the bundled dataset is empty and needs authored content |
-| 17 | Legacy Provider Cleanup | **Complete** |
-| 18 | Performance Hardening | **Complete** — every V2 UX path validated at 1k/5k/10k |
-| 19 | Regression Tests | **Complete** |
-| 20 | Documentation Reconciliation | **Complete** |
-| 21 | Full CI / Build Gate | Partial — everything but the Android builds passes locally; those cannot run in this environment |
+## Phase 2 — Privacy & Account Safety (P0/P1)
 
-## What changed in the V2 stream so far
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| 5.1 Local database encryption / key protection | **Not started** | — | — | Required | Android Keystore / secure key design |
+| 5.1 Sensitive diagnostics / outbox error review | **Not started** | — | — | — | Minimize sensitive persistence |
+| 5.2 App Lock | **Not started** | — | — | Required | Device authentication, timeout, resume, locked-data visibility |
+| 5.3 Account / data transparency | **Not started** | — | — | Required | Local vs cloud, sync state, export, delete cloud data, sign out |
+| 5.3 Cloud-delete confirmation | **Not started** | — | — | Required | Explicit destructive confirmation |
 
-### Navigation (plan §3, §43)
+## Phase 3 — Navigation & Information Architecture (P1)
 
-Primary destinations are now **Home · Qaza · Calculator · Settings**. Logs is no
-longer a root destination; it opens from the Qaza workspace's app bar. Shell
-mechanics are unchanged: `IndexedStack` with lazy mounting, reselect is a no-op,
-and Back from a non-root destination returns to Home.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Primary navigation: Home / Qaza / Knowledge / Settings | **Not started** | — | — | Required | Must be freshly verified against this plan |
+| Calculator contextual access | **Not started** | — | — | Recommended | Home + Qaza entry points |
+| Preserve tab/workspace state | **Not started** | — | — | Required | Scroll/state retention |
+| Prevent duplicate workspace routes | **Not started** | — | — | Required | Navigation stack behavior |
+| Android Back | **Not started** | — | — | Required | Physical / system back |
+| Gesture Back | **Not started** | — | — | Required | Edge-swipe navigation |
+| Predictive Back | **Not started** | — | — | Required | Supported Android versions |
+| Nested-flow Back | **Not started** | — | — | Required | Add Qaza / Calculator / settings subflows |
 
-### Shared preflight (plan §6, §14)
+## Phase 4 — Home Experience (P1)
 
-`QazaAvailabilityAnalysis` is the one preflight model. It now reports
-`requestedCount`, `alreadyRecorded` (pending), `alreadyCompleted`,
-`blockedDateCount`, `newCandidates` and `existingCandidates`. A completed record
-is derived as *already completed* rather than collapsing into *already
-recorded*. Manual Add Qaza and the Calculator both run this same engine.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Today's progress | **Deferred** | — | — | — | Home is explicitly accepted and protected from redesign |
+| Next Qaza | **Deferred** | — | — | — | Home UI changes intentionally excluded |
+| Qaza plan / completion estimate | **Deferred** | — | — | — | Home UI changes intentionally excluded |
+| Home progress persistence / states | **Deferred** | — | — | — | Revisit only by explicit request |
 
-### Calculator (plan §5, §12, §13, §14)
+## Phase 5 — Qaza Tracker UX (P1)
 
-- All workflow state moved into `CalculatorController`; the screen renders and
-  dispatches only.
-- **Witr is configured on Step 2 (Prayer History)**, never on the Result step.
-- Gregorian and Hijri dates are shown together on Steps 1 and 2.
-- `Add to Tracker` runs the shared preflight and shows Calculated / Already
-  Recorded / Already Completed / New to Add before anything is written.
-- Counts are thousands-separated (the previous formatter never matched).
-- **Date-boundary contract: start inclusive, end exclusive**, documented on
-  `calculateQaza` and pinned by `test/calculator_date_boundary_contract_test.dart`.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Mark complete | **Not started** | — | — | Required | Fresh end-to-end verification |
+| Edit original date | **Not started** | — | — | Required | Must preserve identity/duplicate rules |
+| Edit prayer type | **Not started** | — | — | Required | Must prevent invalid duplicates |
+| Delete record | **Not started** | — | — | Required | Explicit confirmation |
+| Offline edit/delete | **Not started** | — | — | Required | Outbox + reconciliation |
+| Conflict-safe edit/delete | **Not started** | — | — | Required | Multi-device behavior |
+| Undo single completion | **Not started** | — | — | Required | Reversible completion window |
+| Undo bulk completion | **Not started** | — | — | Required | Safe bulk reversal |
+| Select all visible | **Not started** | — | — | Recommended | Bounded selection |
+| Select all matching | **Not started** | — | — | Required | Explicit confirmation for very large operations |
+| Clear selection | **Not started** | — | — | Recommended | Immediate action |
+| Oldest / newest sorting | **Not started** | — | — | Recommended | Deterministic: originalDate then id |
+| Active-filter summary | **Not started** | — | — | Recommended | Clear filter state |
+| One-tap filter reset | **Not started** | — | — | Recommended | Compact reset UX |
 
-### Qaza workspace (plan §16, §17)
+## Phase 6 — Add Qaza Flow (P1)
 
-New `QazaTrackerController` + `QazaTrackerScreen`: aggregate progress header,
-status / prayer / original-date filters, keyset pagination at 50 records per
-page, loading / empty / filtered-empty / error+retry / refresh states, bounded
-selection and repository-driven bulk completion. `getPage` now takes `from`/`to`
-so date filtering happens in the database. The full ledger is never loaded — a
-regression test fails the build if `getRecords` is called.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Step 1 date-range inclusivity explanation | **Not started** | — | — | Required | Gregorian primary |
+| Selected-date summary | **Not started** | — | — | Required | Clear date/range feedback |
+| Availability visual language | **Not started** | — | — | Required | Avoid ambiguous states |
+| Cross-month / cross-year selection | **Not started** | — | — | Required | Calendar acceptance test |
+| Step 2 unavailable-prayer explanation | **Not started** | — | — | Required | Explain why a prayer is unavailable |
+| Per-prayer available-date counts | **Not started** | — | — | Required | Partial availability must be obvious |
+| Select all available | **Not started** | — | — | Required | Per-prayer availability aware |
+| Clear all | **Not started** | — | — | Recommended | |
+| Step 3 confirmation summary | **Not started** | — | — | Required | Existing vs new |
+| Large-insert progress | **Not started** | — | — | Required | Determinate progress |
+| Duplicate-submission protection | **Not started** | — | — | Required | Disable repeat submit |
+| Recoverable error UX | **Not started** | — | — | Required | Retry/recovery |
 
-`NamazWiseScreen` and `PendingDatesScreen` were removed; their Witr-independence
-and multi-select completion coverage moved onto the tracker.
+## Phase 7 — Calculator UX & Trust (P1)
 
-### Home (plan §19, §20)
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Full user-facing localization audit | **Not started** | — | — | Required | Buttons, errors, dialogs, helper text, semantics, tooltips, validation |
+| “How was this calculated?” | **Not started** | — | — | Required | Transparent result explanation |
+| Calculation details | **Not started** | — | — | Required | DOB, Baligh, prayer start, period, days, prayer count, Witr, totals, existing/new |
+| Methodology page | **Not started** | — | — | Recommended | Boundaries, assumptions, Witr, duplicates, jurisprudential differences |
+| Result-card readability | **Not started** | — | — | Recommended | Clear hierarchy |
+| Preflight explanation | **Not started** | — | — | Required | Explain before bulk insertion |
+| Empty / zero-result state | **Not started** | — | — | Recommended | Clear no-op behavior |
+| Cancel-safe bulk flow | **Not started** | — | — | Required | No partial silent loss |
+| Retry behavior | **Not started** | — | — | Required | Recoverable failures |
+| Determinate progress state | **Not started** | — | — | Required | Persistent while insertion runs |
 
-Home is the canonical entry point and keeps its aggregate-driven, state-dependent
-CTA. The duplicate `View All Qaza` / per-prayer navigation was removed now that
-Qaza is a primary destination. `lib/features/dashboard/` is deleted — it had no
-production consumers.
+## Phase 8 — Notification Rework & Device QA (P1)
 
-### Legacy providers (plan §38)
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Reminder settings UX | **Not started** | — | — | Required | On/off, time, only-when-pending, repeat |
+| Test notification action | **Not started** | — | — | Required | User-visible confirmation |
+| Notification content | **Not started** | — | — | Required | Pending count + Open Qaza |
+| Android 13 QA | **Not started** | — | — | Required | |
+| Android 14 QA | **Not started** | — | — | Required | |
+| Android 15 QA | **Not started** | — | — | Required | |
+| Android 16 QA | **Not started** | — | — | Required | |
+| Pixel QA | **Not started** | — | — | Required | |
+| Samsung QA | **Not started** | — | — | Required | |
+| Permission denied / later granted | **Not started** | — | — | Required | |
+| Channel blocked / app notifications disabled | **Not started** | — | — | Required | |
+| Reboot / battery saver / Doze | **Not started** | — | — | Required | |
+| Timezone change | **Not started** | — | — | Required | |
+| Notification tap / cold start | **Not started** | — | — | Required | |
+| App update behavior | **Not started** | — | — | Required | |
 
-`loadedRecordsProvider`, `overallProgressProvider`, `prayerProgressProvider`,
-`qazaHistoryProvider`, `pendingForPrayerProvider`, `qazaRecordsProvider` and
-`QazaRecordsNotifier` are all deleted. The last full-ledger read in production —
-the notification controller loading every record to answer "is anything
-pending" — now reads `progressSummaryProvider`.
+## Phase 9 — Knowledge Base (P1/P2)
 
-### Localization and RTL (plan §23, §24)
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Save / bookmark | **Not started** | — | — | Recommended | |
+| Recently viewed | **Not started** | — | — | Recommended | |
+| Share article | **Not started** | — | — | Recommended | |
+| Copy article text | **Not started** | — | — | Recommended | |
+| Source metadata | **Not started** | — | — | Recommended | |
+| Last reviewed date | **Not started** | — | — | Recommended | |
+| Authority / methodology indicator | **Not started** | — | — | Recommended | Must avoid presenting disputed details as universal fact |
+| Search result highlighting | **Not started** | — | — | Recommended | |
+| Better empty/search states | **Not started** | — | — | Recommended | |
+| Content source / reference governance | **Not started** | — | — | Recommended | Source, book, reference, reviewed, last updated |
 
-Full generated-resource localization is now in place:
+## Phase 10 — Import / Export & Backup UX (P1)
 
-- `flutter_localizations` + `intl` added, `generate: true`, `l10n.yaml` driving
-  `flutter gen-l10n` from `lib/l10n/app_en.arb` and `app_ur.arb`.
-- `localeProvider` persists and restores the language, accepting only locales in
-  `AppLocalizations.supportedLocales`. Adding Arabic means adding `app_ar.arb` —
-  no application restructuring.
-- `MaterialApp` declares `locale`, `localizationsDelegates` (including the
-  Material, Widgets and Cupertino global delegates) and `supportedLocales`.
-- **RTL is Flutter's own `Directionality`**, derived from the locale — no text
-  hacks. Urdu renders right to left, verified by test; directional padding is
-  used where the tracker previously hard-coded a left edge.
-- Prayer names are localized through one lookup (`PrayerTypeL10n`), replacing
-  the four duplicated `switch` statements the audit found. `PrayerTypeX.label`
-  remains as the stable non-localized identifier for storage-adjacent code.
-- Translated pluralization is in place for the bulk-completion strings
-  (`qazaCompleteCount`, `qazaCompletedCount`).
-- Settings now offers a real English/اردو choice; the "Urdu is not available
-  yet" placeholder is gone.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Export backup summary | **Not started** | — | — | Required | Record count + format |
+| Import: select file | **Not started** | — | — | Required | |
+| Import: analyze | **Not started** | — | — | Required | |
+| Import: preview | **Not started** | — | — | Required | New / existing / completion changes |
+| Import: confirm | **Not started** | — | — | Required | Explicit action |
+| Import: results | **Not started** | — | — | Required | Created / updated / skipped / failed |
+| Large-file progress | **Not started** | — | — | Required | |
+| Duplicate handling | **Not started** | — | — | Required | |
+| Invalid-file explanation | **Not started** | — | — | Required | No stack traces |
+| UTF-8 / Urdu regression | **Not started** | — | — | Required | |
+| Import cancellation | **Not started** | — | — | Required | |
+| Partial-failure recovery | **Not started** | — | — | Required | |
+| Encrypted backup design | **Not started** | — | — | Required | Future-proof backup security |
 
-Translated surfaces: navigation, Home, the Qaza workspace (filters, states,
-errors, row semantics), Add Qaza (all three steps), the calendar picker,
-the Calculator's step scaffolding and preflight dialog, Settings
-appearance/language, notifications (including the scheduled reminder itself),
-the Knowledge Base, the completion screen, History/Logs, Account, Data & Cloud,
-and the welcome/splash screens.
+## Phase 11 — Accessibility & Localization Certification (P1)
 
-Calendar weekday headers come from `MaterialLocalizations.narrowWeekdays`
-rather than a hardcoded English list, re-indexed to preserve the Monday-first
-grid.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| English matrix | **Not started** | — | — | Required | |
+| Urdu matrix | **Not started** | — | — | Required | |
+| RTL matrix | **Not started** | — | — | Required | |
+| Light theme matrix | **Not started** | — | — | Required | |
+| Dark theme matrix | **Not started** | — | — | Required | |
+| System theme matrix | **Not started** | — | — | Required | |
+| 100% text scale | **Not started** | — | — | Required | |
+| 130% text scale | **Not started** | — | — | Required | |
+| 150% text scale | **Not started** | — | — | Required | |
+| 200% text scale | **Not started** | — | — | Required | |
+| TalkBack | **Not started** | — | — | Required | |
+| Keyboard navigation | **Not started** | — | — | Required | |
+| Reduced motion | **Not started** | — | — | Required | |
+| High contrast | **Not started** | — | — | Required | |
+| Minimum 48dp touch targets | **Not started** | — | — | Required | Calendar cells included |
+| Focus order / semantics review | **Not started** | — | — | Required | |
+| Urdu Nastaliq rendering | **Not started** | — | — | Required | Line height / clipping |
+| RTL mirroring | **Not started** | — | — | Required | |
+| Localized error messages | **Not started** | — | — | Required | |
 
-Strings that interpolate a value use placeholders rather than concatenation —
-`{prayer} Qaza`, `Original Qaza date: {date}` — so word order and possessives
-can differ per language instead of being fixed by Dart string building.
+## Phase 12 — UX Error & Recovery System (P1)
 
-Test hosts use `test/support/test_app.dart`, which configures the same
-delegates production does. A screen rendered without them throws, which is the
-correct behaviour and is why the helper exists rather than a silent English
-fallback.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Plain-language error model | **Not started** | — | — | Recommended | What happened / data safe? / what next? |
+| Authentication errors | **Not started** | — | — | Required | |
+| Google Sign-In errors | **Not started** | — | — | Required | |
+| Notification errors | **Not started** | — | — | Required | |
+| Sync errors | **Not started** | — | — | Required | |
+| Import errors | **Not started** | — | — | Required | |
+| Export errors | **Not started** | — | — | Required | |
+| Calculator errors | **Not started** | — | — | Recommended | |
+| Add Qaza errors | **Not started** | — | — | Required | |
+| Database/migration errors | **Not started** | — | — | Required | |
+| Permission failures | **Not started** | — | — | Required | |
 
-### Startup and authentication (plan §21, §22)
+## Phase 13 — Production Observability (P1)
 
-The journey is now `Splash → Google authentication → Home`. The blocking
-first-time setup is gone: no per-UID `setup_complete` flag, no
-`FirstTimeSetupScreen`, and `AuthGate` is down from six `setState` calls to two.
-Theme (System) and language (English) are persisted defaults changed from
-Settings, so a newly signed-in account — including a brand new one — lands on
-Home immediately. Signing out returns to the welcome entry.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| Crashlytics or equivalent | **Not started** | — | — | Required | Production diagnostics |
+| Crash-rate monitoring | **Not started** | — | — | — | |
+| Auth failure monitoring | **Not started** | — | — | — | Non-sensitive metadata only |
+| Notification initialization monitoring | **Not started** | — | — | — | |
+| Notification scheduling monitoring | **Not started** | — | — | — | |
+| Sync failure monitoring | **Not started** | — | — | — | |
+| Import failure monitoring | **Not started** | — | — | — | |
+| Migration failure monitoring | **Not started** | — | — | — | |
+| Sensitive-data logging audit | **Not started** | — | — | — | Never log full Qaza history, private content, credentials, or tokens |
 
-### Cloud bootstrap and hydration (plan §27)
+## Phase 14 — Automated Quality Gates
 
-`SyncStatus` gained `bootstrapping` and `hydrating`, and `SyncState.isReady`
-distinguishes them from every working state. `OfflineFirstQazaRepository` runs
-`BOOTSTRAPPING → (local empty?) → HYDRATING → READY` on each `setActiveUser`,
-and `ensureHydrated()` gates every read path. Availability and duplicate
-calculations therefore cannot observe a partially hydrated ledger on a fresh
-device or reinstall. Offline starts, empty cloud accounts, failed and
-interrupted pulls, and account switches all terminate in a ready state. See
-`docs/OFFLINE_FIRST_ARCHITECTURE.md`.
+| Gate | Status | Current evidence |
+|---|---|---|
+| Formatting | **In Progress** | Included in Analyze workflow; final project gate depends on full CI |
+| Static analysis | **Passed** | Current CI Analyze job passed |
+| Unit tests | **Blocked** | Current Linux and Windows test jobs failed |
+| Widget tests | **Blocked** | Part of affected test jobs |
+| Accessibility tests | **Not started for final certification** | Dedicated certification matrix still pending |
+| Database tests | **Blocked by CI test jobs** | Needs passing cross-platform test gate |
+| Sync tests | **Blocked by CI test jobs** | Needs passing cross-platform test gate |
+| Guest migration tests | **Not started for final master-plan gate** | Device + regression verification pending |
+| Calculator tests | **Blocked by CI test jobs** | Needs passing final gate |
+| Notification tests | **Not started for final master-plan gate** | Device validation remains |
+| Linux tests | **Failed** | Current run #1444 |
+| Windows tests | **Failed** | Current run #1444 |
+| Android debug build | **Passed** | Current run #1444 |
+| Android release AAB | **Skipped** | Production signing secrets not configured |
+| Firestore security-rule tests | **Passed** | Current run #1444 |
+| Release-only signing verification | **Not completed** | Requires production credentials |
 
-### Knowledge Base (plan §29)
+## Phase 15 — Performance Certification (P1)
 
-Audited against every requirement in §29. The pipeline is compliant as it
-stands: `assets/knowledge_base/content/articles.json` → `KnowledgeBaseParser` →
-domain models → repository → Riverpod → UI, with schema-version checking,
-kebab-case id/slug validation, category validation, required bilingual
-`{en, ur}` text for title/summary/body, structured references
-(`source`/`citation`/`url`), unique tags, search, category filtering, a lazy
-`SliverList.builder`, semantic labels, and no article text hardcoded in any
-widget. No Qaza import appears anywhere under `features/knowledge_base/`, so it
-stays isolated from Qaza business logic.
+| Task | Status | Tests | CI | Device QA | Notes |
+|---|---|---|---|---|---|
+| 100-record dataset | **Not started** | — | — | Required | Fresh certification |
+| 1,000-record dataset | **Not started** | — | — | Required | |
+| 10,000-record dataset | **Not started** | — | — | Required | |
+| 50,000-record dataset | **Not started** | — | — | Required | |
+| 100,000-record dataset | **Not started** | — | — | Required | |
+| Home load time | **Not started** | — | — | Required | Home itself remains unchanged |
+| Qaza tracker load / scroll | **Not started** | — | — | Required | |
+| Filtering / sorting | **Not started** | — | — | Required | |
+| Availability analysis | **Not started** | — | — | Required | |
+| Calculator preflight | **Not started** | — | — | Required | |
+| Bulk add | **Not started** | — | — | Required | |
+| Bulk completion | **Not started** | — | — | Required | |
+| Sync batching | **Not started** | — | — | Required | |
+| Restart recovery | **Not started** | — | — | Required | |
+| No unnecessary full-ledger materialization | **Not started** | — | — | Required | Must be asserted by regression coverage |
 
-Two changes: the module's chrome is now localized (titles, search hint,
-category labels, empty/error states, references and related-articles headings),
-and the five stray `*_test.dart` files that shipped inside `lib/` moved to
-`test/knowledge_base/`.
+## Phase 16 — UX Acceptance Journeys
 
-**Outstanding, and a content decision rather than an engineering one:**
-`articles.json` currently contains `"articles": []` — the Knowledge Base ships
-with no content. The pipeline and its validation are ready for it, but the
-Masail and Mugalat articles need to be authored and scholar-reviewed (see
-`docs/KNOWLEDGE_BASE_RELEASE_CHECKLIST.md`). That is deliberately not something
-this implementation invented.
+| Journey | Status | Device QA | Notes |
+|---|---|---|---|
+| First-time user: Splash → Welcome → Google/Guest → Home | **Not started** | Required | |
+| Manual Qaza: Home → Add → Dates → Prayer → Review → Add → Success | **Not started** | Required | |
+| Calculator: DOB → Baligh → Prayer start → Result → Explain → Preflight → Confirm → Progress → Success | **Not started** | Required | |
+| Daily completion: Home → Next Qaza → Complete → next oldest | **Not started** | Required | |
+| Tracker: Filter → Select → Complete → Undo | **Not started** | Required | |
+| Guest conversion: sign in → existing account → merge/use-account/keep-guest | **Not started** | Required | |
+| Offline: add/complete → restart → reconnect → sync | **Not started** | Required | |
+| Notification: enable → permission → schedule → test → receive → open Qaza | **Not started** | Required | |
 
-### Notifications (plan §28)
+---
 
-There is still exactly one scheduler and one recurring reminder. What changed:
-the pending-Qaza gate reads the database aggregate instead of the full ledger,
-and **notification text is localized**. `NotificationContent` carries title,
-body, channel name and channel description into the platform layer, resolved by
-`NotificationSettingsNotifier` from the active locale through
-`lookupAppLocalizations` — the scheduler has no widget tree and now builds no
-user-facing strings of its own. Covered by 19 tests including permission
-revocation, restart reconciliation, per-account isolation, the pending →
-no-pending transition, and reminder/test text following the chosen language.
+# 4. Final Release Gate
 
-### Documentation (plan §39)
+The application must not be marked production-ready until every applicable item below is satisfied:
 
-`PROJECT_STATUS.md` is the single canonical status document. `docs/README.md`
-indexes the canonical architecture documents, and 19 point-in-time
-`TASK*_STATUS.md` / `KNOWLEDGE_BASE_PART_*_STATUS.md` records moved to
-`docs/archive/` with a note that the canonical documents win wherever they
-disagree. `docs/ARCHITECTURE.md` — named by the plan but previously missing —
-now exists.
+| Release requirement | Status |
+|---|---|
+| Firestore rules hardened | **Implemented; final release gate blocked** |
+| Security tests pass | **Passed for current rules smoke gate** |
+| App Check configured and enforced | **Blocked — Firebase Console + validation required** |
+| Production signing works | **Blocked — production secrets required** |
+| Signed release AAB builds | **Blocked — signing secrets required** |
+| Target SDK verified | **Implemented / CI assertion passed** |
+| Backup strategy finalized | **Implemented policy / device validation pending** |
+| Notification device QA | **Not started** |
+| Google Sign-In device QA | **Not started** |
+| Guest migration device QA | **Not started** |
+| Import/export QA | **Not started** |
+| English localization certified | **Not started** |
+| Urdu localization certified | **Not started** |
+| RTL QA passed | **Not started** |
+| Accessibility QA passed | **Not started** |
+| Large-dataset QA passed | **Not started** |
+| Crash reporting enabled | **Not started** |
+| Privacy policy available | **Not started for this fresh master-plan gate** |
+| Terms available | **Not started for this fresh master-plan gate** |
+| Account/data deletion process documented | **Not started** |
+| Project documentation updated | **In Progress** |
+| Release checklist signed off | **Not started** |
+| Full CI green | **Blocked — Linux + Windows currently fail** |
 
-### Regression matrices (plan §40, §34)
+## 5. Current CI snapshot
 
-`test/sync_regression_matrix_test.dart` covers the sync rows that were not
-already pinned elsewhere: offline reporting, an offline write held locally and
-flushed on reconnect, sign-out clearing the active user, sign-in restoring the
-persisted ledger, and cross-account isolation. Upload, pull, conflict handling
-and multi-device convergence remain in `task3h_offline_first_repository_test`;
-bootstrap in `cloud_bootstrap_test`.
+Current workflow: **Flutter CI #1444** on `5ef351b64293cb1bafbabccbd98e785f88121aed`
 
-`test/accessibility_matrix_test.dart` covers semantic labels (date + prayer +
-status in one announcement), semantics following the active locale, 48dp touch
-targets, 1.3x and 2.0x text scaling, and disabled states.
+| Job | Result |
+|---|---|
+| Firestore security rules | ✅ Passed |
+| Analyze | ✅ Passed |
+| Android debug and release AAB | ✅ Job passed |
+| Android debug APK | ✅ Built |
+| Android release AAB | ⏭️ Skipped because production signing credentials are not configured |
+| Tests (Linux) | ❌ Failed |
+| Tests (Windows) | ❌ Failed |
+| Overall workflow | ❌ Not green |
 
-The text-scaling row found a real defect: at 2.0x every ledger row overflowed
-by 16px, because `ListTile` constrains its trailing slot to the tile height and
-the row stacked prayer name over status there. Status moved into the subtitle
-and the tile is now three-line; the semantics label was already carrying both,
-so screen-reader output is unchanged.
+This CI snapshot is factual for the current run and is not treated as completion of the broader master plan.
 
-### Performance at scale (plan §30, §38, §41)
+## 6. External prerequisites
 
-`test/large_dataset_ux_regression_test.dart` drives the real V2 UX paths against
-ledgers of **1,000 / 5,000 / 10,000 records** through a counting repository, and
-asserts per size that:
+1. Firebase Console: configure/register Android Play Integrity for Firebase App Check and enable enforcement only after validation.
+2. GitHub Actions: configure the production keystore and required signing secrets.
+3. Physical Android devices: perform App Check, authentication, guest migration, notifications, backup/restore, reboot, release-AAB, accessibility, and performance QA.
+4. Resolve the current Linux and Windows CI test failures before claiming the master-plan quality gate complete.
 
-- the Qaza workspace pages in bounded chunks and never calls the full-ledger API;
-- prayer, status and date filtering happen in the data source, not in Dart;
-- Home progress comes from the database aggregate;
-- completion uses a single bounded oldest-pending lookup;
-- availability stays scoped to the requested dates and prayers;
-- the calculator preflight — a 365-day, six-prayer estimate — does not
-  materialize the ledger;
-- bulk selection stays bounded to the loaded page.
+## 7. Implementation order from the shared plan
 
-Startup is bounded too: the bootstrap probes local emptiness with a
-single-record page rather than loading the snapshot, so signing in with 10,000
-records costs one bounded query.
+### Sprint 1 — Security & Release Foundation
 
-### Theme (plan §22)
+Firestore hardening → App Check → production signing → target SDK → backup rules → security tests
 
-The theme mode is persisted locally and restored on startup, defaulting to
-System. Colour, type, shape and elevation tokens come from the Stitch "Serene
-Sanctuary" export in `lib/core/theme/app_theme.dart`.
+### Sprint 2 — Navigation & Daily UX
 
-## Known gaps
+Qaza navigation → Next Qaza → tracker completion UX → tracker actions / undo
 
-- **Localization is not yet complete across every screen.** A sweep for English
-  literals across `lib/features` still finds roughly **86**, concentrated in
-  `authentication_screen.dart`, the body of `calculator_screen.dart` (only its
-  step scaffolding and preflight dialog were converted), the Settings section
-  rows below Appearance/Language, `notifications_screen.dart`, and a few
-  `core/widgets` defaults. Each is a matter of adding ARB keys — no further
-  structural work — but the count is larger than a screen-by-screen tally
-  suggests, because a screen can be partly converted.
-- **Hijri month names are still English.** `DateFormatters.hijriLabel` uses the
-  `hijri` package's month names; only the surrounding format is localizable.
-- **Noto Serif and Manrope font files are not bundled.** `pubspec.yaml` has no
-  `fonts:` section, so the Serene Sanctuary type scale renders in the platform
-  default family.
-- **Cloud bootstrap/hydration states** (`BOOTSTRAPPING / HYDRATING / READY`) do
-  not exist yet.
-- `docs/` still holds point-in-time `TASK*_STATUS.md` and
-  `KNOWLEDGE_BASE_PART_*_STATUS.md` files awaiting consolidation.
-- `dart format --set-exit-if-changed` (plan §47) currently fails on roughly 60
-  files that were never format-clean. Formatting them is a deliberate,
-  separate change rather than incidental churn inside feature work.
+**Home UI remains out of scope for this stream unless explicitly requested.**
 
-## CI gate (plan §47)
+### Sprint 3 — Calculator & Add Qaza
 
-Run locally against the working tree:
+Localization cleanup → calculation explanation → methodology → large-operation UX → Add Qaza progress
 
-| Step | Result |
-| --- | --- |
-| `flutter pub get` | Pass |
-| `flutter analyze` | Pass — 0 errors, 0 warnings, 96 info-level lints |
-| `dart format --set-exit-if-changed lib test` | **Pass** — exit 0 |
-| `dart run build_runner build` (Drift) | Pass — 0 outputs written, no generated drift |
-| `flutter test` | Pass — 372/372 |
-| `flutter build apk --debug` | **Not run** — see below |
-| `flutter build apk --release` | **Not run** — see below |
-| GitHub Actions | **Not verified** — nothing pushed |
+### Sprint 4 — Notifications & Privacy
 
-The format check passes for the first time as of commit
-`Apply dart format to the pre-existing baseline`, which reformatted the 41
-files that predate this work and were never format-clean. It is formatting
-only and touches no file the V2 feature work changes.
+Notification UX → device QA → App Lock → account transparency → privacy controls
 
-### Android builds
+### Sprint 5 — Knowledge & Data Management
 
-Gradle fails before compiling with
-`java.io.IOException: Unable to establish loopback connection`, with and
-without the Gradle daemon. That is the local sandbox refusing localhost
-sockets, not a defect in the project: no Dart or Gradle source is reached.
-`.github/workflows/flutter-ci.yml` already has a `build_android` job running
-both `flutter build apk --debug` and `--release`, so pushing the branch is the
-way to get a real result.
+Knowledge enhancements → import preview → export improvements → encrypted backup design
 
-### Release signing
+### Sprint 6 — Certification
 
-`android/key.properties` does not exist and `android/app/build.gradle` still
-carries `signingConfig = signingConfigs.debug` under a
-`// TODO: Add your own release signing config.` A release build therefore
-produces an APK signed with the **debug** key: it compiles, but it is not a
-shippable artifact. Supplying a keystore is a release decision, not an
-implementation one.
+Accessibility → RTL → large text → performance → crash reporting → integration testing → release AAB → production smoke tests
 
-## Verification
+## 8. Final target architecture
 
-Local run at the time of writing: **311 tests passing**, `flutter analyze` clean
-of errors and warnings (remaining findings are pre-existing `info` lints).
-Step 21 — the full CI gate including Android debug and release builds — has not
-been run, so completion is not claimed.
+```
+                   QAZA-NAMAZ
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+      Home           Qaza         Knowledge
+        │              │              │
+        │              │              ├─ Search
+        │              │              ├─ Masail
+        │              │              ├─ Mugalat
+        │              │              └─ Sources
+        │              │
+        ├─ Today's     ├─ Pending
+        │  progress     ├─ Completed
+        ├─ Next Qaza    ├─ Filters
+        ├─ Qaza plan    ├─ Edit
+        └─ Calculator   └─ Complete
+                       │
+                    Settings
+                       │
+          ┌────────────┼─────────────┐
+          │            │             │
+       Account      Privacy       Backup
+       Notifications Calculation   Help/About
+```
 
-## Pre-V2 history
+Target product qualities:
 
-The SharedPreferences → Drift/SQLite migration (Parts 1–12) and the Task 7–11
-reconciliation stream are complete; their detail lives in `docs/`. Migration
-Part 13 and reconciliation Tasks 12–13 are superseded by V2 step 21, the single
-remaining CI/build gate.
+- calm
+- predictable
+- private
+- low-friction
+- readable
+- accessible
+- localized
+- offline-first
+- technically maintainable
+
+The technical complexity should remain underneath the user experience.
+
+## 9. Next status update rule
+
+When a task changes, update its row only after recording the concrete evidence:
+
+```
+Implementation → Tests → CI → Device QA → UX Review → Documentation → Merge
+```
+
+No task should be promoted to **Complete** merely because it compiles or because an older project status document said it was complete.
