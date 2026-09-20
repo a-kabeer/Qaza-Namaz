@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../domain/knowledge_article.dart';
@@ -182,9 +183,12 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         ),
                       ),
                     ),
-              loading: () => const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => const SliverPadding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
+                sliver: SliverList.builder(
+                  itemCount: 5,
+                  itemBuilder: (_, __) => const _ArticleSkeleton(),
+                ),
               ),
               error: (error, _) => SliverFillRemaining(
                 hasScrollBody: false,
@@ -193,6 +197,34 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ArticleSkeleton extends StatelessWidget {
+  const _ArticleSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SkeletonText(width: 220, height: 19),
+            SizedBox(height: 10),
+            SkeletonText(width: double.infinity, height: 13),
+            SizedBox(height: 7),
+            SkeletonText(width: 290, height: 13),
+            SizedBox(height: 7),
+            SkeletonText(width: 210, height: 13),
+            SizedBox(height: 12),
+            SkeletonText(width: 150, height: 12),
           ],
         ),
       ),
