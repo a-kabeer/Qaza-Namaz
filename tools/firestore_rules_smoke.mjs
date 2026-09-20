@@ -153,5 +153,40 @@ await assertFails(
   ),
 );
 
+await assertFails(
+  setDoc(
+    stateA,
+    {
+      ...validState,
+      generation: 99,
+      resetInProgress: false,
+    },
+  ),
+);
+
+await assertSucceeds(
+  setDoc(
+    stateA,
+    {
+      generation: 1,
+      resetInProgress: true,
+      resetOperationId: 'reset_test_001',
+      lastCompletedResetOperationId: null,
+    },
+  ),
+);
+
+await assertSucceeds(
+  setDoc(
+    stateA,
+    {
+      generation: 1,
+      resetInProgress: false,
+      resetOperationId: null,
+      lastCompletedResetOperationId: 'reset_test_001',
+    },
+  ),
+);
+
 await testEnv.cleanup();
 console.log('Firestore security rule negative/positive smoke tests passed.');
