@@ -1,7 +1,7 @@
 # Local data protection
 
 **Priority:** P0/P1  
-**Status:** **In Progress**
+**Status:** **Merged — Device QA Pending**
 
 ## Task checklist
 
@@ -25,19 +25,25 @@
 
 - [x] Implementation
 - [x] Unit tests added
-- [ ] Full regression tests
-- [ ] Analyze
-- [ ] CI
+- [x] Full regression tests
+- [x] Analyze
+- [x] CI
 - [ ] Device QA where required
 - [x] UX/security review of failure behavior
 - [x] Documentation
-- [ ] Merge
+- [x] Merge
 
 ## Evidence log
 
 | Date | Status | Evidence |
 |---|---|---|
 | 2026-09-20 | In Progress | Encrypted SQLite/key storage/migration and outbox error classification implemented on branch hardening/local-data-protection-20260920. |
-| 2026-09-20 | Pending verification | Full analyzer/CI/device verification and merge remain outstanding. |
+| 2026-09-20 | Merged | PR #46 merged to `main` as `1144e651e034c25d14cb726462af371d14ece452`. CI run #1463 passed: Android, Firestore rules, Analyze, Linux tests, and Windows tests. |
+
+**Rule:** update this tracking file, not the master plan, when status changes.
+
+## Remaining verification
+
+- Android physical-device QA remains recommended/required for final release certification: verify first-run key creation, upgrade from a plaintext database, restart persistence, wrong/corrupt key handling, backup/restore behavior, and device-to-device transfer exclusion.
 
 **Rule:** update this tracking file, not the master plan, when status changes.
