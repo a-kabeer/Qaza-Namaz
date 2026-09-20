@@ -234,6 +234,30 @@ abstract class QazaLocalStore {
   ///
   /// Separate from [load] so a completion can bring the queue up to date
   /// without reading the ledger it is deliberately not touching.
+  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
+      {int limit = 400}) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    final all = await loadOutbox(userId);
+    return all.take(limit).toList(growable: false);
+  }
+
+  Future<void> removeOutboxBatch(String userId, List<String> ids) async {
+    if (ids.isEmpty) return;
+    final wanted = ids.toSet();
+    final remaining = (await loadOutbox(userId))
+        .where((op) => !wanted.contains(op.id))
+        .toList(growable: false);
+    await saveOutbox(userId, remaining);
+  }
+
+  Future<void> appendRecordsAndOutbox(
+      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+    await appendRecords(userId, records);
+    await saveOutbox(userId, [...await loadOutbox(userId), ...ops]);
+  }
+
   Future<List<PendingSyncOp>> loadOutbox(String userId) async {
     final snapshot = await load();
     return List<PendingSyncOp>.of(
