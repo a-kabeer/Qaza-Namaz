@@ -324,11 +324,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       final changed = <String>[];
       for (final id in ids) {
+        final current = await (select(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(id)))
+            .getSingleOrNull();
+        if (current == null) continue;
+        final existingCompletedAt = current.completedAt;
+        if (current.status == QazaStatus.completed &&
+            existingCompletedAt != null &&
+            !completedAt.isBefore(existingCompletedAt)) {
+          continue;
+        }
+
         final updated = await (update(qazaRecords)
               ..where((row) =>
-                  row.userId.equals(userId) &
-                  row.id.equals(id) &
-                  row.status.equals(QazaStatus.pending.name)))
+                  row.userId.equals(userId) & row.id.equals(id)))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
