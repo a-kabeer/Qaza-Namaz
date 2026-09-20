@@ -271,9 +271,9 @@ class InMemoryQazaRepository
       }
     }
 
-    final records = <QazaRecord>[];
     switch (operations.first.type) {
       case SyncOpType.add:
+        final records = <QazaRecord>[];
         for (final operation in operations) {
           final record = operation.record;
           if (record == null) continue;
@@ -281,6 +281,11 @@ class InMemoryQazaRepository
           final stored = _records[record.id];
           if (stored != null) records.add(stored);
         }
+        return _recordChange(
+          userId: userId,
+          type: QazaRemoteChangeType.upsert,
+          records: records,
+        );
       case SyncOpType.complete:
         await completeRecords(
           userId: userId,
@@ -290,22 +295,14 @@ class InMemoryQazaRepository
           ],
           completedAt: operations.first.completedAt ?? DateTime.now(),
         );
-        for (final operation in operations) {
-          final id = operation.targetRecordId;
-          final record = id == null ? null : _records[id];
-          if (record != null) records.add(record);
+        final latest = await getLatestChange(userId: userId);
+        if (latest == null) {
+          throw StateError('completion produced no remote change');
         }
+        return latest;
       case SyncOpType.reset:
         throw ArgumentError('reset must use resetUserRecordsForSync');
     }
-
-    return _recordChange(
-      userId: userId,
-      type: operations.first.type == SyncOpType.add
-          ? QazaRemoteChangeType.upsert
-          : QazaRemoteChangeType.complete,
-      records: records,
-    );
   }
 
   @override
