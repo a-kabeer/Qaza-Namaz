@@ -68,10 +68,6 @@ abstract interface class QazaSyncRemoteDataSource {
     required List<PendingSyncOp> operations,
   });
 
-  Future<void> resetUserRecords({
-    required String userId,
-    String? operationId,
-  });
   Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
     required String userId,
     required String operationId,
