@@ -248,9 +248,18 @@ class FirestoreQazaRepository
   }) async {
     await resetUserRecordsWithOperation(
       userId: userId,
-      operationId: operationId ?? 'reset_${userId}',
+      operationId: operationId ?? 'reset_' + userId,
     );
   }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) => resetUserRecordsWithOperation(
+        userId: userId,
+        operationId: operationId,
+      );
 
   @override
   Future<QazaRemoteResetState> getResetState(
@@ -373,7 +382,7 @@ class FirestoreQazaRepository
     return _cursorFromChange(committed);
   }
 
-  Future<void> resetUserRecordsWithOperation({
+  Future<QazaRemoteChangeCursor> resetUserRecordsWithOperation({
     required String userId,
     required String operationId,
   }) async {
@@ -453,6 +462,8 @@ class FirestoreQazaRepository
     );
 
     await finalBatch.commit();
+    final committed = await changeReference.get();
+    return _cursorFromChange(committed);
   }
 
   QazaRemoteChange _changeFromDocument(
