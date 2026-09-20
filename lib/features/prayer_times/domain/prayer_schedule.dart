@@ -8,11 +8,13 @@ class PrayerScheduleResult {
     required this.current,
     required this.next,
     required this.now,
+    this.nextIsTomorrow = false,
   });
 
   final PrayerName? current;
   final PrayerName? next;
   final tz.TZDateTime now;
+  final bool nextIsTomorrow;
 }
 
 class PrayerSchedule {
@@ -71,7 +73,8 @@ class PrayerSchedule {
       current = PrayerName.isha;
     }
 
-    if (next == null && tomorrow != null) {
+    final nextIsTomorrow = next == null && tomorrow != null;
+    if (nextIsTomorrow) {
       current = PrayerName.isha;
       next = PrayerName.fajr;
     }
@@ -80,6 +83,7 @@ class PrayerSchedule {
       current: current,
       next: next,
       now: currentNow,
+      nextIsTomorrow: nextIsTomorrow,
     );
   }
 
@@ -90,11 +94,7 @@ class PrayerSchedule {
     final result = evaluate(today: today, tomorrow: tomorrow);
     if (result.next == null) return null;
 
-    final nextDay = result.current == PrayerName.isha &&
-            tomorrow != null &&
-            !result.now.isBefore(moment(today, PrayerName.isha))
-        ? tomorrow
-        : today;
+    final nextDay = result.nextIsTomorrow && tomorrow != null ? tomorrow : today;
     final nextMoment = moment(nextDay, result.next!);
     final difference = nextMoment.difference(result.now);
     return difference.isNegative ? Duration.zero : difference;
