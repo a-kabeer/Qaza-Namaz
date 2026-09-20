@@ -234,6 +234,9 @@ abstract class QazaLocalStore {
   ///
   /// Separate from [load] so a completion can bring the queue up to date
   /// without reading the ledger it is deliberately not touching.
+  Future<int> countPendingOutbox(String userId) async =>
+      (await loadOutbox(userId)).length;
+
   Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
       {int limit = 400}) async {
     if (limit < 1 || limit > 500) {
