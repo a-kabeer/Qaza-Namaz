@@ -168,7 +168,7 @@ class PrayerTimesStrings {
     final urdu = _isUrdu(context);
     return switch (method) {
       CalculationMethod.recommended =>
-        urdu ? 'آپ کے مقام کے لیے تجویز کردہ' : 'Recommended for your location',
+        urdu ? 'خودکار (AlAdhan)' : 'Automatic (AlAdhan)',
       CalculationMethod.jafari => 'Jafari',
       CalculationMethod.karachi => urdu ? 'کراچی' : 'University of Islamic Sciences, Karachi',
       CalculationMethod.isna => 'ISNA',
