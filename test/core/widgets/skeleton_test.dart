@@ -31,7 +31,7 @@ void main() {
     );
 
     expect(find.byType(SkeletonText), findsOneWidget);
-    expect(find.byType(ExcludeSemantics), findsOneWidget);
+    expect(find.byType(SkeletonShimmer), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
   });
 }
