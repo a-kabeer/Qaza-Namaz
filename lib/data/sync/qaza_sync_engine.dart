@@ -37,13 +37,16 @@ class QazaSyncEngine {
   String? _retryUserId;
   bool _disposed = false;
 
-  Future<void> synchronize(String userId) {
+  Future<void> synchronize(
+    String userId, {
+    bool requestRerun = false,
+  }) {
     _retryTimer?.cancel();
     _retryTimer = null;
 
     final existing = _idleCompleter;
     if (existing != null) {
-      _rerunRequested = true;
+      if (requestRerun) _rerunRequested = true;
       return existing.future;
     }
 
