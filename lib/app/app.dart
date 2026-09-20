@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/auth/auth_gate.dart';
+import '../features/settings/app_lock_controller.dart';
 import '../features/notifications/notification_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'providers.dart';
@@ -17,11 +18,24 @@ class QazaNamazApp extends ConsumerStatefulWidget {
   ConsumerState<QazaNamazApp> createState() => _QazaNamazAppState();
 }
 
-class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
+class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_initializeNotifications());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    ref.read(appLockControllerProvider.notifier).onLifecycleState(state);
   }
 
   Future<void> _initializeNotifications() async {
