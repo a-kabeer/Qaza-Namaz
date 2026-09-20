@@ -2,7 +2,7 @@
 
 This directory contains the **separate tracking documents** for the Complete Project Improvement & Hardening Plan.
 
-**Master plan:** `docs/MASTER_PROJECT_IMPROVEMENT_AND_HARDENING_PLAN.md`
+**Master plan:** docs/MASTER_PROJECT_IMPROVEMENT_AND_HARDENING_PLAN.md
 
 The master plan is the specification. These tracking files are the execution records. Do not update the master plan just to record status.
 
@@ -19,7 +19,7 @@ Security-sensitive tasks additionally require positive and negative/security cov
 - [Production release signing](./03-production-signing.md) — P0 — **Implemented**
 - [Android target / SDK verification](./04-android-sdk.md) — P0 — **Implemented**
 - [Android backup/privacy hardening](./05-backup-privacy.md) — P0 — **Implemented**
-- [Local data protection](./06-local-data-protection.md) — P0/P1 — **Not started**
+- [Local data protection](./06-local-data-protection.md) — P0/P1 — **In Progress**
 - [App Lock](./07-app-lock.md) — P0/P1 — **Not started**
 - [Account data transparency](./08-account-data-transparency.md) — P0/P1 — **Not started**
 - [Qaza navigation & information architecture](./09-qaza-navigation.md) — P1 — **Not started**
