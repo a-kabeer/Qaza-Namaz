@@ -160,6 +160,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
         ),
       ),
     );
+  }
 
   Future<void> _confirmAndMerge(BuildContext context) async {
     final confirmed = await _confirm(
