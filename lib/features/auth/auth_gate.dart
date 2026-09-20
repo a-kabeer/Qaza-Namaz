@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../onboarding/splash_screen.dart';
+import '../settings/app_lock_gate.dart';
 import '../onboarding/welcome_screen.dart';
 import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
@@ -147,7 +148,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     // A guest reaches the workspace on the same footing as an account: the
     // ledger is local, but every screen works.
     if (user == null && isGuest) {
-      return const WorkspaceShell();
+      return const AppLockGate(child: WorkspaceShell());
     }
 
     if (user == null) {
@@ -161,6 +162,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return const WorkspaceShell();
+    return const AppLockGate(child: WorkspaceShell());
   }
 }
