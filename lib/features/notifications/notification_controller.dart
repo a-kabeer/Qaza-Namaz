@@ -275,6 +275,16 @@ class NotificationSettingsNotifier
       return false;
     }
 
+    if (!await _initializeScheduler()) {
+      state = AsyncData(
+        current.copyWith(
+          schedulerAvailable: false,
+          permissionStatus: NotificationPermissionStatus.unavailable,
+        ),
+      );
+      return false;
+    }
+
     late final bool granted;
     try {
       granted = await _requestPermissionForAction();
@@ -395,6 +405,16 @@ class NotificationSettingsNotifier
           'Notification permission is permanently denied. '
           'Open system notification settings and enable notifications.',
         );
+      }
+
+      if (!await _initializeScheduler()) {
+        state = AsyncData(
+          current.copyWith(
+            schedulerAvailable: false,
+            permissionStatus: NotificationPermissionStatus.unavailable,
+          ),
+        );
+        throw StateError('Notification scheduler is unavailable.');
       }
 
       try {
