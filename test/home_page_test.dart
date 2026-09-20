@@ -288,7 +288,7 @@ void main() {
       expect(find.byType(CompleteQazaSection), findsOneWidget);
     });
 
-    testWidgets('choosing a pill shows that prayer latest record',
+    testWidgets('choosing a pill shows that prayer oldest pending record',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
@@ -298,7 +298,7 @@ void main() {
       ]);
       await pumpHome(tester, repository);
 
-      expect(find.text('10 Jan 2026'), findsOneWidget);
+      expect(find.text('02 Jan 2026'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home_complete_prayer_pill_zuhr')));
       await tester.pumpAndSettle();

@@ -55,7 +55,7 @@ class _CompleteSkeleton extends StatelessWidget {
 /// The Complete Qaza page and Home both offer this, so the pills, the record
 /// card and the completion call live here once. Everything it needs is its
 /// own: the selected prayer and the in-flight flag are local, and the record
-/// comes from [latestPendingProvider], so a host only has to place it.
+/// comes from [oldestPendingProvider], so a host only has to place it.
 class CompleteQazaSection extends ConsumerStatefulWidget {
   const CompleteQazaSection({super.key, this.keyPrefix = 'complete'});
 
@@ -70,7 +70,7 @@ class CompleteQazaSection extends ConsumerStatefulWidget {
   /// invalidating them is free.
   static Future<void> refresh(WidgetRef ref) async {
     for (final prayer in PrayerType.values) {
-      ref.invalidate(latestPendingProvider(prayer));
+      ref.invalidate(oldestPendingProvider(prayer));
     }
     ref.invalidate(progressSummaryProvider);
     await ref.read(progressSummaryProvider.future);
@@ -86,13 +86,13 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
   bool working = false;
 
   AsyncValue<QazaRecord?> get selectedState =>
-      ref.watch(latestPendingProvider(prayer));
+      ref.watch(oldestPendingProvider(prayer));
   QazaRecord? get selected => selectedState.valueOrNull;
 
   Future<void> refresh() async {
-    ref.invalidate(latestPendingProvider(prayer));
+    ref.invalidate(oldestPendingProvider(prayer));
     ref.invalidate(progressSummaryProvider);
-    await ref.read(latestPendingProvider(prayer).future);
+    await ref.read(oldestPendingProvider(prayer).future);
   }
 
   Future<void> _complete() async {
@@ -108,12 +108,12 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
             recordId: record.id,
             completedAt: DateTime.now(),
           );
-      ref.invalidate(latestPendingProvider(completedPrayer));
+      ref.invalidate(oldestPendingProvider(completedPrayer));
       ref.invalidate(progressSummaryProvider);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       final nextPending =
-          await ref.read(latestPendingProvider(completedPrayer).future);
+          await ref.read(oldestPendingProvider(completedPrayer).future);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

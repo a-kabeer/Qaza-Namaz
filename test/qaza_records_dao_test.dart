@@ -139,6 +139,30 @@ void main() {
     expect(await dao.findById(userId: 'user-a', id: 'oldest'), isNotNull);
   });
 
+  test('oldest ordering is deterministic by id when dates are identical',
+      () async {
+    await dao.insertRecords([
+      record(
+          id: 'id-002',
+          userId: 'user-a',
+          prayerType: 'fajr',
+          date: DateTime(2026, 9, 20)),
+      record(
+          id: 'id-001',
+          userId: 'user-a',
+          prayerType: 'zuhr',
+          date: DateTime(2026, 9, 20)),
+      record(
+          id: 'later',
+          userId: 'user-a',
+          prayerType: 'asr',
+          date: DateTime(2026, 9, 21)),
+    ]);
+
+    final rows = await dao.getPage(userId: 'user-a', limit: 10);
+    expect(rows.map((row) => row.id), ['id-001', 'id-002', 'later']);
+  });
+
   test('rejects invalid page sizes, offsets and date ranges', () {
     expect(() => dao.getPage(userId: 'user-a', limit: 0), throwsArgumentError);
     expect(
