@@ -73,15 +73,30 @@ class _CountingRemote extends InMemoryQazaRepository {
   }
 
   @override
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) {
+    completions++;
+    return super.completeRecords(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
+
+  @override
   Future<void> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
-  }) {
-    completions++;
-    return super.completeRecord(
-        userId: userId, recordId: recordId, completedAt: completedAt);
-  }
+  }) =>
+      completeRecords(
+        userId: userId,
+        recordIds: [recordId],
+        completedAt: completedAt,
+      );
 }
 
 void main() {
@@ -271,12 +286,12 @@ void main() {
       expect(remote.fullReads, 0);
     });
 
-    test('an explicit sync is still a full reconciliation', () async {
+    test('an explicit sync uses incremental reconciliation', () async {
       await openWithLedger(1000);
 
       await repository.syncNow();
 
-      expect(remote.fullReads, 1);
+      expect(remote.fullReads, 0);
     });
 
     test('coming back online reconciles too', () async {
@@ -296,7 +311,7 @@ void main() {
       await settle();
 
       expect(remote.completions, 1);
-      expect(remote.fullReads, 1);
+      expect(remote.fullReads, 0);
     });
 
     test('an offline completion is kept and flushed later', () async {
