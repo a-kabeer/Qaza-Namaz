@@ -224,6 +224,7 @@ class LocalNotificationService implements NotificationScheduler {
         await android.areNotificationsEnabled() ?? false;
     var sdkInt = -1;
     var runtimePermission = false;
+    var runtimePermissionGranted = true;
     var shouldShowRationale = false;
     var reminderChannelEnabled = true;
 
@@ -239,13 +240,14 @@ class LocalNotificationService implements NotificationScheduler {
           .invokeMethod<Map<dynamic, dynamic>>('getNotificationPermissionState');
       sdkInt = (result?['sdkInt'] as num?)?.toInt() ?? -1;
       runtimePermission = result?['runtimePermission'] == true;
+      runtimePermissionGranted = result?['runtimePermissionGranted'] == true;
       shouldShowRationale = result?['shouldShowRationale'] == true;
     } catch (error) {
       _log('permission diagnostics unavailable: $error');
     }
 
     final permanentlyDenied = runtimePermission &&
-        !appNotificationsEnabled &&
+        !runtimePermissionGranted &&
         permissionRequested &&
         !shouldShowRationale;
 
@@ -260,8 +262,7 @@ class LocalNotificationService implements NotificationScheduler {
       shouldShowRationale: shouldShowRationale,
       appNotificationsEnabled: appNotificationsEnabled,
       reminderChannelEnabled: reminderChannelEnabled,
-      runtimePermissionGranted:
-          !runtimePermission || (await android.areNotificationsEnabled() ?? false),
+      runtimePermissionGranted: runtimePermissionGranted,
     );
 
     _log(
