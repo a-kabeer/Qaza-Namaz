@@ -56,7 +56,7 @@ void main() {
       timezone: 'America/New_York',
       fajr: const PrayerTime(hour: 0, minute: 30),
       sunrise: const PrayerTime(hour: 3, minute: 30),
-      dhuhr: const PrayerTime(hour: 12, minute: 0),
+      dhuhr: const PrayerTime(hour: 3, minute: 30),
     );
 
     final duration = PrayerSchedule.timeUntilNext(
