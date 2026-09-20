@@ -30,7 +30,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsRemindersSubtitle => 'قضا مکمل کرنے کی روزانہ یاد دہانی۔';
 
   @override
-  String get settingsBackupSection => 'بیک اپ اور ڈیٹا';
+  String get settingsBackupSection => 'ڈیٹا اور اسٹوریج';
 
   @override
   String get settingsBackupSubtitle => 'کلاؤڈ سنک، برآمد اور درآمد۔';

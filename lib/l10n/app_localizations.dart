@@ -143,7 +143,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackupSection.
   ///
   /// In en, this message translates to:
-  /// **'Backup & Data'**
+  /// **'Data & Storage'**
   String get settingsBackupSection;
 
   /// No description provided for @settingsBackupSubtitle.

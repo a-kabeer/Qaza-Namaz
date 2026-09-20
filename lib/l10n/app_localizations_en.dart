@@ -31,7 +31,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Daily reminder to complete your Qaza.';
 
   @override
-  String get settingsBackupSection => 'Backup & Data';
+  String get settingsBackupSection => 'Data & Storage';
 
   @override
   String get settingsBackupSubtitle => 'Cloud sync, export and import.';
