@@ -183,8 +183,8 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         ),
                       ),
                     ),
-              loading: () => const SliverPadding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
+              loading: () => SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 sliver: SliverList.builder(
                   itemCount: 5,
                   itemBuilder: (_, __) => const _ArticleSkeleton(),
