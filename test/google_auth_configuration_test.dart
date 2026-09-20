@@ -15,7 +15,12 @@ void main() {
         RegExp(r'applicationId\s*=\s*"([^"]+)"').firstMatch(gradle);
     expect(applicationMatch, isNotNull);
     final applicationId = applicationMatch!.group(1)!;
-    expect(gradle, contains('assembleRelease'));
+    expect(gradle, contains('buildTypes'));
+    expect(
+      gradle,
+      contains('release {'),
+      reason: 'The Android module must define an explicit release build type.',
+    );
     expect(
       gradle,
       contains('signingConfig = signingConfigs.debug'),
