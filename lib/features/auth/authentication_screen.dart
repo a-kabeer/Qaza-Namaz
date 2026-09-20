@@ -72,93 +72,94 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
         appBar: AppBar(
           leading: IconButton(
             onPressed: loading ? null : () => Navigator.maybePop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: Text(l10n.authTitle),
-        actions: [
-          IconButton(
-            onPressed: () => _showHelp(context),
-            tooltip: l10n.authHelpTooltip,
-            icon: const Icon(Icons.help_outline_rounded),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _BrandHeader(),
-                  const SizedBox(height: 28),
-                  Text(
-                    l10n.authWelcomeBack,
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.authSubtitle,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.45,
+          title: Text(l10n.authTitle),
+          actions: [
+            IconButton(
+              onPressed: () => _showHelp(context),
+              tooltip: l10n.authHelpTooltip,
+              icon: const Icon(Icons.help_outline_rounded),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _BrandHeader(),
+                    const SizedBox(height: 28),
+                    Text(
+                      l10n.authWelcomeBack,
+                      style: theme.textTheme.headlineMedium,
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  if (upgrade.error != null || notice != null) ...[
-                    _Notice(
-                      message: upgrade.error ?? notice!,
-                      onClose: () => setState(() => notice = null),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: loading ? null : _google,
-                      icon: loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.g_mobiledata_rounded),
-                      label: Text(
-                        loading
-                            ? l10n.authSigningIn
-                            : l10n.authContinueWithGoogle,
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.authSubtitle,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.45,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton(
-                    key: const Key('auth_continue_as_guest'),
-                    onPressed: loading ? null : _continueAsGuest,
-                    child: Text(l10n.authContinueAsGuest),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.authGuestNote,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    l10n.authProviderNote,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    if (upgrade.error != null || notice != null) ...[
+                      _Notice(
+                        message: upgrade.error ?? notice!,
+                        onClose: () => setState(() => notice = null),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    SizedBox(
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: loading ? null : _google,
+                        icon: loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.g_mobiledata_rounded),
+                        label: Text(
+                          loading
+                              ? l10n.authSigningIn
+                              : l10n.authContinueWithGoogle,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      key: const Key('auth_continue_as_guest'),
+                      onPressed: loading ? null : _continueAsGuest,
+                      child: Text(l10n.authContinueAsGuest),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.authGuestNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      l10n.authProviderNote,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
     );
-    );
-  }
 
   Future<void> _confirmAndMerge(BuildContext context) async {
     final confirmed = await _confirm(
