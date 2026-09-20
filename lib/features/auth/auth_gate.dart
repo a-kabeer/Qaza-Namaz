@@ -79,34 +79,42 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     required String initialRoute,
     required bool backEnabled,
   }) {
+    final navigator = Navigator(
+      key: _authNavigatorKey,
+      initialRoute: initialRoute,
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/authentication':
+            return _authenticationRoute(settings);
+          case '/welcome':
+            return _welcomeRoute(settings);
+          default:
+            return initialRoute == '/authentication'
+                ? _authenticationRoute(
+                    const RouteSettings(name: '/authentication'),
+                  )
+                : _welcomeRoute(
+                    const RouteSettings(name: '/welcome'),
+                  );
+        }
+      },
+    );
+
+    if (!backEnabled) {
+      return PopScope<void>(
+        canPop: false,
+        child: navigator,
+      );
+    }
+
     return NavigatorPopHandler<void>(
-      enabled: backEnabled,
       onPopWithResult: (result) {
         unawaited(
           _authNavigatorKey.currentState?.maybePop(result) ??
               Future<bool>.value(false),
         );
       },
-      child: Navigator(
-        key: _authNavigatorKey,
-        initialRoute: initialRoute,
-        onGenerateRoute: (settings) {
-          switch (settings.name) {
-            case '/authentication':
-              return _authenticationRoute(settings);
-            case '/welcome':
-              return _welcomeRoute(settings);
-            default:
-              return initialRoute == '/authentication'
-                  ? _authenticationRoute(
-                      const RouteSettings(name: '/authentication'),
-                    )
-                  : _welcomeRoute(
-                      const RouteSettings(name: '/welcome'),
-                    );
-          }
-        },
-      ),
+      child: navigator,
     );
   }
 
