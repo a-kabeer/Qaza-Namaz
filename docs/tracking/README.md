@@ -20,7 +20,7 @@ Security-sensitive tasks additionally require positive and negative/security cov
 - [Android target / SDK verification](./04-android-sdk.md) — P0 — **Implemented**
 - [Android backup/privacy hardening](./05-backup-privacy.md) — P0 — **Implemented**
 - [Local data protection](./06-local-data-protection.md) — P0/P1 — **Merged — Device QA Pending**
-- [App Lock](./07-app-lock.md) — P0/P1 — **Not started**
+- [App Lock](./07-app-lock.md) — P0/P1 — **Implemented — Device QA Pending**
 - [Account data transparency](./08-account-data-transparency.md) — P0/P1 — **Not started**
 - [Qaza navigation & information architecture](./09-qaza-navigation.md) — P1 — **Not started**
 - [Home experience](./10-home-experience.md) — P1 — **Not started**
