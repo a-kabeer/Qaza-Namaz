@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/prayer_times_models.dart';
 
-class PrayerTimesCache(this._preferencesFuture);
+class PrayerTimesCache {
+  PrayerTimesCache(this._preferencesFuture);
 
   static const _locationKey = 'prayer_times_v1.location';
   static const _settingsKey = 'prayer_times_v1.settings';
@@ -63,10 +64,7 @@ class PrayerTimesCache(this._preferencesFuture);
     }
   }
 
-  Future<void> saveDay(
-    PrayerTimesRequest request,
-    PrayerDay day,
-  ) async {
+  Future<void> saveDay(PrayerTimesRequest request, PrayerDay day) async {
     final preferences = await _preferencesFuture;
     final days = _readDays(preferences);
     days[request.cacheKey] = jsonEncode(day.toJson());
@@ -87,7 +85,7 @@ class PrayerTimesCache(this._preferencesFuture);
   }
 
   Map<String, String> _readDays(SharedPreferences preferences) {
-    final raw = _preferences.getString(_daysKey);
+    final raw = preferences.getString(_daysKey);
     if (raw == null) return <String, String>{};
     try {
       final decoded = jsonDecode(raw);
