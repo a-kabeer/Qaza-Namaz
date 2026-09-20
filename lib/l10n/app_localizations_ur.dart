@@ -692,6 +692,24 @@ class AppLocalizationsUr extends AppLocalizations {
       'اطلاعات بند ہیں۔ سسٹم کی ترتیبات میں اجازت دیں، پھر دوبارہ کوشش کریں۔';
 
   @override
+  String get notificationsAppDisabled => 'ایپ کی اطلاعات بند ہیں';
+
+  @override
+  String get notificationsAppDisabledDetail =>
+      'اینڈرائیڈ کی ترتیبات میں قضا نماز کے لیے اطلاعات بند ہیں۔';
+
+  @override
+  String get notificationsChannelDisabled => 'یاد دہانی کی اطلاعات بند ہیں';
+
+  @override
+  String get notificationsChannelDisabledDetail =>
+      'قضا یاد دہانی کی کیٹیگری بند ہے۔ اطلاع کی ترتیبات میں اسے فعال کریں۔';
+
+  @override
+  String get notificationsEnableReminderNotifications =>
+      'یاد دہانی کی اطلاعات فعال کریں';
+
+  @override
   String get notificationsEnableInSettings =>
       'یاد دہانی استعمال کرنے کے لیے سسٹم کی ترتیبات میں اطلاعات فعال کریں۔';
 
@@ -1487,3 +1505,4 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get appLockFailed => 'ڈیوائس کی تصدیق ناکام رہی۔ دوبارہ کوشش کریں۔';
+}

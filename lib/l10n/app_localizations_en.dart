@@ -693,6 +693,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Notifications are blocked. Allow them in system settings, then try again.';
 
   @override
+  String get notificationsAppDisabled => 'App notifications are turned off';
+
+  @override
+  String get notificationsAppDisabledDetail =>
+      'Notifications are turned off for Qaza Namaz in Android settings.';
+
+  @override
+  String get notificationsChannelDisabled =>
+      'Reminder notifications are turned off';
+
+  @override
+  String get notificationsChannelDisabledDetail =>
+      'The Qaza reminder category is turned off. Enable it in notification settings.';
+
+  @override
+  String get notificationsEnableReminderNotifications =>
+      'Enable reminder notifications';
+
+  @override
   String get notificationsEnableInSettings =>
       'Enable notifications in system settings to use reminders.';
 
@@ -1486,6 +1505,5 @@ class AppLocalizationsEn extends AppLocalizations {
       'Device authentication is temporarily locked. Wait a moment and try again.';
 
   @override
-  String get appLockFailed =>
-      'Device authentication failed. Please try again.';
+  String get appLockFailed => 'Device authentication failed. Please try again.';
 }
