@@ -139,6 +139,34 @@ void main() {
     expect(await dao.findById(userId: 'user-a', id: 'oldest'), isNotNull);
   });
 
+  test('oldest pending uses id as deterministic tie-breaker for same date',
+      () async {
+    await dao.insertRecords([
+      record(
+          id: 'id-002',
+          userId: 'user-a',
+          prayerType: 'fajr',
+          date: DateTime(2026, 9, 20)),
+      record(
+          id: 'id-001',
+          userId: 'user-a',
+          prayerType: 'fajr',
+          date: DateTime(2026, 9, 20)),
+      record(
+          id: 'later',
+          userId: 'user-a',
+          prayerType: 'fajr',
+          date: DateTime(2026, 9, 21)),
+    ]);
+
+    final oldest = await dao.getOldestPending(
+      userId: 'user-a',
+      prayerType: 'fajr',
+    );
+
+    expect(oldest?.id, 'id-001');
+  });
+
   test('rejects invalid page sizes, offsets and date ranges', () {
     expect(() => dao.getPage(userId: 'user-a', limit: 0), throwsArgumentError);
     expect(
