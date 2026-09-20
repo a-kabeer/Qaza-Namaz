@@ -213,8 +213,16 @@ void main() {
       final remote = InMemoryQazaRepository();
       final localA = InMemoryQazaLocalStore();
       final localB = InMemoryQazaLocalStore();
-      final deviceA = createRepository(remote: remote, local: localA);
-      final deviceB = createRepository(remote: remote, local: localB);
+      final deviceA = OfflineFirstQazaRepository(
+          remote: remote,
+          localStore: localA,
+          now: () => baseDate,
+          syncCursorNamespace: 'device-a');
+      final deviceB = OfflineFirstQazaRepository(
+          remote: remote,
+          localStore: localB,
+          now: () => baseDate,
+          syncCursorNamespace: 'device-b');
       final original = record();
       await remote.addRecord(original);
       await deviceA.setActiveUser('u1');
