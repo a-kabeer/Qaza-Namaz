@@ -27,6 +27,8 @@ class NotificationPermissionInfo {
     required this.supported,
     required this.sdkInt,
     required this.shouldShowRationale,
+    required this.appNotificationsEnabled,
+    required this.reminderChannelEnabled,
   });
 
   final bool granted;
@@ -35,6 +37,8 @@ class NotificationPermissionInfo {
   final bool supported;
   final int sdkInt;
   final bool shouldShowRationale;
+  final bool appNotificationsEnabled;
+  final bool reminderChannelEnabled;
 }
 
 abstract interface class NotificationScheduler {
@@ -146,9 +150,8 @@ class LocalNotificationService implements NotificationScheduler {
         'channel exists id=$_channelId importance=${current.importance.value}',
       );
       if (current.importance == Importance.none) {
-        throw StateError(
-          'Notification channel "$_channelId" is blocked by Android. Open system notification settings '
-              'and enable it.',
+        _log(
+          'Notification channel is blocked by Android; keeping scheduler initialized so the UI can guide the user to settings.',
         );
       }
     }
@@ -170,6 +173,7 @@ class LocalNotificationService implements NotificationScheduler {
   @override
   Future<bool> openSystemNotificationSettings() async {
     try {
+      await initialize();
       final opened =
           await _settingsChannel.invokeMethod<bool>('openNotificationSettings');
       _log('open notification settings result=$opened');
@@ -208,13 +212,24 @@ class LocalNotificationService implements NotificationScheduler {
         supported: false,
         sdkInt: -1,
         shouldShowRationale: false,
+        appNotificationsEnabled: true,
+        reminderChannelEnabled: true,
       );
     }
 
-    final granted = await android.areNotificationsEnabled() ?? false;
+    final appNotificationsEnabled =
+        await android.areNotificationsEnabled() ?? false;
     var sdkInt = -1;
     var runtimePermission = false;
     var shouldShowRationale = false;
+    var reminderChannelEnabled = true;
+
+    final channels =
+        await android.getNotificationChannels() ?? <AndroidNotificationChannel>[];
+    final channel = channels.where((candidate) => candidate.id == _channelId);
+    if (channel.isNotEmpty) {
+      reminderChannelEnabled = channel.first.importance != Importance.none;
+    }
 
     try {
       final result = await _settingsChannel
@@ -226,17 +241,22 @@ class LocalNotificationService implements NotificationScheduler {
       _log('permission diagnostics unavailable: $error');
     }
 
-    final permanentlyDenied = !granted &&
+    final permanentlyDenied = runtimePermission &&
+        !appNotificationsEnabled &&
         permissionRequested &&
-        (runtimePermission ? !shouldShowRationale : sdkInt >= 0);
+        !shouldShowRationale;
 
     final info = NotificationPermissionInfo(
-      granted: granted,
-      canRequest: runtimePermission && !permanentlyDenied,
+      granted: appNotificationsEnabled && reminderChannelEnabled,
+      canRequest: runtimePermission
+          ? !permanentlyDenied
+          : appNotificationsEnabled && reminderChannelEnabled,
       permanentlyDenied: permanentlyDenied,
       supported: true,
       sdkInt: sdkInt,
       shouldShowRationale: shouldShowRationale,
+      appNotificationsEnabled: appNotificationsEnabled,
+      reminderChannelEnabled: reminderChannelEnabled,
     );
 
     _log(
