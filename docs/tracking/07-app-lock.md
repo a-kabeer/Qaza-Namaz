@@ -1,17 +1,17 @@
 # App Lock
 
 **Priority:** P0/P1  
-**Status:** **Not started**
+**Status:** **Implemented — Device QA Pending**
 
 ## Task checklist
 
-- [ ] Detect biometric/device authentication
-- [ ] Add lock controller
-- [ ] Support immediate/1 minute/5 minutes/Never
-- [ ] Lock on resume
-- [ ] Prevent data visibility while locked
-- [ ] Accessibility support
-- [ ] Tests
+- [x] Detect biometric/device authentication
+- [x] Add lock controller
+- [x] Support immediate/1 minute/5 minutes/Never
+- [x] Lock on background threshold and resume
+- [x] Prevent data visibility while locked
+- [x] Accessibility support
+- [x] Tests
 
 ## Current evidence
 
@@ -19,13 +19,13 @@ Target path: Settings → Privacy & Security → App Lock. Device authentication
 
 ## Definition of Done
 
-- [ ] Implementation
-- [ ] Unit/widget tests
+- [x] Implementation
+- [x] Unit tests added
 - [ ] Regression tests
 - [ ] Analyze
 - [ ] CI
 - [ ] Device QA where required
-- [ ] UX review
+- [x] UX/security review
 - [ ] Documentation
 - [ ] Merge
 
