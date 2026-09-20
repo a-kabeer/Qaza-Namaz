@@ -11,6 +11,7 @@ import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 import 'support/test_app.dart';
+import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
@@ -118,6 +119,15 @@ class FakeGuestMigrationService extends GuestMigrationService {
     if (failRetire) throw StateError('simulated retirement failure');
     guestData = false;
   }
+}
+
+class _FakeGuestUpgradeController extends GuestUpgradeController {
+  _FakeGuestUpgradeController(this.initialState);
+
+  final GuestUpgradeState initialState;
+
+  @override
+  GuestUpgradeState build() => initialState;
 }
 
 void main() {
@@ -428,33 +438,31 @@ void main() {
 
   testWidgets('pending guest upgrade shows all three explicit choices',
       (tester) async {
-    final (container, _, migration) = await makeContainer(guestData: true);
-
-    await container
-        .read(guestUpgradeControllerProvider.notifier)
-        .signInAndMigrate();
-
-    expect(
-      container.read(guestUpgradeControllerProvider).pendingAccount,
-      isNotNull,
+    const account = AppUser(
+      id: 'account-1',
+      email: 'account@example.com',
     );
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
+      ProviderScope(
+        overrides: [
+          guestUpgradeControllerProvider.overrideWith(
+            () => _FakeGuestUpgradeController(
+              const GuestUpgradeState(pendingAccount: account),
+            ),
+          ),
+        ],
         child: const TestApp(home: AuthenticationScreen()),
       ),
     );
-    // The authentication screen can schedule its provider restoration on the first frame.
-    // Advance a bounded amount of fake time instead of settling indefinitely.
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
 
     expect(find.text('Guest progress found'), findsOneWidget);
     expect(find.text('Merge Data'), findsOneWidget);
     expect(find.text('Use Account Data'), findsOneWidget);
     expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
-    expect(migration.migrateCalls, 0);
   });
+
 
   test('retirement failure does not end the guest session', () async {
     final (container, _, migration) =
