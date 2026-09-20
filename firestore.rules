@@ -15,32 +15,149 @@ service cloud.firestore {
       ).data.resetInProgress == true;
     }
 
+    function validQazaRecord(data, userId, recordId) {
+      return data.keys().hasOnly([
+        'id',
+        'userId',
+        'prayerType',
+        'originalDate',
+        'status',
+        'completedAt',
+        'createdAt',
+        'updatedAt',
+        'syncGeneration'
+      ])
+      && data.id is string
+      && data.id.size() > 0
+      && data.id.size() <= 128
+      && data.id == recordId
+      && data.userId is string
+      && data.userId == userId
+      && data.prayerType in [
+        'fajr',
+        'zuhr',
+        'asr',
+        'maghrib',
+        'isha',
+        'witr'
+      ]
+      && data.originalDate is string
+      && data.originalDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && data.status in ['pending', 'completed']
+      && (
+        (data.status == 'pending' && data.completedAt == null)
+        || (data.status == 'completed' && data.completedAt is timestamp)
+      )
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp
+      && data.syncGeneration is int
+      && data.syncGeneration >= 0;
+    }
+
+    function validSyncState(data) {
+      return data.keys().hasOnly([
+        'generation',
+        'resetInProgress',
+        'resetOperationId',
+        'lastCompletedResetOperationId'
+      ])
+      && data.generation is int
+      && data.generation >= 0
+      && data.resetInProgress is bool
+      && (
+        !data.keys().hasAny(['resetOperationId'])
+        || data.resetOperationId == null
+        || data.resetOperationId is string
+      )
+      && (
+        !data.keys().hasAny(['lastCompletedResetOperationId'])
+        || data.lastCompletedResetOperationId == null
+        || data.lastCompletedResetOperationId is string
+      );
+    }
+
+    function validChange(data, userId) {
+      return data.keys().hasOnly([
+        'changeType',
+        'generation',
+        'createdAt',
+        'records'
+      ])
+      && data.changeType in ['upsert', 'complete', 'reset']
+      && data.generation is int
+      && data.generation >= 0
+      && data.createdAt is timestamp
+      && data.records is list
+      && data.records.size() <= 400
+      && (
+        (data.changeType == 'reset' && data.records.size() == 0)
+        || (data.changeType != 'reset' && data.records.size() > 0)
+      )
+      && data.generation
+        == getAfter(
+          /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+        ).data.generation
+      && getAfter(
+        /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+      ).data.resetInProgress == false;
+    }
+
     match /users/{userId}/qazaRecords/{recordId} {
       allow read: if isOwner(userId);
 
-      // Normal writes are blocked while a destructive reset is in progress.
-      // Deletes remain permitted so the reset itself can drain the ledger.
-      allow create, update: if isOwner(userId)
+      allow create: if isOwner(userId)
         && !resetInProgress(userId)
+        && validQazaRecord(request.resource.data, userId, recordId)
         && request.resource.data.syncGeneration
-          == getAfter(/databases/$(database)/documents/users/$(userId)/syncMetadata/state).data.generation;
+          == getAfter(
+            /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+          ).data.generation;
+
+      allow update: if isOwner(userId)
+        && !resetInProgress(userId)
+        && validQazaRecord(request.resource.data, userId, recordId)
+        && request.resource.data.syncGeneration
+          == resource.data.syncGeneration
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.prayerType == resource.data.prayerType
+        && request.resource.data.originalDate == resource.data.originalDate
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          (
+            resource.data.status == 'pending'
+            && request.resource.data.status in ['pending', 'completed']
+          )
+          || (
+            resource.data.status == 'completed'
+            && request.resource.data.status == 'completed'
+            && request.resource.data.completedAt == resource.data.completedAt
+          )
+        )
+        && request.resource.data.syncGeneration
+          == getAfter(
+            /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+          ).data.generation;
+
       allow delete: if isOwner(userId);
     }
 
     match /users/{userId}/qazaChanges/{changeId} {
       allow read: if isOwner(userId);
 
-      // Normal change events are allowed only outside a reset. The final reset
-      // event is written atomically with resetInProgress=false, so getAfter()
-      // sees the completed state.
       allow create: if isOwner(userId)
-        && getAfter(
-          /databases/$(database)/documents/users/$(userId)/syncMetadata/state
-        ).data.resetInProgress == false;
+        && changeId.size() > 0
+        && changeId.size() <= 256
+        && validChange(request.resource.data, userId);
     }
 
     match /users/{userId}/syncMetadata/{documentId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && documentId == 'state'
+        && validSyncState(request.resource.data);
+      allow delete: if isOwner(userId)
+        && documentId == 'state';
     }
   }
 }
