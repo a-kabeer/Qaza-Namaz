@@ -243,6 +243,23 @@ abstract class QazaLocalStore {
     return all.take(limit).toList(growable: false);
   }
 
+  Future<void> markOutboxBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    final wanted = ids.toSet();
+    final current = await loadOutbox(userId);
+    final next = [
+      for (final op in current)
+        if (wanted.contains(op.id))
+          op.copyWith(attempts: op.attempts + 1, lastError: error)
+        else
+          op,
+    ];
+    await saveOutbox(userId, next);
+  }
+
   Future<void> removeOutboxBatch(String userId, List<String> ids) async {
     if (ids.isEmpty) return;
     final wanted = ids.toSet();
