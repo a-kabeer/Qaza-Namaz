@@ -361,7 +361,11 @@ class FirestoreQazaRepository
       records.add(record);
       batch.set(
         _recordsCollection(userId).doc(record.id),
-        _toMap(record, serverUpdatedAt: true),
+        _toMap(
+          record,
+          serverUpdatedAt: true,
+          syncGeneration: reset.generation,
+        ),
         SetOptions(merge: false),
       );
     }
@@ -371,7 +375,8 @@ class FirestoreQazaRepository
       'generation': reset.generation,
       'createdAt': FieldValue.serverTimestamp(),
       'records': [
-        for (final record in records) _toMap(record),
+        for (final record in records)
+          _toMap(record, syncGeneration: reset.generation),
       ],
     });
 
@@ -545,6 +550,7 @@ class FirestoreQazaRepository
   Map<String, dynamic> _toMap(
     QazaRecord record, {
     bool serverUpdatedAt = false,
+    int? syncGeneration,
   }) {
     return {
       'id': record.id,
@@ -559,6 +565,7 @@ class FirestoreQazaRepository
       'updatedAt': serverUpdatedAt
           ? FieldValue.serverTimestamp()
           : Timestamp.fromDate(record.updatedAt),
+      if (syncGeneration != null) 'syncGeneration': syncGeneration,
     };
   }
 
