@@ -248,7 +248,7 @@ class FirestoreQazaRepository
   }) async {
     await resetUserRecordsWithOperation(
       userId: userId,
-      operationId: operationId ?? 'reset_' + userId,
+      operationId: operationId ?? 'reset_' + userId + '_' + DateTime.now().microsecondsSinceEpoch.toString(),
     );
   }
 
@@ -392,6 +392,7 @@ class FirestoreQazaRepository
     final stateReference = _syncStateDocument(userId);
     var generation = 0;
     var effectiveOperationId = operationId;
+    var alreadyCompleted = false;
 
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(stateReference);
@@ -403,6 +404,7 @@ class FirestoreQazaRepository
 
       if (completedOperation == operationId && !inProgress) {
         generation = (data['generation'] as num?)?.toInt() ?? 0;
+        alreadyCompleted = true;
         return;
       }
 
@@ -425,6 +427,17 @@ class FirestoreQazaRepository
         SetOptions(merge: true),
       );
     });
+
+    if (alreadyCompleted) {
+      final changeReference =
+          _changesCollection(userId).doc('reset_' + operationId);
+      final committed = await changeReference.get();
+      if (!committed.exists) {
+        throw StateError(
+            'Completed reset $operationId has no reset change event.');
+      }
+      return _cursorFromChange(committed);
+    }
 
     final collection = _recordsCollection(userId);
     while (true) {
