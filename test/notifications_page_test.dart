@@ -59,7 +59,8 @@ class _FlakyScheduler implements NotificationScheduler {
           !permanentlyDeniedForStatus && !permissionGrantedForStatus,
       appNotificationsEnabled: appNotificationsEnabled,
       reminderChannelEnabled: reminderChannelEnabled,
-      runtimePermissionGranted: runtimePermissionGranted,
+      runtimePermissionGranted:
+          runtimePermissionGranted && permissionGrantedForStatus,
     );
   }
 
