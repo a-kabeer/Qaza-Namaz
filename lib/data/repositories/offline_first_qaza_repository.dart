@@ -107,6 +107,8 @@ class OfflineFirstQazaRepository implements QazaRepository {
         _localStore = localStore,
         _now = now ?? DateTime.now,
         _syncCursorNamespace = syncCursorNamespace {
+    _connectivityKnown = connectivityChanges == null;
+    _isOnline = connectivityChanges == null;
     _connectivitySubscription =
         connectivityChanges?.listen(_onConnectivityChanged);
   }
@@ -122,6 +124,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   List<PendingSyncOp> _outbox = [];
   String? _activeUserId;
   bool _isOnline = true;
+  bool _connectivityKnown = true;
   bool _loaded = false;
   bool _outboxLoaded = false;
   bool _hydrated = false;
@@ -186,7 +189,10 @@ class OfflineFirstQazaRepository implements QazaRepository {
           : false;
       if (generation != _sessionGeneration || userId != _activeUserId) return;
 
-      if (probe.records.isEmpty && _isOnline && !resetQueued) {
+      if (probe.records.isEmpty &&
+          _isOnline &&
+          _connectivityKnown &&
+          !resetQueued) {
         _emit(const SyncState(status: SyncStatus.hydrating));
 
         final baseline = await _syncRemote.getLatestChange(userId: userId);
@@ -221,9 +227,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
       if (generation != _sessionGeneration || userId != _activeUserId) return;
       _hydrated = true;
-      if (_isOnline) {
+      if (_isOnline && _connectivityKnown) {
         await engine.synchronize(userId);
-      } else {
+      } else if (!_isOnline) {
         _emit(const SyncState(status: SyncStatus.offline));
       }
     } catch (error) {
@@ -598,6 +604,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   void _onConnectivityChanged(bool online) {
+    _connectivityKnown = true;
     _isOnline = online;
     if (!online) {
       _emit(
