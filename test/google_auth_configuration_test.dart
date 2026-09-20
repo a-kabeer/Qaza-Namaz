@@ -23,9 +23,15 @@ void main() {
     );
     expect(
       gradle,
-      contains('signingConfig = signingConfigs.debug'),
+      contains('signingConfig = signingConfigs.release'),
       reason:
-          'Release builds should fall back to the debug key when no production keystore is configured.',
+          'Release builds must use the explicit production release signing configuration.',
+    );
+    expect(
+      gradle,
+      isNot(contains('signingConfig = signingConfigs.debug')),
+      reason:
+          'Release builds must never fall back to the debug signing key.',
     );
 
     final clients =
