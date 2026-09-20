@@ -8,9 +8,47 @@ import '../../core/widgets/app_button.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/date_display.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
+
+class _CompleteSkeleton extends StatelessWidget {
+  const _CompleteSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SkeletonCircle(size: 48),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonText(width: 150, height: 18),
+                  SizedBox(height: 8),
+                  SkeletonText(width: 190, height: 12),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 18),
+        SkeletonText(width: 110, height: 14),
+        SizedBox(height: 8),
+        SkeletonText(width: 190, height: 24),
+        SizedBox(height: 8),
+        SkeletonText(width: 130, height: 12),
+        SizedBox(height: 10),
+        SkeletonText(width: 230, height: 12),
+      ],
+    );
+  }
+}
 
 /// Pick a prayer, see its latest pending record, complete it.
 ///
@@ -137,8 +175,7 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: state.when(
-              loading: () =>
-                  LoadingState(message: l10n.completeLoading, padding: 24),
+              loading: () => const _CompleteSkeleton(),
               error: (_, __) =>
                   ErrorState(message: l10n.completeLoadError, onRetry: refresh),
               data: (_) {
