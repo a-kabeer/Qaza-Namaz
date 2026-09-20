@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/app_button.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/app_scaffold.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_scaffold.dart';
 import '../data/location/city_search_provider.dart';
+import '../data/location/prayer_location_service.dart';
 import '../domain/prayer_times_models.dart';
 import '../prayer_times_providers.dart';
 import 'prayer_times_controller.dart';

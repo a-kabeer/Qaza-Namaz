@@ -65,6 +65,42 @@ class _FakeRepository implements PrayerTimesRepository {
     settings = value;
   }
 
+
+
+class _FakeLocationService implements PrayerLocationService {
+  PrayerLocation? location;
+  PrayerLocationException? failure;
+
+  @override
+  Future<PrayerLocation> getCurrentLocation({String? locale}) async {
+    final error = failure;
+    if (error != null) throw error;
+    return location!;
+  }
+
+  @override
+  Future<bool> openAppSettings() async => true;
+
+  @override
+  Future<bool> openLocationSettings() async => true;
+}
+
+class _FakeCitySearchProvider implements CitySearchProvider {
+  @override
+  Future<List<CitySearchResult>> search(String query) async => [
+        const CitySearchResult(
+          name: 'Karachi',
+          country: 'Pakistan',
+          countryCode: 'PK',
+          latitude: 24.8607,
+          longitude: 67.0011,
+          region: 'Sindh',
+          timezone: 'Asia/Karachi',
+        ),
+      ];
+}
+
+void main() {
   test('offline refresh keeps cached prayer times usable', () async {
     final repository = _FakeRepository()
       ..location = const PrayerLocation(
@@ -109,42 +145,6 @@ class _FakeRepository implements PrayerTimesRepository {
     expect(state.today, isNotNull);
   });
 
-}
-
-class _FakeLocationService implements PrayerLocationService {
-  PrayerLocation? location;
-  PrayerLocationException? failure;
-
-  @override
-  Future<PrayerLocation> getCurrentLocation({String? locale}) async {
-    final error = failure;
-    if (error != null) throw error;
-    return location!;
-  }
-
-  @override
-  Future<bool> openAppSettings() async => true;
-
-  @override
-  Future<bool> openLocationSettings() async => true;
-}
-
-class _FakeCitySearchProvider implements CitySearchProvider {
-  @override
-  Future<List<CitySearchResult>> search(String query) async => [
-        const CitySearchResult(
-          name: 'Karachi',
-          country: 'Pakistan',
-          countryCode: 'PK',
-          latitude: 24.8607,
-          longitude: 67.0011,
-          region: 'Sindh',
-          timezone: 'Asia/Karachi',
-        ),
-      ];
-}
-
-void main() {
   test('useMyLocation persists device location and loads prayer times', () async {
     final repository = _FakeRepository();
     final locationService = _FakeLocationService()

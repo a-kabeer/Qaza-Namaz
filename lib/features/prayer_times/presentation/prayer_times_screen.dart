@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/app_button.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/app_scaffold.dart';
-import '../../core/widgets/skeleton.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_scaffold.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../data/location/prayer_location_service.dart';
 import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
 import '../prayer_times_providers.dart';
@@ -56,14 +57,12 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(prayerTimesControllerProvider);
-    final strings = PrayerTimesStrings;
-
     return AppScaffold(
-      title: strings.title(context),
+      title: PrayerTimesStrings.title(context),
       actions: [
         if (state.hasData)
           IconButton(
-            tooltip: strings.refresh(context),
+            tooltip: PrayerTimesStrings.refresh(context),
             onPressed: state.status == PrayerTimesStatus.refreshing
                 ? null
                 : () => ref
@@ -82,7 +81,10 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
             state.status == PrayerTimesStatus.loading ||
             state.status == PrayerTimesStatus.refreshing ||
             state.status == PrayerTimesStatus.offlineWithCache)) {
-      return _PrayerTimesContent(state: state);
+      return _PrayerTimesContent(
+        state: state,
+        onOpenLocationPicker: _openLocationPicker,
+      );
     }
 
     switch (state.status) {
@@ -131,13 +133,17 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
   }
 }
 
-class _PrayerTimesContent extends StatelessWidget {
-  const _PrayerTimesContent({required this.state});
+class _PrayerTimesContent extends ConsumerWidget {
+  const _PrayerTimesContent({
+    required this.state,
+    required this.onOpenLocationPicker,
+  });
 
   final PrayerTimesState state;
+  final VoidCallback onOpenLocationPicker;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final day = state.today!;
     final schedule = PrayerSchedule.evaluate(
       today: day,
@@ -295,7 +301,7 @@ class _PrayerTimesContent extends StatelessWidget {
                 title: Text(PrayerTimesStrings.calculationMethod(context)),
                 subtitle: Text(methodName),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showCalculationMethodPicker(context, state),
+                onTap: () => _showCalculationMethodPicker(context, state, ref),
               ),
               const Divider(height: 1),
               const SizedBox(height: 12),
@@ -333,7 +339,7 @@ class _PrayerTimesContent extends StatelessWidget {
           icon: Icons.location_searching_rounded,
           secondary: true,
           expand: true,
-          onPressed: _openLocationPicker,
+          onPressed: onOpenLocationPicker,
         ),
       ],
     );
@@ -342,6 +348,7 @@ class _PrayerTimesContent extends StatelessWidget {
   Future<void> _showCalculationMethodPicker(
     BuildContext context,
     PrayerTimesState state,
+    WidgetRef ref,
   ) async {
     final selected = await showModalBottomSheet<CalculationMethod>(
       context: context,
@@ -372,7 +379,7 @@ class _PrayerTimesContent extends StatelessWidget {
       ),
     );
 
-    if (!mounted || selected == null) return;
+    if (!context.mounted || selected == null) return;
     await ref
         .read(prayerTimesControllerProvider.notifier)
         .setCalculationMethod(selected);
