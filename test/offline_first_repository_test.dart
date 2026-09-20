@@ -50,6 +50,7 @@ void main() {
       final repo = createRepository(
           remote: remote, local: local, connectivity: connectivity.stream);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
       connectivity.add(false);
       await Future<void>.delayed(Duration.zero);
       final item = record();
@@ -70,10 +71,20 @@ void main() {
         () async {
       final local = InMemoryQazaLocalStore();
       final remote = _FailingRepository();
-      final repo = createRepository(remote: remote, local: local);
+      final connectivity = StreamController<bool>();
+      final repo = createRepository(
+          remote: remote,
+          local: local,
+          connectivity: connectivity.stream);
+      addTearDown(connectivity.close);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
+      connectivity.add(false);
+      await Future<void>.delayed(Duration.zero);
       remote.failWrites = true;
       await repo.addRecord(record());
+      expect((await local.load()).outboxByUser['u1'], hasLength(1));
+      connectivity.add(true);
       await repo.syncNow();
       final failed = (await local.load()).outboxByUser['u1']!;
       expect(failed, hasLength(1));
@@ -169,12 +180,12 @@ void main() {
       connectivity.add(false);
       await Future<void>.delayed(Duration.zero);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
       await repo.syncNow();
       expect((await local.load()).outboxByUser['u1'], isEmpty);
       remote.failWrites = true;
       connectivity.add(true);
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
+      await repo.syncNow();
       final queued = (await local.load()).outboxByUser['u1']!;
       expect(queued, hasLength(1));
       expect(queued.single.type, SyncOpType.complete);

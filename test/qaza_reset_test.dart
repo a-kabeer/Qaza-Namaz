@@ -97,6 +97,7 @@ void main() {
           remote: remote, local: local, connectivity: connectivity.stream);
       addTearDown(repository.dispose);
       await repository.setActiveUser('u1');
+      await repository.ensureHydrated();
       connectivity.add(false);
       await Future<void>.delayed(Duration.zero);
       await repository.addRecords(_ledger(3));

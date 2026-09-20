@@ -307,8 +307,7 @@ void main() {
       expect(remote.fullReads, 0);
 
       connectivity.add(true);
-      await settle();
-      await settle();
+      await repository.syncNow();
 
       expect(remote.completions, 1);
       expect(remote.fullReads, 0);
@@ -337,8 +336,7 @@ void main() {
           'r_000000');
 
       connectivity.add(true);
-      await settle();
-      await settle();
+      await repository.syncNow();
 
       expect(remote.completions, 1);
       expect((await local.load()).outboxByUser[_userId], isEmpty);

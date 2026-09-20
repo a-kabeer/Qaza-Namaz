@@ -536,7 +536,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    if (_isOnline) {
+    if (_isOnline && _connectivityKnown) {
       unawaited(
         _syncEngine?.synchronize(userId, requestRerun: true) ??
             Future<void>.value(),
@@ -572,7 +572,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    if (_isOnline) {
+    if (_isOnline && _connectivityKnown) {
       unawaited(
         _syncEngine?.synchronize(userId, requestRerun: true) ??
             Future<void>.value(),
@@ -583,6 +583,12 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<void> syncNow() async {
     final userId = _activeUserId;
     if (userId == null) return;
+
+    // Stream<bool> events are delivered asynchronously. Allow a pending
+    // connectivity notification to settle before deciding whether we are
+    // currently offline.
+    await Future<void>.delayed(Duration.zero);
+
     if (!_isOnline) {
       _emit(
         SyncState(
