@@ -29,6 +29,7 @@ class NotificationPermissionInfo {
     required this.shouldShowRationale,
     required this.appNotificationsEnabled,
     required this.reminderChannelEnabled,
+    required this.runtimePermissionGranted,
   });
 
   final bool granted;
@@ -39,6 +40,7 @@ class NotificationPermissionInfo {
   final bool shouldShowRationale;
   final bool appNotificationsEnabled;
   final bool reminderChannelEnabled;
+  final bool runtimePermissionGranted;
 }
 
 abstract interface class NotificationScheduler {
@@ -214,6 +216,7 @@ class LocalNotificationService implements NotificationScheduler {
         shouldShowRationale: false,
         appNotificationsEnabled: true,
         reminderChannelEnabled: true,
+        runtimePermissionGranted: true,
       );
     }
 
@@ -257,6 +260,8 @@ class LocalNotificationService implements NotificationScheduler {
       shouldShowRationale: shouldShowRationale,
       appNotificationsEnabled: appNotificationsEnabled,
       reminderChannelEnabled: reminderChannelEnabled,
+      runtimePermissionGranted:
+          !runtimePermission || (await android.areNotificationsEnabled() ?? false),
     );
 
     _log(
