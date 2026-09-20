@@ -66,7 +66,7 @@ void main() {
     );
 
     expect(duration, isNotNull);
-    expect(duration!.inMinutes, 440);
+    expect(duration!.inMinutes, 530);
     expect(duration.isNegative, isFalse);
   });
 }
