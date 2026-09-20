@@ -41,7 +41,7 @@ class PrayerTimesRepositoryImpl implements PrayerTimesRepository {
   }
 
   @override
-  PrayerLocation? getSavedLocation() => _cache.getLocation();
+  Future<PrayerLocation?> getSavedLocation() => _cache.getLocation();
 
   @override
   Future<void> saveLocation(PrayerLocation location) async {
@@ -50,7 +50,7 @@ class PrayerTimesRepositoryImpl implements PrayerTimesRepository {
   }
 
   @override
-  PrayerSettings getSavedSettings() => _cache.getSettings();
+  Future<PrayerSettings> getSavedSettings() => _cache.getSettings();
 
   @override
   Future<void> saveSettings(PrayerSettings settings) =>
