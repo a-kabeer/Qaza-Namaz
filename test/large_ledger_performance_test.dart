@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
@@ -84,6 +85,28 @@ class _CountingRemote extends InMemoryQazaRepository {
       userId: userId,
       recordIds: recordIds,
       completedAt: completedAt,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    if (operations.isEmpty) {
+      throw ArgumentError('operations must not be empty');
+    }
+    if (operations.first.type == SyncOpType.complete) {
+      completions++;
+      return QazaRemoteChangeCursor(
+        at: _now.toUtc(),
+        id: 'counting-complete-' + completions.toString().padLeft(6, '0'),
+        generation: 0,
+      );
+    }
+    return super.applyOperationsBatch(
+      userId: userId,
+      operations: operations,
     );
   }
 
