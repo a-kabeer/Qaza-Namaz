@@ -30,7 +30,8 @@ class AuthGate extends ConsumerStatefulWidget {
 }
 
 class _AuthGateState extends ConsumerState<AuthGate> {
-  bool showWelcome = true;
+  final GlobalKey<NavigatorState> _authNavigatorKey =
+      GlobalKey<NavigatorState>();
   bool splash = true;
   bool wasSignedIn = false;
   Timer? splashTimer;
@@ -49,12 +50,40 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     super.dispose();
   }
 
+  void _openAuthentication() {
+    _authNavigatorKey.currentState?.push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const AuthenticationScreen(),
+      ),
+    );
+  }
+
+  Route<void> _authenticationRoute(RouteSettings settings) {
+    return MaterialPageRoute<void>(
+      settings: settings,
+      builder: (_) => const AuthenticationScreen(),
+    );
+  }
+
+  Route<void> _welcomeRoute(RouteSettings settings) {
+    return MaterialPageRoute<void>(
+      settings: settings,
+      builder: (_) => WelcomeScreen(
+        onGetStarted: _openAuthentication,
+        onContinueAsGuest: () =>
+            ref.read(guestSessionProvider.notifier).start(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (splash) return const SplashScreen();
 
     final auth = ref.watch(authStateProvider);
     final upgrade = ref.watch(guestUpgradeControllerProvider);
+    final isGuest = ref.watch(guestSessionProvider);
+
     if (auth.isLoading && !auth.hasValue) return const SplashScreen();
     if (upgrade.restoring) return const SplashScreen();
 
@@ -65,36 +94,76 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     // resolved rather than entering the account workspace early.
     if (upgrade.running ||
         upgrade.awaitingDecision ||
-        (upgrade.error != null && ref.watch(guestSessionProvider))) {
-      return const AuthenticationScreen();
+        (upgrade.error != null && isGuest)) {
+      // The navigator remains the single source of truth for pre-auth
+      // navigation. These states are normally reached from Authentication,
+      // but persisted guest-upgrade decisions can also start here.
+      wasSignedIn = user != null || wasSignedIn;
+      final navigator = Navigator(
+        key: _authNavigatorKey,
+        initialRoute: '/authentication',
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case '/authentication':
+              return _authenticationRoute(settings);
+            case '/welcome':
+              return _welcomeRoute(settings);
+            default:
+              return _authenticationRoute(
+                const RouteSettings(name: '/authentication'),
+              );
+          }
+        },
+      );
+
+      return NavigatorPopHandler<void>(
+        enabled: !upgrade.running,
+        onPopWithResult: (result) {
+          unawaited(
+            _authNavigatorKey.currentState?.maybePop(result) ??
+                Future<bool>.value(false),
+          );
+        },
+        child: navigator,
+      );
     }
+
     // A guest reaches the workspace on the same footing as an account: the
     // ledger is local, but every screen works.
-    if (user == null && ref.watch(guestSessionProvider)) {
+    if (user == null && isGuest) {
+      wasSignedIn = false;
       return const WorkspaceShell();
     }
 
     if (user == null) {
-      // Signing out returns to the welcome entry. This only fires on the
-      // signed-in -> signed-out transition, so tapping "Get Started" and then
-      // sitting on the sign-in screen is never bounced backwards.
-      if (wasSignedIn) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && ref.read(authStateProvider).valueOrNull == null) {
-            setState(() {
-              wasSignedIn = false;
-              showWelcome = true;
-            });
-          }
-        });
-      }
-      return showWelcome
-          ? WelcomeScreen(
-              onGetStarted: () => setState(() => showWelcome = false),
-              onContinueAsGuest: () =>
-                  ref.read(guestSessionProvider.notifier).start(),
-            )
-          : const AuthenticationScreen();
+      // Signing out returns to the welcome entry. Because the authenticated
+      // workspace is rendered outside this pre-auth Navigator, signing out
+      // creates a fresh navigator whose initial route is Welcome.
+      wasSignedIn = false;
+      return NavigatorPopHandler<void>(
+        onPopWithResult: (result) {
+          unawaited(
+            _authNavigatorKey.currentState?.maybePop(result) ??
+                Future<bool>.value(false),
+          );
+        },
+        child: Navigator(
+          key: _authNavigatorKey,
+          initialRoute: '/welcome',
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/welcome':
+                return _welcomeRoute(settings);
+              case '/authentication':
+                return _authenticationRoute(settings);
+              default:
+                return _welcomeRoute(
+                  const RouteSettings(name: '/welcome'),
+                );
+            }
+          },
+        ),
+      );
     }
 
     wasSignedIn = true;
