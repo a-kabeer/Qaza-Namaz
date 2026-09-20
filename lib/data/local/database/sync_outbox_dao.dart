@@ -90,21 +90,19 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       var updated = 0;
       for (final id in ids.toSet()) {
+        final row = await (select(syncOutbox)
+              ..where((item) =>
+                  item.userId.equals(userId) & item.id.equals(id)))
+            .getSingleOrNull();
+        if (row == null) continue;
+
         updated += await (update(syncOutbox)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(id)))
+              ..where((item) =>
+                  item.userId.equals(userId) & item.id.equals(id)))
             .write(
           SyncOutboxCompanion(
-            attempts: const Value.absent(),
+            attempts: Value(row.attempts + 1),
             lastError: Value(error),
-          ),
-        );
-        await (update(syncOutbox)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(id)))
-            .write(
-          SyncOutboxCompanion(
-            attempts: Value.custom('attempts + 1'),
           ),
         );
       }
