@@ -101,10 +101,12 @@ class OfflineFirstQazaRepository implements QazaRepository {
     required QazaLocalStore localStore,
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
+    String? syncCursorNamespace,
   })  : _remote = remote,
         _syncRemote = _resolveSyncRemote(remote, syncRemote),
         _localStore = localStore,
-        _now = now ?? DateTime.now {
+        _now = now ?? DateTime.now,
+        _syncCursorNamespace = syncCursorNamespace {
     _connectivitySubscription =
         connectivityChanges?.listen(_onConnectivityChanged);
   }
@@ -113,6 +115,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
   final QazaSyncRemoteDataSource _syncRemote;
   final QazaLocalStore _localStore;
   final DateTime Function() _now;
+  final String? _syncCursorNamespace;
 
   StreamSubscription<bool>? _connectivitySubscription;
   final Map<String, QazaRecord> _records = {};
@@ -157,6 +160,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     final engine = QazaSyncEngine(
       localStore: _localStore,
       remote: _syncRemote,
+      cursorNamespace: _syncCursorNamespace,
       onState: _emit,
       onLocalDataChanged: () async {
         if (userId != _activeUserId) return;
@@ -217,7 +221,11 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
       if (generation != _sessionGeneration || userId != _activeUserId) return;
       _hydrated = true;
-      await engine.synchronize(userId);
+      if (_isOnline) {
+        await engine.synchronize(userId);
+      } else {
+        _emit(const SyncState(status: SyncStatus.offline));
+      }
     } catch (error) {
       if (generation != _sessionGeneration || userId != _activeUserId) return;
       _hydrated = true;
@@ -452,7 +460,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    if (_isOnline) {
+      unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    }
   }
 
   @override
@@ -517,7 +527,9 @@ class OfflineFirstQazaRepository implements QazaRepository {
     _outboxLoaded = true;
     _emitPending();
 
-    unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    if (_isOnline) {
+      unawaited(_syncEngine?.synchronize(userId) ?? Future<void>.value());
+    }
   }
 
   @override
@@ -554,7 +566,15 @@ class OfflineFirstQazaRepository implements QazaRepository {
   Future<void> syncNow() async {
     final userId = _activeUserId;
     if (userId == null) return;
-    await _ensureLoaded();
+    if (!_isOnline) {
+      _emit(
+        SyncState(
+          status: SyncStatus.offline,
+          pendingCount: _outbox.length,
+        ),
+      );
+      return;
+    }
     await _syncEngine?.synchronize(userId);
   }
 
