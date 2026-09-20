@@ -84,6 +84,17 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
 }
 
 class OfflineFirstQazaRepository implements QazaRepository {
+  static QazaSyncRemoteDataSource _resolveSyncRemote(
+    QazaRepository remote,
+    QazaSyncRemoteDataSource? syncRemote,
+  ) {
+    if (syncRemote != null) return syncRemote;
+    if (remote is QazaSyncRemoteDataSource) {
+      return remote;
+    }
+    return _LegacyQazaSyncRemoteDataSource(remote);
+  }
+
   OfflineFirstQazaRepository({
     required QazaRepository remote,
     QazaSyncRemoteDataSource? syncRemote,
@@ -91,10 +102,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
   })  : _remote = remote,
-        _syncRemote = syncRemote ??
-            (remote is QazaSyncRemoteDataSource
-                ? remote
-                : _LegacyQazaSyncRemoteDataSource(remote)),
+        _syncRemote = _resolveSyncRemote(remote, syncRemote),
         _localStore = localStore,
         _now = now ?? DateTime.now {
     _connectivitySubscription =
