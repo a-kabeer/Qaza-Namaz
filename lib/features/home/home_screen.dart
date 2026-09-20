@@ -8,6 +8,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_progress_row.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../calculator/calculator_screen.dart';
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
       // Minimal header: Account and Notifications live in Settings.
       title: l10n.homeTitle,
       body: summaryAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _HomeSkeleton(),
         error: (_, __) => _message(l10n.homeProgressError),
         data: (summary) => RefreshIndicator(
           onRefresh: () => CompleteQazaSection.refresh(ref),
@@ -102,6 +103,98 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(32),
             child: Center(child: Text(text, textAlign: TextAlign.center)))
       ]);
+}
+
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
+      children: [
+        const _HomeSkeletonCard(height: 118),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            const Expanded(child: SkeletonText(width: 180, height: 22)),
+            const SizedBox(width: 12),
+            const SkeletonText(width: 60, height: 14),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (var i = 0; i < 6; i++) ...[
+          const _HomePrayerSkeleton(),
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
+class _HomeSkeletonCard extends StatelessWidget {
+  const _HomeSkeletonCard({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: SizedBox(
+        height: height,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                children: [
+                  Expanded(child: SkeletonText(width: 150, height: 18)),
+                  SizedBox(width: 12),
+                  SkeletonText(width: 84, height: 16),
+                ],
+              ),
+              const Spacer(),
+              SkeletonBox(width: double.infinity, height: 8,
+                  borderRadius: const BorderRadius.all(Radius.circular(999))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomePrayerSkeleton extends StatelessWidget {
+  const _HomePrayerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            const SkeletonCircle(size: 40),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonText(width: 92, height: 16),
+                  SizedBox(height: 8),
+                  SkeletonText(width: 150, height: 12),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const SkeletonText(width: 52, height: 14),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// What Home shows before any Qaza has been recorded.
