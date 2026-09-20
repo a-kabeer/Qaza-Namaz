@@ -37,9 +37,11 @@ class MainActivity : FlutterActivity() {
 
     private fun getNotificationPermissionState(): Map<String, Any> {
         val runtimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val runtimePermissionGranted = !runtimePermission ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
         val shouldShowRationale = runtimePermission &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED &&
+            !runtimePermissionGranted &&
             shouldShowRequestPermissionRationale(
                 Manifest.permission.POST_NOTIFICATIONS,
             )
@@ -47,6 +49,7 @@ class MainActivity : FlutterActivity() {
         return mapOf(
             "sdkInt" to Build.VERSION.SDK_INT,
             "runtimePermission" to runtimePermission,
+            "runtimePermissionGranted" to runtimePermissionGranted,
             "shouldShowRationale" to shouldShowRationale,
         )
     }
