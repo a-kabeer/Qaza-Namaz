@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/location/city_search_provider.dart';
@@ -89,6 +87,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   Timer? _citySearchDebounce;
   int _loadGeneration = 0;
+  int _searchGeneration = 0;
   bool _isMounted = true;
 
   @override
@@ -149,7 +148,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
         clearLocationErrorKind: true,
         clearTomorrow: true,
       );
-      await _loadToday(forceRefresh: true);
+      await _loadToday();
     } on PrayerLocationException catch (error) {
       if (!_isMounted) return;
       state = state.copyWith(
@@ -229,6 +228,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   void searchCities(String query) {
     _citySearchDebounce?.cancel();
+    final generation = ++_searchGeneration;
     final normalized = query.trim();
 
     if (normalized.length < 2) {
@@ -247,21 +247,21 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
     _citySearchDebounce = Timer(
       const Duration(milliseconds: 350),
-      () => unawaited(_searchCities(normalized)),
+      () => unawaited(_searchCities(normalized, generation)),
     );
   }
 
-  Future<void> _searchCities(String query) async {
+  Future<void> _searchCities(String query, int generation) async {
     try {
       final results = await _citySearchProvider.search(query);
-      if (!_isMounted) return;
+      if (!_isMounted || generation != _searchGeneration) return;
       state = state.copyWith(
         cityResults: results,
         citySearchLoading: false,
         clearCitySearchError: true,
       );
     } catch (_) {
-      if (!_isMounted) return;
+      if (!_isMounted || generation != _searchGeneration) return;
       state = state.copyWith(
         cityResults: const <CitySearchResult>[],
         citySearchLoading: false,
@@ -300,7 +300,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   Future<void> refresh() async {
     if (state.location == null) return;
-    await _loadToday(forceRefresh: true);
+    await _loadToday();
   }
 
   Future<void> tick() async {
@@ -322,7 +322,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     }
   }
 
-  Future<void> _loadToday({bool forceRefresh = false}) async {
+  Future<void> _loadToday() async {
     final location = state.location;
     if (location == null) {
       state = state.copyWith(status: PrayerTimesStatus.noLocation);
@@ -349,13 +349,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
     if (!_isMounted || generation != _loadGeneration) return;
 
-    if (cached != null && !forceRefresh) {
-      state = state.copyWith(
-        status: PrayerTimesStatus.refreshing,
-        today: cached,
-        clearMessage: true,
-      );
-    } else if (cached != null) {
+    if (cached != null) {
       state = state.copyWith(
         status: PrayerTimesStatus.refreshing,
         today: cached,
@@ -404,7 +398,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       } else {
         state = state.copyWith(
           status: PrayerTimesStatus.apiError,
-          message: error.toString(),
+          clearMessage: true,
         );
       }
     }
@@ -464,6 +458,4 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   String _dateKey(DateTime date) =>
       '${date.year}-${date.month}-${date.day}';
 
-  bool _isNetworkFailure(Object error) =>
-      error is SocketException || error is TimeoutException;
 }
