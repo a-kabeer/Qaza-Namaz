@@ -7,6 +7,7 @@ import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
@@ -246,7 +247,7 @@ class _TrackerBody extends StatelessWidget {
     // The full state belongs to the first load only; a filter change keeps
     // the page that is already there.
     if (state.loading && state.records.isEmpty) {
-      return LoadingState(message: l10n.qazaLoading);
+      return const _TrackerSkeleton();
     }
     if (state.error != null) {
       return ErrorState(
@@ -296,8 +297,17 @@ class _TrackerBody extends StatelessWidget {
           itemBuilder: (context, index) {
             if (index >= state.records.length) {
               return const Padding(
-                padding: EdgeInsets.all(AppSpacing.lg),
-                child: Center(child: CircularProgressIndicator()),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Column(
+                  children: [
+                    _TrackerSkeletonRow(),
+                    _TrackerSkeletonRow(),
+                    _TrackerSkeletonRow(),
+                  ],
+                ),
               );
             }
             final record = state.records[index];
@@ -317,6 +327,58 @@ class _TrackerBody extends StatelessWidget {
 
 /// One ledger row: original Qaza date, prayer, status and completion date are
 /// each distinguishable.
+class _TrackerSkeleton extends StatelessWidget {
+  const _TrackerSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      key: const Key('qaza_tracker_loading_skeleton'),
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.fabClearance,
+      ),
+      itemCount: 6,
+      itemBuilder: (_, __) => const _TrackerSkeletonRow(),
+    );
+  }
+}
+
+class _TrackerSkeletonRow extends StatelessWidget {
+  const _TrackerSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            const SkeletonCircle(size: 40),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonText(width: 120, height: 16),
+                  SizedBox(height: 8),
+                  SkeletonText(width: 180, height: 12),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const SkeletonText(width: 64, height: 28,
+                borderRadius: BorderRadius.all(Radius.circular(999))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RecordRow extends StatelessWidget {
   const _RecordRow({
     required this.record,

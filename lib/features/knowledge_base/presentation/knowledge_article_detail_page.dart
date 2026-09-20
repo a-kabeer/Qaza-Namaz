@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../domain/knowledge_category.dart';
@@ -35,7 +36,7 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
         bottom: const KnowledgeLanguageBar(),
       ),
       body: articleAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _KnowledgeArticleSkeleton(),
         error: (error, _) => _DetailErrorState(
           onRetry: () => ref.invalidate(
             knowledgeArticleProvider(articleId),
@@ -107,8 +108,9 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 28, 16, 24),
                 sliver: relatedAsync.when(
-                  loading: () => const SliverToBoxAdapter(
-                    child: Center(child: CircularProgressIndicator()),
+                  loading: () => SliverList.builder(
+                    itemCount: 3,
+                    itemBuilder: (_, __) => const _RelatedArticleSkeleton(),
                   ),
                   error: (error, _) => const SliverToBoxAdapter(
                     child: SizedBox.shrink(),
@@ -171,6 +173,81 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _KnowledgeArticleSkeleton extends StatelessWidget {
+  const _KnowledgeArticleSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SkeletonText(width: 260, height: 28),
+                const SizedBox(height: 22),
+                const Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    SkeletonBox(width: 94, height: 32,
+                        borderRadius: BorderRadius.all(Radius.circular(999))),
+                    SkeletonBox(width: 120, height: 32,
+                        borderRadius: BorderRadius.all(Radius.circular(999))),
+                  ],
+                ),
+                const SizedBox(height: 22),
+                for (var i = 0; i < 11; i++) ...[
+                  SkeletonText(width: double.infinity, height: 13),
+                  const SizedBox(height: 9),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(16, 28, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: SkeletonText(width: 180, height: 22),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          sliver: SliverList.builder(
+            itemCount: 3,
+            itemBuilder: (_, __) => const _RelatedArticleSkeleton(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RelatedArticleSkeleton extends StatelessWidget {
+  const _RelatedArticleSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: const ListTile(
+        leading: SkeletonCircle(size: 40),
+        title: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: SkeletonText(width: 190, height: 16),
+        ),
+        trailing: SkeletonBox(
+          width: 20,
+          height: 20,
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+        ),
       ),
     );
   }

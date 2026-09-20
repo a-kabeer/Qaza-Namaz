@@ -6,6 +6,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../domain/services/qaza_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
@@ -715,6 +716,28 @@ class _ResultStep extends StatelessWidget {
   }
 }
 
+class _PreflightLoadingPanel extends StatelessWidget {
+  const _PreflightLoadingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      key: const Key('calc_preflight_loading'),
+      background: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonText(width: 180, height: 17),
+          SizedBox(height: 12),
+          SkeletonText(width: double.infinity, height: 13),
+          SizedBox(height: 8),
+          SkeletonText(width: 230, height: 13),
+        ],
+      ),
+    );
+  }
+}
+
 /// Shows the shared preflight result before anything is written.
 /// Progress, success and failure for the tracker insert, in the page itself.
 class _AddStatusPanel extends StatelessWidget {
@@ -730,6 +753,10 @@ class _AddStatusPanel extends StatelessWidget {
     final scheme = theme.colorScheme;
     final numbers =
         NumberFormat.decimalPattern(Localizations.localeOf(context).toString());
+
+    if (state.loadingPreflight) {
+      return const _PreflightLoadingPanel();
+    }
 
     if (state.addingToTracker) {
       return _Panel(
