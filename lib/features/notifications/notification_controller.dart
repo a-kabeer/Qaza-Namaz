@@ -482,13 +482,11 @@ class NotificationSettingsNotifier
 
   Future<void> _reconcile(NotificationSettingsState value) async {
     switch (value.scheduleStatus) {
-      case NotificationScheduleStatus.disabled:
       case NotificationScheduleStatus.unavailable:
+        return;
+      case NotificationScheduleStatus.disabled:
       case NotificationScheduleStatus.permissionRequired:
       case NotificationScheduleStatus.noPendingQaza:
-        if (value.scheduleStatus == NotificationScheduleStatus.unavailable) {
-          return;
-        }
         await _scheduler.cancelDaily();
         return;
       case NotificationScheduleStatus.scheduled:
