@@ -188,11 +188,88 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
   @override
   Future<List<PendingSyncOp>> loadOutbox(String userId) async =>
       List<PendingSyncOp>.of(_outboxByUser[userId] ?? const <PendingSyncOp>[]);
+  @override
+  Future<int> countPendingOutbox(String userId) async =>
+      (_outboxByUser[userId] ?? const <PendingSyncOp>[]).length;
+
+  @override
+  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
+      {int limit = 400}) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    return List<PendingSyncOp>.of(
+      (_outboxByUser[userId] ?? const <PendingSyncOp>[]).take(limit),
+    );
+  }
+
+  @override
+  Future<void> markOutboxBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    final wanted = ids.toSet();
+    final current = _outboxByUser[userId] ?? const <PendingSyncOp>[];
+    _outboxByUser[userId] = [
+      for (final op in current)
+        wanted.contains(op.id)
+            ? op.copyWith(attempts: op.attempts + 1, lastError: error)
+            : op,
+    ];
+  }
+
+  @override
+  Future<void> removeOutboxBatch(String userId, List<String> ids) async {
+    if (ids.isEmpty) return;
+    final wanted = ids.toSet();
+    final current = _outboxByUser[userId] ?? const <PendingSyncOp>[];
+    _outboxByUser[userId] = [
+      for (final op in current)
+        if (!wanted.contains(op.id)) op,
+    ];
+  }
+
 
   @override
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
     _outboxByUser[userId] = List<PendingSyncOp>.of(ops);
   }
+  @override
+  Future<void> appendRecordsAndOutbox(
+      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+    await appendRecords(userId, records);
+    if (ops.isEmpty) return;
+    final current = _outboxByUser.putIfAbsent(userId, () => <PendingSyncOp>[]);
+    current.addAll(ops);
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    final wanted = ids.toSet();
+    return [
+      for (final record in _recordsByUser[userId] ?? const <QazaRecord>[])
+        if (wanted.contains(record.id)) record,
+    ];
+  }
+
+  @override
+  Future<void> upsertRecords(
+      String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final existing = _recordsByUser.putIfAbsent(userId, () => <QazaRecord>[]);
+    final byId = {for (final record in existing) record.id: record};
+    for (final record in records) {
+      if (record.userId == userId) byId[record.id] = record;
+    }
+    existing
+      ..clear()
+      ..addAll(byId.values);
+  }
+
 
   @override
   Future<void> retireUserData({required String userId}) async {
