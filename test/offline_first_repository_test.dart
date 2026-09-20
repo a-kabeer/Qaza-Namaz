@@ -84,8 +84,11 @@ void main() {
       remote.failWrites = true;
       await repo.addRecord(record());
       expect((await local.load()).outboxByUser['u1'], hasLength(1));
+      final failedSync = repo.syncState.firstWhere(
+        (state) => state.status == SyncStatus.syncError,
+      );
       connectivity.add(true);
-      await repo.syncNow();
+      await failedSync;
       final failed = (await local.load()).outboxByUser['u1']!;
       expect(failed, hasLength(1));
       expect(failed.single.attempts, 1);
@@ -266,7 +269,8 @@ void main() {
   });
 }
 
-class _FailingRepository implements QazaRepository {
+class _FailingRepository
+    implements QazaRepository, QazaSyncRemoteDataSource {
   final InMemoryQazaRepository _delegate = InMemoryQazaRepository();
   bool failWrites = false;
 
@@ -358,6 +362,56 @@ class _FailingRepository implements QazaRepository {
   Future<void> resetUserRecords({required String userId}) {
     if (failWrites) return Future.error(StateError('simulated remote outage'));
     return _delegate.resetUserRecords(userId: userId);
+  }
+
+  @override
+  Future<QazaRemoteResetState> getResetState({required String userId}) =>
+      _delegate.getResetState(userId: userId);
+
+  @override
+  Future<QazaRemoteChangeCursor?> getLatestChange({
+    required String userId,
+  }) =>
+      _delegate.getLatestChange(userId: userId);
+
+  @override
+  Future<QazaRemoteChangePage> getChanges({
+    required String userId,
+    QazaRemoteChangeCursor? after,
+    int limit = 100,
+  }) =>
+      _delegate.getChanges(
+        userId: userId,
+        after: after,
+        limit: limit,
+      );
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) {
+    if (failWrites) {
+      return Future.error(StateError('simulated remote outage'));
+    }
+    return _delegate.applyOperationsBatch(
+      userId: userId,
+      operations: operations,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) {
+    if (failWrites) {
+      return Future.error(StateError('simulated remote outage'));
+    }
+    return _delegate.resetUserRecordsForSync(
+      userId: userId,
+      operationId: operationId,
+    );
   }
 
   int get historyPageCalls => _delegate.historyPageCalls;

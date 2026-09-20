@@ -82,8 +82,12 @@ void main() {
     expect(await remote.getRecords(userId: 'user-a'), isEmpty);
     expect(repository.currentState.pendingCount, greaterThan(0));
 
+    final synced = repository.syncState.firstWhere(
+      (state) =>
+          state.status == SyncStatus.synced && state.pendingCount == 0,
+    );
     connectivity.add(true);
-    await repository.syncNow();
+    await synced;
 
     expect(
       (await remote.getRecords(userId: 'user-a')).map((r) => r.id),
