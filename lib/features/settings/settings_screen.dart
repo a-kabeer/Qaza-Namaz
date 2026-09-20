@@ -317,6 +317,7 @@ class DataCloudScreen extends ConsumerWidget {
   String _syncSubtitle(AppLocalizations l10n, sync_models.SyncState? state) {
     if (state == null) return l10n.cloudInactive;
     return switch (state.status) {
+      sync_models.SyncStatus.idle => l10n.cloudInactive,
       sync_models.SyncStatus.bootstrapping => l10n.cloudBootstrapping,
       sync_models.SyncStatus.hydrating => l10n.cloudHydrating,
       sync_models.SyncStatus.synced => l10n.cloudSynced,
