@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
 import '../auth/backup_prompt.dart';
 import 'account_screen.dart';
+import 'app_lock_settings_screen.dart';
 import 'notifications_screen.dart';
 import 'qaza_reset_controller.dart';
 
@@ -153,6 +154,18 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SettingsSection(
+            title: l10n.settingsPrivacySecurity,
+            subtitle: l10n.settingsPrivacySecuritySubtitle,
+            child: SettingsNavRow(
+              key: const Key('settings_privacy_security'),
+              icon: Icons.lock_outline_rounded,
+              title: l10n.settingsAppLock,
+              subtitle: l10n.settingsAppLockSubtitle,
+              onTap: () => open(const AppLockSettingsScreen()),
             ),
           ),
           const SizedBox(height: 16),
