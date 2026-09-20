@@ -51,14 +51,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       final message = value?.schedulerAvailable == false
           ? l10n.notificationsUnavailableDetail
           : switch (value?.permissionStatus) {
-        NotificationPermissionStatus.denied =>
-          l10n.notificationsBlockedDetail,
-        NotificationPermissionStatus.permanentlyDenied =>
-          l10n.notificationsEnableInSettings,
-        NotificationPermissionStatus.unavailable =>
-          l10n.notificationsUnavailableDetail,
-        _ => l10n.notificationsEnableFailed,
-      };
+              NotificationPermissionStatus.denied =>
+                l10n.notificationsBlockedDetail,
+              NotificationPermissionStatus.permanentlyDenied =>
+                l10n.notificationsEnableInSettings,
+              NotificationPermissionStatus.unavailable =>
+                l10n.notificationsUnavailableDetail,
+              _ => l10n.notificationsEnableFailed,
+            };
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
