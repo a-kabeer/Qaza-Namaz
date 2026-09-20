@@ -523,6 +523,7 @@ class FirestoreQazaRepository
     bool serverUpdatedAt = false,
   }) {
     return {
+      'id': record.id,
       'userId': record.userId,
       'prayerType': record.prayerType.name,
       'originalDate': QazaDate.key(record.originalDate),
