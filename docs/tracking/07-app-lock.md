@@ -1,7 +1,7 @@
 # App Lock
 
 **Priority:** P0/P1  
-**Status:** **Implemented — Device QA Pending**
+**Status:** **Merged — Device QA Pending**
 
 ## Task checklist
 
@@ -27,7 +27,7 @@ Target path: Settings → Privacy & Security → App Lock. Device authentication
 - [ ] Device QA where required
 - [x] UX/security review
 - [ ] Documentation
-- [ ] Merge
+- [x] Merge
 
 ## Evidence log
 
@@ -35,4 +35,7 @@ Target path: Settings → Privacy & Security → App Lock. Device authentication
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
 
+| 2026-09-20 | Merged | PR #47 merged to `main` with merge commit `9a4301154340838bdd82e59e6046e9442ba4c59f`; CI run #1468 passed all five jobs. Physical-device QA remains pending. |
+
 **Rule:** update this tracking file, not the master plan, when status changes.
+
