@@ -81,6 +81,37 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
         .go();
   }
 
+  Future<int> markBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    if (ids.isEmpty) return 0;
+    return transaction(() async {
+      var updated = 0;
+      for (final id in ids.toSet()) {
+        updated += await (update(syncOutbox)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(id)))
+            .write(
+          SyncOutboxCompanion(
+            attempts: const Value.absent(),
+            lastError: Value(error),
+          ),
+        );
+        await (update(syncOutbox)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(id)))
+            .write(
+          SyncOutboxCompanion(
+            attempts: Value.custom('attempts + 1'),
+          ),
+        );
+      }
+      return updated;
+    });
+  }
+
   Future<int> removeBatch({
     required String userId,
     required List<String> ids,
