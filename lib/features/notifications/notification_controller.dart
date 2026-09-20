@@ -17,6 +17,8 @@ enum NotificationPermissionStatus {
   granted,
   denied,
   permanentlyDenied,
+  appNotificationsDisabled,
+  reminderChannelDisabled,
   unavailable,
   restricted,
 }
@@ -177,9 +179,18 @@ class NotificationSettingsNotifier
           await _scheduler.getPermissionInfo(permissionRequested: requested);
       if (!info.supported) return NotificationPermissionStatus.granted;
       if (info.granted) return NotificationPermissionStatus.granted;
-      if (!requested) return NotificationPermissionStatus.notRequested;
-      if (info.permanentlyDenied) {
-        return NotificationPermissionStatus.permanentlyDenied;
+      if (!info.runtimePermissionGranted) {
+        if (!requested) return NotificationPermissionStatus.notRequested;
+        if (info.permanentlyDenied) {
+          return NotificationPermissionStatus.permanentlyDenied;
+        }
+        return NotificationPermissionStatus.denied;
+      }
+      if (!info.appNotificationsEnabled) {
+        return NotificationPermissionStatus.appNotificationsDisabled;
+      }
+      if (!info.reminderChannelEnabled) {
+        return NotificationPermissionStatus.reminderChannelDisabled;
       }
       return NotificationPermissionStatus.denied;
     } catch (error, stack) {
@@ -271,7 +282,15 @@ class NotificationSettingsNotifier
     }
 
     if (current.permissionStatus ==
-        NotificationPermissionStatus.permanentlyDenied) {
+            NotificationPermissionStatus.permanentlyDenied ||
+        current.permissionStatus ==
+            NotificationPermissionStatus.appNotificationsDisabled ||
+        current.permissionStatus ==
+            NotificationPermissionStatus.reminderChannelDisabled) {
+      final next = current.copyWith(enabled: true);
+      await _persist(next, permissionRequested: null);
+      state = AsyncData(next);
+      await openSystemSettings();
       return false;
     }
 
