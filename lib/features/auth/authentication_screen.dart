@@ -66,10 +66,12 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
 
     final loading = upgrade.running;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: loading ? null : () => Navigator.maybePop(context),
+    return PopScope<void>(
+      canPop: !loading,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: loading ? null : () => Navigator.maybePop(context),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         title: Text(l10n.authTitle),
@@ -154,6 +156,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
           ),
         ),
       ),
+    );
     );
   }
 
