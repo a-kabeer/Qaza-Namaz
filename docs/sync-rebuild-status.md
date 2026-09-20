@@ -2,6 +2,7 @@
 
 Branch: `rebuild/firestore-sync-hardening`
 PR: #40 — Rebuild Firebase sync for large Qaza ledgers
+Latest implementation commit: `4bab785ebc139ac1c35cc8982216b2f2ab30fd71`
 
 ## Overall
 
@@ -17,8 +18,8 @@ The sync subsystem has been structurally rebuilt on a dedicated branch. The appl
 | 6. Batch reset | ✅ Implemented | 400-op delete batches; resumable reset operation IDs; generation barrier |
 | 7. Retry strategy | ✅ Implemented | Firebase transient-error classification; exponential backoff; durable attempts/errors |
 | 8. Sync state | ✅ Implemented | Syncing/retrying/partial/synced/offline/error + progress counters |
-| 9. Large-data stress testing | 🔄 In progress | 13,000-record engine stress/regression coverage added; full CI validation pending |
-| 10. Final CI / cross-platform validation | 🔄 In progress | Flutter CI run active; Linux, Windows, Android and Analyze jobs present |
+| 9. Large-data stress testing | 🔄 In progress | 13,000-record engine stress/regression coverage plus 1,000-operation completion coverage added; 20k/50k and real-Firebase smoke validation remain |
+| 10. Final CI / cross-platform validation | 🔄 In progress | Latest CI run is being queued/processed; previous run 1367 was cancelled by subsequent branch updates |
 
 ## Changes
 
