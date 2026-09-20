@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 import 'support/in_memory_qaza_local_store.dart';
