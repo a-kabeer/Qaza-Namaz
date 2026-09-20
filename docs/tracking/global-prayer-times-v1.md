@@ -29,20 +29,20 @@ Location services are kept behind module interfaces and are not coupled to Qaza 
 
 ## Dedicated module files
 
-- [ ] Domain models and enums
-- [ ] Prayer provider abstraction
-- [ ] AlAdhan provider
-- [ ] Local SharedPreferences cache
-- [ ] Prayer repository
-- [ ] Device location service
-- [ ] Manual city search provider
-- [ ] Riverpod controller/state
-- [ ] Prayer Times screen
-- [ ] Location picker screen
-- [ ] Schedule/current-next calculation
-- [ ] Navigation entry
-- [ ] Localization-aware module strings
-- [ ] Automated tests
+- [x] Domain models and enums
+- [x] Prayer provider abstraction
+- [x] AlAdhan provider
+- [x] Local SharedPreferences cache
+- [x] Prayer repository
+- [x] Device location service
+- [x] Manual city search provider
+- [x] Riverpod controller/state
+- [x] Prayer Times screen
+- [x] Location picker screen
+- [x] Schedule/current-next calculation
+- [x] Navigation entry
+- [x] Localization-aware module strings
+- [x] Automated tests
 
 ## Implementation checklist
 
@@ -58,78 +58,78 @@ Location services are kept behind module interfaces and are not coupled to Qaza 
 - [ ] Current/next prayer result
 
 ### 2. Location
-- [ ] Foreground-only device location
-- [ ] Location service disabled state
-- [ ] Permission denied state
-- [ ] Permission permanently denied state
-- [ ] Approximate/reduced accuracy handling
-- [ ] Precise accuracy handling
-- [ ] Accuracy validation
-- [ ] Reverse geocoding
-- [ ] Graceful reverse-geocode failure
-- [ ] Manual city search
-- [ ] Manual coordinate input under Advanced
-- [ ] No background location permission/tracking
+- [x] Foreground-only device location
+- [x] Location service disabled state
+- [x] Permission denied state
+- [x] Permission permanently denied state
+- [x] Approximate/reduced accuracy handling
+- [x] Precise accuracy handling
+- [x] Accuracy validation
+- [x] Reverse geocoding
+- [x] Graceful reverse-geocode failure
+- [x] Manual city search
+- [x] Manual coordinate input under Advanced
+- [x] No background location permission/tracking
 
 ### 3. Prayer calculation
-- [ ] Provider abstraction
-- [ ] AlAdhan timing request
-- [ ] Coordinate validation
-- [ ] Calculation Method support
-- [ ] Standard Asr
-- [ ] Hanafi Asr
-- [ ] Timezone parsing
-- [ ] Hijri date parsing
-- [ ] Robust/invalid API response handling
+- [x] Provider abstraction
+- [x] AlAdhan timing request
+- [x] Coordinate validation
+- [x] Calculation Method support
+- [x] Standard Asr
+- [x] Hanafi Asr
+- [x] Timezone parsing
+- [x] Hijri date parsing
+- [x] Robust/invalid API response handling
 
 ### 4. Cache/offline
-- [ ] Persist selected PrayerLocation
-- [ ] Persist PrayerSettings
-- [ ] Cache PrayerDay by location/date/method/Asr
-- [ ] Immediate cache display
-- [ ] Background refresh
-- [ ] Offline-with-cache state
-- [ ] No-cache offline state
-- [ ] No Firebase/analytics storage of precise coordinates
+- [x] Persist selected PrayerLocation
+- [x] Persist PrayerSettings
+- [x] Cache PrayerDay by location/date/method/Asr
+- [x] Immediate cache display
+- [x] Background refresh
+- [x] Offline-with-cache state
+- [x] No-cache offline state
+- [x] No Firebase/analytics storage of precise coordinates
 
 ### 5. UX
-- [ ] First-time Use My Location / Choose Manually
-- [ ] Today's prayer times
-- [ ] Current prayer
-- [ ] Next prayer
-- [ ] Countdown
-- [ ] Gregorian primary date
-- [ ] Hijri secondary date
-- [ ] Change Location
-- [ ] Calculation settings
-- [ ] Skeleton/shimmer loading
-- [ ] Refreshing state
-- [ ] Clear API/location errors
-- [ ] Dark/light theme
-- [ ] RTL
-- [ ] Small-screen layout
+- [x] First-time Use My Location / Choose Manually
+- [x] Today's prayer times
+- [x] Current prayer
+- [x] Next prayer
+- [x] Countdown
+- [x] Gregorian primary date
+- [x] Hijri secondary date
+- [x] Change Location
+- [x] Calculation settings
+- [x] Skeleton/shimmer loading
+- [x] Refreshing state
+- [x] Clear API/location errors
+- [x] Dark/light theme
+- [x] RTL
+- [x] Small-screen layout
 
 ### 6. Testing
-- [ ] Models/serialization
-- [ ] AlAdhan parser
-- [ ] Repository cache/fetch behavior
-- [ ] Location state handling via fakes
-- [ ] City search parsing
-- [ ] Current/next prayer logic
-- [ ] Offline fallback
-- [ ] Calculation method variants
-- [ ] Standard/Hanafi request parameters
-- [ ] Timezone/DST coverage
-- [ ] High-latitude response handling
-- [ ] Widget/loading/error states
-- [ ] RTL/theme smoke coverage
+- [x] Models/serialization
+- [x] AlAdhan parser
+- [x] Repository cache/fetch behavior
+- [x] Location state handling via fakes
+- [x] City search parsing
+- [x] Current/next prayer logic
+- [ ] Offline fallback (CI verification pending)
+- [x] Calculation method variants
+- [x] Standard/Hanafi request parameters
+- [ ] Timezone/DST coverage (CI verification pending)
+- [ ] High-latitude response handling (CI verification pending)
+- [ ] Widget/loading/error states (CI verification pending)
+- [ ] RTL/theme smoke coverage (CI verification pending)
 
 ### 7. CI / release verification
-- [ ] Flutter analyze
-- [ ] Flutter tests
-- [ ] Android debug build
-- [ ] PR CI green
-- [ ] No unrelated existing tracking documents modified
+- [ ] Flutter analyze (CI verification pending)
+- [ ] Flutter tests (CI verification pending)
+- [ ] Android debug build (CI verification pending)
+- [ ] PR CI green (pending)
+- [x] No unrelated existing tracking documents modified
 
 ## V1 explicit exclusions
 
@@ -162,6 +162,13 @@ Location services are kept behind module interfaces and are not coupled to Qaza 
 The module is complete when the feature can be opened without touching Qaza business logic, obtain or manually select a location, calculate today's times for multiple global methods and Asr schools, survive offline/API failures through cache, render correctly in both supported locales/themes/RTL, and pass the dedicated test suite plus repository CI.
 
 ## Change log
+
+### 2026-09-20
+- Implemented the V1 application layers and dedicated tests on the isolated branch.
+- Added Prayer Times navigation without changing existing tracking documents.
+- Added global AlAdhan calculation-method catalog and Standard/Hanafi school mapping.
+- Added Open-Meteo/GeoNames city search with attribution text.
+- Added foreground-only Android location permissions; no background location permission.
 
 ### 2026-09-20
 - Created isolated branch `feature/global-prayer-times-v1`.
