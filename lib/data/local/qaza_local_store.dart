@@ -299,6 +299,22 @@ abstract class QazaLocalStore {
   ///
   /// The default rewrites the user's rows because a plain store has no other
   /// way; database-backed stores override it with an insert.
+  Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final snapshot = await load();
+    final byId = <String, QazaRecord>{
+      for (final record
+          in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        record.id: record,
+    };
+    for (final record in records) {
+      if (record.userId == userId) {
+        byId[record.id] = record;
+      }
+    }
+    await saveRecords(userId, byId.values.toList(growable: false));
+  }
+
   Future<void> appendRecords(String userId, List<QazaRecord> records) async {
     if (records.isEmpty) return;
     final snapshot = await load();
