@@ -108,7 +108,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     }
 
     return NavigatorPopHandler<void>(
-      onPopWithResult: (result) {
+      onPopWithResult: (_) {
         _authNavigatorKey.currentState?.pop();
       },
       child: navigator,
