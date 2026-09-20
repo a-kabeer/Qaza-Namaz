@@ -80,7 +80,9 @@ class GeolocatorPrayerLocationService implements PrayerLocationService {
     final accuracyKind = switch (accuracyStatus) {
       LocationAccuracyStatus.reduced => LocationAccuracyKind.approximate,
       LocationAccuracyStatus.precise => LocationAccuracyKind.precise,
-      LocationAccuracyStatus.unknown => LocationAccuracyKind.unknown,
+      LocationAccuracyStatus.unknown => position.accuracy >= 1000
+          ? LocationAccuracyKind.approximate
+          : LocationAccuracyKind.precise,
     };
 
     String? country;
