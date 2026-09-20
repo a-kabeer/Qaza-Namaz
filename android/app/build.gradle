@@ -25,11 +25,10 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
-// Release signing material. `android/key.properties` is git-ignored and is
-// never committed; see android/key.properties.example for the expected keys.
-// When it is absent — CI, a fresh clone, any contributor without the keystore —
-// the release build falls back to the debug key so the build still succeeds,
-// but the resulting APK is not distributable.
+// Release signing is optional for local builds. When android/key.properties is
+// absent, release falls back to the debug key so APK builds continue to work.
+// A debug-signed release APK is suitable for local installation/testing only;
+// it is not suitable for Play Store distribution.
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 def hasReleaseKeystore = keystorePropertiesFile.exists()
@@ -72,26 +71,15 @@ android {
 
     buildTypes {
         release {
-            // Never fall back to the debug key. Release signing is attached only
-            // when the production keystore is explicitly configured below.
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.release
-            }
-        }
-    }
-
-    // Fail only when a release artifact is actually requested. This keeps
-    // debug/test builds usable on fresh clones while preventing production
-    // artifacts from silently using the debug certificate.
-    tasks.matching {
-        it.name == "assembleRelease" || it.name == "bundleRelease"
-    }.configureEach {
-        doFirst {
-            if (!hasReleaseKeystore) {
-                throw new GradleException(
-                    "Release signing is not configured. Provide android/key.properties " +
-                    "and the production keystore; refusing to build a release artifact."
+            } else {
+                logger.warn(
+                    "WARNING: android/key.properties not found. Signing the " +
+                    "release build with the DEBUG key. This APK is for local " +
+                    "installation/testing and is not suitable for distribution."
                 )
+                signingConfig = signingConfigs.debug
             }
         }
     }
