@@ -349,6 +349,17 @@ class FirestoreQazaRepository
     final batch = _firestore.batch();
     final records = <QazaRecord>[];
 
+    // Materialize sync state in the same atomic batch so first-time accounts
+    // can satisfy the generation-aware Firestore security rule.
+    batch.set(
+      _syncStateDocument(userId),
+      {
+        'generation': reset.generation,
+        'resetInProgress': false,
+      },
+      SetOptions(merge: true),
+    );
+
     for (final operation in operations) {
       final record = operation.record;
       if (record == null ||
