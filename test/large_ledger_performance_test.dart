@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
+import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 import 'support/in_memory_qaza_local_store.dart';
@@ -73,15 +76,52 @@ class _CountingRemote extends InMemoryQazaRepository {
   }
 
   @override
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) {
+    completions++;
+    return super.completeRecords(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    if (operations.isEmpty) {
+      throw ArgumentError('operations must not be empty');
+    }
+    if (operations.first.type == SyncOpType.complete) {
+      completions++;
+      return QazaRemoteChangeCursor(
+        at: _now.toUtc(),
+        id: 'counting-complete-' + completions.toString().padLeft(6, '0'),
+        generation: 0,
+      );
+    }
+    return super.applyOperationsBatch(
+      userId: userId,
+      operations: operations,
+    );
+  }
+
+  @override
   Future<void> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
-  }) {
-    completions++;
-    return super.completeRecord(
-        userId: userId, recordId: recordId, completedAt: completedAt);
-  }
+  }) =>
+      completeRecords(
+        userId: userId,
+        recordIds: [recordId],
+        completedAt: completedAt,
+      );
 }
 
 void main() {
@@ -271,12 +311,12 @@ void main() {
       expect(remote.fullReads, 0);
     });
 
-    test('an explicit sync is still a full reconciliation', () async {
+    test('an explicit sync uses incremental reconciliation', () async {
       await openWithLedger(1000);
 
       await repository.syncNow();
 
-      expect(remote.fullReads, 1);
+      expect(remote.fullReads, 0);
     });
 
     test('coming back online reconciles too', () async {
@@ -291,12 +331,15 @@ void main() {
       await settle();
       expect(remote.fullReads, 0);
 
+      final synced = repository.syncState.firstWhere(
+        (state) =>
+            state.status == SyncStatus.synced && state.pendingCount == 0,
+      );
       connectivity.add(true);
-      await settle();
-      await settle();
+      await synced;
 
       expect(remote.completions, 1);
-      expect(remote.fullReads, 1);
+      expect(remote.fullReads, 0);
     });
 
     test('an offline completion is kept and flushed later', () async {
@@ -321,9 +364,12 @@ void main() {
               .id,
           'r_000000');
 
+      final synced = repository.syncState.firstWhere(
+        (state) =>
+            state.status == SyncStatus.synced && state.pendingCount == 0,
+      );
       connectivity.add(true);
-      await settle();
-      await settle();
+      await synced;
 
       expect(remote.completions, 1);
       expect((await local.load()).outboxByUser[_userId], isEmpty);

@@ -166,6 +166,125 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<int> countPendingOutbox(String userId) =>
+      _database.syncOutboxDao.countPending(userId: userId);
+
+  @override
+  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
+      {int limit = 400}) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    final rows = await _database.syncOutboxDao.getPendingBatch(
+      userId: userId,
+      limit: limit,
+    );
+    return rows.map(_toDomainOp).toList(growable: false);
+  }
+
+  @override
+  Future<void> removeOutboxBatch(String userId, List<String> ids) =>
+      _database.syncOutboxDao.removeBatch(userId: userId, ids: ids);
+
+  @override
+  Future<void> markOutboxBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    await _database.syncOutboxDao.markBatchRetry(
+      userId: userId,
+      ids: ids,
+      error: error,
+    );
+  }
+
+  @override
+  Future<void> upsertRecordsAndOutbox({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    for (final op in ops) {
+      if (op.userId != userId) {
+        throw StateError('Cannot queue a sync operation for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      if (records.isNotEmpty) {
+        await _database.qazaRecordsDao.upsertRecords(
+          records.map(_toCompanion).toList(growable: false),
+        );
+      }
+      if (ops.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          ops.map(_toOpCompanion).toList(growable: false),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<void> appendRecordsAndOutbox(
+      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    for (final op in ops) {
+      if (op.userId != userId) {
+        throw StateError('Cannot queue a sync operation for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      if (records.isNotEmpty) {
+        await _database.qazaRecordsDao.insertRecords(
+          records.map(_toCompanion).toList(growable: false),
+        );
+      }
+      if (ops.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          ops.map(_toOpCompanion).toList(growable: false),
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final rows = await _database.qazaRecordsDao.getByIds(
+      userId: userId,
+      ids: ids,
+    );
+    return rows.map((row) => QazaRecord(
+          id: row.id,
+          userId: row.userId,
+          prayerType: PrayerType.values.firstWhere(
+            (value) => value.name == row.prayerType,
+            orElse: () => throw StateError('Unknown prayer type: ${row.prayerType}'),
+          ),
+          originalDate: row.originalDate,
+          status: QazaStatus.values.firstWhere(
+            (value) => value.name == row.status,
+            orElse: () => throw StateError('Unknown Qaza status: ${row.status}'),
+          ),
+          completedAt: row.completedAt,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+        )).toList(growable: false);
+  }
+
+  @override
   Future<List<PendingSyncOp>> loadOutbox(String userId) async {
     final rows = await _database.syncOutboxDao.getPending(userId: userId);
     return rows.map(_toDomainOp).toList(growable: false);
@@ -184,6 +303,21 @@ class DriftQazaLocalStore extends QazaLocalStore {
         ids: recordIds,
         completedAt: completedAt,
       );
+
+  @override
+  Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    await _database.transaction(() async {
+      await _database.qazaRecordsDao.upsertRecords(
+        records.map(_toCompanion).toList(growable: false),
+      );
+    });
+  }
 
   /// Inserts only the new rows; existing ones are left untouched.
   @override

@@ -42,6 +42,17 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .toList(growable: false);
   }
 
+  Future<List<QazaRecordRow>> getByIds({
+    required String userId,
+    required List<String> ids,
+  }) {
+    if (ids.isEmpty) return Future.value(const <QazaRecordRow>[]);
+    final wanted = ids.toSet().toList(growable: false);
+    return (select(qazaRecords)
+          ..where((row) => row.userId.equals(userId) & row.id.isIn(wanted)))
+        .get();
+  }
+
   Future<QazaRecord?> findById(
       {required String userId, required String id}) async {
     final row = await (select(qazaRecords)
@@ -313,11 +324,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       final changed = <String>[];
       for (final id in ids) {
+        final current = await (select(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(id)))
+            .getSingleOrNull();
+        if (current == null) continue;
+        final existingCompletedAt = current.completedAt;
+        if (current.status == QazaStatus.completed &&
+            existingCompletedAt != null &&
+            !completedAt.isBefore(existingCompletedAt)) {
+          continue;
+        }
+
         final updated = await (update(qazaRecords)
               ..where((row) =>
-                  row.userId.equals(userId) &
-                  row.id.equals(id) &
-                  row.status.equals(QazaStatus.pending.name)))
+                  row.userId.equals(userId) & row.id.equals(id)))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
@@ -343,6 +364,15 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> insertRecord(QazaRecordsCompanion record) =>
       into(qazaRecords).insert(record, mode: InsertMode.insertOrIgnore);
+
+  Future<void> upsertRecords(List<QazaRecordsCompanion> records) async {
+    if (records.isEmpty) return;
+    await transaction(() async {
+      for (final record in records) {
+        await into(qazaRecords).insertOnConflictUpdate(record);
+      }
+    });
+  }
 
   /// Inserts records atomically. Each row is still constrained by its own
   /// userId in SQLite; callers that need a single-user transaction should use

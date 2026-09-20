@@ -1,12 +1,18 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
+import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 
-class InMemoryQazaRepository implements QazaRepository {
+class InMemoryQazaRepository
+    implements QazaRepository, QazaSyncRemoteDataSource {
   final Map<String, QazaRecord> _records = {};
   int historyPageCalls = 0;
   int progressSummaryCalls = 0;
+  final Map<String, List<QazaRemoteChange>> _changesByUser = {};
+  final Map<String, int> _generations = {};
+  int _changeSequence = 0;
 
   @override
   Future<List<QazaRecord>> getRecords(
@@ -129,13 +135,23 @@ class InMemoryQazaRepository implements QazaRepository {
 
   @override
   Future<void> addRecord(QazaRecord record) async {
+    if (!_storeAddRecord(record)) return;
+    _recordChange(
+      userId: record.userId,
+      type: QazaRemoteChangeType.upsert,
+      records: [record],
+    );
+  }
+
+  bool _storeAddRecord(QazaRecord record) {
     if (_records.values.any((r) =>
         r.userId == record.userId &&
         r.prayerType == record.prayerType &&
         _sameDate(r.originalDate, record.originalDate))) {
-      return;
+      return false;
     }
     _records[record.id] = record;
+    return true;
   }
 
   @override
@@ -157,28 +173,185 @@ class InMemoryQazaRepository implements QazaRepository {
       {required String userId,
       required List<String> recordIds,
       required DateTime completedAt}) async {
+    final changed = <QazaRecord>[];
     for (final id in recordIds) {
       final r = _records[id];
       if (r == null || r.userId != userId) continue;
       if (r.status == QazaStatus.completed) {
         if (r.completedAt == null || completedAt.isBefore(r.completedAt!)) {
-          _records[id] =
+          final updated =
               r.copyWith(completedAt: completedAt, updatedAt: completedAt);
+          _records[id] = updated;
+          changed.add(updated);
         }
         continue;
       }
-      _records[id] = r.copyWith(
-          status: QazaStatus.completed,
-          completedAt: completedAt,
-          updatedAt: completedAt);
+      final updated = r.copyWith(
+        status: QazaStatus.completed,
+        completedAt: completedAt,
+        updatedAt: completedAt,
+      );
+      _records[id] = updated;
+      changed.add(updated);
+    }
+    if (changed.isNotEmpty) {
+      _recordChange(
+        userId: userId,
+        type: QazaRemoteChangeType.complete,
+        records: changed,
+      );
     }
   }
 
   @override
   Future<void> resetUserRecords({required String userId}) async {
+    _resetWithoutChange(userId);
+    final generation = _generations[userId] ?? 0;
+    _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.reset,
+      records: const <QazaRecord>[],
+      generation: generation,
+      idPrefix: 'reset',
+    );
+  }
+
+  void _resetWithoutChange(String userId) {
     _records.removeWhere((_, record) => record.userId == userId);
   }
 
   bool _sameDate(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+  @override
+  Future<QazaRemoteResetState> getResetState({
+    required String userId,
+  }) async =>
+      QazaRemoteResetState(
+        generation: _generations[userId] ?? 0,
+        inProgress: false,
+      );
+
+  @override
+  Future<QazaRemoteChangeCursor?> getLatestChange({
+    required String userId,
+  }) async {
+    final changes = _changesByUser[userId];
+    return changes == null || changes.isEmpty ? null : changes.last.cursor;
+  }
+
+  @override
+  Future<QazaRemoteChangePage> getChanges({
+    required String userId,
+    QazaRemoteChangeCursor? after,
+    int limit = 100,
+  }) async {
+    if (limit < 1) throw ArgumentError.value(limit, 'limit');
+    final changes = _changesByUser[userId] ?? const <QazaRemoteChange>[];
+    final filtered = [
+      for (final change in changes)
+        if (after == null || _cursorAfter(change.cursor, after)) change,
+    ];
+    return QazaRemoteChangePage(
+      changes: filtered.take(limit).toList(growable: false),
+      hasMore: filtered.length > limit,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    if (operations.isEmpty) {
+      throw ArgumentError('operations must not be empty');
+    }
+    for (final operation in operations) {
+      if (operation.userId != userId) {
+        throw StateError('operation belongs to another user');
+      }
+    }
+
+    switch (operations.first.type) {
+      case SyncOpType.add:
+        final records = <QazaRecord>[];
+        for (final operation in operations) {
+          final record = operation.record;
+          if (record == null) continue;
+          _storeAddRecord(record);
+          final stored = _records[record.id];
+          if (stored != null) records.add(stored);
+        }
+        return _recordChange(
+          userId: userId,
+          type: QazaRemoteChangeType.upsert,
+          records: records,
+        );
+      case SyncOpType.complete:
+        await completeRecords(
+          userId: userId,
+          recordIds: [
+            for (final operation in operations)
+              if (operation.targetRecordId != null) operation.targetRecordId!,
+          ],
+          completedAt: operations.first.completedAt ?? DateTime.now(),
+        );
+        final latest = await getLatestChange(userId: userId);
+        if (latest == null) {
+          throw StateError('completion produced no remote change');
+        }
+        return latest;
+      case SyncOpType.reset:
+        throw ArgumentError('reset must use resetUserRecordsForSync');
+    }
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) async {
+    _resetWithoutChange(userId);
+    final generation = (_generations[userId] ?? 0) + 1;
+    _generations[userId] = generation;
+    return _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.reset,
+      records: const <QazaRecord>[],
+      generation: generation,
+      idPrefix: 'reset',
+    );
+  }
+
+  bool _cursorAfter(
+    QazaRemoteChangeCursor left,
+    QazaRemoteChangeCursor right,
+  ) {
+    final at = left.at.compareTo(right.at);
+    return at > 0 || (at == 0 && left.id.compareTo(right.id) > 0);
+  }
+
+  QazaRemoteChangeCursor _recordChange({
+    required String userId,
+    required QazaRemoteChangeType type,
+    required List<QazaRecord> records,
+    int? generation,
+    String idPrefix = 'change',
+  }) {
+    _changeSequence++;
+    final cursor = QazaRemoteChangeCursor(
+      at: DateTime.utc(2026, 1, 1).add(
+        Duration(microseconds: _changeSequence),
+      ),
+      id: '${idPrefix}-${_changeSequence.toString().padLeft(8, '0')}',
+      generation: generation ?? (_generations[userId] ?? 0),
+    );
+    final change = QazaRemoteChange(
+      type: type,
+      cursor: cursor,
+      records: List<QazaRecord>.unmodifiable(records),
+    );
+    (_changesByUser[userId] ??= <QazaRemoteChange>[]).add(change);
+    return cursor;
+  }
+
 }

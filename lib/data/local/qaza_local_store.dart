@@ -200,6 +200,18 @@ abstract class QazaLocalStore {
         records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
 
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    final snapshot = await load();
+    final wanted = ids.toSet();
+    return [
+      for (final record in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        if (wanted.contains(record.id)) record,
+    ];
+  }
+
   Future<QazaProgressSummary> getProgressSummary(
       {required String userId}) async {
     final snapshot = await load();
@@ -222,6 +234,59 @@ abstract class QazaLocalStore {
   ///
   /// Separate from [load] so a completion can bring the queue up to date
   /// without reading the ledger it is deliberately not touching.
+  Future<int> countPendingOutbox(String userId) async =>
+      (await loadOutbox(userId)).length;
+
+  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
+      {int limit = 400}) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    final all = await loadOutbox(userId);
+    return all.take(limit).toList(growable: false);
+  }
+
+  Future<void> markOutboxBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    final wanted = ids.toSet();
+    final current = await loadOutbox(userId);
+    final next = [
+      for (final op in current)
+        if (wanted.contains(op.id))
+          op.copyWith(attempts: op.attempts + 1, lastError: error)
+        else
+          op,
+    ];
+    await saveOutbox(userId, next);
+  }
+
+  Future<void> removeOutboxBatch(String userId, List<String> ids) async {
+    if (ids.isEmpty) return;
+    final wanted = ids.toSet();
+    final remaining = (await loadOutbox(userId))
+        .where((op) => !wanted.contains(op.id))
+        .toList(growable: false);
+    await saveOutbox(userId, remaining);
+  }
+
+  Future<void> upsertRecordsAndOutbox({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    await upsertRecords(userId, records);
+    await appendRecordsAndOutbox(userId, const <QazaRecord>[], ops);
+  }
+
+  Future<void> appendRecordsAndOutbox(
+      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
+    await appendRecords(userId, records);
+    await saveOutbox(userId, [...await loadOutbox(userId), ...ops]);
+  }
+
   Future<List<PendingSyncOp>> loadOutbox(String userId) async {
     final snapshot = await load();
     return List<PendingSyncOp>.of(
@@ -245,8 +310,10 @@ abstract class QazaLocalStore {
     final changed = <String>[];
     for (var index = 0; index < records.length; index++) {
       final record = records[index];
-      if (!wanted.contains(record.id) ||
-          record.status == QazaStatus.completed) {
+      if (!wanted.contains(record.id)) continue;
+      if (record.status == QazaStatus.completed &&
+          record.completedAt != null &&
+          !completedAt.isBefore(record.completedAt!)) {
         continue;
       }
       records[index] = record.copyWith(
@@ -263,6 +330,22 @@ abstract class QazaLocalStore {
   ///
   /// The default rewrites the user's rows because a plain store has no other
   /// way; database-backed stores override it with an insert.
+  Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
+    if (records.isEmpty) return;
+    final snapshot = await load();
+    final byId = <String, QazaRecord>{
+      for (final record
+          in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        record.id: record,
+    };
+    for (final record in records) {
+      if (record.userId == userId) {
+        byId[record.id] = record;
+      }
+    }
+    await saveRecords(userId, byId.values.toList(growable: false));
+  }
+
   Future<void> appendRecords(String userId, List<QazaRecord> records) async {
     if (records.isEmpty) return;
     final snapshot = await load();

@@ -10,6 +10,20 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     with _$SyncOutboxDaoMixin {
   SyncOutboxDao(super.db);
 
+  Future<List<SyncOutboxData>> getPendingBatch({
+    required String userId,
+    int limit = 400,
+  }) {
+    return (select(syncOutbox)
+          ..where((row) => row.userId.equals(userId))
+          ..orderBy([
+            (row) => OrderingTerm.asc(row.queuedAt),
+            (row) => OrderingTerm.asc(row.id),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
   Future<List<SyncOutboxData>> getPending({required String userId}) {
     return (select(syncOutbox)
           ..where((row) => row.userId.equals(userId))
@@ -56,7 +70,10 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     if (entries.isEmpty) return;
     await transaction(() async {
       for (final entry in entries) {
-        await into(syncOutbox).insertOnConflictUpdate(entry);
+        await into(syncOutbox).insert(
+          entry,
+          mode: InsertMode.insertOrIgnore,
+        );
       }
     });
   }
@@ -65,6 +82,52 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
     return (delete(syncOutbox)
           ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
         .go();
+  }
+
+  Future<int> markBatchRetry({
+    required String userId,
+    required List<String> ids,
+    required String error,
+  }) async {
+    if (ids.isEmpty) return 0;
+    return transaction(() async {
+      var updated = 0;
+      for (final id in ids.toSet()) {
+        final row = await (select(syncOutbox)
+              ..where((item) =>
+                  item.userId.equals(userId) & item.id.equals(id)))
+            .getSingleOrNull();
+        if (row == null) continue;
+
+        updated += await (update(syncOutbox)
+              ..where((item) =>
+                  item.userId.equals(userId) & item.id.equals(id)))
+            .write(
+          SyncOutboxCompanion(
+            attempts: Value(row.attempts + 1),
+            lastError: Value(error),
+          ),
+        );
+      }
+      return updated;
+    });
+  }
+
+  Future<int> removeBatch({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return 0;
+    return transaction(() async {
+      var removed = 0;
+      for (final id in ids.toSet()) {
+        removed += await (delete(syncOutbox)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(id)))
+            .go();
+      }
+      return removed;
+    });
   }
 
   Future<int> removeAll({required String userId}) {

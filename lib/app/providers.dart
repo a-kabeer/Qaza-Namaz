@@ -18,6 +18,7 @@ import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/repositories/firestore_qaza_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
+import '../data/sync/qaza_sync_remote_data_source.dart';
 import '../data/sync/sync_state.dart';
 import '../domain/entities/app_user.dart';
 import '../domain/entities/qaza_record.dart';
@@ -28,6 +29,15 @@ import '../domain/services/qaza_service.dart';
 
 final firestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firestoreQazaRepositoryProvider = Provider<FirestoreQazaRepository>(
+  (ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)),
+);
+final remoteQazaRepositoryProvider = Provider<QazaRepository>(
+  (ref) => ref.watch(firestoreQazaRepositoryProvider),
+);
+final remoteQazaSyncDataSourceProvider = Provider<QazaSyncRemoteDataSource>(
+  (ref) => ref.watch(firestoreQazaRepositoryProvider),
+);
 final authRepositoryProvider =
     Provider<AuthRepository>((ref) => FirebaseAuthRepository());
 
@@ -45,12 +55,11 @@ final connectivityChangesProvider = Provider<Stream<bool>>((ref) =>
     Connectivity()
         .onConnectivityChanged
         .map((results) => results.any((r) => r != ConnectivityResult.none)));
-final remoteQazaRepositoryProvider = Provider<QazaRepository>(
-    (ref) => FirestoreQazaRepository(firestore: ref.watch(firestoreProvider)));
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
   final repository = OfflineFirstQazaRepository(
       remote: ref.watch(remoteQazaRepositoryProvider),
+      syncRemote: ref.watch(remoteQazaSyncDataSourceProvider),
       localStore: ref.watch(qazaLocalStoreProvider),
       connectivityChanges: ref.watch(connectivityChangesProvider));
   // Follows the active ledger rather than the account directly, so a guest

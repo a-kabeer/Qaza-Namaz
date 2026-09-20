@@ -2,9 +2,45 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function resetInProgress(userId) {
+      return exists(
+        /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+      )
+      && get(
+        /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+      ).data.resetInProgress == true;
+    }
+
+    match /users/{userId}/qazaRecords/{recordId} {
+      allow read: if isOwner(userId);
+
+      // Normal writes are blocked while a destructive reset is in progress.
+      // Deletes remain permitted so the reset itself can drain the ledger.
+      allow create, update: if isOwner(userId)
+        && !resetInProgress(userId)
+        && request.resource.data.syncGeneration
+          == getAfter(/databases/$(database)/documents/users/$(userId)/syncMetadata/state).data.generation;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/qazaChanges/{changeId} {
+      allow read: if isOwner(userId);
+
+      // Normal change events are allowed only outside a reset. The final reset
+      // event is written atomically with resetInProgress=false, so getAfter()
+      // sees the completed state.
+      allow create: if isOwner(userId)
+        && getAfter(
+          /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+        ).data.resetInProgress == false;
+    }
+
+    match /users/{userId}/syncMetadata/{documentId} {
+      allow read, write: if isOwner(userId);
     }
   }
 }

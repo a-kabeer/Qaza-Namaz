@@ -29,6 +29,12 @@ SyncStatusPresentation syncStatusPresentation(
   AppLocalizations l10n,
 ) {
   switch (state.status) {
+    case sync_models.SyncStatus.idle:
+      return SyncStatusPresentation(
+        icon: Icons.cloud_outlined,
+        label: l10n.syncSaved,
+        colorRole: SyncStatusColorRole.neutral,
+      );
     // Startup states stay in the user's vocabulary: they describe setting the
     // account up, never the mechanism behind it.
     case sync_models.SyncStatus.bootstrapping:
@@ -57,6 +63,7 @@ SyncStatusPresentation syncStatusPresentation(
         colorRole: SyncStatusColorRole.primary,
       );
     case sync_models.SyncStatus.syncing:
+    case sync_models.SyncStatus.retrying:
       return SyncStatusPresentation(
         icon: Icons.cloud_sync_outlined,
         label: l10n.syncSyncing,
@@ -64,6 +71,7 @@ SyncStatusPresentation syncStatusPresentation(
       );
     case sync_models.SyncStatus.offline:
     case sync_models.SyncStatus.pendingSync:
+    case sync_models.SyncStatus.partiallySynced:
       return SyncStatusPresentation(
         icon: Icons.save_outlined,
         label: l10n.syncSaved,

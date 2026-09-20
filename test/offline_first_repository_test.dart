@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
@@ -50,6 +51,7 @@ void main() {
       final repo = createRepository(
           remote: remote, local: local, connectivity: connectivity.stream);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
       connectivity.add(false);
       await Future<void>.delayed(Duration.zero);
       final item = record();
@@ -70,11 +72,24 @@ void main() {
         () async {
       final local = InMemoryQazaLocalStore();
       final remote = _FailingRepository();
-      final repo = createRepository(remote: remote, local: local);
+      final connectivity = StreamController<bool>();
+      final repo = createRepository(
+          remote: remote,
+          local: local,
+          connectivity: connectivity.stream);
+      addTearDown(connectivity.close);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
+      connectivity.add(false);
+      await Future<void>.delayed(Duration.zero);
       remote.failWrites = true;
       await repo.addRecord(record());
-      await repo.syncNow();
+      expect((await local.load()).outboxByUser['u1'], hasLength(1));
+      final failedSync = repo.syncState.firstWhere(
+        (state) => state.status == SyncStatus.syncError,
+      );
+      connectivity.add(true);
+      await failedSync;
       final failed = (await local.load()).outboxByUser['u1']!;
       expect(failed, hasLength(1));
       expect(failed.single.attempts, 1);
@@ -169,12 +184,12 @@ void main() {
       connectivity.add(false);
       await Future<void>.delayed(Duration.zero);
       await repo.setActiveUser('u1');
+      await repo.ensureHydrated();
       await repo.syncNow();
       expect((await local.load()).outboxByUser['u1'], isEmpty);
       remote.failWrites = true;
       connectivity.add(true);
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
+      await repo.syncNow();
       final queued = (await local.load()).outboxByUser['u1']!;
       expect(queued, hasLength(1));
       expect(queued.single.type, SyncOpType.complete);
@@ -213,8 +228,16 @@ void main() {
       final remote = InMemoryQazaRepository();
       final localA = InMemoryQazaLocalStore();
       final localB = InMemoryQazaLocalStore();
-      final deviceA = createRepository(remote: remote, local: localA);
-      final deviceB = createRepository(remote: remote, local: localB);
+      final deviceA = OfflineFirstQazaRepository(
+          remote: remote,
+          localStore: localA,
+          now: () => baseDate,
+          syncCursorNamespace: 'device-a');
+      final deviceB = OfflineFirstQazaRepository(
+          remote: remote,
+          localStore: localB,
+          now: () => baseDate,
+          syncCursorNamespace: 'device-b');
       final original = record();
       await remote.addRecord(original);
       await deviceA.setActiveUser('u1');
@@ -247,7 +270,8 @@ void main() {
   });
 }
 
-class _FailingRepository implements QazaRepository {
+class _FailingRepository
+    implements QazaRepository, QazaSyncRemoteDataSource {
   final InMemoryQazaRepository _delegate = InMemoryQazaRepository();
   bool failWrites = false;
 
@@ -339,6 +363,56 @@ class _FailingRepository implements QazaRepository {
   Future<void> resetUserRecords({required String userId}) {
     if (failWrites) return Future.error(StateError('simulated remote outage'));
     return _delegate.resetUserRecords(userId: userId);
+  }
+
+  @override
+  Future<QazaRemoteResetState> getResetState({required String userId}) =>
+      _delegate.getResetState(userId: userId);
+
+  @override
+  Future<QazaRemoteChangeCursor?> getLatestChange({
+    required String userId,
+  }) =>
+      _delegate.getLatestChange(userId: userId);
+
+  @override
+  Future<QazaRemoteChangePage> getChanges({
+    required String userId,
+    QazaRemoteChangeCursor? after,
+    int limit = 100,
+  }) =>
+      _delegate.getChanges(
+        userId: userId,
+        after: after,
+        limit: limit,
+      );
+
+  @override
+  Future<QazaRemoteChangeCursor> applyOperationsBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) {
+    if (failWrites) {
+      return Future.error(StateError('simulated remote outage'));
+    }
+    return _delegate.applyOperationsBatch(
+      userId: userId,
+      operations: operations,
+    );
+  }
+
+  @override
+  Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
+    required String userId,
+    required String operationId,
+  }) {
+    if (failWrites) {
+      return Future.error(StateError('simulated remote outage'));
+    }
+    return _delegate.resetUserRecordsForSync(
+      userId: userId,
+      operationId: operationId,
+    );
   }
 
   int get historyPageCalls => _delegate.historyPageCalls;

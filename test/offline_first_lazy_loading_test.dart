@@ -55,7 +55,7 @@ void main() {
     expect(localStore.loadCalls, 0);
   });
 
-  test('explicit sync remains the controlled legacy full-ledger entry point',
+  test('explicit sync stays bounded and avoids the legacy full-ledger snapshot',
       () async {
     final localStore = InMemoryQazaLocalStore();
     final repository = OfflineFirstQazaRepository(
@@ -64,7 +64,7 @@ void main() {
     await repository.setActiveUser('user-a');
     expect(localStore.loadCalls, 0);
     await repository.syncNow();
-    expect(localStore.loadCalls, 1);
+    expect(localStore.loadCalls, 0);
   });
 
   test(
