@@ -14,7 +14,7 @@ enum SyncStatus {
 
 class SyncState {
   const SyncState({
-    this.status = SyncStatus.idle,
+    this.status = SyncStatus.synced,
     this.lastSyncAt,
     this.pendingCount = 0,
     this.processedCount = 0,
