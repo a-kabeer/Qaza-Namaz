@@ -42,6 +42,17 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .toList(growable: false);
   }
 
+  Future<List<QazaRecordRow>> getByIds({
+    required String userId,
+    required List<String> ids,
+  }) {
+    if (ids.isEmpty) return Future.value(const <QazaRecordRow>[]);
+    final wanted = ids.toSet().toList(growable: false);
+    return (select(qazaRecords)
+          ..where((row) => row.userId.equals(userId) & row.id.isIn(wanted)))
+        .get();
+  }
+
   Future<QazaRecord?> findById(
       {required String userId, required String id}) async {
     final row = await (select(qazaRecords)
