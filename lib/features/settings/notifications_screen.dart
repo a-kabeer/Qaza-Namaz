@@ -48,9 +48,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       if (!mounted || ok) return;
 
       final value = ref.read(notificationSettingsProvider).valueOrNull;
-      final message = value?.schedulerAvailable == false
-          ? l10n.notificationsUnavailableDetail
-          : switch (value?.permissionStatus) {
+      if (!enabled && value?.schedulerAvailable == false) {
+        return;
+      }
+
+      final message = switch (value?.permissionStatus) {
               NotificationPermissionStatus.denied =>
                 l10n.notificationsBlockedDetail,
               NotificationPermissionStatus.permanentlyDenied =>
