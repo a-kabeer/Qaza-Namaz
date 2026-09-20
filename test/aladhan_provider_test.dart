@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import '../lib/features/prayer_times/data/aladhan_provider.dart';
+import '../lib/features/prayer_times/data/prayer_times_provider.dart';
 import '../lib/features/prayer_times/domain/prayer_times_models.dart';
 
 void main() {
@@ -44,7 +45,7 @@ void main() {
 
     final provider = AlAdhanProvider(client: client);
     final day = await provider.fetch(
-      const PrayerTimesRequest(
+      PrayerTimesRequest(
         latitude: 24.8607,
         longitude: 67.0011,
         date: DateTime(2026, 9, 20),
@@ -68,7 +69,7 @@ void main() {
 
     final provider = AlAdhanProvider(client: client);
     await provider.fetch(
-      const PrayerTimesRequest(
+      PrayerTimesRequest(
         latitude: 24.8607,
         longitude: 67.0011,
         date: DateTime(2026, 9, 20),
@@ -85,7 +86,7 @@ void main() {
 
     expect(
       () => provider.fetch(
-        const PrayerTimesRequest(
+        PrayerTimesRequest(
           latitude: 200,
           longitude: 0,
           date: DateTime(2026, 9, 20),

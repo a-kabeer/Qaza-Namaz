@@ -124,12 +124,6 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         return const _PrayerTimesLoadingSkeleton();
     }
 
-    return _NoLocationState(
-      onUseLocation: () => ref
-          .read(prayerTimesControllerProvider.notifier)
-          .useMyLocation(),
-      onChooseManually: _openLocationPicker,
-    );
   }
 }
 
