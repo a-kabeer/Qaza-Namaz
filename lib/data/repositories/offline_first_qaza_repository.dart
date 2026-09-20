@@ -442,7 +442,7 @@ class OfflineFirstQazaRepository implements QazaRepository {
     }
 
     final operation = PendingSyncOp(
-      id: 'reset_' + userId,
+      id: 'reset_' + userId + '_' + DateTime.now().microsecondsSinceEpoch.toString(),
       type: SyncOpType.reset,
       userId: userId,
       queuedAt: _now(),
