@@ -11,11 +11,11 @@ abstract class PrayerTimesRepository {
     required AsrMethod asrMethod,
   });
 
-  PrayerLocation? getSavedLocation();
+  Future<PrayerLocation?> getSavedLocation();
 
   Future<void> saveLocation(PrayerLocation location);
 
-  PrayerSettings getSavedSettings();
+  Future<PrayerSettings> getSavedSettings();
 
   Future<void> saveSettings(PrayerSettings settings);
 }
