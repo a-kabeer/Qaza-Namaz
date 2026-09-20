@@ -344,8 +344,7 @@ class FirestoreQazaRepository
       throw StateError('Remote reset is currently in progress.');
     }
 
-    final changeId =
-        'change_${DateTime.now().microsecondsSinceEpoch}_${operations.first.id}';
+    final changeId = 'change_batch_' + _stableBatchHash(operations);
     final changeReference = _changesCollection(userId).doc(changeId);
     final batch = _firestore.batch();
     final records = <QazaRecord>[];
@@ -528,6 +527,19 @@ class FirestoreQazaRepository
       id: document.id,
       generation: (data['generation'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  String _stableBatchHash(List<PendingSyncOp> operations) {
+    var hash = 0xcbf29ce484222325;
+    for (final operation in operations) {
+      for (final unit in operation.id.codeUnits) {
+        hash ^= unit;
+        hash = (hash * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
+      }
+      hash ^= 0xff;
+      hash = (hash * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
+    }
+    return hash.toRadixString(16).padLeft(16, '0');
   }
 
   Map<String, dynamic> _toMap(
