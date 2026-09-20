@@ -21,8 +21,9 @@ class SkeletonShimmer extends StatefulWidget {
 class _SkeletonShimmerState extends State<SkeletonShimmer>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<AlignmentGeometry> _begin;
-  late final Animation<AlignmentGeometry> _end;
+  late final Animation<Alignment> _begin;
+  late final Animation<Alignment> _end;
+  bool _animationsDisabled = false;
 
   @override
   void initState() {
@@ -46,6 +47,19 @@ class _SkeletonShimmerState extends State<SkeletonShimmer>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disabled = MediaQuery.disableAnimationsOf(context);
+    if (disabled == _animationsDisabled) return;
+    _animationsDisabled = disabled;
+    if (disabled) {
+      _controller.stop();
+    } else {
+      _controller.repeat();
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -54,7 +68,7 @@ class _SkeletonShimmerState extends State<SkeletonShimmer>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final disableAnimations = MediaQuery.of(context).disableAnimations;
+    final disableAnimations = _animationsDisabled;
 
     final base = Color.alphaBlend(
       scheme.onSurface.withValues(alpha: .06),
