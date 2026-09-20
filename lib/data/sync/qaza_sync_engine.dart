@@ -11,10 +11,12 @@ class QazaSyncEngine {
   QazaSyncEngine({
     required QazaLocalStore localStore,
     required QazaSyncRemoteDataSource remote,
+    String? cursorNamespace,
     required void Function(SyncState state) onState,
     Future<void> Function()? onLocalDataChanged,
   })  : _localStore = localStore,
         _remote = remote,
+        _cursorNamespace = cursorNamespace,
         _onState = onState,
         _onLocalDataChanged = onLocalDataChanged;
 
@@ -24,10 +26,12 @@ class QazaSyncEngine {
 
   final QazaLocalStore _localStore;
   final QazaSyncRemoteDataSource _remote;
+  final String? _cursorNamespace;
   final void Function(SyncState state) _onState;
   final Future<void> Function()? _onLocalDataChanged;
 
   Future<void>? _running;
+  Completer<void>? _idleCompleter;
   bool _rerunRequested = false;
   Timer? _retryTimer;
   String? _retryUserId;
@@ -36,22 +40,43 @@ class QazaSyncEngine {
   Future<void> synchronize(String userId) {
     _retryTimer?.cancel();
     _retryTimer = null;
-    final existing = _running;
+
+    final existing = _idleCompleter;
     if (existing != null) {
       _rerunRequested = true;
-      return existing;
+      return existing.future;
     }
 
-    final future = _run(userId);
-    _running = future;
-    return future.whenComplete(() {
-      if (_disposed) return;
-      _running = null;
-      if (_rerunRequested) {
+    final idle = Completer<void>();
+    _idleCompleter = idle;
+    unawaited(_drain(userId, idle));
+    return idle.future;
+  }
+
+  Future<void> _drain(String userId, Completer<void> idle) async {
+    try {
+      while (!_disposed) {
         _rerunRequested = false;
-        unawaited(synchronize(userId));
+        final run = _run(userId);
+        _running = run;
+        try {
+          await run;
+        } finally {
+          if (identical(_running, run)) {
+            _running = null;
+          }
+        }
+        if (!_rerunRequested) break;
       }
-    });
+
+      if (!idle.isCompleted) idle.complete();
+    } catch (error, stackTrace) {
+      if (!idle.isCompleted) idle.completeError(error, stackTrace);
+    } finally {
+      if (identical(_idleCompleter, idle)) {
+        _idleCompleter = null;
+      }
+    }
   }
 
   Future<void> primeCursor(
@@ -327,7 +352,13 @@ class QazaSyncEngine {
         message.contains('reset is currently in progress');
   }
 
-  String _keyPrefix(String userId) => 'qaza_sync_cursor_${userId}';
+  String _keyPrefix(String userId) {
+    final namespace = _cursorNamespace;
+    if (namespace == null || namespace.isEmpty) {
+      return 'qaza_sync_cursor_' + userId;
+    }
+    return 'qaza_sync_cursor_' + namespace + '_' + userId;
+  }
 
   Future<void> _notifyLocalDataChanged() async {
     final callback = _onLocalDataChanged;
