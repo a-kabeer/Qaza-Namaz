@@ -33,7 +33,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   final GlobalKey<NavigatorState> _authNavigatorKey =
       GlobalKey<NavigatorState>();
   bool splash = true;
-  bool wasSignedIn = false;
   Timer? splashTimer;
 
   @override
@@ -76,6 +75,41 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     );
   }
 
+  Widget _buildAuthFlowNavigator({
+    required String initialRoute,
+    required bool backEnabled,
+  }) {
+    return NavigatorPopHandler<void>(
+      enabled: backEnabled,
+      onPopWithResult: (result) {
+        unawaited(
+          _authNavigatorKey.currentState?.maybePop(result) ??
+              Future<bool>.value(false),
+        );
+      },
+      child: Navigator(
+        key: _authNavigatorKey,
+        initialRoute: initialRoute,
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case '/authentication':
+              return _authenticationRoute(settings);
+            case '/welcome':
+              return _welcomeRoute(settings);
+            default:
+              return initialRoute == '/authentication'
+                  ? _authenticationRoute(
+                      const RouteSettings(name: '/authentication'),
+                    )
+                  : _welcomeRoute(
+                      const RouteSettings(name: '/welcome'),
+                    );
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (splash) return const SplashScreen();
@@ -95,78 +129,33 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     if (upgrade.running ||
         upgrade.awaitingDecision ||
         (upgrade.error != null && isGuest)) {
-      // The navigator remains the single source of truth for pre-auth
-      // navigation. These states are normally reached from Authentication,
-      // but persisted guest-upgrade decisions can also start here.
-      wasSignedIn = user != null || wasSignedIn;
-      final navigator = Navigator(
-        key: _authNavigatorKey,
+      // Keep this as the same pre-auth Navigator used by the Welcome route.
+      // If the transition started from Welcome, the Authentication route was
+      // already pushed and remains intact across this auth-state rebuild.
+      // Persisted guest-upgrade decisions start directly on Authentication.
+      return _buildAuthFlowNavigator(
         initialRoute: '/authentication',
-        onGenerateRoute: (settings) {
-          switch (settings.name) {
-            case '/authentication':
-              return _authenticationRoute(settings);
-            case '/welcome':
-              return _welcomeRoute(settings);
-            default:
-              return _authenticationRoute(
-                const RouteSettings(name: '/authentication'),
-              );
-          }
-        },
-      );
-
-      return NavigatorPopHandler<void>(
-        enabled: !upgrade.running,
-        onPopWithResult: (result) {
-          unawaited(
-            _authNavigatorKey.currentState?.maybePop(result) ??
-                Future<bool>.value(false),
-          );
-        },
-        child: navigator,
+        backEnabled: !upgrade.running,
       );
     }
 
     // A guest reaches the workspace on the same footing as an account: the
     // ledger is local, but every screen works.
     if (user == null && isGuest) {
-      wasSignedIn = false;
       return const WorkspaceShell();
     }
 
     if (user == null) {
-      // Signing out returns to the welcome entry. Because the authenticated
-      // workspace is rendered outside this pre-auth Navigator, signing out
-      // creates a fresh navigator whose initial route is Welcome.
-      wasSignedIn = false;
-      return NavigatorPopHandler<void>(
-        onPopWithResult: (result) {
-          unawaited(
-            _authNavigatorKey.currentState?.maybePop(result) ??
-                Future<bool>.value(false),
-          );
-        },
-        child: Navigator(
-          key: _authNavigatorKey,
-          initialRoute: '/welcome',
-          onGenerateRoute: (settings) {
-            switch (settings.name) {
-              case '/welcome':
-                return _welcomeRoute(settings);
-              case '/authentication':
-                return _authenticationRoute(settings);
-              default:
-                return _welcomeRoute(
-                  const RouteSettings(name: '/welcome'),
-                );
-            }
-          },
-        ),
+      // The pre-auth Navigator owns Welcome -> Authentication navigation.
+      // Authentication is pushed as a real route, so AppBar Back, Android
+      // system Back, Android predictive Back, and supported iOS back-swipe
+      // behavior all operate on the same route history.
+      return _buildAuthFlowNavigator(
+        initialRoute: '/welcome',
+        backEnabled: true,
       );
     }
 
-    wasSignedIn = true;
     return const WorkspaceShell();
   }
 }
