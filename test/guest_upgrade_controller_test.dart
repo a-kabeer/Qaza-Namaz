@@ -8,6 +8,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
+import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
