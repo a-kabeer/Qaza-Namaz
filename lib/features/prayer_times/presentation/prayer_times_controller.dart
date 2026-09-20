@@ -324,7 +324,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     }
 
     if (state.tomorrow == null) {
-      final schedule = PrayerSchedule.evaluate(today: today);
+      final schedule = PrayerSchedule.evaluate(
+        today: today,
+        nowOverride: _clock.now(),
+      );
       if (schedule.next == null) {
         unawaited(_loadTomorrow(today));
       }
@@ -435,7 +438,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   }
 
   Future<void> _loadTomorrowIfRequired(PrayerDay day) async {
-    final schedule = PrayerSchedule.evaluate(today: day);
+    final schedule = PrayerSchedule.evaluate(
+      today: day,
+      nowOverride: _clock.now(),
+    );
     if (schedule.next != null) return;
     await _loadTomorrow(day);
   }
