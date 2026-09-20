@@ -52,8 +52,9 @@ class PrayerSchedule {
   static PrayerScheduleResult evaluate({
     required PrayerDay today,
     PrayerDay? tomorrow,
+    DateTime? nowOverride,
   }) {
-    final currentNow = now(today.timezone);
+    final currentNow = _resolveNow(today.timezone, nowOverride);
     final ordered =
         PrayerName.values.where((item) => item.isCyclePrayer).toList();
 
@@ -90,14 +91,25 @@ class PrayerSchedule {
   static Duration? timeUntilNext({
     required PrayerDay today,
     PrayerDay? tomorrow,
+    DateTime? nowOverride,
   }) {
-    final result = evaluate(today: today, tomorrow: tomorrow);
+    final result = evaluate(
+      today: today,
+      tomorrow: tomorrow,
+      nowOverride: nowOverride,
+    );
     if (result.next == null) return null;
 
     final nextDay = result.nextIsTomorrow && tomorrow != null ? tomorrow : today;
     final nextMoment = moment(nextDay, result.next!);
     final difference = nextMoment.difference(result.now);
     return difference.isNegative ? Duration.zero : difference;
+  }
+
+  static tz.TZDateTime _resolveNow(String timezone, DateTime? override) {
+    final location = _location(timezone);
+    if (override == null) return tz.TZDateTime.now(location);
+    return tz.TZDateTime.from(override, location);
   }
 
   static tz.Location _location(String timezone) {
