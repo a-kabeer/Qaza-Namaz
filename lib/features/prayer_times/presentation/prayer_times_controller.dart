@@ -288,6 +288,14 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     await _loadToday(forceRefresh: true);
   }
 
+  Future<void> openRelevantSettings() async {
+    if (state.locationErrorKind == PrayerLocationErrorKind.serviceDisabled) {
+      await _locationService.openLocationSettings();
+    } else {
+      await _locationService.openAppSettings();
+    }
+  }
+
   Future<void> refresh() async {
     if (state.location == null) return;
     await _loadToday(forceRefresh: true);
