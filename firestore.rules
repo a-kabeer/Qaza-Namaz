@@ -20,7 +20,10 @@ service cloud.firestore {
 
       // Normal writes are blocked while a destructive reset is in progress.
       // Deletes remain permitted so the reset itself can drain the ledger.
-      allow create, update: if isOwner(userId) && !resetInProgress(userId);
+      allow create, update: if isOwner(userId)
+        && !resetInProgress(userId)
+        && request.resource.data.syncGeneration
+          == get(/databases/$(database)/documents/users/$(userId)/syncMetadata/state).data.generation;
       allow delete: if isOwner(userId);
     }
 
@@ -31,12 +34,9 @@ service cloud.firestore {
       // event is written atomically with resetInProgress=false, so getAfter()
       // sees the completed state.
       allow create: if isOwner(userId)
-        && (
-          !resetInProgress(userId)
-          || getAfter(
-            /databases/$(database)/documents/users/$(userId)/syncMetadata/state
-          ).data.resetInProgress == false
-        );
+        && getAfter(
+          /databases/$(database)/documents/users/$(userId)/syncMetadata/state
+        ).data.resetInProgress == false;
     }
 
     match /users/{userId}/syncMetadata/{documentId} {
