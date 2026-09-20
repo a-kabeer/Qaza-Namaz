@@ -247,7 +247,15 @@ class _GuestAccountChoice extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose what to do')),
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed:
+              state.running ? null : () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: AppLocalizations.of(context).commonBack,
+        ),
+        title: const Text('Choose what to do'),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
