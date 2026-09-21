@@ -1,7 +1,7 @@
 # Account data transparency
 
 **Priority:** P0/P1  
-**Status:** **Not started**
+**Status:** **In Progress**
 
 ## Task checklist
 
@@ -35,5 +35,6 @@ Cloud/data-management UX is not counted as implemented yet.
 | Date | Status | Evidence |
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
+| 2026-09-21 | In Progress | Task 8 is now the active workstream. Repository audit/planning started; implementation status is not yet credited until verified in code and tests. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.
