@@ -158,3 +158,67 @@ DateTime homeEstimatedCompletionDate({
         ),
       ),
     );
+
+
+enum HomeProgressRange {
+  sevenDays,
+  thirtyDays,
+  monthly,
+}
+
+class HomeProgressPoint {
+  const HomeProgressPoint({
+    required this.start,
+    required this.count,
+  });
+
+  final DateTime start;
+  final int count;
+}
+
+final homeProgressHistoryProvider =
+    FutureProvider.autoDispose.family<List<HomeProgressPoint>, HomeProgressRange>(
+  (ref, range) async {
+    final userId = ref.watch(activeUserIdProvider);
+    final now = ref.watch(homeNowProvider);
+    if (userId == null) return const <HomeProgressPoint>[];
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    List<DateTime> starts;
+    switch (range) {
+      case HomeProgressRange.sevenDays:
+        starts = [
+          for (var i = 6; i >= 0; i--)
+            today.subtract(Duration(days: i)),
+        ];
+      case HomeProgressRange.thirtyDays:
+        starts = [
+          for (var i = 29; i >= 0; i--)
+            today.subtract(Duration(days: i)),
+        ];
+      case HomeProgressRange.monthly:
+        final firstThisMonth = DateTime(today.year, today.month);
+        starts = [
+          for (var i = 11; i >= 0; i--)
+            DateTime(firstThisMonth.year, firstThisMonth.month - i),
+        ];
+    }
+
+    final counts = await Future.wait([
+      for (var i = 0; i < starts.length; i++)
+        ref.read(qazaServiceProvider).countCompletedBetween(
+              userId: userId,
+              from: starts[i],
+              to: range == HomeProgressRange.monthly
+                  ? DateTime(starts[i].year, starts[i].month + 1)
+                  : starts[i].add(const Duration(days: 1)),
+            ),
+    ]);
+
+    return [
+      for (var i = 0; i < starts.length; i++)
+        HomeProgressPoint(start: starts[i], count: counts[i]),
+    ];
+  },
+);
