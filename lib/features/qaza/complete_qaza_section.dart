@@ -12,6 +12,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
+import 'qaza_undo_banner.dart';
 
 class _CompleteSkeleton extends StatelessWidget {
   const _CompleteSkeleton();
@@ -103,28 +104,23 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     setState(() => working = true);
     try {
       final userId = ref.read(requiredUserIdProvider);
+      final completedAt = DateTime.now();
       await ref.read(qazaServiceProvider).completeRecord(
             userId: userId,
             recordId: record.id,
-            completedAt: DateTime.now(),
+            completedAt: completedAt,
           );
       ref.invalidate(oldestPendingProvider(completedPrayer));
       ref.invalidate(progressSummaryProvider);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      final nextPending =
-          await ref.read(oldestPendingProvider(completedPrayer).future);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: const Duration(milliseconds: 900),
-          content: Text(
-            nextPending == null
-                ? l10n.completeSuccess(completedPrayer.localizedLabel(l10n))
-                : l10n
-                    .completeSuccessNext(completedPrayer.localizedLabel(l10n)),
-          ),
-        ),
+      await showQazaUndoSnackBar(
+        context: context,
+        ref: ref,
+        userId: userId,
+        recordIds: [record.id],
+        completedAt: completedAt,
       );
     } catch (_) {
       if (!mounted) return;

@@ -388,6 +388,55 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  Future<List<QazaRecord>> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletedAt.isEmpty) return const <QazaRecord>[];
+
+    return transaction(() async {
+      final changed = <QazaRecord>[];
+      for (final entry in expectedCompletedAt.entries) {
+        final current = await (select(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(entry.key)))
+            .getSingleOrNull();
+        if (current == null ||
+            current.status != QazaStatus.completed.name ||
+            current.completedAt == null ||
+            !current.completedAt!.isAtSameMomentAs(entry.value) ||
+            !current.updatedAt.isAtSameMomentAs(entry.value)) {
+          continue;
+        }
+
+        final updated = await (update(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(entry.key)))
+            .write(QazaRecordsCompanion(
+          status: Value(QazaStatus.pending.name),
+          completedAt: Value(null),
+          updatedAt: Value(undoneAt),
+        ));
+        if (updated > 0) {
+          changed.add(QazaRecord(
+            id: current.id,
+            userId: current.userId,
+            prayerType: PrayerType.values.firstWhere(
+              (value) => value.name == current.prayerType,
+            ),
+            originalDate: current.originalDate,
+            status: QazaStatus.pending,
+            completedAt: null,
+            createdAt: current.createdAt,
+            updatedAt: undoneAt,
+          ));
+        }
+      }
+      return changed;
+    });
+  }
+
   Future<int> count(
       {required String userId, String? prayerType, String? status}) async {
     final query = selectOnly(qazaRecords)

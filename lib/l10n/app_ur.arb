@@ -143,6 +143,15 @@
   "qazaRecordDeleted": "قضا ریکارڈ حذف ہو گیا۔",
   "qazaRecordDeleteFailed": "قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
 
+  "qazaUndoAction": "واپس کریں",
+  "qazaUndoAvailable": "{count, plural, =1{حالیہ تکمیل واپس کی جا سکتی ہے۔} other{حالیہ تکمیلات واپس کی جا سکتی ہیں۔}}",
+  "@qazaUndoAvailable": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "qazaUndoCount": "{count, plural, =1{1 قضا دوبارہ باقی ہو گئی۔} other{{count} قضا دوبارہ باقی ہو گئیں۔}}",
+  "@qazaUndoCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaCompletedCount": "{count, plural, =0{کچھ مکمل نہیں ہوا۔} =1{1 قضا مکمل ہو گئی۔} other{{count} قضا مکمل ہو گئیں۔}}",
 
   "calcAboutYouIntro": "اپنی تاریخِ پیدائش اور بلوغت کی معلومات سے آغاز کریں۔ تاریخیں گریگورین کیلنڈر میں منتخب ہوتی ہیں؛ ہجری تاریخ ساتھ دکھائی جاتی ہے۔",

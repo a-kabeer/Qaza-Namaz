@@ -17,6 +17,7 @@ import 'home_next_qaza_card.dart';
 import 'home_plan.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_navigation.dart';
+import '../qaza/qaza_undo_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -84,6 +85,10 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                QazaUndoBanner(
+                  onUndone: () => _refresh(ref),
+                ),
+                const SizedBox(height: 4),
                 _ProgressOverview(progress: overall),
                 const SizedBox(height: 12),
                 _TodayProgress(

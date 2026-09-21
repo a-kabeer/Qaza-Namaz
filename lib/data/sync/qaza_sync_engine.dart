@@ -374,26 +374,57 @@ class QazaSyncEngine {
             winner = localRecord;
           }
         } else if (localCompletedAt != null && remoteCompletedAt == null) {
-          winner = localRecord;
-          recoveryOp = PendingSyncOp(
-            id: 'complete_${localRecord.id}',
-            type: SyncOpType.complete,
-            userId: userId,
-            queuedAt: localRecord.updatedAt,
-            targetRecordId: localRecord.id,
-            completedAt: localRecord.completedAt,
-            record: localRecord,
-          );
+          // Completion and undo are both state transitions. The newer record
+          // wins when only one side carries a completion timestamp, allowing a
+          // later local undo to override an older remote completion.
+          if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt) ||
+              localRecord.updatedAt.isAtSameMomentAs(remoteRecord.updatedAt)) {
+            winner = localRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'complete_${localRecord.id}_${localRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.complete,
+              userId: userId,
+              queuedAt: localRecord.updatedAt,
+              targetRecordId: localRecord.id,
+              completedAt: localRecord.completedAt,
+              record: localRecord,
+            );
+          } else {
+            winner = remoteRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: remoteRecord.updatedAt,
+              targetRecordId: remoteRecord.id,
+              record: remoteRecord,
+            );
+          }
         } else if (localCompletedAt == null && remoteCompletedAt != null) {
-          winner = remoteRecord;
-          recoveryOp = PendingSyncOp(
-            id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
-            type: SyncOpType.update,
-            userId: userId,
-            queuedAt: remoteRecord.updatedAt,
-            targetRecordId: remoteRecord.id,
-            record: remoteRecord,
-          );
+          if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt) ||
+              localRecord.updatedAt.isAtSameMomentAs(remoteRecord.updatedAt)) {
+            // A newer local undo must be propagated to the remote completed
+            // record rather than being overwritten by the stale completion.
+            winner = localRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'update_${localRecord.id}_${localRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: localRecord.updatedAt,
+              targetRecordId: localRecord.id,
+              record: localRecord,
+            );
+          } else {
+            winner = remoteRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: remoteRecord.updatedAt,
+              targetRecordId: remoteRecord.id,
+              record: remoteRecord,
+            );
+          }
         } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
           winner = localRecord;
           recoveryOp = PendingSyncOp(

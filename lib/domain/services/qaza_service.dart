@@ -3,6 +3,7 @@ import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
+import '../repositories/qaza_undo_repository.dart';
 import 'qaza_availability_service.dart';
 
 export '../entities/qaza_progress.dart';
@@ -251,6 +252,25 @@ class QazaService {
           required DateTime completedAt}) =>
       repository.completeRecords(
           userId: userId, recordIds: recordIds, completedAt: completedAt);
+
+  /// Reverts only the completions captured by an active undo window.
+  ///
+  /// The persistence layer re-checks the exact completion timestamp so an old
+  /// undo can never overwrite a later edit or conflict resolution.
+  Future<int> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) {
+    if (repository is! QazaUndoRepository) {
+      throw StateError('Qaza undo is not supported by this repository.');
+    }
+    return (repository as QazaUndoRepository).undoCompletions(
+      userId: userId,
+      expectedCompletedAt: expectedCompletedAt,
+      undoneAt: undoneAt,
+    );
+  }
 
   /// Resets the Qaza counter for [userId] by deleting the entire ledger.
   ///

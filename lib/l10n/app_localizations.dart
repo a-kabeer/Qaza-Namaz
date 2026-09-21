@@ -715,6 +715,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}'**
   String qazaCompletedCount(int count);
 
+  /// No description provided for @qazaUndoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get qazaUndoAction;
+
+  /// No description provided for @qazaUndoAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Recent completion can be undone.} other{Recent completions can be undone.}}'**
+  String qazaUndoAvailable(int count);
+
+  /// No description provided for @qazaUndoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Qaza restored.} other{{count} Qaza restored.}}'**
+  String qazaUndoCount(int count);
+
   /// No description provided for @calcAboutYouIntro.
   ///
   /// In en, this message translates to:

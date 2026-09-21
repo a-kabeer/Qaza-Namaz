@@ -5,11 +5,12 @@ import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/repositories/qaza_undo_repository.dart';
 import '../local/qaza_local_store.dart';
 import '../sync/qaza_sync_remote_data_source.dart';
 
 class FirestoreQazaRepository
-    implements QazaRepository, QazaSyncRemoteDataSource {
+    implements QazaRepository, QazaUndoRepository, QazaSyncRemoteDataSource {
   FirestoreQazaRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
@@ -259,6 +260,102 @@ class FirestoreQazaRepository
     }
   }
 
+  @override
+  Future<int> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletedAt.isEmpty) return 0;
+    if (expectedCompletedAt.length > maxBatchSize) {
+      throw ArgumentError.value(
+        expectedCompletedAt.length,
+        'expectedCompletedAt',
+        'Undo batch cannot exceed maxBatchSize records.',
+      );
+    }
+
+    final reset = await getResetState(userId: userId);
+    if (reset.inProgress) {
+      throw StateError('Remote reset is currently in progress.');
+    }
+
+    final ids = expectedCompletedAt.keys.toList()..sort();
+    final hashOperations = <PendingSyncOp>[
+      for (final id in ids)
+        PendingSyncOp(
+          id: 'undo_' + id + '_' +
+              expectedCompletedAt[id]!.microsecondsSinceEpoch.toString(),
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: expectedCompletedAt[id]!,
+          targetRecordId: id,
+        ),
+    ];
+    final changeId = 'change_batch_' + _stableBatchHash(hashOperations);
+    final changeReference = _changesCollection(userId).doc(changeId);
+    final restored = <QazaRecord>[];
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshots = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+      for (final id in ids) {
+        snapshots[id] =
+            await transaction.get(_recordsCollection(userId).doc(id));
+      }
+
+      transaction.set(
+        _syncStateDocument(userId),
+        {
+          'generation': reset.generation,
+          'resetInProgress': false,
+        },
+        SetOptions(merge: true),
+      );
+
+      for (final id in ids) {
+        final snapshot = snapshots[id]!;
+        if (!snapshot.exists) continue;
+        final current = _fromDocument(snapshot);
+        final expected = expectedCompletedAt[id];
+        if (expected == null ||
+            current.status != QazaStatus.completed ||
+            current.completedAt == null ||
+            !current.completedAt!.isAtSameMomentAs(expected) ||
+            !current.updatedAt.isAtSameMomentAs(expected)) {
+          continue;
+        }
+
+        final pending = current.copyWith(
+          status: QazaStatus.pending,
+          completedAt: null,
+          updatedAt: undoneAt,
+        );
+        restored.add(pending);
+        transaction.set(
+          _recordsCollection(userId).doc(id),
+          _toMap(
+            pending,
+            serverUpdatedAt: true,
+            syncGeneration: reset.generation,
+          ),
+          SetOptions(merge: false),
+        );
+      }
+
+      transaction.set(changeReference, {
+        'changeType': 'update',
+        'generation': reset.generation,
+        'createdAt': FieldValue.serverTimestamp(),
+        'records': [
+          for (final record in restored)
+            _toMap(record, syncGeneration: reset.generation),
+        ],
+        'recordIds': const <String>[],
+      });
+    });
+
+    return restored.length;
+  }
   @override
   Future<void> updateRecord({required QazaRecord record}) async {
     await applyOperationsBatch(

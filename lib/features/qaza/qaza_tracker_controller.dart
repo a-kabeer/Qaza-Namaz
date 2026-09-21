@@ -134,6 +134,20 @@ class QazaTrackerFilterRequest {
 final qazaTrackerFilterRequestProvider =
     StateProvider<QazaTrackerFilterRequest?>((ref) => null);
 
+/// Result of one bulk completion action, including the exact timestamp
+/// needed to make its undo safe.
+class QazaCompletionBatch {
+  const QazaCompletionBatch({
+    required this.recordIds,
+    required this.completedAt,
+    required this.count,
+  });
+
+  final List<String> recordIds;
+  final DateTime completedAt;
+  final int count;
+}
+
 /// Owns the Qaza workspace: filters, bounded paging, selection and bulk
 /// completion. Every read goes through [QazaService] with a page limit.
 class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
@@ -351,29 +365,45 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
   }
 
-  /// Completes the selected records in one repository call. Repeat taps are
-  /// rejected while in flight and the service is idempotent.
-  Future<int> completeSelected() async {
+  /// Completes the selected records and returns the batch metadata needed
+  /// for a safe, timestamp-bound undo action.
+  Future<QazaCompletionBatch?> completeSelectedWithUndo() async {
     final userId = ref.read(activeUserIdProvider);
-    if (userId == null || state.selected.isEmpty || state.completing) return 0;
+    if (userId == null || state.selected.isEmpty || state.completing) {
+      return null;
+    }
 
+    final selectedIds = state.selected.toList(growable: false);
+    final completedAt = DateTime.now();
     state = state.copyWith(completing: true, clearError: true);
     try {
       final completed = await ref.read(qazaServiceProvider).completeSelected(
             userId: userId,
-            recordIds: state.selected.toList(),
+            recordIds: selectedIds,
+            completedAt: completedAt,
           );
       state = state.copyWith(completing: false);
       ref.invalidate(progressSummaryProvider);
       await refresh();
-      return completed;
+      if (completed == 0) return null;
+      return QazaCompletionBatch(
+        recordIds: selectedIds,
+        completedAt: completedAt,
+        count: completed,
+      );
     } catch (error) {
       state = state.copyWith(
         completing: false,
         error: error.toString(),
       );
-      return 0;
+      return null;
     }
+  }
+
+  /// Legacy count-returning wrapper kept for existing controller callers/tests.
+  Future<int> completeSelected() async {
+    final batch = await completeSelectedWithUndo();
+    return batch?.count ?? 0;
   }
 }
 

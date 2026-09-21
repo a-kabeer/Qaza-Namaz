@@ -26,6 +26,7 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../features/auth/guest_session.dart';
 import '../domain/services/qaza_service.dart';
+import '../domain/services/qaza_undo_service.dart';
 import '../domain/services/cloud_data_deletion_service.dart';
 
 final firestoreProvider =
@@ -74,6 +75,9 @@ final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
 
 final qazaServiceProvider = Provider<QazaService>(
     (ref) => QazaService(ref.watch(qazaRepositoryProvider)));
+final qazaUndoManagerProvider = Provider<QazaUndoManager>(
+  (ref) => QazaUndoManager(),
+);
 final qazaDataTransferServiceProvider = Provider<QazaDataTransferService>(
     (ref) => QazaDataTransferService(ref.watch(qazaRepositoryProvider)));
 final authStateProvider = StreamProvider<AppUser?>(

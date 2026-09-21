@@ -4,6 +4,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/repositories/qaza_undo_repository.dart';
 import '../local/qaza_local_store.dart';
 import '../sync/qaza_sync_engine.dart';
 import '../sync/qaza_sync_remote_data_source.dart';
@@ -105,7 +106,7 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
   }
 }
 
-class OfflineFirstQazaRepository implements QazaRepository {
+class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
   static QazaSyncRemoteDataSource _resolveSyncRemote(
     QazaRepository remote,
     QazaSyncRemoteDataSource? syncRemote,
@@ -674,6 +675,57 @@ class OfflineFirstQazaRepository implements QazaRepository {
             Future<void>.value(),
       );
     }
+  }
+
+  @override
+  Future<int> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletedAt.isEmpty || userId != _activeUserId) return 0;
+
+    final generation = _sessionGeneration;
+    await _ensureOutboxLoaded();
+    final changedRecords = await _localStore.undoCompletions(
+      userId: userId,
+      expectedCompletedAt: expectedCompletedAt,
+      undoneAt: undoneAt,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) return 0;
+    if (changedRecords.isEmpty) return 0;
+
+    final operations = <PendingSyncOp>[
+      for (final record in changedRecords)
+        PendingSyncOp(
+          id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: record.updatedAt,
+          targetRecordId: record.id,
+          record: record,
+        ),
+    ];
+    await _localStore.appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      operations,
+    );
+
+    for (final record in changedRecords) {
+      _records[record.id] = record;
+    }
+    _outbox.addAll(operations);
+    _outboxLoaded = true;
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+    return changedRecords.length;
   }
 
   @override

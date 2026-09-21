@@ -402,6 +402,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get qazaUndoAction => 'Undo';
+
+  @override
+  String qazaUndoAvailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recent completions can be undone.',
+      one: 'Recent completion can be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaUndoCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Qaza restored.',
+      one: '1 Qaza restored.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get calcAboutYouIntro =>
       'Start with your date of birth and Baligh information. Dates are selected in the Gregorian calendar; the Hijri date is shown alongside.';
 

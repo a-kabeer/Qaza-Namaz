@@ -15,6 +15,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
+import 'qaza_undo_banner.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
@@ -33,6 +34,9 @@ class QazaTrackerScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            QazaUndoBanner(
+              onUndone: controller.refresh,
+            ),
             const _ProgressHeader(),
             _StatusFilterBar(state: state, controller: controller),
             _PrayerFilterBar(state: state, controller: controller),
@@ -213,8 +217,7 @@ class _DateFilterBar extends StatelessWidget {
               onPressed: () => _pickRange(context, l10n),
               icon: const Icon(Icons.event_rounded),
               label: Text(
-                state.hasDateFilter
-                    ? l10n.qazaDateFilterRange(
+                state.hasDateFilter                    ? l10n.qazaDateFilterRange(
                         DateFormatters.formatGregorianDatePadded(state.from!),
                         DateFormatters.formatGregorianDatePadded(state.to!),
                       )
@@ -433,8 +436,7 @@ class _TrackerSkeletonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),        child: Row(
           children: [
             const SkeletonCircle(size: 40),
             const SizedBox(width: 12),
@@ -556,14 +558,14 @@ class _RecordRow extends StatelessWidget {
 }
 
 enum _RecordAction { edit, delete }
-class _BulkCompletionBar extends StatelessWidget {
+class _BulkCompletionBar extends ConsumerWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
 
   final QazaTrackerState state;
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final count = state.selected.length;
     return Material(
@@ -591,11 +593,23 @@ class _BulkCompletionBar extends StatelessWidget {
                     ? null
                     : () async {
                         final messenger = ScaffoldMessenger.of(context);
-                        final completed = await controller.completeSelected();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.qazaCompletedCount(completed)),
-                          ),
+                        final batch =
+                            await controller.completeSelectedWithUndo();
+                        if (batch == null) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.qazaCompletedCount(0)),
+                            ),
+                          );
+                          return;
+                        }
+                        await showQazaUndoSnackBar(
+                          context: context,
+                          ref: ref,
+                          userId: ref.read(requiredUserIdProvider),
+                          recordIds: batch.recordIds,
+                          completedAt: batch.completedAt,
+                          onUndone: controller.refresh,
                         );
                       },
                 child: Text(l10n.qazaCompleteCount(count)),
