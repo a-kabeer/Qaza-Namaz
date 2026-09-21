@@ -109,7 +109,8 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final selection = ref.watch(homePrayerSelectionProvider);
-    final prayer = ref.watch(homeSelectedPrayerProvider);
+    final selected = ref.watch(homeSelectedPrayerProvider);
+    final prayer = selected.prayer;
 
     return AppCard(
       key: const Key('home_oldest_qaza'),
