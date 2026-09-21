@@ -705,7 +705,9 @@ class FirestoreQazaRepository
     final generation = (data['generation'] as num?)?.toInt() ?? 0;
     final typeName = data['changeType'] as String? ?? 'upsert';
     final type = switch (typeName) {
+      'update' => QazaRemoteChangeType.update,
       'complete' => QazaRemoteChangeType.complete,
+      'delete' => QazaRemoteChangeType.delete,
       'reset' => QazaRemoteChangeType.reset,
       _ => QazaRemoteChangeType.upsert,
     };
@@ -719,6 +721,10 @@ class FirestoreQazaRepository
         }
       }
     }
+    final rawRecordIds = data['recordIds'];
+    final recordIds = rawRecordIds is Iterable
+        ? rawRecordIds.whereType<String>().toList(growable: false)
+        : const <String>[];
 
     return QazaRemoteChange(
       type: type,
@@ -728,6 +734,7 @@ class FirestoreQazaRepository
         generation: generation,
       ),
       records: List.unmodifiable(records),
+      recordIds: recordIds,
     );
   }
 
