@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -348,14 +349,12 @@ class _TodayDonut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final charts = AppChartColors.of(context);
     final percent = (progress * 100).round();
 
     return Semantics(
-      label: percent.toString() +
-          '%, ' +
-          completed.toString() +
-          ' of ' +
-          target.toString(),
+      label: percent.toString() + '%, ' +
+          completed.toString() + ' of ' + target.toString(),
       child: SizedBox(
         key: const Key('home_today_donut'),
         width: 150,
@@ -363,11 +362,27 @@ class _TodayDonut extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 14,
-              backgroundColor: AppChartColors.of(context).track,
-              color: AppChartColors.of(context).primary,
+            PieChart(
+              PieChartData(
+                sectionsSpace: 0,
+                centerSpaceRadius: 50,
+                startDegreeOffset: -90,
+                sections: [
+                  PieChartSectionData(
+                    value: progress.clamp(0.0, 1.0).toDouble(),
+                    color: charts.primary,
+                    radius: 16,
+                    showTitle: false,
+                  ),
+                  PieChartSectionData(
+                    value: (1 - progress).clamp(0.0, 1.0).toDouble(),
+                    color: charts.track,
+                    radius: 16,
+                    showTitle: false,
+                  ),
+                ],
+              ),
+              duration: Duration.zero,
             ),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -633,6 +648,8 @@ class _OverviewDonut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final charts = AppChartColors.of(context);
+
     return SizedBox(
       key: const Key('home_overall_donut'),
       width: 150,
@@ -640,14 +657,30 @@ class _OverviewDonut extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          CircularProgressIndicator(
-            value: progress,
-            strokeWidth: 16,
-            backgroundColor: AppChartColors.of(context).track,
-            color: AppChartColors.of(context).primary,
+          PieChart(
+            PieChartData(
+              sectionsSpace: 0,
+              centerSpaceRadius: 52,
+              startDegreeOffset: -90,
+              sections: [
+                PieChartSectionData(
+                  value: progress.clamp(0.0, 1.0).toDouble(),
+                  color: charts.primary,
+                  radius: 16,
+                  showTitle: false,
+                ),
+                PieChartSectionData(
+                  value: (1 - progress).clamp(0.0, 1.0).toDouble(),
+                  color: charts.track,
+                  radius: 16,
+                  showTitle: false,
+                ),
+              ],
+            ),
+            duration: Duration.zero,
           ),
           Text(
-            ((progress * 100).round()).toString() + '%',
+            (progress * 100).round().toString() + '%',
             key: const Key('home_overall_percent'),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -823,6 +856,246 @@ class _HomeProgressChartSection extends ConsumerStatefulWidget {
   @override
   ConsumerState<_HomeProgressChartSection> createState() =>
       _HomeProgressChartSectionState();
+}
+
+class _HomeProgressChartSectionState
+    extends ConsumerState<_HomeProgressChartSection> {
+  HomeProgressRange range = HomeProgressRange.sevenDays;
+  int? selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final charts = AppChartColors.of(context);
+    final data = ref.watch(homeProgressHistoryProvider(range));
+
+    return AppCard(
+      key: const Key('home_your_progress'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.homeYourProgress,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 10),
+          SegmentedButton<HomeProgressRange>(
+            key: const Key('home_progress_range'),
+            segments: [
+              ButtonSegment<HomeProgressRange>(
+                value: HomeProgressRange.sevenDays,
+                label: Text(l10n.homeRange7Days),
+              ),
+              ButtonSegment<HomeProgressRange>(
+                value: HomeProgressRange.thirtyDays,
+                label: Text(l10n.homeRange30Days),
+              ),
+              ButtonSegment<HomeProgressRange>(
+                value: HomeProgressRange.monthly,
+                label: Text(l10n.homeRangeMonthly),
+              ),
+            ],
+            selected: {range},
+            onSelectionChanged: (selection) {
+              setState(() {
+                range = selection.single;
+                selectedIndex = null;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          data.when(
+            loading: () => const _ChartSkeleton(),
+            error: (_, __) => Text(l10n.homeProgressError),
+            data: (points) {
+              if (points.every((point) => point.count == 0)) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Center(
+                    child: Text(
+                      l10n.homeChartNoData,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+
+              final selected = selectedIndex == null || points.isEmpty
+                  ? null
+                  : points[
+                      selectedIndex!.clamp(0, points.length - 1).toInt()
+                    ];
+
+              return Column(
+                children: [
+                  if (selected != null)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        DateFormatters.gregorianMonthName(selected.start.month) +
+                            ' ' +
+                            selected.start.day.toString() +
+                            ': ' +
+                            DateFormatters.formatCount(selected.count),
+                        key: const Key('home_chart_selected_value'),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    key: const Key('home_progress_chart'),
+                    height: 190,
+                    child: LineChart(
+                      LineChartData(
+                        minX: 0,
+                        maxX: points.length <= 1
+                            ? 1
+                            : (points.length - 1).toDouble(),
+                        minY: 0,
+                        maxY: _maxY(points),
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: _gridInterval(points),
+                          getDrawingHorizontalLine: (_) => FlLine(
+                            color: charts.grid,
+                            strokeWidth: 1,
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              interval: _labelInterval(points),
+                              reservedSize: 28,
+                              getTitlesWidget: (value, meta) =>
+                                  _bottomTitle(value, meta, points),
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineTouchData: LineTouchData(
+                          handleBuiltInTouches: true,
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipItems: (spots) => spots
+                                .map(
+                                  (spot) => LineTooltipItem(
+                                    DateFormatters.formatCount(
+                                      spot.y.round(),
+                                    ),
+                                    TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                          touchCallback: (_, response) {
+                            final spots = response?.lineBarSpots;
+                            if (spots == null || spots.isEmpty) return;
+                            final index = spots.first.x.round();
+                            if (index != selectedIndex) {
+                              setState(() => selectedIndex = index);
+                            }
+                          },
+                        ),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: [
+                              for (var i = 0; i < points.length; i++)
+                                FlSpot(
+                                  i.toDouble(),
+                                  points[i].count.toDouble(),
+                                ),
+                            ],
+                            isCurved: true,
+                            color: charts.primary,
+                            barWidth: 2.5,
+                            isStrokeCapRound: true,
+                            dotData: const FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: charts.primary.withValues(alpha: 0.12),
+                            ),
+                          ),
+                        ],
+                      ),
+                      duration: Duration.zero,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _maxY(List<HomeProgressPoint> points) {
+    final maxValue = points.fold<int>(
+      0,
+      (maxValue, point) =>
+          point.count > maxValue ? point.count : maxValue,
+    );
+    return maxValue <= 0 ? 1 : (maxValue * 1.2).ceilToDouble();
+  }
+
+  double _gridInterval(List<HomeProgressPoint> points) {
+    final maxY = _maxY(points);
+    return maxY <= 4 ? 1 : (maxY / 4).ceilToDouble();
+  }
+
+  double _labelInterval(List<HomeProgressPoint> points) {
+    if (points.length <= 7) return 1;
+    return (points.length / 4).ceilToDouble();
+  }
+
+  Widget _bottomTitle(
+    double value,
+    TitleMeta meta,
+    List<HomeProgressPoint> points,
+  ) {
+    final index = value.round();
+    if (index < 0 ||
+        index >= points.length ||
+        (value - index).abs() > 0.01) {
+      return const SizedBox.shrink();
+    }
+
+    final point = points[index];
+    final label = points.length <= 7
+        ? point.start.day.toString() +
+            ' ' +
+            DateFormatters.gregorianMonthName(point.start.month)
+        : point.start.day == 1
+            ? DateFormatters.gregorianMonthName(point.start.month)
+            : point.start.day.toString();
+
+    return SideTitleWidget(
+      meta: meta,
+      space: 6,
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall,
+      ),
+    );
+  }
 }
 
 class _HomeProgressChartSectionState
