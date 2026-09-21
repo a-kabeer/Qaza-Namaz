@@ -289,6 +289,9 @@ void main() {
         size: const Size(360, 800),
       );
 
+      await tester.tap(find.byKey(const Key('home_qaza_chip_fajr')));
+      await tester.pumpAndSettle();
+
       final action =
           tester.getRect(find.byKey(const Key('home_complete_oldest_qaza')));
       final navigation = tester.getRect(find.byType(NavigationBar));
@@ -389,6 +392,45 @@ void main() {
       await tester.tap(find.byKey(const Key('home_qaza_plan_done')));
       await tester.pumpAndSettle();
 
+      expect(find.byKey(const Key('home_qaza_plan_dialog')), findsNothing);
+    });
+
+    testWidgets('reaching the daily target shows the Alhamdulillah popup',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(PrayerType.fajr, 2, QazaStatus.pending),
+      ]);
+      await pumpHome(tester, repository);
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_qaza_plan_done')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('home_qaza_chip_fajr')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_qaza_plan_complete_dialog')), findsOneWidget);
+      expect(find.text('Alhamdulillah!'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_complete_close')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('home_qaza_plan_complete_dialog')), findsNothing);
+    });
+
+    testWidgets('daily target popup dismisses by tapping outside',
+        (tester) async {
+      await pumpHome(tester, await ledger());
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('home_qaza_plan_dialog')), findsOneWidget);
+
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('home_qaza_plan_dialog')), findsNothing);
     });
   });
