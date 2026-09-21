@@ -95,14 +95,15 @@ class AccountScreen extends ConsumerWidget {
               final syncState =
                   ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
               final syncText = switch (syncState?.status) {
-                sync_models.SyncStatus.synced => 'Cloud backup is up to date.',
-                sync_models.SyncStatus.syncing => 'Cloud backup is syncing…',
-                sync_models.SyncStatus.pendingSync => 'Cloud backup has pending changes.',
-                sync_models.SyncStatus.partiallySynced => 'Cloud backup has pending changes.',
-                sync_models.SyncStatus.offline => 'Offline — local records remain on this device.',
-                sync_models.SyncStatus.retrying => 'Cloud backup will retry automatically.',
-                sync_models.SyncStatus.syncError => 'Cloud sync needs attention; local records remain safe.',
-                _ => 'Cloud backup status is being checked…',
+                sync_models.SyncStatus.synced => l10n.cloudSynced,
+                sync_models.SyncStatus.syncing => l10n.cloudSyncing,
+                sync_models.SyncStatus.pendingSync ||
+                sync_models.SyncStatus.partiallySynced =>
+                  l10n.cloudPendingCount(syncState?.pendingCount ?? 0),
+                sync_models.SyncStatus.offline => l10n.cloudOffline,
+                sync_models.SyncStatus.retrying => l10n.cloudSyncing,
+                sync_models.SyncStatus.syncError => l10n.cloudSyncProblem,
+                _ => l10n.cloudInactive,
               };
               return AppCard(
                 padding: EdgeInsets.zero,
