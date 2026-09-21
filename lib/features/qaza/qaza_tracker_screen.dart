@@ -217,8 +217,7 @@ class _DateFilterBar extends StatelessWidget {
               onPressed: () => _pickRange(context, l10n),
               icon: const Icon(Icons.event_rounded),
               label: Text(
-                state.hasDateFilter
-                    ? l10n.qazaDateFilterRange(
+                state.hasDateFilter                    ? l10n.qazaDateFilterRange(
                         DateFormatters.formatGregorianDatePadded(state.from!),
                         DateFormatters.formatGregorianDatePadded(state.to!),
                       )
@@ -437,8 +436,7 @@ class _TrackerSkeletonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),        child: Row(
           children: [
             const SkeletonCircle(size: 40),
             const SizedBox(width: 12),
@@ -567,7 +565,7 @@ class _BulkCompletionBar extends ConsumerWidget {
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final count = state.selected.length;
     return Material(
