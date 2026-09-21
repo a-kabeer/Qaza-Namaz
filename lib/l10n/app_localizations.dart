@@ -488,6 +488,18 @@ abstract class AppLocalizations {
   /// **'Unable to load your Qaza progress. Pull to retry.'**
   String get homeProgressError;
 
+  String get homeTodayProgress;
+  String homeDailyProgress(int completed, int target);
+  String homeDailyRemaining(int count);
+  String get homeQazaPlan;
+  String get homeDailyTarget;
+  String homePerDay(int count);
+  String homeEstimatedCompletion(String date);
+  String get homeNextQaza;
+  String get homeCompleteNextQaza;
+  String get homeViewAllQaza;
+  String get homeDailyProgressError;
+
   /// No description provided for @progressPendingCompleted.
   ///
   /// In en, this message translates to:
