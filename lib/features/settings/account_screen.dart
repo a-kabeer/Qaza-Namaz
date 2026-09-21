@@ -5,6 +5,8 @@ import '../../app/providers.dart';
 import '../../core/widgets/app_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../data/sync/sync_state.dart' as sync_models;
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/entities/app_user.dart';
 
@@ -84,6 +86,65 @@ class AccountScreen extends ConsumerWidget {
                     subtitle: Text(l10n.accountSignedIn)),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+          Builder(
+            builder: (context) {
+              final summary = ref.watch(progressSummaryProvider).valueOrNull;
+              final offline = ref.watch(offlineRepositoryProvider);
+              final syncState =
+                  ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
+              final syncText = switch (syncState?.status) {
+                sync_models.SyncStatus.synced => 'Cloud backup is up to date.',
+                sync_models.SyncStatus.syncing => 'Cloud backup is syncing…',
+                sync_models.SyncStatus.pendingSync => 'Cloud backup has pending changes.',
+                sync_models.SyncStatus.partiallySynced => 'Cloud backup has pending changes.',
+                sync_models.SyncStatus.offline => 'Offline — local records remain on this device.',
+                sync_models.SyncStatus.retrying => 'Cloud backup will retry automatically.',
+                sync_models.SyncStatus.syncError => 'Cloud sync needs attention; local records remain safe.',
+                _ => 'Cloud backup status is being checked…',
+              };
+              return AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.cloud_outlined),
+                      title: Text(l10n.cloudBackupStatus),
+                      subtitle: Text(syncText),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(Icons.checklist_outlined),
+                      title: Text(l10n.cloudQazaCount),
+                      subtitle: Text(
+                        summary == null
+                            ? l10n.dataProcessing
+                            : l10n.cloudQazaCountValue(summary.overall.total),
+                      ),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(l10n.cloudLastSynced),
+                      subtitle: Text(formatAppDateTime(syncState?.lastSyncAt)),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.manage_accounts_outlined),
+                      title: Text(l10n.settingsDataCloud),
+                      subtitle: Text(l10n.settingsDataCloudSubtitle),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DataCloudScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
           AppCard(
