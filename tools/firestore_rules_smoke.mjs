@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 
 const rules = fs.readFileSync('firestore.rules', 'utf8');
@@ -164,14 +165,10 @@ await assertSucceeds(
   ),
 );
 await assertSucceeds(
-  import('firebase/firestore').then(({deleteDoc}) =>
-    deleteDoc(doc(dbA, 'users/user-a/qazaRecords/record-delete-me')),
-  ),
+  deleteDoc(doc(dbA, 'users/user-a/qazaRecords/record-delete-me')),
 );
 await assertFails(
-  import('firebase/firestore').then(({deleteDoc}) =>
-    deleteDoc(doc(dbB, 'users/user-a/qazaRecords/record-a')),
-  ),
+  deleteDoc(doc(dbB, 'users/user-a/qazaRecords/record-a')),
 );
 
 const validChange = {
