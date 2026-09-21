@@ -6,6 +6,7 @@ import '../../core/constants/app_metadata.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/date_display.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../core/widgets/sync_status.dart';
@@ -264,12 +265,67 @@ class _ResetQazaCounterRow extends ConsumerWidget {
 class DataCloudScreen extends ConsumerWidget {
   const DataCloudScreen({super.key});
 
+  Future<void> _deleteCloudData(
+    BuildContext context,
+    WidgetRef ref,
+    String userId,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await confirmDestructiveWithAcknowledgement(
+      context,
+      title: l10n.cloudDeleteTitle,
+      message: l10n.cloudDeleteBody,
+      acknowledgeLabel: l10n.cloudDeleteAcknowledge,
+      confirmLabel: l10n.cloudDeleteAction,
+    );
+    if (!confirmed) return;
+
+    try {
+      await ref.read(cloudDataDeletionServiceProvider).deleteCloudData(
+            userId: userId,
+          );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'qaza_cloud_deleted_at_$userId',
+        DateTime.now().toUtc().toIso8601String(),
+      );
+      ref.invalidate(cloudDataDeletedAtProvider(userId));
+      ref.invalidate(progressSummaryProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.cloudDeleteDone)));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.cloudDeleteFailed)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final offline = ref.watch(offlineRepositoryProvider);
     final state =
         ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
+    final user = ref.watch(currentUserProvider);
+    final summary = ref.watch(progressSummaryProvider).valueOrNull;
+    final userId = user?.id;
+    final deletedAt = userId == null
+        ? null
+        : ref.watch(cloudDataDeletedAtProvider(userId)).valueOrNull;
+    final cloudDeleted = userId != null &&
+        deletedAt != null &&
+        !(state?.lastSyncAt?.isAfter(deletedAt) ?? false);
+
+    final backupSubtitle = user == null
+        ? l10n.cloudDeleteSignInRequired
+        : cloudDeleted
+            ? l10n.cloudBackupDeleted
+            : _syncSubtitle(l10n, state);
 
     return AppScaffold(
       title: l10n.settingsDataCloud,
@@ -283,32 +339,91 @@ class DataCloudScreen extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.cloud_done_outlined),
-                  title: Text(l10n.cloudSyncTitle),
-                  subtitle: Text(_syncSubtitle(l10n, state)),
-                  trailing: offline == null
+                  title: Text(l10n.cloudBackupStatus),
+                  subtitle: Text(backupSubtitle),
+                  trailing: offline == null || user == null
                       ? null
                       : IconButton(
                           key: const Key('data_cloud_sync_now'),
                           tooltip: l10n.cloudSyncNow,
                           onPressed: offline.syncNow,
-                          icon: const Icon(Icons.sync_rounded)),
+                          icon: const Icon(Icons.sync_rounded),
+                        ),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
-                  leading: const Icon(Icons.cloud_upload_outlined),
+                  leading: const Icon(Icons.pending_actions_outlined),
                   title: Text(l10n.cloudPendingChanges),
                   subtitle:
                       Text(l10n.cloudPendingCount(state?.pendingCount ?? 0)),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
-                    leading: const Icon(Icons.schedule_outlined),
-                    title: Text(l10n.cloudLastSynced),
-                    subtitle: Text(formatAppDateTime(state?.lastSyncAt))),
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: Text(l10n.cloudLastSynced),
+                  subtitle: Text(formatAppDateTime(state?.lastSyncAt)),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.checklist_outlined),
+                  title: Text(l10n.cloudQazaCount),
+                  subtitle: Text(
+                    summary == null
+                        ? l10n.dataProcessing
+                        : l10n.cloudQazaCountValue(summary.overall.total),
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.cloudLocalVsCloudTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(l10n.cloudLocalVsCloudBody),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (user != null)
+            AppCard(
+              color: Theme.of(context).colorScheme.errorContainer.withValues(
+                    alpha: .35,
+                  ),
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                key: const Key('data_cloud_delete'),
+                leading: Icon(
+                  Icons.cloud_off_outlined,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  l10n.cloudDeleteTitle,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(l10n.cloudDeleteBody),
+                onTap: () => _deleteCloudData(context, ref, user.id),
+              ),
+            )
+          else
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.cloud_off_outlined),
+                title: Text(l10n.cloudDeleteTitle),
+                subtitle: Text(l10n.cloudDeleteSignInRequired),
+              ),
+            ),
+          const SizedBox(height: 12),
           AppCard(
             padding: EdgeInsets.zero,
             child: ListTile(
@@ -317,9 +432,11 @@ class DataCloudScreen extends ConsumerWidget {
               subtitle: Text(l10n.cloudExportImportSubtitle),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const QazaDataManagementScreen())),
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const QazaDataManagementScreen(),
+                ),
+              ),
             ),
           ),
         ],
@@ -341,7 +458,8 @@ class DataCloudScreen extends ConsumerWidget {
       sync_models.SyncStatus.offline => l10n.cloudOffline,
       sync_models.SyncStatus.pendingSync =>
         l10n.cloudPendingCount(state.pendingCount),
-      sync_models.SyncStatus.syncError => state.detail ?? l10n.cloudSyncProblem,
+      sync_models.SyncStatus.syncError =>
+        state.detail ?? l10n.cloudSyncProblem,
     };
   }
 }
