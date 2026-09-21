@@ -48,6 +48,7 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
 
   Future<void> setDailyTarget(int value) async {
     final target = _normalizeTarget(value);
+    _restoreGeneration++;
     final userId = ref.read(activeUserIdProvider);
     state = state.copyWith(dailyTarget: target);
     if (userId == null) return;
