@@ -73,4 +73,8 @@ abstract interface class QazaSyncRemoteDataSource {
     required String operationId,
   });
 
+  /// Permanently removes the user's cloud records and cloud change log while
+  /// leaving the local/offline ledger untouched.
+  Future<void> deleteCloudData({required String userId});
+
 }
