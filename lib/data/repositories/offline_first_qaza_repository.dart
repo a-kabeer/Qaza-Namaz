@@ -85,7 +85,7 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
   @override
   Future<void> deleteCloudData({required String userId}) async {
     // The legacy adapter cannot issue the newer change-log deletion API.
-    // Its destructive operation is the existing scoped user reset.
+    // Use its existing scoped reset operation for interface compatibility.
     await _remote.resetUserRecords(userId: userId);
   }
 }
