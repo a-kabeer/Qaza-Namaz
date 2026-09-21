@@ -121,7 +121,8 @@ service cloud.firestore {
         'changeType',
         'generation',
         'createdAt',
-        'records'
+        'records',
+        'recordIds'
       ])
       && data.changeType in ['upsert', 'update', 'complete', 'delete', 'reset']
       && data.generation is int
