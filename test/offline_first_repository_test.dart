@@ -366,6 +366,12 @@ class _FailingRepository
   }
 
   @override
+  Future<void> deleteCloudData({required String userId}) {
+    if (failWrites) return Future.error(StateError('simulated remote outage'));
+    return _delegate.deleteCloudData(userId: userId);
+  }
+
+  @override
   Future<QazaRemoteResetState> getResetState({required String userId}) =>
       _delegate.getResetState(userId: userId);
 
