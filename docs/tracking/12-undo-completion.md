@@ -1,7 +1,7 @@
 # Undo completion
 
 **Priority:** P1  
-**Status:** **In progress**
+**Status:** **Merged — Device QA Pending**
 
 ## Task checklist
 
@@ -17,15 +17,15 @@ Undo must not silently delete or corrupt records.
 
 ## Definition of Done
 
-- [ ] Implementation
+- [x] Implementation
 - [x] Unit/widget tests
 - [x] Regression tests
-- [ ] Analyze
-- [ ] CI
+- [x] Analyze
+- [x] CI
 - [ ] Device QA where required
 - [ ] UX review
 - [x] Documentation
-- [ ] Merge
+- [x] Merge
 
 ## Evidence log
 
@@ -46,4 +46,4 @@ Undo must not silently delete or corrupt records.
 ### Evidence log
 | Date | Status | Evidence |
 |---|---|---|
-| 2026-09-21 | In progress | Implementation and focused tests added on `task-12/undo-completion`; CI and merge still pending. |
+| 2026-09-21 | Merged — Device QA Pending | PR #65 merged by squash as `6493ddc8ba271bd757d823a0607bb9673aff2e32`; final CI run #1615 passed all five required gates. Physical-device QA and UX review remain pending. |
