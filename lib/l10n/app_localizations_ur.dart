@@ -215,6 +215,47 @@ class AppLocalizationsUr extends AppLocalizations {
       'آپ کی قضا کی پیش رفت لوڈ نہیں ہو سکی۔ دوبارہ کوشش کے لیے نیچے کھینچیں۔';
 
   @override
+  String get homeTodayProgress => 'آج کی پیش رفت';
+
+  @override
+  String homeDailyProgress(int completed, int target) {
+    return '$completed / $target مکمل';
+  }
+
+  @override
+  String homeDailyRemaining(int count) {
+    return '$count باقی';
+  }
+
+  @override
+  String get homeQazaPlan => 'قضا کا منصوبہ';
+
+  @override
+  String get homeDailyTarget => 'روزانہ ہدف';
+
+  @override
+  String homePerDay(int count) {
+    return 'روزانہ $count';
+  }
+
+  @override
+  String homeEstimatedCompletion(String date) {
+    return 'متوقع تکمیل: $date';
+  }
+
+  @override
+  String get homeNextQaza => 'اگلی قضا';
+
+  @override
+  String get homeCompleteNextQaza => 'اگلی قضا مکمل کریں';
+
+  @override
+  String get homeViewAllQaza => 'تمام قضا دیکھیں';
+
+  @override
+  String get homeDailyProgressError => 'آج کی پیش رفت لوڈ نہیں ہو سکی۔';
+
+  @override
   String progressPendingCompleted(String pending, String completed) {
     return '$pending باقی • $completed مکمل';
   }
