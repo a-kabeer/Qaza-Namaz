@@ -140,6 +140,74 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<bool> hasRecordCombination({
+    required String userId,
+    required PrayerType prayerType,
+    required DateTime originalDate,
+    String? excludingRecordId,
+  }) =>
+      _database.qazaRecordsDao.hasRecordCombination(
+        userId: userId,
+        prayerType: prayerType.name,
+        originalDate: originalDate,
+        excludingRecordId: excludingRecordId,
+      );
+
+  @override
+  Future<bool> updateRecord(QazaRecord record) => _database.transaction(
+        () => _database.qazaRecordsDao.updateRecord(record),
+      );
+
+  @override
+  Future<bool> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) =>
+      _database.transaction(
+        () => _database.qazaRecordsDao.deleteById(
+          userId: userId,
+          id: recordId,
+        ),
+      ).then((count) => count > 0);
+
+  @override
+  Future<bool> updateRecordAndOutbox({
+    required String userId,
+    required QazaRecord record,
+    required PendingSyncOp operation,
+  }) async {
+    if (record.userId != userId || operation.userId != userId) {
+      throw StateError('Cannot persist data for a different user.');
+    }
+    return _database.transaction(() async {
+      final changed = await _database.qazaRecordsDao.updateRecord(record);
+      if (!changed) return false;
+      await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
+      return true;
+    });
+  }
+
+  @override
+  Future<bool> deleteRecordAndOutbox({
+    required String userId,
+    required String recordId,
+    required PendingSyncOp operation,
+  }) async {
+    if (operation.userId != userId) {
+      throw StateError('Cannot queue sync data for a different user.');
+    }
+    return _database.transaction(() async {
+      final deleted = await _database.qazaRecordsDao.deleteById(
+        userId: userId,
+        id: recordId,
+      );
+      if (deleted == 0) return false;
+      await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
+      return true;
+    });
+  }
+
+  @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     await _database.transaction(() async {
       await _database.qazaRecordsDao.replaceUserRecords(
