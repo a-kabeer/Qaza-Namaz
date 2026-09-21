@@ -101,10 +101,11 @@ void main() {
       expect(find.byKey(const Key('home_pending_value')), findsNothing);
       expect(find.text('Total'), findsNothing);
 
-      final next = tester.getRect(find.byKey(const Key('home_next_qaza')));
       final overview =
           tester.getRect(find.byKey(const Key('home_progress_overview')));
-      expect(next.bottom, lessThanOrEqualTo(overview.top));
+      final today =
+          tester.getRect(find.byKey(const Key('home_today_progress')));
+      expect(overview.bottom, lessThanOrEqualTo(today.top));
     });
 
     testWidgets('summary sits above the horizontal bar', (tester) async {
@@ -142,7 +143,7 @@ void main() {
         (tester) async {
       await pumpHome(tester, await ledger(), home: const WorkspaceShell());
 
-      expect(find.byKey(const Key('home_next_qaza')), findsOneWidget);
+      expect(find.byKey(const Key('home_oldest_qaza')), findsOneWidget);
       expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
       expect(find.byKey(const Key('home_calculate_qaza')), findsNothing);
@@ -173,7 +174,7 @@ void main() {
 
       // The dashboard is not built at all.
       expect(find.byKey(const Key('home_progress_overview')), findsNothing);
-      expect(find.byKey(const Key('home_next_qaza')), findsNothing);
+      expect(find.byKey(const Key('home_oldest_qaza')), findsNothing);
       expect(find.byKey(const Key('home_prayer_row_fajr')), findsNothing);
     });
 
@@ -253,28 +254,26 @@ void main() {
   });
 
   group('daily Home experience', () {
-    testWidgets('shows the next oldest pending Qaza across all prayers',
+    testWidgets('shows the oldest pending Qaza for the selected prayer',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
-        _record(PrayerType.zuhr, 10, QazaStatus.pending),
+        _record(PrayerType.fajr, 10, QazaStatus.pending),
         _record(PrayerType.fajr, 2, QazaStatus.pending),
-        _record(PrayerType.isha, 1, QazaStatus.pending),
-        _record(PrayerType.asr, 3, QazaStatus.completed),
+        _record(PrayerType.zuhr, 1, QazaStatus.pending),
       ]);
       await pumpHome(tester, repository);
 
-      expect(find.byKey(const Key('home_next_qaza')), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('home_next_qaza')),
-          matching: find.text('Isha'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('home_complete_next_qaza')),
+      expect(find.byKey(const Key('home_oldest_qaza')), findsOneWidget);
+      expect(find.byKey(const Key('home_qaza_auto_chip')), findsOneWidget);
+      expect(find.text('All'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('home_qaza_chip_fajr')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(find.byKey(const Key('home_complete_oldest_qaza')),
           findsOneWidget);
-      expect(find.text('01 Jan 2026'), findsOneWidget);
     });
 
     testWidgets('completion action is visible without scrolling',
@@ -291,28 +290,32 @@ void main() {
       );
 
       final action =
-          tester.getRect(find.byKey(const Key('home_complete_next_qaza')));
+          tester.getRect(find.byKey(const Key('home_complete_oldest_qaza')));
       final navigation = tester.getRect(find.byType(NavigationBar));
       expect(action.bottom, lessThanOrEqualTo(navigation.top));
     });
 
-    testWidgets('completing next Qaza advances to the next oldest record',
+    testWidgets('completing oldest Qaza advances within the same prayer',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(PrayerType.fajr, 2, QazaStatus.pending),
-        _record(PrayerType.zuhr, 5, QazaStatus.pending),
+        _record(PrayerType.fajr, 5, QazaStatus.pending),
+        _record(PrayerType.zuhr, 9, QazaStatus.pending),
       ]);
       await pumpHome(tester, repository);
 
+      await tester.tap(find.byKey(const Key('home_qaza_chip_fajr')));
+      await tester.pumpAndSettle();
       expect(find.text('02 Jan 2026'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('home_complete_next_qaza')));
+
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
       await tester.pumpAndSettle();
 
       expect(find.text('05 Jan 2026'), findsOneWidget);
       expect(
         textOf(tester, const Key('home_progress_summary')),
-        '1 of 2 completed · 50%',
+        '1 of 3 completed · 33%',
       );
     });
 
@@ -352,7 +355,7 @@ void main() {
       );
     });
 
-    testWidgets('shows plan target and completion estimate', (tester) async {
+    testWidgets('places Qaza Plan inside Today\'s progress', (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(PrayerType.fajr, 1, QazaStatus.pending),
@@ -363,10 +366,30 @@ void main() {
       ]);
       await pumpHome(tester, repository);
 
-      expect(find.byKey(const Key('home_qaza_plan')), findsOneWidget);
-      expect(find.byKey(const Key('home_daily_target')), findsOneWidget);
-      expect(find.byKey(const Key('home_estimated_completion')),
-          findsOneWidget);
+      expect(find.byKey(const Key('home_today_progress')), findsOneWidget);
+      expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
+      expect(find.byKey(const Key('home_qaza_plan')), findsNothing);
+      expect(find.byKey(const Key('home_estimated_completion')), findsOneWidget);
+
+      final today = find.byKey(const Key('home_today_progress'));
+      final planButton = find.byKey(const Key('home_qaza_plan_button'));
+      expect(tester.getRect(planButton).top, greaterThan(tester.getRect(today).top));
+    });
+
+    testWidgets('Qaza Plan opens target popup and saves a new target', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_qaza_plan_dialog')), findsOneWidget);
+      expect(find.byKey(const Key('home_qaza_plan_target')), findsOneWidget);
+      expect(find.byKey(const Key('home_qaza_plan_done')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_done')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_qaza_plan_dialog')), findsNothing);
     });
   });
 
@@ -552,9 +575,8 @@ void main() {
       expect(Directionality.of(tester.element(find.byType(HomeScreen))),
           TextDirection.rtl);
       expect(tester.takeException(), isNull);
-      // The chevron points onward for the reading direction.
-      expect(find.byIcon(Icons.chevron_left_rounded), findsWidgets);
-      expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+      expect(find.byKey(const Key('home_qaza_prayer_chips')), findsOneWidget);
+      expect(find.text('تمام'), findsNothing);
     });
 
     testWidgets('survives a small screen', (tester) async {
