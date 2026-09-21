@@ -189,6 +189,10 @@ service cloud.firestore {
         && changeId.size() > 0
         && changeId.size() <= 256
         && validChange(request.resource.data, userId);
+
+      // The owner may explicitly purge their cloud change log. This is used
+      // only by the Account Data Transparency cloud-deletion flow.
+      allow delete: if isOwner(userId);
     }
 
     match /users/{userId}/syncMetadata/{documentId} {
