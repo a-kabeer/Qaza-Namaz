@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/utils/qaza_date.dart';
-import '../../core/widgets/app_spacing.dart';
+import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
