@@ -11,7 +11,6 @@ import '../../domain/services/qaza_service.dart';
 /// gets silently overwritten by an old undo action.
 class QazaUndoBatch {
   const QazaUndoBatch({
-    required this.recordIds,
     required this.completedAt,
     required this.expiresAt,
   });
