@@ -10,16 +10,23 @@ class CloudDataDeletionService {
   const CloudDataDeletionService({
     required QazaSyncRemoteDataSource remote,
     required QazaLocalStore localStore,
+    Future<void> Function()? syncBeforeDelete,
   })  : _remote = remote,
-        _localStore = localStore;
+        _localStore = localStore,
+        _syncBeforeDelete = syncBeforeDelete;
 
   final QazaSyncRemoteDataSource _remote;
   final QazaLocalStore _localStore;
+  final Future<void> Function()? _syncBeforeDelete;
 
   Future<void> deleteCloudData({required String userId}) async {
     if (userId.isEmpty) {
       throw ArgumentError.value(userId, 'userId');
     }
+
+    // Finish any active/pending sync before deleting the cloud copy. This
+    // prevents an in-flight upload from racing the destructive action.
+    await _syncBeforeDelete?.call();
 
     // Delete the authoritative cloud copy first. Local data is intentionally
     // untouched by the remote operation.
