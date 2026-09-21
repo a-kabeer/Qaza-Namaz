@@ -405,6 +405,10 @@ void main() {
 
       await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_qaza_plan_target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 per day').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('home_qaza_plan_done')));
       await tester.pumpAndSettle();
 
@@ -421,9 +425,13 @@ void main() {
       expect(find.byKey(const Key('home_qaza_plan_complete_dialog')), findsNothing);
     });
 
-    testWidgets('daily target popup dismisses by tapping outside',
+    testWidgets('daily target and celebration dialogs support outside dismissal',
         (tester) async {
-      await pumpHome(tester, await ledger());
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(PrayerType.fajr, 3, QazaStatus.pending),
+      ]);
+      await pumpHome(tester, repository);
 
       await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
       await tester.pumpAndSettle();
@@ -432,6 +440,25 @@ void main() {
       await tester.tapAt(const Offset(1, 1));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('home_qaza_plan_dialog')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('home_qaza_plan_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_qaza_plan_target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 per day').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_qaza_plan_done')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('home_qaza_chip_fajr')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_qaza_plan_complete_dialog')), findsOneWidget);
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('home_qaza_plan_complete_dialog')), findsNothing);
     });
   });
 
