@@ -33,8 +33,6 @@ jobs:
         run: flutter pub get
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
-      # Runs after generation so the check covers the same tree Analyze sees,
-      # generated sources included.
       - name: Check formatting
         run: dart format lib test
       - name: Show formatting diff
@@ -100,26 +98,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
-
       - name: Install Firebase emulator test dependencies
         run: npm install --no-save --no-package-lock @firebase/rules-unit-testing firebase firebase-tools
-
       - name: Run Firestore security rule tests
         run: npx firebase emulators:exec --only firestore --project qaza-nmz "node tools/firestore_rules_smoke.mjs"
 
   build_android:
-    name: Android debug and release AAB
+    name: Android debug and release artifacts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -157,36 +151,24 @@ jobs:
           config = json.loads(Path("android/app/google-services.json").read_text())
           matching = None
           for client in config.get("client", []):
-              info = client.get("client_info", {})
-              android = info.get("android_client_info", {})
+              android = client.get("client_info", {}).get("android_client_info", {})
               if android.get("package_name") == package_name:
                   matching = client
                   break
 
           if matching is None:
-              raise SystemExit(
-                  f"No Firebase Android client is registered for {package_name}."
-              )
+              raise SystemExit(f"No Firebase Android client is registered for {package_name}.")
 
-          android_oauth = []
+          certificate_hashes = []
           for oauth in matching.get("oauth_client", []):
               android_info = oauth.get("android_info", {})
               if (
                   oauth.get("client_type") == 1
                   and android_info.get("package_name") == package_name
+                  and android_info.get("certificate_hash")
               ):
-                  android_oauth.append(android_info)
+                  certificate_hashes.append(android_info["certificate_hash"])
 
-          if not android_oauth:
-              raise SystemExit(
-                  f"No Android OAuth client is registered for {package_name}."
-              )
-
-          certificate_hashes = [
-              item.get("certificate_hash")
-              for item in android_oauth
-              if item.get("certificate_hash")
-          ]
           if not certificate_hashes:
               raise SystemExit(
                   f"No Android OAuth SHA-1 certificate is configured for {package_name}."
@@ -214,11 +196,10 @@ jobs:
                   f"targetSdk {target_sdk} is below the Android 16 / API 36 Play requirement."
               )
           if "signingConfig = signingConfigs.debug" in build_gradle:
-              raise SystemExit(
-                  "Release build must never use the debug signing configuration."
-              )
+              raise SystemExit("Release build must never use the debug signing configuration.")
           print(f"Android target SDK policy OK: {target_sdk}")
           print("Release signing policy OK: no debug signing fallback.")
+          PY
 
       - name: Detect release signing
         id: release_signing
@@ -230,7 +211,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Production release signing is not configured; release artifact will be skipped."
+            echo "Production release signing is not configured; release artifacts will be skipped."
           fi
 
       - name: Prepare release signing
@@ -251,6 +232,31 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
+      - name: Audit production release signing identity
+        if: steps.release_signing.outputs.configured == 'true'
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          python3 tools/android_signing_audit.py \
+            --keystore android/release-keystore.jks \
+            --alias "$ANDROID_KEY_ALIAS" \
+            --store-password-env ANDROID_KEYSTORE_PASSWORD \
+            --firebase-package com.example.qaza_namaz_task1_flutter
+
+      - name: Build signed release APK
+        if: steps.release_signing.outputs.configured == 'true'
+        run: flutter build apk --release
+
+      - name: Audit signed release APK
+        if: steps.release_signing.outputs.configured == 'true'
+        run: |
+          python3 tools/android_signing_audit.py \
+            --apk build/app/outputs/flutter-apk/app-release.apk \
+            --firebase-package com.example.qaza_namaz_task1_flutter
+
       - name: Build release AAB
         if: steps.release_signing.outputs.configured == 'true'
         run: flutter build appbundle --release
@@ -260,6 +266,13 @@ jobs:
         with:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Upload signed release APK
+        if: steps.release_signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk-signed
+          path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload release AAB
         if: steps.release_signing.outputs.configured == 'true'
