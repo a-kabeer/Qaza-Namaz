@@ -375,6 +375,15 @@ class QazaSyncEngine {
           }
         } else if (localCompletedAt != null && remoteCompletedAt == null) {
           winner = localRecord;
+          recoveryOp = PendingSyncOp(
+            id: 'complete_${localRecord.id}',
+            type: SyncOpType.complete,
+            userId: userId,
+            queuedAt: localRecord.updatedAt,
+            targetRecordId: localRecord.id,
+            completedAt: localRecord.completedAt,
+            record: localRecord,
+          );
         } else if (localCompletedAt == null && remoteCompletedAt != null) {
           winner = remoteRecord;
           recoveryOp = PendingSyncOp(
