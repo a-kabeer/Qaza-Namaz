@@ -127,6 +127,22 @@
   "qazaCompletedOn": "{date} کو مکمل",
 
   "qazaCompleteCount": "{count, plural, =1{1 قضا مکمل کریں} other{{count} قضا مکمل کریں}}",
+  "qazaRecordActions": "ریکارڈ کے اعمال",
+  "qazaEditRecord": "ترمیم",
+  "qazaDeleteRecord": "حذف کریں",
+  "qazaEditRecordTitle": "قضا میں ترمیم",
+  "qazaEditPrayer": "نماز",
+  "qazaEditDate": "اصل تاریخ",
+  "qazaEditDateHelp": "قضا کی اصل تاریخ منتخب کریں",
+  "qazaSaveChanges": "تبدیلیاں محفوظ کریں",
+  "qazaDeleteRecordTitle": "قضا ریکارڈ حذف کریں؟",
+  "qazaDeleteRecordMessage": "{date} کی {prayer} قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔",
+  "qazaRecordUpdated": "قضا ریکارڈ اپ ڈیٹ ہو گیا۔",
+  "qazaDuplicateRecord": "{date} کی {prayer} قضا پہلے سے موجود ہے۔",
+  "qazaRecordUpdateFailed": "قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "qazaRecordDeleted": "قضا ریکارڈ حذف ہو گیا۔",
+  "qazaRecordDeleteFailed": "قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+
   "qazaCompletedCount": "{count, plural, =0{کچھ مکمل نہیں ہوا۔} =1{1 قضا مکمل ہو گئی۔} other{{count} قضا مکمل ہو گئیں۔}}",
 
   "calcAboutYouIntro": "اپنی تاریخِ پیدائش اور بلوغت کی معلومات سے آغاز کریں۔ تاریخیں گریگورین کیلنڈر میں منتخب ہوتی ہیں؛ ہجری تاریخ ساتھ دکھائی جاتی ہے۔",
