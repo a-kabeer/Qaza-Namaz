@@ -236,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String homePerDay(int count) {
-    return '$count/day';
+    return '$count per day';
   }
 
   @override
@@ -254,8 +254,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeViewAllQaza => 'View all Qaza';
 
   @override
-  String get homeDailyProgressError =>
-      'Today\'s progress could not be loaded.';
+  String get homeDailyProgressError => 'Today\'s progress could not be loaded.';
 
   @override
   String progressPendingCompleted(String pending, String completed) {
@@ -1439,13 +1438,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudQazaCount => 'Qaza count';
 
   @override
-  String cloudQazaCountValue(int count) => intl.Intl.pluralLogic(
-        count,
-        locale: localeName,
-        zero: 'No Qaza records',
-        one: '1 Qaza record',
-        other: '$count Qaza records',
-      );
+  String cloudQazaCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Qaza records',
+      one: '1 Qaza record',
+      zero: 'No Qaza records',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get cloudBackupStatus => 'Cloud backup';

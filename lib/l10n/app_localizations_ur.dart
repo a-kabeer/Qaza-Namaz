@@ -235,7 +235,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String homePerDay(int count) {
-    return '$count/دن';
+    return 'روزانہ $count';
   }
 
   @override
@@ -1437,19 +1437,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudQazaCount => 'قضا ریکارڈز کی تعداد';
 
   @override
-  String cloudQazaCountValue(int count) => intl.Intl.pluralLogic(
-        count,
-        locale: localeName,
-        zero: 'کوئی قضا ریکارڈ نہیں',
-        one: '1 قضا ریکارڈ',
-        other: '$count قضا ریکارڈز',
-      );
+  String cloudQazaCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قضا ریکارڈز',
+      one: '1 قضا ریکارڈ',
+      zero: 'کوئی قضا ریکارڈ نہیں',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get cloudBackupStatus => 'کلاؤڈ بیک اپ';
 
   @override
-  String get cloudBackupDeleted => 'کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔';
+  String get cloudBackupDeleted =>
+      'کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔';
 
   @override
   String get cloudLocalVsCloudTitle => 'لوکل اور کلاؤڈ ڈیٹا';
@@ -1481,7 +1485,8 @@ class AppLocalizationsUr extends AppLocalizations {
       'کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔';
 
   @override
-  String get cloudDeleteSignInRequired => 'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
+  String get cloudDeleteSignInRequired =>
+      'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
 
   @override
   String get settingsTitle => 'ترتیبات';

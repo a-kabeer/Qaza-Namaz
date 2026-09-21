@@ -488,16 +488,70 @@ abstract class AppLocalizations {
   /// **'Unable to load your Qaza progress. Pull to retry.'**
   String get homeProgressError;
 
+  /// No description provided for @homeTodayProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s progress'**
   String get homeTodayProgress;
+
+  /// No description provided for @homeDailyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} / {target} completed'**
   String homeDailyProgress(int completed, int target);
+
+  /// No description provided for @homeDailyRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} remaining'**
   String homeDailyRemaining(int count);
+
+  /// No description provided for @homeQazaPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza plan'**
   String get homeQazaPlan;
+
+  /// No description provided for @homeDailyTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target'**
   String get homeDailyTarget;
+
+  /// No description provided for @homePerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} per day'**
   String homePerDay(int count);
+
+  /// No description provided for @homeEstimatedCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated completion: {date}'**
   String homeEstimatedCompletion(String date);
+
+  /// No description provided for @homeNextQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Qaza'**
   String get homeNextQaza;
+
+  /// No description provided for @homeCompleteNextQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete next Qaza'**
   String get homeCompleteNextQaza;
+
+  /// No description provided for @homeViewAllQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'View all Qaza'**
   String get homeViewAllQaza;
+
+  /// No description provided for @homeDailyProgressError.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s progress could not be loaded.'**
   String get homeDailyProgressError;
 
   /// No description provided for @progressPendingCompleted.
@@ -2408,18 +2462,82 @@ abstract class AppLocalizations {
   /// **'Sync problem — your data is safe on this device.'**
   String get cloudSyncProblem;
 
+  /// No description provided for @cloudQazaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza count'**
   String get cloudQazaCount;
+
+  /// No description provided for @cloudQazaCountValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No Qaza records} =1{1 Qaza record} other{{count} Qaza records}}'**
   String cloudQazaCountValue(int count);
+
+  /// No description provided for @cloudBackupStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup'**
   String get cloudBackupStatus;
+
+  /// No description provided for @cloudBackupDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud copy deleted; local records remain.'**
   String get cloudBackupDeleted;
+
+  /// No description provided for @cloudLocalVsCloudTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local vs cloud'**
   String get cloudLocalVsCloudTitle;
+
+  /// No description provided for @cloudLocalVsCloudBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.'**
   String get cloudLocalVsCloudBody;
+
+  /// No description provided for @cloudDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete cloud data'**
   String get cloudDeleteTitle;
+
+  /// No description provided for @cloudDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.'**
   String get cloudDeleteBody;
+
+  /// No description provided for @cloudDeleteAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand the cloud copy will be permanently deleted.'**
   String get cloudDeleteAcknowledge;
+
+  /// No description provided for @cloudDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete cloud data'**
   String get cloudDeleteAction;
+
+  /// No description provided for @cloudDeleteDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Qaza data was deleted. Your local records remain on this device.'**
   String get cloudDeleteDone;
+
+  /// No description provided for @cloudDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data could not be deleted. Your local records are still safe.'**
   String get cloudDeleteFailed;
+
+  /// No description provided for @cloudDeleteSignInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to manage cloud data.'**
   String get cloudDeleteSignInRequired;
 
   /// No description provided for @settingsTitle.
