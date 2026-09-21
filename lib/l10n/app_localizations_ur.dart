@@ -1440,7 +1440,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔';
 
   @override
-  String get cloudDeleteSignInRequired => 'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔'
+  String get cloudDeleteSignInRequired => 'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
 
   @override
   String get settingsTitle => 'ترتیبات';
