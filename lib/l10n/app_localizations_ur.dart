@@ -231,6 +231,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeQazaPlan => 'قضا کا منصوبہ';
 
   @override
+  String get homeCompleteOldestQaza => 'سب سے پرانی قضا مکمل کریں';
+
+  @override
+  String get homeAuto => 'خودکار';
+
+  @override
+  String get homePrayerTimeUnavailable =>
+      'خودکار نماز کا انتخاب دستیاب نہیں جب تک نماز کے اوقات سیٹ نہ کیے جائیں۔';
+
+  @override
+  String get homeQazaTargetReachedTitle => 'الحمدللہ!';
+
+  @override
+  String get homeQazaTargetReachedMessage =>
+      'آپ نے آج کا اپنا قضا منصوبہ مکمل کر لیا ہے۔\nاللہ تعالیٰ آپ کی کوششیں قبول فرمائے۔';
+
+  @override
   String get homeDailyTarget => 'روزانہ ہدف';
 
   @override

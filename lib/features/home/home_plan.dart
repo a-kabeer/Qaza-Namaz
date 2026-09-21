@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
-import '../../domain/entities/qaza_record.dart';
 
 class HomeQazaPlanState {
   const HomeQazaPlanState({required this.dailyTarget});
@@ -61,6 +60,28 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
     }
   }
 
+  /// Atomically claims the congratulation event for a user/day/target.
+  ///
+  /// Returning false means this exact target completion has already been
+  /// celebrated, preventing duplicate dialogs from rebuilds or re-entry.
+  Future<bool> claimDailyTargetCelebration({
+    required String userId,
+    required DateTime date,
+    required int target,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateKey =
+        '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    final key = 'qaza_home_daily_target_celebrated_$userId';
+    final marker = '$dateKey:$target';
+
+    if (prefs.getString(key) == marker) return false;
+    await prefs.setString(key, marker);
+    return true;
+  }
+
   int _normalizeTarget(int value) => value.clamp(1, 50).toInt();
 }
 
@@ -108,12 +129,6 @@ final homeDailyProgressProvider =
   return HomeDailyProgress(completed: completed, target: target);
 });
 
-final homeNextQazaProvider =
-    FutureProvider.autoDispose<QazaRecord?>((ref) async {
-  final userId = ref.watch(activeUserIdProvider);
-  if (userId == null) return null;
-  return ref.read(qazaServiceProvider).oldestPendingOverall(userId: userId);
-});
 
 int homeDaysUntilCompletion({
   required int pending,

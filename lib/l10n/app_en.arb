@@ -94,6 +94,11 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "homeQazaPlan": "Qaza plan",
+  "homeCompleteOldestQaza": "Complete Oldest Qaza",
+  "homeAuto": "Auto",
+  "homePrayerTimeUnavailable": "Automatic prayer selection is unavailable until Prayer Times are set up.",
+  "homeQazaTargetReachedTitle": "Alhamdulillah!",
+  "homeQazaTargetReachedMessage": "You have completed your Qaza plan for today.\nMay Allah accept your efforts.",
   "homeDailyTarget": "Daily target",
   "homePerDay": "{count} per day",
   "@homePerDay": {

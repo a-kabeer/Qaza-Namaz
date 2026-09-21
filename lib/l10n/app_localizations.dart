@@ -512,6 +512,16 @@ abstract class AppLocalizations {
   /// **'Qaza plan'**
   String get homeQazaPlan;
 
+  String get homeCompleteOldestQaza;
+
+  String get homeAuto;
+
+  String get homePrayerTimeUnavailable;
+
+  String get homeQazaTargetReachedTitle;
+
+  String get homeQazaTargetReachedMessage;
+
   /// No description provided for @homeDailyTarget.
   ///
   /// In en, this message translates to:
