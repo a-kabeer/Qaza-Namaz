@@ -9,7 +9,6 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_progress_row.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
-import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../calculator/calculator_screen.dart';
@@ -29,6 +28,13 @@ class HomeScreen extends ConsumerWidget {
     ref.invalidate(homeDailyProgressProvider);
   }
 
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(homeNextQazaProvider);
+    ref.invalidate(homeDailyProgressProvider);
+    await ref.read(progressSummaryProvider.future);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -40,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
         loading: () => const _HomeSkeleton(),
         error: (_, __) => _message(l10n.homeProgressError),
         data: (summary) => RefreshIndicator(
-          onRefresh: () => CompleteQazaSection.refresh(ref),
+          onRefresh: () => _refresh(ref),
           child: _buildContent(context, ref, summary),
         ),
       ),
@@ -424,7 +430,7 @@ class _TodayProgressSkeleton extends StatelessWidget {
   }
 }
 
-class _QazaPlanCard extends StatelessWidget {
+class _QazaPlanCard extends ConsumerWidget {
   const _QazaPlanCard({
     required this.pending,
     required this.completedToday,
@@ -442,9 +448,9 @@ class _QazaPlanCard extends StatelessWidget {
   final DateTime now;
 
   @override
-  Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final ref = ProviderScope.containerOf(context);
     final target = plan.dailyTarget;
     final estimate = dailyState.valueOrNull == null || pending == 0
         ? null
