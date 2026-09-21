@@ -525,7 +525,7 @@ class _RecordRow extends StatelessWidget {
         ),
         isThreeLine: true,
         trailing: PopupMenuButton<_RecordAction>(
-          key: Key('qaza_record_actions_\${record.id}'),
+          key: Key('qaza_record_actions_${record.id}'),
           enabled: !busy,
           tooltip: l10n.qazaRecordActions,
           onSelected: (action) {
