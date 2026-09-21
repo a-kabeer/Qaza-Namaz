@@ -420,6 +420,44 @@ abstract class QazaLocalStore {
     return changed;
   }
 
+  /// Reverts only records whose completion timestamp and last update
+  /// still match the completion captured by the active undo window.
+  Future<List<QazaRecord>> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletedAt.isEmpty) return const <QazaRecord>[];
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+    final changed = <QazaRecord>[];
+
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      final expected = expectedCompletedAt[record.id];
+      if (expected == null ||
+          record.status != QazaStatus.completed ||
+          record.completedAt == null ||
+          !record.completedAt!.isAtSameMomentAs(expected) ||
+          !record.updatedAt.isAtSameMomentAs(expected)) {
+        continue;
+      }
+
+      final undone = record.copyWith(
+        status: QazaStatus.pending,
+        completedAt: null,
+        updatedAt: undoneAt,
+      );
+      records[index] = undone;
+      changed.add(undone);
+    }
+
+    if (changed.isNotEmpty) await saveRecords(userId, records);
+    return changed;
+  }
+
   /// Adds records without removing anything already stored.
   ///
   /// The default rewrites the user's rows because a plain store has no other
