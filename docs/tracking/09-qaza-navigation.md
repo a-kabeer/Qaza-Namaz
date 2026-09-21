@@ -1,7 +1,7 @@
 # Qaza navigation & information architecture
 
 **Priority:** P1  
-**Status:** **In Progress — PR pending CI**
+**Status:** **Merged — Device QA Pending**
 
 ## Task checklist
 
@@ -26,18 +26,18 @@ Implemented in the workspace shell. Qaza is now a primary destination; Calculato
 - [x] Implementation
 - [x] Unit/widget tests
 - [x] Regression tests
-- [ ] Analyze
-- [ ] CI
+- [x] Analyze
+- [x] CI
 - [ ] Device QA where required
 - [ ] UX review
-- [ ] Documentation
-- [ ] Merge
+- [x] Documentation
+- [x] Merge
 
 ## Evidence log
 
 | Date | Status | Evidence |
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
-| 2026-09-21 | In Progress | Primary Qaza navigation implemented; regression coverage added. CI pending on the single Task 9 PR. |
+| 2026-09-21 | Merged | PR #60 merged after all five CI gates passed on head `b610d7a3a559bbc2aeac6ca105305e24d4944def`; merge commit `2e200e2cb3a7a94b65e7373ad3ed365737ef5273`. Device QA and UX review remain pending. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.
