@@ -582,7 +582,9 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
+      final exception = tester.takeException();
+      debugPrint('TASK10_HOME_DOUBLE_SCALE_EXCEPTION: $exception');
+      expect(exception, isNull);
     });
   });
 }
