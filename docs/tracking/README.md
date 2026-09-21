@@ -22,7 +22,7 @@ Security-sensitive tasks additionally require positive and negative/security cov
 - [Local data protection](./06-local-data-protection.md) — P0/P1 — **Merged — Device QA Pending**
 - [App Lock](./07-app-lock.md) — P0/P1 — **Implemented — Device QA Pending**
 - [Account data transparency](./08-account-data-transparency.md) — P0/P1 — **Merged — Device QA Pending**
-- [Qaza navigation & information architecture](./09-qaza-navigation.md) — P1 — **Not started**
+- [Qaza navigation & information architecture](./09-qaza-navigation.md) — P1 — **In Progress — PR pending CI**
 - [Home experience](./10-home-experience.md) — P1 — **Not started**
 - [Qaza tracker record actions](./11-tracker-record-actions.md) — P1 — **Not started**
 - [Undo completion](./12-undo-completion.md) — P1 — **Not started**
