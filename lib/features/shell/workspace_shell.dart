@@ -15,8 +15,7 @@ import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// Not all of them are bottom-bar entries: Calculator and Prayer Times are
-/// contextual destinations. See `_barDestinations` for the primary bar.
+/// Calculator remains contextual; the other five destinations are primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
