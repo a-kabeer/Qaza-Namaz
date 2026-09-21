@@ -19,3 +19,10 @@ void openQazaForPrayer(WidgetRef ref, PrayerType prayer) {
   ref.read(workspaceDestinationProvider.notifier).state =
       WorkspaceDestination.qaza;
 }
+
+/// Opens the unfiltered Qaza tracker tab without pushing a duplicate screen.
+void openQazaAll(WidgetRef ref) {
+  ref.read(qazaTrackerFilterRequestProvider.notifier).state = null;
+  ref.read(workspaceDestinationProvider.notifier).state =
+      WorkspaceDestination.qaza;
+}
