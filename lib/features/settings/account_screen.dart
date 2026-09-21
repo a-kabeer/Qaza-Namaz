@@ -16,8 +16,8 @@ class AccountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final user =
-        ref.watch(currentUserProvider) ?? const AppUser(id: '', email: '');
+    final signedInUser = ref.watch(currentUserProvider);
+    final user = signedInUser ?? const AppUser(id: '', email: '');
     final scheme = Theme.of(context).colorScheme;
     final name = user.displayName == null || user.displayName!.isEmpty
         ? user.email
@@ -94,7 +94,15 @@ class AccountScreen extends ConsumerWidget {
               final offline = ref.watch(offlineRepositoryProvider);
               final syncState =
                   ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
-              final syncText = switch (syncState?.status) {
+              final deletedAt = signedInUser == null
+                  ? null
+                  : ref.watch(cloudDataDeletedAtProvider(signedInUser.id)).valueOrNull;
+              final cloudDeleted = signedInUser != null &&
+                  deletedAt != null &&
+                  !(syncState?.lastSyncAt?.isAfter(deletedAt) ?? false);
+              final syncText = cloudDeleted
+                  ? l10n.cloudBackupDeleted
+                  : switch (syncState?.status) {
                 sync_models.SyncStatus.synced => l10n.cloudSynced,
                 sync_models.SyncStatus.syncing => l10n.cloudSyncing,
                 sync_models.SyncStatus.pendingSync ||
