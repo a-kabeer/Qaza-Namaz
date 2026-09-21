@@ -7,6 +7,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_screen.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -300,18 +301,15 @@ void main() {
       final records =
           container.read(qazaTrackerControllerProvider).records.toList();
 
-      expect(
-        () => container
-            .read(qazaTrackerControllerProvider.notifier)
-            .updateRecord(
+      await expectLater(
+        container.read(qazaTrackerControllerProvider.notifier).updateRecord(
               records.first.copyWith(
                 prayerType: PrayerType.zuhr,
                 originalDate: DateTime(2025, 2, 1),
               ),
             ),
-        returnsNormally,
+        throwsA(isA<QazaDuplicateRecordException>()),
       );
-      await Future<void>.delayed(Duration.zero);
       final state = container.read(qazaTrackerControllerProvider);
       expect(state.recordMutating, isFalse);
       expect(state.records, isNotEmpty);
