@@ -93,7 +93,7 @@ class HomeCurrentPrayerState {
   final PrayerType? prayer;
 }
 
-class HomeCurrentPrayerNotifier extends Notifier<HomeCurrentPrayerState> {
+class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerState> {
   Timer? _timer;
   AppLifecycleListener? _lifecycle;
 
@@ -160,8 +160,8 @@ class HomeCurrentPrayerNotifier extends Notifier<HomeCurrentPrayerState> {
   }
 }
 
-final homeCurrentPrayerProvider =
-    NotifierProvider<HomeCurrentPrayerNotifier, HomeCurrentPrayerState>(
+final homeCurrentPrayerProvider = AutoDisposeNotifierProvider<
+    HomeCurrentPrayerNotifier, HomeCurrentPrayerState>(
   HomeCurrentPrayerNotifier.new,
 );
 
