@@ -423,7 +423,7 @@
   "cloudDeleteAction": "کلاؤڈ ڈیٹا حذف کریں",
   "cloudDeleteDone": "کلاؤڈ قضا ڈیٹا حذف ہو گیا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار ہیں۔",
   "cloudDeleteFailed": "کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔",
-  "cloudDeleteSignInRequired": "کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔"
+  "cloudDeleteSignInRequired": "کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔",
 
   "settingsTitle": "ترتیبات",
   "settingsPreferences": "ترجیحات",
