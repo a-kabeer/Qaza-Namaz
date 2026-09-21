@@ -39,7 +39,7 @@ void main() {
     await _pumpNavigation(tester);
   }
 
-  testWidgets('Workspace exposes three primary navigation destinations',
+  testWidgets('Workspace exposes four primary navigation destinations',
       (tester) async {
     // A record of some kind, or Home shows its empty state instead of the
     // dashboard this test is about.
@@ -55,10 +55,12 @@ void main() {
     ]);
     await pumpWorkspace(tester, repository);
     expect(find.text('Home').first, findsOneWidget);
+    expect(find.text('Qaza'), findsWidgets);
     expect(find.text('Knowledge'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    // Qaza and Calculator are reached from Home, not from the bar.
+    // Calculator and Prayer Times are contextual, not primary tabs.
     expect(find.text('Calculator'), findsNothing);
+    expect(find.text('Prayer Times'), findsNothing);
     // Home leads with the compact progress overview; Add/Calculate live in
     // the workspace action menu rather than separate Home buttons.
     expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
@@ -100,6 +102,30 @@ void main() {
       '1 of 2 completed · 50%',
     );
     expect(find.text('Total'), findsNothing);
+  });
+
+  testWidgets('Qaza is a primary destination and Back returns to Home', (tester) async {
+    final repository = InMemoryQazaRepository();
+    await repository.addRecords([
+      QazaRecord(
+          id: 'test_fajr_2026-09-01',
+          userId: 'test-user',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 1),
+          createdAt: DateTime(2026, 9, 13),
+          updatedAt: DateTime(2026, 9, 13)),
+    ]);
+    await pumpWorkspace(tester, repository);
+
+    await tester.tap(find.text('Qaza').first);
+    await _pumpNavigation(tester);
+    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_prayer_filter')), findsOneWidget);
+
+    final handled = await tester.binding.handlePopRoute();
+    await _pumpNavigation(tester);
+    expect(handled, isTrue);
+    expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
   });
 
   testWidgets('Selecting Knowledge and Settings preserves destination state',

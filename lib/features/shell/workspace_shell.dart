@@ -8,7 +8,6 @@ import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
 import '../prayer_times/presentation/prayer_times_screen.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
@@ -16,8 +15,8 @@ import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// Not all of them are bottom-bar entries: Qaza and Calculator are reached
-/// from Home. See `_barDestinations` for what the bar offers.
+/// Not all of them are bottom-bar entries: Calculator and Prayer Times are
+/// contextual destinations. See `_barDestinations` for the primary bar.
 enum WorkspaceDestination {
   home,
   qaza,
@@ -52,14 +51,13 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     PrayerTimesScreen(),
   ];
 
-  /// The destinations the bottom bar offers.
+  /// The four primary destinations defined by the project navigation plan.
   ///
-  /// Qaza and Calculator stay part of the workspace — Home's prayer rows open
-  /// the tracker, and Home's action menu opens Add/Calculate — they are simply
-  /// not bar destinations any more.
+  /// Calculator remains contextual from Home/Qaza, while Prayer Times remains
+  /// contextual from Settings so it does not displace the core Qaza tab.
   static const _barDestinations = [
     WorkspaceDestination.home,
-    WorkspaceDestination.prayerTimes,
+    WorkspaceDestination.qaza,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -103,8 +101,8 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     // scroll position and in-progress state.
     _mounted.add(index);
 
-    // Qaza and Calculator are reached from Home, so while one of them is open
-    // the bar keeps Home lit rather than showing nothing selected.
+    // Calculator and Prayer Times are contextual destinations, so while one
+    // is open the bar keeps Home lit rather than showing no primary tab.
     final barIndex = _barDestinations.indexOf(destination);
     final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
 
@@ -144,9 +142,9 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 selectedIcon: const Icon(Icons.mosque_rounded),
                 label: l10n.navHome),
             NavigationDestination(
-                icon: const Icon(Icons.schedule_outlined),
-                selectedIcon: const Icon(Icons.schedule_rounded),
-                label: PrayerTimesStrings.title(context)),
+                icon: const Icon(Icons.checklist_outlined),
+                selectedIcon: const Icon(Icons.checklist_rounded),
+                label: l10n.navQaza),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
