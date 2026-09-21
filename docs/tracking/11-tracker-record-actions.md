@@ -1,7 +1,7 @@
 # Qaza tracker record actions
 
 **Priority:** P1  
-**Status:** **In progress — PR pending CI**
+**Status:** **Merged — Device QA Pending**
 
 ## Task checklist
 
@@ -23,12 +23,12 @@ Offline and conflict-safe behavior are completion requirements.
 - [x] Implementation
 - [x] Unit/widget tests
 - [x] Regression tests
-- [ ] Analyze
-- [ ] CI
+- [x] Analyze
+- [x] CI
 - [ ] Device QA where required
 - [ ] UX review
 - [x] Documentation
-- [ ] Merge
+- [x] Merge
 
 ## Evidence log
 
@@ -36,5 +36,6 @@ Offline and conflict-safe behavior are completion requirements.
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
 | 2026-09-21 | In progress — PR pending CI | Tracker edit/delete actions, duplicate protection, offline outbox operations, conflict-safe sync, localized UI, and regression coverage implemented on the Task 11 branch. |
+| 2026-09-21 | Merged — Device QA Pending | PR #64 merged after Flutter CI run #1604 passed all required gates. Squash merge commit: `93855b7c944c5c1da26734a71bc73813f35feb2e`. Device QA and UX review remain pending. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.
