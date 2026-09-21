@@ -171,9 +171,6 @@ class _HomeNextQazaCardState extends ConsumerState<HomeNextQazaCard> {
               AppButton(
                 key: const Key('home_complete_next_qaza'),
                 expand: true,
-                icon: working
-                    ? Icons.hourglass_top_rounded
-                    : Icons.check_circle_rounded,
                 label: working
                     ? l10n.completeInProgress
                     : l10n.homeCompleteNextQaza,
