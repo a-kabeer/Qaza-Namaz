@@ -560,7 +560,7 @@ class _RecordRow extends StatelessWidget {
 }
 
 enum _RecordAction { edit, delete }
-class _BulkCompletionBar extends StatelessWidget {
+class _BulkCompletionBar extends ConsumerWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
 
   final QazaTrackerState state;
