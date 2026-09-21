@@ -496,7 +496,7 @@
   "cloudDeleteAction": "Delete cloud data",
   "cloudDeleteDone": "Cloud Qaza data was deleted. Your local records remain on this device.",
   "cloudDeleteFailed": "Cloud data could not be deleted. Your local records are still safe.",
-  "cloudDeleteSignInRequired": "Sign in to manage cloud data."
+  "cloudDeleteSignInRequired": "Sign in to manage cloud data.",
 
   "settingsTitle": "Settings",
   "settingsPreferences": "Preferences",
