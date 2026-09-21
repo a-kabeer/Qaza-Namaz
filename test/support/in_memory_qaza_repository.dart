@@ -4,9 +4,10 @@ import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
 
 class InMemoryQazaRepository
-    implements QazaRepository, QazaSyncRemoteDataSource {
+    implements QazaRepository, QazaUndoRepository, QazaSyncRemoteDataSource {
   final Map<String, QazaRecord> _records = {};
   int historyPageCalls = 0;
   int progressSummaryCalls = 0;
@@ -259,6 +260,43 @@ class InMemoryQazaRepository
         records: changed,
       );
     }
+  }
+
+  @override
+  Future<int> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) async {
+    var changedCount = 0;
+    final changed = <QazaRecord>[];
+    for (final entry in expectedCompletedAt.entries) {
+      final current = _records[entry.key];
+      if (current == null ||
+          current.userId != userId ||
+          current.status != QazaStatus.completed ||
+          current.completedAt == null ||
+          !current.completedAt!.isAtSameMomentAs(entry.value) ||
+          !current.updatedAt.isAtSameMomentAs(entry.value)) {
+        continue;
+      }
+      final pending = current.copyWith(
+        status: QazaStatus.pending,
+        completedAt: null,
+        updatedAt: undoneAt,
+      );
+      _records[entry.key] = pending;
+      changed.add(pending);
+      changedCount++;
+    }
+    if (changed.isNotEmpty) {
+      _recordChange(
+        userId: userId,
+        type: QazaRemoteChangeType.update,
+        records: changed,
+      );
+    }
+    return changedCount;
   }
 
   @override
