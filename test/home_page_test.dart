@@ -142,7 +142,7 @@ void main() {
         (tester) async {
       await pumpHome(tester, await ledger(), home: const WorkspaceShell());
 
-      expect(find.byType(CompleteQazaSection), findsOneWidget);
+      expect(find.byKey(const Key('home_next_qaza')), findsOneWidget);
       expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
       expect(find.byKey(const Key('complete_qaza_fab')), findsNothing);
       expect(find.byKey(const Key('home_calculate_qaza')), findsNothing);
@@ -173,7 +173,7 @@ void main() {
 
       // The dashboard is not built at all.
       expect(find.byKey(const Key('home_progress_overview')), findsNothing);
-      expect(find.byType(CompleteQazaSection), findsNothing);
+      expect(find.byKey(const Key('home_next_qaza')), findsNothing);
       expect(find.byKey(const Key('home_prayer_row_fajr')), findsNothing);
     });
 
