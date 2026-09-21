@@ -15,8 +15,6 @@ import '../../data/sync/sync_state.dart' as sync_models;
 import '../../domain/entities/app_user.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
-import '../prayer_times/presentation/prayer_times_screen.dart';
 import '../auth/backup_prompt.dart';
 import 'account_screen.dart';
 import 'app_lock_settings_screen.dart';
@@ -181,17 +179,6 @@ class SettingsScreen extends ConsumerWidget {
               title: l10n.notificationsTitle,
               subtitle: l10n.settingsNotificationsRowSubtitle,
               onTap: () => open(const NotificationsScreen()),
-            ),
-          ),
-          const SizedBox(height: 16),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: SettingsNavRow(
-              key: const Key('settings_prayer_times'),
-              icon: Icons.schedule_outlined,
-              title: PrayerTimesStrings.title(context),
-              subtitle: PrayerTimesStrings.settings(context),
-              onTap: () => open(const PrayerTimesScreen()),
             ),
           ),
           const SizedBox(height: 16),
