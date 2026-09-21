@@ -15,6 +15,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
+import 'qaza_undo_banner.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
@@ -33,6 +34,9 @@ class QazaTrackerScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
+            QazaUndoBanner(
+              onUndone: controller.refresh,
+            ),
             const _ProgressHeader(),
             _StatusFilterBar(state: state, controller: controller),
             _PrayerFilterBar(state: state, controller: controller),
@@ -591,11 +595,23 @@ class _BulkCompletionBar extends StatelessWidget {
                     ? null
                     : () async {
                         final messenger = ScaffoldMessenger.of(context);
-                        final completed = await controller.completeSelected();
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.qazaCompletedCount(completed)),
-                          ),
+                        final batch =
+                            await controller.completeSelectedWithUndo();
+                        if (batch == null) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.qazaCompletedCount(0)),
+                            ),
+                          );
+                          return;
+                        }
+                        await showQazaUndoSnackBar(
+                          context: context,
+                          ref: ref,
+                          userId: ref.read(requiredUserIdProvider),
+                          recordIds: batch.recordIds,
+                          completedAt: batch.completedAt,
+                          onUndone: controller.refresh,
                         );
                       },
                 child: Text(l10n.qazaCompleteCount(count)),
