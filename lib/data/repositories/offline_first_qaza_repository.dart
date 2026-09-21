@@ -58,6 +58,21 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
         ],
         completedAt: operations.first.completedAt ?? DateTime.now(),
       );
+    } else if (type == SyncOpType.update) {
+      for (final operation in operations) {
+        if (operation.record != null) {
+          await _remote.updateRecord(record: operation.record!);
+        }
+      }
+    } else if (type == SyncOpType.delete) {
+      for (final operation in operations) {
+        if (operation.targetRecordId != null) {
+          await _remote.deleteRecord(
+            userId: userId,
+            recordId: operation.targetRecordId!,
+          );
+        }
+      }
     } else {
       throw ArgumentError('Reset must use resetUserRecordsForSync.');
     }
@@ -478,6 +493,108 @@ class OfflineFirstQazaRepository implements QazaRepository {
 
     await _localStore.appendRecordsAndOutbox(userId, fresh, operations);
     _outbox.addAll(operations);
+    _outboxLoaded = true;
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+  }
+
+  @override
+  Future<void> updateRecord({required QazaRecord record}) async {
+    final userId = _activeUserId;
+    if (userId == null || record.userId != userId || record.id.isEmpty) {
+      throw StateError('Cannot update a Qaza record for a non-active user.');
+    }
+
+    final generation = _sessionGeneration;
+    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+
+    final current = _records[record.id];
+    if (current == null) return;
+    if (_records.values.any(
+      (candidate) =>
+          candidate.id != record.id &&
+          candidate.userId == userId &&
+          candidate.prayerType == record.prayerType &&
+          candidate.originalDate.year == record.originalDate.year &&
+          candidate.originalDate.month == record.originalDate.month &&
+          candidate.originalDate.day == record.originalDate.day,
+    )) {
+      throw StateError('A Qaza record already exists for this prayer and date.');
+    }
+
+    final operation = PendingSyncOp(
+      id: 'update_' + record.id + '_' + record.updatedAt.microsecondsSinceEpoch.toString(),
+      type: SyncOpType.update,
+      userId: userId,
+      queuedAt: record.updatedAt,
+      record: record,
+      targetRecordId: record.id,
+    );
+    final changed = await _localStore.updateRecordAndOutbox(
+      userId: userId,
+      record: record,
+      operation: operation,
+    );
+    if (!changed) return;
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+
+    _records[record.id] = record;
+    _outbox.add(operation);
+    _outboxLoaded = true;
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+  }
+
+  @override
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    if (userId != _activeUserId) {
+      throw StateError('Cannot delete a Qaza record for a non-active user.');
+    }
+
+    final generation = _sessionGeneration;
+    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+
+    final current = _records[recordId];
+    if (current == null) return;
+
+    final now = _now();
+    final operation = PendingSyncOp(
+      id: 'delete_' + recordId + '_' + now.microsecondsSinceEpoch.toString(),
+      type: SyncOpType.delete,
+      userId: userId,
+      queuedAt: now,
+      targetRecordId: recordId,
+      record: current,
+    );
+    final changed = await _localStore.deleteRecordAndOutbox(
+      userId: userId,
+      recordId: recordId,
+      operation: operation,
+    );
+    if (!changed) return;
+    if (generation != _sessionGeneration || userId != _activeUserId) return;
+
+    _records.remove(recordId);
+    _outbox.add(operation);
     _outboxLoaded = true;
     _emitPending();
 
