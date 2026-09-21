@@ -2,14 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../constants/prayer_types.dart';
 import 'app_colors.dart';
 
 /// Central application theme.
 ///
 /// The only source of Material styling for the application. Colour, type,
-/// shape and elevation tokens are taken from the Stitch "Serene Sanctuary"
-/// design export: deep slate-teal surfaces, luminous mint primaries, dawn
-/// amber accents, and Noto Serif / Manrope typography.
+/// shape and elevation tokens are taken from the Qaza Namaz "Serene Sanctuary"
+/// palette: fresh greens, sage neutrals, a soft purple accent, semantic
+/// feedback colors, and Noto Serif / Manrope typography.
 class AppTheme {
   // Canonical palette aliases. Keep theme construction centralized while the
   // raw color values live in AppColors.
@@ -35,6 +36,7 @@ class AppTheme {
   static const Color darkOutlineVariant = AppColors.darkOutlineVariant;
 
   static const Color lightBase = AppColors.lightBase;
+  static const Color lightSurface = AppColors.lightSurface;
   static const Color lightSurfaceLow = AppColors.lightSurfaceLow;
   static const Color lightBorder = AppColors.lightBorder;
   static const Color lightOnSurface = AppColors.lightOnSurface;
@@ -112,13 +114,18 @@ class AppTheme {
       onTertiary: AppColors.white,
       tertiaryContainer: AppColors.lightTertiaryContainer,
       onTertiaryContainer: AppColors.lightOnTertiaryContainer,
+      error: AppColors.lightError,
+      onError: AppColors.white,
+      errorContainer: AppColors.lightError.withValues(alpha: 0.12),
+      onErrorContainer: AppColors.lightError,
       surface: lightBase,
       onSurface: lightOnSurface,
       surfaceContainerLowest: white,
       surfaceContainerLow: lightSurfaceLow,
-      surfaceContainer: white,
-      surfaceContainerHigh: lightSurfaceLow,
+      surfaceContainer: lightSurface,
+      surfaceContainerHigh: white,
       surfaceContainerHighest: lightSurfaceLow,
+      outline: lightBorder,
       outlineVariant: lightBorder,
       surfaceTint: AppColors.lightPrimary,
     );
@@ -141,13 +148,13 @@ class AppTheme {
       tertiaryContainer: AppColors.darkTertiaryContainer,
       onTertiaryContainer: AppColors.darkOnTertiaryContainer,
       error: AppColors.darkError,
-      onError: Color(0xFF5F0000),
-      errorContainer: Color(0xFF7A1F1F),
-      onErrorContainer: Color(0xFFFFDAD6),
+      onError: AppColors.darkOnError,
+      errorContainer: AppColors.darkErrorContainer,
+      onErrorContainer: AppColors.darkOnErrorContainer,
       surface: darkBase,
       onSurface: darkOnSurface,
       surfaceDim: darkBase,
-      surfaceBright: Color(0xFF303B35),
+      surfaceBright: AppColors.darkSurfaceBright,
       surfaceContainerLowest: darkSurfaceLowest,
       surfaceContainerLow: darkSurfaceLow,
       surfaceContainer: darkSurface,
@@ -157,7 +164,7 @@ class AppTheme {
       outline: darkOutline,
       outlineVariant: darkOutlineVariant,
       inverseSurface: darkOnSurface,
-      onInverseSurface: Color(0xFF25302A),
+      onInverseSurface: AppColors.darkOnInverseSurface,
       inversePrimary: AppColors.lightPrimary,
       surfaceTint: AppColors.darkPrimaryContainer,
       primaryFixed: AppColors.primaryFixed,
@@ -296,7 +303,10 @@ class AppTheme {
       textTheme: textTheme,
       // Both scales travel with the theme so bilingual content can ask for the
       // one matching the text it is about to draw, without naming a font.
-      extensions: [typography],
+      extensions: [
+        typography,
+        AppChartColors.forBrightness(brightness),
+      ],
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
@@ -388,7 +398,7 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: scheme.tertiaryContainer,
+        color: scheme.primary,
         linearTrackColor: scheme.surfaceContainerHighest,
         circularTrackColor: scheme.surfaceContainerHighest,
       ),
@@ -443,6 +453,134 @@ class AppTypography extends ThemeExtension<AppTypography> {
     return AppTypography(
       latin: TextTheme.lerp(latin, other.latin, t),
       urdu: TextTheme.lerp(urdu, other.urdu, t),
+    );
+  }
+}
+
+@immutable
+class AppChartColors extends ThemeExtension<AppChartColors> {
+  const AppChartColors({
+    required this.fajr,
+    required this.zuhr,
+    required this.asr,
+    required this.maghrib,
+    required this.isha,
+    required this.witr,
+    required this.completed,
+    required this.pending,
+    required this.total,
+    required this.primary,
+    required this.grid,
+    required this.track,
+  });
+
+  final Color fajr;
+  final Color zuhr;
+  final Color asr;
+  final Color maghrib;
+  final Color isha;
+  final Color witr;
+  final Color completed;
+  final Color pending;
+  final Color total;
+  final Color primary;
+  final Color grid;
+  final Color track;
+
+  static AppChartColors forBrightness(Brightness brightness) =>
+      brightness == Brightness.dark ? dark : light;
+
+  static const light = AppChartColors(
+    fajr: AppColors.chartFajr,
+    zuhr: AppColors.chartZuhr,
+    asr: AppColors.chartAsr,
+    maghrib: AppColors.chartMaghrib,
+    isha: AppColors.chartIsha,
+    witr: AppColors.chartWitr,
+    completed: AppColors.chartCompleted,
+    pending: AppColors.chartPending,
+    total: AppColors.chartTotal,
+    primary: AppColors.lightChartPrimary,
+    grid: AppColors.lightChartGrid,
+    track: AppColors.lightChartTrack,
+  );
+
+  static const dark = AppChartColors(
+    fajr: AppColors.chartFajr,
+    zuhr: AppColors.chartZuhr,
+    asr: AppColors.chartAsr,
+    maghrib: AppColors.chartMaghrib,
+    isha: AppColors.chartIsha,
+    witr: AppColors.chartWitr,
+    completed: AppColors.chartCompleted,
+    pending: AppColors.chartPending,
+    total: AppColors.chartTotal,
+    primary: AppColors.darkChartPrimary,
+    grid: AppColors.darkChartGrid,
+    track: AppColors.darkChartTrack,
+  );
+
+  Color forPrayer(PrayerType prayer) => switch (prayer) {
+        PrayerType.fajr => fajr,
+        PrayerType.zuhr => zuhr,
+        PrayerType.asr => asr,
+        PrayerType.maghrib => maghrib,
+        PrayerType.isha => isha,
+        PrayerType.witr => witr,
+      };
+
+  static AppChartColors of(BuildContext context) =>
+      Theme.of(context).extension<AppChartColors>() ??
+      AppChartColors.forBrightness(Theme.of(context).brightness);
+
+  @override
+  AppChartColors copyWith({
+    Color? fajr,
+    Color? zuhr,
+    Color? asr,
+    Color? maghrib,
+    Color? isha,
+    Color? witr,
+    Color? completed,
+    Color? pending,
+    Color? total,
+    Color? primary,
+    Color? grid,
+    Color? track,
+  }) =>
+      AppChartColors(
+        fajr: fajr ?? this.fajr,
+        zuhr: zuhr ?? this.zuhr,
+        asr: asr ?? this.asr,
+        maghrib: maghrib ?? this.maghrib,
+        isha: isha ?? this.isha,
+        witr: witr ?? this.witr,
+        completed: completed ?? this.completed,
+        pending: pending ?? this.pending,
+        total: total ?? this.total,
+        primary: primary ?? this.primary,
+        grid: grid ?? this.grid,
+        track: track ?? this.track,
+      );
+
+  @override
+  AppChartColors lerp(ThemeExtension<AppChartColors>? other, double t) {
+    if (other is! AppChartColors) return this;
+    Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
+
+    return AppChartColors(
+      fajr: mix(fajr, other.fajr),
+      zuhr: mix(zuhr, other.zuhr),
+      asr: mix(asr, other.asr),
+      maghrib: mix(maghrib, other.maghrib),
+      isha: mix(isha, other.isha),
+      witr: mix(witr, other.witr),
+      completed: mix(completed, other.completed),
+      pending: mix(pending, other.pending),
+      total: mix(total, other.total),
+      primary: mix(primary, other.primary),
+      grid: mix(grid, other.grid),
+      track: mix(track, other.track),
     );
   }
 }
