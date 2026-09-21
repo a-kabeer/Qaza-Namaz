@@ -44,7 +44,7 @@ void main() {
     expect(find.text('Data & Storage'), findsOneWidget);
     expect(find.text('Export data'), findsNothing);
     expect(find.text('Import data'), findsNothing);
-    expect(find.byType(SettingsNavRow), findsNWidgets(6));
+    expect(find.byType(SettingsNavRow), findsNWidgets(5));
   });
 
   testWidgets('Data & Cloud owns the combined export/import destination',
