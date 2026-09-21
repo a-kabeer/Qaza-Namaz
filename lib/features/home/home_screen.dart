@@ -813,27 +813,27 @@ class _PrayerPendingBar extends StatelessWidget {
   }
 
   void _openPrayer(BuildContext context, PrayerType prayer) {
-    Navigator.push<void>(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => _HomePrayerQazaScreen(prayer: prayer),
-      ),
-    );
+    final scope = ProviderScope.containerOf(context, listen: false);
+    final container = scope;
+    // The navigation helper updates the existing workspace destination and
+    // applies the selected prayer filter without pushing a duplicate tracker.
+    // This row is a non-Consumer widget, so obtain the current WidgetRef by
+    // using the page-level ProviderScope container through a small local bridge.
+    _HomePrayerNavigation.open(container, prayer);
   }
 }
 
-class _HomePrayerQazaScreen extends StatelessWidget {
-  const _HomePrayerQazaScreen({required this.prayer});
-
-  final PrayerType prayer;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AppScaffold(
-      title: prayer.localizedLabel(l10n),
-      body: const SizedBox.shrink(),
+class _HomePrayerNavigation {
+  static void open(ProviderContainer container, PrayerType prayer) {
+    container
+        .read(qazaTrackerFilterRequestProvider.notifier)
+        .state = QazaTrackerFilterRequest(
+      prayer: prayer,
+      status: QazaStatusFilter.pending,
     );
+    container
+        .read(workspaceDestinationProvider.notifier)
+        .state = WorkspaceDestination.qaza;
   }
 }
 
