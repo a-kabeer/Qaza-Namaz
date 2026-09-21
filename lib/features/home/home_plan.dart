@@ -121,7 +121,7 @@ int homeDaysUntilCompletion({
 }) {
   if (pending <= 0 || dailyTarget <= 0) return 0;
   final capacityToday =
-      (dailyTarget - completedToday).clamp(0, dailyTarget);
+      (dailyTarget - completedToday).clamp(0, dailyTarget).toInt();
   final afterToday = pending - capacityToday;
   if (afterToday <= 0) return 0;
   return (afterToday + dailyTarget - 1) ~/ dailyTarget;
