@@ -167,16 +167,22 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt >= resource.data.updatedAt
         && (
-          (
-            resource.data.status == 'pending'
-            && request.resource.data.status in ['pending', 'completed']
+            (
+              resource.data.status == 'pending'
+              && request.resource.data.status in ['pending', 'completed']
+            )
+            || (
+              resource.data.status == 'completed'
+              && request.resource.data.status == 'pending'
+              && request.resource.data.completedAt == null
+              && request.resource.data.updatedAt > resource.data.updatedAt
+            )
+            || (
+              resource.data.status == 'completed'
+              && request.resource.data.status == 'completed'
+              && request.resource.data.completedAt == resource.data.completedAt
+            )
           )
-          || (
-            resource.data.status == 'completed'
-            && request.resource.data.status == 'completed'
-            && request.resource.data.completedAt == resource.data.completedAt
-          )
-        )
         && request.resource.data.syncGeneration
           == getAfter(
             /databases/$(database)/documents/users/$(userId)/syncMetadata/state
