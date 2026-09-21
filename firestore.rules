@@ -123,15 +123,18 @@ service cloud.firestore {
         'createdAt',
         'records'
       ])
-      && data.changeType in ['upsert', 'complete', 'reset']
+      && data.changeType in ['upsert', 'update', 'complete', 'delete', 'reset']
       && data.generation is int
       && data.generation >= 0
       && data.createdAt is timestamp
       && data.records is list
       && data.records.size() <= 400
+      && data.recordIds is list
+      && data.recordIds.size() <= 400
       && (
-        (data.changeType == 'reset' && data.records.size() == 0)
-        || (data.changeType != 'reset' && data.records.size() > 0)
+        (data.changeType == 'reset' && data.records.size() == 0 && data.recordIds.size() == 0)
+        || (data.changeType == 'delete' && (data.records.size() + data.recordIds.size()) > 0)
+        || (data.changeType != 'delete' && data.changeType != 'reset' && data.records.size() > 0)
       )
       && data.generation
         == getAfter(
@@ -160,9 +163,8 @@ service cloud.firestore {
           == resource.data.syncGeneration
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.id == resource.data.id
-        && request.resource.data.prayerType == resource.data.prayerType
-        && request.resource.data.originalDate == resource.data.originalDate
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt
         && (
           (
             resource.data.status == 'pending'
