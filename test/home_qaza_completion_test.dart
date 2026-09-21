@@ -76,7 +76,7 @@ void main() {
     expect(
       currentHomePrayerForSchedule(
         today: today,
-        now: DateTime.utc(2026, 9, 20, 20),
+        now: DateTime.utc(2026, 9, 20, 17),
       ),
       PrayerType.isha,
     );
