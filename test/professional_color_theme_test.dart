@@ -61,5 +61,5 @@ void main() {
     expect(dark.primary, const Color(0xFF63D8A0));
     expect(dark.track, const Color(0xFF20362E));
   });
-  });
 }
+
