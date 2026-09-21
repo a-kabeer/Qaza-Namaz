@@ -5,6 +5,9 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/confirmation_dialog.dart';
+import '../../domain/services/qaza_service.dart';
+import 'qaza_record_editor.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
@@ -234,6 +237,69 @@ class _DateFilterBar extends StatelessWidget {
   }
 }
 
+Future<void> _editTrackerRecord(
+  BuildContext context,
+  QazaTrackerController controller,
+  QazaRecord record,
+  AppLocalizations l10n,
+) async {
+  final edited = await showQazaRecordEditor(context, record: record);
+  if (edited == null) return;
+  try {
+    await controller.updateRecord(edited);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.qazaRecordUpdated)),
+    );
+  } on QazaDuplicateRecordException {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          l10n.qazaDuplicateRecord(
+            edited.prayerType.localizedLabel(l10n),
+            DateFormatters.formatGregorianDatePadded(edited.originalDate),
+          ),
+        ),
+      ),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.qazaRecordUpdateFailed)),
+    );
+  }
+}
+
+Future<void> _deleteTrackerRecord(
+  BuildContext context,
+  QazaTrackerController controller,
+  QazaRecord record,
+  AppLocalizations l10n,
+) async {
+  final confirmed = await confirmDestructive(
+    context,
+    title: l10n.qazaDeleteRecordTitle,
+    message: l10n.qazaDeleteRecordMessage(
+      DateFormatters.formatGregorianDatePadded(record.originalDate),
+      record.prayerType.localizedLabel(l10n),
+    ),
+    confirmLabel: l10n.qazaDeleteRecord,
+  );
+  if (!confirmed || !context.mounted) return;
+  try {
+    await controller.deleteRecord(record.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.qazaRecordDeleted)),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.qazaRecordDeleteFailed)),
+    );
+  }
+}
 class _TrackerBody extends StatelessWidget {
   const _TrackerBody({required this.state, required this.controller});
 
@@ -314,9 +380,22 @@ class _TrackerBody extends StatelessWidget {
             return _RecordRow(
               record: record,
               selected: state.selected.contains(record.id),
+              busy: state.recordMutating,
               onToggle: record.status == QazaStatus.pending
                   ? () => controller.toggleSelection(record.id)
                   : null,
+              onEdit: () => _editTrackerRecord(
+                context,
+                controller,
+                record,
+                l10n,
+              ),
+              onDelete: () => _deleteTrackerRecord(
+                context,
+                controller,
+                record,
+                l10n,
+              ),
             );
           },
         ),
@@ -384,11 +463,17 @@ class _RecordRow extends StatelessWidget {
     required this.record,
     required this.selected,
     required this.onToggle,
+    required this.busy,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final QazaRecord record;
   final bool selected;
   final VoidCallback? onToggle;
+  final bool busy;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -400,24 +485,31 @@ class _RecordRow extends StatelessWidget {
 
     return Semantics(
       selected: selected,
-      label: '$originalDate, ${record.prayerType.localizedLabel(l10n)}, '
-          '${record.status.localizedLabel(l10n)}',
+      label: '\${originalDate}, \${record.prayerType.localizedLabel(l10n)}, '
+          '\${record.status.localizedLabel(l10n)}',
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: onToggle == null
-            ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
-            : Checkbox(value: selected, onChanged: (_) => onToggle!()),
+            ? Icon(
+                Icons.check_circle_rounded,
+                color: theme.colorScheme.primary,
+              )
+            : Checkbox(
+                value: selected,
+                onChanged: (_) => onToggle!(),
+              ),
         title: Text(originalDate),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
+              record.prayerType.localizedLabel(l10n),
+              style: theme.textTheme.titleSmall,
+            ),
+            Text(
               DateFormatters.hijriLabel(record.originalDate),
               style: theme.textTheme.bodySmall,
             ),
-            // Status lives here rather than in the trailing slot: the tile
-            // constrains trailing to the tile height, so a stack of two lines
-            // there overflows once the user scales text up.
             Text(
               record.status.localizedLabel(l10n),
               style: theme.textTheme.bodySmall,
@@ -432,9 +524,28 @@ class _RecordRow extends StatelessWidget {
           ],
         ),
         isThreeLine: true,
-        trailing: Text(
-          record.prayerType.localizedLabel(l10n),
-          style: theme.textTheme.titleSmall,
+        trailing: PopupMenuButton<_RecordAction>(
+          key: Key('qaza_record_actions_\${record.id}'),
+          enabled: !busy,
+          tooltip: l10n.qazaRecordActions,
+          onSelected: (action) {
+            switch (action) {
+              case _RecordAction.edit:
+                onEdit();
+              case _RecordAction.delete:
+                onDelete();
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: _RecordAction.edit,
+              child: Text(l10n.qazaEditRecord),
+            ),
+            PopupMenuItem(
+              value: _RecordAction.delete,
+              child: Text(l10n.qazaDeleteRecord),
+            ),
+          ],
         ),
         onTap: onToggle,
       ),
@@ -442,6 +553,7 @@ class _RecordRow extends StatelessWidget {
   }
 }
 
+enum _RecordAction { edit, delete }
 class _BulkCompletionBar extends StatelessWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
 
