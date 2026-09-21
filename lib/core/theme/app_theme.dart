@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// Central application theme.
 ///
 /// The only source of Material styling for the application. Colour, type,
@@ -9,45 +11,42 @@ import 'package:flutter/material.dart';
 /// design export: deep slate-teal surfaces, luminous mint primaries, dawn
 /// amber accents, and Noto Serif / Manrope typography.
 class AppTheme {
-  // --- Serene Sanctuary dark tokens (canonical export values) -------------
-  static const Color darkBase = Color(0xFF091515);
-  static const Color darkPrimary = Color(0xFFA0F0EF);
-  static const Color darkOnPrimary = Color(0xFF003737);
-  static const Color darkPrimaryContainer = Color(0xFF84D4D3);
-  static const Color darkOnPrimaryContainer = Color(0xFF005C5C);
-  static const Color amber = Color(0xFFFFB77D);
-  static const Color mint = Color(0xFF70F8E8);
-  static const Color kineticMint = Color(0xFF4FDBCC);
+  // Canonical palette aliases. Keep theme construction centralized while the
+  // raw color values live in AppColors.
+  static const Color darkBase = AppColors.darkBase;
+  static const Color darkPrimary = AppColors.darkPrimary;
+  static const Color darkOnPrimary = AppColors.darkOnPrimary;
+  static const Color darkPrimaryContainer = AppColors.darkPrimaryContainer;
+  static const Color darkOnPrimaryContainer = AppColors.darkOnPrimaryContainer;
+  static const Color amber = AppColors.darkSecondary;
+  static const Color mint = AppColors.darkTertiary;
+  static const Color kineticMint = AppColors.darkTertiaryContainer;
 
-  /// Deep teal used for interactive fills in light mode.
-  static const Color interactive = Color(0xFF0D6E6E);
+  static const Color interactive = AppColors.lightPrimary;
 
-  // Dark surface scale.
-  static const Color darkSurfaceLowest = Color(0xFF051010);
-  static const Color darkSurfaceLow = Color(0xFF121E1E);
-  static const Color darkSurface = Color(0xFF162222);
-  static const Color darkSurfaceHigh = Color(0xFF202C2C);
-  static const Color darkSurfaceHighest = Color(0xFF2B3737);
-  static const Color darkOnSurface = Color(0xFFD8E5E4);
-  static const Color darkOnSurfaceVariant = Color(0xFFBEC9C8);
-  static const Color darkOutline = Color(0xFF889392);
-  static const Color darkOutlineVariant = Color(0xFF3E4948);
+  static const Color darkSurfaceLowest = AppColors.darkSurfaceLowest;
+  static const Color darkSurfaceLow = AppColors.darkSurfaceLow;
+  static const Color darkSurface = AppColors.darkSurface;
+  static const Color darkSurfaceHigh = AppColors.darkSurfaceHigh;
+  static const Color darkSurfaceHighest = AppColors.darkSurfaceHighest;
+  static const Color darkOnSurface = AppColors.darkOnSurface;
+  static const Color darkOnSurfaceVariant = AppColors.darkOnSurfaceVariant;
+  static const Color darkOutline = AppColors.darkOutline;
+  static const Color darkOutlineVariant = AppColors.darkOutlineVariant;
 
-  // Light surface tokens.
-  static const Color lightBase = Color(0xFFF8FAF9);
-  static const Color lightSurfaceLow = Color(0xFFF0F4F2);
-  static const Color lightBorder = Color(0xFFE2EAE6);
-  static const Color lightOnSurface = Color(0xFF171D1C);
-  static const Color lightSecondary = Color(0xFF9C4300);
-  static const Color white = Color(0xFFFFFFFF);
+  static const Color lightBase = AppColors.lightBase;
+  static const Color lightSurfaceLow = AppColors.lightSurfaceLow;
+  static const Color lightBorder = AppColors.lightBorder;
+  static const Color lightOnSurface = AppColors.lightOnSurface;
+  static const Color lightSecondary = AppColors.lightSecondary;
+  static const Color white = AppColors.white;
 
-  // Shared "fixed" tokens; these double as the light container pairs.
-  static const Color primaryFixed = Color(0xFFA0F0EF);
-  static const Color onPrimaryFixed = Color(0xFF002020);
-  static const Color secondaryFixed = Color(0xFFFFDCC3);
-  static const Color onSecondaryFixed = Color(0xFF2F1500);
-  static const Color tertiaryFixed = Color(0xFF70F8E8);
-  static const Color onTertiaryFixed = Color(0xFF00201D);
+  static const Color primaryFixed = AppColors.primaryFixed;
+  static const Color onPrimaryFixed = AppColors.onPrimaryFixed;
+  static const Color secondaryFixed = AppColors.secondaryFixed;
+  static const Color onSecondaryFixed = AppColors.onSecondaryFixed;
+  static const Color tertiaryFixed = AppColors.tertiaryFixed;
+  static const Color onTertiaryFixed = AppColors.onTertiaryFixed;
 
   static const String _serif = 'Noto Serif';
   static const String _sans = 'Manrope';
@@ -98,19 +97,21 @@ class AppTheme {
 
   static ThemeData light({Locale? locale}) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: interactive,
+      seedColor: AppColors.lightPrimary,
       brightness: Brightness.light,
     ).copyWith(
-      primary: interactive,
-      onPrimary: white,
-      primaryContainer: primaryFixed,
-      onPrimaryContainer: onPrimaryFixed,
-      secondary: lightSecondary,
-      onSecondary: white,
-      secondaryContainer: secondaryFixed,
-      onSecondaryContainer: onSecondaryFixed,
-      tertiaryContainer: tertiaryFixed,
-      onTertiaryContainer: onTertiaryFixed,
+      primary: AppColors.lightPrimary,
+      onPrimary: AppColors.white,
+      primaryContainer: AppColors.lightPrimaryContainer,
+      onPrimaryContainer: AppColors.lightOnPrimaryContainer,
+      secondary: AppColors.lightSecondary,
+      onSecondary: AppColors.white,
+      secondaryContainer: AppColors.lightSecondaryContainer,
+      onSecondaryContainer: AppColors.lightOnSecondaryContainer,
+      tertiary: AppColors.lightTertiary,
+      onTertiary: AppColors.white,
+      tertiaryContainer: AppColors.lightTertiaryContainer,
+      onTertiaryContainer: AppColors.lightOnTertiaryContainer,
       surface: lightBase,
       onSurface: lightOnSurface,
       surfaceContainerLowest: white,
@@ -119,7 +120,7 @@ class AppTheme {
       surfaceContainerHigh: lightSurfaceLow,
       surfaceContainerHighest: lightSurfaceLow,
       outlineVariant: lightBorder,
-      surfaceTint: interactive,
+      surfaceTint: AppColors.lightPrimary,
     );
     return _base(scheme, Brightness.light, urdu: isUrdu(locale));
   }
@@ -131,22 +132,22 @@ class AppTheme {
       onPrimary: darkOnPrimary,
       primaryContainer: darkPrimaryContainer,
       onPrimaryContainer: darkOnPrimaryContainer,
-      secondary: amber,
-      onSecondary: Color(0xFF4D2600),
-      secondaryContainer: Color(0xFF6E3D0D),
-      onSecondaryContainer: Color(0xFFEFA971),
-      tertiary: mint,
-      onTertiary: Color(0xFF003732),
-      tertiaryContainer: kineticMint,
-      onTertiaryContainer: Color(0xFF005D55),
-      error: Color(0xFFFFB4AB),
-      onError: Color(0xFF690005),
-      errorContainer: Color(0xFF93000A),
+      secondary: AppColors.darkSecondary,
+      onSecondary: AppColors.darkOnSecondary,
+      secondaryContainer: AppColors.darkSecondaryContainer,
+      onSecondaryContainer: AppColors.darkOnSecondaryContainer,
+      tertiary: AppColors.darkTertiary,
+      onTertiary: AppColors.darkOnTertiary,
+      tertiaryContainer: AppColors.darkTertiaryContainer,
+      onTertiaryContainer: AppColors.darkOnTertiaryContainer,
+      error: AppColors.darkError,
+      onError: Color(0xFF5F0000),
+      errorContainer: Color(0xFF7A1F1F),
       onErrorContainer: Color(0xFFFFDAD6),
       surface: darkBase,
       onSurface: darkOnSurface,
       surfaceDim: darkBase,
-      surfaceBright: Color(0xFF2F3B3B),
+      surfaceBright: Color(0xFF303B35),
       surfaceContainerLowest: darkSurfaceLowest,
       surfaceContainerLow: darkSurfaceLow,
       surfaceContainer: darkSurface,
@@ -156,26 +157,26 @@ class AppTheme {
       outline: darkOutline,
       outlineVariant: darkOutlineVariant,
       inverseSurface: darkOnSurface,
-      onInverseSurface: Color(0xFF273332),
-      inversePrimary: Color(0xFF006A69),
-      surfaceTint: darkPrimaryContainer,
-      primaryFixed: primaryFixed,
-      primaryFixedDim: darkPrimaryContainer,
-      onPrimaryFixed: onPrimaryFixed,
-      onPrimaryFixedVariant: Color(0xFF00504F),
-      secondaryFixed: secondaryFixed,
-      secondaryFixedDim: amber,
-      onSecondaryFixed: onSecondaryFixed,
-      onSecondaryFixedVariant: Color(0xFF6B3B0A),
-      tertiaryFixed: tertiaryFixed,
-      tertiaryFixedDim: kineticMint,
-      onTertiaryFixed: onTertiaryFixed,
-      onTertiaryFixedVariant: Color(0xFF005049),
+      onInverseSurface: Color(0xFF25302A),
+      inversePrimary: AppColors.lightPrimary,
+      surfaceTint: AppColors.darkPrimaryContainer,
+      primaryFixed: AppColors.primaryFixed,
+      primaryFixedDim: AppColors.primaryFixedDim,
+      onPrimaryFixed: AppColors.onPrimaryFixed,
+      onPrimaryFixedVariant: AppColors.onPrimaryFixedVariant,
+      secondaryFixed: AppColors.secondaryFixed,
+      secondaryFixedDim: AppColors.secondaryFixedDim,
+      onSecondaryFixed: AppColors.onSecondaryFixed,
+      onSecondaryFixedVariant: AppColors.onSecondaryFixedVariant,
+      tertiaryFixed: AppColors.tertiaryFixed,
+      tertiaryFixedDim: AppColors.tertiaryFixedDim,
+      onTertiaryFixed: AppColors.onTertiaryFixed,
+      onTertiaryFixedVariant: AppColors.onTertiaryFixedVariant,
     );
     return _base(scheme, Brightness.dark, urdu: isUrdu(locale));
   }
 
-  /// The Serene Sanctuary type scale: Noto Serif for display/headline and the
+  /// The Qaza Namaz type scale: Noto Serif for display/headline and the
   /// large title used by prayer names, Manrope for everything else.
   static TextTheme _latinTextTheme(ColorScheme scheme) {
     TextStyle serif(double size, double lineHeight, FontWeight weight) =>

@@ -24,7 +24,7 @@ class ProgressRing extends StatelessWidget {
             value: progress,
             strokeWidth: strokeWidth,
             backgroundColor: scheme.onPrimaryContainer.withValues(alpha: .18),
-            color: scheme.secondary,
+            color: scheme.tertiary,
           ),
           Text(
             '${(progress * 100).round()}%',
