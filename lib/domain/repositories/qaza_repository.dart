@@ -67,6 +67,16 @@ abstract interface class QazaRepository {
 
   Future<QazaProgressSummary> getProgressSummary({required String userId});
 
+  /// Counts Qaza records completed in the half-open local time range [from, to).
+  ///
+  /// This is intentionally a targeted aggregate rather than a full-ledger read,
+  /// so Home remains responsive with very large Qaza histories.
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  });
+
   Future<void> addRecord(QazaRecord record);
   Future<void> addRecords(List<QazaRecord> records);
 
