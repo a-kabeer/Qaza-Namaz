@@ -22,6 +22,19 @@ class QazaUndoBatch {
 
   bool isExpired(DateTime now) => !now.isBefore(expiresAt);
 
+  bool matches(QazaUndoBatch other) {
+    if (expiresAt != other.expiresAt || completedAt.length != other.completedAt.length) {
+      return false;
+    }
+    for (final entry in completedAt.entries) {
+      final otherTimestamp = other.completedAt[entry.key];
+      if (otherTimestamp == null || !otherTimestamp.isAtSameMomentAs(entry.value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Map<String, dynamic> toJson() => {
         'completedAt': {
           for (final entry in completedAt.entries)
@@ -123,13 +136,13 @@ class QazaUndoManager {
   Future<QazaUndoBatch?> restore({required String userId}) =>
       _store.load(userId: userId, now: _now());
 
-  Future<void> register({
+  Future<QazaUndoBatch?> register({
     required String userId,
     required Iterable<String> recordIds,
     required DateTime completedAt,
   }) async {
     final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
-    if (ids.isEmpty) return;
+    if (ids.isEmpty) return null;
 
     final batch = QazaUndoBatch(
       completedAt: {
@@ -138,14 +151,17 @@ class QazaUndoManager {
       expiresAt: _now().add(QazaUndoStore.window),
     );
     await _store.save(userId: userId, batch: batch);
+    return batch;
   }
 
   Future<int> undo({
     required String userId,
     required QazaService service,
+    QazaUndoBatch? expectedBatch,
   }) async {
     final batch = await restore(userId: userId);
     if (batch == null) return 0;
+    if (expectedBatch != null && !batch.matches(expectedBatch)) return 0;
 
     final undoneAt = _now();
     final count = await service.undoCompletions(
