@@ -10,31 +10,60 @@ import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
 import 'firebase_options.dart';
 
+/// How long any single startup step may take before the app gives up on it.
+///
+/// Nothing here is worth a launch for. The app is offline-first: it opens,
+/// and whatever did not finish is retried or simply unavailable.
+const Duration _startupStepTimeout = Duration(seconds: 10);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Every step below is optional to *starting*. A failure or a stall in any
+  // of them used to mean `runApp` was never reached, which the user sees as a
+  // launch that hangs or a black screen with nothing to act on.
+  await _step('firebase', () async {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // App Check must be activated immediately after Firebase initialization and
-  // before any Firebase service is used. The enum-style provider API is used
-  // here because the app remains on the Firebase Core 3.x dependency line.
-  // Debug builds use the Firebase debug provider; release builds use Play Integrity.
-  await FirebaseAppCheck.instance.activate(
-    androidProvider:
-        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-  );
+    // App Check is activated immediately after Firebase initialization and
+    // before any Firebase service is used. The enum-style provider API is
+    // used here because the app remains on the Firebase Core 3.x line.
+    // Debug builds use the Firebase debug provider; release builds use Play
+    // Integrity, which is the one startup step that behaves differently in a
+    // release build and so the one most likely to stall in one.
+    await FirebaseAppCheck.instance.activate(
+      androidProvider:
+          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    );
+  });
 
   // Complete the legacy migration before any repository can read the local
   // database. The legacy SharedPreferences document remains untouched.
-  final database = AppDatabase();
-  final preferences = await SharedPreferences.getInstance();
-  await bootstrapQazaDatabase(
-    database: database,
-    preferences: preferences,
-  );
-  await database.close();
+  await _step('database', () async {
+    final database = AppDatabase();
+    try {
+      await bootstrapQazaDatabase(
+        database: database,
+        preferences: await SharedPreferences.getInstance(),
+      );
+    } finally {
+      await database.close();
+    }
+  });
 
   runApp(const ProviderScope(child: QazaNamazApp()));
+}
+
+/// Runs one startup step, bounded and non-fatal.
+Future<void> _step(String name, Future<void> Function() body) async {
+  try {
+    await body().timeout(_startupStepTimeout);
+  } catch (error, stack) {
+    if (kDebugMode) {
+      debugPrint('[startup] $name failed: ${error.runtimeType}: $error');
+      debugPrintStack(stackTrace: stack);
+    }
+  }
 }

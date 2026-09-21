@@ -17,6 +17,18 @@ final guestMigrationServiceProvider = Provider<GuestMigrationService>(
   ),
 );
 
+/// How long startup waits for Firebase's first auth emission.
+///
+/// The stream normally emits within milliseconds, from locally persisted
+/// state, so this is not a latency budget — it is a stop for the case where
+/// the emission never comes at all. A release build signed with a key the
+/// Firebase project does not know, or one whose App Check attestation the
+/// device cannot complete, can leave the Auth SDK without an initial event,
+/// and `AuthGate` shows the splash screen for exactly as long as this
+/// controller says it is restoring.
+final startupAuthTimeoutProvider =
+    Provider<Duration>((ref) => const Duration(seconds: 5));
+
 /// Coordinates the guest -> Google account transition without ever auto-merging.
 ///
 /// Firebase authentication and application-ledger switching are deliberately
@@ -25,9 +37,12 @@ final guestMigrationServiceProvider = Provider<GuestMigrationService>(
 class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   static const _pendingDecisionKey = 'qaza_guest_upgrade_decision';
   bool _userActionStarted = false;
+  bool _disposed = false;
 
   @override
   GuestUpgradeState build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     Future.microtask(_restorePendingDecision);
     return const GuestUpgradeState(restoring: true);
   }
@@ -40,7 +55,11 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       // Wait for Firebase's initial auth emission before deciding whether a
       // persisted upgrade marker is stale. This prevents a cold-start auth
       // restoration from racing the pending-decision restoration.
-      final currentUser = await ref.read(authStateProvider.future);
+      // Bounded on purpose. Waiting forever here is indistinguishable, from
+      // the outside, from the app being frozen on its splash screen.
+      final currentUser = await ref
+          .read(authStateProvider.future)
+          .timeout(ref.read(startupAuthTimeoutProvider), onTimeout: () => null);
       // Read the persisted guest flag directly so restoration cannot race the
       // async GuestSessionNotifier restore during cold start.
       final guestPersisted =
@@ -73,9 +92,23 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
       state = GuestUpgradeState(pendingAccount: currentUser);
     } catch (error) {
+      if (_disposed) return;
       state = GuestUpgradeState(
         error: 'Could not restore the pending sign-in decision: $error',
       );
+    } finally {
+      // Whatever happened above — an early return because the user got there
+      // first, a throw, or a timeout — restoration is over. Leaving this flag
+      // set strands the app on the splash screen with no way out, so it is
+      // cleared here rather than on each individual path.
+      if (!_disposed && state.restoring) {
+        state = GuestUpgradeState(
+          running: state.running,
+          pendingAccount: state.pendingAccount,
+          migration: state.migration,
+          error: state.error,
+        );
+      }
     }
   }
 
@@ -91,9 +124,8 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     // Resolve persisted guest mode before starting Firebase auth. Otherwise a
     // cold-start tap can authenticate directly into the account namespace and
     // leave the guest ledger stranded on the device.
-    final wasGuest = await ref
-        .read(guestSessionProvider.notifier)
-        .ensureRestored();
+    final wasGuest =
+        await ref.read(guestSessionProvider.notifier).ensureRestored();
     state = const GuestUpgradeState(running: true);
 
     if (wasGuest) {

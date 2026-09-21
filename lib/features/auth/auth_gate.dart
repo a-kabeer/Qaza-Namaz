@@ -26,6 +26,17 @@ import 'guest_upgrade_controller.dart';
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
+  /// The deliberate brand moment at launch.
+  static const Duration splashDuration = Duration(milliseconds: 700);
+
+  /// The point after which the splash is no longer allowed to be the answer.
+  ///
+  /// Startup waits on state that can, on a misconfigured release build, never
+  /// arrive. Past this deadline the app renders whatever it knows — an
+  /// unresolved account is treated as signed out — rather than showing a
+  /// splash screen indefinitely, which reads as a frozen app.
+  static const Duration startupDeadline = Duration(seconds: 8);
+
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
 }
@@ -34,19 +45,25 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   final GlobalKey<NavigatorState> _authNavigatorKey =
       GlobalKey<NavigatorState>();
   bool splash = true;
+  bool startupOverdue = false;
   Timer? splashTimer;
+  Timer? startupTimer;
 
   @override
   void initState() {
     super.initState();
-    splashTimer = Timer(const Duration(milliseconds: 700), () {
+    splashTimer = Timer(AuthGate.splashDuration, () {
       if (mounted) setState(() => splash = false);
+    });
+    startupTimer = Timer(AuthGate.startupDeadline, () {
+      if (mounted) setState(() => startupOverdue = true);
     });
   }
 
   @override
   void dispose() {
     splashTimer?.cancel();
+    startupTimer?.cancel();
     super.dispose();
   }
 
@@ -124,8 +141,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     final upgrade = ref.watch(guestUpgradeControllerProvider);
     final isGuest = ref.watch(guestSessionProvider);
 
-    if (auth.isLoading && !auth.hasValue) return const SplashScreen();
-    if (upgrade.restoring) return const SplashScreen();
+    if (!startupOverdue) {
+      if (auth.isLoading && !auth.hasValue) return const SplashScreen();
+      if (upgrade.restoring) return const SplashScreen();
+    }
 
     final user = auth.valueOrNull;
 
