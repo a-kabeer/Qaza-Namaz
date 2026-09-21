@@ -26,6 +26,7 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../features/auth/guest_session.dart';
 import '../domain/services/qaza_service.dart';
+import '../domain/services/cloud_data_deletion_service.dart';
 
 final firestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
@@ -247,4 +248,19 @@ final syncStateProvider = StreamProvider<SyncState?>((ref) {
   final repository = ref.watch(offlineRepositoryProvider);
   if (repository == null) return const Stream<SyncState?>.empty();
   return repository.syncState.map<SyncState?>((state) => state);
+});
+
+final cloudDataDeletionServiceProvider = Provider<CloudDataDeletionService>((ref) {
+  return CloudDataDeletionService(
+    remote: ref.watch(remoteQazaSyncDataSourceProvider),
+    localStore: ref.watch(qazaLocalStoreProvider),
+    syncBeforeDelete: ref.watch(offlineRepositoryProvider)?.syncNow,
+  );
+});
+
+final cloudDataDeletedAtProvider =
+    FutureProvider.autoDispose.family<DateTime?, String>((ref, userId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString('qaza_cloud_deleted_at_$userId');
+  return raw == null ? null : DateTime.tryParse(raw);
 });
