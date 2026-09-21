@@ -6,7 +6,7 @@ import '../../domain/entities/qaza_record.dart';
 ///
 /// [reset] carries no payload: it deletes the whole remote ledger for its
 /// user, so it supersedes every operation queued before it.
-enum SyncOpType { add, complete, reset }
+enum SyncOpType { add, update, complete, delete, reset }
 
 class PendingSyncOp {
   const PendingSyncOp(
@@ -227,6 +227,83 @@ abstract class QazaLocalStore {
           !completedAt.isBefore(from) &&
           completedAt.isBefore(to);
     }).length;
+  }
+
+  Future<bool> hasRecordCombination({
+    required String userId,
+    required PrayerType prayerType,
+    required DateTime originalDate,
+    String? excludingRecordId,
+  }) async {
+    final snapshot = await load();
+    return (snapshot.recordsByUser[userId] ?? const <QazaRecord>[]).any(
+      (record) =>
+          record.prayerType == prayerType &&
+          record.originalDate.year == originalDate.year &&
+          record.originalDate.month == originalDate.month &&
+          record.originalDate.day == originalDate.day &&
+          record.id != excludingRecordId,
+    );
+  }
+
+  Future<bool> updateRecord(QazaRecord record) async {
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+      snapshot.recordsByUser[record.userId] ?? const <QazaRecord>[],
+    );
+    final index = records.indexWhere((candidate) => candidate.id == record.id);
+    if (index < 0) return false;
+    records[index] = record;
+    await saveRecords(record.userId, records);
+    return true;
+  }
+
+  Future<bool> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+    final before = records.length;
+    records.removeWhere((record) => record.id == recordId);
+    if (records.length == before) return false;
+    await saveRecords(userId, records);
+    return true;
+  }
+
+  Future<bool> updateRecordAndOutbox({
+    required String userId,
+    required QazaRecord record,
+    required PendingSyncOp operation,
+  }) async {
+    final changed = await updateRecord(record);
+    if (!changed) return false;
+    await appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      [operation],
+    );
+    return true;
+  }
+
+  Future<bool> deleteRecordAndOutbox({
+    required String userId,
+    required String recordId,
+    required PendingSyncOp operation,
+  }) async {
+    final changed = await deleteRecord(
+      userId: userId,
+      recordId: recordId,
+    );
+    if (!changed) return false;
+    await appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      [operation],
+    );
+    return true;
   }
 
   Future<QazaProgressSummary> getProgressSummary(
