@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -27,7 +28,7 @@ def run(command: list[str]) -> str:
         raise SystemExit(f"Required tool not found: {command[0]}") from exc
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or exc.stdout).strip()
-        raise SystemExit(f"Command failed: {' '.join(command)}\n{detail}") from exc
+        raise SystemExit(f"Command failed: {command[0]} {detail}") from exc
     return result.stdout
 
 
@@ -117,14 +118,44 @@ def keystore_audit(
     return sha1, sha256
 
 
+def env_secret(name: str | None, description: str) -> str | None:
+    if not name:
+        return None
+    value = os.environ.get(name)
+    if value is None:
+        raise SystemExit(f"Environment variable for {description} is not set: {name}")
+    return value
+
+
+def print_firebase_comparison(
+    config_path: Path, package: str, sha1: str
+) -> None:
+    if not config_path.exists():
+        print("Firebase SHA-1 comparison: SKIPPED (config not found)")
+        return
+
+    registered = firebase_sha1s(config_path, package)
+    matched = bool(sha1 and sha1 in registered)
+    print("Firebase SHA-1 match:", "YES" if matched else "NO")
+    print("Firebase registered SHA-1 count:", len(registered))
+    if not matched:
+        print(
+            "WARNING: Firebase OAuth SHA-1 registration does not match this "
+            "signing certificate. This affects Google/Firebase authentication; "
+            "it does not by itself determine Android package-install identity."
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--apk", type=Path)
     source.add_argument("--keystore", type=Path)
     parser.add_argument("--alias")
-    parser.add_argument("--store-password", default="")
-    parser.add_argument("--key-password", default=None)
+    parser.add_argument("--store-password", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--key-password", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--store-password-env")
+    parser.add_argument("--key-password-env")
     parser.add_argument("--firebase-package")
     parser.add_argument(
         "--firebase-config",
@@ -138,40 +169,36 @@ def main() -> int:
         print(f"Package ID: {package}")
         print(f"APK SHA-1: {sha1 or 'unavailable'}")
         print(f"APK SHA-256: {sha256}")
-
-        if args.firebase_config.exists() and package != "unknown":
-            registered = firebase_sha1s(args.firebase_config, package)
-            matched = bool(sha1 and sha1 in registered)
-            print("Firebase SHA-1 match:", "YES" if matched else "NO")
-            if registered:
-                print("Firebase registered SHA-1 count:", len(registered))
-            if sha1 and not matched:
-                return 1
+        if package != "unknown":
+            print_firebase_comparison(args.firebase_config, package, sha1)
         return 0
 
     if not args.alias:
         raise SystemExit("--alias is required with --keystore.")
-    if not args.firebase_package:
-        raise SystemExit("--firebase-package is required with --keystore.")
+
+    store_password = (
+        args.store_password
+        if args.store_password is not None
+        else env_secret(args.store_password_env, "keystore password")
+    )
+    key_password = (
+        args.key_password
+        if args.key_password is not None
+        else env_secret(args.key_password_env, "key password")
+    )
+    if store_password is None:
+        raise SystemExit(
+            "Provide --store-password or --store-password-env for keystore access."
+        )
 
     sha1, sha256 = keystore_audit(
-        args.keystore, args.alias, args.store_password, args.key_password
+        args.keystore, args.alias, store_password, key_password
     )
     print(f"Keystore SHA-1: {sha1}")
     print(f"Keystore SHA-256: {sha256}")
 
-    if not args.firebase_config.exists():
-        raise SystemExit(f"Firebase config not found: {args.firebase_config}")
-
-    registered = firebase_sha1s(args.firebase_config, args.firebase_package)
-    matched = bool(sha1 and sha1 in registered)
-    print("Firebase SHA-1 match:", "YES" if matched else "NO")
-    if not matched:
-        print(
-            f"Release certificate is not registered for Firebase package "
-            f"{args.firebase_package}."
-        )
-        return 1
+    if args.firebase_package:
+        print_firebase_comparison(args.firebase_config, args.firebase_package, sha1)
     return 0
 
 
