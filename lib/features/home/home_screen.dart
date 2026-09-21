@@ -305,33 +305,49 @@ class _ProgressOverview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.homeProgressTitle,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Text(
+                l10n.homeProgressTitle,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  '${progress.completed} of ${progress.total} ${l10n.statusCompleted.toLowerCase()} · $percent%',
-                  key: const Key('home_progress_summary'),
-                  maxLines: 2,
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+              );
+              final summary = Text(
+                '${progress.completed} of ${progress.total} ${l10n.statusCompleted.toLowerCase()} · $percent%',
+                key: const Key('home_progress_summary'),
+                maxLines: 2,
+                textAlign: constraints.maxWidth < 400
+                    ? TextAlign.start
+                    : TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+              );
+
+              if (constraints.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    title,
+                    const SizedBox(height: 4),
+                    summary,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: title),
+                  const SizedBox(width: 12),
+                  Flexible(child: summary),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           ClipRRect(
