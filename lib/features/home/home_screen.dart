@@ -478,10 +478,9 @@ class _QazaPlanCard extends ConsumerWidget {
                 ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: Text(l10n.homeDailyTarget)),
-              DropdownButton<int>(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final selector = DropdownButton<int>(
                 key: const Key('home_daily_target'),
                 value: _targetOptions.contains(target)
                     ? target
@@ -500,8 +499,26 @@ class _QazaPlanCard extends ConsumerWidget {
                         .setDailyTarget(value);
                   }
                 },
-              ),
-            ],
+              );
+
+              if (constraints.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.homeDailyTarget),
+                    const SizedBox(height: 4),
+                    selector,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: Text(l10n.homeDailyTarget)),
+                  selector,
+                ],
+              );
+            },
           ),
           if (estimate != null) ...[
             const SizedBox(height: 2),
