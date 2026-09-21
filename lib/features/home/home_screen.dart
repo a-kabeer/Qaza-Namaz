@@ -744,6 +744,7 @@ class _PendingByPrayerSection extends ConsumerWidget {
               pending: summary.byPrayer[prayer]?.progress.pending ?? 0,
               maxPending: maxPending,
               charts: charts,
+              onTap: () => openQazaForPrayer(ref, prayer),
             ),
         ],
       ),
@@ -757,12 +758,14 @@ class _PrayerPendingBar extends StatelessWidget {
     required this.pending,
     required this.maxPending,
     required this.charts,
+    required this.onTap,
   });
 
   final PrayerType prayer;
   final int pending;
   final int maxPending;
   final AppChartColors charts;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -774,7 +777,7 @@ class _PrayerPendingBar extends StatelessWidget {
     return InkWell(
       key: Key('home_pending_prayer_' + prayer.name),
       borderRadius: BorderRadius.circular(10),
-      onTap: () => _openPrayer(context, prayer),
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(
@@ -812,29 +815,6 @@ class _PrayerPendingBar extends StatelessWidget {
     );
   }
 
-  void _openPrayer(BuildContext context, PrayerType prayer) {
-    final scope = ProviderScope.containerOf(context, listen: false);
-    final container = scope;
-    // The navigation helper updates the existing workspace destination and
-    // applies the selected prayer filter without pushing a duplicate tracker.
-    // This row is a non-Consumer widget, so obtain the current WidgetRef by
-    // using the page-level ProviderScope container through a small local bridge.
-    _HomePrayerNavigation.open(container, prayer);
-  }
-}
-
-class _HomePrayerNavigation {
-  static void open(ProviderContainer container, PrayerType prayer) {
-    container
-        .read(qazaTrackerFilterRequestProvider.notifier)
-        .state = QazaTrackerFilterRequest(
-      prayer: prayer,
-      status: QazaStatusFilter.pending,
-    );
-    container
-        .read(workspaceDestinationProvider.notifier)
-        .state = WorkspaceDestination.qaza;
-  }
 }
 
 class _HomeProgressChartSection extends ConsumerStatefulWidget {
