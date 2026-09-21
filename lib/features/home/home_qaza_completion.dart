@@ -87,12 +87,18 @@ PrayerType? currentHomePrayerForSchedule({
   };
 }
 
-class HomeCurrentPrayerNotifier extends Notifier<PrayerType?> {
+class HomeCurrentPrayerState {
+  const HomeCurrentPrayerState({this.prayer});
+
+  final PrayerType? prayer;
+}
+
+class HomeCurrentPrayerNotifier extends Notifier<HomeCurrentPrayerState> {
   Timer? _timer;
   AppLifecycleListener? _lifecycle;
 
   @override
-  PrayerType? build() {
+  HomeCurrentPrayerState build() {
     final prayerTimesState = ref.watch(prayerTimesControllerProvider);
 
     _timer?.cancel();
@@ -113,13 +119,15 @@ class HomeCurrentPrayerNotifier extends Notifier<PrayerType?> {
       _lifecycle?.dispose();
     });
 
-    return initial;
+    return HomeCurrentPrayerState(prayer: initial);
   }
 
   void _tick() {
-    state = _resolve(
-      ref.read(prayerTimesControllerProvider),
-      DateTime.now(),
+    state = HomeCurrentPrayerState(
+      prayer: _resolve(
+        ref.read(prayerTimesControllerProvider),
+        DateTime.now(),
+      ),
     );
   }
 
@@ -139,9 +147,19 @@ class HomeCurrentPrayerNotifier extends Notifier<PrayerType?> {
 }
 
 final homeCurrentPrayerProvider =
-    NotifierProvider<HomeCurrentPrayerNotifier, PrayerType?>(
+    NotifierProvider<HomeCurrentPrayerNotifier, HomeCurrentPrayerState>(
   HomeCurrentPrayerNotifier.new,
 );
+
+class HomeSelectedPrayerState {
+  const HomeSelectedPrayerState({
+    required this.mode,
+    this.prayer,
+  });
+
+  final HomePrayerSelectionMode mode;
+  final PrayerType? prayer;
+}
 
 /// The actual prayer used by the Home completion card.
 ///
