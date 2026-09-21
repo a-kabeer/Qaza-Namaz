@@ -114,8 +114,6 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
       ref.invalidate(progressSummaryProvider);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      final nextPending =
-          await ref.read(oldestPendingProvider(completedPrayer).future);
       if (!mounted) return;
       await showQazaUndoSnackBar(
         context: context,
