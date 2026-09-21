@@ -352,20 +352,38 @@ class QazaSyncEngine {
       PendingSyncOp? recoveryOp;
 
       if (localRecord != null) {
-        if (localRecord.status == QazaStatus.completed &&
-            localRecord.completedAt != null &&
-            (remoteRecord.status != QazaStatus.completed ||
-                remoteRecord.completedAt == null ||
-                localRecord.completedAt!.isAfter(remoteRecord.completedAt!))) {
+        final localCompletedAt = localRecord.completedAt;
+        final remoteCompletedAt = remoteRecord.completedAt;
+
+        if (localCompletedAt != null && remoteCompletedAt != null) {
+          // Completion is a monotonic business event: the earliest recorded
+          // completion wins across devices.
+          if (localCompletedAt.isBefore(remoteCompletedAt)) {
+            winner = localRecord;
+          } else if (remoteCompletedAt.isBefore(localCompletedAt)) {
+            winner = remoteRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: remoteRecord.updatedAt,
+              targetRecordId: remoteRecord.id,
+              record: remoteRecord,
+            );
+          } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
+            winner = localRecord;
+          }
+        } else if (localCompletedAt != null && remoteCompletedAt == null) {
           winner = localRecord;
+        } else if (localCompletedAt == null && remoteCompletedAt != null) {
+          winner = remoteRecord;
           recoveryOp = PendingSyncOp(
-            id: 'complete_${localRecord.id}',
-            type: SyncOpType.complete,
+            id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+            type: SyncOpType.update,
             userId: userId,
-            queuedAt: localRecord.updatedAt,
-            targetRecordId: localRecord.id,
-            completedAt: localRecord.completedAt,
-            record: localRecord,
+            queuedAt: remoteRecord.updatedAt,
+            targetRecordId: remoteRecord.id,
+            record: remoteRecord,
           );
         } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
           winner = localRecord;
