@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
@@ -11,6 +12,7 @@ import '../../support/in_memory_qaza_repository.dart';
 import '../../support/test_app.dart';
 
 void main() {
+  setUpAll(() => SharedPreferences.setMockInitialValues({}));
   testWidgets('Settings exposes one canonical entry per destination',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
@@ -69,7 +71,10 @@ void main() {
     await tester.tap(find.byKey(const Key('settings_data_cloud')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Cloud Sync'), findsOneWidget);
+    expect(find.text('Cloud backup'), findsOneWidget);
     expect(find.text('Export & Import'), findsOneWidget);
+    expect(find.text('Qaza count'), findsOneWidget);
+    expect(find.byKey(const Key('data_cloud_delete')), findsOneWidget);
+    expect(find.text('Local vs cloud'), findsOneWidget);
   });
 }

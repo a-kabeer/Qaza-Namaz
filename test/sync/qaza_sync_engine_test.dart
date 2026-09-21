@@ -289,6 +289,9 @@ class _FakeSyncRemote implements QazaSyncRemoteDataSource {
   }
 
   @override
+  Future<void> deleteCloudData({required String userId}) async {}
+
+  @override
   Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
     required String userId,
     required String operationId,

@@ -2396,6 +2396,20 @@ abstract class AppLocalizations {
   /// **'Sync problem — your data is safe on this device.'**
   String get cloudSyncProblem;
 
+  String get cloudQazaCount;
+  String cloudQazaCountValue(int count);
+  String get cloudBackupStatus;
+  String get cloudBackupDeleted;
+  String get cloudLocalVsCloudTitle;
+  String get cloudLocalVsCloudBody;
+  String get cloudDeleteTitle;
+  String get cloudDeleteBody;
+  String get cloudDeleteAcknowledge;
+  String get cloudDeleteAction;
+  String get cloudDeleteDone;
+  String get cloudDeleteFailed;
+  String get cloudDeleteSignInRequired;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

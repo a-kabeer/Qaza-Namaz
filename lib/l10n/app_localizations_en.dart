@@ -1394,6 +1394,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sync problem — your data is safe on this device.';
 
   @override
+  String get cloudQazaCount => 'Qaza count';
+
+  @override
+  String cloudQazaCountValue(int count) => intl.Intl.pluralLogic(
+        count,
+        locale: localeName,
+        zero: 'No Qaza records',
+        one: '1 Qaza record',
+        other: '$count Qaza records',
+      );
+
+  @override
+  String get cloudBackupStatus => 'Cloud backup';
+
+  @override
+  String get cloudBackupDeleted => 'Cloud copy deleted; local records remain.';
+
+  @override
+  String get cloudLocalVsCloudTitle => 'Local vs cloud';
+
+  @override
+  String get cloudLocalVsCloudBody =>
+      'Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.';
+
+  @override
+  String get cloudDeleteTitle => 'Delete cloud data';
+
+  @override
+  String get cloudDeleteBody =>
+      'This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.';
+
+  @override
+  String get cloudDeleteAcknowledge =>
+      'I understand the cloud copy will be permanently deleted.';
+
+  @override
+  String get cloudDeleteAction => 'Delete cloud data';
+
+  @override
+  String get cloudDeleteDone =>
+      'Cloud Qaza data was deleted. Your local records remain on this device.';
+
+  @override
+  String get cloudDeleteFailed =>
+      'Cloud data could not be deleted. Your local records are still safe.';
+
+  @override
+  String get cloudDeleteSignInRequired => 'Sign in to manage cloud data.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

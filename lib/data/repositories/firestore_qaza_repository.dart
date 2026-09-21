@@ -262,6 +262,32 @@ class FirestoreQazaRepository
       );
 
   @override
+  Future<void> deleteCloudData({required String userId}) async {
+    if (userId.isEmpty) {
+      throw ArgumentError.value(userId, 'userId');
+    }
+
+    // Delete only the authenticated user's cloud collections. The local
+    // offline ledger is owned by OfflineFirstQazaRepository and is untouched.
+    await _deleteCollection(_recordsCollection(userId));
+    await _deleteCollection(_changesCollection(userId));
+  }
+
+  Future<void> _deleteCollection(
+      CollectionReference<Map<String, dynamic>> collection) async {
+    while (true) {
+      final snapshot = await collection.limit(_deleteBatchSize).get();
+      if (snapshot.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (final document in snapshot.docs) {
+        batch.delete(document.reference);
+      }
+      await batch.commit();
+    }
+  }
+
+  @override
   Future<QazaRemoteResetState> getResetState(
       {required String userId}) async {
     final snapshot = await _syncStateDocument(userId).get();

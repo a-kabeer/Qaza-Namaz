@@ -1393,6 +1393,56 @@ class AppLocalizationsUr extends AppLocalizations {
       'سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
 
   @override
+  String get cloudQazaCount => 'قضا ریکارڈز کی تعداد';
+
+  @override
+  String cloudQazaCountValue(int count) => intl.Intl.pluralLogic(
+        count,
+        locale: localeName,
+        zero: 'کوئی قضا ریکارڈ نہیں',
+        one: '1 قضا ریکارڈ',
+        other: '$count قضا ریکارڈز',
+      );
+
+  @override
+  String get cloudBackupStatus => 'کلاؤڈ بیک اپ';
+
+  @override
+  String get cloudBackupDeleted => 'کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔';
+
+  @override
+  String get cloudLocalVsCloudTitle => 'لوکل اور کلاؤڈ ڈیٹا';
+
+  @override
+  String get cloudLocalVsCloudBody =>
+      'آپ کے قضا ریکارڈ آف لائن استعمال کے لیے اس ڈیوائس پر محفوظ رہتے ہیں۔ سائن اِن ہونے پر تبدیلیاں آپ کے نجی کلاؤڈ اکاؤنٹ سے سنک ہو سکتی ہیں۔ برآمد ایک لوکل بیک اپ ہے؛ کلاؤڈ ڈیٹا حذف کرنے سے لوکل ریکارڈز حذف نہیں ہوتے۔';
+
+  @override
+  String get cloudDeleteTitle => 'کلاؤڈ ڈیٹا حذف کریں';
+
+  @override
+  String get cloudDeleteBody =>
+      'یہ آپ کے کلاؤڈ اکاؤنٹ سے قضا ریکارڈز مستقل طور پر حذف کر دے گا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار رہیں گے۔ یہ عمل واپس نہیں ہو سکتا۔ اگر بیک اپ درکار ہو سکتا ہے تو پہلے ڈیٹا برآمد کر لیں۔';
+
+  @override
+  String get cloudDeleteAcknowledge =>
+      'میں سمجھتا/سمجھتی ہوں کہ کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔';
+
+  @override
+  String get cloudDeleteAction => 'کلاؤڈ ڈیٹا حذف کریں';
+
+  @override
+  String get cloudDeleteDone =>
+      'کلاؤڈ قضا ڈیٹا حذف ہو گیا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار ہیں۔';
+
+  @override
+  String get cloudDeleteFailed =>
+      'کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔';
+
+  @override
+  String get cloudDeleteSignInRequired => 'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
+
+  @override
   String get settingsTitle => 'ترتیبات';
 
   @override

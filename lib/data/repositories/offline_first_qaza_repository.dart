@@ -81,6 +81,17 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
       generation: 0,
     );
   }
+
+  @override
+  Future<void> deleteCloudData({required String userId}) async {
+    final remote = _remote;
+    if (remote is QazaSyncRemoteDataSource) {
+      await remote.deleteCloudData(userId: userId);
+      return;
+    }
+    // Legacy remotes expose reset as their only destructive cloud operation.
+    await remote.resetUserRecords(userId: userId);
+  }
 }
 
 class OfflineFirstQazaRepository implements QazaRepository {

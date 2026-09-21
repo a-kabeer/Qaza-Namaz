@@ -5,6 +5,8 @@ import '../../app/providers.dart';
 import '../../core/widgets/app_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/date_display.dart';
+import '../../data/sync/sync_state.dart' as sync_models;
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/entities/app_user.dart';
 
@@ -14,8 +16,8 @@ class AccountScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final user =
-        ref.watch(currentUserProvider) ?? const AppUser(id: '', email: '');
+    final signedInUser = ref.watch(currentUserProvider);
+    final user = signedInUser ?? const AppUser(id: '', email: '');
     final scheme = Theme.of(context).colorScheme;
     final name = user.displayName == null || user.displayName!.isEmpty
         ? user.email
@@ -84,6 +86,74 @@ class AccountScreen extends ConsumerWidget {
                     subtitle: Text(l10n.accountSignedIn)),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+          Builder(
+            builder: (context) {
+              final summary = ref.watch(progressSummaryProvider).valueOrNull;
+              final offline = ref.watch(offlineRepositoryProvider);
+              final syncState =
+                  ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
+              final deletedAt = signedInUser == null
+                  ? null
+                  : ref.watch(cloudDataDeletedAtProvider(signedInUser.id)).valueOrNull;
+              final cloudDeleted = signedInUser != null &&
+                  deletedAt != null &&
+                  !(syncState?.lastSyncAt?.isAfter(deletedAt) ?? false);
+              final syncText = cloudDeleted
+                  ? l10n.cloudBackupDeleted
+                  : switch (syncState?.status) {
+                sync_models.SyncStatus.synced => l10n.cloudSynced,
+                sync_models.SyncStatus.syncing => l10n.cloudSyncing,
+                sync_models.SyncStatus.pendingSync ||
+                sync_models.SyncStatus.partiallySynced =>
+                  l10n.cloudPendingCount(syncState?.pendingCount ?? 0),
+                sync_models.SyncStatus.offline => l10n.cloudOffline,
+                sync_models.SyncStatus.retrying => l10n.cloudSyncing,
+                sync_models.SyncStatus.syncError => l10n.cloudSyncProblem,
+                _ => l10n.cloudInactive,
+              };
+              return AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.cloud_outlined),
+                      title: Text(l10n.cloudBackupStatus),
+                      subtitle: Text(syncText),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(Icons.checklist_outlined),
+                      title: Text(l10n.cloudQazaCount),
+                      subtitle: Text(
+                        summary == null
+                            ? l10n.dataProcessing
+                            : l10n.cloudQazaCountValue(summary.overall.total),
+                      ),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(l10n.cloudLastSynced),
+                      subtitle: Text(formatAppDateTime(syncState?.lastSyncAt)),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.manage_accounts_outlined),
+                      title: Text(l10n.settingsDataCloud),
+                      subtitle: Text(l10n.settingsDataCloudSubtitle),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DataCloudScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
           AppCard(
