@@ -20,6 +20,7 @@ class QazaRemoteChange {
     required this.type,
     required this.cursor,
     required this.records,
+    this.recordIds = const <String>[],
   });
 
   final QazaRemoteChangeType type;
