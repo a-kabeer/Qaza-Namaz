@@ -10,6 +10,7 @@ import '../features/settings/app_lock_controller.dart';
 import '../features/notifications/notification_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'providers.dart';
+import 'startup_gate.dart';
 
 class QazaNamazApp extends ConsumerStatefulWidget {
   const QazaNamazApp({super.key});
@@ -44,7 +45,8 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     } catch (error, stack) {
       if (kDebugMode) {
         debugPrint(
-          '[notifications] app-start initialization failed: ${error.runtimeType}: $error',
+          '[notifications] app-start initialization failed: '
+          '${error.runtimeType}: $error',
         );
         debugPrintStack(stackTrace: stack);
       }
@@ -63,7 +65,7 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const AuthGate(),
+      home: const StartupGate(child: AuthGate()),
     );
   }
 }
