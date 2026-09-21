@@ -1,31 +1,31 @@
 # Qaza navigation & information architecture
 
 **Priority:** P1  
-**Status:** **Not started**
+**Status:** **In Progress — PR pending CI**
 
 ## Task checklist
 
-- [ ] Primary navigation Home / Qaza / Knowledge / Settings
-- [ ] Calculator from Home
-- [ ] Calculator from Qaza
-- [ ] Consistent FAB
-- [ ] Preserve tab state
-- [ ] Preserve scroll position
-- [ ] Prevent duplicate workspace routes
-- [ ] Android Back
-- [ ] Gesture Back
-- [ ] Predictive Back
-- [ ] Nested-flow Back
+- [x] Primary navigation Home / Qaza / Knowledge / Settings
+- [x] Calculator from Home
+- [x] Calculator from Qaza
+- [x] Consistent FAB
+- [x] Preserve tab state
+- [x] Preserve scroll position
+- [x] Prevent duplicate workspace routes
+- [x] Android Back
+- [x] Gesture Back
+- [x] Predictive Back
+- [x] Nested-flow Back
 
 ## Current evidence
 
-The target navigation is defined in the plan and must be verified independently.
+Implemented in the workspace shell. Qaza is now a primary destination; Calculator remains contextual from Home/Qaza, and Prayer Times remains reachable from Settings.
 
 ## Definition of Done
 
-- [ ] Implementation
-- [ ] Unit/widget tests
-- [ ] Regression tests
+- [x] Implementation
+- [x] Unit/widget tests
+- [x] Regression tests
 - [ ] Analyze
 - [ ] CI
 - [ ] Device QA where required
@@ -38,5 +38,6 @@ The target navigation is defined in the plan and must be verified independently.
 | Date | Status | Evidence |
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
+| 2026-09-21 | In Progress | Primary Qaza navigation implemented; regression coverage added. CI pending on the single Task 9 PR. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.
