@@ -21,9 +21,9 @@ class AppColors {
   static const lightSecondary = Color(0xFF8A6338);
   static const lightSecondaryContainer = Color(0xFFF2E6D5);
   static const lightOnSecondaryContainer = Color(0xFF5A3D1F);
-  static const lightTertiary = Color(0xFF4F7770);
-  static const lightTertiaryContainer = Color(0xFFD9ECE7);
-  static const lightOnTertiaryContainer = Color(0xFF28534D);
+  static const lightTertiary = Color(0xFF2E7D59);
+  static const lightTertiaryContainer = Color(0xFFD7EBDD);
+  static const lightOnTertiaryContainer = Color(0xFF174B35);
 
   // Dark surfaces and text.
   static const darkBase = Color(0xFF0D1512);
@@ -46,10 +46,10 @@ class AppColors {
   static const darkOnSecondary = Color(0xFF402A08);
   static const darkSecondaryContainer = Color(0xFF5A4528);
   static const darkOnSecondaryContainer = Color(0xFFF2D39A);
-  static const darkTertiary = Color(0xFF93C9C0);
-  static const darkOnTertiary = Color(0xFF0B3833);
-  static const darkTertiaryContainer = Color(0xFF2D5E57);
-  static const darkOnTertiaryContainer = Color(0xFFC0E9E1);
+  static const darkTertiary = Color(0xFF70C995);
+  static const darkOnTertiary = Color(0xFF073D27);
+  static const darkTertiaryContainer = Color(0xFF1E4C35);
+  static const darkOnTertiaryContainer = Color(0xFFB7E8C9);
 
   // Semantic feedback.
   static const lightSuccess = Color(0xFF2E7D59);
