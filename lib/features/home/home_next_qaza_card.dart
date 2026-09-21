@@ -16,6 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'home_plan.dart';
 import 'home_qaza_completion.dart';
+import '../qaza/qaza_undo_banner.dart';
 
 class HomeOldestQazaCard extends ConsumerStatefulWidget {
   const HomeOldestQazaCard({super.key});
@@ -41,10 +42,11 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
 
     try {
       final userId = ref.read(requiredUserIdProvider);
+      final completedAt = ref.read(homeNowProvider);
       await ref.read(qazaServiceProvider).completeRecord(
         userId: userId,
         recordId: record.id,
-        completedAt: ref.read(homeNowProvider),
+        completedAt: completedAt,
       );
 
       ref.invalidate(oldestPendingProvider(prayer));
@@ -83,16 +85,16 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            duration: const Duration(milliseconds: 900),
-            content: Text(
-              l10n.completeSuccess(prayer.localizedLabel(l10n)),
-            ),
-          ),
-        );
+      await showQazaUndoSnackBar(
+        context: context,
+        ref: ref,
+        userId: userId,
+        recordIds: [record.id],
+        completedAt: completedAt,
+        onUndone: () async {
+          ref.invalidate(homeDailyProgressProvider);
+        },
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
