@@ -39,7 +39,7 @@ void main() {
     await _pumpNavigation(tester);
   }
 
-  testWidgets('Workspace exposes four primary navigation destinations',
+  testWidgets('Workspace exposes five primary navigation destinations',
       (tester) async {
     // A record of some kind, or Home shows its empty state instead of the
     // dashboard this test is about.
@@ -57,10 +57,10 @@ void main() {
     expect(find.text('Home').first, findsOneWidget);
     expect(find.text('Qaza'), findsWidgets);
     expect(find.text('Knowledge'), findsOneWidget);
+    expect(find.text('Prayer Times'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    // Calculator and Prayer Times are contextual, not primary tabs.
+    // Calculator remains contextual; Prayer Times is a primary destination.
     expect(find.text('Calculator'), findsNothing);
-    expect(find.text('Prayer Times'), findsNothing);
     // Home leads with the compact progress overview; Add/Calculate live in
     // the workspace action menu rather than separate Home buttons.
     expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
