@@ -401,6 +401,31 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get qazaUndoAction => 'واپس کریں';
+
+  @override
+  String qazaUndoAvailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'حالیہ تکمیلات واپس کی جا سکتی ہیں۔',
+      one: 'حالیہ تکمیل واپس کی جا سکتی ہے۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaUndoCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قضا دوبارہ باقی ہو گئیں۔',
+      one: '1 قضا دوبارہ باقی ہو گئی۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get calcAboutYouIntro =>
       'اپنی تاریخِ پیدائش اور بلوغت کی معلومات سے آغاز کریں۔ تاریخیں گریگورین کیلنڈر میں منتخب ہوتی ہیں؛ ہجری تاریخ ساتھ دکھائی جاتی ہے۔';
 
