@@ -165,10 +165,17 @@ class HomeSelectedPrayerState {
 ///
 /// Automatic mode follows Prayer Time. Manual mode follows the selected chip
 /// until the user switches back to Auto.
-final homeSelectedPrayerProvider = Provider<PrayerType?>((ref) {
+final homeSelectedPrayerProvider = Provider<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
   if (selection.mode == HomePrayerSelectionMode.manual) {
-    return selection.manualPrayer;
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: selection.manualPrayer,
+    );
   }
-  return ref.watch(homeCurrentPrayerProvider);
+
+  return HomeSelectedPrayerState(
+    mode: selection.mode,
+    prayer: ref.watch(homeCurrentPrayerProvider).prayer,
+  );
 });
