@@ -605,6 +605,5 @@
   "homeDetailedStatistics": "View Detailed Statistics",
   "homeDetailedStatisticsSubtitle": "Year-wise pending, monthly history, and more",
   "homeChartNoData": "No completed Qaza in this period.",
-  "homeTodayDate": "Today",
-
+  "homeTodayDate": "Today"
 }
