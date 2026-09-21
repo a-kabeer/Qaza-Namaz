@@ -444,7 +444,7 @@ class _QazaPlanCard extends ConsumerWidget {
     required this.now,
   });
 
-  static const _targetOptions = [1, 2, 3, 5, 10, 15, 20, 30];
+  static const _targetOptions = [1, 2, 3, 5, 10, 15, 20, 30, 50];
 
   final int pending;
   final int completedToday;
