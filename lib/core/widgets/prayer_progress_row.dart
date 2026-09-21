@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
@@ -29,6 +31,8 @@ class PrayerProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final charts = AppChartColors.of(context);
+    final prayerColor = charts.forPrayer(prayer);
     final l10n = AppLocalizations.of(context);
     final percent = (progress.percentage * 100).round();
 
@@ -102,8 +106,8 @@ class PrayerProgressRow extends StatelessWidget {
                         ),
                         value: progress.percentage,
                         minHeight: 6,
-                        backgroundColor: scheme.surfaceContainerHighest,
-                        color: scheme.primary,
+                        backgroundColor: charts.track,
+                        color: prayerColor,
                       ),
                     ),
                   ),
