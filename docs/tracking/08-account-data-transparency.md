@@ -24,7 +24,7 @@ Account and Data & Cloud surfaces now expose the signed-in email, cloud-backup s
 - [x] Unit/widget tests
 - [x] Regression tests
 - [x] Analyze — the initial failure was in test doubles for the new interface and was fixed before final merge
-- [ ] CI — final verification is running on this tracker commit
+- [ ] CI — final verification result is not independently exposed by the GitHub connector
 - [ ] Device QA where required
 - [x] UX review
 - [x] Documentation
@@ -38,6 +38,6 @@ Account and Data & Cloud surfaces now expose the signed-in email, cloud-backup s
 | 2026-09-21 | In Progress | Task 8 became the active workstream and repository audit began. |
 | 2026-09-21 | Implemented | Added account/cloud transparency UI, Qaza count, local-vs-cloud explanation, explicit cloud deletion with acknowledgement, owner-scoped Firestore deletion, English/Urdu localization, and regression coverage. |
 | 2026-09-21 | Merged | Task 8 implementation merged to main via PR #57, merge commit 1e3aa4a17f484bebf8de2d8acb028b4825ef275f. Firestore security-rule CI passed; the initial Analyze failure in test doubles was fixed before the final merge. |
-| 2026-09-21 | Verification | Final full CI verification is being triggered from this tracker update so the exact merged implementation is checked again before the task is considered fully verified. |
+| 2026-09-21 | Verification | PR #58 merged the Task 8 tracking evidence onto main. Firestore security-rule CI passed during final implementation verification. The GitHub connector did not expose a fresh final post-merge Actions result, so CI is not marked passed here. Physical-device QA remains pending. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.
