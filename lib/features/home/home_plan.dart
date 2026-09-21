@@ -121,28 +121,7 @@ final homeDailyProgressProvider =
         to: end,
       );
   return HomeDailyProgress(completed: completed, target: target);
-});
-
-) {
-  if (pending <= 0 || dailyTarget <= 0) return 0;
-  final capacityToday =
-      (dailyTarget - completedToday).clamp(0, dailyTarget).toInt();
-  final afterToday = pending - capacityToday;
-  if (afterToday <= 0) return 0;
-  return (afterToday + dailyTarget - 1) ~/ dailyTarget;
-}
-) =>
-    DateTime(now.year, now.month, now.day).add(
-      Duration(
-        days: homeDaysUntilCompletion(
-          pending: pending,
-          dailyTarget: dailyTarget,
-          completedToday: completedToday,
-        ),
-      ),
-    );
-
-
+})
 enum HomeProgressRange {
   sevenDays,
   thirtyDays,
