@@ -26,6 +26,9 @@ class HomeScreen extends ConsumerWidget {
     await Navigator.push<void>(
         context, MaterialPageRoute(builder: (_) => page));
     ref.invalidate(progressSummaryProvider);
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
     ref.invalidate(homeDailyProgressProvider);
   }
 
@@ -138,7 +141,11 @@ class _HomeSkeleton extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
       children: [
-        const _HomeSkeletonCard(height: 118),
+        const _HomeSkeletonCard(height: 96),
+        const SizedBox(height: 12),
+        const _HomeSkeletonCard(height: 170),
+        const SizedBox(height: 12),
+        const _HomeSkeletonCard(height: 180),
         const SizedBox(height: 20),
         const Row(
           children: [
