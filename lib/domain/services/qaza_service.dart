@@ -262,11 +262,10 @@ class QazaService {
     required Map<String, DateTime> expectedCompletedAt,
     required DateTime undoneAt,
   }) {
-    final undoRepository = repository;
-    if (undoRepository is! QazaUndoRepository) {
+    if (repository is! QazaUndoRepository) {
       throw StateError('Qaza undo is not supported by this repository.');
     }
-    return undoRepository.undoCompletions(
+    return (repository as QazaUndoRepository).undoCompletions(
       userId: userId,
       expectedCompletedAt: expectedCompletedAt,
       undoneAt: undoneAt,
