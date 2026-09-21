@@ -74,6 +74,32 @@
   "homeCompletedCount": "{count} مکمل",
   "homeProgressTitle": "آپ کی پیش رفت",
   "homeProgressError": "آپ کی قضا کی پیش رفت لوڈ نہیں ہو سکی۔ دوبارہ کوشش کے لیے نیچے کھینچیں۔",
+  "homeTodayProgress": "آج کی پیش رفت",
+  "homeDailyProgress": "{completed} / {target} مکمل",
+  "@homeDailyProgress": {
+    "placeholders": {
+      "completed": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
+  "homeDailyRemaining": "{count} باقی",
+  "@homeDailyRemaining": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "homeQazaPlan": "قضا کا منصوبہ",
+  "homeDailyTarget": "روزانہ ہدف",
+  "homePerDay": "روزانہ {count}",
+  "@homePerDay": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "homeEstimatedCompletion": "متوقع تکمیل: {date}",
+  "@homeEstimatedCompletion": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "homeNextQaza": "اگلی قضا",
+  "homeCompleteNextQaza": "اگلی قضا مکمل کریں",
+  "homeViewAllQaza": "تمام قضا دیکھیں",
+  "homeDailyProgressError": "آج کی پیش رفت لوڈ نہیں ہو سکی۔",
 
   "progressPendingCompleted": "{pending} باقی • {completed} مکمل",
   "progressCompletedPending": "{completed} مکمل • {pending} باقی",
