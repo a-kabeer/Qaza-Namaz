@@ -124,25 +124,28 @@ await assertFails(
   ),
 );
 
-await assertSucceeds(
-  setDoc(
-    recordA,
-    {
-      ...validRecord,
-      prayerType: 'zuhr',
-      originalDate: '2020-01-16',
-      updatedAt: Timestamp.fromDate(
-        new Date('2026-01-03T00:00:00Z'),
-      ),
-    },
+const editableRecord = {
+  ...validRecord,
+  status: 'completed',
+  completedAt: Timestamp.fromDate(
+    new Date('2026-01-02T00:00:00Z'),
   ),
+  prayerType: 'zuhr',
+  originalDate: '2020-01-16',
+  updatedAt: Timestamp.fromDate(
+    new Date('2026-01-03T00:00:00Z'),
+  ),
+};
+
+await assertSucceeds(
+  setDoc(recordA, editableRecord),
 );
 
 await assertSucceeds(
   setDoc(
     recordA,
     {
-      ...validRecord,
+      ...editableRecord,
       prayerType: 'asr',
       originalDate: '2020-01-17',
       updatedAt: Timestamp.fromDate(
