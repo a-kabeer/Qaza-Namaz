@@ -532,8 +532,10 @@ class _RecordRow extends StatelessWidget {
             switch (action) {
               case _RecordAction.edit:
                 onEdit();
+                break;
               case _RecordAction.delete:
                 onDelete();
+                break;
             }
           },
           itemBuilder: (context) => [
