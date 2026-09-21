@@ -60,7 +60,7 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
     }
   }
 
-  int _normalizeTarget(int value) => value.clamp(1, 50);
+  int _normalizeTarget(int value) => value.clamp(1, 50).toInt();
 }
 
 final homeQazaPlanProvider =
@@ -79,7 +79,7 @@ class HomeDailyProgress {
   final int completed;
   final int target;
 
-  int get remainingToTarget => (target - completed).clamp(0, target);
+  int get remainingToTarget => (target - completed).clamp(0, target).toInt();
 
   double get percentage {
     if (target <= 0) return 0;
