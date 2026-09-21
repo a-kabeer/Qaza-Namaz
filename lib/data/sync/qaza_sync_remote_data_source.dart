@@ -1,7 +1,7 @@
 import '../../domain/entities/qaza_record.dart';
 import '../local/qaza_local_store.dart';
 
-enum QazaRemoteChangeType { upsert, complete, reset }
+enum QazaRemoteChangeType { upsert, update, complete, delete, reset }
 
 class QazaRemoteChangeCursor {
   const QazaRemoteChangeCursor({
@@ -20,11 +20,13 @@ class QazaRemoteChange {
     required this.type,
     required this.cursor,
     required this.records,
+    this.recordIds = const <String>[],
   });
 
   final QazaRemoteChangeType type;
   final QazaRemoteChangeCursor cursor;
   final List<QazaRecord> records;
+  final List<String> recordIds;
 }
 
 class QazaRemoteChangePage {

@@ -1,18 +1,18 @@
 # Qaza tracker record actions
 
 **Priority:** P1  
-**Status:** **Not started**
+**Status:** **In progress — PR pending CI**
 
 ## Task checklist
 
-- [ ] Mark complete
-- [ ] Edit original date
-- [ ] Edit prayer type
-- [ ] Prevent duplicate combination
-- [ ] Confirm destructive delete
-- [ ] Support offline changes
-- [ ] Queue sync operations
-- [ ] Resolve conflicts safely
+- [x] Mark complete
+- [x] Edit original date
+- [x] Edit prayer type
+- [x] Prevent duplicate combination
+- [x] Confirm destructive delete
+- [x] Support offline changes
+- [x] Queue sync operations
+- [x] Resolve conflicts safely
 
 ## Current evidence
 
@@ -20,14 +20,14 @@ Offline and conflict-safe behavior are completion requirements.
 
 ## Definition of Done
 
-- [ ] Implementation
-- [ ] Unit/widget tests
-- [ ] Regression tests
+- [x] Implementation
+- [x] Unit/widget tests
+- [x] Regression tests
 - [ ] Analyze
 - [ ] CI
 - [ ] Device QA where required
 - [ ] UX review
-- [ ] Documentation
+- [x] Documentation
 - [ ] Merge
 
 ## Evidence log
@@ -35,5 +35,6 @@ Offline and conflict-safe behavior are completion requirements.
 | Date | Status | Evidence |
 |---|---|---|
 | 2026-09-20 | Not started | Fresh tracking document created from the shared master plan. |
+| 2026-09-21 | In progress — PR pending CI | Tracker edit/delete actions, duplicate protection, offline outbox operations, conflict-safe sync, localized UI, and regression coverage implemented on the Task 11 branch. |
 
 **Rule:** update this tracking file, not the master plan, when status changes.

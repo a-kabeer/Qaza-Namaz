@@ -260,6 +260,46 @@ class FirestoreQazaRepository
   }
 
   @override
+  Future<void> updateRecord({required QazaRecord record}) async {
+    await applyOperationsBatch(
+      userId: record.userId,
+      operations: [
+        PendingSyncOp(
+          id: 'update_direct_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+          type: SyncOpType.update,
+          userId: record.userId,
+          queuedAt: record.updatedAt,
+          record: record,
+          targetRecordId: record.id,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    final snapshot = await _recordsCollection(userId).doc(recordId).get();
+    if (!snapshot.exists) return;
+    final record = _fromDocument(snapshot);
+    await applyOperationsBatch(
+      userId: userId,
+      operations: [
+        PendingSyncOp(
+          id: 'delete_direct_${recordId}_${DateTime.now().microsecondsSinceEpoch}',
+          type: SyncOpType.delete,
+          userId: userId,
+          queuedAt: DateTime.now(),
+          targetRecordId: recordId,
+          record: record,
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<void> resetUserRecords({
     required String userId,
     String? operationId,
@@ -375,12 +415,19 @@ class FirestoreQazaRepository
     }
 
     final type = operations.first.type;
-    if (type != SyncOpType.add && type != SyncOpType.complete) {
-      throw ArgumentError('Only add and complete operations can be batched.');
+    if (type == SyncOpType.reset) {
+      throw ArgumentError('Reset must use resetUserRecordsForSync.');
     }
     if (operations.any((op) => op.type != type || op.userId != userId)) {
       throw ArgumentError(
           'All operations in a batch must share userId and type.');
+    }
+
+    if (type == SyncOpType.update || type == SyncOpType.delete) {
+      return _applyUpdateDeleteBatch(
+        userId: userId,
+        operations: operations,
+      );
     }
 
     final reset = await getResetState(userId: userId);
@@ -393,8 +440,6 @@ class FirestoreQazaRepository
     final batch = _firestore.batch();
     final records = <QazaRecord>[];
 
-    // Materialize sync state in the same atomic batch so first-time accounts
-    // can satisfy the generation-aware Firestore security rule.
     batch.set(
       _syncStateDocument(userId),
       {
@@ -433,9 +478,120 @@ class FirestoreQazaRepository
         for (final record in records)
           _toMap(record, syncGeneration: reset.generation),
       ],
+      'recordIds': const <String>[],
     });
 
     await batch.commit();
+    final committed = await changeReference.get();
+    return _cursorFromChange(committed);
+  }
+
+  Future<QazaRemoteChangeCursor> _applyUpdateDeleteBatch({
+    required String userId,
+    required List<PendingSyncOp> operations,
+  }) async {
+    final type = operations.first.type;
+    final latestById = <String, PendingSyncOp>{};
+    for (final operation in operations) {
+      final id = operation.targetRecordId ?? operation.record?.id;
+      if (id == null || id.isEmpty) {
+        throw StateError('Sync operation is missing its target record id.');
+      }
+      final previous = latestById[id];
+      if (previous == null ||
+          operation.queuedAt.isAfter(previous.queuedAt) ||
+          (operation.queuedAt.isAtSameMomentAs(previous.queuedAt) &&
+              operation.id.compareTo(previous.id) > 0)) {
+        latestById[id] = operation;
+      }
+    }
+
+    final reset = await getResetState(userId: userId);
+    if (reset.inProgress) {
+      throw StateError('Remote reset is currently in progress.');
+    }
+
+    final changeId = 'change_batch_${_stableBatchHash(latestById.values.toList(growable: false))}';
+    final changeReference = _changesCollection(userId).doc(changeId);
+    final accepted = <QazaRecord>[];
+    final deletedIds = <String>[];
+    final rejected = <QazaRecord>[];
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshots = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+      for (final id in latestById.keys) {
+        snapshots[id] = await transaction.get(_recordsCollection(userId).doc(id));
+      }
+
+      transaction.set(
+        _syncStateDocument(userId),
+        {
+          'generation': reset.generation,
+          'resetInProgress': false,
+        },
+        SetOptions(merge: true),
+      );
+
+      for (final operation in latestById.values) {
+        final id = operation.targetRecordId ?? operation.record?.id;
+        if (id == null) continue;
+        final snapshot = snapshots[id]!;
+        if (operation.type == SyncOpType.update) {
+          final record = operation.record;
+          if (record == null ||
+              record.userId != userId ||
+              record.id != id ||
+              !_isOwned(userId, record.userId)) {
+            throw StateError('Sync update contains an invalid record.');
+          }
+          final current = snapshot.exists ? _fromDocument(snapshot) : null;
+          if (current != null &&
+              current.updatedAt.isAfter(record.updatedAt)) {
+            rejected.add(current);
+            continue;
+          }
+          accepted.add(record);
+          transaction.set(
+            _recordsCollection(userId).doc(id),
+            _toMap(
+              record,
+              serverUpdatedAt: true,
+              syncGeneration: reset.generation,
+            ),
+            SetOptions(merge: false),
+          );
+        } else {
+          final current = snapshot.exists ? _fromDocument(snapshot) : null;
+          if (current != null) {
+            final tombstone = operation.record;
+            if (tombstone != null &&
+                current.updatedAt.isAfter(tombstone.updatedAt)) {
+              rejected.add(current);
+              continue;
+            }
+            transaction.delete(_recordsCollection(userId).doc(id));
+          }
+          deletedIds.add(id);
+        }
+      }
+
+      transaction.set(
+        changeReference,
+        {
+          'changeType': type == SyncOpType.update ? 'update' : 'delete',
+          'generation': reset.generation,
+          'createdAt': FieldValue.serverTimestamp(),
+          'records': [
+            for (final record in [...accepted, ...rejected])
+              _toMap(record, syncGeneration: reset.generation),
+          ],
+          'recordIds': type == SyncOpType.delete
+              ? deletedIds
+              : const <String>[],
+        },
+      );
+    });
+
     final committed = await changeReference.get();
     return _cursorFromChange(committed);
   }
@@ -549,7 +705,9 @@ class FirestoreQazaRepository
     final generation = (data['generation'] as num?)?.toInt() ?? 0;
     final typeName = data['changeType'] as String? ?? 'upsert';
     final type = switch (typeName) {
+      'update' => QazaRemoteChangeType.update,
       'complete' => QazaRemoteChangeType.complete,
+      'delete' => QazaRemoteChangeType.delete,
       'reset' => QazaRemoteChangeType.reset,
       _ => QazaRemoteChangeType.upsert,
     };
@@ -563,6 +721,10 @@ class FirestoreQazaRepository
         }
       }
     }
+    final rawRecordIds = data['recordIds'];
+    final recordIds = rawRecordIds is Iterable
+        ? rawRecordIds.whereType<String>().toList(growable: false)
+        : const <String>[];
 
     return QazaRemoteChange(
       type: type,
@@ -572,6 +734,7 @@ class FirestoreQazaRepository
         generation: generation,
       ),
       records: List.unmodifiable(records),
+      recordIds: recordIds,
     );
   }
 

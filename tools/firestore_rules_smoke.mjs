@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 
 const rules = fs.readFileSync('firestore.rules', 'utf8');
@@ -123,6 +124,56 @@ await assertFails(
   ),
 );
 
+const editableRecord = {
+  ...validRecord,
+  status: 'completed',
+  completedAt: Timestamp.fromDate(
+    new Date('2026-01-02T00:00:00Z'),
+  ),
+  prayerType: 'zuhr',
+  originalDate: '2020-01-16',
+  updatedAt: Timestamp.fromDate(
+    new Date('2026-01-03T00:00:00Z'),
+  ),
+};
+
+await assertSucceeds(
+  setDoc(recordA, editableRecord),
+);
+
+await assertSucceeds(
+  setDoc(
+    recordA,
+    {
+      ...editableRecord,
+      prayerType: 'asr',
+      originalDate: '2020-01-17',
+      updatedAt: Timestamp.fromDate(
+        new Date('2026-01-04T00:00:00Z'),
+      ),
+    },
+  ),
+);
+
+await assertSucceeds(
+  setDoc(
+    doc(dbA, 'users/user-a/qazaRecords/record-delete-me'),
+    {
+      ...validRecord,
+      id: 'record-delete-me',
+      updatedAt: Timestamp.fromDate(
+        new Date('2026-01-04T00:00:00Z'),
+      ),
+    },
+  ),
+);
+await assertSucceeds(
+  deleteDoc(doc(dbA, 'users/user-a/qazaRecords/record-delete-me')),
+);
+await assertFails(
+  deleteDoc(doc(dbB, 'users/user-a/qazaRecords/record-a')),
+);
+
 const validChange = {
   changeType: 'complete',
   generation: 0,
@@ -130,6 +181,7 @@ const validChange = {
     new Date('2026-01-02T00:00:00Z'),
   ),
   records: [validRecord],
+  recordIds: [],
 };
 
 await assertSucceeds(

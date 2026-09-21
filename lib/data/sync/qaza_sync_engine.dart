@@ -199,7 +199,13 @@ class QazaSyncEngine {
             userId: userId,
             operations: operations,
           );
-          locallyCommittedChanges.add(committed.id);
+          // Keep the cursor at the last pulled change until the post-write
+          // pull. This prevents concurrent remote changes that land while the
+          // write is in flight from being skipped.
+          if (operations.first.type != SyncOpType.update &&
+              operations.first.type != SyncOpType.delete) {
+            locallyCommittedChanges.add(committed.id);
+          }
           await _localStore.removeOutboxBatch(
             userId,
             operations.map((op) => op.id).toList(growable: false),
@@ -300,6 +306,16 @@ class QazaSyncEngine {
           locallyCommittedChanges.clear();
           await _notifyLocalDataChanged();
         } else if (!locallyCommittedChanges.contains(change.cursor.id)) {
+          if (change.type == QazaRemoteChangeType.delete &&
+              change.recordIds.isNotEmpty) {
+            for (final recordId in change.recordIds) {
+              await _localStore.deleteRecord(
+                userId: userId,
+                recordId: recordId,
+              );
+            }
+            await _notifyLocalDataChanged();
+          }
           await _mergeRemoteRecords(
             userId: userId,
             records: change.records,
@@ -333,29 +349,66 @@ class QazaSyncEngine {
     for (final remoteRecord in records) {
       final localRecord = byId[remoteRecord.id];
       var winner = remoteRecord;
+      PendingSyncOp? recoveryOp;
 
-      if (localRecord != null &&
-          localRecord.status == QazaStatus.completed &&
-          localRecord.completedAt != null) {
-        if (remoteRecord.status != QazaStatus.completed ||
-            remoteRecord.completedAt == null ||
-            localRecord.completedAt!.isBefore(remoteRecord.completedAt!)) {
-          winner = localRecord;
-          recovery.add(
-            PendingSyncOp(
-              id: 'complete_${localRecord.id}',
-              type: SyncOpType.complete,
+      if (localRecord != null) {
+        final localCompletedAt = localRecord.completedAt;
+        final remoteCompletedAt = remoteRecord.completedAt;
+
+        if (localCompletedAt != null && remoteCompletedAt != null) {
+          // Completion is a monotonic business event: the earliest recorded
+          // completion wins across devices.
+          if (localCompletedAt.isBefore(remoteCompletedAt)) {
+            winner = localRecord;
+          } else if (remoteCompletedAt.isBefore(localCompletedAt)) {
+            winner = remoteRecord;
+            recoveryOp = PendingSyncOp(
+              id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+              type: SyncOpType.update,
               userId: userId,
-              queuedAt: localRecord.updatedAt,
-              targetRecordId: localRecord.id,
-              completedAt: localRecord.completedAt,
-              record: localRecord,
-            ),
+              queuedAt: remoteRecord.updatedAt,
+              targetRecordId: remoteRecord.id,
+              record: remoteRecord,
+            );
+          } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
+            winner = localRecord;
+          }
+        } else if (localCompletedAt != null && remoteCompletedAt == null) {
+          winner = localRecord;
+          recoveryOp = PendingSyncOp(
+            id: 'complete_${localRecord.id}',
+            type: SyncOpType.complete,
+            userId: userId,
+            queuedAt: localRecord.updatedAt,
+            targetRecordId: localRecord.id,
+            completedAt: localRecord.completedAt,
+            record: localRecord,
+          );
+        } else if (localCompletedAt == null && remoteCompletedAt != null) {
+          winner = remoteRecord;
+          recoveryOp = PendingSyncOp(
+            id: 'update_${remoteRecord.id}_${remoteRecord.updatedAt.microsecondsSinceEpoch}',
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: remoteRecord.updatedAt,
+            targetRecordId: remoteRecord.id,
+            record: remoteRecord,
+          );
+        } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
+          winner = localRecord;
+          recoveryOp = PendingSyncOp(
+            id: 'update_${localRecord.id}_${localRecord.updatedAt.microsecondsSinceEpoch}',
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: localRecord.updatedAt,
+            targetRecordId: localRecord.id,
+            record: localRecord,
           );
         }
       }
 
       merged.add(winner);
+      if (recoveryOp != null) recovery.add(recoveryOp);
     }
 
     await _localStore.upsertRecordsAndOutbox(

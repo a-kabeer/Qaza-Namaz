@@ -352,6 +352,24 @@ class _FailingRepository
   }
 
   @override
+  Future<void> updateRecord({required QazaRecord record}) {
+    if (failWrites) return Future.error(StateError('simulated remote outage'));
+    return _delegate.updateRecord(record: record);
+  }
+
+  @override
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) {
+    if (failWrites) return Future.error(StateError('simulated remote outage'));
+    return _delegate.deleteRecord(
+      userId: userId,
+      recordId: recordId,
+    );
+  }
+
+  @override
   Future<void> completeRecord(
       {required String userId,
       required String recordId,

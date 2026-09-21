@@ -39,6 +39,7 @@ class QazaTrackerState {
     this.refreshing = false,
     this.loadingMore = false,
     this.completing = false,
+    this.recordMutating = false,
     this.error,
     this.selected = const <String>{},
   });
@@ -61,6 +62,7 @@ class QazaTrackerState {
 
   final bool loadingMore;
   final bool completing;
+  final bool recordMutating;
   final String? error;
   final Set<String> selected;
 
@@ -91,6 +93,7 @@ class QazaTrackerState {
     bool? refreshing,
     bool? loadingMore,
     bool? completing,
+    bool? recordMutating,
     String? error,
     Set<String>? selected,
     bool clearPrayerFilter = false,
@@ -109,6 +112,7 @@ class QazaTrackerState {
         refreshing: refreshing ?? this.refreshing,
         loadingMore: loadingMore ?? this.loadingMore,
         completing: completing ?? this.completing,
+        recordMutating: recordMutating ?? this.recordMutating,
         error: clearError ? null : error ?? this.error,
         selected: selected ?? this.selected,
       );
@@ -312,6 +316,40 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
       );
 
   void clearSelection() => state = state.copyWith(selected: const <String>{});
+
+  /// Updates a single tracker record and reloads the bounded page.
+  Future<void> updateRecord(QazaRecord record) async {
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null || state.recordMutating) return;
+    state = state.copyWith(recordMutating: true, clearError: true);
+    try {
+      await ref.read(qazaServiceProvider).updateRecord(
+            userId: userId,
+            record: record,
+          );
+      ref.invalidate(progressSummaryProvider);
+      await refresh();
+    } finally {
+      state = state.copyWith(recordMutating: false);
+    }
+  }
+
+  /// Deletes a single tracker record and reloads the bounded page.
+  Future<void> deleteRecord(String recordId) async {
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null || state.recordMutating) return;
+    state = state.copyWith(recordMutating: true, clearError: true);
+    try {
+      await ref.read(qazaServiceProvider).deleteRecord(
+            userId: userId,
+            recordId: recordId,
+          );
+      ref.invalidate(progressSummaryProvider);
+      await refresh();
+    } finally {
+      state = state.copyWith(recordMutating: false);
+    }
+  }
 
   /// Completes the selected records in one repository call. Repeat taps are
   /// rejected while in flight and the service is idempotent.

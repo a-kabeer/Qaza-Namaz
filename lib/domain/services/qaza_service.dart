@@ -10,6 +10,14 @@ export '../repositories/qaza_repository.dart' show QazaHistoryPage, QazaPage;
 export 'qaza_availability_service.dart'
     show QazaAvailabilityAnalysis, QazaEligibility, QazaPrayerKey;
 
+class QazaDuplicateRecordException implements Exception {
+  const QazaDuplicateRecordException();
+
+  @override
+  String toString() =>
+      'A Qaza record already exists for this prayer and date.';
+}
+
 class QazaService {
   QazaService(this.repository, {QazaAvailabilityService? availability})
       : availability = availability ?? const QazaAvailabilityService();
@@ -184,6 +192,49 @@ class QazaService {
       result[date] = Set.unmodifiable(available);
     }
     return Map.unmodifiable(result);
+  }
+
+  /// Updates only the editable fields of a Qaza record.
+  ///
+  /// Record identity, status, completion timestamp and creation time remain
+  /// unchanged. The prayer/date combination remains unique per user.
+  Future<void> updateRecord({
+    required String userId,
+    required QazaRecord record,
+  }) async {
+    if (userId.isEmpty || record.userId != userId || record.id.isEmpty) {
+      throw ArgumentError('Invalid Qaza record update.');
+    }
+
+    final normalizedDate = QazaDate.normalize(record.originalDate);
+    final existing = await repository.getPage(
+      userId: userId,
+      limit: 2,
+      prayerType: record.prayerType,
+      status: null,
+      from: normalizedDate,
+      to: normalizedDate,
+    );
+    if (existing.records.any((candidate) => candidate.id != record.id)) {
+      throw const QazaDuplicateRecordException();
+    }
+
+    await repository.updateRecord(
+      record: record.copyWith(
+        originalDate: normalizedDate,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    if (userId.isEmpty || recordId.isEmpty) {
+      throw ArgumentError('Invalid Qaza record deletion.');
+    }
+    await repository.deleteRecord(userId: userId, recordId: recordId);
   }
 
   Future<void> addRecords(List<QazaRecord> records) =>

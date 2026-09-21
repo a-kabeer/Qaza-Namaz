@@ -125,6 +125,17 @@ class _BlockingRemote implements QazaRepository {
       delegate.addRecords(records);
 
   @override
+  Future<void> updateRecord({required QazaRecord record}) =>
+      delegate.updateRecord(record: record);
+
+  @override
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) =>
+      delegate.deleteRecord(userId: userId, recordId: recordId);
+
+  @override
   Future<void> completeRecord({
     required String userId,
     required String recordId,

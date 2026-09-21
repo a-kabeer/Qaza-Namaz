@@ -343,6 +343,41 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get qazaRecordActions => 'ریکارڈ کے اعمال';
+  @override
+  String get qazaEditRecord => 'ترمیم';
+  @override
+  String get qazaDeleteRecord => 'حذف کریں';
+  @override
+  String get qazaEditRecordTitle => 'قضا میں ترمیم';
+  @override
+  String get qazaEditPrayer => 'نماز';
+  @override
+  String get qazaEditDate => 'اصل تاریخ';
+  @override
+  String get qazaEditDateHelp => 'قضا کی اصل تاریخ منتخب کریں';
+  @override
+  String get qazaSaveChanges => 'تبدیلیاں محفوظ کریں';
+  @override
+  String get qazaDeleteRecordTitle => 'قضا ریکارڈ حذف کریں؟';
+  @override
+  String qazaDeleteRecordMessage(String date, String prayer) =>
+      '$date کی $prayer قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔';
+  @override
+  String get qazaRecordUpdated => 'قضا ریکارڈ اپ ڈیٹ ہو گیا۔';
+  @override
+  String qazaDuplicateRecord(String prayer, String date) =>
+      '$date کی $prayer قضا پہلے سے موجود ہے۔';
+  @override
+  String get qazaRecordUpdateFailed =>
+      'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+  @override
+  String get qazaRecordDeleted => 'قضا ریکارڈ حذف ہو گیا۔';
+  @override
+  String get qazaRecordDeleteFailed =>
+      'قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
   String qazaCompleteCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

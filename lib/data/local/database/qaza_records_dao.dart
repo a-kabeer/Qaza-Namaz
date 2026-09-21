@@ -288,6 +288,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return (await query.getSingle()).read(countExpression) ?? 0;
   }
 
+  Future<bool> hasRecordCombination({
+    required String userId,
+    required String prayerType,
+    required DateTime originalDate,
+    String? excludingRecordId,
+  }) async {
+    final query = select(qazaRecords)
+      ..where(
+        (row) =>
+            row.userId.equals(userId) &
+            row.prayerType.equals(prayerType) &
+            row.originalDate.equals(originalDate),
+      )
+      ..limit(2);
+    final rows = await query.get();
+    return rows.any((row) => row.id != excludingRecordId);
+  }
+
   Future<int> countPending({required String userId, String? prayerType}) =>
       count(
           userId: userId,

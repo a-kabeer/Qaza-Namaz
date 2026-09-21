@@ -182,6 +182,44 @@ class InMemoryQazaRepository
   }
 
   @override
+  Future<void> updateRecord({required QazaRecord record}) async {
+    final current = _records[record.id];
+    if (current == null || current.userId != record.userId) return;
+    final duplicate = _records.values.any(
+      (candidate) =>
+          candidate.id != record.id &&
+          candidate.userId == record.userId &&
+          candidate.prayerType == record.prayerType &&
+          _sameDate(candidate.originalDate, record.originalDate),
+    );
+    if (duplicate) {
+      throw StateError('A Qaza record already exists for this prayer and date.');
+    }
+    _records[record.id] = record;
+    _recordChange(
+      userId: record.userId,
+      type: QazaRemoteChangeType.update,
+      records: [record],
+    );
+  }
+
+  @override
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    final current = _records[recordId];
+    if (current == null || current.userId != userId) return;
+    _records.remove(recordId);
+    _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.delete,
+      records: const <QazaRecord>[],
+      recordIds: [recordId],
+    );
+  }
+
+  @override
   Future<void> completeRecord(
           {required String userId,
           required String recordId,
@@ -306,6 +344,31 @@ class InMemoryQazaRepository
           type: QazaRemoteChangeType.upsert,
           records: records,
         );
+      case SyncOpType.update:
+        for (final operation in operations) {
+          if (operation.record != null) {
+            await updateRecord(record: operation.record!);
+          }
+        }
+        final updateLatest = await getLatestChange(userId: userId);
+        if (updateLatest == null) {
+          throw StateError('update produced no remote change');
+        }
+        return updateLatest;
+      case SyncOpType.delete:
+        for (final operation in operations) {
+          if (operation.targetRecordId != null) {
+            await deleteRecord(
+              userId: userId,
+              recordId: operation.targetRecordId!,
+            );
+          }
+        }
+        final deleteLatest = await getLatestChange(userId: userId);
+        if (deleteLatest == null) {
+          throw StateError('delete produced no remote change');
+        }
+        return deleteLatest;
       case SyncOpType.complete:
         await completeRecords(
           userId: userId,
@@ -362,6 +425,7 @@ class InMemoryQazaRepository
     required List<QazaRecord> records,
     int? generation,
     String idPrefix = 'change',
+    List<String> recordIds = const <String>[],
   }) {
     _changeSequence++;
     final cursor = QazaRemoteChangeCursor(
@@ -375,6 +439,7 @@ class InMemoryQazaRepository
       type: type,
       cursor: cursor,
       records: List<QazaRecord>.unmodifiable(records),
+      recordIds: List<String>.unmodifiable(recordIds),
     );
     (_changesByUser[userId] ??= <QazaRemoteChange>[]).add(change);
     return cursor;

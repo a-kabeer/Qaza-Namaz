@@ -7,6 +7,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_screen.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -257,6 +258,82 @@ void main() {
       expect(state.selected.length, 1);
     });
 
+    test('edits a record and keeps its identity', () async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+      ]);
+      final container = await _container(repository);
+      container.listen(qazaTrackerControllerProvider, (_, __) {});
+      await _settle(container);
+      final record =
+          container.read(qazaTrackerControllerProvider).records.single;
+
+      await container.read(qazaTrackerControllerProvider.notifier).updateRecord(
+            record.copyWith(
+              prayerType: PrayerType.zuhr,
+              originalDate: DateTime(2025, 2, 3),
+            ),
+          );
+
+      final updated = (await repository.getPage(
+        userId: 'test-user',
+        limit: 50,
+      ))
+          .records
+          .single;
+      expect(updated.id, record.id);
+      expect(updated.prayerType, PrayerType.zuhr);
+      expect(updated.originalDate, DateTime(2025, 2, 3));
+      expect(updated.status, QazaStatus.pending);
+    });
+
+    test('rejects an edit that would create a duplicate prayer/date pair',
+        () async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+        _record(prayer: PrayerType.zuhr, date: DateTime(2025, 2, 1)),
+      ]);
+      final container = await _container(repository);
+      container.listen(qazaTrackerControllerProvider, (_, __) {});
+      await _settle(container);
+      final records =
+          container.read(qazaTrackerControllerProvider).records.toList();
+
+      await expectLater(
+        container.read(qazaTrackerControllerProvider.notifier).updateRecord(
+              records.first.copyWith(
+                prayerType: PrayerType.zuhr,
+                originalDate: DateTime(2025, 2, 1),
+              ),
+            ),
+        throwsA(isA<QazaDuplicateRecordException>()),
+      );
+      final state = container.read(qazaTrackerControllerProvider);
+      expect(state.recordMutating, isFalse);
+      expect(state.records, isNotEmpty);
+    });
+
+    test('deletes a record from the bounded tracker', () async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+      ]);
+      final container = await _container(repository);
+      container.listen(qazaTrackerControllerProvider, (_, __) {});
+      await _settle(container);
+      final id =
+          container.read(qazaTrackerControllerProvider).records.single.id;
+
+      await container.read(qazaTrackerControllerProvider.notifier).deleteRecord(id);
+
+      expect(
+        (await repository.getPage(userId: 'test-user', limit: 50)).records,
+        isEmpty,
+      );
+    });
+
     test('never asks the repository for the full ledger', () async {
       final delegate = InMemoryQazaRepository();
       await delegate.addRecords([
@@ -326,6 +403,72 @@ void main() {
       expect(
           find.byKey(const Key('qaza_tracker_filtered_empty')), findsOneWidget);
       expect(find.byKey(const Key('qaza_tracker_empty')), findsNothing);
+    });
+
+    testWidgets('record actions expose edit and delete without changing selection',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+      ]);
+      await pump(tester, repository);
+
+      expect(
+        find.byKey(const Key(
+          'qaza_record_actions_test-user_fajr_2025-01-01',
+        )),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key(
+          'qaza_record_actions_test-user_fajr_2025-01-01',
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      await tester.tap(find.text('Edit').last);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('qaza_record_edit_save')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('qaza_record_edit_save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Qaza record updated.'), findsOneWidget);
+      expect(
+        find.byKey(const Key(
+          'qaza_record_actions_test-user_fajr_2025-01-01',
+        )),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('delete action requires confirmation', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+      ]);
+      await pump(tester, repository);
+
+      await tester.tap(
+        find.byKey(const Key(
+          'qaza_record_actions_test-user_fajr_2025-01-01',
+        )),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Qaza record?'), findsOneWidget);
+      await tester.tap(find.text('Delete').last);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
     });
 
     testWidgets('selecting records reveals the bulk completion bar',
