@@ -385,6 +385,18 @@ class DriftQazaLocalStore extends QazaLocalStore {
       );
 
   @override
+  Future<List<QazaRecord>> undoCompletions({
+    required String userId,
+    required Map<String, DateTime> expectedCompletedAt,
+    required DateTime undoneAt,
+  }) =>
+      _database.qazaRecordsDao.undoCompletions(
+        userId: userId,
+        expectedCompletedAt: expectedCompletedAt,
+        undoneAt: undoneAt,
+      );
+
+  @override
   Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
     if (records.isEmpty) return;
     for (final record in records) {
