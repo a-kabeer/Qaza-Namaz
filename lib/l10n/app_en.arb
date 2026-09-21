@@ -588,7 +588,7 @@
   "appLockUnavailable": "Device authentication is not available. Set up a screen lock or supported biometric and try again.",
   "appLockCanceled": "Unlock canceled. Your Qaza data is still protected.",
   "appLockTemporarilyLocked": "Device authentication is temporarily locked. Wait a moment and try again.",
-  "appLockFailed": "Device authentication failed. Please try again."
+  "appLockFailed": "Device authentication failed. Please try again.",
   "homeTodayProgressHeader": "Today's Progress",
   "homeNextQazaCurrentPrayer": "Next Qaza (Current Prayer)",
   "homeOldestPending": "Oldest Pending",
