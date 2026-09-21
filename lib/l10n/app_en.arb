@@ -151,6 +151,22 @@
     "description": "Bulk completion action label",
     "placeholders": { "count": {"type": "int"} }
   },
+  "qazaRecordActions": "Record actions",
+  "qazaEditRecord": "Edit",
+  "qazaDeleteRecord": "Delete",
+  "qazaEditRecordTitle": "Edit Qaza",
+  "qazaEditPrayer": "Prayer",
+  "qazaEditDate": "Original date",
+  "qazaEditDateHelp": "Select original Qaza date",
+  "qazaSaveChanges": "Save changes",
+  "qazaDeleteRecordTitle": "Delete Qaza record?",
+  "qazaDeleteRecordMessage": "Permanently delete the {prayer} Qaza from {date}? This cannot be undone.",
+  "qazaRecordUpdated": "Qaza record updated.",
+  "qazaDuplicateRecord": "{prayer} Qaza already exists for {date}.",
+  "qazaRecordUpdateFailed": "Qaza record could not be updated. Please try again.",
+  "qazaRecordDeleted": "Qaza record deleted.",
+  "qazaRecordDeleteFailed": "Qaza record could not be deleted. Please try again.",
+
   "qazaCompletedCount": "{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}",
   "@qazaCompletedCount": {
     "description": "Confirmation after bulk completion",
