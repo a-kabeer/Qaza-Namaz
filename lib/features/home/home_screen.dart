@@ -100,11 +100,10 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Align(
                   alignment: AlignmentDirectional.centerEnd,
-                  child: TextButton.icon(
+                  child: TextButton(
                     key: const Key('home_view_all_qaza'),
                     onPressed: () => openQazaAll(ref),
-                    icon: const Icon(Icons.open_in_new_rounded),
-                    label: Text(l10n.homeViewAllQaza),
+                    child: Text(l10n.homeViewAllQaza),
                   ),
                 ),
                 const SizedBox(height: 8),
