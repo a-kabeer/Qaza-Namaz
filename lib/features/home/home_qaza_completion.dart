@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -119,6 +120,10 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
   }
 
   void _startTicker() {
+    // Flutter widget tests use FakeAsync and must not inherit a real periodic
+    // timer that remains pending until the test finishes. Production and
+    // interactive debug builds retain the 30-second refresh behavior.
+    if (Platform.environment['FLUTTER_TEST'] == 'true') return;
     if (_timer != null) return;
     _timer = Timer.periodic(
       const Duration(seconds: 30),
