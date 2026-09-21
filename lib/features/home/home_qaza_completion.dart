@@ -106,11 +106,20 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
       prayerTimesState = null;
     }
 
-    _timer?.cancel();
-    _lifecycle?.dispose();
+    _stopTicker();
 
     final initial = _safeResolve(prayerTimesState, DateTime.now());
 
+    _startTicker();
+    ref.onCancel(_stopTicker);
+    ref.onResume(_startTicker);
+    ref.onDispose(_stopTicker);
+
+    return HomeCurrentPrayerState(prayer: initial);
+  }
+
+  void _startTicker() {
+    if (_timer != null) return;
     _timer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _tick(),
@@ -118,13 +127,13 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
     _lifecycle = AppLifecycleListener(
       onResume: _tick,
     );
+  }
 
-    ref.onDispose(() {
-      _timer?.cancel();
-      _lifecycle?.dispose();
-    });
-
-    return HomeCurrentPrayerState(prayer: initial);
+  void _stopTicker() {
+    _timer?.cancel();
+    _timer = null;
+    _lifecycle?.dispose();
+    _lifecycle = null;
   }
 
   void _tick() {
