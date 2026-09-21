@@ -672,6 +672,37 @@ abstract class AppLocalizations {
   /// **'Completed {date}'**
   String qazaCompletedOn(String date);
 
+  /// Record action menu.
+  String get qazaRecordActions;
+  /// Edit a tracker record.
+  String get qazaEditRecord;
+  /// Delete a tracker record.
+  String get qazaDeleteRecord;
+  /// Edit Qaza dialog title.
+  String get qazaEditRecordTitle;
+  /// Prayer field label.
+  String get qazaEditPrayer;
+  /// Original-date field label.
+  String get qazaEditDate;
+  /// Original-date picker help.
+  String get qazaEditDateHelp;
+  /// Save tracker edit.
+  String get qazaSaveChanges;
+  /// Delete confirmation title.
+  String get qazaDeleteRecordTitle;
+  /// Delete confirmation message.
+  String qazaDeleteRecordMessage(String date, String prayer);
+  /// Successful update.
+  String get qazaRecordUpdated;
+  /// Duplicate tracker combination.
+  String qazaDuplicateRecord(String prayer, String date);
+  /// Failed update.
+  String get qazaRecordUpdateFailed;
+  /// Successful deletion.
+  String get qazaRecordDeleted;
+  /// Failed deletion.
+  String get qazaRecordDeleteFailed;
+
   /// Bulk completion action label
   ///
   /// In en, this message translates to:
