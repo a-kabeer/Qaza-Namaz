@@ -8,7 +8,6 @@ import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
 import '../prayer_times/presentation/prayer_times_screen.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
@@ -143,8 +142,8 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 selectedIcon: const Icon(Icons.mosque_rounded),
                 label: l10n.navHome),
             NavigationDestination(
-                icon: const Icon(Icons.dashboard_outlined),
-                selectedIcon: const Icon(Icons.dashboard_rounded),
+                icon: const Icon(Icons.checklist_outlined),
+                selectedIcon: const Icon(Icons.checklist_rounded),
                 label: l10n.navQaza),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
