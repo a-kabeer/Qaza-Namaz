@@ -7,6 +7,7 @@ import '../../core/constants/prayer_types.dart';
 import '../prayer_times/domain/prayer_schedule.dart';
 import '../prayer_times/domain/prayer_times_models.dart';
 import '../prayer_times/prayer_times_providers.dart';
+import '../prayer_times/presentation/prayer_times_controller.dart';
 
 enum HomePrayerSelectionMode {
   automatic,
