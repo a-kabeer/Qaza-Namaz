@@ -71,7 +71,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings_data_cloud')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Cloud Sync'), findsOneWidget);
+    expect(find.text('Cloud backup'), findsOneWidget);
     expect(find.text('Export & Import'), findsOneWidget);
     expect(find.text('Qaza count'), findsOneWidget);
     expect(find.byKey(const Key('data_cloud_delete')), findsOneWidget);
