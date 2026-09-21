@@ -415,7 +415,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                   row.userId.equals(userId) & row.id.equals(entry.key)))
             .write(QazaRecordsCompanion(
           status: const Value(QazaStatus.pending.name),
-          completedAt: const Value(null),
+          completedAt: Value(null),
           updatedAt: Value(undoneAt),
         ));
         if (updated > 0) {
