@@ -350,13 +350,13 @@ class _ProgressOverview extends StatelessWidget {
 }
 
 
-class _TodayProgress extends StatelessWidget {
+class _TodayProgress extends ConsumerWidget {
   const _TodayProgress({required this.state});
 
   final AsyncValue<HomeDailyProgress> state;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return AppCard(
       key: const Key('home_today_progress'),
@@ -367,6 +367,11 @@ class _TodayProgress extends StatelessWidget {
             const Icon(Icons.refresh_rounded),
             const SizedBox(width: 12),
             Expanded(child: Text(l10n.homeDailyProgressError)),
+            TextButton(
+              key: const Key('home_daily_progress_retry'),
+              onPressed: () => ref.invalidate(homeDailyProgressProvider),
+              child: Text(l10n.commonRetry),
+            ),
           ],
         ),
         data: (progress) => Column(
@@ -447,7 +452,6 @@ class _QazaPlanCard extends ConsumerWidget {
   final HomeQazaPlanState plan;
   final DateTime now;
 
-  @override
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
