@@ -50,13 +50,11 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     PrayerTimesScreen(),
   ];
 
-  /// The four primary destinations defined by the project navigation plan.
-  ///
-  /// Calculator remains contextual from Home/Qaza, while Prayer Times remains
-  /// contextual from Settings so it does not displace the core Qaza tab.
+  /// The five primary destinations in the bottom navigation.
   static const _barDestinations = [
     WorkspaceDestination.home,
     WorkspaceDestination.qaza,
+    WorkspaceDestination.prayerTimes,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -100,8 +98,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     // scroll position and in-progress state.
     _mounted.add(index);
 
-    // Calculator and Prayer Times are contextual destinations, so while one
-    // is open the bar keeps Home lit rather than showing no primary tab.
+    // Calculator remains contextual; Prayer Times is a primary destination.
     final barIndex = _barDestinations.indexOf(destination);
     final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
 
@@ -144,6 +141,10 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
                 label: l10n.navQaza),
+            NavigationDestination(
+                icon: const Icon(Icons.schedule_outlined),
+                selectedIcon: const Icon(Icons.schedule_rounded),
+                label: l10n.navPrayerTimes),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
