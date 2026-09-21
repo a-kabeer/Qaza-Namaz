@@ -64,11 +64,7 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
   ///
   /// Returning false means this exact target completion has already been
   /// celebrated, preventing duplicate dialogs from rebuilds or re-entry.
-  Future<bool> claimDailyTargetCelebration({
-    required String userId,
-    required DateTime date,
-    required int target,
-  }) async {
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final dateKey =
         '${date.year.toString().padLeft(4, '0')}-'
@@ -101,8 +97,6 @@ class HomeDailyProgress {
   final int completed;
   final int target;
 
-  int get remainingToTarget => (target - completed).clamp(0, target).toInt();
-
   double get percentage {
     if (target <= 0) return 0;
     return (completed / target).clamp(0, 1).toDouble();
@@ -129,12 +123,7 @@ final homeDailyProgressProvider =
   return HomeDailyProgress(completed: completed, target: target);
 });
 
-
-int homeDaysUntilCompletion({
-  required int pending,
-  required int dailyTarget,
-  required int completedToday,
-}) {
+) {
   if (pending <= 0 || dailyTarget <= 0) return 0;
   final capacityToday =
       (dailyTarget - completedToday).clamp(0, dailyTarget).toInt();
@@ -142,13 +131,7 @@ int homeDaysUntilCompletion({
   if (afterToday <= 0) return 0;
   return (afterToday + dailyTarget - 1) ~/ dailyTarget;
 }
-
-DateTime homeEstimatedCompletionDate({
-  required DateTime now,
-  required int pending,
-  required int dailyTarget,
-  required int completedToday,
-}) =>
+) =>
     DateTime(now.year, now.month, now.day).add(
       Duration(
         days: homeDaysUntilCompletion(
