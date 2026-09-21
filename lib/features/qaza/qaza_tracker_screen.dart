@@ -485,8 +485,8 @@ class _RecordRow extends StatelessWidget {
 
     return Semantics(
       selected: selected,
-      label: '\${originalDate}, \${record.prayerType.localizedLabel(l10n)}, '
-          '\${record.status.localizedLabel(l10n)}',
+      label: '$originalDate, ${record.prayerType.localizedLabel(l10n)}, '
+          '${record.status.localizedLabel(l10n)}',
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: onToggle == null
