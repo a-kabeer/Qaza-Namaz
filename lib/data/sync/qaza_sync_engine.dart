@@ -314,6 +314,7 @@ class QazaSyncEngine {
                 recordId: recordId,
               );
             }
+            await _notifyLocalDataChanged();
           }
           await _mergeRemoteRecords(
             userId: userId,
