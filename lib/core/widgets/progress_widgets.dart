@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class ProgressRing extends StatelessWidget {
   const ProgressRing(
       {super.key,
@@ -14,6 +16,7 @@ class ProgressRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final charts = AppChartColors.of(context);
     return SizedBox(
       width: size,
       height: size,
@@ -23,8 +26,8 @@ class ProgressRing extends StatelessWidget {
           CircularProgressIndicator(
             value: progress,
             strokeWidth: strokeWidth,
-            backgroundColor: scheme.onPrimaryContainer.withValues(alpha: .18),
-            color: scheme.tertiary,
+            backgroundColor: charts.track,
+            color: charts.primary,
           ),
           Text(
             '${(progress * 100).round()}%',
