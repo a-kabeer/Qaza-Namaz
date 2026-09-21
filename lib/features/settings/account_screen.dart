@@ -9,6 +9,7 @@ import '../../core/widgets/date_display.dart';
 import '../../data/sync/sync_state.dart' as sync_models;
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/entities/app_user.dart';
+import 'settings_screen.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -146,7 +147,7 @@ class AccountScreen extends ConsumerWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const DataCloudScreen(),
+                          builder: (_) => DataCloudScreen(),
                         ),
                       ),
                     ),
