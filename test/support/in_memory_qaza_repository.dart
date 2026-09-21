@@ -134,6 +134,26 @@ class InMemoryQazaRepository
   }
 
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    if (!from.isBefore(to)) {
+      throw ArgumentError('from must be before to');
+    }
+    return _records.values
+        .where((record) =>
+            record.userId == userId && record.status == QazaStatus.completed)
+        .where((record) {
+      final completedAt = record.completedAt;
+      return completedAt != null &&
+          !completedAt.isBefore(from) &&
+          completedAt.isBefore(to);
+    }).length;
+  }
+
+  @override
   Future<void> addRecord(QazaRecord record) async {
     if (!_storeAddRecord(record)) return;
     _recordChange(
