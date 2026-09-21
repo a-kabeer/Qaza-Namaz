@@ -179,7 +179,7 @@ class HomeSelectedPrayerState {
 ///
 /// Automatic mode follows Prayer Time. Manual mode follows the selected chip
 /// until the user switches back to Auto.
-final homeSelectedPrayerProvider = Provider<HomeSelectedPrayerState>((ref) {
+final homeSelectedPrayerProvider = Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
   if (selection.mode == HomePrayerSelectionMode.manual) {
     return HomeSelectedPrayerState(
