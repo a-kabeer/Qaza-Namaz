@@ -34,7 +34,9 @@ class HomeScreen extends ConsumerWidget {
 
   Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(progressSummaryProvider);
-    ref.invalidate(homeNextQazaProvider);
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
     ref.invalidate(homeDailyProgressProvider);
     await ref.read(progressSummaryProvider.future);
   }
