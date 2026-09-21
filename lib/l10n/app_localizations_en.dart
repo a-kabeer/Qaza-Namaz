@@ -236,7 +236,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String homePerDay(int count) {
-    return '$count per day';
+    return '$count/day';
   }
 
   @override
