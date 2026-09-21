@@ -7,6 +7,7 @@ import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
