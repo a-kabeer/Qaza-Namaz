@@ -344,6 +344,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get qazaRecordActions => 'Record actions';
+  @override
+  String get qazaEditRecord => 'Edit';
+  @override
+  String get qazaDeleteRecord => 'Delete';
+  @override
+  String get qazaEditRecordTitle => 'Edit Qaza';
+  @override
+  String get qazaEditPrayer => 'Prayer';
+  @override
+  String get qazaEditDate => 'Original date';
+  @override
+  String get qazaEditDateHelp => 'Select original Qaza date';
+  @override
+  String get qazaSaveChanges => 'Save changes';
+  @override
+  String get qazaDeleteRecordTitle => 'Delete Qaza record?';
+  @override
+  String qazaDeleteRecordMessage(String date, String prayer) =>
+      'Permanently delete the $prayer Qaza from $date? This cannot be undone.';
+  @override
+  String get qazaRecordUpdated => 'Qaza record updated.';
+  @override
+  String qazaDuplicateRecord(String prayer, String date) =>
+      '$prayer Qaza already exists for $date.';
+  @override
+  String get qazaRecordUpdateFailed =>
+      'Qaza record could not be updated. Please try again.';
+  @override
+  String get qazaRecordDeleted => 'Qaza record deleted.';
+  @override
+  String get qazaRecordDeleteFailed =>
+      'Qaza record could not be deleted. Please try again.';
+
+  @override
   String qazaCompleteCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
