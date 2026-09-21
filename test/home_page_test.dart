@@ -583,8 +583,6 @@ void main() {
       await tester.pumpAndSettle();
 
       final exception = tester.takeException();
-      debugDumpRenderTree();
-      debugPrint('TASK10_HOME_DOUBLE_SCALE_EXCEPTION: $exception');
       expect(exception, isNull);
     });
   });
