@@ -265,7 +265,13 @@ void main() {
       await pumpHome(tester, repository);
 
       expect(find.byKey(const Key('home_next_qaza')), findsOneWidget);
-      expect(find.text('Isha'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('home_next_qaza')),
+          matching: find.text('Isha'),
+        ),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('home_complete_next_qaza')),
           findsOneWidget);
       expect(find.text('01 Jan 2026'), findsOneWidget);
