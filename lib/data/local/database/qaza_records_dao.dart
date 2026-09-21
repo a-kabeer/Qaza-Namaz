@@ -268,6 +268,26 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           limit: limit,
           prayerType: prayerType,
           status: QazaStatus.completed.name);
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    if (!from.isBefore(to)) {
+      throw ArgumentError('from must be before to');
+    }
+    final countExpression = qazaRecords.id.count();
+    final query = selectOnly(qazaRecords)
+      ..addColumns([countExpression])
+      ..where(
+        qazaRecords.userId.equals(userId) &
+            qazaRecords.status.equals(QazaStatus.completed.name) &
+            qazaRecords.completedAt.isBiggerOrEqualValue(from) &
+            qazaRecords.completedAt.isSmallerThanValue(to),
+      );
+    return (await query.getSingle()).read(countExpression) ?? 0;
+  }
+
   Future<int> countPending({required String userId, String? prayerType}) =>
       count(
           userId: userId,
