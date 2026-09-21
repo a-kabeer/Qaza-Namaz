@@ -495,25 +495,32 @@ class _QazaPlanCard extends ConsumerWidget {
           const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
-              final selector = DropdownButton<int>(
-                key: const Key('home_daily_target'),
-                value: _targetOptions.contains(target)
-                    ? target
-                    : HomeQazaPlanState.defaultDailyTarget,
-                items: [
-                  for (final value in _targetOptions)
-                    DropdownMenuItem<int>(
-                      value: value,
-                      child: Text(l10n.homePerDay(value)),
-                    ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    ref
-                        .read(homeQazaPlanProvider.notifier)
-                        .setDailyTarget(value);
-                  }
-                },
+              final selector = SizedBox(
+                width: 140,
+                child: DropdownButton<int>(
+                  key: const Key('home_daily_target'),
+                  isExpanded: true,
+                  value: _targetOptions.contains(target)
+                      ? target
+                      : HomeQazaPlanState.defaultDailyTarget,
+                  items: [
+                    for (final value in _targetOptions)
+                      DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(
+                          l10n.homePerDay(value),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref
+                          .read(homeQazaPlanProvider.notifier)
+                          .setDailyTarget(value);
+                    }
+                  },
+                ),
               );
 
               if (constraints.maxWidth < 400) {
