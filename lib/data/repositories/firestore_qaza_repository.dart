@@ -172,6 +172,24 @@ class FirestoreQazaRepository
       QazaProgressSummary.fromRecords(await getRecords(userId: userId));
 
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    if (!from.isBefore(to)) {
+      throw ArgumentError('from must be before to');
+    }
+    final snapshot = await _recordsCollection(userId)
+        .where('status', isEqualTo: QazaStatus.completed.name)
+        .where('completedAt',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(from))
+        .where('completedAt', isLessThan: Timestamp.fromDate(to))
+        .get();
+    return snapshot.size;
+  }
+
+  @override
   Future<void> addRecord(QazaRecord record) async => addRecords([record]);
 
   @override
