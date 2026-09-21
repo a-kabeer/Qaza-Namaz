@@ -328,6 +328,18 @@ class _FailingRepository
   Future<QazaProgressSummary> getProgressSummary({required String userId}) =>
       _delegate.getProgressSummary(userId: userId);
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _delegate.countCompletedBetween(
+        userId: userId,
+        from: from,
+        to: to,
+      );
+
+  @override
   Future<void> addRecord(QazaRecord record) {
     if (failWrites) return Future.error(StateError('simulated remote outage'));
     return _delegate.addRecord(record);

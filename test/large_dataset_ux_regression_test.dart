@@ -106,6 +106,18 @@ class _CountingRepository implements QazaRepository {
   }
 
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      delegate.countCompletedBetween(
+        userId: userId,
+        from: from,
+        to: to,
+      );
+
+  @override
   Future<void> addRecord(QazaRecord record) => delegate.addRecord(record);
 
   @override

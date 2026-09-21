@@ -44,6 +44,30 @@ class QazaService {
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
 
+  /// Returns the oldest pending Qaza across all prayers.
+  ///
+  /// The repository keeps the ordering deterministic: originalDate ASC,
+  /// then id ASC. Home uses this as the single "next Qaza" action.
+  Future<QazaRecord?> oldestPendingOverall({required String userId}) async {
+    final page = await repository.getPage(
+      userId: userId,
+      limit: 1,
+      status: QazaStatus.pending,
+    );
+    return page.records.isEmpty ? null : page.records.first;
+  }
+
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      repository.countCompletedBetween(
+        userId: userId,
+        from: from,
+        to: to,
+      );
+
   /// The most recent pending record for [prayerType], or null when there is
   /// none.
   ///

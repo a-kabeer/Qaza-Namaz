@@ -387,6 +387,26 @@ class OfflineFirstQazaRepository implements QazaRepository {
   }
 
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    if (userId != _activeUserId) return 0;
+    await ensureHydrated();
+    final generation = _sessionGeneration;
+    final count = await _localStore.countCompletedBetween(
+      userId: userId,
+      from: from,
+      to: to,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return 0;
+    }
+    return count;
+  }
+
+  @override
   Future<QazaProgressSummary> getProgressSummary({
     required String userId,
   }) async {

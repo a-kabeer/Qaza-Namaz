@@ -6,14 +6,16 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/prayer_progress_row.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../calculator/calculator_screen.dart';
+import 'home_next_qaza_card.dart';
+import 'home_plan.dart';
 import '../qaza/add_qaza_screen.dart';
-import '../qaza/complete_qaza_section.dart';
 import '../qaza/qaza_navigation.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -23,6 +25,15 @@ class HomeScreen extends ConsumerWidget {
     await Navigator.push<void>(
         context, MaterialPageRoute(builder: (_) => page));
     ref.invalidate(progressSummaryProvider);
+    ref.invalidate(homeNextQazaProvider);
+    ref.invalidate(homeDailyProgressProvider);
+  }
+
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(homeNextQazaProvider);
+    ref.invalidate(homeDailyProgressProvider);
+    await ref.read(progressSummaryProvider.future);
   }
 
   @override
@@ -36,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
         loading: () => const _HomeSkeleton(),
         error: (_, __) => _message(l10n.homeProgressError),
         data: (summary) => RefreshIndicator(
-          onRefresh: () => CompleteQazaSection.refresh(ref),
+          onRefresh: () => _refresh(ref),
           child: _buildContent(context, ref, summary),
         ),
       ),
@@ -56,11 +67,13 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
+    final plan = ref.watch(homeQazaPlanProvider);
+    final dailyState = ref.watch(homeDailyProgressProvider);
+    final now = ref.watch(homeNowProvider);
+
     return ListView(
+      key: const Key('home_dashboard'),
       physics: const AlwaysScrollableScrollPhysics(),
-      // The workspace FAB floats over this list, so the last prayer needs
-      // room to scroll clear of it.
-      // No FAB is present in the empty state, so no FAB clearance is needed.
       padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
       children: [
         Center(
@@ -69,11 +82,31 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Primary daily action: deliberately first so the user never
+                // has to scroll past statistics to find the next Qaza.
+                const HomeNextQazaCard(),
+                const SizedBox(height: 12),
                 _ProgressOverview(progress: overall),
-                const SizedBox(height: 20),
-                // Keep the reusable completion section on Home.
-                const CompleteQazaSection(keyPrefix: 'home_complete'),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                _TodayProgress(state: dailyState),
+                const SizedBox(height: 12),
+                _QazaPlanCard(
+                  pending: overall.pending,
+                  completedToday: dailyState.valueOrNull?.completed ?? 0,
+                  dailyState: dailyState,
+                  plan: plan,
+                  now: now,
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton(
+                    key: const Key('home_view_all_qaza'),
+                    onPressed: () => openQazaAll(ref),
+                    child: Text(l10n.homeViewAllQaza),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   l10n.homeProgressTitle,
                   style: Theme.of(context)
@@ -271,33 +304,49 @@ class _ProgressOverview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.homeProgressTitle,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Text(
+                l10n.homeProgressTitle,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(
-                  '${progress.completed} of ${progress.total} ${l10n.statusCompleted.toLowerCase()} · $percent%',
-                  key: const Key('home_progress_summary'),
-                  maxLines: 2,
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+              );
+              final summary = Text(
+                '${progress.completed} of ${progress.total} ${l10n.statusCompleted.toLowerCase()} · $percent%',
+                key: const Key('home_progress_summary'),
+                maxLines: 2,
+                textAlign: constraints.maxWidth < 400
+                    ? TextAlign.start
+                    : TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            ],
+              );
+
+              if (constraints.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    title,
+                    const SizedBox(height: 4),
+                    summary,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: title),
+                  const SizedBox(width: 12),
+                  Flexible(child: summary),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -316,3 +365,195 @@ class _ProgressOverview extends StatelessWidget {
   }
 }
 
+
+class _TodayProgress extends ConsumerWidget {
+  const _TodayProgress({required this.state});
+
+  final AsyncValue<HomeDailyProgress> state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return AppCard(
+      key: const Key('home_today_progress'),
+      child: state.when(
+        loading: () => const _TodayProgressSkeleton(),
+        error: (_, __) => Row(
+          children: [
+            const Icon(Icons.refresh_rounded),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l10n.homeDailyProgressError)),
+            TextButton(
+              key: const Key('home_daily_progress_retry'),
+              onPressed: () => ref.invalidate(homeDailyProgressProvider),
+              child: Text(l10n.commonRetry),
+            ),
+          ],
+        ),
+        data: (progress) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.homeTodayProgress,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.homeDailyProgress(progress.completed, progress.target),
+              key: const Key('home_daily_progress_summary'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                key: const Key('home_daily_progress_bar'),
+                value: progress.percentage,
+                minHeight: 6,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.homeDailyRemaining(progress.remainingToTarget),
+              key: const Key('home_daily_remaining'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayProgressSkeleton extends StatelessWidget {
+  const _TodayProgressSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SkeletonText(width: 150, height: 18),
+        SizedBox(height: 10),
+        SkeletonText(width: 120, height: 24),
+        SizedBox(height: 10),
+        SkeletonBox(
+          width: double.infinity,
+          height: 6,
+          borderRadius: BorderRadius.all(Radius.circular(999)),
+        ),
+        SizedBox(height: 8),
+        SkeletonText(width: 100, height: 12),
+      ],
+    );
+  }
+}
+
+class _QazaPlanCard extends ConsumerWidget {
+  const _QazaPlanCard({
+    required this.pending,
+    required this.completedToday,
+    required this.dailyState,
+    required this.plan,
+    required this.now,
+  });
+
+  static const _targetOptions = [1, 2, 3, 5, 10, 15, 20, 30, 50];
+
+  final int pending;
+  final int completedToday;
+  final AsyncValue<HomeDailyProgress> dailyState;
+  final HomeQazaPlanState plan;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final target = plan.dailyTarget;
+    final estimate = dailyState.valueOrNull == null || pending == 0
+        ? null
+        : homeEstimatedCompletionDate(
+            now: now,
+            pending: pending,
+            dailyTarget: target,
+            completedToday: completedToday,
+          );
+
+    return AppCard(
+      key: const Key('home_qaza_plan'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.homeQazaPlan,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final selector = SizedBox(
+                width: 140,
+                child: DropdownButton<int>(
+                  key: const Key('home_daily_target'),
+                  isExpanded: true,
+                  value: _targetOptions.contains(target)
+                      ? target
+                      : HomeQazaPlanState.defaultDailyTarget,
+                  items: [
+                    for (final value in _targetOptions)
+                      DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(
+                          l10n.homePerDay(value),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      ref
+                          .read(homeQazaPlanProvider.notifier)
+                          .setDailyTarget(value);
+                    }
+                  },
+                ),
+              );
+
+              if (constraints.maxWidth < 400) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.homeDailyTarget),
+                    const SizedBox(height: 4),
+                    selector,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: Text(l10n.homeDailyTarget)),
+                  selector,
+                ],
+              );
+            },
+          ),
+          if (estimate != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              l10n.homeEstimatedCompletion(
+                DateFormatters.formatGregorianDatePadded(estimate),
+              ),
+              key: const Key('home_estimated_completion'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

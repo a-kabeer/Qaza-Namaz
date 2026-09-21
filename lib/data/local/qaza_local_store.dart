@@ -212,6 +212,23 @@ abstract class QazaLocalStore {
     ];
   }
 
+  /// Counts completions in [from, to) without materializing unrelated records.
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final snapshot = await load();
+    return (snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        .where((record) => record.status == QazaStatus.completed)
+        .where((record) {
+      final completedAt = record.completedAt;
+      return completedAt != null &&
+          !completedAt.isBefore(from) &&
+          completedAt.isBefore(to);
+    }).length;
+  }
+
   Future<QazaProgressSummary> getProgressSummary(
       {required String userId}) async {
     final snapshot = await load();

@@ -93,6 +93,18 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<int> countCompletedBetween({
+    required String userId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _database.qazaRecordsDao.countCompletedBetween(
+        userId: userId,
+        from: from,
+        to: to,
+      );
+
+  @override
   Future<QazaProgressSummary> getProgressSummary(
       {required String userId}) async {
     final counts =

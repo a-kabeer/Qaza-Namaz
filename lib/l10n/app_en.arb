@@ -81,6 +81,32 @@
   "@homeCompletedCount": {"placeholders": {"count": {"type": "int"}}},
   "homeProgressTitle": "Your progress",
   "homeProgressError": "Unable to load your Qaza progress. Pull to retry.",
+  "homeTodayProgress": "Today's progress",
+  "homeDailyProgress": "{completed} / {target} completed",
+  "@homeDailyProgress": {
+    "placeholders": {
+      "completed": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
+  "homeDailyRemaining": "{count} remaining",
+  "@homeDailyRemaining": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "homeQazaPlan": "Qaza plan",
+  "homeDailyTarget": "Daily target",
+  "homePerDay": "{count} per day",
+  "@homePerDay": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "homeEstimatedCompletion": "Estimated completion: {date}",
+  "@homeEstimatedCompletion": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "homeNextQaza": "Next Qaza",
+  "homeCompleteNextQaza": "Complete next Qaza",
+  "homeViewAllQaza": "View all Qaza",
+  "homeDailyProgressError": "Today's progress could not be loaded.",
 
   "progressPendingCompleted": "{pending} pending • {completed} completed",
   "@progressPendingCompleted": {

@@ -216,6 +216,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load your Qaza progress. Pull to retry.';
 
   @override
+  String get homeTodayProgress => 'Today\'s progress';
+
+  @override
+  String homeDailyProgress(int completed, int target) {
+    return '$completed / $target completed';
+  }
+
+  @override
+  String homeDailyRemaining(int count) {
+    return '$count remaining';
+  }
+
+  @override
+  String get homeQazaPlan => 'Qaza plan';
+
+  @override
+  String get homeDailyTarget => 'Daily target';
+
+  @override
+  String homePerDay(int count) {
+    return '$count/day';
+  }
+
+  @override
+  String homeEstimatedCompletion(String date) {
+    return 'Estimated completion: $date';
+  }
+
+  @override
+  String get homeNextQaza => 'Next Qaza';
+
+  @override
+  String get homeCompleteNextQaza => 'Complete next Qaza';
+
+  @override
+  String get homeViewAllQaza => 'View all Qaza';
+
+  @override
+  String get homeDailyProgressError =>
+      'Today\'s progress could not be loaded.';
+
+  @override
   String progressPendingCompleted(String pending, String completed) {
     return '$pending pending • $completed completed';
   }
