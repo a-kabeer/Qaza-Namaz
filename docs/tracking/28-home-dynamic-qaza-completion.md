@@ -1,6 +1,6 @@
 # Task 28 — Home Dynamic Qaza Completion Experience
 
-**Status:** In progress  
+**Status:** Implementation complete; CI verification in progress  
 **Branch:** `task/home-dynamic-qaza`  
 **Started:** 2026-09-21  
 **Scope:** Home Screen only, using the existing Qaza completion and Prayer Time architecture.
@@ -67,10 +67,10 @@
 - [ ] Localization verified.
 - [ ] No hardcoded theme colors.
 - [ ] Relevant tests updated/added.
-- [ ] Flutter analyzer passes.
-- [ ] Linux tests pass.
-- [ ] Windows tests pass.
-- [ ] Android build checks remain healthy.
+- [x] Flutter analyzer passes.
+- [ ] Linux tests pass. *(CI run 1584 still running)*
+- [ ] Windows tests pass. *(CI run 1584 still running)*
+- [ ] Android build checks remain healthy. *(CI run 1584 still running)*
 
 ## Implementation Notes
 
@@ -82,8 +82,8 @@ The manual prayer chips are an explicit user preference. Automatic mode is the d
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Code implementation | ⏳ | In progress |
-| Tests | ⏳ | In progress |
-| CI | ⏳ | Pending |
+| Code implementation | ✅ | Implemented on \`task/home-dynamic-qaza\` |
+| Tests | ✅ | Existing Home tests updated and dynamic prayer tests added |
+| CI | ⏳ | Run 1584: Analyze ✅, Firestore ✅; Linux/Windows/Android still running |
 | Tracking document | ✅ | New standalone task document |
 | Older tracking documents preserved | ✅ | No older tracking file is modified |
