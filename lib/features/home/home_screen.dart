@@ -15,7 +15,6 @@ import '../../l10n/app_localizations.dart';
 import '../calculator/calculator_screen.dart';
 import 'home_next_qaza_card.dart';
 import 'home_plan.dart';
-import 'home_qaza_completion.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_navigation.dart';
 
