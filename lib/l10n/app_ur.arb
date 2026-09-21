@@ -413,6 +413,7 @@
   "cloudSyncProblem": "سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
   "cloudQazaCount": "قضا ریکارڈز کی تعداد",
   "cloudQazaCountValue": "{count, plural, =0{کوئی قضا ریکارڈ نہیں} =1{1 قضا ریکارڈ} other{{count} قضا ریکارڈز}}",
+  "@cloudQazaCountValue": { "placeholders": { "count": { "type": "int" } } },
   "cloudBackupStatus": "کلاؤڈ بیک اپ",
   "cloudBackupDeleted": "کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔",
   "cloudLocalVsCloudTitle": "لوکل اور کلاؤڈ ڈیٹا",
