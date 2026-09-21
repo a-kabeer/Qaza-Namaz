@@ -80,6 +80,15 @@ abstract interface class QazaRepository {
   Future<void> addRecord(QazaRecord record);
   Future<void> addRecords(List<QazaRecord> records);
 
+  /// Updates only the editable fields of a Qaza record while preserving its identity.
+  Future<void> updateRecord({required QazaRecord record});
+
+  /// Permanently deletes one Qaza record owned by [userId].
+  Future<void> deleteRecord({
+    required String userId,
+    required String recordId,
+  });
+
   Future<void> completeRecord({
     required String userId,
     required String recordId,
