@@ -486,6 +486,7 @@
   "cloudSyncProblem": "Sync problem — your data is safe on this device.",
   "cloudQazaCount": "Qaza count",
   "cloudQazaCountValue": "{count, plural, =0{No Qaza records} =1{1 Qaza record} other{{count} Qaza records}}",
+  "@cloudQazaCountValue": { "placeholders": { "count": { "type": "int" } } },
   "cloudBackupStatus": "Cloud backup",
   "cloudBackupDeleted": "Cloud copy deleted; local records remain.",
   "cloudLocalVsCloudTitle": "Local vs cloud",
