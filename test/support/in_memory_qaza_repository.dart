@@ -306,6 +306,12 @@ class InMemoryQazaRepository
   }
 
   @override
+  Future<void> deleteCloudData({required String userId}) async {
+    _records.removeWhere((_, record) => record.userId == userId);
+    _changesByUser.remove(userId);
+  }
+
+  @override
   Future<QazaRemoteChangeCursor> resetUserRecordsForSync({
     required String userId,
     required String operationId,
