@@ -40,9 +40,10 @@ class PrayerProgressRow extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final top = Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
                   CircleAvatar(
                     radius: 22,
@@ -70,10 +71,27 @@ class PrayerProgressRow extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${progress.pending}',
+                    key: Key(
+                      '${keyPrefix}_prayer_pending_${prayer.name}',
+                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.chevron_left_rounded
+                        : Icons.chevron_right_rounded,
+                  ),
                 ],
-              );
-
-              final progressLine = Row(
+              ),
+              const SizedBox(height: 8),
+              Row(
                 children: [
                   Expanded(
                     child: ClipRRect(
@@ -97,60 +115,10 @@ class PrayerProgressRow extends StatelessWidget {
                     ),
                     style: theme.textTheme.labelMedium,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${progress.pending}',
-                    key: Key(
-                      '${keyPrefix}_prayer_pending_${prayer.name}',
-                    ),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left_rounded
-                        : Icons.chevron_right_rounded,
-                  ),
                 ],
-              );
-
-              if (constraints.maxWidth < 420) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    top,
-                    const SizedBox(height: 8),
-                    progressLine,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: top),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${progress.pending}',
-                    key: Key(
-                      '${keyPrefix}_prayer_pending_${prayer.name}',
-                    ),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left_rounded
-                        : Icons.chevron_right_rounded,
-                  ),
-                ],
-              );
-            },
-          ),
-          ),
+              ),
+            ],
+          )
         ),
       ),
     );
