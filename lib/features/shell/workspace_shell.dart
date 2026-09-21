@@ -7,6 +7,7 @@ import '../auth/backup_prompt.dart';
 import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
+import '../prayer_times/presentation/prayer_times_localizations.dart';
 import '../prayer_times/presentation/prayer_times_screen.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
@@ -144,7 +145,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             NavigationDestination(
                 icon: const Icon(Icons.schedule_outlined),
                 selectedIcon: const Icon(Icons.schedule_rounded),
-                label: l10n.navPrayerTimes),
+                label: PrayerTimesStrings.title(context)),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
