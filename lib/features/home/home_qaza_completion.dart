@@ -99,12 +99,17 @@ class HomeCurrentPrayerNotifier extends Notifier<HomeCurrentPrayerState> {
 
   @override
   HomeCurrentPrayerState build() {
-    final prayerTimesState = ref.watch(prayerTimesControllerProvider);
+    PrayerTimesState? prayerTimesState;
+    try {
+      prayerTimesState = ref.watch(prayerTimesControllerProvider);
+    } catch (_) {
+      prayerTimesState = null;
+    }
 
     _timer?.cancel();
     _lifecycle?.dispose();
 
-    final initial = _resolve(prayerTimesState, DateTime.now());
+    final initial = _safeResolve(prayerTimesState, DateTime.now());
 
     _timer = Timer.periodic(
       const Duration(seconds: 30),
@@ -123,26 +128,35 @@ class HomeCurrentPrayerNotifier extends Notifier<HomeCurrentPrayerState> {
   }
 
   void _tick() {
+    PrayerTimesState? prayerTimesState;
+    try {
+      prayerTimesState = ref.read(prayerTimesControllerProvider);
+    } catch (_) {
+      prayerTimesState = null;
+    }
+
     state = HomeCurrentPrayerState(
-      prayer: _resolve(
-        ref.read(prayerTimesControllerProvider),
-        DateTime.now(),
-      ),
+      prayer: _safeResolve(prayerTimesState, DateTime.now()),
     );
   }
 
-  PrayerType? _resolve(
-    PrayerTimesState state,
+  PrayerType? _safeResolve(
+    PrayerTimesState? state,
     DateTime now,
   ) {
-    final today = state.today;
-    if (!state.hasData || today == null) return null;
+    try {
+      final today = state?.today;
+      if (state == null || !state.hasData || today == null) return null;
 
-    return currentHomePrayerForSchedule(
-      today: today,
-      tomorrow: state.tomorrow,
-      now: now,
-    );
+      return currentHomePrayerForSchedule(
+        today: today,
+        tomorrow: state.tomorrow,
+        now: now,
+      );
+    } catch (_) {
+      // Home must remain usable while Prayer Times is unavailable or booting.
+      return null;
+    }
   }
 }
 
