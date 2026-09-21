@@ -388,14 +388,12 @@ class _TodayProgress extends ConsumerWidget {
         builder: (context, setState) => AlertDialog(
           key: const Key('home_qaza_plan_dialog'),
           title: Text(l10n.homeQazaPlan),
-          content: DropdownButtonFormField<int>(
+          content: DropdownButton<int>(
             key: const Key('home_qaza_plan_target'),
-            initialValue: _targetOptions.contains(selected)
+            isExpanded: true,
+            value: _targetOptions.contains(selected)
                 ? selected
                 : HomeQazaPlanState.defaultDailyTarget,
-            decoration: InputDecoration(
-              labelText: l10n.homeDailyTarget,
-            ),
             items: [
               for (final value in _targetOptions)
                 DropdownMenuItem<int>(
