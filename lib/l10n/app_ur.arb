@@ -516,4 +516,22 @@
   "appLockCanceled": "اَن لاک منسوخ کر دیا گیا۔ آپ کا قضا ڈیٹا اب بھی محفوظ ہے۔",
   "appLockTemporarilyLocked": "ڈیوائس کی تصدیق عارضی طور پر لاک ہے۔ کچھ دیر بعد دوبارہ کوشش کریں۔",
   "appLockFailed": "ڈیوائس کی تصدیق ناکام رہی۔ دوبارہ کوشش کریں۔"
+  "homeTodayProgressHeader": "آج کی پیش رفت",
+  "homeNextQazaCurrentPrayer": "اگلی قضا (موجودہ نماز)",
+  "homeOldestPending": "سب سے پرانی باقی",
+  "homeOverallQaza": "مجموعی قضا",
+  "homePendingByPrayer": "نماز کے لحاظ سے باقی",
+  "homeViewDetails": "تفصیلات دیکھیں",
+  "homeViewAll": "سب دیکھیں",
+  "homeCompleted": "مکمل",
+  "homePending": "باقی",
+  "homeYourProgress": "آپ کی پیش رفت",
+  "homeRange7Days": "7 دن",
+  "homeRange30Days": "30 دن",
+  "homeRangeMonthly": "ماہانہ",
+  "homeDetailedStatistics": "تفصیلی اعداد و شمار",
+  "homeDetailedStatisticsSubtitle": "سال وار باقی، ماہانہ تاریخ اور مزید",
+  "homeChartNoData": "اس مدت میں کوئی قضا مکمل نہیں ہوئی۔",
+  "homeTodayDate": "آج",
+
 }
