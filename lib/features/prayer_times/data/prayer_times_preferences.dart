@@ -9,6 +9,7 @@ class PrayerTimesPreferences {
 
   static const _locationKey = 'prayer_times_v1.location';
   static const _settingsKey = 'prayer_times_v1.settings';
+  static const _notificationSettingsKey = 'prayer_times_v1.notifications';
 
   final Future<SharedPreferences> _preferencesFuture;
 
@@ -48,5 +49,29 @@ class PrayerTimesPreferences {
   Future<void> saveSettings(PrayerSettings settings) async {
     final preferences = await _preferencesFuture;
     await preferences.setString(_settingsKey, jsonEncode(settings.toJson()));
+  }
+
+  Future<PrayerNotificationSettings> getNotificationSettings() async {
+    final preferences = await _preferencesFuture;
+    final raw = preferences.getString(_notificationSettingsKey);
+    if (raw == null) return const PrayerNotificationSettings();
+
+    try {
+      return PrayerNotificationSettings.fromJson(
+        Map<String, dynamic>.from(jsonDecode(raw) as Map),
+      );
+    } catch (_) {
+      return const PrayerNotificationSettings();
+    }
+  }
+
+  Future<void> saveNotificationSettings(
+    PrayerNotificationSettings settings,
+  ) async {
+    final preferences = await _preferencesFuture;
+    await preferences.setString(
+      _notificationSettingsKey,
+      jsonEncode(settings.toJson()),
+    );
   }
 }
