@@ -6,6 +6,7 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 import '../local/qaza_local_store.dart';
 import '../sync/qaza_sync_engine.dart';
 import '../sync/qaza_sync_remote_data_source.dart';
@@ -107,7 +108,7 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
   }
 }
 
-class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
+class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, QazaRecoveryRepository {
   static QazaSyncRemoteDataSource _resolveSyncRemote(
     QazaRepository remote,
     QazaSyncRemoteDataSource? syncRemote,
@@ -745,6 +746,292 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
       );
     }
     return changedRecords.length;
+  }
+
+  @override
+  Future<int> softDeleteRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    if (recordIds.isEmpty || userId != _activeUserId) return 0;
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: recordIds,
+    );
+    var changed = 0;
+    for (final record in records) {
+      if (record.isDeleted) continue;
+      final deleted = record.copyWith(
+        status: QazaStatus.deleted,
+        updatedAt: deletedAt,
+      );
+      final syncOp = PendingSyncOp(
+        id: 'soft_delete_${record.id}_${operationId}',
+        type: SyncOpType.update,
+        userId: userId,
+        queuedAt: deletedAt,
+        targetRecordId: record.id,
+        record: deleted,
+      );
+      final ok = await _localStore.updateRecordAndOutbox(
+        userId: userId,
+        record: deleted,
+        operation: syncOp,
+      );
+      if (ok) {
+        _records[record.id] = deleted;
+        _outbox.add(syncOp);
+        changed++;
+      }
+    }
+    _outboxLoaded = true;
+    if (changed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(
+          _syncEngine?.synchronize(userId, requestRerun: true) ??
+              Future<void>.value(),
+        );
+      }
+    }
+    return changed;
+  }
+
+  @override
+  Future<int> restoreDeletedRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime restoredAt,
+    required String operationId,
+  }) async {
+    if (recordIds.isEmpty || userId != _activeUserId) return 0;
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: recordIds,
+    );
+    var changed = 0;
+    for (final record in records) {
+      if (!record.isDeleted) continue;
+      final restored = record.copyWith(
+        status: record.completedAt == null
+            ? QazaStatus.pending
+            : QazaStatus.completed,
+        updatedAt: restoredAt,
+      );
+      final syncOp = PendingSyncOp(
+        id: 'restore_${record.id}_${operationId}',
+        type: SyncOpType.update,
+        userId: userId,
+        queuedAt: restoredAt,
+        targetRecordId: record.id,
+        record: restored,
+      );
+      final ok = await _localStore.updateRecordAndOutbox(
+        userId: userId,
+        record: restored,
+        operation: syncOp,
+      );
+      if (ok) {
+        _records[record.id] = restored;
+        _outbox.add(syncOp);
+        changed++;
+      }
+    }
+    _outboxLoaded = true;
+    if (changed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(
+          _syncEngine?.synchronize(userId, requestRerun: true) ??
+              Future<void>.value(),
+        );
+      }
+    }
+    return changed;
+  }
+
+  @override
+  Future<int> undoAddedOperation({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+  }) async {
+    if (userId != _activeUserId) return 0;
+    DateTime? cursorDate;
+    String? cursorId;
+    var removed = 0;
+    while (true) {
+      final page = await getPage(
+        userId: userId,
+        limit: 200,
+        status: QazaStatus.pending,
+        afterOriginalDate: cursorDate,
+        afterId: cursorId,
+      );
+      if (page.records.isEmpty) break;
+      for (final record in page.records) {
+        if (record.operationId != operationId ||
+            !record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
+            !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
+          continue;
+        }
+        final syncOp = PendingSyncOp(
+          id: 'undo_import_${record.id}_${operationId}',
+          type: SyncOpType.delete,
+          userId: userId,
+          queuedAt: _now(),
+          targetRecordId: record.id,
+          record: record,
+        );
+        final ok = await _localStore.deleteRecordAndOutbox(
+          userId: userId,
+          recordId: record.id,
+          operation: syncOp,
+        );
+        if (ok) {
+          _records.remove(record.id);
+          _outbox.add(syncOp);
+          removed++;
+        }
+      }
+      if (!page.hasMore) break;
+      cursorDate = page.nextOriginalDate;
+      cursorId = page.nextId;
+    }
+    _outboxLoaded = true;
+    if (removed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(
+          _syncEngine?.synchronize(userId, requestRerun: true) ??
+              Future<void>.value(),
+        );
+      }
+    }
+    return removed;
+  }
+
+  @override
+  Future<QazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    required QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    if (userId != _activeUserId) {
+      return const QazaPage(records: [], hasMore: false);
+    }
+    await ensureHydrated();
+    DateTime? cursorDate = beforeOriginalDate;
+    String? cursorId = beforeId;
+    final matches = <QazaRecord>[];
+    while (matches.length < limit) {
+      final page = await getPage(
+        userId: userId,
+        limit: 200,
+        prayerType: null,
+        status: status,
+        afterOriginalDate: cursorDate,
+        afterId: cursorId,
+      );
+      if (page.records.isEmpty) break;
+      for (final record in page.records) {
+        final match = matchLastAction
+            ? record.updatedAt.isAtSameMomentAs(operationAt)
+            : record.operationId == operationId;
+        if (match) {
+          matches.add(record);
+          if (matches.length == limit) break;
+        }
+      }
+      cursorDate = page.nextOriginalDate;
+      cursorId = page.nextId;
+      if (!page.hasMore) break;
+    }
+    return QazaPage(
+      records: matches,
+      hasMore: matches.length == limit,
+    );
+  }
+
+  @override
+  Future<QazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) =>
+      getHistoryPage(
+        userId: userId,
+        limit: limit,
+        status: QazaStatus.deleted,
+        beforeOriginalDate: beforeOriginalDate,
+        beforeId: beforeId,
+      );
+
+  @override
+  Future<int> purgeDeletedBefore({
+    required String userId,
+    required DateTime cutoff,
+  }) async {
+    if (userId != _activeUserId) return 0;
+    var cursorDate;
+    String? cursorId;
+    final ids = <String>[];
+    while (true) {
+      final page = await getHistoryPage(
+        userId: userId,
+        limit: 200,
+        status: QazaStatus.deleted,
+        beforeOriginalDate: cursorDate,
+        beforeId: cursorId,
+      );
+      if (page.records.isEmpty) break;
+      ids.addAll(
+        page.records
+            .where((record) => record.updatedAt.isBefore(cutoff))
+            .map((record) => record.id),
+      );
+      if (!page.hasMore) break;
+      cursorDate = page.nextOriginalDate;
+      cursorId = page.nextId;
+    }
+    var removed = 0;
+    for (final id in ids) {
+      final op = PendingSyncOp(
+        id: 'purge_deleted_${id}_${cutoff.microsecondsSinceEpoch}',
+        type: SyncOpType.delete,
+        userId: userId,
+        queuedAt: _now(),
+        targetRecordId: id,
+      );
+      if (await _localStore.deleteRecordAndOutbox(
+        userId: userId,
+        recordId: id,
+        operation: op,
+      )) {
+        _records.remove(id);
+        _outbox.add(op);
+        removed++;
+      }
+    }
+    _outboxLoaded = true;
+    if (removed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(
+          _syncEngine?.synchronize(userId, requestRerun: true) ??
+              Future<void>.value(),
+        );
+      }
+    }
+    return removed;
   }
 
   @override
