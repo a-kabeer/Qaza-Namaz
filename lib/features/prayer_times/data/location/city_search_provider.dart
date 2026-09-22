@@ -19,5 +19,8 @@ class CitySearchResult {
 }
 
 abstract class CitySearchProvider {
-  Future<List<CitySearchResult>> search(String query);
+  Future<List<CitySearchResult>> search(
+    String query, {
+    String? countryCode,
+  });
 }
