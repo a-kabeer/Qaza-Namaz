@@ -63,6 +63,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get statusCompleted => 'مکمل';
 
   @override
+  String get statusDeleted => 'حالیہ حذف شدہ';
+
+  @override
   String get qazaSelectAllMatching => 'سب مطابق منتخب کریں';
 
   @override
