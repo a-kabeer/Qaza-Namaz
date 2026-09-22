@@ -562,6 +562,7 @@ class _RecordRow extends StatelessWidget {
 }
 
 enum _RecordAction { edit, delete }
+
 class _BulkCompletionBar extends ConsumerStatefulWidget {
   const _BulkCompletionBar({
     required this.state,
@@ -581,7 +582,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   @override
   void initState() {
     super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       ref.invalidate(qazaRestrictionEvaluationProvider);
     });
@@ -616,8 +617,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text(
-                  '${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}
-'
+                  '${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n'
                   '${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
