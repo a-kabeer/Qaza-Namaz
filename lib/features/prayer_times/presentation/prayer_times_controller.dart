@@ -314,7 +314,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
   Future<void> _searchCities(String query, int generation, String? countryCode) async {
     try {
-      final results = await _citySearchProvider.search(query, countryCode: countryCode);
+      final results = await _citySearchProvider.searchInCountry(
+        query,
+        countryCode: countryCode,
+      );
       if (!_isMounted || generation != _searchGeneration) return;
       state = state.copyWith(
         cityResults: results,
