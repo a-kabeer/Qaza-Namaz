@@ -700,18 +700,24 @@ class _TrackerSkeletonRow extends StatelessWidget {
 
 class _RecordRow extends StatelessWidget {
   const _RecordRow({
+    super.key,
     required this.record,
     required this.selected,
-    required this.onToggle,
+    required this.selectionMode,
+    required this.onTap,
+    required this.onLongPress,
     required this.busy,
+    required this.canAct,
     required this.onEdit,
     required this.onDelete,
   });
-
   final QazaRecord record;
   final bool selected;
-  final VoidCallback? onToggle;
+  final bool selectionMode;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool busy;
+  final bool canAct;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -720,83 +726,64 @@ class _RecordRow extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final completed = record.status == QazaStatus.completed;
-    final originalDate =
-        DateFormatters.formatGregorianDatePadded(record.originalDate);
-
+    final originalDate = DateFormatters.formatGregorianDatePadded(record.originalDate);
     return Semantics(
       selected: selected,
-      label: '$originalDate, ${record.prayerType.localizedLabel(l10n)}, '
-          '${record.status.localizedLabel(l10n)}',
+      button: record.status == QazaStatus.pending,
+      label: '$originalDate, ${record.prayerType.localizedLabel(l10n)}, ${record.status.localizedLabel(l10n)}',
+      hint: record.status == QazaStatus.pending
+          ? (selectionMode ? 'Tap to select or unselect.' : 'Tap to complete. Long press to select.')
+          : null,
       child: ListTile(
+        key: Key('qaza_record_' + record.id),
         contentPadding: EdgeInsets.zero,
-        leading: completed
-            ? Icon(
-                Icons.check_circle_rounded,
-                color: theme.colorScheme.primary,
+        leading: selectionMode
+            ? Checkbox(
+                value: selected,
+                onChanged: onTap == null || busy ? null : (_) => onTap!(),
               )
-            : onToggle == null
-                ? const Icon(Icons.lock_outline_rounded)
-                : Checkbox(
-                    value: selected,
-                    onChanged: (_) => onToggle!(),
-                  ),
+            : IconButton(
+                key: Key('qaza_record_complete_' + record.id),
+                tooltip: completed ? l10n.statusCompleted : l10n.qazaCompleteCount(1),
+                onPressed: completed || !canAct || busy ? null : onTap,
+                icon: Icon(
+                  completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: completed ? theme.colorScheme.primary : theme.colorScheme.outline,
+                ),
+              ),
         title: Text(originalDate),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              record.prayerType.localizedLabel(l10n),
-              style: theme.textTheme.titleSmall,
-            ),
-            Text(
-              DateFormatters.hijriLabel(record.originalDate),
-              style: theme.textTheme.bodySmall,
-            ),
-            Text(
-              record.status.localizedLabel(l10n),
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(record.prayerType.localizedLabel(l10n), style: theme.textTheme.titleSmall),
+            Text(DateFormatters.hijriLabel(record.originalDate), style: theme.textTheme.bodySmall),
+            Text(record.status.localizedLabel(l10n), style: theme.textTheme.bodySmall),
             if (completed && record.completedAt != null)
-              Text(
-                l10n.qazaCompletedOn(
-                  DateFormatters.formatGregorianDatePadded(record.completedAt!),
-                ),
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(l10n.qazaCompletedOn(DateFormatters.formatGregorianDatePadded(record.completedAt!)), style: theme.textTheme.bodySmall),
           ],
         ),
         isThreeLine: true,
         trailing: PopupMenuButton<_RecordAction>(
-          key: Key('qaza_record_actions_${record.id}'),
+          key: Key('qaza_record_actions_' + record.id),
           enabled: !busy,
           tooltip: l10n.qazaRecordActions,
           onSelected: (action) {
             switch (action) {
-              case _RecordAction.edit:
-                onEdit();
-                break;
-              case _RecordAction.delete:
-                onDelete();
-                break;
+              case _RecordAction.edit: onEdit(); break;
+              case _RecordAction.delete: onDelete(); break;
             }
           },
           itemBuilder: (context) => [
-            PopupMenuItem(
-              value: _RecordAction.edit,
-              child: Text(l10n.qazaEditRecord),
-            ),
-            PopupMenuItem(
-              value: _RecordAction.delete,
-              child: Text(l10n.qazaDeleteRecord),
-            ),
+            PopupMenuItem(value: _RecordAction.edit, child: Text(l10n.qazaEditRecord)),
+            PopupMenuItem(value: _RecordAction.delete, child: Text(l10n.qazaDeleteRecord)),
           ],
         ),
-        onTap: onToggle,
+        onTap: onTap,
+        onLongPress: onLongPress,
       ),
     );
   }
 }
-
 enum _RecordAction { edit, delete }
 
 class _BulkCompletionBar extends ConsumerStatefulWidget {
