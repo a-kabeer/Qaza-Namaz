@@ -1235,28 +1235,28 @@ class _PrayerTimesLoadingSkeleton extends StatelessWidget {
         const SizedBox(height: 16),
         AppCard(
           child: Column(
-            children: [
-              const _SkeletonRow(),
+            children: const [
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
             ],
           ),
         ),
         const SizedBox(height: 16),
         AppCard(
           child: Column(
-            children: [
-              const _SkeletonRow(),
+            children: const [
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
               SizedBox(height: 10),
-              const _SkeletonRow(),
+              _SkeletonRow(),
             ],
           ),
         ),
