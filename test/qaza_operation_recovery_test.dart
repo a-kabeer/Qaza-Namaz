@@ -36,7 +36,7 @@ void main() {
       operationId: operation.operationId,
       operationCreatedAt: operation.createdAt,
     );
-    await operationService.finish(operation, status: QazaOperationStatus.completed, affectedRecordCount: added);
+    operation = await operationService.finish(operation, status: QazaOperationStatus.completed, affectedRecordCount: added);
     expect(added, 3);
     expect(opRepo.values.values.single.recordCount, 3);
 
@@ -55,7 +55,7 @@ void main() {
     expect(remaining, hasLength(2));
     expect(remaining.any((r) => r.status == QazaStatus.completed), isTrue);
 
-    await operationService.finish(operation, status: QazaOperationStatus.partial, affectedRecordCount: removed);
+    operation = await operationService.finish(operation, status: QazaOperationStatus.partial, affectedRecordCount: removed);
     expect(opRepo.values.values.single.recordCount, 3);
     expect(opRepo.values.values.single.affectedRecordCount, 1);
   });
