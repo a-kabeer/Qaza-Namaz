@@ -195,7 +195,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final query = selectOnly(qazaRecords)
       ..addColumns(
           [qazaRecords.prayerType, qazaRecords.status, countExpression])
-      ..where(qazaRecords.userId.equals(userId))
+      ..where(qazaRecords.userId.equals(userId) &
+          qazaRecords.status.isIn([
+            QazaStatus.pending.name,
+            QazaStatus.completed.name,
+          ]))
       ..groupBy([qazaRecords.prayerType, qazaRecords.status]);
     final rows = await query.get();
     final counts = <PrayerType, Map<QazaStatus, int>>{};
