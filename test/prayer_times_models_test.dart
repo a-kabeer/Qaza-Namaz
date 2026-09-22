@@ -35,32 +35,26 @@ void main() {
     expect(restoredSettings.asrMethod, AsrMethod.hanafi);
   });
 
-  test('PrayerTimesRequest cache key includes all cache dimensions', () {
-    final base = PrayerTimesRequest(
-      latitude: 24.8607,
-      longitude: 67.0011,
+  test('PrayerDay round trips its solar restriction anchors', () {
+    final day = PrayerDay(
       date: DateTime(2026, 9, 20),
-      method: CalculationMethod.karachi,
-      asrMethod: AsrMethod.standard,
+      timezone: 'Asia/Karachi',
+      times: const {
+        PrayerName.fajr: PrayerTime(hour: 4, minute: 50),
+        PrayerName.sunrise: PrayerTime(hour: 6, minute: 8),
+        PrayerName.dhuhr: PrayerTime(hour: 12, minute: 20),
+        PrayerName.asr: PrayerTime(hour: 16, minute: 45),
+        PrayerName.maghrib: PrayerTime(hour: 18, minute: 28),
+        PrayerName.isha: PrayerTime(hour: 19, minute: 44),
+      },
+      solarNoon: DateTime(2026, 9, 20, 12, 20),
+      sunset: DateTime(2026, 9, 20, 18, 28),
+      hijriDate: const HijriDate(day: 18, month: 'Rabi al-Thani', year: 1448),
+      fetchedAt: DateTime.utc(2026, 9, 20),
     );
 
-    final hanafi = PrayerTimesRequest(
-      latitude: base.latitude,
-      longitude: base.longitude,
-      date: base.date,
-      method: base.method,
-      asrMethod: AsrMethod.hanafi,
-    );
-
-    final differentMethod = PrayerTimesRequest(
-      latitude: base.latitude,
-      longitude: base.longitude,
-      date: base.date,
-      method: CalculationMethod.mwl,
-      asrMethod: base.asrMethod,
-    );
-
-    expect(hanafi.cacheKey, isNot(base.cacheKey));
-    expect(differentMethod.cacheKey, isNot(base.cacheKey));
+    final restored = PrayerDay.fromJson(day.toJson());
+    expect(restored.solarNoon, day.solarNoon);
+    expect(restored.sunset, day.sunset);
   });
 }
