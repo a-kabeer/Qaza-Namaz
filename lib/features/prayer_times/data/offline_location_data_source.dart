@@ -234,13 +234,6 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
       final distance = _distanceSquared(latitude, longitude, lat, lon);
       if (distance >= nearestDistance) continue;
 
-      final countryCode = city.countryCode;
-      final timezone = TimezoneConvert.nearestTimezone(
-        lat,
-        lon,
-        countryCode: countryCode,
-      );
-
       nearestDistance = distance;
       nearest = CitySearchResult(
         name: city.name ?? '',
@@ -248,8 +241,7 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
         latitude: lat,
         longitude: lon,
         region: city.stateName,
-        countryCode: countryCode,
-        timezone: timezone,
+        countryCode: city.countryCode,
       );
     }
 
