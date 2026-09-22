@@ -461,7 +461,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String qazaDeleteRecordMessage(Object date, Object prayer) {
-    return 'Permanently delete the $prayer Qaza from $date? This cannot be undone.';
+    return 'Move the $prayer Qaza from $date to Recently Deleted? You can restore it for 30 days.';
   }
 
   @override
@@ -477,7 +477,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Qaza record could not be updated. Please try again.';
 
   @override
-  String get qazaRecordDeleted => 'Qaza record deleted.';
+  String get qazaRecordDeleted => 'Qaza moved to Recently Deleted.';
 
   @override
   String get qazaRecordDeleteFailed =>
