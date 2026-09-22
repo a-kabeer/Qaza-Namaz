@@ -1,7 +1,7 @@
 import 'package:geodb_flutter/geodb_flutter.dart';
+import 'package:timezone_country/timezone_country.dart';
 
 import 'location/city_search_provider.dart';
-import 'package:timezone_country/timezone_country.dart';
 
 abstract class OfflineLocationDataSource {
   Future<List<CitySearchResult>> searchCities(String query);
