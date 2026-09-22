@@ -37,6 +37,13 @@ QazaRecord _record(
       updatedAt: completedAt ?? _stamp,
     );
 
+
+class _TestHomeCurrentPrayerNotifier extends HomeCurrentPrayerNotifier {
+  @override
+  HomeCurrentPrayerState build() =>
+      const HomeCurrentPrayerState(prayer: PrayerType.fajr);
+}
+
 void main() {
   Future<InMemoryQazaRepository> ledger() async {
     final repository = InMemoryQazaRepository();
@@ -99,8 +106,8 @@ void main() {
         ),
       ),
       if (currentPrayer)
-        homeCurrentPrayerProvider.overrideWithValue(
-          const HomeCurrentPrayerState(prayer: PrayerType.fajr),
+        homeCurrentPrayerProvider.overrideWith(
+          _TestHomeCurrentPrayerNotifier.new,
         ),
     ];
 
@@ -341,8 +348,8 @@ void main() {
             const AppUser(id: 'u1', email: 'u1@example.com'),
           ),
         ),
-        homeCurrentPrayerProvider.overrideWithValue(
-          const HomeCurrentPrayerState(prayer: PrayerType.fajr),
+        homeCurrentPrayerProvider.overrideWith(
+          _TestHomeCurrentPrayerNotifier.new,
         ),
       ]);
       addTearDown(container.dispose);
