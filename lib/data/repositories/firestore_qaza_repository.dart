@@ -39,7 +39,12 @@ class FirestoreQazaRepository
     if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
     }
-    if (status != null) {
+    if (status == null) {
+      query = query.where(
+        'status',
+        whereIn: [QazaStatus.pending.name, QazaStatus.completed.name],
+      );
+    } else {
       query = query.where('status', isEqualTo: status.name);
     }
     final records = (await query.get()).docs.map(_fromDocument).toList()
