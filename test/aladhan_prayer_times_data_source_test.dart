@@ -31,7 +31,7 @@ void main() {
 
     expect(requestedUri?.host, 'api.aladhan.com');
     expect(requestedUri?.path, '/v1/timings/22-09-2026');
-    expect(requestedUri?.queryParameters['method'], '1');
+    expect(requestedUri?.queryParameters['method'], '3');
     expect(requestedUri?.queryParameters['school'], '1');
 
     expect(day.timezone, 'Asia/Karachi');
