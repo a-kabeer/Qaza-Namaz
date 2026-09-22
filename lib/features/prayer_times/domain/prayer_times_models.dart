@@ -166,6 +166,97 @@ class PrayerLocation {
   }
 }
 
+class PrayerCountryOption {
+  const PrayerCountryOption({
+    required this.name,
+    required this.iso2,
+    this.nativeName,
+    this.emoji,
+  });
+
+  final String name;
+  final String iso2;
+  final String? nativeName;
+  final String? emoji;
+}
+
+class PrayerNotificationSettings {
+  const PrayerNotificationSettings({
+    this.enabledPrayers = const <PrayerName>{},
+    this.sunrise = false,
+    this.zawal = false,
+    this.sunset = false,
+    this.restrictedLeadMinutes = 5,
+  });
+
+  final Set<PrayerName> enabledPrayers;
+  final bool sunrise;
+  final bool zawal;
+  final bool sunset;
+  final int restrictedLeadMinutes;
+
+  bool get anyPrayerReminder => enabledPrayers.isNotEmpty;
+
+  bool get anyRestrictedReminder => sunrise || zawal || sunset;
+
+  bool get anyEnabled => anyPrayerReminder || anyRestrictedReminder;
+
+  PrayerNotificationSettings copyWith({
+    Set<PrayerName>? enabledPrayers,
+    bool? sunrise,
+    bool? zawal,
+    bool? sunset,
+    int? restrictedLeadMinutes,
+  }) {
+    return PrayerNotificationSettings(
+      enabledPrayers: enabledPrayers ?? this.enabledPrayers,
+      sunrise: sunrise ?? this.sunrise,
+      zawal: zawal ?? this.zawal,
+      sunset: sunset ?? this.sunset,
+      restrictedLeadMinutes:
+          restrictedLeadMinutes ?? this.restrictedLeadMinutes,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'enabledPrayers': enabledPrayers.map((item) => item.name).toList(),
+        'sunrise': sunrise,
+        'zawal': zawal,
+        'sunset': sunset,
+        'restrictedLeadMinutes': restrictedLeadMinutes,
+      };
+
+  factory PrayerNotificationSettings.fromJson(Map<String, dynamic> json) {
+    final rawPrayers = json['enabledPrayers'];
+    final enabledPrayers = <PrayerName>{};
+    if (rawPrayers is List) {
+      for (final raw in rawPrayers) {
+        if (raw is! String) continue;
+        for (final prayer in PrayerName.values) {
+          if (prayer.name == raw && prayer.isCyclePrayer) {
+            enabledPrayers.add(prayer);
+            break;
+          }
+        }
+      }
+    }
+
+    final lead = json['restrictedLeadMinutes'];
+    final leadMinutes = lead is num ? lead.toInt() : 5;
+
+    return PrayerNotificationSettings(
+      enabledPrayers: Set.unmodifiable(enabledPrayers),
+      sunrise: json['sunrise'] == true,
+      zawal: json['zawal'] == true,
+      sunset: json['sunset'] == true,
+      restrictedLeadMinutes:
+          leadMinutes == 0 || leadMinutes == 5 || leadMinutes == 10
+              ? leadMinutes
+              : 5,
+    );
+  }
+}
+
 class PrayerSettings {
   const PrayerSettings({
     this.calculationMethod = CalculationMethod.recommended,
