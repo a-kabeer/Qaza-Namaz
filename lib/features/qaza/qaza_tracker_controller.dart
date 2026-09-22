@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/entities/qaza_operation.dart';
 import '../../domain/services/qaza_service.dart';
 import '../prayer_times/prayer_times_providers.dart';
 
@@ -64,6 +65,7 @@ class QazaTrackerState {
   });
 
   final QazaStatusFilter statusFilter;
+  final bool selectionMode;
 
   /// Which end of the ledger is read first. Oldest by default,
   /// because that is the order Qaza is owed in.
@@ -134,12 +136,14 @@ class QazaTrackerState {
     bool? recordMutating,
     String? error,
     Set<String>? selected,
+    bool? selectionMode,
     bool clearPrayerFilter = false,
     bool clearDates = false,
     bool clearError = false,
   }) =>
       QazaTrackerState(
         statusFilter: statusFilter ?? this.statusFilter,
+        selectionMode: selectionMode ?? this.selectionMode,
         sortOrder: sortOrder ?? this.sortOrder,
         selectingAll: selectingAll ?? this.selectingAll,
         prayerFilter:
@@ -391,14 +395,28 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     refresh();
   }
 
+  void enterSelectionMode(String recordId) {
+    if (state.statusFilter != QazaStatusFilter.pending) return;
+    final record = state.records.where((r) => r.id == recordId).firstOrNull;
+    if (record == null || record.status != QazaStatus.pending) return;
+    final next = Set<String>.of(state.selected)..add(recordId);
+    state = state.copyWith(selectionMode: true, selected: next);
+  }
+
   void toggleSelection(String recordId) {
     final next = Set<String>.of(state.selected);
     if (!next.remove(recordId)) next.add(recordId);
-    state = state.copyWith(selected: next);
+    state = state.copyWith(selectionMode: true, selected: next);
   }
+
+  void exitSelectionMode() => state = state.copyWith(
+        selectionMode: false,
+        selected: const <String>{},
+      );
 
   /// Selection is bounded to the records actually loaded, never the ledger.
   void selectAllLoaded() => state = state.copyWith(
+        selectionMode: true,
         selected: {for (final record in state.selectableRecords) record.id},
       );
 
@@ -436,7 +454,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         if (!page.hasMore) break;
         cursor = page.records.last;
       }
-      state = state.copyWith(selected: ids, selectingAll: false);
+      state = state.copyWith(selectionMode: true, selected: ids, selectingAll: false);
     } catch (error) {
       state = state.copyWith(
         selectingAll: false,
@@ -445,7 +463,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
   }
 
-  void clearSelection() => state = state.copyWith(selected: const <String>{});
+  void clearSelection() => exitSelectionMode();
 
   /// Updates a single tracker record and reloads the bounded page.
   Future<void> updateRecord(QazaRecord record) async {
@@ -470,12 +488,118 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     if (userId == null || state.recordMutating) return;
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
-      await ref.read(qazaServiceProvider).deleteRecord(
+      final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: userId,
-            recordId: recordId,
+            type: QazaOperationType.bulkDelete,
           );
+      try {
+        final deletedAt = operation.createdAt;
+        final recovery = ref.read(qazaServiceProvider);
+        if (recovery.repository is! QazaRecoveryRepository) {
+          throw StateError('Qaza recovery is not available.');
+        }
+        final count = await recovery.deleteRecordsWithRecovery(
+          userId: userId,
+          recordIds: [recordId],
+          deletedAt: deletedAt,
+          operationId: operation.operationId,
+        );
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: count == 1
+                  ? QazaOperationStatus.completed
+                  : QazaOperationStatus.partial,
+              affectedRecordCount: count,
+            );
+      } catch (error) {
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: QazaOperationStatus.failed,
+              affectedRecordCount: 0,
+              note: error.toString(),
+            );
+        rethrow;
+      }
       ref.invalidate(progressSummaryProvider);
       await refresh();
+    } finally {
+      state = state.copyWith(recordMutating: false);
+    }
+  }
+
+  Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId) async {
+    if (state.completing) return null;
+    final record = state.records.where((r) => r.id == recordId).firstOrNull;
+    if (record == null || record.status != QazaStatus.pending) return null;
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null) return null;
+    final restrictions = await ref
+        .read(qazaRestrictionServiceProvider)
+        .evaluateForPrayers([record.prayerType]);
+    if (restrictions.values.any((e) => e.isRestricted)) return null;
+    final tartib = await ref.read(qazaServiceProvider).sahibAlTartibState(
+          userId: userId,
+        );
+    if (tartib.requiresOrder && tartib.nextPending?.id != recordId) return null;
+    final completedAt = DateTime.now();
+    try {
+      state = state.copyWith(completing: true, clearError: true);
+      await ref.read(qazaServiceProvider).completeRecord(
+            userId: userId,
+            recordId: recordId,
+            completedAt: completedAt,
+          );
+      ref.invalidate(sahibAlTartibProvider);
+      ref.invalidate(progressSummaryProvider);
+      await refresh();
+      return QazaCompletionBatch(
+        recordIds: [recordId],
+        completedAt: completedAt,
+        count: 1,
+      );
+    } finally {
+      state = state.copyWith(completing: false);
+    }
+  }
+
+  Future<int> deleteSelectedWithRecovery() async {
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null || state.selected.isEmpty || state.recordMutating) {
+      return 0;
+    }
+    final ids = state.selected.toList(growable: false);
+    final operation = await ref.read(qazaOperationServiceProvider).begin(
+          userId: userId,
+          type: QazaOperationType.bulkDelete,
+        );
+    state = state.copyWith(recordMutating: true, clearError: true);
+    try {
+      final count = await ref.read(qazaServiceProvider).deleteRecordsWithRecovery(
+            userId: userId,
+            recordIds: ids,
+            deletedAt: operation.createdAt,
+            operationId: operation.operationId,
+          );
+      await ref.read(qazaOperationServiceProvider).finish(
+            operation,
+            status: count == ids.length
+                ? QazaOperationStatus.completed
+                : QazaOperationStatus.partial,
+            affectedRecordCount: count,
+          );
+      exitSelectionMode();
+      ref.invalidate(progressSummaryProvider);
+      await refresh();
+      return count;
+    } catch (error) {
+      await ref.read(qazaOperationServiceProvider).finish(
+            operation,
+            status: QazaOperationStatus.failed,
+            affectedRecordCount: 0,
+            note: error.toString(),
+          );
+      state = state.copyWith(recordMutating: false, error: error.toString());
+      return 0;
     } finally {
       state = state.copyWith(recordMutating: false);
     }
