@@ -70,11 +70,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await _ensurePerformanceIndexes();
           }
-          if (from < 3) {
-            await _ensureRecoveryIndexes();
-          }
           if (from < 4) {
             await m.addColumn(qazaRecords, qazaRecords.operationId);
+          }
+          if (from < 3 || from < 4) {
             await _ensureRecoveryIndexes();
           }
         },
