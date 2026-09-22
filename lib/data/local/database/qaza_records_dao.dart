@@ -685,6 +685,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   QazaRecord _toDomain(QazaRecordRow row) => QazaRecord(
         id: row.id,
         userId: row.userId,
+        operationId: row.operationId,
         prayerType: PrayerType.values.firstWhere(
             (value) => value.name == row.prayerType,
             orElse: () => throw StateError(
@@ -703,6 +704,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       QazaRecordsCompanion.insert(
           id: record.id,
           userId: record.userId,
+          operationId: record.operationId,
           prayerType: record.prayerType.name,
           originalDate: record.originalDate,
           status: record.status.name,
