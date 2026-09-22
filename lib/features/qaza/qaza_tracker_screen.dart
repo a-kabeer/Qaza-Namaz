@@ -22,6 +22,7 @@ import '../prayer_times/prayer_times_providers.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
+import 'history/qaza_history_screen.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
@@ -33,35 +34,70 @@ class QazaTrackerScreen extends ConsumerWidget {
     final state = ref.watch(qazaTrackerControllerProvider);
     final controller = ref.read(qazaTrackerControllerProvider.notifier);
     final l10n = AppLocalizations.of(context);
+    final title = state.selectionMode
+        ? state.selected.length.toString() + ' selected'
+        : l10n.qazaTitle;
 
-    return AppScaffold(
-      // Adding is offered by the workspace action button, not the header.
-      title: l10n.qazaTitle,
-      body: SafeArea(
-        child: Column(
-          children: [
-            QazaUndoBanner(
-              onUndone: controller.refresh,
+    return PopScope(
+      canPop: !state.selectionMode,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && state.selectionMode) {
+          controller.exitSelectionMode();
+        }
+      },
+      child: AppScaffold(
+        title: title,
+        actions: [
+          if (state.selectionMode)
+            IconButton(
+              key: const Key('qaza_tracker_exit_selection'),
+              tooltip: l10n.commonClose,
+              onPressed: controller.exitSelectionMode,
+              icon: const Icon(Icons.close_rounded),
             ),
-            const _ProgressHeader(),
-            _StatusFilterBar(state: state, controller: controller),
-            _PrayerFilterBar(state: state, controller: controller),
-            _SortBar(state: state, controller: controller),
-            _DateFilterBar(state: state, controller: controller),
-            // Subtle, in place, and reserving its own height so the list
-            // never jumps when a filter changes.
-            SizedBox(
-              height: 3,
-              child: state.refreshing
-                  ? const LinearProgressIndicator(
-                      key: Key('qaza_tracker_refreshing'), minHeight: 3)
-                  : null,
+        ],
+        body: SafeArea(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                if (!state.selectionMode) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  const TabBar(
+                    tabs: [
+                      Tab(text: 'Pending'),
+                      Tab(text: 'History'),
+                    ],
+                  ),
+                ],
+                Expanded(
+                  child: TabBarView(
+                    physics: state.selectionMode
+                        ? const NeverScrollableScrollPhysics()
+                        : null,
+                    children: [
+                      _PendingTrackerContent(
+                        state: state,
+                        controller: controller,
+                      ),
+                      const QazaHistoryScreen(embedded: true),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(child: _TrackerBody(state: state, controller: controller)),
-            if (state.selected.isNotEmpty)
-              _BulkCompletionBar(state: state, controller: controller),
-          ],
+          ),
         ),
+        floatingActionButton: state.selectionMode
+            ? null
+            : FloatingActionButton(
+                key: const Key('qaza_tracker_add_fab'),
+                tooltip: l10n.qazaAddTooltip,
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/qaza/add');
+                },
+                child: const Icon(Icons.add_rounded),
+              ),
       ),
     );
   }
@@ -76,8 +112,7 @@ class _ProgressHeader extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(progressSummaryProvider);
     return summaryAsync.when(
-      loading: () =>
-          const SizedBox(height: 4, child: LinearProgressIndicator()),
+      loading: () => const SizedBox(height: 3, child: LinearProgressIndicator()),
       error: (_, __) => const SizedBox.shrink(),
       data: (summary) => Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -86,31 +121,40 @@ class _ProgressHeader extends ConsumerWidget {
           AppSpacing.lg,
           AppSpacing.sm,
         ),
-        child: Row(
+        child: Column(
           key: const Key('qaza_tracker_progress'),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
                     l10n.qazaProgressLabel,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    l10n.progressPendingCompleted(
-                      DateFormatters.formatCount(summary.overall.pending),
-                      DateFormatters.formatCount(summary.overall.completed),
-                    ),
-                  ),
-                ],
+                ),
+                Text(
+                  (summary.overall.percentage * 100).round().toString() + '%',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: LinearProgressIndicator(
+                value: summary.overall.percentage,
+                minHeight: 10,
               ),
             ),
-            ProgressRing(
-              progress: summary.overall.percentage,
-              size: 52,
-              strokeWidth: 5,
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.progressCompletedPending(
+                DateFormatters.formatCount(summary.overall.completed),
+                DateFormatters.formatCount(summary.overall.pending),
+              ),
             ),
           ],
         ),
@@ -118,6 +162,165 @@ class _ProgressHeader extends ConsumerWidget {
     );
   }
 }
+
+class _PendingTrackerContent extends StatelessWidget {
+  const _PendingTrackerContent({
+    required this.state,
+    required this.controller,
+  });
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  Future<void> _openFilters(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => _FilterSheet(state: state, controller: controller),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      children: [
+        const _ProgressHeader(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('qaza_tracker_filter_button'),
+                  onPressed: () => _openFilters(context),
+                  icon: const Icon(Icons.filter_list_rounded),
+                  label: Text(
+                    state.isFiltered
+                        ? l10n.qazaFiltersActive
+                        : l10n.qazaFilter,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: SegmentedButton<QazaSortOrder>(
+                  key: const Key('qaza_tracker_sort'),
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(
+                      value: QazaSortOrder.oldestFirst,
+                      label: Text(l10n.qazaSortOldestFirst),
+                    ),
+                    ButtonSegment(
+                      value: QazaSortOrder.newestFirst,
+                      label: Text(l10n.qazaSortNewestFirst),
+                    ),
+                  ],
+                  selected: {state.sortOrder},
+                  onSelectionChanged: (value) =>
+                      controller.setSortOrder(value.first),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: _TrackerBody(state: state, controller: controller)),
+        if (state.selected.isNotEmpty)
+          _BulkCompletionBar(state: state, controller: controller),
+      ],
+    );
+  }
+}
+
+class _FilterSheet extends StatelessWidget {
+  const _FilterSheet({required this.state, required this.controller});
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  Future<void> _pickRange(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(now.year, now.month, now.day),
+      initialDateRange: state.from != null && state.to != null
+          ? DateTimeRange(start: state.from!, end: state.to!)
+          : null,
+      helpText: AppLocalizations.of(context).qazaDateFilterHelp,
+    );
+    if (picked != null) {
+      controller.setDateRange(picked.start, picked.end);
+      if (context.mounted) Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        children: [
+          Text(l10n.qazaFilterPrayer,
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilterChip(
+                label: Text(l10n.filterAll),
+                selected: state.prayerFilter == null,
+                onSelected: (_) => controller.setPrayerFilter(null),
+              ),
+              for (final prayer in PrayerType.values)
+                FilterChip(
+                  label: Text(prayer.localizedLabel(l10n)),
+                  selected: state.prayerFilter == prayer,
+                  onSelected: (selected) =>
+                      controller.setPrayerFilter(selected ? prayer : null),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(l10n.qazaDateFilterHelp,
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _pickRange(context),
+            icon: const Icon(Icons.event_rounded),
+            label: Text(
+              state.hasDateFilter
+                  ? l10n.qazaDateFilterRange(
+                      DateFormatters.formatGregorianDatePadded(state.from!),
+                      DateFormatters.formatGregorianDatePadded(state.to!),
+                    )
+                  : l10n.qazaDateFilterAny,
+            ),
+          ),
+          if (state.isFiltered)
+            TextButton(
+              onPressed: () {
+                controller.clearFilters();
+                Navigator.of(context).pop();
+              },
+              child: Text(l10n.commonReset),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class _StatusFilterBar extends StatelessWidget {
   const _StatusFilterBar({required this.state, required this.controller});
