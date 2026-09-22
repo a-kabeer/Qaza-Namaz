@@ -416,7 +416,6 @@ class _TrackerBody extends ConsumerWidget {
                         ? (record.status == QazaStatus.pending ? () => controller.toggleSelection(record.id) : null)
                         : (record.status == QazaStatus.pending ? () => _completeSingle(context, ref, record) : null),
                     onLongPress: record.status == QazaStatus.pending && (lockedRecordId == null || record.id == lockedRecordId) ? () => controller.enterSelectionMode(record.id) : null,
-                    onEdit: () => _editTrackerRecord(context, controller, record, l10n),
                     onDelete: () => _deleteTrackerRecord(context, controller, record, l10n),
                   );
                 },
@@ -494,7 +493,6 @@ class _RecordRow extends StatelessWidget {
     required this.onLongPress,
     required this.busy,
     required this.canAct,
-    required this.onEdit,
     required this.onDelete,
   });
   final QazaRecord record;
@@ -504,7 +502,6 @@ class _RecordRow extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool busy;
   final bool canAct;
-  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -555,12 +552,10 @@ class _RecordRow extends StatelessWidget {
           tooltip: l10n.qazaRecordActions,
           onSelected: (action) {
             switch (action) {
-              case _RecordAction.edit: onEdit(); break;
               case _RecordAction.delete: onDelete(); break;
             }
           },
           itemBuilder: (context) => [
-            PopupMenuItem(value: _RecordAction.edit, child: Text(l10n.qazaEditRecord)),
             PopupMenuItem(value: _RecordAction.delete, child: Text(l10n.qazaDeleteRecord)),
           ],
         ),
@@ -570,7 +565,7 @@ class _RecordRow extends StatelessWidget {
     );
   }
 }
-enum _RecordAction { edit, delete }
+enum _RecordAction { delete }
 
 class _BulkCompletionBar extends ConsumerStatefulWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
