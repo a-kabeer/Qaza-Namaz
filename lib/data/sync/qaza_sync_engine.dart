@@ -355,7 +355,55 @@ class QazaSyncEngine {
         final localCompletedAt = localRecord.completedAt;
         final remoteCompletedAt = remoteRecord.completedAt;
 
-        if (localCompletedAt != null && remoteCompletedAt != null) {
+        // A delete is user-visible state, but it must not erase completion
+        // metadata from a concurrent device. If the newer winner is deleted
+        // and the loser was completed, carry the completion timestamp forward
+        // so Restore returns to the correct completed state.
+        if (localRecord.status == QazaStatus.deleted ||
+            remoteRecord.status == QazaStatus.deleted) {
+          final localWins =
+              localRecord.updatedAt.isAfter(remoteRecord.updatedAt) ||
+              localRecord.updatedAt.isAtSameMomentAs(remoteRecord.updatedAt);
+          if (localWins) {
+            winner = localRecord.status == QazaStatus.deleted &&
+                    localRecord.completedAt == null &&
+                    remoteRecord.completedAt != null
+                ? localRecord.copyWith(
+                    completedAt: remoteRecord.completedAt,
+                  )
+                : localRecord;
+            if (winner != remoteRecord) {
+              recoveryOp = PendingSyncOp(
+                id: 'recovery_' + localRecord.id + '_' +
+                    localRecord.updatedAt.microsecondsSinceEpoch.toString(),
+                type: SyncOpType.update,
+                userId: userId,
+                queuedAt: localRecord.updatedAt,
+                targetRecordId: localRecord.id,
+                record: winner,
+              );
+            }
+          } else {
+            winner = remoteRecord.status == QazaStatus.deleted &&
+                    remoteRecord.completedAt == null &&
+                    localRecord.completedAt != null
+                ? remoteRecord.copyWith(
+                    completedAt: localRecord.completedAt,
+                  )
+                : remoteRecord;
+            if (winner != localRecord) {
+              recoveryOp = PendingSyncOp(
+                id: 'recovery_' + remoteRecord.id + '_' +
+                    remoteRecord.updatedAt.microsecondsSinceEpoch.toString(),
+                type: SyncOpType.update,
+                userId: userId,
+                queuedAt: remoteRecord.updatedAt,
+                targetRecordId: remoteRecord.id,
+                record: winner,
+              );
+            }
+          }
+        } else if (localCompletedAt != null && remoteCompletedAt != null) {
           // Completion is a monotonic business event: the earliest recorded
           // completion wins across devices.
           if (localCompletedAt.isBefore(remoteCompletedAt)) {
