@@ -1,6 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/prayer_schedule.dart';
@@ -30,7 +29,6 @@ class PrayerTimesNotificationService {
     if (_initialized) return;
 
     PrayerSchedule.ensureTimezoneDatabase();
-    tz_data.initializeTimeZones();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwin = DarwinInitializationSettings();
