@@ -1,6 +1,6 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -503,13 +503,19 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
 
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Timer? _restrictionTicker;
+  QazaRestrictionEvaluation? _lastRestriction;
 
   @override
   void initState() {
     super.initState();
     _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      ref.invalidate(qazaRestrictionEvaluationProvider);
+      final current =
+          ref.read(qazaRestrictionEvaluationProvider).valueOrNull ??
+              _lastRestriction;
+      if (current?.isRestricted == true) {
+        ref.invalidate(qazaRestrictionEvaluationProvider);
+      }
     });
   }
 
@@ -521,10 +527,20 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
+      qazaRestrictionEvaluationProvider,
+      (previous, next) {
+        if (next.hasValue) {
+          _lastRestriction = next.value;
+        }
+      },
+    );
+
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
+    final restrictionAsync = ref.watch(qazaRestrictionEvaluationProvider);
     final restriction =
-        ref.watch(qazaRestrictionEvaluationProvider).valueOrNull;
+        _lastRestriction ?? restrictionAsync.valueOrNull;
     final restricted =
         restriction?.isRestricted == true && restriction?.type != null;
     final pendingPrayers = PrayerType.values
