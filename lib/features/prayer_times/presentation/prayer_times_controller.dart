@@ -146,6 +146,15 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     await _loadToday();
   }
 
+  Future<void> openRelevantSettings() async {
+    final kind = state.locationErrorKind;
+    if (kind == PrayerLocationErrorKind.permissionPermanentlyDenied) {
+      await _locationService.openAppSettings();
+      return;
+    }
+    await _locationService.openLocationSettings();
+  }
+
   Future<void> useMyLocation() async {
     state = state.copyWith(
       status: PrayerTimesStatus.locating,
