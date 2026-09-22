@@ -199,7 +199,7 @@ void main() {
     testWidgets(
         'explains restricted time instead of showing Complete Qaza',
         (tester) async {
-      const restriction = QazaRestrictionEvaluation(
+      final restriction = QazaRestrictionEvaluation(
         isRestricted: true,
         type: RestrictionType.sunrise,
         remaining: Duration(minutes: 12),
@@ -250,7 +250,7 @@ void main() {
     });
 
     testWidgets('restricted Home state uses Urdu localization', (tester) async {
-      const restriction = QazaRestrictionEvaluation(
+      final restriction = QazaRestrictionEvaluation(
         isRestricted: true,
         type: RestrictionType.zawal,
         remaining: Duration(minutes: 5),
