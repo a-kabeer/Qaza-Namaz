@@ -110,6 +110,7 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
             completedAt: completedAt,
           );
       ref.invalidate(oldestPendingProvider(completedPrayer));
+      ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
@@ -120,6 +121,7 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
         userId: userId,
         recordIds: [record.id],
         completedAt: completedAt,
+        onUndone: refresh,
       );
     } on QazaTartibViolationException catch (error) {
       if (!mounted) return;
