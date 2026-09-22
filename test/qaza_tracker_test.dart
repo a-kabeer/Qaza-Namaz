@@ -483,7 +483,8 @@ void main() {
       await tester.tap(find.byKey(const Key('qaza_record_complete_test-user_fajr_2025-01-01')));
       await tester.pumpAndSettle();
 
-      expect(repository.completedFor('test-user'), hasLength(1));
+      final completed = await repository.getRecords(userId: 'test-user', status: QazaStatus.completed);
+      expect(completed, hasLength(1));
       expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
     });
 
@@ -528,8 +529,10 @@ void main() {
       await tester.tap(find.text('Delete').last);
       await tester.pumpAndSettle();
 
-      expect(repository.activeFor('test-user'), isEmpty);
-      expect(repository.deletedFor('test-user'), hasLength(2));
+      final active = await repository.getRecords(userId: 'test-user');
+      final deleted = await repository.getHistoryPage(userId: 'test-user', status: QazaStatus.deleted);
+      expect(active, isEmpty);
+      expect(deleted.records, hasLength(2));
     });
   });
 }
