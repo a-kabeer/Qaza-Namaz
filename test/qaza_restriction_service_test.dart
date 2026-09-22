@@ -95,7 +95,6 @@ void main() {
   test('returns allowed outside restricted periods', () async {
     final service = QazaRestrictionService(
       repository: _Repo(location, const PrayerSettings(), _day()),
-      calculator: const PrayerTimeCalculator(),
       now: () => DateTime.utc(2026, 9, 20, 8, 0),
       policy: const QazaRestrictionPolicy(
         sunriseAfter: Duration.zero,
