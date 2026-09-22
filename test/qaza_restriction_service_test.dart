@@ -79,7 +79,6 @@ void main() {
   test('blocks the configured zawal restriction', () async {
     final service = QazaRestrictionService(
       repository: _Repo(location, const PrayerSettings(), _day()),
-      calculator: const PrayerTimeCalculator(),
       now: () => DateTime.utc(2026, 9, 20, 7, 15),
       policy: const QazaRestrictionPolicy(
         sunriseAfter: Duration.zero,
