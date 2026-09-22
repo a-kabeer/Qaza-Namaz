@@ -260,8 +260,8 @@ class PrayerDay {
     required this.date,
     required this.timezone,
     required this.times,
-    required this.solarNoon,
-    required this.sunset,
+    this.solarNoon,
+    this.sunset,
     required this.hijriDate,
     required this.fetchedAt,
     this.resolvedCalculationMethodName,
@@ -270,8 +270,8 @@ class PrayerDay {
   final DateTime date;
   final String timezone;
   final Map<PrayerName, PrayerTime> times;
-  final DateTime solarNoon;
-  final DateTime sunset;
+  final DateTime? solarNoon;
+  final DateTime? sunset;
   final HijriDate hijriDate;
   final DateTime fetchedAt;
   final String? resolvedCalculationMethodName;
@@ -307,8 +307,8 @@ class PrayerDay {
           for (final entry in times.entries)
             entry.key.name: entry.value.toJson(),
         },
-        'solarNoon': solarNoon.toIso8601String(),
-        'sunset': sunset.toIso8601String(),
+        'solarNoon': solarNoon?.toIso8601String(),
+        'sunset': sunset?.toIso8601String(),
         'hijriDate': hijriDate.toJson(),
         'fetchedAt': fetchedAt.toIso8601String(),
         'resolvedCalculationMethodName': resolvedCalculationMethodName,
@@ -327,8 +327,12 @@ class PrayerDay {
       date: DateTime.parse(json['date'] as String),
       timezone: json['timezone'] as String,
       times: times,
-      solarNoon: DateTime.parse(json['solarNoon'] as String),
-      sunset: DateTime.parse(json['sunset'] as String),
+      solarNoon: json['solarNoon'] is String
+          ? DateTime.parse(json['solarNoon'] as String)
+          : null,
+      sunset: json['sunset'] is String
+          ? DateTime.parse(json['sunset'] as String)
+          : null,
       hijriDate: HijriDate.fromJson(
         Map<String, dynamic>.from(json['hijriDate'] as Map),
       ),
@@ -356,10 +360,5 @@ class PrayerTimesRequest {
   final AsrMethod asrMethod;
   final String? timezone;
 
-  String get cacheKey {
-    final dateKey =
-        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return '${latitude.toStringAsFixed(6)}_${longitude.toStringAsFixed(6)}_${dateKey}_${method.storageValue}_${asrMethod.name}';
-  }
 }
 
