@@ -202,9 +202,7 @@ class _PendingTrackerContent extends StatelessWidget {
                   onPressed: () => _openFilters(context),
                   icon: const Icon(Icons.filter_list_rounded),
                   label: Text(
-                    state.isFiltered
-                        ? l10n.qazaFiltersActive
-                        : l10n.qazaFilter,
+                    state.isFiltered ? 'Filters active' : 'Filter',
                   ),
                 ),
               ),
@@ -270,7 +268,7 @@ class _FilterSheet extends StatelessWidget {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         children: [
-          Text(l10n.qazaFilterPrayer,
+          Text(l10n.qazaDateFilterHelp,
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Wrap(
