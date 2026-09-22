@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/diagnostics/diagnostics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/prayer_types.dart';
@@ -45,7 +47,9 @@ final remoteQazaSyncDataSourceProvider = Provider<QazaSyncRemoteDataSource>(
   (ref) => ref.watch(firestoreQazaRepositoryProvider),
 );
 final authRepositoryProvider =
-    Provider<AuthRepository>((ref) => FirebaseAuthRepository());
+    Provider<AuthRepository>((ref) => FirebaseAuthRepository(
+          diagnostics: ref.watch(diagnosticsProvider),
+        ));
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
@@ -64,6 +68,7 @@ final connectivityChangesProvider = Provider<Stream<bool>>((ref) =>
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
   final repository = OfflineFirstQazaRepository(
+      diagnostics: ref.watch(diagnosticsProvider),
       remote: ref.watch(remoteQazaRepositoryProvider),
       syncRemote: ref.watch(remoteQazaSyncDataSourceProvider),
       localStore: ref.watch(qazaLocalStoreProvider),
@@ -87,8 +92,8 @@ final qazaPrayerTimeBlockedResolverProvider =
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayerTypes,
   }) async {
-    final requestedDates = dates.map((date) =>
-        DateTime(date.year, date.month, date.day)).toSet();
+    final requestedDates =
+        dates.map((date) => DateTime(date.year, date.month, date.day)).toSet();
     final requestedPrayers = prayerTypes.toSet();
     if (requestedDates.isEmpty || requestedPrayers.isEmpty) {
       return const <QazaPrayerKey>{};
@@ -134,14 +139,14 @@ final qazaPrayerTimeBlockedResolverProvider =
     DateTime? waqtEnd(PrayerType prayer) => switch (prayer) {
           // Fajr ends at sunrise; the other prayers end when the next prayer
           // starts. Isha and Witr end with the following day's Fajr.
-          PrayerType.fajr => PrayerSchedule.moment(
-              todaySchedule, PrayerName.sunrise),
-          PrayerType.zuhr => PrayerSchedule.moment(
-              todaySchedule, PrayerName.asr),
-          PrayerType.asr => PrayerSchedule.moment(
-              todaySchedule, PrayerName.maghrib),
-          PrayerType.maghrib => PrayerSchedule.moment(
-              todaySchedule, PrayerName.isha),
+          PrayerType.fajr =>
+            PrayerSchedule.moment(todaySchedule, PrayerName.sunrise),
+          PrayerType.zuhr =>
+            PrayerSchedule.moment(todaySchedule, PrayerName.asr),
+          PrayerType.asr =>
+            PrayerSchedule.moment(todaySchedule, PrayerName.maghrib),
+          PrayerType.maghrib =>
+            PrayerSchedule.moment(todaySchedule, PrayerName.isha),
           PrayerType.isha => tomorrowSchedule == null
               ? null
               : PrayerSchedule.moment(tomorrowSchedule, PrayerName.fajr),
@@ -165,17 +170,26 @@ final qazaPrayerTimeBlockedResolverProvider =
   };
 });
 
+/// Where failures are reported.
+///
+/// Debug output by default. A crash-reporting backend is added by overriding
+/// this provider with a `FanOutDiagnostics([const DebugDiagnostics(), ...])`,
+/// which is the only change the rest of the app needs.
+final diagnosticsProvider =
+    Provider<DiagnosticsService>((ref) => const DebugDiagnostics());
+
 final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
       prayerTimeBlockedResolver: ({
         required userId,
         required dates,
         required prayerTypes,
-      }) => ref.read(qazaPrayerTimeBlockedResolverProvider)(
-            userId: userId,
-            dates: dates,
-            prayerTypes: prayerTypes,
-          ),
+      }) =>
+          ref.read(qazaPrayerTimeBlockedResolverProvider)(
+        userId: userId,
+        dates: dates,
+        prayerTypes: prayerTypes,
+      ),
     ));
 
 /** The current user's Sahib al-Tartib state. */
@@ -372,7 +386,8 @@ final syncStateProvider = StreamProvider<SyncState?>((ref) {
   return repository.syncState.map<SyncState?>((state) => state);
 });
 
-final cloudDataDeletionServiceProvider = Provider<CloudDataDeletionService>((ref) {
+final cloudDataDeletionServiceProvider =
+    Provider<CloudDataDeletionService>((ref) {
   return CloudDataDeletionService(
     remote: ref.watch(remoteQazaSyncDataSourceProvider),
     localStore: ref.watch(qazaLocalStoreProvider),

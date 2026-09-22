@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/constants/app_metadata.dart';
+import '../../core/errors/app_error.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
@@ -40,10 +41,15 @@ class QazaImportResult {
   final int unchangedCount;
 }
 
-class QazaDataTransferException implements Exception {
+class QazaDataTransferException implements Exception, ClassifiedError {
   const QazaDataTransferException(this.message);
 
   final String message;
+
+  /// Every failure this throws is a file the app could not make sense of,
+  /// which is not fixed by importing the same file again.
+  @override
+  AppErrorKind get kind => AppErrorKind.malformedData;
 
   @override
   String toString() => message;

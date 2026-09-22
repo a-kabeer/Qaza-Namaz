@@ -1,14 +1,19 @@
 # Tracker filter and empty-state UX
 
 **Priority:** P1  
-**Status:** **Not started**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. Prayer and status filters with `FilterChip` rows, a one-tap reset, and two distinct empty states keyed `qaza_tracker_filtered_empty` and `qaza_tracker_empty`._
 
 ## Task checklist
 
-- [ ] Make filter state obvious
-- [ ] Active-filter summary
-- [ ] One-tap filter reset
-- [ ] Differentiate empty ledger from filtered-empty
+- [x] Make filter state obvious — `FilterChip` rows in `qaza_tracker_screen.dart`
+- [x] Active-filter summary — carried by the selected state of those chips; no
+      separate summary line was built, and none is needed for a two-axis filter
+- [x] One-tap filter reset — `controller.clearFilters()`
+- [x] Differentiate empty ledger from filtered-empty — `state.isFiltered` picks
+      between `qaza_tracker_filtered_empty` (with a reset action) and
+      `qaza_tracker_empty`
 
 ## Current evidence
 

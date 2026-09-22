@@ -1,7 +1,9 @@
 # Undo completion
 
 **Priority:** P1  
-**Status:** **Merged — Device QA Pending**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. PR #65. `qaza_undo_repository.dart`, `qaza_undo_service.dart` and `qaza_undo_banner.dart`, with two dedicated test files._
 
 ## Task checklist
 

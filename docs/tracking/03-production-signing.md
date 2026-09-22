@@ -1,7 +1,9 @@
 # Production release signing
 
 **Priority:** P0  
-**Status:** **Merged — Production Signing Secrets Pending**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. Release signing is wired through `android/key.properties` with a hard guard in `android/app/build.gradle` that refuses an unsigned release artifact, and CI publishes `app-release-apk-signed` and `app-release-aab`._
 
 ## Task checklist
 

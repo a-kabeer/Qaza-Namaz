@@ -1,6 +1,8 @@
 # Task 28 — Home Dynamic Qaza Completion Experience
 
-**Status:** Implementation complete; CI verification in progress  
+**Status:** **Superseded — See PR #71/#72/#73/#74**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. The Home completion surface was replaced by the prayer selector (#71), restricted-time UX (#72), today's-prayer eligibility (#73) and pending-by-prayer (#74)._
 **Branch:** `task/home-dynamic-qaza`  
 **Started:** 2026-09-21  
 **Scope:** Home Screen only, using the existing Qaza completion and Prayer Time architecture.
@@ -87,3 +89,11 @@ The manual prayer chips are an explicit user preference. Automatic mode is the d
 | CI | ⏳ | Run 1584: Analyze ✅, Firestore ✅; Linux/Windows/Android still running |
 | Tracking document | ✅ | New standalone task document |
 | Older tracking documents preserved | ✅ | No older tracking file is modified |
+
+## Why this file is superseded
+
+The Home completion surface described here was replaced before this checklist was
+finished, by the prayer selector (#71), the restricted-time UX (#72), today's-prayer
+eligibility (#73) and pending-by-prayer (#74). The unticked boxes below are kept as
+the historical record of what this task intended; they are not outstanding work.
+Anything still wanted from them belongs in a new task against the current Home.

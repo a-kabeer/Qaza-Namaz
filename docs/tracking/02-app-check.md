@@ -1,7 +1,9 @@
 # Firebase App Check
 
 **Priority:** P0  
-**Status:** **Merged — Firebase Console / Device QA Pending**
+**Status:** **Blocked — External Configuration**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. App Check is activated in `lib/main.dart` (Play Integrity for release, debug provider otherwise). Enforcement still depends on registering this build's signing SHA-1/SHA-256 in the Firebase console, which is outside the repository._
 
 ## Task checklist
 

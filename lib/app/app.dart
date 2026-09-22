@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/diagnostics/diagnostics.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/settings/app_lock_controller.dart';
@@ -42,12 +42,12 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     try {
       await ref.read(notificationSchedulerProvider).initialize();
     } catch (error, stack) {
-      if (kDebugMode) {
-        debugPrint(
-          '[notifications] app-start initialization failed: ${error.runtimeType}: $error',
-        );
-        debugPrintStack(stackTrace: stack);
-      }
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.notificationsInit,
+            'app_start_initialize_failed',
+            error,
+            stack: stack,
+          );
     }
   }
 

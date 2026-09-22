@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../data/notifications/local_notification_service.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
@@ -418,8 +418,7 @@ class NotificationSettingsNotifier
 
     var permissionStatus = current.permissionStatus;
     if (permissionStatus != NotificationPermissionStatus.granted) {
-      if (permissionStatus ==
-          NotificationPermissionStatus.permanentlyDenied) {
+      if (permissionStatus == NotificationPermissionStatus.permanentlyDenied) {
         throw StateError(
           'Notification permission is permanently denied. '
           'Open system notification settings and enable notifications.',
@@ -445,8 +444,7 @@ class NotificationSettingsNotifier
           state =
               AsyncData(current.copyWith(permissionStatus: permissionStatus));
           throw StateError(
-            permissionStatus ==
-                    NotificationPermissionStatus.permanentlyDenied
+            permissionStatus == NotificationPermissionStatus.permanentlyDenied
                 ? 'Notification permission is permanently denied. '
                     'Open system notification settings and enable notifications.'
                 : 'Notification permission was not granted.',
@@ -534,12 +532,12 @@ class NotificationSettingsNotifier
   }
 
   void _logPlatformFailure(String operation, Object error, StackTrace stack) {
-    if (kDebugMode) {
-      debugPrint(
-        '[notifications] $operation failed: ${error.runtimeType}: $error',
-      );
-      debugPrintStack(stackTrace: stack);
-    }
+    ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.notificationsSchedule,
+          '${operation}_failed',
+          error,
+          stack: stack,
+        );
   }
 }
 

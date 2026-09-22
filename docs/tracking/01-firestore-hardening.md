@@ -3,6 +3,8 @@
 **Priority:** P0  
 **Status:** **Merged**
 
+_Reconciled 2026-09-22 against `main` @ 505a828. CI runs a dedicated `security_rules` job (`.github/workflows/flutter-ci.yml`)._
+
 ## Task checklist
 
 - [x] Validate exact document fields

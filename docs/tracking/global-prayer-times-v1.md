@@ -104,4 +104,4 @@ Repository CI additionally validates Flutter analysis, Linux/Windows tests, Fire
 
 ## Definition of done
 
-The migration is complete when CI is green, the feature contains no AlAdhan/Open-Meteo prayer references, and real-device airplane-mode testing confirms Prayer Times and restricted-Qaza behavior without network access.
+_Superseded 2026-09-22 by PR #75._ The "no AlAdhan references" completion criterion no longer applies: AlAdhan is the online source again, with `adhan_dart` as the local fallback. The migration is complete when CI is green, the online source and the local fallback both resolve, and real-device testing confirms Prayer Times and restricted-Qaza behaviour both online and in airplane mode.

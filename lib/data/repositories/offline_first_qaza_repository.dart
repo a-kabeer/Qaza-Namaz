@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
@@ -118,6 +119,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
     return _LegacyQazaSyncRemoteDataSource(remote);
   }
 
+  final DiagnosticsService _diagnostics;
+
   OfflineFirstQazaRepository({
     required QazaRepository remote,
     QazaSyncRemoteDataSource? syncRemote,
@@ -125,7 +128,9 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
     Stream<bool>? connectivityChanges,
     DateTime Function()? now,
     String? syncCursorNamespace,
-  })  : _remote = remote,
+    DiagnosticsService diagnostics = const NoopDiagnostics(),
+  })  : _diagnostics = diagnostics,
+        _remote = remote,
         _syncRemote = _resolveSyncRemote(remote, syncRemote),
         _localStore = localStore,
         _now = now ?? DateTime.now,
@@ -255,9 +260,17 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
       } else if (!_isOnline) {
         _emit(const SyncState(status: SyncStatus.offline));
       }
-    } catch (error) {
+    } catch (error, stack) {
       if (generation != _sessionGeneration || userId != _activeUserId) return;
       _hydrated = true;
+      // Sync failure monitoring: this is the one the user never sees, because
+      // the app keeps working offline.
+      _diagnostics.recordFailure(
+        DiagnosticArea.sync,
+        'hydrate_failed',
+        error,
+        stack: stack,
+      );
       _emit(
         SyncState(
           status: _isOnline ? SyncStatus.syncError : SyncStatus.offline,
@@ -314,8 +327,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
     if (userId != _activeUserId) return const [];
 
     final result = _records.values
-        .where((record) =>
-            prayerType == null || record.prayerType == prayerType)
+        .where(
+            (record) => prayerType == null || record.prayerType == prayerType)
         .where((record) => status == null || record.status == status)
         .toList()
       ..sort((a, b) => a.originalDate.compareTo(b.originalDate));
@@ -366,7 +379,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
       userId: userId,
       prayerType: prayerType,
     );
-    if (generation != _sessionGeneration || userId != _activeUserId) return null;
+    if (generation != _sessionGeneration || userId != _activeUserId)
+      return null;
     return record;
   }
 
@@ -466,7 +480,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
 
     final fresh = <QazaRecord>[];
     for (final record in records) {
-      final key = '${record.prayerType.name}|${record.originalDate.year}-${record.originalDate.month}-${record.originalDate.day}';
+      final key =
+          '${record.prayerType.name}|${record.originalDate.year}-${record.originalDate.month}-${record.originalDate.day}';
 
       if (record.userId != userId ||
           _records.containsKey(record.id) ||
@@ -528,11 +543,15 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository {
           candidate.originalDate.month == record.originalDate.month &&
           candidate.originalDate.day == record.originalDate.day,
     )) {
-      throw StateError('A Qaza record already exists for this prayer and date.');
+      throw StateError(
+          'A Qaza record already exists for this prayer and date.');
     }
 
     final operation = PendingSyncOp(
-      id: 'update_' + record.id + '_' + record.updatedAt.microsecondsSinceEpoch.toString(),
+      id: 'update_' +
+          record.id +
+          '_' +
+          record.updatedAt.microsecondsSinceEpoch.toString(),
       type: SyncOpType.update,
       userId: userId,
       queuedAt: record.updatedAt,

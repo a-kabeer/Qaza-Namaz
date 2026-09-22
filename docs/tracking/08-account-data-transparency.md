@@ -1,7 +1,9 @@
 # Account data transparency
 
 **Priority:** P0/P1  
-**Status:** **Merged — Device QA Pending**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. PRs #54-#58 merged; CI green on `main`._
 
 ## Task checklist
 
