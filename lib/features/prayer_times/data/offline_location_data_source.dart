@@ -1,4 +1,4 @@
-import 'package:geodb_flutter/geodb_flutter.dart';
+import 'package:country/country.dart';
 import 'package:timezone_country/timezone_country.dart';
 
 import 'location/city_search_provider.dart';
@@ -11,50 +11,44 @@ abstract class OfflineLocationDataSource {
   });
 }
 
-class GeodbOfflineLocationDataSource implements OfflineLocationDataSource {
-  GeodbOfflineLocationDataSource({GeodbFlutter? database})
-      : _database = database ?? GeodbFlutter();
-
-  final GeodbFlutter _database;
-  bool _initialized = false;
-
-  Future<void> _ensureInitialized() async {
-    if (_initialized) return;
-    await _database.initialize();
-    _initialized = true;
-  }
+class OfflineCityDataSource implements OfflineLocationDataSource {
+  const OfflineCityDataSource();
 
   @override
   Future<List<CitySearchResult>> searchCities(String query) async {
     final normalized = query.trim();
     if (normalized.length < 2) return const <CitySearchResult>[];
 
-    await _ensureInitialized();
-    final results = await _database.smartSearch(normalized);
-
+    final results = await Cities.byName(normalized);
     final cities = <CitySearchResult>[];
-    for (final city in results) {
-      // GeoDB uses an empty geoid for countries/states; cities have a geoid.
-      if (city.geoid.isEmpty) continue;
 
+    for (final city in results) {
+      final lat = double.tryParse(city.latitude ?? '');
+      final lon = double.tryParse(city.longitude ?? '');
+      if (lat == null || lon == null) continue;
+
+      final countryCode = city.countryCode;
       final timezone = TimezoneConvert.nearestTimezone(
-        city.lat,
-        city.lng,
-        countryCode: city.iso2,
+        lat,
+        lon,
+        countryCode: countryCode,
       );
+
       cities.add(
         CitySearchResult(
-          name: city.name,
-          country: city.country,
-          latitude: city.lat,
-          longitude: city.lng,
-          region: city.state.isEmpty ? null : city.state,
-          countryCode: city.iso2,
+          name: city.name ?? '',
+          country: city.countryName ?? '',
+          latitude: lat,
+          longitude: lon,
+          region: city.stateName,
+          countryCode: countryCode,
           timezone: timezone,
         ),
       );
+
       if (cities.length == 8) break;
     }
+
     return List.unmodifiable(cities);
   }
 
@@ -63,29 +57,52 @@ class GeodbOfflineLocationDataSource implements OfflineLocationDataSource {
     required double latitude,
     required double longitude,
   }) async {
-    await _ensureInitialized();
-    final results = await _database.findNearest(
-      lat: latitude,
-      lng: longitude,
-      count: 1,
-    );
-    if (results.isEmpty) return null;
-
-    final city = results.first;
-    final timezone = TimezoneConvert.nearestTimezone(
-      city.lat,
-      city.lng,
-      countryCode: city.iso2,
+    final results = await Cities.byCoords(
+      latitude.toStringAsFixed(4),
+      longitude.toStringAsFixed(4),
     );
 
-    return CitySearchResult(
-      name: city.name,
-      country: city.country,
-      latitude: city.lat,
-      longitude: city.lng,
-      region: city.state.isEmpty ? null : city.state,
-      countryCode: city.iso2,
-      timezone: timezone,
-    );
+    CitySearchResult? nearest;
+    var nearestDistance = double.infinity;
+
+    for (final city in results) {
+      final lat = double.tryParse(city.latitude ?? '');
+      final lon = double.tryParse(city.longitude ?? '');
+      if (lat == null || lon == null) continue;
+
+      final distance = _distanceSquared(latitude, longitude, lat, lon);
+      if (distance >= nearestDistance) continue;
+
+      final countryCode = city.countryCode;
+      final timezone = TimezoneConvert.nearestTimezone(
+        lat,
+        lon,
+        countryCode: countryCode,
+      );
+
+      nearestDistance = distance;
+      nearest = CitySearchResult(
+        name: city.name ?? '',
+        country: city.countryName ?? '',
+        latitude: lat,
+        longitude: lon,
+        region: city.stateName,
+        countryCode: countryCode,
+        timezone: timezone,
+      );
+    }
+
+    return nearest;
+  }
+
+  double _distanceSquared(
+    double aLat,
+    double aLon,
+    double bLat,
+    double bLon,
+  ) {
+    final dLat = aLat - bLat;
+    final dLon = aLon - bLon;
+    return (dLat * dLat) + (dLon * dLon);
   }
 }
