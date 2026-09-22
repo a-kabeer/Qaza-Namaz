@@ -130,7 +130,16 @@ class PrayerTimesNotificationService {
         final period = periods[restrictionIndex];
         if (!_restrictionEnabled(notifications, period.type)) continue;
 
-        final notifyAt = period.start.subtract(
+        final localLocation = tz.getLocation(day.timezone);
+        final restrictionStart = tz.TZDateTime.from(
+          period.start,
+          localLocation,
+        );
+        final restrictionEnd = tz.TZDateTime.from(
+          period.end,
+          localLocation,
+        );
+        final notifyAt = restrictionStart.subtract(
           Duration(minutes: notifications.restrictedLeadMinutes),
         );
         await _schedule(
@@ -139,7 +148,7 @@ class PrayerTimesNotificationService {
               restrictionIndex,
           title: '${_restrictionLabel(period.type)} Restriction',
           body:
-              'Restricted time starts at ${_formatTime(period.start)} and lasts ${_durationMinutes(period.start, period.end)} min.',
+              'Restricted time starts at ${_formatTime(restrictionStart)} and lasts ${_durationMinutes(restrictionStart, restrictionEnd)} min.',
           when: notifyAt,
         );
       }
