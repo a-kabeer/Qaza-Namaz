@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import '../entities/qaza_operation.dart';
 import '../repositories/qaza_operation_repository.dart';
 
@@ -10,11 +8,8 @@ class QazaOperationService {
   final QazaOperationRepository repository;
   final DateTime Function() _now;
 
-  String _newId() {
-    final now = _now().microsecondsSinceEpoch.toRadixString(36);
-    final salt = Random().nextInt(1 << 30).toRadixString(36);
-    return '${now}_${salt}';
-  }
+  String _newId(DateTime timestamp) =>
+      'op_${timestamp.microsecondsSinceEpoch}';
 
   Future<QazaOperation> begin({
     required String userId,
@@ -22,7 +17,7 @@ class QazaOperationService {
   }) async {
     final timestamp = _now();
     final op = QazaOperation(
-      operationId: _newId(),
+      operationId: _newId(timestamp),
       userId: userId,
       type: type,
       status: QazaOperationStatus.running,
