@@ -482,7 +482,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       QazaRecordsCompanion.insert(
         id: record.id,
         userId: record.userId,
-        operationId: record.operationId,
+        operationId: Value(record.operationId),
         prayerType: record.prayerType.name,
         originalDate: record.originalDate,
         status: record.status.name,
