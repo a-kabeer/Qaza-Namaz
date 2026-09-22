@@ -194,8 +194,8 @@ void main() {
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
+    });
 
-    
     testWidgets(
         'explains restricted time instead of showing Complete Qaza',
         (tester) async {
@@ -263,7 +263,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('تمام قضا دیکھیں'), findsOneWidget);
-    });
     });
 
     testWidgets('completing the displayed oldest Qaza updates Home',
