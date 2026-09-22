@@ -7,6 +7,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
+import 'package:qaza_namaz/features/qaza/qaza_tracker_screen.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 
 import 'support/in_memory_qaza_repository.dart';
@@ -41,7 +42,7 @@ void main() {
 
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: const TestApp(home: WorkspaceShell()),
+      child: const TestApp(home: QazaTrackerScreen()),
     ));
     await tester.pumpAndSettle();
     container.read(workspaceDestinationProvider.notifier).state =
