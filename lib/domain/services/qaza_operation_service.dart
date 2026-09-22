@@ -42,7 +42,9 @@ class QazaOperationService {
     );
     final recordCount = operation.recordCount != 0
         ? operation.recordCount
-        : existing?.recordCount ?? affectedRecordCount;
+        : (existing?.recordCount ?? 0) != 0
+            ? existing!.recordCount
+            : affectedRecordCount;
     final finished = operation.copyWith(
         status: status,
         updatedAt: _now(),
