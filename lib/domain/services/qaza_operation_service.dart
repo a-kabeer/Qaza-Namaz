@@ -9,7 +9,7 @@ class QazaOperationService {
   final DateTime Function() _now;
 
   String _newId(DateTime timestamp) =>
-      'op_${timestamp.microsecondsSinceEpoch}';
+      'op_${timestamp.microsecondsSinceEpoch}_${Random().nextInt(1 << 30).toRadixString(36)}';
 
   Future<QazaOperation> begin({
     required String userId,
