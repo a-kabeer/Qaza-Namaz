@@ -1014,16 +1014,17 @@ class _CountryPickerSheetState extends ConsumerState<_CountryPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final countriesAsync = ref.watch(prayerCountriesProvider);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        4,
-        20,
-        20 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * .78,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          4,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          children: [
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
@@ -1092,7 +1093,8 @@ class _CountryPickerSheetState extends ConsumerState<_CountryPickerSheet> {
               },
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
