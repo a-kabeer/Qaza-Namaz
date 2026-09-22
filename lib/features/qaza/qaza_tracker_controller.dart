@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/services/qaza_service.dart';
 import '../prayer_times/prayer_times_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
@@ -208,6 +209,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   }
 
   Future<void> refresh() async {
+    ref.invalidate(sahibAlTartibProvider);
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) {
       state = state.copyWith(
@@ -400,6 +402,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
             completedAt: completedAt,
           );
       state = state.copyWith(completing: false);
+      ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       await refresh();
       if (completed == 0) return null;
@@ -408,6 +411,13 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         completedAt: completedAt,
         count: completed,
       );
+    } on QazaTartibViolationException {
+      state = state.copyWith(
+        completing: false,
+        clearError: true,
+      );
+      ref.invalidate(sahibAlTartibProvider);
+      return null;
     } catch (error) {
       state = state.copyWith(
         completing: false,

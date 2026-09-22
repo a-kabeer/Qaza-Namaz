@@ -26,6 +26,7 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../features/auth/guest_session.dart';
 import '../domain/services/qaza_service.dart';
+import '../domain/services/sahib_al_tartib_service.dart';
 import '../domain/services/qaza_undo_service.dart';
 import '../domain/services/cloud_data_deletion_service.dart';
 
@@ -75,6 +76,22 @@ final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
 
 final qazaServiceProvider = Provider<QazaService>(
     (ref) => QazaService(ref.watch(qazaRepositoryProvider)));
+
+/** The current user's Sahib al-Tartib state. */
+final sahibAlTartibProvider =
+    FutureProvider.autoDispose<SahibAlTartibState>((ref) {
+  final userId = ref.watch(activeUserIdProvider);
+  if (userId == null) {
+    return Future.value(
+      const SahibAlTartibState(
+        pendingFarzCount: 0,
+        requiresOrder: false,
+        nextPending: null,
+      ),
+    );
+  }
+  return ref.read(qazaServiceProvider).sahibAlTartibState(userId: userId);
+});
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
 );

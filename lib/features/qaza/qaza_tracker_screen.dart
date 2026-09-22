@@ -307,15 +307,18 @@ Future<void> _deleteTrackerRecord(
     );
   }
 }
-class _TrackerBody extends StatelessWidget {
+class _TrackerBody extends ConsumerWidget {
   const _TrackerBody({required this.state, required this.controller});
 
   final QazaTrackerState state;
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final lockedRecordId =
+        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
 
     // The full state belongs to the first load only; a filter change keeps
     // the page that is already there.
@@ -347,66 +350,96 @@ class _TrackerBody extends StatelessWidget {
             );
     }
 
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.extentAfter < 320) controller.loadMore();
-          return false;
-        },
-        child: ListView.builder(
-          key: const Key('qaza_tracker_list'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          // Keep the final prayer row (including Witr) above the
-          // workspace FAB. AppSpacing.fabClearance matches the FAB's
-          // occupied footprint and keeps the last row fully reachable.
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.fabClearance,
+    return Column(
+      children: [
+        if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                l10n.qazaTartibRequiredMessage(
+                  tartib!.pendingFarzCount,
+                  tartib.nextPrayer!.localizedLabel(l10n),
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           ),
-          itemCount: state.records.length + (state.hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= state.records.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.refresh,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320) {
+                  controller.loadMore();
+                }
+                return false;
+              },
+              child: ListView.builder(
+                key: const Key('qaza_tracker_list'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                // Keep the final prayer row (including Witr) above the
+                // workspace FAB. AppSpacing.fabClearance matches the FAB's
+                // occupied footprint and keeps the last row fully reachable.
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.fabClearance,
                 ),
-                child: Column(
-                  children: [
-                    _TrackerSkeletonRow(),
-                    _TrackerSkeletonRow(),
-                    _TrackerSkeletonRow(),
-                  ],
-                ),
-              );
-            }
-            final record = state.records[index];
-            return _RecordRow(
-              record: record,
-              selected: state.selected.contains(record.id),
-              busy: state.recordMutating,
-              onToggle: record.status == QazaStatus.pending
-                  ? () => controller.toggleSelection(record.id)
-                  : null,
-              onEdit: () => _editTrackerRecord(
-                context,
-                controller,
-                record,
-                l10n,
+                itemCount: state.records.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.records.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Column(
+                        children: [
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final record = state.records[index];
+                  return _RecordRow(
+                    record: record,
+                    selected: state.selected.contains(record.id),
+                    busy: state.recordMutating,
+                    onToggle: record.status == QazaStatus.pending &&
+                            (lockedRecordId == null ||
+                                record.id == lockedRecordId)
+                        ? () => controller.toggleSelection(record.id)
+                        : null,
+                    onEdit: () => _editTrackerRecord(
+                      context,
+                      controller,
+                      record,
+                      l10n,
+                    ),
+                    onDelete: () => _deleteTrackerRecord(
+                      context,
+                      controller,
+                      record,
+                      l10n,
+                    ),
+                  );
+                },
               ),
-              onDelete: () => _deleteTrackerRecord(
-                context,
-                controller,
-                record,
-                l10n,
-              ),
-            );
-          },
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -495,15 +528,17 @@ class _RecordRow extends StatelessWidget {
           '${record.status.localizedLabel(l10n)}',
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: onToggle == null
+        leading: completed
             ? Icon(
                 Icons.check_circle_rounded,
                 color: theme.colorScheme.primary,
               )
-            : Checkbox(
-                value: selected,
-                onChanged: (_) => onToggle!(),
-              ),
+            : onToggle == null
+                ? const Icon(Icons.lock_outline_rounded)
+                : Checkbox(
+                    value: selected,
+                    onChanged: (_) => onToggle!(),
+                  ),
         title: Text(originalDate),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,12 +678,30 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                             final messenger = ScaffoldMessenger.of(context);
                             final batch = await widget.controller
                                 .completeSelectedWithUndo();
-                            if (batch == null) {
-                              final latest = ref
-                                  .read(qazaRestrictionEvaluationProvider)
+                                            if (batch == null) {
+                              final tartib = ref
+                                  .read(sahibAlTartibProvider)
                                   .valueOrNull;
-                              if (latest?.isRestricted == true &&
-                                  latest?.type != null) {
+                              if (tartib?.requiresOrder == true &&
+                                  tartib?.nextPrayer != null) {
+                                messenger
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.qazaTartibBlocked(
+                                          tartib!.nextPrayer!
+                                              .localizedLabel(l10n),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                              } else {
+                                final latest = ref
+                                    .read(qazaRestrictionEvaluationProvider)
+                                    .valueOrNull;
+                                if (latest?.isRestricted == true &&
+                                    latest?.type != null) {
                                 messenger
                                   ..hideCurrentSnackBar()
                                   ..showSnackBar(
@@ -676,12 +729,13 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                                       ),
                                     ),
                                   );
-                              } else {
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(l10n.qazaCompletedCount(0)),
-                                  ),
-                                );
+                                } else {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.qazaCompletedCount(0)),
+                                    ),
+                                  );
+                                }
                               }
                               return;
                             }

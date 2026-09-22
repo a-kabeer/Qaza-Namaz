@@ -32,9 +32,9 @@ void main() {
   });
 
   test('both shipped files parse and join', () {
-    expect(englishSource, hasLength(75));
-    expect(urduSource, hasLength(75));
-    expect(articles, hasLength(75));
+    expect(englishSource, hasLength(76));
+    expect(urduSource, hasLength(76));
+    expect(articles, hasLength(76));
   });
 
   test('every id from the source files survives verbatim', () {
@@ -51,7 +51,7 @@ void main() {
       bySection[article.category] = (bySection[article.category] ?? 0) + 1;
     }
 
-    expect(bySection[KnowledgeCategory.masail], 55);
+    expect(bySection[KnowledgeCategory.masail], 56);
     expect(bySection[KnowledgeCategory.mugalat], 20);
   });
 

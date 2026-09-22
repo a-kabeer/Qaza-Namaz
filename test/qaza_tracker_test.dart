@@ -214,7 +214,7 @@ void main() {
         () async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
-        for (var day = 1; day <= 5; day++)
+        for (var day = 1; day <= 6; day++)
           _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, day)),
       ]);
       final container = await _container(repository);
@@ -223,10 +223,10 @@ void main() {
       final controller = container.read(qazaTrackerControllerProvider.notifier);
 
       controller.selectAllLoaded();
-      expect(container.read(qazaTrackerControllerProvider).selected.length, 5);
+      expect(container.read(qazaTrackerControllerProvider).selected.length, 6);
 
       final completed = await controller.completeSelected();
-      expect(completed, 5);
+      expect(completed, 6);
 
       final state = container.read(qazaTrackerControllerProvider);
       expect(state.selected, isEmpty);
