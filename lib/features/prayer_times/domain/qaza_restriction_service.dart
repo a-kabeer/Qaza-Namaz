@@ -2,7 +2,6 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
 import 'prayer_schedule.dart';
-import 'prayer_time_calculator.dart';
 import 'prayer_times_models.dart';
 import 'prayer_times_repository.dart';
 
