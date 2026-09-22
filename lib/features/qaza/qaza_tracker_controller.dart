@@ -387,10 +387,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         .isNotEmpty;
 
     if (restrictionBlocked) {
-      state = state.copyWith(
-        completing: false,
-        error: 'Qaza completion is restricted during a prohibited prayer time.',
-      );
+      state = state.copyWith(completing: false, clearError: true);
       return null;
     }
 
