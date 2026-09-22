@@ -85,8 +85,8 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
             );
         deleted = page.records;
         hasMore = page.hasMore;
-        cursorDate = page.nextOriginalDate;
-        cursorId = page.nextId;
+        cursorDate = deleted.isEmpty ? null : deleted.last.updatedAt;
+        cursorId = deleted.isEmpty ? null : deleted.last.id;
       }
       if (mounted) setState(() => loading = false);
     } catch (e) {
@@ -101,14 +101,14 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
       final page = await ref.read(qazaServiceProvider).getRecentlyDeletedPage(
             userId: ref.read(requiredUserIdProvider),
             limit: 50,
-            beforeOriginalDate: cursorDate,
+            beforeDeletedAt: cursorDate,
             beforeId: cursorId,
           );
       setState(() {
         deleted = [...deleted, ...page.records];
         hasMore = page.hasMore;
-        cursorDate = page.nextOriginalDate;
-        cursorId = page.nextId;
+        cursorDate = deleted.isEmpty ? null : deleted.last.updatedAt;
+        cursorId = deleted.isEmpty ? null : deleted.last.id;
         loadingMore = false;
       });
     } catch (e) {
