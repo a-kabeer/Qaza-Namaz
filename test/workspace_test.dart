@@ -61,8 +61,7 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     // Calculator remains contextual; Prayer Times is a primary destination.
     expect(find.text('Calculator'), findsNothing);
-    // Home leads with the compact progress overview; Add/Calculate live in
-    // the workspace action menu rather than separate Home buttons.
+    // Home leads with the compact progress overview; Qaza actions live on the Qaza workspace.
     expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
     
     expect(find.byKey(const Key('qaza_tracker_add_fab')), findsOneWidget);
