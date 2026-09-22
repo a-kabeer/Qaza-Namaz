@@ -67,7 +67,6 @@ final prayerTimesControllerProvider =
 final qazaRestrictionServiceProvider = Provider<QazaRestrictionService>((ref) {
   return QazaRestrictionService(
     repository: ref.watch(prayerTimesRepositoryProvider),
-    calculator: ref.watch(prayerTimesCalculatorProvider),
     now: ref.watch(prayerTimesClockProvider).now,
   );
 });
