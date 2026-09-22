@@ -449,6 +449,7 @@ class QazaService {
           QazaRecord(
               id: candidate.value,
               userId: userId,
+              operationId: operationId,
               prayerType: candidate.prayerType,
               originalDate: candidate.date,
               status: QazaStatus.pending,
