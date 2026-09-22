@@ -192,12 +192,10 @@ class _PrayerTimesContent extends ConsumerWidget {
               ),
               const SizedBox(height: 5),
               Text(
-                schedule.current != null
-                    ? PrayerTimesStrings.prayerName(
-                        context,
-                        schedule.current!,
-                      )
-                    : '—',
+                PrayerTimesStrings.prayerName(
+                  context,
+                  schedule.current ?? schedule.next!,
+                ),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
