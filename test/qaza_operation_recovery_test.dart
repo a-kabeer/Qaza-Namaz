@@ -27,7 +27,7 @@ void main() {
     final clock = DateTime(2026, 1, 1, 12);
     final operationService = QazaOperationService(opRepo, now: () => clock);
     final qazaService = QazaService(repository, prayerTimeBlockedResolver: ({required userId, required dates, required prayerTypes}) async => const {});
-    final operation = await operationService.begin(userId: 'test-user', type: QazaOperationType.calculatorImport);
+    var operation = await operationService.begin(userId: 'test-user', type: QazaOperationType.calculatorImport);
 
     final added = await qazaService.recordQazaForDates(
       userId: 'test-user',
