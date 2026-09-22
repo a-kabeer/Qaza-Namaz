@@ -65,7 +65,7 @@ void main() {
     // the workspace action menu rather than separate Home buttons.
     expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
     
-    expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_add_fab')), findsOneWidget);
     expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
   });
 
@@ -138,8 +138,8 @@ void main() {
 
     await tester.tap(find.text('Qaza').first);
     await _pumpNavigation(tester);
-    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsOneWidget);
-    expect(find.byKey(const Key('qaza_tracker_prayer_filter')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_filter_button')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_sort')), findsOneWidget);
 
     final handled = await tester.binding.handlePopRoute();
     await _pumpNavigation(tester);
