@@ -236,7 +236,7 @@ void main() {
     );
     expect(asrTile.onChanged, isNull);
     expect(
-      find.textContaining('Already recorded or prayed on every selected date'),
+      find.textContaining('Already recorded/prayed or its prayer time has not ended yet'),
       findsOneWidget,
     );
 
