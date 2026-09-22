@@ -36,7 +36,9 @@ class QazaOperationService {
   }) => repository.save(operation.copyWith(
         status: status,
         updatedAt: _now(),
-        recordCount: affectedRecordCount,
+        recordCount: operation.recordCount == 0
+            ? affectedRecordCount
+            : operation.recordCount,
         affectedRecordCount: affectedRecordCount,
         note: note,
       ));
