@@ -447,9 +447,7 @@ class QazaService {
       await repository.addRecords([
         for (final candidate in candidates.sublist(start, end))
           QazaRecord(
-              id: operationId == null
-                  ? candidate.value
-                  : 'op_${operationId}_${candidate.value}',
+              id: candidate.value,
               userId: userId,
               prayerType: candidate.prayerType,
               originalDate: candidate.date,
