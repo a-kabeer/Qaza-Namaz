@@ -151,7 +151,7 @@ class PrayerTimesStrings {
     };
   }
 
-  static String qazaRestricted(context, RestrictionType type) => _isUrdu(context)
+  static String qazaRestricted(BuildContext context, RestrictionType type) => _isUrdu(context)
       ? 'اس وقت ${restrictionType(context, type)} کے دوران قضا مکمل نہیں کی جا سکتی۔'
       : 'Qaza completion is unavailable during ${restrictionType(context, type).toLowerCase()} restriction.';
 
@@ -193,7 +193,7 @@ class PrayerTimesStrings {
     final urdu = _isUrdu(context);
     return switch (method) {
       CalculationMethod.recommended =>
-        urdu ? 'خودکار (AlAdhan)' : 'Automatic (AlAdhan)',
+        urdu ? 'خودکار (آف لائن)' : 'Automatic (Offline)',
       CalculationMethod.jafari => 'Jafari',
       CalculationMethod.karachi => urdu ? 'کراچی' : 'University of Islamic Sciences, Karachi',
       CalculationMethod.isna => 'ISNA',
