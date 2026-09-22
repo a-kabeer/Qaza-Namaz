@@ -684,7 +684,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                   }
 
                   if (restricted) {
-                    final nextAllowedTime = restriction!.nextAllowedTime;
+                    final nextAllowedTime = restriction.nextAllowedTime;
                     final timeLabel = nextAllowedTime == null
                         ? null
                         : MaterialLocalizations.of(context).formatTimeOfDay(
