@@ -61,11 +61,9 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     // Calculator remains contextual; Prayer Times is a primary destination.
     expect(find.text('Calculator'), findsNothing);
-    // Home leads with the compact progress overview; Add/Calculate live in
-    // the workspace action menu rather than separate Home buttons.
+    // Home leads with the compact progress overview; Qaza actions live on the Qaza workspace.
     expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
     
-    expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
     expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
   });
 
@@ -138,8 +136,8 @@ void main() {
 
     await tester.tap(find.text('Qaza').first);
     await _pumpNavigation(tester);
-    expect(find.byKey(const Key('qaza_tracker_status_filter')), findsOneWidget);
-    expect(find.byKey(const Key('qaza_tracker_prayer_filter')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_filter_button')), findsOneWidget);
+    expect(find.byKey(const Key('qaza_tracker_sort')), findsOneWidget);
 
     final handled = await tester.binding.handlePopRoute();
     await _pumpNavigation(tester);

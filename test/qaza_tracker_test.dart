@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'support/test_app.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -10,6 +11,7 @@ import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_screen.dart';
+import 'package:qaza_namaz/l10n/app_localizations_en.dart';
 import 'support/in_memory_qaza_repository.dart';
 
 /// Fails the test if any consumer asks for the whole ledger.
@@ -97,6 +99,10 @@ Future<void> _settle(ProviderContainer container) async {
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('controller', () {
     test('loads a bounded first page and defaults to pending', () async {
       final repository = InMemoryQazaRepository();
@@ -396,6 +402,8 @@ void main() {
       await pump(tester, repository);
       expect(find.byKey(const Key('qaza_tracker_list')), findsOneWidget);
 
+      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilterChip, 'Witr'));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
@@ -464,15 +472,29 @@ void main() {
       await tester.tap(find.text('Delete').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Delete Qaza record?'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().qazaDeleteRecordTitle), findsOneWidget);
       await tester.tap(find.text('Delete').last);
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
     });
 
-    testWidgets('selecting records reveals the bulk completion bar',
-        (tester) async {
+    testWidgets('tap completion circle completes the oldest record', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
+      ]);
+      await pump(tester, repository);
+
+      await tester.tap(find.byKey(const Key('qaza_record_complete_test-user_fajr_2025-01-01')));
+      await tester.pumpAndSettle();
+
+      final completed = await repository.getRecords(userId: 'test-user', status: QazaStatus.completed);
+      expect(completed, hasLength(1));
+      expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
+    });
+
+    testWidgets('long press enters selection and back exits it', (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
@@ -480,14 +502,19 @@ void main() {
       ]);
       await pump(tester, repository);
 
-      expect(find.byKey(const Key('qaza_tracker_complete_selected')),
-          findsNothing);
-      await tester.tap(find.byType(Checkbox).first);
+      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-01-01')));
       await tester.pump();
 
-      expect(find.byKey(const Key('qaza_tracker_complete_selected')),
-          findsOneWidget);
-      expect(find.text('Complete 1 Qaza'), findsOneWidget);
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.byKey(const Key('qaza_tracker_complete_selected')), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(find.text('Qaza'), findsOneWidget);
+      expect(find.byKey(const Key('qaza_tracker_complete_selected')), findsNothing);
     });
+
+
   });
 }

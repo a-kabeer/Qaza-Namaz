@@ -22,6 +22,7 @@
   "prayerWitr": "Witr",
 
   "statusPending": "Pending",
+  "statusDeleted": "Recently deleted",
   "statusCompleted": "Completed",
   "qazaSelectAllMatching": "Select all matching",
   "qazaSelectAllMatchingCapped": "Selected the first {count} matching records.",
@@ -190,11 +191,11 @@
   "qazaEditDateHelp": "Select original Qaza date",
   "qazaSaveChanges": "Save changes",
   "qazaDeleteRecordTitle": "Delete Qaza record?",
-  "qazaDeleteRecordMessage": "Permanently delete the {prayer} Qaza from {date}? This cannot be undone.",
+  "qazaDeleteRecordMessage": "Move the {prayer} Qaza from {date} to Recently Deleted? You can restore it for 30 days.",
   "qazaRecordUpdated": "Qaza record updated.",
   "qazaDuplicateRecord": "{prayer} Qaza already exists for {date}.",
   "qazaRecordUpdateFailed": "Qaza record could not be updated. Please try again.",
-  "qazaRecordDeleted": "Qaza record deleted.",
+  "qazaRecordDeleted": "Qaza moved to Recently Deleted.",
   "qazaRecordDeleteFailed": "Qaza record could not be deleted. Please try again.",
 
   "qazaUndoAction": "Undo",

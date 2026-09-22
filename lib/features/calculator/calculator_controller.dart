@@ -9,6 +9,7 @@ import 'calculator_persistence.dart';
 import 'calculator_validation.dart';
 import 'calculator_tracker.dart';
 import 'qaza_calculation.dart';
+import '../../domain/entities/qaza_operation.dart';
 
 enum BalighInputMode { age, exactDate }
 
@@ -559,17 +560,30 @@ class CalculatorController extends Notifier<CalculatorState> {
       clearError: true,
     );
     try {
-      final added = await ref.read(qazaServiceProvider).recordQazaForDates(
+      final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: ref.read(requiredUserIdProvider),
-            dates: trackerDates(calculation),
-            prayerTypes:
-                trackerPrayerTypes(includeWitr: calculation.includeWitr),
-            onProgress: (processed, total) {
-              if (_disposed) return;
-              state = state.copyWith(addProcessed: processed, addTotal: total);
-            },
+            type: QazaOperationType.calculatorImport,
           );
-      if (_disposed) return false;
+      try {
+        final added = await ref.read(qazaServiceProvider).recordQazaForDates(
+              userId: ref.read(requiredUserIdProvider),
+              dates: trackerDates(calculation),
+              prayerTypes:
+                  trackerPrayerTypes(includeWitr: calculation.includeWitr),
+              operationId: operation.operationId,
+              operationCreatedAt: operation.createdAt,
+              onProgress: (processed, total) {
+                if (_disposed) return;
+                state = state.copyWith(
+                    addProcessed: processed, addTotal: total);
+              },
+            );
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: QazaOperationStatus.completed,
+              affectedRecordCount: added,
+            );
+        if (_disposed) return false;
       // The estimate has been consumed. Clearing it here is what turns
       // Step 3 into a success state rather than a form inviting a second add.
       state = state.copyWith(
@@ -581,7 +595,18 @@ class CalculatorController extends Notifier<CalculatorState> {
       // Home reads the aggregate, which has just changed underneath it.
       ref.invalidate(progressSummaryProvider);
       _persist();
-      return true;
+        return true;
+      } catch (error, stackTrace) {
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: state.addProcessed > 0
+                  ? QazaOperationStatus.partial
+                  : QazaOperationStatus.failed,
+              affectedRecordCount: state.addProcessed,
+              note: error.toString(),
+            );
+        Error.throwWithStackTrace(error, stackTrace);
+      }
     } catch (error) {
       if (_disposed) return false;
       state = state.copyWith(

@@ -1,11 +1,12 @@
 import '../../core/constants/prayer_types.dart';
 
-enum QazaStatus { pending, completed }
+enum QazaStatus { pending, completed, deleted }
 
 class QazaRecord {
   const QazaRecord({
     required this.id,
     required this.userId,
+    this.operationId,
     required this.prayerType,
     required this.originalDate,
     this.status = QazaStatus.pending,
@@ -16,6 +17,7 @@ class QazaRecord {
 
   final String id;
   final String userId;
+  final String? operationId;
   final PrayerType prayerType;
   final DateTime originalDate;
   final QazaStatus status;
@@ -23,9 +25,14 @@ class QazaRecord {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  bool get hasOperationProvenance => operationId != null && operationId!.isNotEmpty;
+
+  bool get isDeleted => status == QazaStatus.deleted;
+
   QazaRecord copyWith({
     String? id,
     String? userId,
+    String? operationId,
     PrayerType? prayerType,
     DateTime? originalDate,
     QazaStatus? status,
@@ -36,6 +43,7 @@ class QazaRecord {
     return QazaRecord(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      operationId: operationId ?? this.operationId,
       prayerType: prayerType ?? this.prayerType,
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
@@ -51,6 +59,7 @@ class QazaRecord {
   Map<String, dynamic> toJson() => {
         'id': id,
         'userId': userId,
+        if (operationId != null) 'operationId': operationId,
         'prayerType': prayerType.name,
         'originalDate': originalDate.toIso8601String(),
         'status': status.name,
@@ -63,6 +72,7 @@ class QazaRecord {
   factory QazaRecord.fromJson(Map<String, dynamic> json) => QazaRecord(
         id: json['id'] as String,
         userId: json['userId'] as String,
+        operationId: json['operationId'] as String?,
         prayerType: PrayerType.values
             .firstWhere((v) => v.name == (json['prayerType'] as String)),
         originalDate: DateTime.parse(json['originalDate'] as String),

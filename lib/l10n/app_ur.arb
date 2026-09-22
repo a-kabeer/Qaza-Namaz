@@ -21,6 +21,7 @@
   "prayerWitr": "وتر",
 
   "statusPending": "باقی",
+  "statusDeleted": "حالیہ حذف شدہ",
   "statusCompleted": "مکمل",
   "qazaSelectAllMatching": "سب مطابق منتخب کریں",
   "qazaSelectAllMatchingCapped": "پہلے {count} مطابق ریکارڈ منتخب کر لیے گئے۔",
@@ -163,11 +164,11 @@
   "qazaEditDateHelp": "قضا کی اصل تاریخ منتخب کریں",
   "qazaSaveChanges": "تبدیلیاں محفوظ کریں",
   "qazaDeleteRecordTitle": "قضا ریکارڈ حذف کریں؟",
-  "qazaDeleteRecordMessage": "{date} کی {prayer} قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔",
+  "qazaDeleteRecordMessage": "{date} کی {prayer} قضا کو حالیہ حذف شدہ میں منتقل کریں؟ آپ اسے 30 دن تک بحال کر سکتے ہیں۔",
   "qazaRecordUpdated": "قضا ریکارڈ اپ ڈیٹ ہو گیا۔",
   "qazaDuplicateRecord": "{date} کی {prayer} قضا پہلے سے موجود ہے۔",
   "qazaRecordUpdateFailed": "قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-  "qazaRecordDeleted": "قضا ریکارڈ حذف ہو گیا۔",
+  "qazaRecordDeleted": "قضا حالیہ حذف شدہ میں منتقل کر دی گئی ہے۔",
   "qazaRecordDeleteFailed": "قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
 
   "qazaUndoAction": "واپس کریں",

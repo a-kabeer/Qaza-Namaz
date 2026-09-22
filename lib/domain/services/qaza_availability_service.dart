@@ -120,7 +120,8 @@ class QazaAvailabilityService {
 
   /// Every combination that exists, whatever its status.
   Set<QazaPrayerKey> recordedKeys(Iterable<QazaRecord> records) => {
-        for (final record in records) QazaPrayerKey.fromRecord(record),
+        for (final record in records)
+          if (record.status != QazaStatus.deleted) QazaPrayerKey.fromRecord(record),
       };
 
   /// Combinations that are already fulfilled.

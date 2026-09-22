@@ -5,9 +5,10 @@ import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_recovery_repository.dart';
 
 class InMemoryQazaRepository
-    implements QazaRepository, QazaUndoRepository, QazaSyncRemoteDataSource {
+    implements QazaRepository, QazaUndoRepository, QazaSyncRemoteDataSource, QazaRecoveryRepository {
   final Map<String, QazaRecord> _records = {};
   int historyPageCalls = 0;
   int progressSummaryCalls = 0;
@@ -43,7 +44,7 @@ class InMemoryQazaRepository
     final records = _records.values
         .where((r) => r.userId == userId)
         .where((r) => prayerType == null || r.prayerType == prayerType)
-        .where((r) => status == null || r.status == status)
+        .where((r) => status == QazaStatus.deleted ? r.status == QazaStatus.deleted : r.status != QazaStatus.deleted && (status == null || r.status == status))
         .where((r) => from == null || !r.originalDate.isBefore(from))
         .where((r) => to == null || !r.originalDate.isAfter(to))
         .where((r) =>
@@ -299,6 +300,94 @@ class InMemoryQazaRepository
     return changedCount;
   }
 
+  @override
+  Future<int> softDeleteRecords({
+    required String userId, required List<String> recordIds, required DateTime deletedAt, required String operationId,
+  }) async {
+    var changed = 0;
+    for (final id in recordIds.toSet()) {
+      final current = _records[id];
+      if (current == null || current.userId != userId || current.status == QazaStatus.deleted) continue;
+      _records[id] = current.copyWith(status: QazaStatus.deleted, updatedAt: deletedAt);
+      changed++;
+    }
+    return changed;
+  }
+
+  @override
+  Future<int> restoreDeletedRecords({
+    required String userId, required List<String> recordIds, required DateTime restoredAt, required String operationId,
+  }) async {
+    var changed = 0;
+    for (final id in recordIds.toSet()) {
+      final current = _records[id];
+      if (current == null || current.userId != userId || current.status != QazaStatus.deleted) continue;
+      _records[id] = current.copyWith(status: current.completedAt == null ? QazaStatus.pending : QazaStatus.completed, updatedAt: restoredAt);
+      changed++;
+    }
+    return changed;
+  }
+
+  @override
+  Future<int> undoAddedOperation({
+    required String userId, required String operationId, required DateTime expectedCreatedAt,
+  }) async {
+    final ids = _records.values
+        .where((r) => r.userId == userId && r.status == QazaStatus.pending &&
+            r.operationId == operationId &&
+            r.createdAt.isAtSameMomentAs(expectedCreatedAt) &&
+            r.updatedAt.isAtSameMomentAs(expectedCreatedAt))
+        .map((r) => r.id)
+        .toList();
+    for (final id in ids) _records.remove(id);
+    return ids.length;
+  }
+
+  @override
+  Future<QazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    var rows = _records.values.where((r) => r.userId == userId);
+    if (status != null) rows = rows.where((r) => r.status == status);
+    rows = rows.where((r) => matchLastAction
+        ? r.updatedAt.isAtSameMomentAs(operationAt)
+        : r.operationId == operationId);
+    final result = rows.toList()..sort((a, b) {
+      final d = b.originalDate.compareTo(a.originalDate);
+      return d != 0 ? d : b.id.compareTo(a.id);
+    });
+    return QazaPage(records: result.take(limit).toList(growable: false), hasMore: result.length > limit);
+  }
+
+  @override
+  Future<QazaHistoryPage> getRecentlyDeletedPage({
+    required String userId, int limit = 50, DateTime? beforeDeletedAt, String? beforeId,
+  }) async {
+    var rows = _records.values.where((r) => r.userId == userId && r.status == QazaStatus.deleted).toList()
+      ..sort((a, b) {
+        final d = b.updatedAt.compareTo(a.updatedAt);
+        return d != 0 ? d : b.id.compareTo(a.id);
+      });
+    if (beforeDeletedAt != null) {
+      rows = rows.where((r) => r.updatedAt.isBefore(beforeDeletedAt) ||
+          (r.updatedAt.isAtSameMomentAs(beforeDeletedAt) && r.id.compareTo(beforeId!) < 0)).toList();
+    }
+    return QazaHistoryPage(records: rows.take(limit).toList(growable: false), hasMore: rows.length > limit);
+  }
+
+  @override
+  Future<int> purgeDeletedBefore({required String userId, required DateTime cutoff}) async {
+    final ids = _records.values.where((r) => r.userId == userId && r.status == QazaStatus.deleted && r.updatedAt.isBefore(cutoff)).map((r) => r.id).toList();
+    for (final id in ids) _records.remove(id);
+    return ids.length;
+  }
   @override
   Future<void> resetUserRecords({required String userId}) async {
     _resetWithoutChange(userId);

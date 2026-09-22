@@ -39,7 +39,12 @@ class FirestoreQazaRepository
     if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
     }
-    if (status != null) {
+    if (status == null) {
+      query = query.where(
+        'status',
+        whereIn: [QazaStatus.pending.name, QazaStatus.completed.name],
+      );
+    } else {
       query = query.where('status', isEqualTo: status.name);
     }
     final records = (await query.get()).docs.map(_fromDocument).toList()
@@ -73,7 +78,12 @@ class FirestoreQazaRepository
     if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
     }
-    if (status != null) {
+    if (status == null) {
+      query = query.where(
+        'status',
+        whereIn: [QazaStatus.pending.name, QazaStatus.completed.name],
+      );
+    } else {
       query = query.where('status', isEqualTo: status.name);
     }
     if (from != null) {
@@ -139,7 +149,12 @@ class FirestoreQazaRepository
     if (prayerType != null) {
       query = query.where('prayerType', isEqualTo: prayerType.name);
     }
-    if (status != null) {
+    if (status == null) {
+      query = query.where(
+        'status',
+        whereIn: [QazaStatus.pending.name, QazaStatus.completed.name],
+      );
+    } else {
       query = query.where('status', isEqualTo: status.name);
     }
     if (from != null) {
@@ -870,6 +885,7 @@ class FirestoreQazaRepository
     return {
       'id': record.id,
       'userId': record.userId,
+      if (record.operationId != null) 'operationId': record.operationId,
       'prayerType': record.prayerType.name,
       'originalDate': QazaDate.key(record.originalDate),
       'status': record.status.name,
@@ -899,6 +915,7 @@ class FirestoreQazaRepository
     return QazaRecord(
       id: raw['id'] as String? ?? id,
       userId: raw['userId'] as String? ?? '',
+      operationId: raw['operationId'] as String?,
       prayerType: prayerType,
       originalDate: _originalDate(raw['originalDate'], id),
       status: status,

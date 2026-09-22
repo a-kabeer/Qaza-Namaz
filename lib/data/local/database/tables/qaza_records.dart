@@ -10,6 +10,8 @@ class QazaRecords extends Table {
 
   TextColumn get userId => text()();
 
+  TextColumn get operationId => text().nullable()();
+
   TextColumn get prayerType => text()();
 
   DateTimeColumn get originalDate => dateTime()();

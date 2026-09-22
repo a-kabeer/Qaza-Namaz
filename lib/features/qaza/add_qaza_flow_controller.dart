@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../calendar/calendar_controller.dart';
 import 'add_qaza_validation.dart';
+import '../../domain/entities/qaza_operation.dart';
 
 /// The three steps of the Add Qaza workflow.
 enum AddQazaStep { selectDates, selectMissedPrayers, reviewAndAdd }
@@ -307,17 +308,46 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
         return 0;
       }
 
-      final created = await ref.read(qazaServiceProvider).recordQazaForDates(
+      final operationType = switch (ref.read(calendarControllerProvider).selectionMode) {
+        DateSelectionMode.single => QazaOperationType.manualAdd,
+        DateSelectionMode.range => QazaOperationType.rangeAdd,
+        DateSelectionMode.multiple => QazaOperationType.multipleDateAdd,
+      };
+      final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: ref.read(requiredUserIdProvider),
-            dates: dates,
-            prayerTypes: prayers,
+            type: operationType,
           );
-      // Everything asked for now exists, whoever wrote it.
-      state = state.copyWith(
-        existingCount: analysis.unavailableCount + created,
-        newCount: 0,
-      );
-      return created;
+      var processed = 0;
+      try {
+        final created = await ref.read(qazaServiceProvider).recordQazaForDates(
+              userId: ref.read(requiredUserIdProvider),
+              dates: dates,
+              prayerTypes: prayers,
+              operationId: operation.operationId,
+              operationCreatedAt: operation.createdAt,
+              onProgress: (value, _) => processed = value,
+            );
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: QazaOperationStatus.completed,
+              affectedRecordCount: created,
+            );
+        state = state.copyWith(
+          existingCount: analysis.unavailableCount + created,
+          newCount: 0,
+        );
+        return created;
+      } catch (error) {
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: processed > 0
+                  ? QazaOperationStatus.partial
+                  : QazaOperationStatus.failed,
+              affectedRecordCount: processed,
+              note: error.toString(),
+            );
+        rethrow;
+      }
     } finally {
       if (state.saving) state = state.copyWith(saving: false);
     }

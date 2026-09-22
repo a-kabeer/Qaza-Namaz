@@ -53,25 +53,46 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 2 establishes an explicit migration boundary for the
-  /// production database. Version 1 databases already contain the same
-  /// tables; the upgrade path below is intentionally data-preserving and
-  /// idempotently restores the indexes required by the paginated DAOs.
+  /// Schema version 4 adds recoverable deletion support indexes and the
+  /// nullable operationId provenance column without rewriting existing rows.
+  /// Older databases are upgraded in place and preserve all Qaza data.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
           await _ensurePerformanceIndexes();
+          await _ensureRecoveryIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await _ensurePerformanceIndexes();
           }
+          if (from < 4) {
+            await m.addColumn(qazaRecords, qazaRecords.operationId);
+          }
+          if (from < 3 || from < 4) {
+            await _ensureRecoveryIndexes();
+          }
         },
       );
+
+  Future<void> _ensureRecoveryIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_updated_idx '
+      'ON qaza_records (user_id, status, updated_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_updated_date_idx '
+      'ON qaza_records (user_id, updated_at, original_date, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_operation_status_idx '
+      'ON qaza_records (user_id, operation_id, status, updated_at)',
+    );
+  }
 
   Future<void> _ensurePerformanceIndexes() async {
     await customStatement(

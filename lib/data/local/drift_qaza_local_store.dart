@@ -349,6 +349,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     return rows.map((row) => QazaRecord(
           id: row.id,
           userId: row.userId,
+          operationId: row.operationId,
           prayerType: PrayerType.values.firstWhere(
             (value) => value.name == row.prayerType,
             orElse: () => throw StateError('Unknown prayer type: ${row.prayerType}'),
@@ -438,6 +439,25 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = 50,
+    DateTime? beforeDeletedAt,
+    String? beforeId,
+  }) async {
+    final page = await _database.qazaRecordsDao.getRecentlyDeletedPage(
+      userId: userId,
+      limit: limit,
+      beforeDeletedAt: beforeDeletedAt,
+      beforeId: beforeId,
+    );
+    return LocalQazaHistoryPage(
+      records: page.records,
+      hasMore: page.hasMore,
+    );
+  }
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {
     _lastSyncByUser[userId] = lastSync;
   }
@@ -462,6 +482,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       QazaRecordsCompanion.insert(
         id: record.id,
         userId: record.userId,
+        operationId: Value(record.operationId),
         prayerType: record.prayerType.name,
         originalDate: record.originalDate,
         status: record.status.name,

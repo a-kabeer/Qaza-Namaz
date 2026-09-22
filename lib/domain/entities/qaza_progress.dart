@@ -60,6 +60,7 @@ class QazaProgressSummary {
     };
 
     for (final record in records) {
+      if (record.status == QazaStatus.deleted) continue;
       if (record.status == QazaStatus.completed) {
         completed[record.prayerType] = completed[record.prayerType]! + 1;
       } else {
