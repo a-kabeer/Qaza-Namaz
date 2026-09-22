@@ -735,7 +735,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.qazaRestricted(
                                         context,
-                                        restriction!.type!,
+                                        restriction.type!,
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_reason',
