@@ -10,6 +10,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../data/location/city_search_provider.dart';
+import '../data/location/prayer_location_service.dart';
 import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
 import '../domain/qaza_restriction_service.dart';
