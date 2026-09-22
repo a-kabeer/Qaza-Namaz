@@ -75,6 +75,29 @@ void main() {
       ),
     );
 
+    final repository =
+        File('lib/data/auth/firebase_auth_repository.dart').readAsStringSync();
+    expect(
+      repository,
+      contains('GoogleSignIn.instance'),
+      reason: 'Google Sign-In 7.x requires the singleton instance.',
+    );
+    expect(
+      repository,
+      contains('initialize(serverClientId: googleServerClientId)'),
+      reason: 'Google Sign-In must be initialized with the Web/server client ID.',
+    );
+    expect(
+      repository,
+      contains('await _googleSignIn.authenticate()'),
+      reason: 'Android interactive authentication must use authenticate() in 7.x.',
+    );
+    expect(
+      repository,
+      isNot(contains('_googleSignIn.signIn()')),
+      reason: 'The pre-7.x signIn() API must not be used.',
+    );
+
     final authConfig =
         File('lib/data/auth/google_auth_config.dart').readAsStringSync();
     expect(authConfig, contains("googleFirebaseProjectId = 'qaza-nmz'"));
