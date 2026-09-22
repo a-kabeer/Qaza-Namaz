@@ -123,10 +123,10 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Fajr'), findsOneWidget);
-      expect(find.text('04:50'), findsOneWidget);
+      expect(find.text('4:50 AM'), findsOneWidget);
       expect(find.text('Prayer times could not be calculated'), findsNothing);
       expect(tester.takeException(), isNull);
     },
