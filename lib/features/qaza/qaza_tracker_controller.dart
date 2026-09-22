@@ -5,6 +5,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_operation.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 import '../../domain/services/qaza_service.dart';
 import '../prayer_times/prayer_times_providers.dart';
 
@@ -397,7 +398,9 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
   void enterSelectionMode(String recordId) {
     if (state.statusFilter != QazaStatusFilter.pending) return;
-    final record = state.records.where((r) => r.id == recordId).firstOrNull;
+    final record = state.records.where((r) => r.id == recordId).isEmpty
+        ? null
+        : state.records.firstWhere((r) => r.id == recordId);
     if (record == null || record.status != QazaStatus.pending) return;
     final next = Set<String>.of(state.selected)..add(recordId);
     state = state.copyWith(selectionMode: true, selected: next);
