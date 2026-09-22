@@ -967,33 +967,33 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
-    DateTime? beforeOriginalDate,
+    DateTime? beforeDeletedAt,
     String? beforeId,
-  }) =>
-      getHistoryPage(
-        userId: userId,
-        limit: limit,
-        status: QazaStatus.deleted,
-        beforeOriginalDate: beforeOriginalDate,
-        beforeId: beforeId,
-      );
+  }) async {
+    if (userId != _activeUserId) return const QazaHistoryPage(records: [], hasMore: false);
+    final page = await _localStore.getRecentlyDeletedPage(
+      userId: userId,
+      limit: limit,
+      beforeDeletedAt: beforeDeletedAt,
+      beforeId: beforeId,
+    );
+    return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
+  }
 
-  @override
   @override
   Future<int> purgeDeletedBefore({
     required String userId,
     required DateTime cutoff,
   }) async {
     if (userId != _activeUserId) return 0;
-    DateTime? cursorDate;
+    DateTime? cursorDeletedAt;
     String? cursorId;
     var removed = 0;
     while (true) {
-      final page = await getHistoryPage(
+      final page = await _localStore.getRecentlyDeletedPage(
         userId: userId,
         limit: 200,
-        status: QazaStatus.deleted,
-        beforeOriginalDate: cursorDate,
+        beforeDeletedAt: cursorDeletedAt,
         beforeId: cursorId,
       );
       if (page.records.isEmpty) break;
@@ -1013,8 +1013,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
         }
       }
       if (!page.hasMore) break;
-      cursorDate = page.nextOriginalDate;
-      cursorId = page.nextId;
+      cursorDeletedAt = page.records.last.updatedAt;
+      cursorId = page.records.last.id;
     }
     _outboxLoaded = true;
     if (removed > 0) {
