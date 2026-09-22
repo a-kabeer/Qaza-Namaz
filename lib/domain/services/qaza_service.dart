@@ -5,11 +5,14 @@ import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
 import 'qaza_availability_service.dart';
+import 'sahib_al_tartib_service.dart';
 
 export '../entities/qaza_progress.dart';
 export '../repositories/qaza_repository.dart' show QazaHistoryPage, QazaPage;
 export 'qaza_availability_service.dart'
     show QazaAvailabilityAnalysis, QazaEligibility, QazaPrayerKey;
+export 'sahib_al_tartib_service.dart'
+    show QazaTartibViolationException, SahibAlTartibState;
 
 class QazaDuplicateRecordException implements Exception {
   const QazaDuplicateRecordException();
@@ -20,10 +23,15 @@ class QazaDuplicateRecordException implements Exception {
 }
 
 class QazaService {
-  QazaService(this.repository, {QazaAvailabilityService? availability})
-      : availability = availability ?? const QazaAvailabilityService();
+  QazaService(
+    this.repository, {
+    QazaAvailabilityService? availability,
+    SahibAlTartibService? tartib,
+  })  : availability = availability ?? const QazaAvailabilityService(),
+        tartib = tartib ?? SahibAlTartibService(repository);
   final QazaRepository repository;
   final QazaAvailabilityService availability;
+  final SahibAlTartibService tartib;
 
   Future<List<QazaRecord>> getRecords(
           {required String userId,
@@ -53,17 +61,40 @@ class QazaService {
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
 
-  /// Returns the oldest pending Qaza across all prayers.
+  /// Returns the next Qaza allowed by the active Sahib al-Tartib rule.
   ///
-  /// The repository keeps the ordering deterministic: originalDate ASC,
-  /// then id ASC. Home uses this as the single "next Qaza" action.
+  /// When fewer than six Fard prayers are pending, the next prayer is selected
+  /// by date and the actual prayer sequence. Otherwise the existing bounded
+  /// repository ordering is preserved.
   Future<QazaRecord?> oldestPendingOverall({required String userId}) async {
+    final tartibState = await tartib.evaluate(userId: userId);
+    if (tartibState.requiresOrder) return tartibState.nextPending;
+
     final page = await repository.getPage(
       userId: userId,
       limit: 1,
       status: QazaStatus.pending,
     );
     return page.records.isEmpty ? null : page.records.first;
+  }
+
+  Future<SahibAlTartibState> sahibAlTartibState({
+    required String userId,
+  }) =>
+      tartib.evaluate(userId: userId);
+
+  Future<void> _ensureCompletionAllowed({
+    required String userId,
+    required String recordId,
+  }) async {
+    final state = await tartib.evaluate(userId: userId);
+    if (!state.requiresOrder || state.nextPending == null) return;
+    if (state.nextPending!.id != recordId) {
+      throw QazaTartibViolationException(
+        requiredPrayer: state.nextPending!.prayerType,
+        pendingFarzCount: state.pendingFarzCount,
+      );
+    }
   }
 
   Future<int> countCompletedBetween({
@@ -240,18 +271,49 @@ class QazaService {
 
   Future<void> addRecords(List<QazaRecord> records) =>
       repository.addRecords(records);
-  Future<void> completeRecord(
-          {required String userId,
-          required String recordId,
-          required DateTime completedAt}) =>
-      repository.completeRecord(
-          userId: userId, recordId: recordId, completedAt: completedAt);
-  Future<void> completeRecords(
-          {required String userId,
-          required List<String> recordIds,
-          required DateTime completedAt}) =>
-      repository.completeRecords(
-          userId: userId, recordIds: recordIds, completedAt: completedAt);
+  Future<void> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    await _ensureCompletionAllowed(
+      userId: userId,
+      recordId: recordId,
+    );
+    await repository.completeRecord(
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+    );
+  }
+
+  Future<void> completeRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) async {
+    if (recordIds.isEmpty) return;
+    final state = await tartib.evaluate(userId: userId);
+    if (state.requiresOrder) {
+      if (recordIds.length != 1 || state.nextPending == null) {
+        throw QazaTartibViolationException(
+          requiredPrayer: state.nextPrayer!,
+          pendingFarzCount: state.pendingFarzCount,
+        );
+      }
+      if (recordIds.single != state.nextPending!.id) {
+        throw QazaTartibViolationException(
+          requiredPrayer: state.nextPrayer!,
+          pendingFarzCount: state.pendingFarzCount,
+        );
+      }
+    }
+    await repository.completeRecords(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
 
   /// Reverts only the completions captured by an active undo window.
   ///
