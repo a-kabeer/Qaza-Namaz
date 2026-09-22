@@ -12,4 +12,15 @@ class OfflineCitySearchProvider implements CitySearchProvider {
   Future<List<CitySearchResult>> search(String query) {
     return _dataSource.searchCities(query);
   }
+
+  @override
+  Future<List<CitySearchResult>> searchInCountry(
+    String query, {
+    String? countryCode,
+  }) {
+    return _dataSource.searchCitiesInCountry(
+      query,
+      countryCode: countryCode,
+    );
+  }
 }

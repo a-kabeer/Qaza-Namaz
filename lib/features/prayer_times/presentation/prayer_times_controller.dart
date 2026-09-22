@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone_country/timezone_country.dart';
 
 import '../data/location/city_search_provider.dart';
+import '../data/prayer_times_notification_service.dart';
+import '../data/prayer_times_preferences.dart';
+import '../domain/qaza_restriction_service.dart';
 import '../data/location/prayer_location_service.dart';
 import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
@@ -25,6 +28,7 @@ class PrayerTimesState {
     this.status = PrayerTimesStatus.noLocation,
     this.location,
     this.settings = const PrayerSettings(),
+    this.notificationSettings = const PrayerNotificationSettings(),
     this.today,
     this.tomorrow,
     this.message,
@@ -37,6 +41,7 @@ class PrayerTimesState {
   final PrayerTimesStatus status;
   final PrayerLocation? location;
   final PrayerSettings settings;
+  final PrayerNotificationSettings notificationSettings;
   final PrayerDay? today;
   final PrayerDay? tomorrow;
   final String? message;
@@ -49,6 +54,7 @@ class PrayerTimesState {
     PrayerTimesStatus? status,
     PrayerLocation? location,
     PrayerSettings? settings,
+    PrayerNotificationSettings? notificationSettings,
     PrayerDay? today,
     PrayerDay? tomorrow,
     bool clearTomorrow = false,
@@ -65,6 +71,7 @@ class PrayerTimesState {
       status: status ?? this.status,
       location: location ?? this.location,
       settings: settings ?? this.settings,
+      notificationSettings: notificationSettings ?? this.notificationSettings,
       today: today ?? this.today,
       tomorrow: clearTomorrow ? null : (tomorrow ?? this.tomorrow),
       message: clearMessage ? null : (message ?? this.message),
@@ -83,6 +90,8 @@ class PrayerTimesState {
 
 class PrayerTimesController extends Notifier<PrayerTimesState> {
   late final PrayerTimesRepository _repository;
+  late final PrayerTimesPreferences _preferences;
+  late final PrayerTimesNotificationService _notificationService;
   late final PrayerLocationService _locationService;
   late final CitySearchProvider _citySearchProvider;
   late final PrayerTimesClock _clock;
@@ -95,6 +104,8 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   @override
   PrayerTimesState build() {
     _repository = ref.read(prayerTimesRepositoryProvider);
+    _preferences = ref.read(prayerTimesPreferencesProvider);
+    _notificationService = ref.read(prayerTimesNotificationServiceProvider);
     _locationService = ref.read(prayerLocationServiceProvider);
     _citySearchProvider = ref.read(prayerCitySearchProvider);
     _clock = ref.read(prayerTimesClockProvider);
@@ -111,6 +122,12 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   Future<void> _restore() async {
     var location = await _repository.getSavedLocation();
     final settings = await _repository.getSavedSettings();
+    PrayerNotificationSettings notificationSettings;
+    try {
+      notificationSettings = await _preferences.getNotificationSettings();
+    } catch (_) {
+      notificationSettings = const PrayerNotificationSettings();
+    }
 
     if (!_isMounted) return;
 
@@ -118,6 +135,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       state = state.copyWith(
         status: PrayerTimesStatus.noLocation,
         settings: settings,
+        notificationSettings: notificationSettings,
       );
       return;
     }
@@ -138,6 +156,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     state = state.copyWith(
       location: location,
       settings: settings,
+      notificationSettings: notificationSettings,
       status: PrayerTimesStatus.loading,
       clearMessage: true,
       clearLocationErrorKind: true,
@@ -175,6 +194,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
         clearTomorrow: true,
       );
       await _loadToday();
+      _syncScheduledNotifications();
     } on PrayerLocationException catch (error) {
       if (!_isMounted) return;
       state = state.copyWith(
@@ -223,6 +243,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       cityResults: const <CitySearchResult>[],
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
   Future<void> useManualCoordinates(
@@ -268,9 +289,10 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearTomorrow: true,
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
-  void searchCities(String query) {
+  void searchCities(String query, {String? countryCode}) {
     _citySearchDebounce?.cancel();
     final generation = ++_searchGeneration;
     final normalized = query.trim();
@@ -291,13 +313,16 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
 
     _citySearchDebounce = Timer(
       const Duration(milliseconds: 180),
-      () => unawaited(_searchCities(normalized, generation)),
+      () => unawaited(_searchCities(normalized, generation, countryCode)),
     );
   }
 
-  Future<void> _searchCities(String query, int generation) async {
+  Future<void> _searchCities(String query, int generation, String? countryCode) async {
     try {
-      final results = await _citySearchProvider.search(query);
+      final results = await _citySearchProvider.searchInCountry(
+        query,
+        countryCode: countryCode,
+      );
       if (!_isMounted || generation != _searchGeneration) return;
       state = state.copyWith(
         cityResults: results,
@@ -312,6 +337,71 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
         citySearchError: 'Offline city search failed.',
       );
     }
+  }
+
+
+
+  void _syncScheduledNotifications() {
+    final location = state.location;
+    if (location == null || !state.notificationSettings.anyEnabled) return;
+    unawaited(_notificationService.sync(
+      location: location,
+      settings: state.settings,
+      notifications: state.notificationSettings,
+    ));
+  }
+
+  Future<bool> setPrayerNotification(PrayerName prayer, bool enabled) async {
+    if (enabled) {
+      final granted = await _notificationService.requestPermission();
+      if (!granted) return false;
+    }
+    final prayers = Set<PrayerName>.from(state.notificationSettings.enabledPrayers);
+    if (enabled) {
+      prayers.add(prayer);
+    } else {
+      prayers.remove(prayer);
+    }
+    await _saveNotificationSettings(state.notificationSettings.copyWith(
+      enabledPrayers: Set.unmodifiable(prayers),
+    ));
+    return true;
+  }
+
+  Future<bool> setRestrictedNotification(RestrictionType type, bool enabled) async {
+    if (enabled) {
+      final granted = await _notificationService.requestPermission();
+      if (!granted) return false;
+    }
+    final current = state.notificationSettings;
+    final updated = switch (type) {
+      RestrictionType.sunrise => current.copyWith(sunrise: enabled),
+      RestrictionType.zawal => current.copyWith(zawal: enabled),
+      RestrictionType.sunset => current.copyWith(sunset: enabled),
+      RestrictionType.otherConfiguredRestriction => current,
+    };
+    await _saveNotificationSettings(updated);
+    return true;
+  }
+
+  Future<void> setRestrictedLeadMinutes(int minutes) async {
+    if (minutes != 0 && minutes != 5 && minutes != 10) return;
+    await _saveNotificationSettings(state.notificationSettings.copyWith(
+      restrictedLeadMinutes: minutes,
+    ));
+  }
+
+  Future<void> _saveNotificationSettings(PrayerNotificationSettings settings) async {
+    await _preferences.saveNotificationSettings(settings);
+    if (!_isMounted) return;
+    state = state.copyWith(notificationSettings: settings);
+    final location = state.location;
+    if (location == null) return;
+    unawaited(_notificationService.sync(
+      location: location,
+      settings: state.settings,
+      notifications: settings,
+    ));
   }
 
   Future<void> setCalculationMethod(CalculationMethod method) async {
@@ -335,6 +425,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearTomorrow: true,
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
   Future<void> refresh() async {

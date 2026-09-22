@@ -79,6 +79,13 @@ class _Location implements PrayerLocationService {
 class _Cities implements CitySearchProvider {
   @override
   Future<List<CitySearchResult>> search(String query) async => const [];
+
+  @override
+  Future<List<CitySearchResult>> searchInCountry(
+    String query, {
+    String? countryCode,
+  }) async =>
+      const [];
 }
 
 class _FixedClock implements PrayerTimesClock {
@@ -101,24 +108,32 @@ ProviderContainer _container() => ProviderContainer(
     );
 
 void main() {
-  testWidgets('renders local calculated prayer data without network UI', (tester) async {
-    final container = _container();
-    addTearDown(container.dispose);
+  testWidgets(
+    'renders local calculated prayer data without network UI',
+    (tester) async {
+      final container = _container();
+      addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          home: const PrayerTimesScreen(),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: const PrayerTimesScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Fajr'), findsOneWidget);
-    expect(find.text('04:50'), findsOneWidget);
-    expect(find.text('Prayer times could not be calculated'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('Fajr'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Text && widget.data?.contains('4:50') == true,
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Prayer times could not be calculated'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

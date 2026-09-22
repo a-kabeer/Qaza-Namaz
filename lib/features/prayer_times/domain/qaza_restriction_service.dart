@@ -134,6 +134,9 @@ class QazaRestrictionService {
     };
   }
 
+  List<QazaRestrictionPeriod> periodsForDay(PrayerDay day) =>
+      _periods(day, day.timezone);
+
   List<QazaRestrictionPeriod> _periods(
     PrayerDay day,
     String timezone,

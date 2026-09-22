@@ -20,4 +20,18 @@ class CitySearchResult {
 
 abstract class CitySearchProvider {
   Future<List<CitySearchResult>> search(String query);
+
+  Future<List<CitySearchResult>> searchInCountry(
+    String query, {
+    String? countryCode,
+  }) async {
+    final results = await search(query);
+    if (countryCode == null || countryCode.isEmpty) return results;
+    return results
+        .where(
+          (result) =>
+              result.countryCode?.toUpperCase() == countryCode.toUpperCase(),
+        )
+        .toList(growable: false);
+  }
 }
