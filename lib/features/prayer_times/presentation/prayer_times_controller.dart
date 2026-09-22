@@ -189,6 +189,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
         clearTomorrow: true,
       );
       await _loadToday();
+      _syncScheduledNotifications();
     } on PrayerLocationException catch (error) {
       if (!_isMounted) return;
       state = state.copyWith(
@@ -237,6 +238,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       cityResults: const <CitySearchResult>[],
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
   Future<void> useManualCoordinates(
@@ -282,6 +284,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearTomorrow: true,
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
   void searchCities(String query, {String? countryCode}) {
@@ -328,6 +331,17 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     }
   }
 
+
+
+  void _syncScheduledNotifications() {
+    final location = state.location;
+    if (location == null || !state.notificationSettings.anyEnabled) return;
+    unawaited(_notificationService.sync(
+      location: location,
+      settings: state.settings,
+      notifications: state.notificationSettings,
+    ));
+  }
 
   Future<bool> setPrayerNotification(PrayerName prayer, bool enabled) async {
     if (enabled) {
