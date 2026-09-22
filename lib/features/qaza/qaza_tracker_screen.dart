@@ -320,7 +320,6 @@ class _TrackerBody extends ConsumerWidget {
     final lockedRecordId =
         tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
 
-
     // The full state belongs to the first load only; a filter change keeps
     // the page that is already there.
     if (state.loading && state.records.isEmpty) {
@@ -353,9 +352,7 @@ class _TrackerBody extends ConsumerWidget {
 
     return Column(
       children: [
-        if (tartib?.requiresOrder == true &&
-            tartib?.nextPrayer != null &&
-            tartib?.pendingFarzCount != null) ...[
+        if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
@@ -374,67 +371,72 @@ class _TrackerBody extends ConsumerWidget {
               ),
             ),
           ),
-        ],
         Expanded(
           child: RefreshIndicator(
             onRefresh: controller.refresh,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.metrics.extentAfter < 320) controller.loadMore();
-          return false;
-        },
-            child: ListView.builder(
-          key: const Key('qaza_tracker_list'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          // Keep the final prayer row (including Witr) above the
-          // workspace FAB. AppSpacing.fabClearance matches the FAB's
-          // occupied footprint and keeps the last row fully reachable.
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.fabClearance,
-          ),
-          itemCount: state.records.length + (state.hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= state.records.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320) {
+                  controller.loadMore();
+                }
+                return false;
+              },
+              child: ListView.builder(
+                key: const Key('qaza_tracker_list'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                // Keep the final prayer row (including Witr) above the
+                // workspace FAB. AppSpacing.fabClearance matches the FAB's
+                // occupied footprint and keeps the last row fully reachable.
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.fabClearance,
                 ),
-                child: Column(
-                  children: [
-                    _TrackerSkeletonRow(),
-                    _TrackerSkeletonRow(),
-                    _TrackerSkeletonRow(),
-                  ],
-                ),
-              );
-            }
-            final record = state.records[index];
-            return _RecordRow(
-              record: record,
-              selected: state.selected.contains(record.id),
-              busy: state.recordMutating,
-              onToggle: record.status == QazaStatus.pending &&
-                      (lockedRecordId == null || record.id == lockedRecordId)
-                  ? () => controller.toggleSelection(record.id)
-                  : null,
-              onEdit: () => _editTrackerRecord(
-                context,
-                controller,
-                record,
-                l10n,
+                itemCount: state.records.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.records.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Column(
+                        children: [
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final record = state.records[index];
+                  return _RecordRow(
+                    record: record,
+                    selected: state.selected.contains(record.id),
+                    busy: state.recordMutating,
+                    onToggle: record.status == QazaStatus.pending &&
+                            (lockedRecordId == null ||
+                                record.id == lockedRecordId)
+                        ? () => controller.toggleSelection(record.id)
+                        : null,
+                    onEdit: () => _editTrackerRecord(
+                      context,
+                      controller,
+                      record,
+                      l10n,
+                    ),
+                    onDelete: () => _deleteTrackerRecord(
+                      context,
+                      controller,
+                      record,
+                      l10n,
+                    ),
+                  );
+                },
               ),
-              onDelete: () => _deleteTrackerRecord(
-                context,
-                controller,
-                record,
-                l10n,
-              ),
-            );
-          },
+            ),
           ),
         ),
       ],
