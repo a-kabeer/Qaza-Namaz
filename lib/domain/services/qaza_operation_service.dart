@@ -30,7 +30,7 @@ class QazaOperationService {
     return op;
   }
 
-  Future<void> finish(
+  Future<QazaOperation> finish(
     QazaOperation operation, {
     required QazaOperationStatus status,
     required int affectedRecordCount,
@@ -43,15 +43,15 @@ class QazaOperationService {
     final recordCount = operation.recordCount != 0
         ? operation.recordCount
         : existing?.recordCount ?? affectedRecordCount;
-    await repository.save(
-      operation.copyWith(
+    final finished = operation.copyWith(
         status: status,
         updatedAt: _now(),
         recordCount: recordCount,
         affectedRecordCount: affectedRecordCount,
         note: note,
-      ),
-    );
+      );
+    await repository.save(finished);
+    return finished;
   }
 
   Future<List<QazaOperation>> recent(String userId, {int limit = 50}) =>
