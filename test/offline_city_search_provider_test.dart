@@ -36,7 +36,7 @@ class _FakeDataSource implements OfflineLocationDataSource {
 
 void main() {
   test('offline city provider delegates to local data source', () async {
-    const provider = OfflineCitySearchProvider(
+    final provider = OfflineCitySearchProvider(
       dataSource: _FakeDataSource(),
     );
 
