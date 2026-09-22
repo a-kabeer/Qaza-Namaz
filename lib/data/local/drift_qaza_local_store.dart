@@ -349,6 +349,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     return rows.map((row) => QazaRecord(
           id: row.id,
           userId: row.userId,
+          operationId: row.operationId,
           prayerType: PrayerType.values.firstWhere(
             (value) => value.name == row.prayerType,
             orElse: () => throw StateError('Unknown prayer type: ${row.prayerType}'),
@@ -462,6 +463,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       QazaRecordsCompanion.insert(
         id: record.id,
         userId: record.userId,
+        operationId: record.operationId,
         prayerType: record.prayerType.name,
         originalDate: record.originalDate,
         status: record.status.name,
