@@ -41,3 +41,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Screenshots pulled off a device during QA are not part of the app.
+/*.png
+/screenshot*.png
