@@ -625,6 +625,19 @@ class QazaService {
     );
   }
 
+  Future<int> purgeDeletedBefore({
+    required String userId,
+    required DateTime cutoff,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).purgeDeletedBefore(
+      userId: userId,
+      cutoff: cutoff,
+    );
+  }
+
   Future<QazaProgress> overallProgress(String userId) async =>
       (await getProgressSummary(userId: userId)).overall;
   Future<PrayerProgress> prayerProgress(
