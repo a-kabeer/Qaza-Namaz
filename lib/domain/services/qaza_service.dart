@@ -563,7 +563,7 @@ class QazaService {
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
-    DateTime? beforeOriginalDate,
+    DateTime? beforeDeletedAt,
     String? beforeId,
   }) {
     if (repository is! QazaRecoveryRepository) {
@@ -572,7 +572,7 @@ class QazaService {
     return (repository as QazaRecoveryRepository).getRecentlyDeletedPage(
       userId: userId,
       limit: limit,
-      beforeOriginalDate: beforeOriginalDate,
+      beforeDeletedAt: beforeDeletedAt,
       beforeId: beforeId,
     );
   }
