@@ -49,6 +49,7 @@ enum QazaSortOrder {
 class QazaTrackerState {
   const QazaTrackerState({
     this.statusFilter = QazaStatusFilter.pending,
+    this.selectionMode = false,
     this.sortOrder = QazaSortOrder.oldestFirst,
     this.selectingAll = false,
     this.prayerFilter,
@@ -398,9 +399,8 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
   void enterSelectionMode(String recordId) {
     if (state.statusFilter != QazaStatusFilter.pending) return;
-    final record = state.records.where((r) => r.id == recordId).isEmpty
-        ? null
-        : state.records.firstWhere((r) => r.id == recordId);
+    final index = state.records.indexWhere((r) => r.id == recordId);
+    final record = index < 0 ? null : state.records[index];
     if (record == null || record.status != QazaStatus.pending) return;
     final next = Set<String>.of(state.selected)..add(recordId);
     state = state.copyWith(selectionMode: true, selected: next);
