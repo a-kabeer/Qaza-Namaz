@@ -4,7 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
+import 'package:qaza_namaz/features/prayer_times/domain/prayer_times_models.dart';
+import 'package:qaza_namaz/features/prayer_times/domain/prayer_times_repository.dart';
+import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_flow_controller.dart';
 import 'support/in_memory_qaza_repository.dart';
 
@@ -18,6 +22,11 @@ void main() {
     container = ProviderContainer(
       overrides: [
         qazaRepositoryProvider.overrideWithValue(repository),
+        prayerTimesRepositoryProvider
+            .overrideWithValue(_FakePrayerTimesRepository()),
+        prayerTimesClockProvider.overrideWithValue(
+          _FixedPrayerClock(DateTime.utc(2026, 9, 14, 3)),
+        ),
         activeUserIdProvider.overrideWithValue('test-user'),
         calendarTodayProvider.overrideWithValue(today),
       ],
@@ -41,6 +50,31 @@ void main() {
       updatedAt: today,
     ));
   }
+
+  test('today disables prayers whose current waqt has not ended', () async {
+    container
+        .read(calendarControllerProvider.notifier)
+        .select(today);
+    final controller = container.read(addQazaFlowProvider.notifier);
+    await controller.openPrayersStep();
+
+    expect(flow().prayerAvailability[PrayerType.fajr], isTrue);
+    expect(flow().prayerAvailability[PrayerType.zuhr], isFalse);
+    expect(flow().prayerAvailability[PrayerType.asr], isFalse);
+    expect(flow().prayerAvailability[PrayerType.maghrib], isFalse);
+    expect(flow().prayerAvailability[PrayerType.isha], isFalse);
+    expect(flow().prayerAvailability[PrayerType.witr], isFalse);
+
+    await controller.togglePrayer(PrayerType.zuhr, selected: true);
+    expect(flow().newCount, 0);
+
+    controller.clearPrayers();
+    await controller.togglePrayer(PrayerType.fajr, selected: true);
+    expect(flow().newCount, 1);
+    expect(await controller.addQaza(), 0);
+    await controller.openReviewStep();
+    expect(await controller.addQaza(), 1);
+  });
 
   test('openPrayersStep is a no-op without dates', () async {
     await container.read(addQazaFlowProvider.notifier).openPrayersStep();
@@ -188,4 +222,63 @@ void main() {
     records = await repository.getRecords(userId: 'test-user');
     expect(records, hasLength(6));
   });
+}
+
+
+class _FixedPrayerClock implements PrayerTimesClock {
+  const _FixedPrayerClock(this.instant);
+
+  final DateTime instant;
+
+  @override
+  DateTime now() => instant;
+}
+
+class _FakePrayerTimesRepository implements PrayerTimesRepository {
+  static const _timezone = 'Asia/Karachi';
+
+  const _FakePrayerTimesRepository();
+
+  @override
+  Future<PrayerDay> getPrayerTimes({
+    required double latitude,
+    required double longitude,
+    required DateTime date,
+    required CalculationMethod method,
+    required AsrMethod asrMethod,
+    String? timezone,
+  }) async {
+    final day = DateTime(date.year, date.month, date.day);
+    return PrayerDay(
+      date: day,
+      timezone: timezone ?? _timezone,
+      times: const {
+        PrayerName.fajr: PrayerTime(hour: 5, minute: 0),
+        PrayerName.sunrise: PrayerTime(hour: 6, minute: 0),
+        PrayerName.dhuhr: PrayerTime(hour: 12, minute: 0),
+        PrayerName.asr: PrayerTime(hour: 15, minute: 0),
+        PrayerName.maghrib: PrayerTime(hour: 18, minute: 0),
+        PrayerName.isha: PrayerTime(hour: 19, minute: 0),
+      },
+      hijriDate: const HijriDate(day: 1, month: 'Muharram', year: 1448),
+      fetchedAt: DateTime.utc(2026, 9, 14),
+    );
+  }
+
+  @override
+  Future<PrayerLocation?> getSavedLocation() async => const PrayerLocation(
+        latitude: 24.86,
+        longitude: 67.01,
+        timezone: _timezone,
+      );
+
+  @override
+  Future<void> saveLocation(PrayerLocation location) async {}
+
+  @override
+  Future<PrayerSettings> getSavedSettings() async =>
+      const PrayerSettings();
+
+  @override
+  Future<void> saveSettings(PrayerSettings settings) async {}
 }
