@@ -512,14 +512,34 @@ abstract class AppLocalizations {
   /// **'Qaza plan'**
   String get homeQazaPlan;
 
+  /// No description provided for @homeCompleteOldestQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Oldest Qaza'**
   String get homeCompleteOldestQaza;
 
+  /// No description provided for @homeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
   String get homeAuto;
 
+  /// No description provided for @homePrayerTimeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic prayer selection is unavailable until Prayer Times are set up.'**
   String get homePrayerTimeUnavailable;
 
+  /// No description provided for @homeQazaTargetReachedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Alhamdulillah!'**
   String get homeQazaTargetReachedTitle;
 
+  /// No description provided for @homeQazaTargetReachedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have completed your Qaza plan for today.\nMay Allah accept your efforts.'**
   String get homeQazaTargetReachedMessage;
 
   /// No description provided for @homeDailyTarget.
@@ -666,42 +686,29 @@ abstract class AppLocalizations {
   /// **'Could not complete the selected Qaza: {error}'**
   String qazaCompleteError(String error);
 
+  /// No description provided for @qazaTartibRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza order is required'**
+  String get qazaTartibRequiredTitle;
+
+  /// No description provided for @qazaTartibRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {count} outstanding Fard prayers. According to this ruling, complete {prayer} Qaza before other pending prayers.'**
+  String qazaTartibRequiredMessage(int count, String prayer);
+
+  /// No description provided for @qazaTartibBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza order is required. Complete {prayer} Qaza first.'**
+  String qazaTartibBlocked(String prayer);
+
   /// No description provided for @qazaCompletedOn.
   ///
   /// In en, this message translates to:
   /// **'Completed {date}'**
   String qazaCompletedOn(String date);
-
-  /// Record action menu.
-  String get qazaRecordActions;
-  /// Edit a tracker record.
-  String get qazaEditRecord;
-  /// Delete a tracker record.
-  String get qazaDeleteRecord;
-  /// Edit Qaza dialog title.
-  String get qazaEditRecordTitle;
-  /// Prayer field label.
-  String get qazaEditPrayer;
-  /// Original-date field label.
-  String get qazaEditDate;
-  /// Original-date picker help.
-  String get qazaEditDateHelp;
-  /// Save tracker edit.
-  String get qazaSaveChanges;
-  /// Delete confirmation title.
-  String get qazaDeleteRecordTitle;
-  /// Delete confirmation message.
-  String qazaDeleteRecordMessage(String date, String prayer);
-  /// Successful update.
-  String get qazaRecordUpdated;
-  /// Duplicate tracker combination.
-  String qazaDuplicateRecord(String prayer, String date);
-  /// Failed update.
-  String get qazaRecordUpdateFailed;
-  /// Successful deletion.
-  String get qazaRecordDeleted;
-  /// Failed deletion.
-  String get qazaRecordDeleteFailed;
 
   /// Bulk completion action label
   ///
@@ -709,11 +716,95 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Complete 1 Qaza} other{Complete {count} Qaza}}'**
   String qazaCompleteCount(int count);
 
-  /// Confirmation after bulk completion
+  /// No description provided for @qazaRecordActions.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}'**
-  String qazaCompletedCount(int count);
+  /// **'Record actions'**
+  String get qazaRecordActions;
+
+  /// No description provided for @qazaEditRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get qazaEditRecord;
+
+  /// No description provided for @qazaDeleteRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get qazaDeleteRecord;
+
+  /// No description provided for @qazaEditRecordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Qaza'**
+  String get qazaEditRecordTitle;
+
+  /// No description provided for @qazaEditPrayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer'**
+  String get qazaEditPrayer;
+
+  /// No description provided for @qazaEditDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Original date'**
+  String get qazaEditDate;
+
+  /// No description provided for @qazaEditDateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select original Qaza date'**
+  String get qazaEditDateHelp;
+
+  /// No description provided for @qazaSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get qazaSaveChanges;
+
+  /// No description provided for @qazaDeleteRecordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Qaza record?'**
+  String get qazaDeleteRecordTitle;
+
+  /// No description provided for @qazaDeleteRecordMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete the {prayer} Qaza from {date}? This cannot be undone.'**
+  String qazaDeleteRecordMessage(Object date, Object prayer);
+
+  /// No description provided for @qazaRecordUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza record updated.'**
+  String get qazaRecordUpdated;
+
+  /// No description provided for @qazaDuplicateRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'{prayer} Qaza already exists for {date}.'**
+  String qazaDuplicateRecord(Object date, Object prayer);
+
+  /// No description provided for @qazaRecordUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza record could not be updated. Please try again.'**
+  String get qazaRecordUpdateFailed;
+
+  /// No description provided for @qazaRecordDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza record deleted.'**
+  String get qazaRecordDeleted;
+
+  /// No description provided for @qazaRecordDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza record could not be deleted. Please try again.'**
+  String get qazaRecordDeleteFailed;
 
   /// No description provided for @qazaUndoAction.
   ///
@@ -732,6 +823,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 Qaza restored.} other{{count} Qaza restored.}}'**
   String qazaUndoCount(int count);
+
+  /// Confirmation after bulk completion
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}'**
+  String qazaCompletedCount(int count);
 
   /// No description provided for @calcAboutYouIntro.
   ///
@@ -1966,7 +2063,7 @@ abstract class AppLocalizations {
   /// No description provided for @addQazaUnavailablePrayer.
   ///
   /// In en, this message translates to:
-  /// **'{rakats} • Already recorded or prayed on every selected date'**
+  /// **'{rakats} • Already recorded/prayed or its prayer time has not ended yet'**
   String addQazaUnavailablePrayer(String rakats);
 
   /// No description provided for @commonNone.
@@ -2802,6 +2899,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Device authentication failed. Please try again.'**
   String get appLockFailed;
+
+  /// No description provided for @homeTodayProgressHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Progress'**
+  String get homeTodayProgressHeader;
+
+  /// No description provided for @homeNextQazaCurrentPrayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Qaza (Current Prayer)'**
+  String get homeNextQazaCurrentPrayer;
+
+  /// No description provided for @homeOldestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest Pending'**
+  String get homeOldestPending;
+
+  /// No description provided for @homeOverallQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall Qaza'**
+  String get homeOverallQaza;
+
+  /// No description provided for @homePendingByPrayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending by Prayer'**
+  String get homePendingByPrayer;
+
+  /// No description provided for @homeViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View details'**
+  String get homeViewDetails;
+
+  /// No description provided for @homeViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get homeViewAll;
+
+  /// No description provided for @homeCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get homeCompleted;
+
+  /// No description provided for @homePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get homePending;
+
+  /// No description provided for @homeYourProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Progress'**
+  String get homeYourProgress;
+
+  /// No description provided for @homeRange7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'7 Days'**
+  String get homeRange7Days;
+
+  /// No description provided for @homeRange30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'30 Days'**
+  String get homeRange30Days;
+
+  /// No description provided for @homeRangeMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get homeRangeMonthly;
+
+  /// No description provided for @homeDetailedStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'View Detailed Statistics'**
+  String get homeDetailedStatistics;
+
+  /// No description provided for @homeDetailedStatisticsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Year-wise pending, monthly history, and more'**
+  String get homeDetailedStatisticsSubtitle;
+
+  /// No description provided for @homeChartNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed Qaza in this period.'**
+  String get homeChartNoData;
+
+  /// No description provided for @homeTodayDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeTodayDate;
 }
 
 class _AppLocalizationsDelegate

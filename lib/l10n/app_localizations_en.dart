@@ -339,44 +339,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String qazaCompletedOn(String date) {
-    return 'Completed $date';
+  String get qazaTartibRequiredTitle => 'Qaza order is required';
+
+  @override
+  String qazaTartibRequiredMessage(int count, String prayer) {
+    return 'You have $count outstanding Fard prayers. According to this ruling, complete $prayer Qaza before other pending prayers.';
   }
 
   @override
-  String get qazaRecordActions => 'Record actions';
+  String qazaTartibBlocked(String prayer) {
+    return 'Qaza order is required. Complete $prayer Qaza first.';
+  }
+
   @override
-  String get qazaEditRecord => 'Edit';
-  @override
-  String get qazaDeleteRecord => 'Delete';
-  @override
-  String get qazaEditRecordTitle => 'Edit Qaza';
-  @override
-  String get qazaEditPrayer => 'Prayer';
-  @override
-  String get qazaEditDate => 'Original date';
-  @override
-  String get qazaEditDateHelp => 'Select original Qaza date';
-  @override
-  String get qazaSaveChanges => 'Save changes';
-  @override
-  String get qazaDeleteRecordTitle => 'Delete Qaza record?';
-  @override
-  String qazaDeleteRecordMessage(String date, String prayer) =>
-      'Permanently delete the $prayer Qaza from $date? This cannot be undone.';
-  @override
-  String get qazaRecordUpdated => 'Qaza record updated.';
-  @override
-  String qazaDuplicateRecord(String prayer, String date) =>
-      '$prayer Qaza already exists for $date.';
-  @override
-  String get qazaRecordUpdateFailed =>
-      'Qaza record could not be updated. Please try again.';
-  @override
-  String get qazaRecordDeleted => 'Qaza record deleted.';
-  @override
-  String get qazaRecordDeleteFailed =>
-      'Qaza record could not be deleted. Please try again.';
+  String qazaCompletedOn(String date) {
+    return 'Completed $date';
+  }
 
   @override
   String qazaCompleteCount(int count) {
@@ -390,16 +368,55 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String qazaCompletedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Completed $count Qaza.',
-      one: 'Completed 1 Qaza.',
-      zero: 'Nothing was completed.',
-    );
-    return '$_temp0';
+  String get qazaRecordActions => 'Record actions';
+
+  @override
+  String get qazaEditRecord => 'Edit';
+
+  @override
+  String get qazaDeleteRecord => 'Delete';
+
+  @override
+  String get qazaEditRecordTitle => 'Edit Qaza';
+
+  @override
+  String get qazaEditPrayer => 'Prayer';
+
+  @override
+  String get qazaEditDate => 'Original date';
+
+  @override
+  String get qazaEditDateHelp => 'Select original Qaza date';
+
+  @override
+  String get qazaSaveChanges => 'Save changes';
+
+  @override
+  String get qazaDeleteRecordTitle => 'Delete Qaza record?';
+
+  @override
+  String qazaDeleteRecordMessage(Object date, Object prayer) {
+    return 'Permanently delete the $prayer Qaza from $date? This cannot be undone.';
   }
+
+  @override
+  String get qazaRecordUpdated => 'Qaza record updated.';
+
+  @override
+  String qazaDuplicateRecord(Object date, Object prayer) {
+    return '$prayer Qaza already exists for $date.';
+  }
+
+  @override
+  String get qazaRecordUpdateFailed =>
+      'Qaza record could not be updated. Please try again.';
+
+  @override
+  String get qazaRecordDeleted => 'Qaza record deleted.';
+
+  @override
+  String get qazaRecordDeleteFailed =>
+      'Qaza record could not be deleted. Please try again.';
 
   @override
   String get qazaUndoAction => 'Undo';
@@ -422,6 +439,18 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count Qaza restored.',
       one: '1 Qaza restored.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaCompletedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Completed $count Qaza.',
+      one: 'Completed 1 Qaza.',
+      zero: 'Nothing was completed.',
     );
     return '$_temp0';
   }
@@ -1178,7 +1207,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String addQazaUnavailablePrayer(String rakats) {
-    return '$rakats • Already recorded or prayed on every selected date';
+    return '$rakats • Already recorded/prayed or its prayer time has not ended yet';
   }
 
   @override
@@ -1677,4 +1706,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appLockFailed => 'Device authentication failed. Please try again.';
+
+  @override
+  String get homeTodayProgressHeader => 'Today\'s Progress';
+
+  @override
+  String get homeNextQazaCurrentPrayer => 'Next Qaza (Current Prayer)';
+
+  @override
+  String get homeOldestPending => 'Oldest Pending';
+
+  @override
+  String get homeOverallQaza => 'Overall Qaza';
+
+  @override
+  String get homePendingByPrayer => 'Pending by Prayer';
+
+  @override
+  String get homeViewDetails => 'View details';
+
+  @override
+  String get homeViewAll => 'View all';
+
+  @override
+  String get homeCompleted => 'Completed';
+
+  @override
+  String get homePending => 'Pending';
+
+  @override
+  String get homeYourProgress => 'Your Progress';
+
+  @override
+  String get homeRange7Days => '7 Days';
+
+  @override
+  String get homeRange30Days => '30 Days';
+
+  @override
+  String get homeRangeMonthly => 'Monthly';
+
+  @override
+  String get homeDetailedStatistics => 'View Detailed Statistics';
+
+  @override
+  String get homeDetailedStatisticsSubtitle =>
+      'Year-wise pending, monthly history, and more';
+
+  @override
+  String get homeChartNoData => 'No completed Qaza in this period.';
+
+  @override
+  String get homeTodayDate => 'Today';
 }

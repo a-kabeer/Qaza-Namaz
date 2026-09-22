@@ -338,44 +338,22 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String qazaCompletedOn(String date) {
-    return '$date کو مکمل';
+  String get qazaTartibRequiredTitle => 'قضا میں ترتیب لازم ہے';
+
+  @override
+  String qazaTartibRequiredMessage(int count, String prayer) {
+    return 'آپ کے ذمہ $count فرض نمازیں قضا باقی ہیں۔ اس حکم کے مطابق دوسری باقی قضا نمازوں سے پہلے $prayer کی قضا ادا کریں۔';
   }
 
   @override
-  String get qazaRecordActions => 'ریکارڈ کے اعمال';
+  String qazaTartibBlocked(String prayer) {
+    return 'قضا میں ترتیب لازم ہے۔ پہلے $prayer کی قضا ادا کریں۔';
+  }
+
   @override
-  String get qazaEditRecord => 'ترمیم';
-  @override
-  String get qazaDeleteRecord => 'حذف کریں';
-  @override
-  String get qazaEditRecordTitle => 'قضا میں ترمیم';
-  @override
-  String get qazaEditPrayer => 'نماز';
-  @override
-  String get qazaEditDate => 'اصل تاریخ';
-  @override
-  String get qazaEditDateHelp => 'قضا کی اصل تاریخ منتخب کریں';
-  @override
-  String get qazaSaveChanges => 'تبدیلیاں محفوظ کریں';
-  @override
-  String get qazaDeleteRecordTitle => 'قضا ریکارڈ حذف کریں؟';
-  @override
-  String qazaDeleteRecordMessage(String date, String prayer) =>
-      '$date کی $prayer قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔';
-  @override
-  String get qazaRecordUpdated => 'قضا ریکارڈ اپ ڈیٹ ہو گیا۔';
-  @override
-  String qazaDuplicateRecord(String prayer, String date) =>
-      '$date کی $prayer قضا پہلے سے موجود ہے۔';
-  @override
-  String get qazaRecordUpdateFailed =>
-      'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
-  @override
-  String get qazaRecordDeleted => 'قضا ریکارڈ حذف ہو گیا۔';
-  @override
-  String get qazaRecordDeleteFailed =>
-      'قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+  String qazaCompletedOn(String date) {
+    return '$date کو مکمل';
+  }
 
   @override
   String qazaCompleteCount(int count) {
@@ -389,16 +367,55 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String qazaCompletedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count قضا مکمل ہو گئیں۔',
-      one: '1 قضا مکمل ہو گئی۔',
-      zero: 'کچھ مکمل نہیں ہوا۔',
-    );
-    return '$_temp0';
+  String get qazaRecordActions => 'ریکارڈ کے اعمال';
+
+  @override
+  String get qazaEditRecord => 'ترمیم';
+
+  @override
+  String get qazaDeleteRecord => 'حذف کریں';
+
+  @override
+  String get qazaEditRecordTitle => 'قضا میں ترمیم';
+
+  @override
+  String get qazaEditPrayer => 'نماز';
+
+  @override
+  String get qazaEditDate => 'اصل تاریخ';
+
+  @override
+  String get qazaEditDateHelp => 'قضا کی اصل تاریخ منتخب کریں';
+
+  @override
+  String get qazaSaveChanges => 'تبدیلیاں محفوظ کریں';
+
+  @override
+  String get qazaDeleteRecordTitle => 'قضا ریکارڈ حذف کریں؟';
+
+  @override
+  String qazaDeleteRecordMessage(Object date, Object prayer) {
+    return '$date کی $prayer قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔';
   }
+
+  @override
+  String get qazaRecordUpdated => 'قضا ریکارڈ اپ ڈیٹ ہو گیا۔';
+
+  @override
+  String qazaDuplicateRecord(Object date, Object prayer) {
+    return '$date کی $prayer قضا پہلے سے موجود ہے۔';
+  }
+
+  @override
+  String get qazaRecordUpdateFailed =>
+      'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get qazaRecordDeleted => 'قضا ریکارڈ حذف ہو گیا۔';
+
+  @override
+  String get qazaRecordDeleteFailed =>
+      'قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
 
   @override
   String get qazaUndoAction => 'واپس کریں';
@@ -421,6 +438,18 @@ class AppLocalizationsUr extends AppLocalizations {
       locale: localeName,
       other: '$count قضا دوبارہ باقی ہو گئیں۔',
       one: '1 قضا دوبارہ باقی ہو گئی۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaCompletedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قضا مکمل ہو گئیں۔',
+      one: '1 قضا مکمل ہو گئی۔',
+      zero: 'کچھ مکمل نہیں ہوا۔',
     );
     return '$_temp0';
   }
@@ -1177,7 +1206,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String addQazaUnavailablePrayer(String rakats) {
-    return '$rakats • ہر منتخب تاریخ پر پہلے سے درج یا ادا شدہ';
+    return '$rakats • ہر منتخب تاریخ پر پہلے سے درج، ادا شدہ، یا نماز کا وقت ابھی ختم نہیں ہوا';
   }
 
   @override
@@ -1678,4 +1707,56 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get appLockFailed => 'ڈیوائس کی تصدیق ناکام رہی۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get homeTodayProgressHeader => 'آج کی پیش رفت';
+
+  @override
+  String get homeNextQazaCurrentPrayer => 'اگلی قضا (موجودہ نماز)';
+
+  @override
+  String get homeOldestPending => 'سب سے پرانی باقی';
+
+  @override
+  String get homeOverallQaza => 'مجموعی قضا';
+
+  @override
+  String get homePendingByPrayer => 'نماز کے لحاظ سے باقی';
+
+  @override
+  String get homeViewDetails => 'تفصیلات دیکھیں';
+
+  @override
+  String get homeViewAll => 'سب دیکھیں';
+
+  @override
+  String get homeCompleted => 'مکمل';
+
+  @override
+  String get homePending => 'باقی';
+
+  @override
+  String get homeYourProgress => 'آپ کی پیش رفت';
+
+  @override
+  String get homeRange7Days => '7 دن';
+
+  @override
+  String get homeRange30Days => '30 دن';
+
+  @override
+  String get homeRangeMonthly => 'ماہانہ';
+
+  @override
+  String get homeDetailedStatistics => 'تفصیلی اعداد و شمار';
+
+  @override
+  String get homeDetailedStatisticsSubtitle =>
+      'سال وار باقی، ماہانہ تاریخ اور مزید';
+
+  @override
+  String get homeChartNoData => 'اس مدت میں کوئی قضا مکمل نہیں ہوئی۔';
+
+  @override
+  String get homeTodayDate => 'آج';
 }
