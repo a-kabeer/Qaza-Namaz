@@ -37,7 +37,7 @@ void main() {
       _record(PrayerType.asr, 1, QazaStatus.pending),
       _record(PrayerType.maghrib, 1, QazaStatus.pending),
       _record(PrayerType.isha, 1, QazaStatus.pending),
-      _record(PrayerType.fajr, 6, QazaStatus.pending),
+      _record(PrayerType.zuhr, 6, QazaStatus.pending),
     ]);
     return repository;
   }
