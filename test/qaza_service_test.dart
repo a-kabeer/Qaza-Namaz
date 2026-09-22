@@ -147,7 +147,7 @@ void main() {
     });
 
     test('bulk completion changes only selected pending records', () async {
-      for (var day = 1; day <= 5; day++) {
+      for (var day = 1; day <= 6; day++) {
         await service.recordQaza(
             userId: 'u1',
             prayerType: PrayerType.fajr,
@@ -248,13 +248,13 @@ void main() {
       final records = await service.repository.getRecords(userId: 'u1');
       await service.completeRecord(
           userId: 'u1',
-          recordId: records.last.id,
+          recordId: records.first.id,
           completedAt: DateTime(2026, 3, 1));
 
       final completed = await service.getHistoryPage(
           userId: 'u1', status: QazaStatus.completed);
       final all = await service.getHistoryPage(userId: 'u1', status: null);
-      expect(completed.records.map((r) => r.id), [records.last.id]);
+      expect(completed.records.map((r) => r.id), [records.first.id]);
       expect(all.records, hasLength(2));
     });
 
@@ -262,15 +262,20 @@ void main() {
       await service.recordQaza(
           userId: 'u1',
           prayerType: PrayerType.fajr,
-          originalDate: DateTime(2026, 1, 1));
+          originalDate: DateTime(2026, 1, 2));
       await service.recordQaza(
           userId: 'u1',
           prayerType: PrayerType.witr,
-          originalDate: DateTime(2026, 1, 2));
-      final records = await service.repository.getRecords(userId: 'u1');
+          originalDate: DateTime(2026, 1, 1));
+      final witr = (await service.repository.getRecords(
+        userId: 'u1',
+        prayerType: PrayerType.witr,
+        status: QazaStatus.pending,
+      ))
+          .single;
       await service.completeRecord(
           userId: 'u1',
-          recordId: records.last.id,
+          recordId: witr.id,
           completedAt: DateTime(2026, 2, 1));
 
       final summary = await service.getProgressSummary(userId: 'u1');
