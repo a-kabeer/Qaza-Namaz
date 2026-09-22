@@ -596,7 +596,7 @@ class CalculatorController extends Notifier<CalculatorState> {
       ref.invalidate(progressSummaryProvider);
       _persist();
         return true;
-      } catch (error) {
+      } catch (error, stackTrace) {
         await ref.read(qazaOperationServiceProvider).finish(
               operation,
               status: state.addProcessed > 0
@@ -605,7 +605,7 @@ class CalculatorController extends Notifier<CalculatorState> {
               affectedRecordCount: state.addProcessed,
               note: error.toString(),
             );
-        throw;
+        Error.throwWithStackTrace(error, stackTrace);
       }
     } catch (error) {
       if (_disposed) return false;
