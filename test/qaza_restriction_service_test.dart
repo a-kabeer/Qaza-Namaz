@@ -65,7 +65,7 @@ void main() {
   test('blocks the configured sunrise restriction', () async {
     final service = QazaRestrictionService(
       repository: _Repo(location, const PrayerSettings(), _day()),
-      now: () => DateTime.utc(2026, 9, 20, 0, 10),
+      now: () => DateTime.utc(2026, 9, 20, 1, 10),
     );
 
     final evaluation = await service.evaluateCurrent();
