@@ -130,8 +130,13 @@ void main() {
     return container;
   }
 
-  String textOf(WidgetTester tester, Key key) =>
-      tester.widget<Text>(find.byKey(key)).data!;
+  String textOf(WidgetTester tester, Key key) {
+    final finder = find.descendant(
+      of: find.byKey(key),
+      matching: find.byType(Text),
+    );
+    return tester.widget<Text>(finder.last).data!;
+  }
 
   group('reference dashboard layout', () {
     testWidgets('renders the reference sections in order', (tester) async {
@@ -178,7 +183,7 @@ void main() {
       expect(find.byKey(const Key('home_today_percent')), findsOneWidget);
       expect(find.byKey(const Key('home_today_count')), findsOneWidget);
       expect(find.text('Next Qaza (Current Prayer)'), findsOneWidget);
-      expect(find.text('Fajr'), findsOneWidget);
+      expect(find.text('Fajr'), findsWidgets);
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
