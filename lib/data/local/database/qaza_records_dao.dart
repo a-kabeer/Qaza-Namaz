@@ -639,7 +639,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (prayerType != null) {
       query.where(qazaRecords.prayerType.equals(prayerType));
     }
-    if (status != null) {\n      query.where(qazaRecords.status.equals(status));\n    } else {\n      query.where(qazaRecords.status.isNotIn([QazaStatus.deleted.name]));\n    }
+    if (status != null) {
+      query.where(qazaRecords.status.equals(status));
+    } else {
+      query.where(qazaRecords.status.isNotIn([QazaStatus.deleted.name]));
+    }
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
 
