@@ -25,6 +25,9 @@ import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../features/auth/guest_session.dart';
+import '../features/prayer_times/domain/prayer_schedule.dart';
+import '../features/prayer_times/domain/prayer_times_models.dart';
+import '../features/prayer_times/prayer_times_providers.dart';
 import '../domain/services/qaza_service.dart';
 import '../domain/services/sahib_al_tartib_service.dart';
 import '../domain/services/qaza_undo_service.dart';
@@ -74,8 +77,113 @@ final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
   return repository;
 });
 
-final qazaServiceProvider = Provider<QazaService>(
-    (ref) => QazaService(ref.watch(qazaRepositoryProvider)));
+final qazaPrayerTimeBlockedResolverProvider =
+    Provider<QazaPrayerTimeBlockedResolver>((ref) {
+  final prayerTimesRepository = ref.watch(prayerTimesRepositoryProvider);
+  final clock = ref.watch(prayerTimesClockProvider);
+
+  return ({
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+  }) async {
+    final requestedDates = dates.map((date) =>
+        DateTime(date.year, date.month, date.day)).toSet();
+    final requestedPrayers = prayerTypes.toSet();
+    if (requestedDates.isEmpty || requestedPrayers.isEmpty) {
+      return const <QazaPrayerKey>{};
+    }
+
+    final location = await prayerTimesRepository.getSavedLocation();
+    final timezone = location?.timezone;
+    if (location == null || timezone == null || timezone.isEmpty) {
+      // Prayer times cannot be determined without a saved prayer-time
+      // location. Preserve the existing manual-add behavior in this state.
+      return const <QazaPrayerKey>{};
+    }
+
+    final instant = clock.now();
+    final localNow = PrayerSchedule.now(timezone, instant: instant);
+    final today = DateTime(localNow.year, localNow.month, localNow.day);
+    if (!requestedDates.contains(today)) return const <QazaPrayerKey>{};
+
+    final settings = await prayerTimesRepository.getSavedSettings();
+    final todaySchedule = await prayerTimesRepository.getPrayerTimes(
+      latitude: location.latitude,
+      longitude: location.longitude,
+      date: today,
+      method: settings.calculationMethod,
+      asrMethod: settings.asrMethod,
+      timezone: timezone,
+    );
+
+    PrayerDay? tomorrowSchedule;
+    if (requestedPrayers.contains(PrayerType.isha) ||
+        requestedPrayers.contains(PrayerType.witr)) {
+      final tomorrow = DateTime(today.year, today.month, today.day + 1);
+      tomorrowSchedule = await prayerTimesRepository.getPrayerTimes(
+        latitude: location.latitude,
+        longitude: location.longitude,
+        date: tomorrow,
+        method: settings.calculationMethod,
+        asrMethod: settings.asrMethod,
+        timezone: timezone,
+      );
+    }
+
+    DateTime? waqtEnd(PrayerType prayer) => switch (prayer) {
+          // Fajr ends at sunrise; the other prayers end when the next prayer
+          // starts. Isha and Witr end with the following day's Fajr.
+          PrayerType.fajr => PrayerSchedule.moment(
+              todaySchedule, PrayerName.sunrise),
+          PrayerType.zuhr => PrayerSchedule.moment(
+              todaySchedule, PrayerName.asr),
+          PrayerType.asr => PrayerSchedule.moment(
+              todaySchedule, PrayerName.maghrib),
+          PrayerType.maghrib => PrayerSchedule.moment(
+              todaySchedule, PrayerName.isha),
+          PrayerType.isha => tomorrowSchedule == null
+              ? null
+              : PrayerSchedule.moment(tomorrowSchedule, PrayerName.fajr),
+          PrayerType.witr => tomorrowSchedule == null
+              ? null
+              : PrayerSchedule.moment(tomorrowSchedule, PrayerName.fajr),
+        };
+
+    final blocked = <QazaPrayerKey>{};
+    for (final prayer in requestedPrayers) {
+      final end = waqtEnd(prayer);
+      if (end != null && localNow.isBefore(end)) {
+        blocked.add(QazaPrayerKey(
+          userId: '',
+          date: today,
+          prayerType: prayer,
+        ));
+      }
+    }
+    return blocked;
+  };
+});
+
+final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
+      ref.watch(qazaRepositoryProvider),
+      prayerTimeBlockedResolver: ({required dates, required prayerTypes}) async {
+        final blocked = await ref
+            .read(qazaPrayerTimeBlockedResolverProvider)(
+              dates: dates,
+              prayerTypes: prayerTypes,
+            );
+        final userId = ref.read(activeUserIdProvider);
+        if (userId == null || blocked.isEmpty) return const <QazaPrayerKey>{};
+        return {
+          for (final key in blocked)
+            QazaPrayerKey(
+              userId: userId,
+              date: key.date,
+              prayerType: key.prayerType,
+            ),
+        };
+      },
+    ));
 
 /** The current user's Sahib al-Tartib state. */
 final sahibAlTartibProvider =
