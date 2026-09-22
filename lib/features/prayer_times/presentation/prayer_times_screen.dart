@@ -504,6 +504,7 @@ class _PrayerTimeRow extends StatelessWidget {
     required this.isCurrent,
     required this.reminderEnabled,
     required this.onReminderChanged,
+    required this.isLast,
   });
 
   final PrayerName prayer;
@@ -511,6 +512,7 @@ class _PrayerTimeRow extends StatelessWidget {
   final bool isCurrent;
   final bool reminderEnabled;
   final ValueChanged<bool> onReminderChanged;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
@@ -518,45 +520,46 @@ class _PrayerTimeRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isCurrent ? scheme.secondaryContainer : null,
-        border: Border(
-          bottom: BorderSide(
-            color: scheme.outlineVariant,
-          ),
-        ),
+        border: isLast
+            ? null
+            : Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
       child: Row(
         children: [
           Icon(
             _icon(prayer),
-            size: 22,
+            size: 19,
             color: isCurrent
                 ? scheme.onSecondaryContainer
                 : scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               PrayerTimesStrings.prayerName(context, prayer),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
                   ),
             ),
           ),
           Text(
             DateFormat.jm().format(time),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
                 ),
           ),
-          const SizedBox(width: 4),
           IconButton(
             tooltip: PrayerTimesStrings.notifications(context),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 34, height: 34),
             onPressed: () => onReminderChanged(!reminderEnabled),
             icon: Icon(
               reminderEnabled
                   ? Icons.notifications_active_outlined
                   : Icons.notifications_none_outlined,
+              size: 19,
             ),
           ),
         ],
@@ -580,16 +583,19 @@ class _RestrictedTimeRow extends StatelessWidget {
     required this.isActive,
     required this.now,
     required this.isLast,
+    required this.reminderEnabled,
+    required this.onReminderChanged,
   });
 
   final QazaRestrictionPeriod period;
   final bool isActive;
   final DateTime now;
   final bool isLast;
+  final bool reminderEnabled;
+  final ValueChanged<bool> onReminderChanged;
 
   @override
   Widget build(BuildContext context) {
-    final duration = period.end.difference(period.start).inMinutes;
     final remaining = period.end.difference(now).inMinutes.clamp(0, 9999);
     final scheme = Theme.of(context).colorScheme;
 
@@ -598,13 +604,9 @@ class _RestrictedTimeRow extends StatelessWidget {
         color: isActive ? scheme.tertiaryContainer : null,
         border: isLast
             ? null
-            : Border(
-                bottom: BorderSide(
-                  color: scheme.outlineVariant,
-                ),
-              ),
+            : Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
       child: Row(
         children: [
           Icon(
@@ -614,54 +616,53 @@ class _RestrictedTimeRow extends StatelessWidget {
               RestrictionType.sunset => Icons.wb_twilight,
               RestrictionType.otherConfiguredRestriction => Icons.schedule,
             },
-            size: 22,
+            size: 19,
             color: isActive
                 ? scheme.onTertiaryContainer
                 : scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  PrayerTimesStrings.restrictionType(context, period.type),
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  PrayerTimesStrings.timeWindow(
-                    context,
-                    DateFormat.jm().format(period.start),
-                    DateFormat.jm().format(period.end),
+            child: Text(
+              PrayerTimesStrings.restrictionType(context, period.type),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   ),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                PrayerTimesStrings.restrictedFor(context, duration),
-                style: Theme.of(context).textTheme.labelMedium,
-                textAlign: TextAlign.end,
-              ),
-              if (isActive) ...[
-                const SizedBox(height: 3),
-                Text(
-                  PrayerTimesStrings.restrictionRemaining(
-                    context,
-                    Duration(minutes: remaining),
-                  ),
-                  style: Theme.of(context).textTheme.labelSmall,
-                  textAlign: TextAlign.end,
+          Text(
+            PrayerTimesStrings.timeWindow(
+              context,
+              DateFormat.jm().format(period.start),
+              DateFormat.jm().format(period.end),
+            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ],
+          ),
+          if (isActive && remaining > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: Text(
+                '${remaining}m',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onTertiaryContainer,
+                    ),
+              ),
+            ),
+          IconButton(
+            tooltip: PrayerTimesStrings.notifications(context),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+            onPressed: () => onReminderChanged(!reminderEnabled),
+            icon: Icon(
+              reminderEnabled
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_none_outlined,
+              size: 19,
+            ),
           ),
         ],
       ),
