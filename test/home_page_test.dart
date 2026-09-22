@@ -375,11 +375,11 @@ void main() {
       expect(find.byKey(const Key('home_overall_percent')), findsOneWidget);
     });
 
-    testWidgets('shows all six pending-by-prayer bars with counts',
+    testWidgets('shows only pending prayers with decreasing bars and counts',
         (tester) async {
       await pumpHome(tester, await ledger());
 
-      for (final prayer in PrayerType.values) {
+      for (final prayer in [PrayerType.fajr, PrayerType.zuhr]) {
         expect(
           find.byKey(Key('home_pending_prayer_' + prayer.name)),
           findsOneWidget,
@@ -390,9 +390,62 @@ void main() {
         );
       }
 
+      for (final prayer in [
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.isha,
+        PrayerType.witr,
+      ]) {
+        expect(
+          find.byKey(Key('home_pending_prayer_' + prayer.name)),
+          findsNothing,
+        );
+        expect(
+          find.byKey(Key('home_pending_bar_' + prayer.name)),
+          findsNothing,
+        );
+      }
+
+      final fajrBar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_pending_bar_fajr')),
+      );
+      final zuhrBar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_pending_bar_zuhr')),
+      );
+      expect(fajrBar.value, closeTo(0.5, 0.0001));
+      expect(zuhrBar.value, closeTo(0.5, 0.0001));
       expect(find.text('1').evaluate(), isNotEmpty);
-      expect(find.byKey(const Key('home_pending_by_prayer_view_all')),
-          findsOneWidget);
+      expect(
+        find.byKey(const Key('home_pending_by_prayer_view_all')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows a compact empty state when no Qaza is pending',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'f1',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.completed,
+          completedAt: _stamp,
+        ),
+      ]);
+
+      await pumpHome(tester, repository);
+
+      expect(
+        find.byKey(const Key('home_pending_by_prayer_empty')),
+        findsOneWidget,
+      );
+      for (final prayer in PrayerType.values) {
+        expect(
+          find.byKey(Key('home_pending_prayer_' + prayer.name)),
+          findsNothing,
+        );
+      }
     });
 
     testWidgets('opens the existing Qaza workspace from View all',
