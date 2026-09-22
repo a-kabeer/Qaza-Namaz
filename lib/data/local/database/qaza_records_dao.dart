@@ -42,7 +42,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .toList(growable: false);
   }
 
-  Future<List<QazaRecordRow>> getByIds({
+  Future<List<QazaRecordRow>> getRowsByIds({
     required String userId,
     required List<String> ids,
   }) {
@@ -385,7 +385,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         changed += await (update(qazaRecords)
               ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
             .write(QazaRecordsCompanion(
-              status: const Value(QazaStatus.deleted.name),
+              status: Value(QazaStatus.deleted.name),
               updatedAt: Value(deletedAt),
             ));
       }
@@ -472,7 +472,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
         if (beforeOriginalDate != null) {
           predicates.add(
-              row.originalDate.isLessThanValue(beforeOriginalDate) |
+              row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                   (row.originalDate.equals(beforeOriginalDate) &
                       row.id.isSmallerThanValue(beforeId!)));
         }
@@ -722,7 +722,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       QazaRecordsCompanion.insert(
           id: record.id,
           userId: record.userId,
-          operationId: record.operationId,
+          operationId: Value(record.operationId),
           prayerType: record.prayerType.name,
           originalDate: record.originalDate,
           status: record.status.name,
