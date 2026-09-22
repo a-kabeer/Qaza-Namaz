@@ -747,6 +747,16 @@ class _PrayerLocationEditSheetState
       );
       _citySearchController.text = location.city!;
     }
+
+    if (_country != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(prayerTimesControllerProvider.notifier).searchCities(
+              '',
+              countryCode: _country!.iso2,
+            );
+      });
+    }
   }
 
   @override
@@ -850,6 +860,10 @@ class _PrayerLocationEditSheetState
                   controller: _citySearchController,
                   textInputAction: TextInputAction.search,
                   onChanged: (value) {
+                    if (_selectedCity != null &&
+                        value.trim() != _selectedCity!.name.trim()) {
+                      _selectedCity = null;
+                    }
                     ref
                         .read(prayerTimesControllerProvider.notifier)
                         .searchCities(
@@ -870,6 +884,7 @@ class _PrayerLocationEditSheetState
                         : IconButton(
                             onPressed: () {
                               _citySearchController.clear();
+                              _selectedCity = null;
                               ref
                                   .read(
                                     prayerTimesControllerProvider.notifier,
@@ -901,7 +916,8 @@ class _PrayerLocationEditSheetState
                       ),
                     ),
                   ),
-                if (state.cityResults.isNotEmpty) ...[
+                if (state.cityResults.isNotEmpty &&
+                    _selectedCity == null) ...[
                   const SizedBox(height: 3),
                   for (final result in state.cityResults.take(8))
                     ListTile(
@@ -930,7 +946,7 @@ class _PrayerLocationEditSheetState
                         ref
                             .read(prayerTimesControllerProvider.notifier)
                             .searchCities(
-                              result.name,
+                              '',
                               countryCode: result.countryCode,
                             );
                       },
