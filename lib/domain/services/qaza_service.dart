@@ -15,6 +15,7 @@ export 'sahib_al_tartib_service.dart'
     show QazaTartibViolationException, SahibAlTartibState;
 
 typedef QazaPrayerTimeBlockedResolver = Future<Set<QazaPrayerKey>> Function({
+  required String userId,
   required Iterable<DateTime> dates,
   required Iterable<PrayerType> prayerTypes,
 });
@@ -42,12 +43,13 @@ class QazaService {
   final QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver;
 
   Future<Set<QazaPrayerKey>> _getTimeBlockedKeys({
+    required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayerTypes,
   }) async {
     final resolver = prayerTimeBlockedResolver;
     if (resolver == null) return const <QazaPrayerKey>{};
-    return resolver(dates: dates, prayerTypes: prayerTypes);
+    return resolver(userId: userId, dates: dates, prayerTypes: prayerTypes);
   }
 
   Future<List<QazaRecord>> getRecords(
@@ -209,6 +211,7 @@ class QazaService {
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
     final timeBlockedKeys = await _getTimeBlockedKeys(
+      userId: userId,
       dates: normalizedDates,
       prayerTypes: selectedPrayers,
     );
