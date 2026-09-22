@@ -173,7 +173,6 @@ class _PendingTrackerContent extends StatelessWidget {
   final QazaTrackerController controller;
 
   Future<void> _openFilters(BuildContext context) async {
-    final l10n = AppLocalizations.of(context);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
