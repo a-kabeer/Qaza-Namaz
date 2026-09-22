@@ -32,6 +32,11 @@ class _FakeDataSource implements OfflineLocationDataSource {
   }
 
   @override
+  Future<List<CitySearchResult>> popularCitiesInCountry(
+    String countryCode,
+  ) => searchCitiesInCountry('', countryCode: countryCode);
+
+  @override
   Future<List<PrayerCountryOption>> getCountries() async => const [];
 
   @override
