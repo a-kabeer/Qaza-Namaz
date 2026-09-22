@@ -715,7 +715,6 @@ class _PrayerLocationEditSheetState
   PrayerCountryOption? _country;
   CitySearchResult? _selectedCity;
   late AsrMethod _asrMethod;
-  late CalculationMethod _calculationMethod;
   final TextEditingController _citySearchController =
       TextEditingController();
 
@@ -726,14 +725,15 @@ class _PrayerLocationEditSheetState
         ? _EditLocationMode.current
         : _EditLocationMode.city;
     _asrMethod = widget.state.settings.asrMethod;
-    _calculationMethod = widget.state.settings.calculationMethod;
     final location = widget.state.location;
+
     if (location?.countryCode != null && location?.country != null) {
       _country = PrayerCountryOption(
         name: location!.country!,
         iso2: location.countryCode!,
       );
     }
+
     if (location?.city != null &&
         location!.countryCode != null &&
         location.country != null) {
@@ -746,6 +746,7 @@ class _PrayerLocationEditSheetState
         countryCode: location.countryCode,
         timezone: location.timezone,
       );
+      _citySearchController.text = location.city!;
     }
   }
 
@@ -759,185 +760,220 @@ class _PrayerLocationEditSheetState
   Widget build(BuildContext context) {
     final state = ref.watch(prayerTimesControllerProvider);
     final canSaveCity = _selectedCity != null;
+    final theme = Theme.of(context);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 4,
-        bottom: 20 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              PrayerTimesStrings.editLocation(context),
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 18),
-            SegmentedButton<_EditLocationMode>(
-              segments: [
-                ButtonSegment<_EditLocationMode>(
-                  value: _EditLocationMode.current,
-                  label: Text(PrayerTimesStrings.currentLocation(context)),
-                  icon: const Icon(Icons.my_location_rounded),
-                ),
-                ButtonSegment<_EditLocationMode>(
-                  value: _EditLocationMode.city,
-                  label: Text(
-                    PrayerTimesStrings.selectCountryAndCity(context),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          14,
+          2,
+          14,
+          12 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      PrayerTimesStrings.editLocation(context),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                  icon: const Icon(Icons.location_city_outlined),
-                ),
-              ],
-              selected: <_EditLocationMode>{_mode},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _mode = selection.single;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            if (_mode == _EditLocationMode.city) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.public_rounded),
-                title: Text(
-                  _country?.name ??
-                      PrayerTimesStrings.selectCountry(context),
-                ),
-                subtitle: Text(PrayerTimesStrings.selectCountry(context)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: _pickCountry,
+                ],
               ),
-              TextField(
-                controller: _citySearchController,
-                enabled: _country != null,
-                textInputAction: TextInputAction.search,
-                onChanged: (value) {
-                  ref
-                      .read(prayerTimesControllerProvider.notifier)
-                      .searchCities(
-                        value,
-                        countryCode: _country?.iso2,
-                      );
-                  setState(() {});
+              const SizedBox(height: 8),
+              SegmentedButton<_EditLocationMode>(
+                segments: [
+                  ButtonSegment<_EditLocationMode>(
+                    value: _EditLocationMode.current,
+                    label: Text(PrayerTimesStrings.currentLocation(context)),
+                    icon: const Icon(Icons.my_location_rounded, size: 18),
+                  ),
+                  ButtonSegment<_EditLocationMode>(
+                    value: _EditLocationMode.city,
+                    label: Text(PrayerTimesStrings.city(context)),
+                    icon: const Icon(Icons.location_city_outlined, size: 18),
+                  ),
+                ],
+                selected: <_EditLocationMode>{_mode},
+                onSelectionChanged: (selection) {
+                  setState(() {
+                    _mode = selection.single;
+                  });
+                  if (_mode == _EditLocationMode.city &&
+                      _country != null) {
+                    ref
+                        .read(prayerTimesControllerProvider.notifier)
+                        .searchCities(
+                          _citySearchController.text,
+                          countryCode: _country!.iso2,
+                        );
+                  }
                 },
-                decoration: InputDecoration(
-                  labelText: PrayerTimesStrings.selectCity(context),
-                  hintText: _country == null
-                      ? PrayerTimesStrings.chooseCityFirst(context)
-                      : PrayerTimesStrings.searchCity(context),
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _citySearchController.text.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: () {
-                            _citySearchController.clear();
-                            ref
-                                .read(
-                                  prayerTimesControllerProvider.notifier,
-                                )
-                                .searchCities('');
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.clear_rounded),
-                        ),
-                ),
               ),
-              if (state.citySearchLoading) ...[
-                const SizedBox(height: 8),
-                const LinearProgressIndicator(),
-              ],
-              if (_selectedCity != null) ...[
-                const SizedBox(height: 8),
-                InputDecorator(
-                  decoration: InputDecoration(
-                    labelText: PrayerTimesStrings.selectCity(context),
+              const SizedBox(height: 8),
+              if (_mode == _EditLocationMode.current)
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  leading: const Icon(Icons.my_location_rounded),
+                  title: Text(PrayerTimesStrings.useMyLocation(context)),
+                  subtitle: Text(
+                    PrayerTimesStrings.privacyNote(context),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: Text(_selectedCity!.name),
-                ),
-              ],
-              if (state.cityResults.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                for (final result in state.cityResults)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.location_city_outlined),
-                    title: Text(result.name),
-                    subtitle: Text(
-                      [
-                        if (result.region != null && result.region!.isNotEmpty)
-                          result.region!,
-                        result.country,
-                      ].join(', '),
+                )
+              else ...[
+                Material(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    dense: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 10),
+                    leading: const Icon(Icons.public_rounded),
+                    title: Text(
+                      _country?.name ??
+                          PrayerTimesStrings.selectCountry(context),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      setState(() {
-                        _selectedCity = result;
-                        _citySearchController.text = result.name;
-                      });
-                      FocusScope.of(context).unfocus();
-                      ref
-                          .read(prayerTimesControllerProvider.notifier)
-                          .searchCities('');
-                    },
+                    onTap: _pickCountry,
                   ),
-              ],
-            ],
-            const SizedBox(height: 18),
-            Text(
-              PrayerTimesStrings.asrMethod(context),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            SegmentedButton<AsrMethod>(
-              segments: [
-                ButtonSegment<AsrMethod>(
-                  value: AsrMethod.standard,
-                  label: Text(PrayerTimesStrings.standard(context)),
                 ),
-                ButtonSegment<AsrMethod>(
-                  value: AsrMethod.hanafi,
-                  label: Text(PrayerTimesStrings.hanafi(context)),
+                const SizedBox(height: 7),
+                TextField(
+                  controller: _citySearchController,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (value) {
+                    ref
+                        .read(prayerTimesControllerProvider.notifier)
+                        .searchCities(
+                          value,
+                          countryCode: _country?.iso2,
+                        );
+                    setState(() {});
+                  },
+                  decoration: InputDecoration(
+                    labelText: PrayerTimesStrings.selectCity(context),
+                    hintText: _country == null
+                        ? PrayerTimesStrings.chooseCityFirst(context)
+                        : PrayerTimesStrings.searchCity(context),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    isDense: true,
+                    suffixIcon: _citySearchController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: () {
+                              _citySearchController.clear();
+                              ref
+                                  .read(
+                                    prayerTimesControllerProvider.notifier,
+                                  )
+                                  .searchCities(
+                                    '',
+                                    countryCode: _country?.iso2,
+                                  );
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.clear_rounded, size: 20),
+                          ),
+                  ),
+                  enabled: _country != null,
                 ),
-              ],
-              selected: <AsrMethod>{_asrMethod},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _asrMethod = selection.single;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calculate_outlined),
-              title: Text(PrayerTimesStrings.calculationMethod(context)),
-              subtitle: Text(
-                _calculationMethod == CalculationMethod.recommended
-                    ? PrayerTimesStrings.recommended(context)
-                    : PrayerTimesStrings.methodName(
-                        context,
-                        _calculationMethod,
+                if (state.citySearchLoading) ...[
+                  const SizedBox(height: 6),
+                  const LinearProgressIndicator(minHeight: 2),
+                ],
+                if (_selectedCity != null &&
+                    _citySearchController.text == _selectedCity!.name)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      '${_selectedCity!.name}, ${_selectedCity!.country}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                  ),
+                if (state.cityResults.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  for (final result in state.cityResults.take(8))
+                    ListTile(
+                      dense: true,
+                      minVerticalPadding: 0,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 8),
+                      leading: const Icon(
+                        Icons.location_city_outlined,
+                        size: 19,
+                      ),
+                      title: Text(result.name),
+                      subtitle: result.region == null || result.region!.isEmpty
+                          ? null
+                          : Text(result.region!),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 19,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedCity = result;
+                          _citySearchController.text = result.name;
+                        });
+                        FocusScope.of(context).unfocus();
+                        ref
+                            .read(prayerTimesControllerProvider.notifier)
+                            .searchCities(
+                              result.name,
+                              countryCode: result.countryCode,
+                            );
+                      },
+                    ),
+                ],
+              ],
+              const SizedBox(height: 8),
+              Text(
+                PrayerTimesStrings.asrMethod(context),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: _pickCalculationMethod,
-            ),
-            const SizedBox(height: 12),
-            AppButton(
-              label: PrayerTimesStrings.save(context),
-              icon: Icons.check_rounded,
-              expand: true,
-              onPressed: state.status == PrayerTimesStatus.locating ||
-                      (_mode == _EditLocationMode.city && !canSaveCity)
-                  ? null
-                  : _save,
-            ),
-          ],
+              const SizedBox(height: 5),
+              SegmentedButton<AsrMethod>(
+                segments: [
+                  ButtonSegment<AsrMethod>(
+                    value: AsrMethod.standard,
+                    label: Text(PrayerTimesStrings.standard(context)),
+                  ),
+                  ButtonSegment<AsrMethod>(
+                    value: AsrMethod.hanafi,
+                    label: Text(PrayerTimesStrings.hanafi(context)),
+                  ),
+                ],
+                selected: <AsrMethod>{_asrMethod},
+                onSelectionChanged: (selection) {
+                  setState(() => _asrMethod = selection.single);
+                },
+              ),
+              const SizedBox(height: 8),
+              AppButton(
+                label: PrayerTimesStrings.save(context),
+                icon: Icons.check_rounded,
+                expand: true,
+                onPressed: state.status == PrayerTimesStatus.locating ||
+                        (_mode == _EditLocationMode.city && !canSaveCity)
+                    ? null
+                    : _save,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -958,52 +994,18 @@ class _PrayerLocationEditSheetState
       _selectedCity = null;
       _citySearchController.clear();
     });
-    ref.read(prayerTimesControllerProvider.notifier).searchCities('');
-  }
 
-  Future<void> _pickCalculationMethod() async {
-    final selected = await showModalBottomSheet<CalculationMethod>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .72,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-            children: [
-              Text(
-                PrayerTimesStrings.calculationMethod(context),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              for (final method in CalculationMethod.values)
-                ListTile(
-                  title: Text(
-                    PrayerTimesStrings.methodOption(context, method),
-                  ),
-                  trailing: method == _calculationMethod
-                      ? const Icon(Icons.check_rounded)
-                      : null,
-                  onTap: () => Navigator.pop(context, method),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (!mounted || selected == null) return;
-    setState(() => _calculationMethod = selected);
+    ref.read(prayerTimesControllerProvider.notifier).searchCities(
+          '',
+          countryCode: selected.iso2,
+        );
   }
 
   Future<void> _save() async {
     final controller = ref.read(prayerTimesControllerProvider.notifier);
     final previousSettings = controller.state.settings;
-    final nextSettings = previousSettings.copyWith(
-      asrMethod: _asrMethod,
-      calculationMethod: _calculationMethod,
-    );
+    final nextSettings =
+        previousSettings.copyWith(asrMethod: _asrMethod);
 
     if (_mode == _EditLocationMode.current) {
       await controller.useMyLocation();
@@ -1017,8 +1019,7 @@ class _PrayerLocationEditSheetState
       return;
     }
 
-    if (nextSettings.asrMethod != previousSettings.asrMethod ||
-        nextSettings.calculationMethod != previousSettings.calculationMethod) {
+    if (nextSettings.asrMethod != previousSettings.asrMethod) {
       await controller.saveSettings(nextSettings);
     }
 
