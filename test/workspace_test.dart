@@ -63,11 +63,10 @@ void main() {
     expect(find.text('Calculator'), findsNothing);
     // Home leads with the compact progress overview; Add/Calculate live in
     // the workspace action menu rather than separate Home buttons.
-    expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
-    expect(find.byKey(const Key('home_progress_summary')), findsOneWidget);
+    expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
+    
     expect(find.byKey(const Key('add_actions_fab')), findsOneWidget);
-    await revealPrayerLedger(tester);
-    expect(find.byKey(const Key('home_prayer_row_fajr')), findsOneWidget);
+    expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
   });
 
   testWidgets('Home derives live totals from the aggregate repository summary',
@@ -97,11 +96,31 @@ void main() {
     // aggregate repository state.
     expect(
       tester.widget<Text>(
-        find.byKey(const Key('home_progress_summary')),
+        find.descendant(
+          of: find.byKey(const Key('home_completed_value')),
+          matching: find.byType(Text),
+        ).last,
       ).data,
-      '1 of 2 completed · 50%',
+      '1',
     );
-    expect(find.text('Total'), findsNothing);
+    expect(
+      tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const Key('home_pending_value')),
+          matching: find.byType(Text),
+        ).last,
+      ).data,
+      '1',
+    );
+    expect(
+      tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(const Key('home_total_value')),
+          matching: find.byType(Text),
+        ).last,
+      ).data,
+      '2',
+    );
   });
 
   testWidgets('Qaza is a primary destination and Back returns to Home', (tester) async {
@@ -125,7 +144,7 @@ void main() {
     final handled = await tester.binding.handlePopRoute();
     await _pumpNavigation(tester);
     expect(handled, isTrue);
-    expect(find.byKey(const Key('home_progress_overview')), findsOneWidget);
+    expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
   });
 
   testWidgets('Selecting Knowledge and Settings preserves destination state',
