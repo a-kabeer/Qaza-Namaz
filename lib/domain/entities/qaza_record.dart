@@ -1,6 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 
-enum QazaStatus { pending, completed }
+enum QazaStatus { pending, completed, deleted }
 
 class QazaRecord {
   const QazaRecord({
@@ -22,6 +22,18 @@ class QazaRecord {
   final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Stable originating operation for records created by an import/add action.
+  /// Legacy records return null because they predate operation provenance.
+  String? get operationId {
+    const prefix = 'op_';
+    if (!id.startsWith(prefix)) return null;
+    final remainder = id.substring(prefix.length);
+    final separator = remainder.indexOf('_');
+    return separator <= 0 ? null : remainder.substring(0, separator);
+  }
+
+  bool get isDeleted => status == QazaStatus.deleted;
 
   QazaRecord copyWith({
     String? id,
