@@ -16,10 +16,10 @@ import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-import 'qaza_tracker_controller.dart';
-import 'qaza_undo_banner.dart';
 import '../prayer_times/prayer_times_providers.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
+import 'qaza_tracker_controller.dart';
+import 'qaza_undo_banner.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
