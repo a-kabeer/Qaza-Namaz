@@ -95,6 +95,7 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
         completedAt: completedAt,
         onUndone: () async {
           ref.invalidate(homeDailyProgressProvider);
+          ref.invalidate(sahibAlTartibProvider);
         },
       );
     } on QazaTartibViolationException catch (error) {
