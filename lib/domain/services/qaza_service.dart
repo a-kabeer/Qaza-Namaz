@@ -623,6 +623,7 @@ class QazaService {
     var completed = 0;
     var total = 0;
     for (final record in records) {
+      if (record.status == QazaStatus.deleted) continue;
       total++;
       if (record.status == QazaStatus.completed) completed++;
     }
