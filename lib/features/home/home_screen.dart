@@ -681,22 +681,38 @@ class _OverallQazaSection extends StatelessWidget {
           final stats = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.homeOverallQaza,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final title = Text(
+                    l10n.homeOverallQaza,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                  TextButton(
+                  );
+                  final action = TextButton(
                     key: const Key('home_overall_view_details'),
                     onPressed: onDetails,
                     child: Text(l10n.homeViewDetails),
-                  ),
-                ],
+                  );
+                  if (constraints.maxWidth < 300) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        title,
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: action,
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: title),
+                      action,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 8),
               _StatLine(
