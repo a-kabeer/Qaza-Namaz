@@ -83,6 +83,7 @@ final qazaPrayerTimeBlockedResolverProvider =
   final clock = ref.watch(prayerTimesClockProvider);
 
   return ({
+    required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayerTypes,
   }) async {
@@ -154,7 +155,7 @@ final qazaPrayerTimeBlockedResolverProvider =
       final end = waqtEnd(prayer);
       if (end != null && localNow.isBefore(end)) {
         blocked.add(QazaPrayerKey(
-          userId: '',
+          userId: userId,
           date: today,
           prayerType: prayer,
         ));
@@ -166,23 +167,15 @@ final qazaPrayerTimeBlockedResolverProvider =
 
 final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
-      prayerTimeBlockedResolver: ({required dates, required prayerTypes}) async {
-        final blocked = await ref
-            .read(qazaPrayerTimeBlockedResolverProvider)(
-              dates: dates,
-              prayerTypes: prayerTypes,
-            );
-        final userId = ref.read(activeUserIdProvider);
-        if (userId == null || blocked.isEmpty) return const <QazaPrayerKey>{};
-        return {
-          for (final key in blocked)
-            QazaPrayerKey(
-              userId: userId,
-              date: key.date,
-              prayerType: key.prayerType,
-            ),
-        };
-      },
+      prayerTimeBlockedResolver: ({
+        required userId,
+        required dates,
+        required prayerTypes,
+      }) => ref.read(qazaPrayerTimeBlockedResolverProvider)(
+            userId: userId,
+            dates: dates,
+            prayerTypes: prayerTypes,
+          ),
     ));
 
 /** The current user's Sahib al-Tartib state. */
