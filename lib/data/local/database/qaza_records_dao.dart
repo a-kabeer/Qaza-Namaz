@@ -351,6 +351,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }
 
 
+  Future<List<QazaRecord>> getByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final unique = ids.toSet().toList(growable: false);
+    final result = <QazaRecord>[];
+    for (var offset = 0; offset < unique.length; offset += 400) {
+      final chunk = unique.skip(offset).take(400).toList(growable: false);
+      final rows = await (select(qazaRecords)
+            ..where((row) =>
+                row.userId.equals(userId) & row.id.isIn(chunk)))
+          .get();
+      result.addAll(rows.map(_toDomain));
+    }
+    return result;
+  }
+
   Future<int> softDeleteByIds({
     required String userId,
     required List<String> ids,
