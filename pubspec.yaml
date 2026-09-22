@@ -34,8 +34,8 @@ dependencies:
   flutter_timezone: ^5.1.0
   timezone: ^0.10.1
   adhan_dart: ^2.0.1
-  geodb_flutter: ^0.2.0
   timezone_country: ^1.2.0
+  flutter_countries: ^1.0.2
 
 dev_dependencies:
   flutter_test:
