@@ -123,8 +123,11 @@ class _StatusFilterBar extends StatelessWidget {
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final lockedRecordId =
+        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: SegmentedButton<QazaStatusFilter>(
@@ -307,7 +310,7 @@ Future<void> _deleteTrackerRecord(
     );
   }
 }
-class _TrackerBody extends StatelessWidget {
+class _TrackerBody extends ConsumerWidget {
   const _TrackerBody({required this.state, required this.controller});
 
   final QazaTrackerState state;
@@ -347,8 +350,33 @@ class _TrackerBody extends StatelessWidget {
             );
     }
 
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
+    return Column(
+      children: [
+        if (tartib?.requiresOrder == true &&
+            tartib?.nextPrayer != null &&
+            tartib?.pendingFarzCount != null) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                l10n.qazaTartibRequiredMessage(
+                  tartib!.pendingFarzCount,
+                  tartib.nextPrayer!.localizedLabel(l10n),
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ),
+        ],
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.refresh,
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           if (notification.metrics.extentAfter < 320) controller.loadMore();
@@ -388,7 +416,8 @@ class _TrackerBody extends StatelessWidget {
               record: record,
               selected: state.selected.contains(record.id),
               busy: state.recordMutating,
-              onToggle: record.status == QazaStatus.pending
+              onToggle: record.status == QazaStatus.pending &&
+                      (lockedRecordId == null || record.id == lockedRecordId)
                   ? () => controller.toggleSelection(record.id)
                   : null,
               onEdit: () => _editTrackerRecord(
@@ -405,8 +434,9 @@ class _TrackerBody extends StatelessWidget {
               ),
             );
           },
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -495,15 +525,17 @@ class _RecordRow extends StatelessWidget {
           '${record.status.localizedLabel(l10n)}',
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: onToggle == null
+        leading: completed
             ? Icon(
                 Icons.check_circle_rounded,
                 color: theme.colorScheme.primary,
               )
-            : Checkbox(
-                value: selected,
-                onChanged: (_) => onToggle!(),
-              ),
+            : onToggle == null
+                ? const Icon(Icons.lock_outline_rounded)
+                : Checkbox(
+                    value: selected,
+                    onChanged: (_) => onToggle!(),
+                  ),
         title: Text(originalDate),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
