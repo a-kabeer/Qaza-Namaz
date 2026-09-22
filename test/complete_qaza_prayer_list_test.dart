@@ -34,6 +34,10 @@ void main() {
       for (var day = 2; day <= 5; day++)
         _record(PrayerType.fajr, day, QazaStatus.completed),
       _record(PrayerType.zuhr, 1, QazaStatus.pending),
+      _record(PrayerType.asr, 1, QazaStatus.pending),
+      _record(PrayerType.maghrib, 1, QazaStatus.pending),
+      _record(PrayerType.isha, 1, QazaStatus.pending),
+      _record(PrayerType.fajr, 6, QazaStatus.pending),
     ]);
     return repository;
   }
@@ -163,6 +167,10 @@ void main() {
         _record(PrayerType.fajr, 10, QazaStatus.pending),
         _record(PrayerType.zuhr, 5, QazaStatus.pending),
         _record(PrayerType.zuhr, 20, QazaStatus.pending),
+        _record(PrayerType.asr, 1, QazaStatus.pending),
+        _record(PrayerType.maghrib, 1, QazaStatus.pending),
+        _record(PrayerType.isha, 1, QazaStatus.pending),
+        _record(PrayerType.fajr, 25, QazaStatus.pending),
       ]);
       await pumpPage(tester, repository);
 
@@ -184,6 +192,10 @@ void main() {
         _record(PrayerType.fajr, 2, QazaStatus.pending),
         _record(PrayerType.fajr, 10, QazaStatus.pending),
         _record(PrayerType.fajr, 20, QazaStatus.pending),
+        _record(PrayerType.zuhr, 1, QazaStatus.pending),
+        _record(PrayerType.asr, 1, QazaStatus.pending),
+        _record(PrayerType.maghrib, 1, QazaStatus.pending),
+        _record(PrayerType.isha, 1, QazaStatus.pending),
       ]);
       await pumpPage(tester, repository);
 
@@ -209,7 +221,14 @@ void main() {
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository
-          .addRecords([_record(PrayerType.fajr, 10, QazaStatus.pending)]);
+          .addRecords([
+        _record(PrayerType.fajr, 10, QazaStatus.pending),
+        _record(PrayerType.zuhr, 1, QazaStatus.pending),
+        _record(PrayerType.asr, 1, QazaStatus.pending),
+        _record(PrayerType.maghrib, 1, QazaStatus.pending),
+        _record(PrayerType.isha, 1, QazaStatus.pending),
+        _record(PrayerType.fajr, 20, QazaStatus.pending),
+      ]);
       await pumpPage(tester, repository);
 
       final gregorian = find.byKey(const Key('complete_original_date'));
@@ -230,6 +249,10 @@ void main() {
       await repository.addRecords([
         _record(PrayerType.fajr, 10, QazaStatus.pending),
         _record(PrayerType.zuhr, 20, QazaStatus.pending),
+        _record(PrayerType.asr, 1, QazaStatus.pending),
+        _record(PrayerType.maghrib, 1, QazaStatus.pending),
+        _record(PrayerType.isha, 1, QazaStatus.pending),
+        _record(PrayerType.fajr, 25, QazaStatus.pending),
       ]);
       await pumpPage(tester, repository);
       final before = tester
