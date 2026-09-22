@@ -1,4 +1,5 @@
 import '../entities/qaza_record.dart';
+import '../../core/constants/prayer_types.dart';
 import '../repositories/qaza_repository.dart';
 
 /// Recovery capability layered onto the existing Qaza repository.
@@ -21,7 +22,6 @@ abstract class QazaRecoveryRepository {
     required String userId,
     required String operationId,
     required DateTime expectedCreatedAt,
-    required List<String> candidateIds,
   });
 
   Future<QazaPage> getOperationPage({
