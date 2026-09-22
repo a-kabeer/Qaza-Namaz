@@ -204,6 +204,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Completed'**
+  String get statusDeleted;
   String get statusCompleted;
 
   /// No description provided for @qazaSelectAllMatching.
