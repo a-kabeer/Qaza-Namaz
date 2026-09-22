@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone_country/timezone_country.dart';
 
@@ -95,8 +96,11 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   late final PrayerLocationService _locationService;
   late final CitySearchProvider _citySearchProvider;
   late final PrayerTimesClock _clock;
+  late final Connectivity _connectivity;
 
   Timer? _citySearchDebounce;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool? _lastHasConnectivity;
   int _loadGeneration = 0;
   int _searchGeneration = 0;
   bool _isMounted = true;
@@ -109,14 +113,47 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     _locationService = ref.read(prayerLocationServiceProvider);
     _citySearchProvider = ref.read(prayerCitySearchProvider);
     _clock = ref.read(prayerTimesClockProvider);
+    _connectivity = ref.read(prayerTimesConnectivityProvider);
 
     ref.onDispose(() {
       _isMounted = false;
       _citySearchDebounce?.cancel();
+      _connectivitySubscription?.cancel();
     });
 
+    _watchConnectivity();
     unawaited(_restore());
     return const PrayerTimesState();
+  }
+
+  void _watchConnectivity() {
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen((results) {
+      final hasConnectivity = results.any(
+        (result) => result != ConnectivityResult.none,
+      );
+      final previous = _lastHasConnectivity;
+      _lastHasConnectivity = hasConnectivity;
+
+      if (previous == null || previous == hasConnectivity) return;
+      if (_isMounted && state.location != null) {
+        unawaited(_loadToday());
+      }
+    });
+
+    unawaited(_primeConnectivityState());
+  }
+
+  Future<void> _primeConnectivityState() async {
+    try {
+      final results = await _connectivity.checkConnectivity();
+      if (!_isMounted) return;
+      _lastHasConnectivity = results.any(
+        (result) => result != ConnectivityResult.none,
+      );
+    } catch (_) {
+      _lastHasConnectivity = false;
+    }
   }
 
   Future<void> _restore() async {
@@ -297,7 +334,9 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
     final generation = ++_searchGeneration;
     final normalized = query.trim();
 
-    if (normalized.length < 2) {
+    final hasCountryFilter =
+        countryCode != null && countryCode.trim().isNotEmpty;
+    if (normalized.length < 2 && !hasCountryFilter) {
       state = state.copyWith(
         cityResults: const <CitySearchResult>[],
         citySearchLoading: false,
