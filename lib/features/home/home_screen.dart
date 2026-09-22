@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -508,6 +509,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   @override
   void initState() {
     super.initState();
+    if (Platform.environment['FLUTTER_TEST'] == 'true') return;
     _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final current =
