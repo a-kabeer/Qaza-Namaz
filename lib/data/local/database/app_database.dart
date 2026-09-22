@@ -58,20 +58,35 @@ class AppDatabase extends _$AppDatabase {
   /// tables; the upgrade path below is intentionally data-preserving and
   /// idempotently restores the indexes required by the paginated DAOs.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
           await _ensurePerformanceIndexes();
+          await _ensureRecoveryIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
             await _ensurePerformanceIndexes();
           }
+          if (from < 3) {
+            await _ensureRecoveryIndexes();
+          }
         },
       );
+
+  Future<void> _ensureRecoveryIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_updated_idx '
+      'ON qaza_records (user_id, status, updated_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_updated_date_idx '
+      'ON qaza_records (user_id, updated_at, original_date, id)',
+    );
+  }
 
   Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
