@@ -776,7 +776,7 @@ class _RecordRow extends StatelessWidget {
             PopupMenuItem(value: _RecordAction.delete, child: Text(l10n.qazaDeleteRecord)),
           ],
         ),
-        onTap: onTap,
+        onTap: selectionMode ? onTap : null,
         onLongPress: onLongPress,
       ),
     );
@@ -807,6 +807,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   Future<void> _complete(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final count = widget.state.selected.length;
+    final _urdu = Localizations.localeOf(context).languageCode == 'ur';
     if (widget.state.selectionNeedsConfirmation) {
       final confirmed = await confirmDestructive(
         context,
@@ -840,15 +841,15 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
     final count = widget.state.selected.length;
     final confirmed = await confirmDestructive(
       context,
-      title: l10n.qazaConfirmBulkTitle('$count'),
-      message: l10n.qazaConfirmBulkMessage('$count'),
+      title: _urdu ? count.toString() + ' قضا حذف کریں؟' : 'Delete ' + count.toString() + ' Qaza records?',
+      message: _urdu ? 'یہ ریکارڈ History سے 30 دن تک بحال کیے جا سکتے ہیں۔' : 'These records can be restored from History for 30 days.',
       confirmLabel: l10n.qazaDeleteRecord,
     );
     if (!confirmed || !context.mounted) return;
     final deleted = await widget.controller.deleteSelectedWithRecovery();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(deleted.toString() + ' deleted. You can restore from History.')),
+      SnackBar(content: Text(_urdu ? deleted.toString() + ' ریکارڈ حذف ہوئے۔ History سے بحال کر سکتے ہیں۔' : deleted.toString() + ' deleted. You can restore from History.')),
     );
   }
 
