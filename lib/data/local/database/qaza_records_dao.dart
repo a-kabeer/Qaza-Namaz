@@ -443,7 +443,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
         if (matchLastAction) {
-          predicates.add(row.updatedAt.isSameMoment(operationAt));
+          predicates.add(row.updatedAt.equals(operationAt));
         } else {
           predicates.add(
               row.id.like('op_${operationId}_%'));
