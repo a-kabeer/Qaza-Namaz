@@ -157,7 +157,7 @@ class PrayerTimesNotificationService {
     required String body,
     required tz.TZDateTime when,
   }) async {
-    if (!when.isAfter(tz.TZDateTime.now(when.location))) return;
+    if (!when.isAfter(_now())) return;
 
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
