@@ -568,8 +568,12 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final restrictionAsync = ref.watch(qazaRestrictionEvaluationProvider);
     final restriction =
         _lastRestriction ?? restrictionAsync.valueOrNull;
-    final restricted =
-        restriction?.isRestricted == true && restriction?.type != null;
+    final restrictedRestriction =
+        restriction != null &&
+                restriction.isRestricted &&
+                restriction.type != null
+            ? restriction
+            : null;
     final pendingPrayers = PrayerType.values
         .where(
           (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
@@ -683,8 +687,9 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     );
                   }
 
-                  if (restricted) {
-                    final nextAllowedTime = restriction.nextAllowedTime;
+                  if (restrictedRestriction != null) {
+                    final nextAllowedTime =
+                        restrictedRestriction.nextAllowedTime;
                     final timeLabel = nextAllowedTime == null
                         ? null
                         : MaterialLocalizations.of(context).formatTimeOfDay(
@@ -735,7 +740,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.qazaRestricted(
                                         context,
-                                        restriction.type!,
+                                        restrictedRestriction.type!,
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_reason',
@@ -745,7 +750,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.restrictionRemaining(
                                         context,
-                                        _liveRestrictionRemaining(restriction),
+                                        _liveRestrictionRemaining(restrictedRestriction),
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_remaining',
