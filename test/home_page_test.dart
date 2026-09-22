@@ -232,6 +232,53 @@ void main() {
     });
   });
 
+  group('home prayer selection', () {
+    testWidgets('allows selecting any prayer with pending Qaza', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      await tester.tap(find.byKey(const Key('home_qaza_prayer_selector')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_auto')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_fajr')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_zuhr')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_asr')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_maghrib')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_isha')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_prayer_option_witr')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('home_qaza_prayer_option_zuhr')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Next Qaza'), findsOneWidget);
+      expect(find.text('Zuhr'), findsWidgets);
+      expect(find.text('04 Jan 2026'), findsOneWidget);
+    });
+  });
+
   group('overall and prayer graphs', () {
     testWidgets('shows completed, pending and total with donut', (tester) async {
       await pumpHome(tester, await ledger());

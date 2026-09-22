@@ -92,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const _TodayProgressSection(),
+                _TodayProgressSection(summary: summary),
                 const SizedBox(height: 12),
                 _OverallQazaSection(
                   progress: summary.overall,
@@ -130,7 +130,9 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _TodayProgressSection extends ConsumerStatefulWidget {
-  const _TodayProgressSection();
+  const _TodayProgressSection({required this.summary});
+
+  final QazaProgressSummary summary;
 
   @override
   ConsumerState<_TodayProgressSection> createState() =>
@@ -211,6 +213,12 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
       ref.invalidate(homeDailyProgressProvider);
       for (final range in HomeProgressRange.values) {
         ref.invalidate(homeProgressHistoryProvider(range));
+      }
+
+      final pendingBefore =
+          widget.summary.byPrayer[prayer]?.progress.pending ?? 0;
+      if (pendingBefore <= 1 && mounted) {
+        ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
       }
 
       if (!mounted) return;
@@ -316,6 +324,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
                     target: progress.target,
                   );
                   final next = _NextQazaPanel(
+                    summary: widget.summary,
                     selected: selected,
                     working: working,
                     onComplete: _complete,
@@ -450,32 +459,112 @@ IconData _prayerIcon(PrayerType prayer) {
   }
 }
 
-class _NextQazaPanel extends StatelessWidget {
+class _NextQazaPanel extends ConsumerWidget {
   const _NextQazaPanel({
+    required this.summary,
     required this.selected,
     required this.working,
     required this.onComplete,
     required this.onPlan,
   });
 
+  final QazaProgressSummary summary;
   final HomeSelectedPrayerState selected;
   final bool working;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
   final VoidCallback onPlan;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final prayer = selected.prayer;
+    final pendingPrayers = PrayerType.values
+        .where(
+          (item) => (summary.byPrayer[item]?.progress.pending ?? 0) > 0,
+        )
+        .toList(growable: false);
+
+    final prayerSelector = PopupMenuButton<String>(
+      key: const Key('home_qaza_prayer_selector'),
+      tooltip: l10n.homeNextQaza,
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value == 'auto') {
+          ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
+          return;
+        }
+        final selectedPrayer = PrayerType.values.firstWhere(
+          (item) => item.name == value,
+        );
+        ref
+            .read(homePrayerSelectionProvider.notifier)
+            .selectPrayer(selectedPrayer);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          key: const Key('home_qaza_prayer_option_auto'),
+          value: 'auto',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected.mode == HomePrayerSelectionMode.automatic
+                    ? Icons.check_rounded
+                    : Icons.auto_awesome_outlined,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(l10n.homeAuto),
+            ],
+          ),
+        ),
+        for (final item in pendingPrayers)
+          PopupMenuItem<String>(
+            key: Key('home_qaza_prayer_option_' + item.name),
+            value: item.name,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  selected.prayer == item
+                      ? Icons.check_rounded
+                      : _prayerIcon(item),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(item.localizedLabel(l10n)),
+              ],
+            ),
+          ),
+      ],
+      child: Chip(
+        avatar: const Icon(Icons.tune_rounded, size: 18),
+        label: Text(
+          selected.mode == HomePrayerSelectionMode.automatic
+              ? l10n.homeAuto
+              : prayer!.localizedLabel(l10n),
+        ),
+      ),
+    );
+
+    final header = Text(
+      selected.mode == HomePrayerSelectionMode.automatic
+          ? l10n.homeNextQazaCurrentPrayer
+          : l10n.homeNextQaza,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          l10n.homeNextQazaCurrentPrayer,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+        Row(
+          children: [
+            Expanded(child: header),
+            const SizedBox(width: 8),
+            prayerSelector,
+          ],
         ),
         const SizedBox(height: 10),
         if (prayer == null)
