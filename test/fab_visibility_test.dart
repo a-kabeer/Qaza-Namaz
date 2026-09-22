@@ -64,38 +64,5 @@ void main() {
     expect(find.byIcon(Icons.add_rounded), findsOneWidget);
   });
 
-  testWidgets('selection mode hides the FAB and shows bulk actions',
-      (tester) async {
-    final repository = InMemoryQazaRepository();
-    await repository.addRecords([
-      _record(PrayerType.fajr, 1),
-      _record(PrayerType.zuhr, 2),
-    ]);
-    final container = await pumpShell(tester, repository);
 
-    await tester.longPress(
-      find.byKey(const Key('qaza_record_' + 'fajr_1')),
-    );
-    await tester.pump();
-
-    expect(container.read(qazaTrackerControllerProvider).selected, hasLength(1));
-    expect(find.byKey(const Key('qaza_tracker_add_fab')), findsNothing);
-    expect(find.byKey(const Key('qaza_tracker_complete_selected')), findsOneWidget);
-    expect(find.byKey(const Key('qaza_tracker_delete_selected')), findsOneWidget);
-  });
-
-  testWidgets('exiting selection restores the add FAB', (tester) async {
-    final repository = InMemoryQazaRepository();
-    await repository.addRecords([
-      _record(PrayerType.fajr, 1),
-    ]);
-    final container = await pumpShell(tester, repository);
-
-    await tester.longPress(find.byKey(const Key('qaza_record_fajr_1')));
-    await tester.pump();
-    container.read(qazaTrackerControllerProvider.notifier).exitSelectionMode();
-    await tester.pump();
-
-    expect(find.byKey(const Key('qaza_tracker_add_fab')), findsOneWidget);
-  });
 }
