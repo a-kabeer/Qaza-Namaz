@@ -100,6 +100,42 @@ abstract class QazaLocalStore {
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
+  /// Bounded keyset page for soft-deleted records, ordered by deletion time.
+  Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = 50,
+    DateTime? beforeDeletedAt,
+    String? beforeId,
+  }) async {
+    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
+    if ((beforeDeletedAt == null) != (beforeId == null)) {
+      throw ArgumentError(
+          'beforeDeletedAt and beforeId must be provided together');
+    }
+    final snapshot = await load();
+    var records = List<QazaRecord>.of(
+        snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+      ..removeWhere((r) => r.status != QazaStatus.deleted)
+      ..sort((a, b) {
+        final d = b.updatedAt.compareTo(a.updatedAt);
+        return d != 0 ? d : b.id.compareTo(a.id);
+      });
+    if (beforeDeletedAt != null) {
+      records = records
+          .where((r) =>
+              r.updatedAt.isBefore(beforeDeletedAt) ||
+              (r.updatedAt.isAtSameMomentAs(beforeDeletedAt) &&
+                  r.id.compareTo(beforeId!) < 0))
+          .toList();
+    }
+    final hasMore = records.length > limit;
+    return LocalQazaHistoryPage(
+      records: records.take(limit).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
+
 
   /// Retires all local records and pending sync operations owned by [userId].
   ///
