@@ -185,6 +185,58 @@ void main() {
     );
   });
 
+
+  test('time-blocked prayers are excluded without being counted as duplicates', () {
+    final date = DateTime(2026, 9, 14);
+    final blocked = {
+      QazaPrayerKey(
+        userId: 'u1',
+        date: date,
+        prayerType: PrayerType.zuhr,
+      ),
+      QazaPrayerKey(
+        userId: 'u1',
+        date: date,
+        prayerType: PrayerType.isha,
+      ),
+    };
+
+    expect(
+      service.eligibility(
+        userId: 'u1',
+        date: date,
+        prayerType: PrayerType.zuhr,
+        timeBlockedKeys: blocked,
+      ),
+      QazaEligibility.notYetDue,
+    );
+    expect(
+      service.availablePrayers(
+        userId: 'u1',
+        date: date,
+        existingRecords: const [],
+        timeBlockedKeys: blocked,
+      ),
+      [
+        PrayerType.fajr,
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.witr,
+      ],
+    );
+
+    final analysis = service.analyze(
+      userId: 'u1',
+      dates: [date],
+      prayerTypes: PrayerType.values,
+      existingRecords: const [],
+      timeBlockedKeys: blocked,
+    );
+    expect(analysis.notYetDueCount, 2);
+    expect(analysis.newCount, 4);
+    expect(analysis.unavailableCount, 0);
+  });
+
   test('blocked dates are the dates with no eligible prayer left', () {
     final records = [
       for (final prayer in PrayerType.values)

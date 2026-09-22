@@ -240,6 +240,7 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
   }
 
   Future<void> togglePrayer(PrayerType prayer, {required bool selected}) async {
+    if (selected && !state.isPrayerAvailable(prayer)) return;
     final prayers = {...state.prayers};
     if (selected) {
       prayers.add(prayer);

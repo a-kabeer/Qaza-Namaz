@@ -440,7 +440,7 @@
   "@addQazaDateCount": { "placeholders": { "count": {"type": "int"} } },
   "addQazaCreatedMessage": "{count, plural, =1{1 record was added to your ledger.} other{{count} records were added to your ledger.}}",
   "@addQazaCreatedMessage": { "placeholders": { "count": {"type": "int"} } },
-  "addQazaUnavailablePrayer": "{rakats} • Already recorded or prayed on every selected date",
+  "addQazaUnavailablePrayer": "{rakats} • Already recorded/prayed or its prayer time has not ended yet",
   "@addQazaUnavailablePrayer": { "placeholders": { "rakats": {"type": "String"} } },
   "commonNone": "None",
 

@@ -14,6 +14,12 @@ export 'qaza_availability_service.dart'
 export 'sahib_al_tartib_service.dart'
     show QazaTartibViolationException, SahibAlTartibState;
 
+typedef QazaPrayerTimeBlockedResolver = Future<Set<QazaPrayerKey>> Function({
+  required String userId,
+  required Iterable<DateTime> dates,
+  required Iterable<PrayerType> prayerTypes,
+});
+
 class QazaDuplicateRecordException implements Exception {
   const QazaDuplicateRecordException();
 
@@ -27,11 +33,24 @@ class QazaService {
     this.repository, {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
+    QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver,
   })  : availability = availability ?? const QazaAvailabilityService(),
-        tartib = tartib ?? SahibAlTartibService(repository);
+        tartib = tartib ?? SahibAlTartibService(repository),
+        prayerTimeBlockedResolver = prayerTimeBlockedResolver;
   final QazaRepository repository;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
+  final QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver;
+
+  Future<Set<QazaPrayerKey>> _getTimeBlockedKeys({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+  }) async {
+    final resolver = prayerTimeBlockedResolver;
+    if (resolver == null) return const <QazaPrayerKey>{};
+    return resolver(userId: userId, dates: dates, prayerTypes: prayerTypes);
+  }
 
   Future<List<QazaRecord>> getRecords(
           {required String userId,
@@ -191,12 +210,18 @@ class QazaService {
     final selectedPrayers = prayerTypes.toSet();
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
+    final timeBlockedKeys = await _getTimeBlockedKeys(
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+    );
     return availability.analyze(
         userId: userId,
         dates: normalizedDates,
         prayerTypes: selectedPrayers,
         existingRecords: existing,
-        prayedKeys: prayedKeys);
+        prayedKeys: prayedKeys,
+        timeBlockedKeys: timeBlockedKeys);
   }
 
   /// Returns the prayers still eligible on each requested date. Reads remain bounded to the requested dates.
@@ -210,6 +235,11 @@ class QazaService {
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return const {};
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
+    final timeBlockedKeys = await _getTimeBlockedKeys(
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+    );
     final recorded = availability.recordedKeys(existing);
     final result = <DateTime, Set<PrayerType>>{};
     for (final date in normalizedDates) {
@@ -217,7 +247,9 @@ class QazaService {
       for (final prayer in selectedPrayers) {
         final key =
             QazaPrayerKey(userId: userId, date: date, prayerType: prayer);
-        if (!prayedKeys.contains(key) && !recorded.contains(key)) {
+        if (!prayedKeys.contains(key) &&
+            !recorded.contains(key) &&
+            !timeBlockedKeys.contains(key)) {
           available.add(prayer);
         }
       }
@@ -372,12 +404,18 @@ class QazaService {
     }
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
+    final timeBlockedKeys = await _getTimeBlockedKeys(
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+    );
     final analysis = availability.analyze(
         userId: userId,
         dates: normalizedDates,
         prayerTypes: selectedPrayers,
         existingRecords: existing,
-        prayedKeys: prayedKeys);
+        prayedKeys: prayedKeys,
+        timeBlockedKeys: timeBlockedKeys);
     final candidates = analysis.newCandidates.toList(growable: false);
     final total = candidates.length;
     // Reported even when there is nothing to do, so a caller showing progress
