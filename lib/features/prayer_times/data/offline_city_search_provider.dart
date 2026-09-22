@@ -1,4 +1,4 @@
-import 'city_search_provider.dart';
+import 'location/city_search_provider.dart';
 import 'offline_location_data_source.dart';
 
 class OfflineCitySearchProvider implements CitySearchProvider {
