@@ -155,6 +155,12 @@ class PrayerTimesStrings {
       ? 'اس وقت ${restrictionType(context, type)} کے دوران قضا مکمل نہیں کی جا سکتی۔'
       : 'Qaza completion is unavailable during ${restrictionType(context, type).toLowerCase()} restriction.';
 
+  static String qazaTemporarilyUnavailable(BuildContext context) =>
+      _isUrdu(context) ? 'قضا عارضی طور پر دستیاب نہیں' : 'Qaza temporarily unavailable';
+
+  static String availableAt(BuildContext context, String time) =>
+      _isUrdu(context) ? 'دوبارہ $time سے دستیاب ہوگی' : 'Available again at $time';
+
   static String settingsSaved(BuildContext context) =>
       _isUrdu(context) ? 'نماز کے اوقات کی ترتیبات محفوظ ہو گئیں۔' : 'Prayer time settings saved.';
 
