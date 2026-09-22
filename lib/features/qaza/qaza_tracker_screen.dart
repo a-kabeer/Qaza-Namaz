@@ -676,12 +676,30 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                             final messenger = ScaffoldMessenger.of(context);
                             final batch = await widget.controller
                                 .completeSelectedWithUndo();
-                            if (batch == null) {
-                              final latest = ref
-                                  .read(qazaRestrictionEvaluationProvider)
+                                            if (batch == null) {
+                              final tartib = ref
+                                  .read(sahibAlTartibProvider)
                                   .valueOrNull;
-                              if (latest?.isRestricted == true &&
-                                  latest?.type != null) {
+                              if (tartib?.requiresOrder == true &&
+                                  tartib?.nextPrayer != null) {
+                                messenger
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        l10n.qazaTartibBlocked(
+                                          tartib!.nextPrayer!
+                                              .localizedLabel(l10n),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                              } else {
+                                final latest = ref
+                                    .read(qazaRestrictionEvaluationProvider)
+                                    .valueOrNull;
+                                if (latest?.isRestricted == true &&
+                                    latest?.type != null) {
                                 messenger
                                   ..hideCurrentSnackBar()
                                   ..showSnackBar(
@@ -709,12 +727,13 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                                       ),
                                     ),
                                   );
-                              } else {
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(l10n.qazaCompletedCount(0)),
-                                  ),
-                                );
+                                } else {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.qazaCompletedCount(0)),
+                                    ),
+                                  );
+                                }
                               }
                               return;
                             }
