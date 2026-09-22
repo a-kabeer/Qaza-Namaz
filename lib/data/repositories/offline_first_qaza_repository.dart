@@ -914,6 +914,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   }
 
   @override
+  @override
   Future<QazaPage> getOperationPage({
     required String userId,
     required String operationId,
@@ -924,42 +925,44 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     DateTime? beforeOriginalDate,
     String? beforeId,
   }) async {
-    if (userId != _activeUserId) {
-      return const QazaPage(records: [], hasMore: false);
-    }
+    if (userId != _activeUserId) return const QazaPage(records: [], hasMore: false);
     await ensureHydrated();
     DateTime? cursorDate = beforeOriginalDate;
     String? cursorId = beforeId;
     final matches = <QazaRecord>[];
     while (matches.length < limit) {
-      final page = await getPage(
+      final page = await getHistoryPage(
         userId: userId,
         limit: 200,
-        prayerType: null,
         status: status,
-        afterOriginalDate: cursorDate,
-        afterId: cursorId,
+        beforeOriginalDate: cursorDate,
+        beforeId: cursorId,
       );
       if (page.records.isEmpty) break;
-      for (final record in page.records) {
+      var reachedLimit = false;
+      var moreAfterMatch = false;
+      for (var index = 0; index < page.records.length; index++) {
+        final record = page.records[index];
         final match = matchLastAction
             ? record.updatedAt.isAtSameMomentAs(operationAt)
             : record.operationId == operationId;
-        if (match) {
-          matches.add(record);
-          if (matches.length == limit) break;
+        if (!match) continue;
+        matches.add(record);
+        if (matches.length == limit) {
+          reachedLimit = true;
+          moreAfterMatch = index + 1 < page.records.length || page.hasMore;
+          break;
         }
       }
+      if (reachedLimit) {
+        return QazaPage(records: matches, hasMore: moreAfterMatch);
+      }
+      if (!page.hasMore) break;
       cursorDate = page.nextOriginalDate;
       cursorId = page.nextId;
-      if (!page.hasMore) break;
     }
-    return QazaPage(
-      records: matches,
-      hasMore: matches.length == limit,
-    );
+    return QazaPage(records: matches, hasMore: false);
   }
-
   @override
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
@@ -976,14 +979,15 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       );
 
   @override
+  @override
   Future<int> purgeDeletedBefore({
     required String userId,
     required DateTime cutoff,
   }) async {
     if (userId != _activeUserId) return 0;
-    var cursorDate;
+    DateTime? cursorDate;
     String? cursorId;
-    final ids = <String>[];
+    var removed = 0;
     while (true) {
       final page = await getHistoryPage(
         userId: userId,
@@ -993,47 +997,34 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
         beforeId: cursorId,
       );
       if (page.records.isEmpty) break;
-      ids.addAll(
-        page.records
-            .where((record) => record.updatedAt.isBefore(cutoff))
-            .map((record) => record.id),
-      );
+      for (final record in page.records) {
+        if (!record.updatedAt.isBefore(cutoff)) continue;
+        final op = PendingSyncOp(
+          id: 'purge_deleted_${record.id}_${cutoff.microsecondsSinceEpoch}',
+          type: SyncOpType.delete,
+          userId: userId,
+          queuedAt: _now(),
+          targetRecordId: record.id,
+        );
+        if (await _localStore.deleteRecordAndOutbox(userId: userId, recordId: record.id, operation: op)) {
+          _records.remove(record.id);
+          _outbox.add(op);
+          removed++;
+        }
+      }
       if (!page.hasMore) break;
       cursorDate = page.nextOriginalDate;
       cursorId = page.nextId;
-    }
-    var removed = 0;
-    for (final id in ids) {
-      final op = PendingSyncOp(
-        id: 'purge_deleted_${id}_${cutoff.microsecondsSinceEpoch}',
-        type: SyncOpType.delete,
-        userId: userId,
-        queuedAt: _now(),
-        targetRecordId: id,
-      );
-      if (await _localStore.deleteRecordAndOutbox(
-        userId: userId,
-        recordId: id,
-        operation: op,
-      )) {
-        _records.remove(id);
-        _outbox.add(op);
-        removed++;
-      }
     }
     _outboxLoaded = true;
     if (removed > 0) {
       _emitPending();
       if (_isOnline && _connectivityKnown) {
-        unawaited(
-          _syncEngine?.synchronize(userId, requestRerun: true) ??
-              Future<void>.value(),
-        );
+        unawaited(_syncEngine?.synchronize(userId, requestRerun: true) ?? Future<void>.value());
       }
     }
     return removed;
   }
-
   @override
   Future<void> resetUserRecords({required String userId}) async {
     if (userId != _activeUserId) {
