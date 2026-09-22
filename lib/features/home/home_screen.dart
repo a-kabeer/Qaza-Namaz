@@ -505,6 +505,7 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Timer? _restrictionTicker;
   QazaRestrictionEvaluation? _lastRestriction;
+  bool _restrictionInvalidated = false;
 
   @override
   void initState() {
@@ -512,12 +513,22 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     if (Platform.environment['FLUTTER_TEST'] == 'true') return;
     _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
+
       final current =
-          ref.read(qazaRestrictionEvaluationProvider).valueOrNull ??
-              _lastRestriction;
-      if (current?.isRestricted == true) {
-        ref.invalidate(qazaRestrictionEvaluationProvider);
+          _lastRestriction ??
+          ref.read(qazaRestrictionEvaluationProvider).valueOrNull;
+      if (current?.isRestricted != true) return;
+
+      final end = current?.end;
+      if (end != null && !DateTime.now().isBefore(end)) {
+        if (!_restrictionInvalidated) {
+          _restrictionInvalidated = true;
+          ref.invalidate(qazaRestrictionEvaluationProvider);
+        }
+        return;
       }
+
+      setState(() {});
     });
   }
 
@@ -527,6 +538,16 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     super.dispose();
   }
 
+  Duration _liveRestrictionRemaining(
+    QazaRestrictionEvaluation restriction,
+  ) {
+    final end = restriction.end;
+    final remaining = end == null
+        ? restriction.remaining
+        : end.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
@@ -534,6 +555,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       (previous, next) {
         if (next.hasValue) {
           _lastRestriction = next.value;
+          _restrictionInvalidated = false;
         }
       },
     );
@@ -720,7 +742,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.restrictionRemaining(
                                         context,
-                                        restriction.remaining,
+                                        _liveRestrictionRemaining(restriction),
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_remaining',
