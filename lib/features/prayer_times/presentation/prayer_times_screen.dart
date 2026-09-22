@@ -1018,7 +1018,7 @@ class _PrayerLocationEditSheetState
 
   Future<void> _save() async {
     final controller = ref.read(prayerTimesControllerProvider.notifier);
-    final previousSettings = controller.state.settings;
+    final previousSettings = ref.read(prayerTimesControllerProvider).settings;
     final nextSettings =
         previousSettings.copyWith(asrMethod: _asrMethod);
 
