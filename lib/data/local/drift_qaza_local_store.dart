@@ -439,6 +439,25 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = 50,
+    DateTime? beforeDeletedAt,
+    String? beforeId,
+  }) async {
+    final page = await _database.qazaRecordsDao.getRecentlyDeletedPage(
+      userId: userId,
+      limit: limit,
+      beforeDeletedAt: beforeDeletedAt,
+      beforeId: beforeId,
+    );
+    return LocalQazaHistoryPage(
+      records: page.records,
+      hasMore: page.hasMore,
+    );
+  }
+
+  @override
   Future<void> saveLastSync(String userId, DateTime? lastSync) async {
     _lastSyncByUser[userId] = lastSync;
   }
