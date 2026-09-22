@@ -148,7 +148,7 @@ class AlAdhanPrayerTimesDataSource implements PrayerTimesRemoteDataSource {
   }
 
   int _methodId(CalculationMethod method) => switch (method) {
-        CalculationMethod.recommended => 1,
+        CalculationMethod.recommended => 3,
         CalculationMethod.jafari => 0,
         CalculationMethod.karachi => 1,
         CalculationMethod.isna => 2,
