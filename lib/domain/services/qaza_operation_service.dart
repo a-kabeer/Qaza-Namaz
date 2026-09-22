@@ -35,15 +35,24 @@ class QazaOperationService {
     required QazaOperationStatus status,
     required int affectedRecordCount,
     String? note,
-  }) => repository.save(operation.copyWith(
+  }) async {
+    final existing = await repository.get(
+      operation.userId,
+      operation.operationId,
+    );
+    final recordCount = operation.recordCount != 0
+        ? operation.recordCount
+        : existing?.recordCount ?? affectedRecordCount;
+    await repository.save(
+      operation.copyWith(
         status: status,
         updatedAt: _now(),
-        recordCount: operation.recordCount == 0
-            ? affectedRecordCount
-            : operation.recordCount,
+        recordCount: recordCount,
         affectedRecordCount: affectedRecordCount,
         note: note,
-      ));
+      ),
+    );
+  }
 
   Future<List<QazaOperation>> recent(String userId, {int limit = 50}) =>
       repository.listRecent(userId, limit: limit);
