@@ -569,11 +569,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final restriction =
         _lastRestriction ?? restrictionAsync.valueOrNull;
     final restrictedRestriction =
-        restriction != null &&
-                restriction.isRestricted &&
-                restriction.type != null
-            ? restriction
-            : null;
+        restriction?.isRestricted == true ? restriction : null;
+    final restrictedType = restriction?.type;
     final pendingPrayers = PrayerType.values
         .where(
           (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
@@ -687,7 +684,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     );
                   }
 
-                  if (restrictedRestriction != null) {
+                  if (restrictedRestriction != null && restrictedType != null) {
                     final nextAllowedTime =
                         restrictedRestriction.nextAllowedTime;
                     final timeLabel = nextAllowedTime == null
@@ -740,7 +737,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.qazaRestricted(
                                         context,
-                                        restrictedRestriction.type!,
+                                        restrictedType,
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_reason',
