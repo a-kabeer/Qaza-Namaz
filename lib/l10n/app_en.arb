@@ -143,6 +143,16 @@
   "@qazaLoadMoreError": { "placeholders": { "error": {"type": "String"} } },
   "qazaCompleteError": "Could not complete the selected Qaza: {error}",
   "@qazaCompleteError": { "placeholders": { "error": {"type": "String"} } },
+  "qazaTartibRequiredTitle": "Qaza order is required",
+  "qazaTartibRequiredMessage": "You have {count} outstanding Fard prayers. According to this ruling, complete {prayer} Qaza before other pending prayers.",
+  "@qazaTartibRequiredMessage": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "prayer": {"type": "String"}
+    }
+  },
+  "qazaTartibBlocked": "Qaza order is required. Complete {prayer} Qaza first.",
+  "@qazaTartibBlocked": { "placeholders": { "prayer": {"type": "String"} } },
   "qazaCompletedOn": "Completed {date}",
   "@qazaCompletedOn": { "placeholders": { "date": {"type": "String"} } },
 
