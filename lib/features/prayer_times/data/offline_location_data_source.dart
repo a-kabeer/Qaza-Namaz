@@ -4,7 +4,11 @@ import 'package:timezone_country/timezone_country.dart';
 import 'location/city_search_provider.dart';
 
 abstract class OfflineLocationDataSource {
-  Future<List<CitySearchResult>> searchCities(String query);
+  Future<List<CitySearchResult>> searchCities(
+    String query, {
+    String? countryCode,
+  });
+  Future<List<PrayerCountryOption>> getCountries();
   Future<CitySearchResult?> findNearestCity({
     required double latitude,
     required double longitude,
@@ -15,7 +19,33 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
   const OfflineCityDataSource();
 
   @override
-  Future<List<CitySearchResult>> searchCities(String query) async {
+  Future<List<PrayerCountryOption>> getCountries() async {
+    final countries = await Countries.all;
+    final options = <PrayerCountryOption>[];
+    for (final country in countries) {
+      final name = country.name?.trim();
+      final iso2 = country.iso2?.trim();
+      if (name == null || name.isEmpty || iso2 == null || iso2.isEmpty) {
+        continue;
+      }
+      options.add(
+        PrayerCountryOption(
+          name: name,
+          iso2: iso2,
+          nativeName: country.native?.trim(),
+          emoji: country.emoji?.trim(),
+        ),
+      );
+    }
+    options.sort((a, b) => a.name.compareTo(b.name));
+    return List.unmodifiable(options);
+  }
+
+  @override
+  Future<List<CitySearchResult>> searchCities(
+    String query, {
+    String? countryCode,
+  }) async {
     final normalized = query.trim();
     if (normalized.length < 2) return const <CitySearchResult>[];
 
@@ -27,11 +57,17 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
       final lon = double.tryParse(city.longitude ?? '');
       if (lat == null || lon == null) continue;
 
-      final countryCode = city.countryCode;
+      final cityCountryCode = city.countryCode;
+      if (countryCode != null &&
+          countryCode.isNotEmpty &&
+          cityCountryCode?.toUpperCase() != countryCode.toUpperCase()) {
+        continue;
+      }
+
       final timezone = TimezoneConvert.nearestTimezone(
         lat,
         lon,
-        countryCode: countryCode,
+        countryCode: cityCountryCode,
       );
 
       cities.add(
@@ -41,7 +77,7 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
           latitude: lat,
           longitude: lon,
           region: city.stateName,
-          countryCode: countryCode,
+          countryCode: cityCountryCode,
           timezone: timezone,
         ),
       );
