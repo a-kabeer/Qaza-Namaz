@@ -1,5 +1,3 @@
-import '../entities/qaza_record.dart';
-
 /// Persistence capability required by the undo-completion workflow.
 ///
 /// Kept separate from the base repository so lightweight test doubles and
