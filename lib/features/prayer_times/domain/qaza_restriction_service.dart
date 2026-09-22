@@ -159,6 +159,7 @@ class QazaRestrictionService {
     final sunrise = at(PrayerName.sunrise);
     final sunset = day.sunset;
     final solarNoon = day.solarNoon;
+    if (sunset == null || solarNoon == null) return const <QazaRestrictionPeriod>[];
 
     return <QazaRestrictionPeriod>[
       QazaRestrictionPeriod(
