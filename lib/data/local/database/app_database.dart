@@ -58,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   /// tables; the upgrade path below is intentionally data-preserving and
   /// idempotently restores the indexes required by the paginated DAOs.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -74,6 +74,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await _ensureRecoveryIndexes();
           }
+          if (from < 4) {
+            await m.addColumn(qazaRecords, qazaRecords.operationId);
+            await _ensureRecoveryIndexes();
+          }
         },
       );
 
@@ -85,6 +89,10 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_updated_date_idx '
       'ON qaza_records (user_id, updated_at, original_date, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_operation_status_idx '
+      'ON qaza_records (user_id, operation_id, status, updated_at)',
     );
   }
 
