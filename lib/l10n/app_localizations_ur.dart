@@ -459,7 +459,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String qazaDeleteRecordMessage(Object date, Object prayer) {
-    return '$date کی $prayer قضا مستقل طور پر حذف ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔';
+    return '$date کی $prayer قضا کو حالیہ حذف شدہ میں منتقل کریں؟ آپ اسے 30 دن تک بحال کر سکتے ہیں۔';
   }
 
   @override
@@ -475,7 +475,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
 
   @override
-  String get qazaRecordDeleted => 'قضا ریکارڈ حذف ہو گیا۔';
+  String get qazaRecordDeleted => 'قضا حالیہ حذف شدہ میں منتقل کر دی گئی ہے۔';
 
   @override
   String get qazaRecordDeleteFailed =>
