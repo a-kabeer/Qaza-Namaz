@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'support/test_app.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -97,6 +98,10 @@ Future<void> _settle(ProviderContainer container) async {
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('controller', () {
     test('loads a bounded first page and defaults to pending', () async {
       final repository = InMemoryQazaRepository();
