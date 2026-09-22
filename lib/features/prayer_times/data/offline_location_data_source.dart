@@ -5,11 +5,25 @@ import '../domain/prayer_times_models.dart';
 import 'location/city_search_provider.dart';
 
 abstract class OfflineLocationDataSource {
-  Future<List<CitySearchResult>> searchCities(
+  Future<List<CitySearchResult>> searchCities(String query);
+
+  Future<List<CitySearchResult>> searchCitiesInCountry(
     String query, {
     String? countryCode,
-  });
-  Future<List<PrayerCountryOption>> getCountries();
+  }) async {
+    final results = await searchCities(query);
+    if (countryCode == null || countryCode.isEmpty) return results;
+    return results
+        .where(
+          (result) =>
+              result.countryCode?.toUpperCase() == countryCode.toUpperCase(),
+        )
+        .toList(growable: false);
+  }
+
+  Future<List<PrayerCountryOption>> getCountries() async =>
+      const <PrayerCountryOption>[];
+
   Future<CitySearchResult?> findNearestCity({
     required double latitude,
     required double longitude,
@@ -43,7 +57,19 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
   }
 
   @override
-  Future<List<CitySearchResult>> searchCities(
+  Future<List<CitySearchResult>> searchCities(String query) async {
+    return _search(query);
+  }
+
+  @override
+  Future<List<CitySearchResult>> searchCitiesInCountry(
+    String query, {
+    String? countryCode,
+  }) async {
+    return _search(query, countryCode: countryCode);
+  }
+
+  Future<List<CitySearchResult>> _search(
     String query, {
     String? countryCode,
   }) async {
