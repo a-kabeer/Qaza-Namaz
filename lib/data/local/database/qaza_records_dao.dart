@@ -616,6 +616,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           changed.add(QazaRecord(
             id: current.id,
             userId: current.userId,
+            operationId: current.operationId,
             prayerType: PrayerType.values.firstWhere(
               (value) => value.name == current.prayerType,
             ),
