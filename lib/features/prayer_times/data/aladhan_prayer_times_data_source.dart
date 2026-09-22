@@ -180,7 +180,7 @@ class AlAdhanPrayerTimesDataSource implements PrayerTimesRemoteDataSource {
       throw StateError('AlAdhan response is missing $key.');
     }
 
-    final match = RegExp(r'^(\\d{1,2}):(\\d{2})').firstMatch(raw.trim());
+    final match = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(raw.trim());
     if (match == null) {
       throw StateError('Invalid AlAdhan time for $key: $raw');
     }
