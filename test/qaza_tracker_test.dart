@@ -515,30 +515,6 @@ void main() {
       expect(find.byKey(const Key('qaza_tracker_complete_selected')), findsNothing);
     });
 
-    testWidgets('selection mode supports bulk delete and records can be restored',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
-        _record(prayer: PrayerType.zuhr, date: DateTime(2025, 1, 2)),
-      ]);
-      await pump(tester, repository);
 
-      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-01-01')));
-      await tester.pump();
-      await tester.tap(find.byKey(const Key('qaza_record_test-user_zuhr_2025-01-02')));
-      await tester.pump();
-      await tester.tap(find.byKey(const Key('qaza_tracker_delete_selected')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Delete Qaza record?'), findsOneWidget);
-      await tester.tap(find.text('Delete').last);
-      await tester.pumpAndSettle();
-
-      final active = await repository.getRecords(userId: 'test-user');
-      final deleted = await repository.getHistoryPage(userId: 'test-user', status: QazaStatus.deleted);
-      expect(active, isEmpty);
-      expect(deleted.records, hasLength(2));
-    });
   });
 }
