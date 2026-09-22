@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../lib/features/prayer_times/data/location/city_search_provider.dart';
 import '../lib/features/prayer_times/data/offline_city_search_provider.dart';
 import '../lib/features/prayer_times/data/offline_location_data_source.dart';
+import '../lib/features/prayer_times/domain/prayer_times_models.dart';
 
 class _FakeDataSource implements OfflineLocationDataSource {
   @override
