@@ -578,6 +578,23 @@ class QazaService {
     );
   }
 
+  Future<int> deleteRecordsWithRecovery({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime deletedAt,
+    required String operationId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).softDeleteRecords(
+      userId: userId,
+      recordIds: recordIds,
+      deletedAt: deletedAt,
+      operationId: operationId,
+    );
+  }
+
   Future<int> restoreDeletedRecords({
     required String userId,
     required List<String> recordIds,
