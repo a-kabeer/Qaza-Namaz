@@ -10,6 +10,7 @@ import 'data/prayer_times_repository_impl.dart';
 import 'domain/prayer_time_calculator.dart';
 import 'domain/prayer_times_repository.dart';
 import 'presentation/prayer_times_controller.dart';
+import 'data/prayer_times_notification_service.dart';
 import 'domain/qaza_restriction_service.dart';
 
 abstract class PrayerTimesClock {
@@ -46,6 +47,11 @@ final prayerCitySearchProvider = Provider<CitySearchProvider>((ref) {
   );
 });
 
+final prayerCountriesProvider =
+    FutureProvider<List<PrayerCountryOption>>((ref) async {
+  return ref.watch(offlineLocationDataSourceProvider).getCountries();
+});
+
 final prayerLocationServiceProvider = Provider<PrayerLocationService>((ref) {
   return GeolocatorPrayerLocationService(
     dataSource: ref.watch(offlineLocationDataSourceProvider),
@@ -66,6 +72,14 @@ final prayerTimesControllerProvider =
 
 final qazaRestrictionServiceProvider = Provider<QazaRestrictionService>((ref) {
   return QazaRestrictionService(
+    repository: ref.watch(prayerTimesRepositoryProvider),
+    now: ref.watch(prayerTimesClockProvider).now,
+  );
+});
+
+final prayerTimesNotificationServiceProvider =
+    Provider<PrayerTimesNotificationService>((ref) {
+  return PrayerTimesNotificationService(
     repository: ref.watch(prayerTimesRepositoryProvider),
     now: ref.watch(prayerTimesClockProvider).now,
   );
