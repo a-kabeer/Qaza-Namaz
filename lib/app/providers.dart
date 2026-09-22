@@ -33,6 +33,9 @@ import '../features/prayer_times/prayer_times_providers.dart';
 import '../domain/services/qaza_service.dart';
 import '../domain/services/sahib_al_tartib_service.dart';
 import '../domain/services/qaza_undo_service.dart';
+import '../domain/services/qaza_operation_service.dart';
+import '../domain/repositories/qaza_operation_repository.dart';
+import '../data/repositories/shared_preferences_qaza_operation_repository.dart';
 import '../domain/services/cloud_data_deletion_service.dart';
 
 final firestoreProvider =
@@ -207,6 +210,15 @@ final sahibAlTartibProvider =
   }
   return ref.read(qazaServiceProvider).sahibAlTartibState(userId: userId);
 });
+final qazaOperationRepositoryProvider =
+    Provider<QazaOperationRepository>(
+  (ref) => SharedPreferencesQazaOperationRepository(),
+);
+
+final qazaOperationServiceProvider = Provider<QazaOperationService>(
+  (ref) => QazaOperationService(ref.watch(qazaOperationRepositoryProvider)),
+);
+
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
 );
