@@ -232,7 +232,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                     trailing: Wrap(
                                       children: [
                                         IconButton(
-                                          tooltip: l10n.commonView,
+                                          tooltip: _urdu ? 'دیکھیں' : 'View',
                                           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => QazaOperationDetailScreen(operation: op))),
                                           icon: const Icon(Icons.visibility_outlined),
                                         ),
@@ -281,7 +281,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_urdu ? 'ریکارڈ بحال نہیں ہو سکا۔' : 'Record could not be restored.')));
                                           }
                                         },
-                                        child: Text(l10n.commonRestore),
+                                        child: Text(_urdu ? 'بحال' : 'Restore'),
                                       ),
                                     ),
                                   );
