@@ -221,9 +221,8 @@ void main() {
         PrayerType.fajr,
         PrayerType.asr,
         PrayerType.maghrib,
-        PrayerType.isha,
         PrayerType.witr,
-      ].where((prayer) => !blocked.any((key) => key.prayerType == prayer)),
+      ],
     );
 
     final analysis = service.analyze(
