@@ -807,7 +807,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   Future<void> _complete(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final count = widget.state.selected.length;
-    final _urdu = Localizations.localeOf(context).languageCode == 'ur';
     if (widget.state.selectionNeedsConfirmation) {
       final confirmed = await confirmDestructive(
         context,
@@ -839,6 +838,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   Future<void> _delete(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final count = widget.state.selected.length;
+    final _urdu = Localizations.localeOf(context).languageCode == 'ur';
     final confirmed = await confirmDestructive(
       context,
       title: _urdu ? count.toString() + ' قضا حذف کریں؟' : 'Delete ' + count.toString() + ' Qaza records?',
