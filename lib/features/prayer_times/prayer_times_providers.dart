@@ -8,6 +8,7 @@ import 'data/offline_location_data_source.dart';
 import 'data/prayer_times_preferences.dart';
 import 'data/prayer_times_repository_impl.dart';
 import 'domain/prayer_time_calculator.dart';
+import 'domain/prayer_times_models.dart';
 import 'domain/prayer_times_repository.dart';
 import 'presentation/prayer_times_controller.dart';
 import 'data/prayer_times_notification_service.dart';
