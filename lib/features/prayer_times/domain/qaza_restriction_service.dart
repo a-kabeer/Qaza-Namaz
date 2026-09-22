@@ -75,15 +75,12 @@ class QazaRestrictionEvaluation {
 class QazaRestrictionService {
   const QazaRestrictionService({
     required PrayerTimesRepository repository,
-    required PrayerTimeCalculator calculator,
     required DateTime Function() now,
     this.policy = const QazaRestrictionPolicy(),
   })  : _repository = repository,
-        _calculator = calculator,
         _now = now;
 
   final PrayerTimesRepository _repository;
-  final PrayerTimeCalculator _calculator;
   final DateTime Function() _now;
   final QazaRestrictionPolicy policy;
 
