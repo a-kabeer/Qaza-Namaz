@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +21,9 @@ import '../../domain/entities/qaza_record.dart';
 import '../../features/calculator/calculator_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/qaza/qaza_navigation.dart';
+import '../../features/prayer_times/domain/qaza_restriction_service.dart';
+import '../../features/prayer_times/prayer_times_providers.dart';
+import '../../features/prayer_times/presentation/prayer_times_localizations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'home_plan.dart';
@@ -200,6 +206,27 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
     final completedAt = ref.read(homeNowProvider);
 
     try {
+      final restriction =
+          await ref.read(qazaRestrictionServiceProvider).evaluateCurrent();
+      if (restriction.isRestricted && restriction.type != null) {
+        ref.invalidate(qazaRestrictionEvaluationProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  PrayerTimesStrings.qazaRestricted(
+                    context,
+                    restriction.type!,
+                  ),
+                ),
+              ),
+            );
+        }
+        return;
+      }
+
       await ref.read(qazaServiceProvider).completeRecord(
             userId: userId,
             recordId: record.id,
@@ -459,7 +486,7 @@ IconData _prayerIcon(PrayerType prayer) {
   }
 }
 
-class _NextQazaPanel extends ConsumerWidget {
+class _NextQazaPanel extends ConsumerStatefulWidget {
   const _NextQazaPanel({
     required this.summary,
     required this.selected,
@@ -475,12 +502,77 @@ class _NextQazaPanel extends ConsumerWidget {
   final VoidCallback onPlan;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
+}
+
+class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
+  Timer? _restrictionTicker;
+  QazaRestrictionEvaluation? _lastRestriction;
+  bool _restrictionInvalidated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.environment['FLUTTER_TEST'] == 'true') return;
+    _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+
+      final current =
+          _lastRestriction ??
+          ref.read(qazaRestrictionEvaluationProvider).valueOrNull;
+      if (current?.isRestricted != true) return;
+
+      final end = current?.end;
+      if (end != null && !DateTime.now().isBefore(end)) {
+        if (!_restrictionInvalidated) {
+          _restrictionInvalidated = true;
+          ref.invalidate(qazaRestrictionEvaluationProvider);
+        }
+        return;
+      }
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _restrictionTicker?.cancel();
+    super.dispose();
+  }
+
+  Duration _liveRestrictionRemaining(
+    QazaRestrictionEvaluation restriction,
+  ) {
+    final end = restriction.end;
+    final remaining = end == null
+        ? restriction.remaining
+        : end.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
+      qazaRestrictionEvaluationProvider,
+      (previous, next) {
+        if (next.hasValue) {
+          _lastRestriction = next.value;
+          _restrictionInvalidated = false;
+        }
+      },
+    );
+
     final l10n = AppLocalizations.of(context);
-    final prayer = selected.prayer;
+    final prayer = widget.selected.prayer;
+    final restrictionAsync = ref.watch(qazaRestrictionEvaluationProvider);
+    final restriction =
+        _lastRestriction ?? restrictionAsync.valueOrNull;
+    final restricted =
+        restriction?.isRestricted == true && restriction?.type != null;
     final pendingPrayers = PrayerType.values
         .where(
-          (item) => (summary.byPrayer[item]?.progress.pending ?? 0) > 0,
+          (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
         )
         .toList(growable: false);
 
@@ -496,9 +588,9 @@ class _NextQazaPanel extends ConsumerWidget {
         final selectedPrayer = PrayerType.values.firstWhere(
           (item) => item.name == value,
         );
-        ref
-            .read(homePrayerSelectionProvider.notifier)
-            .selectPrayer(selectedPrayer);
+        ref.read(homePrayerSelectionProvider.notifier).selectPrayer(
+              selectedPrayer,
+            );
       },
       itemBuilder: (context) => [
         PopupMenuItem<String>(
@@ -508,7 +600,7 @@ class _NextQazaPanel extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                selected.mode == HomePrayerSelectionMode.automatic
+                widget.selected.mode == HomePrayerSelectionMode.automatic
                     ? Icons.check_rounded
                     : Icons.auto_awesome_outlined,
                 size: 18,
@@ -526,7 +618,7 @@ class _NextQazaPanel extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  selected.prayer == item
+                  widget.selected.prayer == item
                       ? Icons.check_rounded
                       : _prayerIcon(item),
                   size: 18,
@@ -540,7 +632,7 @@ class _NextQazaPanel extends ConsumerWidget {
       child: Chip(
         avatar: const Icon(Icons.tune_rounded, size: 18),
         label: Text(
-          selected.mode == HomePrayerSelectionMode.automatic
+          widget.selected.mode == HomePrayerSelectionMode.automatic
               ? l10n.homeAuto
               : prayer!.localizedLabel(l10n),
         ),
@@ -548,7 +640,7 @@ class _NextQazaPanel extends ConsumerWidget {
     );
 
     final header = Text(
-      selected.mode == HomePrayerSelectionMode.automatic
+      widget.selected.mode == HomePrayerSelectionMode.automatic
           ? l10n.homeNextQazaCurrentPrayer
           : l10n.homeNextQaza,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -588,6 +680,129 @@ class _NextQazaPanel extends ConsumerWidget {
                     return Text(
                       l10n.completeNoPendingTitle,
                       key: const Key('home_oldest_qaza_empty'),
+                    );
+                  }
+
+                  if (restricted) {
+                    final nextAllowedTime = restriction!.nextAllowedTime;
+                    final timeLabel = nextAllowedTime == null
+                        ? null
+                        : MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay.fromDateTime(nextAllowedTime),
+                          );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          key: const Key('home_qaza_restricted_state'),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.lock_clock_outlined,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSecondaryContainer,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      PrayerTimesStrings
+                                          .qazaTemporarilyUnavailable(context),
+                                      key: const Key(
+                                        'home_qaza_restricted_title',
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      PrayerTimesStrings.qazaRestricted(
+                                        context,
+                                        restriction!.type!,
+                                      ),
+                                      key: const Key(
+                                        'home_qaza_restricted_reason',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      PrayerTimesStrings.restrictionRemaining(
+                                        context,
+                                        _liveRestrictionRemaining(restriction),
+                                      ),
+                                      key: const Key(
+                                        'home_qaza_restricted_remaining',
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                    if (timeLabel != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        PrayerTimesStrings.availableAt(
+                                          context,
+                                          timeLabel,
+                                        ),
+                                        key: const Key(
+                                          'home_qaza_restricted_available_at',
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                key: const Key('home_qaza_view_all'),
+                                onPressed: () => openQazaAll(ref),
+                                icon: const Icon(
+                                  Icons.list_alt_rounded,
+                                ),
+                                label: Text(l10n.homeViewAllQaza),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              key: const Key('home_qaza_plan_button'),
+                              onPressed: widget.onPlan,
+                              icon: const Icon(
+                                Icons.calendar_month_outlined,
+                              ),
+                              label: Text(l10n.homeQazaPlan),
+                            ),
+                          ],
+                        ),
+                      ],
                     );
                   }
 
@@ -640,18 +855,19 @@ class _NextQazaPanel extends ConsumerWidget {
 
                       final complete = FilledButton.icon(
                         key: const Key('home_complete_oldest_qaza'),
-                        onPressed:
-                            working ? null : () => onComplete(record, prayer),
+                        onPressed: widget.working
+                            ? null
+                            : () => widget.onComplete(record, prayer),
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: Text(
-                          working
+                          widget.working
                               ? l10n.completeInProgress
                               : l10n.homeCompleteQaza,
                         ),
                       );
                       final plan = OutlinedButton.icon(
                         key: const Key('home_qaza_plan_button'),
-                        onPressed: onPlan,
+                        onPressed: widget.onPlan,
                         icon: const Icon(Icons.calendar_month_outlined),
                         label: Text(l10n.homeQazaPlan),
                       );
@@ -665,10 +881,12 @@ class _NextQazaPanel extends ConsumerWidget {
                               children: [
                                 CircleAvatar(
                                   radius: 26,
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.errorContainer,
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.onErrorContainer,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .errorContainer,
+                                foregroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .onErrorContainer,
                                   child: Icon(_prayerIcon(prayer)),
                                 ),
                                 const SizedBox(width: 12),
@@ -687,7 +905,8 @@ class _NextQazaPanel extends ConsumerWidget {
                                             ),
                                       ),
                                       Text(
-                                        DateFormatters.formatGregorianDatePadded(
+                                        DateFormatters
+                                            .formatGregorianDatePadded(
                                           record.originalDate,
                                         ),
                                         key: const Key('home_oldest_qaza_date'),
@@ -699,8 +918,9 @@ class _NextQazaPanel extends ConsumerWidget {
                                         key: const Key(
                                           'home_oldest_qaza_date_hijri',
                                         ),
-                                        style:
-                                            Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       ),
                                     ],
                                   ),

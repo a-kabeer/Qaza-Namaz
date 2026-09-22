@@ -11,6 +11,8 @@ import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/home_plan.dart';
 import 'package:qaza_namaz/features/home/home_qaza_completion.dart';
 import 'package:qaza_namaz/features/home/home_screen.dart';
+import 'package:qaza_namaz/features/prayer_times/domain/qaza_restriction_service.dart';
+import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
@@ -92,6 +94,7 @@ void main() {
     ThemeMode themeMode = ThemeMode.light,
     Size size = const Size(900, 2000),
     bool currentPrayer = true,
+    QazaRestrictionEvaluation? restrictionEvaluation,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -108,6 +111,10 @@ void main() {
       if (currentPrayer)
         homeCurrentPrayerProvider.overrideWith(
           _TestHomeCurrentPrayerNotifier.new,
+        ),
+      if (restrictionEvaluation != null)
+        qazaRestrictionEvaluationProvider.overrideWith(
+          (ref) async => restrictionEvaluation,
         ),
     ];
 
@@ -187,6 +194,75 @@ void main() {
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
+    });
+
+    testWidgets(
+        'explains restricted time instead of showing Complete Qaza',
+        (tester) async {
+      final restriction = QazaRestrictionEvaluation(
+        isRestricted: true,
+        type: RestrictionType.sunrise,
+        remaining: Duration(minutes: 12),
+        nextAllowedTime: DateTime(2026, 9, 22, 18, 42),
+      );
+
+      await pumpHome(
+        tester,
+        await ledger(),
+        restrictionEvaluation: restriction,
+      );
+
+      expect(
+        find.byKey(const Key('home_qaza_restricted_state')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_complete_oldest_qaza')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_restricted_title')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_restricted_reason')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_restricted_remaining')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_restricted_available_at')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('home_qaza_view_all')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('restricted Home state uses Urdu localization', (tester) async {
+      final restriction = QazaRestrictionEvaluation(
+        isRestricted: true,
+        type: RestrictionType.zawal,
+        remaining: Duration(minutes: 5),
+        nextAllowedTime: DateTime(2026, 9, 22, 18, 55),
+      );
+
+      await pumpHome(
+        tester,
+        await ledger(),
+        locale: const Locale('ur'),
+        restrictionEvaluation: restriction,
+      );
+
+      expect(find.text('قضا عارضی طور پر دستیاب نہیں'), findsOneWidget);
+      expect(
+        find.byKey(const Key('home_qaza_restricted_available_at')),
+        findsOneWidget,
+      );
+      expect(find.text('تمام قضا دیکھیں'), findsOneWidget);
     });
 
     testWidgets('completing the displayed oldest Qaza updates Home',
