@@ -405,6 +405,7 @@ class QazaService {
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
     final timeBlockedKeys = await _getTimeBlockedKeys(
+      userId: userId,
       dates: normalizedDates,
       prayerTypes: selectedPrayers,
     );
