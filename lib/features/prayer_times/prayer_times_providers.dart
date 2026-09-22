@@ -37,7 +37,7 @@ final prayerTimesPreferencesProvider = Provider<PrayerTimesPreferences>(
 
 final offlineLocationDataSourceProvider =
     Provider<OfflineLocationDataSource>((ref) {
-  return GeodbOfflineLocationDataSource();
+  return const OfflineCityDataSource();
 });
 
 final prayerCitySearchProvider = Provider<CitySearchProvider>((ref) {
