@@ -54,7 +54,8 @@ class SharedPreferencesQazaOperationRepository
       }
     }
     result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return result.take(limit.clamp(1, _maxPerUser)).toList(growable: false);
+    final safeLimit = limit.clamp(1, _maxPerUser).toInt();
+    return result.take(safeLimit).toList(growable: false);
   }
 
   @override
