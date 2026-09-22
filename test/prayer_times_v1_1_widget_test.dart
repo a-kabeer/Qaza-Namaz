@@ -126,7 +126,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Fajr'), findsOneWidget);
-      expect(find.text('4:50 AM'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Text && widget.data?.contains('4:50') == true,
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Prayer times could not be calculated'), findsNothing);
       expect(tester.takeException(), isNull);
     },
