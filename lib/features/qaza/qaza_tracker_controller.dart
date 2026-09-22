@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../prayer_times/prayer_times_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
 /// so the database returns both pending and completed records.
