@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 enum PrayerName {
   fajr,
   sunrise,
@@ -10,17 +8,6 @@ enum PrayerName {
 }
 
 extension PrayerNameX on PrayerName {
-  String get apiKey => switch (this) {
-        PrayerName.fajr => 'Fajr',
-        PrayerName.sunrise => 'Sunrise',
-        PrayerName.dhuhr => 'Dhuhr',
-        PrayerName.asr => 'Asr',
-        PrayerName.maghrib => 'Maghrib',
-        PrayerName.isha => 'Isha',
-      };
-
-  String get cacheKey => name;
-
   bool get isCyclePrayer =>
       this == PrayerName.fajr ||
       this == PrayerName.dhuhr ||
@@ -318,7 +305,7 @@ class PrayerDay {
         'timezone': timezone,
         'times': <String, dynamic>{
           for (final entry in times.entries)
-            entry.key.cacheKey: entry.value.toJson(),
+            entry.key.name: entry.value.toJson(),
         },
         'solarNoon': solarNoon.toIso8601String(),
         'sunset': sunset.toIso8601String(),
@@ -331,7 +318,7 @@ class PrayerDay {
     final rawTimes = Map<String, dynamic>.from(json['times'] as Map);
     final times = <PrayerName, PrayerTime>{};
     for (final prayer in PrayerName.values) {
-      final raw = rawTimes[prayer.cacheKey];
+      final raw = rawTimes[prayer.name];
       if (raw is Map) {
         times[prayer] = PrayerTime.fromJson(Map<String, dynamic>.from(raw));
       }
@@ -376,4 +363,3 @@ class PrayerTimesRequest {
   }
 }
 
-String encodePrayerCache(Map<String, dynamic> data) => jsonEncode(data);
