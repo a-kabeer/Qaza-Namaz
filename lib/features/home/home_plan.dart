@@ -1,7 +1,3 @@
-export '../../core/theme/app_theme.dart' show AppChartColors;
-export 'home_qaza_completion.dart' show HomeSelectedPrayerState, homeSelectedPrayerProvider;
-export '../qaza/qaza_undo_banner.dart' show showQazaUndoSnackBar;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -62,6 +58,28 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
     } catch (_) {
       // The in-memory selection remains valid when persistence is unavailable.
     }
+  }
+
+  /// Atomically claims the congratulation event for a user/day/target.
+  ///
+  /// Returning false means this exact target completion has already been
+  /// celebrated, preventing duplicate dialogs from rebuilds or re-entry.
+  Future<bool> claimDailyTargetCelebration({
+    required String userId,
+    required DateTime date,
+    required int target,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dateKey =
+        '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    final key = 'qaza_home_daily_target_celebrated_$userId';
+    final marker = '$dateKey:$target';
+
+    if (prefs.getString(key) == marker) return false;
+    await prefs.setString(key, marker);
+    return true;
   }
 
   int _normalizeTarget(int value) => value.clamp(1, 50).toInt();
@@ -171,3 +189,32 @@ final homeProgressHistoryProvider =
     ];
   },
 );
+
+
+int homeDaysUntilCompletion({
+  required int pending,
+  required int dailyTarget,
+  required int completedToday,
+}) {
+  if (pending <= 0 || dailyTarget <= 0) return 0;
+  final capacityToday =
+      (dailyTarget - completedToday).clamp(0, dailyTarget).toInt();
+  final afterToday = pending - capacityToday;
+  if (afterToday <= 0) return 0;
+  return (afterToday + dailyTarget - 1) ~/ dailyTarget;
+}
+
+DateTime homeEstimatedCompletionDate({
+  required DateTime now,
+  required int pending,
+  required int dailyTarget,
+  required int completedToday,
+}) => DateTime(now.year, now.month, now.day).add(
+      Duration(
+        days: homeDaysUntilCompletion(
+          pending: pending,
+          dailyTarget: dailyTarget,
+          completedToday: completedToday,
+        ),
+      ),
+    );
