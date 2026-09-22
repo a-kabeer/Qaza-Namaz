@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/progress_widgets.dart';
@@ -20,6 +21,8 @@ import '../../features/qaza/qaza_navigation.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'home_plan.dart';
+import 'home_qaza_completion.dart';
+import '../qaza/qaza_undo_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -412,6 +415,23 @@ class _TodayDonut extends StatelessWidget {
   }
 }
 
+IconData _prayerIcon(PrayerType prayer) {
+  switch (prayer) {
+    case PrayerType.fajr:
+      return Icons.wb_twilight_outlined;
+    case PrayerType.zuhr:
+      return Icons.wb_sunny_outlined;
+    case PrayerType.asr:
+      return Icons.sunny_snowing;
+    case PrayerType.maghrib:
+      return Icons.wb_twilight;
+    case PrayerType.isha:
+      return Icons.nightlight_outlined;
+    case PrayerType.witr:
+      return Icons.nightlight_round;
+  }
+}
+
 class _NextQazaPanel extends StatelessWidget {
   const _NextQazaPanel({
     required this.selected,
@@ -475,7 +495,7 @@ class _NextQazaPanel extends StatelessWidget {
                                 Theme.of(context).colorScheme.errorContainer,
                             foregroundColor:
                                 Theme.of(context).colorScheme.onErrorContainer,
-                            child: Icon(prayer.icon),
+                            child: Icon(_prayerIcon(prayer)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
