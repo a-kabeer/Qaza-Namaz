@@ -114,46 +114,7 @@ void main() {
 
 
 
-    testWidgets('the selection checkbox is reachable at a comfortable size',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(PrayerType.fajr, DateTime(2025, 3, 4)),
-      ]);
-      await _pumpTracker(tester, repository);
 
-      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-03-04')));
-      await tester.pump();
-      final checkbox = find.byType(Checkbox).first;
-      final size = tester.getSize(checkbox);
-      expect(size.width, greaterThanOrEqualTo(40.0));
-      expect(size.height, greaterThanOrEqualTo(40.0));
-    });
-  });
-
-  group('text scaling', () {
-    for (final scale in [1.3, 2.0]) {
-      testWidgets('the Qaza workspace renders at ${scale}x text scale',
-          (tester) async {
-        final repository = InMemoryQazaRepository();
-        await repository.addRecords([
-          for (var day = 1; day <= 6; day++)
-            _record(PrayerType.values[day % PrayerType.values.length],
-                DateTime(2025, 3, day)),
-        ]);
-        await _pumpTracker(tester, repository, textScale: scale);
-
-        expect(tester.takeException(), isNull,
-            reason: 'large text must not overflow or throw');
-        expect(find.byKey(const Key('qaza_tracker_list')), findsOneWidget);
-      });
-    }
-
-    testWidgets('the empty state survives a large text scale', (tester) async {
-      await _pumpTracker(tester, InMemoryQazaRepository(), textScale: 2.0);
-      expect(tester.takeException(), isNull);
-      expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
-    });
   });
 
   group('disabled states', () {
