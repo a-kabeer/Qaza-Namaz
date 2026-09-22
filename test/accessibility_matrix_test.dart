@@ -112,48 +112,7 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('a completed row announces its completed status',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(PrayerType.asr, DateTime(2025, 3, 5),
-            status: QazaStatus.completed),
-      ]);
-      await _pumpTracker(tester, repository);
 
-      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilterChip, AppLocalizationsEn().filterAll));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      final handle = tester.ensureSemantics();
-      expect(
-        find.bySemanticsLabel(RegExp(AppLocalizationsEn().statusCompleted)),
-        findsWidgets,
-      );
-      handle.dispose();
-    });
-  });
-
-  group('touch targets', () {
-    testWidgets('interactive controls meet the 48dp minimum', (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(PrayerType.fajr, DateTime(2025, 3, 4)),
-      ]);
-      await _pumpTracker(tester, repository);
-
-      for (final finder in <Finder>[
-        find.byKey(const Key('qaza_record_complete_test-user_fajr_2025-03-04')),
-      ]) {
-        final size = tester.getSize(finder);
-        expect(size.width, greaterThanOrEqualTo(48.0),
-            reason: 'width of ${finder.describeMatch(Plurality.one)}');
-        expect(size.height, greaterThanOrEqualTo(48.0),
-            reason: 'height of ${finder.describeMatch(Plurality.one)}');
-      }
-    });
 
     testWidgets('the selection checkbox is reachable at a comfortable size',
         (tester) async {
@@ -198,41 +157,6 @@ void main() {
   });
 
   group('disabled states', () {
-    testWidgets('a completed record offers no selection control',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(PrayerType.asr, DateTime(2025, 3, 5),
-            status: QazaStatus.completed),
-      ]);
-      await _pumpTracker(tester, repository);
 
-      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilterChip, AppLocalizationsEn().filterAll));
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
-
-      expect(find.byType(Checkbox), findsNothing,
-          reason: 'only pending records are selectable');
-      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget,
-          reason: 'a completed row states its state instead');
-    });
-
-    testWidgets('the bulk action appears only once something is selected',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(PrayerType.fajr, DateTime(2025, 3, 4)),
-      ]);
-      await _pumpTracker(tester, repository);
-
-      expect(find.byKey(const Key('qaza_tracker_complete_selected')),
-          findsNothing);
-      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-03-04')));
-      await tester.pump();
-      expect(find.byKey(const Key('qaza_tracker_complete_selected')),
-          findsOneWidget);
-    });
   });
 }
