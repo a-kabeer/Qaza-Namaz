@@ -3,6 +3,8 @@
 **Priority:** P0  
 **Status:** **Merged**
 
+_Reconciled 2026-09-22 against `main` @ 505a828. Device `dumpsys` on the connected RMX3938 reports `minSdk=24 targetSdk=36`._
+
 ## Task checklist
 
 - [x] Inspect resolved compile SDK

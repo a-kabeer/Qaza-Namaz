@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'google_auth_flow.dart';
@@ -46,11 +46,14 @@ class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository({
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
+    DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : _auth = auth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+        _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
+        _diagnostics = diagnostics;
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
+  final DiagnosticsService _diagnostics;
 
   /// google_sign_in 7.x requires exactly one initialization before any other
   /// GoogleSignIn method is called. Keep it lazy so constructing the repository
@@ -58,8 +61,7 @@ class FirebaseAuthRepository implements AuthRepository {
   late final Future<void> _googleSignInInitialization =
       _googleSignIn.initialize(serverClientId: googleServerClientId);
 
-  Future<void> _ensureGoogleSignInInitialized() =>
-      _googleSignInInitialization;
+  Future<void> _ensureGoogleSignInInitialized() => _googleSignInInitialization;
 
   @override
   AppUser? get currentUser => _mapUser(_auth.currentUser);
@@ -169,8 +171,7 @@ class FirebaseAuthRepository implements AuthRepository {
       throw AuthenticationException(
         source: 'firebase-config',
         code: 'project-mismatch',
-        message:
-            'Firebase project mismatch: expected $googleFirebaseProjectId '
+        message: 'Firebase project mismatch: expected $googleFirebaseProjectId '
             'but the app is using ${options.projectId}.',
       );
     }
@@ -194,9 +195,14 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   void _debugLog(Object error, StackTrace stack) {
-    if (!kDebugMode) return;
-    debugPrint('[auth] ${error.runtimeType}: $error');
-    debugPrintStack(stackTrace: stack);
+    // Authentication failure monitoring. The diagnostics port redacts before
+    // anything leaves: an auth error can carry an email address.
+    _diagnostics.recordFailure(
+      DiagnosticArea.auth,
+      'sign_in_failed',
+      error,
+      stack: stack,
+    );
   }
 
   AppUser? _mapUser(User? user) {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/diagnostics/diagnostics.dart';
 import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
 import 'firebase_options.dart';
@@ -18,6 +19,32 @@ const Duration _startupStepTimeout = Duration(seconds: 10);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Crash-rate monitoring: both of the places Flutter surfaces an otherwise
+  // unhandled error. Reported through the same port as everything else, so a
+  // backend picks these up the moment one is wired in.
+  const diagnostics = DebugDiagnostics();
+  final previousOnError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    diagnostics.recordFailure(
+      DiagnosticArea.uncaught,
+      'flutter_error',
+      details.exception,
+      stack: details.stack,
+      fatal: true,
+    );
+    previousOnError?.call(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.uncaught,
+      'platform_error',
+      error,
+      stack: stack,
+      fatal: true,
+    );
+    return false;
+  };
 
   // Every step below is optional to *starting*. A failure or a stall in any
   // of them used to mean `runApp` was never reached, which the user sees as a
@@ -61,9 +88,15 @@ Future<void> _step(String name, Future<void> Function() body) async {
   try {
     await body().timeout(_startupStepTimeout);
   } catch (error, stack) {
-    if (kDebugMode) {
-      debugPrint('[startup] $name failed: ${error.runtimeType}: $error');
-      debugPrintStack(stackTrace: stack);
-    }
+    // Startup steps are non-fatal by design, which is exactly why they need
+    // reporting: a silent failure here is invisible in the field.
+    const DebugDiagnostics().recordFailure(
+      name == 'database'
+          ? DiagnosticArea.databaseMigration
+          : DiagnosticArea.startup,
+      '${name}_failed',
+      error,
+      stack: stack,
+    );
   }
 }

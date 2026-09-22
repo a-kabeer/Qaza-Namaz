@@ -1,6 +1,8 @@
 # Prayer Times — Offline Hardening QA
 
-Status: **Migrated to offline calculation**
+Status: **Merged — Device QA Pending**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. The architecture is no longer offline-only. PR #75 made AlAdhan the online source with a local `adhan_dart` fallback: see `lib/features/prayer_times/data/aladhan_prayer_times_data_source.dart` and `adhan_dart: ^2.0.1` in `pubspec.yaml`. The earlier "migrated to offline calculation" claim from PR #68 is superseded._
 
 This document supersedes the earlier network/API hardening checklist. Prayer calculation, city search and restriction evaluation are now local.
 

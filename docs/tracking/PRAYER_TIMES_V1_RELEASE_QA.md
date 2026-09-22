@@ -30,7 +30,7 @@ Do not mark the offline Prayer Times migration release-ready until automated CI 
 | PT-020 | Solar | Sunrise/Zawal/Sunset | Restriction windows are derived from local solar results |
 | PT-021 | Restriction | During restriction | Remaining duration and next allowed time are shown; completion disabled |
 | PT-022 | Restriction | After restriction | Completion becomes available without restart |
-| PT-023 | Offline | Airplane mode | Prayer times and city lookup work with no network |
+| PT-023 | Fallback | Airplane mode | Prayer times fall back to the local `adhan_dart` calculation and city lookup still works |
 | PT-024 | Offline | Fresh install, no cache | Prayer calculation still works after local location selection |
 | PT-025 | UI | English light/dark | No overflow/unreadable controls |
 | PT-026 | UI | Urdu/RTL | Correct direction and readable text |
@@ -39,7 +39,7 @@ Do not mark the offline Prayer Times migration release-ready until automated CI 
 
 ## Accuracy procedure
 
-For a representative set of cities/dates, compare the offline calculation against a trusted reference before release. Record the selected calculation method, Asr method, location timezone and observed minute differences.
+For a representative set of cities/dates, compare the local `adhan_dart` fallback against the AlAdhan online response and a trusted reference before release. Record the selected calculation method, Asr method, location timezone and observed minute differences.
 
 A numerical match is a validation target, not an assumption; supported methods may differ when providers use different adjustments or defaults.
 

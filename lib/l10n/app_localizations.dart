@@ -206,6 +206,108 @@ abstract class AppLocalizations {
   /// **'Completed'**
   String get statusCompleted;
 
+  /// No description provided for @qazaSelectAllMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all matching'**
+  String get qazaSelectAllMatching;
+
+  /// No description provided for @qazaSelectAllMatchingCapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected the first {count} matching records.'**
+  String qazaSelectAllMatchingCapped(String count);
+
+  /// No description provided for @qazaConfirmBulkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete {count} records?'**
+  String qazaConfirmBulkTitle(String count);
+
+  /// No description provided for @qazaConfirmBulkMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This marks {count} pending prayers as completed. You can undo it straight afterwards, but not later.'**
+  String qazaConfirmBulkMessage(String count);
+
+  /// No description provided for @qazaConfirmBulkAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete them'**
+  String get qazaConfirmBulkAction;
+
+  /// No description provided for @errorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection. Your Qaza are saved on this device and will sync when you are back online.'**
+  String get errorNetwork;
+
+  /// No description provided for @errorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'That took too long. Try again in a moment.'**
+  String get errorTimeout;
+
+  /// No description provided for @errorPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission is needed for this. Open Settings to grant it.'**
+  String get errorPermission;
+
+  /// No description provided for @errorAuthentication.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be signed in for this.'**
+  String get errorAuthentication;
+
+  /// No description provided for @errorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'That input was not accepted. Check it and try again.'**
+  String get errorValidation;
+
+  /// No description provided for @errorMalformedData.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is not a Qaza backup, or it is damaged.'**
+  String get errorMalformedData;
+
+  /// No description provided for @errorStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'This device could not save the change. Free some space and try again.'**
+  String get errorStorage;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong.'**
+  String get errorUnknown;
+
+  /// No description provided for @commonOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get commonOpenSettings;
+
+  /// No description provided for @qazaSortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get qazaSortLabel;
+
+  /// No description provided for @qazaSortOldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get qazaSortOldestFirst;
+
+  /// No description provided for @qazaSortNewestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get qazaSortNewestFirst;
+
   /// No description provided for @filterAll.
   ///
   /// In en, this message translates to:

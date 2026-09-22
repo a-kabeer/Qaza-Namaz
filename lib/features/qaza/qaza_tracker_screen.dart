@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -44,6 +46,7 @@ class QazaTrackerScreen extends ConsumerWidget {
             const _ProgressHeader(),
             _StatusFilterBar(state: state, controller: controller),
             _PrayerFilterBar(state: state, controller: controller),
+            _SortBar(state: state, controller: controller),
             _DateFilterBar(state: state, controller: controller),
             // Subtle, in place, and reserving its own height so the list
             // never jumps when a filter changes.
@@ -183,6 +186,55 @@ class _PrayerFilterBar extends StatelessWidget {
   }
 }
 
+/// Which end of the ledger to read from.
+///
+/// Two choices rather than a menu: Qaza is owed oldest-first, and the only
+/// other question a user asks of this list is what they missed most recently.
+class _SortBar extends StatelessWidget {
+  const _SortBar({required this.state, required this.controller});
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: AppSpacing.lg,
+        end: AppSpacing.lg,
+        bottom: AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Text(l10n.qazaSortLabel,
+              style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: SegmentedButton<QazaSortOrder>(
+              key: const Key('qaza_tracker_sort'),
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(
+                  value: QazaSortOrder.oldestFirst,
+                  label: Text(l10n.qazaSortOldestFirst),
+                ),
+                ButtonSegment(
+                  value: QazaSortOrder.newestFirst,
+                  label: Text(l10n.qazaSortNewestFirst),
+                ),
+              ],
+              selected: {state.sortOrder},
+              onSelectionChanged: (value) =>
+                  controller.setSortOrder(value.first),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DateFilterBar extends StatelessWidget {
   const _DateFilterBar({required this.state, required this.controller});
 
@@ -221,7 +273,8 @@ class _DateFilterBar extends StatelessWidget {
               onPressed: () => _pickRange(context, l10n),
               icon: const Icon(Icons.event_rounded),
               label: Text(
-                state.hasDateFilter                    ? l10n.qazaDateFilterRange(
+                state.hasDateFilter
+                    ? l10n.qazaDateFilterRange(
                         DateFormatters.formatGregorianDatePadded(state.from!),
                         DateFormatters.formatGregorianDatePadded(state.to!),
                       )
@@ -307,6 +360,7 @@ Future<void> _deleteTrackerRecord(
     );
   }
 }
+
 class _TrackerBody extends ConsumerWidget {
   const _TrackerBody({required this.state, required this.controller});
 
@@ -326,10 +380,13 @@ class _TrackerBody extends ConsumerWidget {
       return const _TrackerSkeleton();
     }
     if (state.error != null) {
+      // Classified once, so the wording and whether Retry is offered follow
+      // the same rule here as everywhere else.
+      final failure = AppError.from(state.error!);
       return ErrorState(
         key: const Key('qaza_tracker_error'),
-        message: l10n.qazaLoadError(state.error!),
-        onRetry: controller.refresh,
+        message: failure.message(context),
+        onRetry: failure.isRetryable ? controller.refresh : null,
       );
     }
     if (state.records.isEmpty) {
@@ -473,7 +530,8 @@ class _TrackerSkeletonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
           children: [
             const SkeletonCircle(size: 40),
             const SizedBox(width: 12),
@@ -488,7 +546,9 @@ class _TrackerSkeletonRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const SkeletonText(width: 64, height: 28,
+            const SkeletonText(
+                width: 64,
+                height: 28,
                 borderRadius: BorderRadius.all(Radius.circular(999))),
           ],
         ),
@@ -669,6 +729,41 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                   child: Text(l10n.commonClear),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                // Compact on purpose: a third full-width button overflows this
+                // bar on a narrow phone, and this is a secondary action.
+                IconButton(
+                  key: const Key('qaza_tracker_select_all_matching'),
+                  tooltip: l10n.qazaSelectAllMatching,
+                  icon: widget.state.selectingAll
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.select_all_rounded),
+                  onPressed: widget.state.completing ||
+                          widget.state.selectingAll
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          await widget.controller.selectAllMatching();
+                          if (!context.mounted) return;
+                          final count = widget.state.selected.length;
+                          // Say so when the cap was reached, rather than
+                          // letting the count quietly mean something else.
+                          if (count >=
+                              QazaTrackerController.selectAllMatchingCap) {
+                            messenger
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(SnackBar(
+                                content: Text(
+                                  l10n.qazaSelectAllMatchingCapped('$count'),
+                                ),
+                              ));
+                          }
+                        },
+                ),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: FilledButton(
                     key: const Key('qaza_tracker_complete_selected'),
@@ -676,12 +771,22 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                         ? null
                         : () async {
                             final messenger = ScaffoldMessenger.of(context);
+                            // A large bulk completion is confirmed first: undo
+                            // exists, but it is a narrow window.
+                            if (widget.state.selectionNeedsConfirmation) {
+                              final confirmed = await confirmDestructive(
+                                context,
+                                title: l10n.qazaConfirmBulkTitle('$count'),
+                                message: l10n.qazaConfirmBulkMessage('$count'),
+                                confirmLabel: l10n.qazaConfirmBulkAction,
+                              );
+                              if (!confirmed || !context.mounted) return;
+                            }
                             final batch = await widget.controller
                                 .completeSelectedWithUndo();
-                                            if (batch == null) {
-                              final tartib = ref
-                                  .read(sahibAlTartibProvider)
-                                  .valueOrNull;
+                            if (batch == null) {
+                              final tartib =
+                                  ref.read(sahibAlTartibProvider).valueOrNull;
                               if (tartib?.requiresOrder == true &&
                                   tartib?.nextPrayer != null) {
                                 messenger
@@ -702,33 +807,34 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                                     .valueOrNull;
                                 if (latest?.isRestricted == true &&
                                     latest?.type != null) {
-                                messenger
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        PrayerTimesStrings.qazaRestricted(
-                                          context,
-                                          latest!.type!,
+                                  messenger
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          PrayerTimesStrings.qazaRestricted(
+                                            context,
+                                            latest!.type!,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                              } else if (ref
-                                      .read(qazaTrackerControllerProvider)
-                                      .error !=
-                                  null) {
-                                messenger
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ref
-                                            .read(qazaTrackerControllerProvider)
-                                            .error!,
+                                    );
+                                } else if (ref
+                                        .read(qazaTrackerControllerProvider)
+                                        .error !=
+                                    null) {
+                                  messenger
+                                    ..hideCurrentSnackBar()
+                                    ..showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          ref
+                                              .read(
+                                                  qazaTrackerControllerProvider)
+                                              .error!,
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
                                 } else {
                                   messenger.showSnackBar(
                                     SnackBar(

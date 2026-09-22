@@ -1,7 +1,9 @@
 # Android backup/privacy hardening
 
 **Priority:** P0  
-**Status:** **Merged — Device Restore QA Pending**
+**Status:** **Merged — Device QA Pending**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. `AndroidManifest.xml` declares `fullBackupContent` and `dataExtractionRules`. Backup/restore behaviour has not been exercised on a device._
 
 ## Task checklist
 

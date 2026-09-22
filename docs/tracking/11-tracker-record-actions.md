@@ -1,7 +1,9 @@
 # Qaza tracker record actions
 
 **Priority:** P1  
-**Status:** **Merged — Device QA Pending**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. PR #64. Record actions live in `lib/features/qaza/qaza_tracker_screen.dart`._
 
 ## Task checklist
 

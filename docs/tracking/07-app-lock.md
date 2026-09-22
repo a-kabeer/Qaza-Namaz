@@ -3,6 +3,8 @@
 **Priority:** P0/P1  
 **Status:** **Merged — Device QA Pending**
 
+_Reconciled 2026-09-22 against `main` @ 505a828. `lib/features/settings/app_lock_controller.dart` and `app_lock_gate.dart` are wired into `QazaNamazApp` lifecycle handling. Biometric prompt is untested on hardware._
+
 ## Task checklist
 
 - [x] Detect biometric/device authentication

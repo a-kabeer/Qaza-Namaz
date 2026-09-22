@@ -29,9 +29,26 @@ extension QazaStatusFilterX on QazaStatusFilter {
 ///
 /// The full ledger is never held here: [records] only ever contains the pages
 /// that have actually been requested.
+/// Which end of the ledger the tracker reads from.
+///
+/// Both directions are keyset queries over the same `(originalDate, id)` index,
+/// so paging stays bounded and the tie-breaker keeps the order total: two
+/// records on the same day can never swap places between pages.
+enum QazaSortOrder {
+  /// Ascending by date. The order a Qaza debt is owed in.
+  oldestFirst,
+
+  /// Descending by date. What was missed most recently.
+  newestFirst;
+
+  bool get isOldestFirst => this == QazaSortOrder.oldestFirst;
+}
+
 class QazaTrackerState {
   const QazaTrackerState({
     this.statusFilter = QazaStatusFilter.pending,
+    this.sortOrder = QazaSortOrder.oldestFirst,
+    this.selectingAll = false,
     this.prayerFilter,
     this.from,
     this.to,
@@ -47,6 +64,13 @@ class QazaTrackerState {
   });
 
   final QazaStatusFilter statusFilter;
+
+  /// Which end of the ledger is read first. Oldest by default,
+  /// because that is the order Qaza is owed in.
+  final QazaSortOrder sortOrder;
+
+  /// True while the whole filtered ledger is being gathered for selection.
+  final bool selectingAll;
   final PrayerType? prayerFilter;
   final DateTime? from;
   final DateTime? to;
@@ -82,10 +106,22 @@ class QazaTrackerState {
   List<QazaRecord> get selectableRecords =>
       records.where((record) => record.status == QazaStatus.pending).toList();
 
+  /// How many selected records it takes before completing them is confirmed.
+  ///
+  /// Bulk completion is undoable, but an undo banner is a poor answer to
+  /// "I have just completed four thousand prayers by accident".
+  static const int largeSelectionThreshold = 25;
+
+  /// A selection big enough that acting on it should be confirmed first.
+  bool get selectionNeedsConfirmation =>
+      selected.length >= largeSelectionThreshold;
+
   bool get isEmpty => records.isEmpty && !loading && error == null;
 
   QazaTrackerState copyWith({
     QazaStatusFilter? statusFilter,
+    QazaSortOrder? sortOrder,
+    bool? selectingAll,
     PrayerType? prayerFilter,
     DateTime? from,
     DateTime? to,
@@ -104,6 +140,8 @@ class QazaTrackerState {
   }) =>
       QazaTrackerState(
         statusFilter: statusFilter ?? this.statusFilter,
+        sortOrder: sortOrder ?? this.sortOrder,
+        selectingAll: selectingAll ?? this.selectingAll,
         prayerFilter:
             clearPrayerFilter ? null : prayerFilter ?? this.prayerFilter,
         from: clearDates ? null : from ?? this.from,
@@ -232,14 +270,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
       selected: const <String>{},
     );
     try {
-      final page = await ref.read(qazaServiceProvider).getPage(
-            userId: userId,
-            limit: pageSize,
-            prayerType: state.prayerFilter,
-            status: state.statusFilter.status,
-            from: state.from,
-            to: state.to,
-          );
+      final page = await _readPage(userId: userId);
       state = state.copyWith(
         records: page.records,
         hasMore: page.hasMore,
@@ -257,6 +288,54 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
   }
 
+  /// Reads one bounded page in the active sort order.
+  ///
+  /// Ascending and descending are two different keyset queries — `after` for
+  /// one, `before` for the other — so the direction is resolved here rather
+  /// than at each call site.
+  Future<QazaPage> _readPage({
+    required String userId,
+    QazaRecord? after,
+  }) async {
+    final service = ref.read(qazaServiceProvider);
+    if (state.sortOrder.isOldestFirst) {
+      return service.getPage(
+        userId: userId,
+        limit: pageSize,
+        prayerType: state.prayerFilter,
+        status: state.statusFilter.status,
+        from: state.from,
+        to: state.to,
+        afterOriginalDate: after?.originalDate,
+        afterId: after?.id,
+      );
+    }
+    final page = await service.getHistoryPage(
+      userId: userId,
+      limit: pageSize,
+      prayerType: state.prayerFilter,
+      status: state.statusFilter.status,
+      from: state.from,
+      to: state.to,
+      beforeOriginalDate: after?.originalDate,
+      beforeId: after?.id,
+    );
+    return QazaPage(records: page.records, hasMore: page.hasMore);
+  }
+
+  /// Switches the order and reloads from the top. Paging state cannot be
+  /// carried across a direction change, so the selection is dropped with it.
+  void setSortOrder(QazaSortOrder order) {
+    if (order == state.sortOrder) return;
+    state = state.copyWith(
+      sortOrder: order,
+      records: const <QazaRecord>[],
+      hasMore: false,
+      selected: const <String>{},
+    );
+    refresh();
+  }
+
   Future<void> loadMore() async {
     if (state.loading || state.loadingMore || !state.hasMore) return;
     final userId = ref.read(activeUserIdProvider);
@@ -265,16 +344,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
     state = state.copyWith(loadingMore: true, clearError: true);
     try {
-      final page = await ref.read(qazaServiceProvider).getPage(
-            userId: userId,
-            limit: pageSize,
-            prayerType: state.prayerFilter,
-            status: state.statusFilter.status,
-            from: state.from,
-            to: state.to,
-            afterOriginalDate: last.originalDate,
-            afterId: last.id,
-          );
+      final page = await _readPage(userId: userId, after: last);
       state = state.copyWith(
         records: [...state.records, ...page.records],
         hasMore: page.hasMore,
@@ -331,6 +401,49 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   void selectAllLoaded() => state = state.copyWith(
         selected: {for (final record in state.selectableRecords) record.id},
       );
+
+  /// The most records one "select all matching" may gather.
+  ///
+  /// A bound rather than a preference: without it this walks an unbounded
+  /// ledger into memory, which is the thing the rest of this controller is
+  /// carefully built to avoid.
+  static const int selectAllMatchingCap = 2000;
+
+  /// Selects every pending record matching the active filter, not just the
+  /// ones already paged in.
+  ///
+  /// Walks the same bounded keyset query the list uses, a page at a time, and
+  /// stops at [selectAllMatchingCap]. Stopping early is reported through
+  /// [QazaTrackerState.hasMore] semantics on the selection: the user gets the
+  /// cap's worth and the count tells them what they got.
+  Future<void> selectAllMatching() async {
+    if (state.selectingAll) return;
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null) return;
+
+    state = state.copyWith(selectingAll: true, clearError: true);
+    final ids = <String>{};
+    try {
+      QazaRecord? cursor;
+      while (ids.length < selectAllMatchingCap) {
+        final page = await _readPage(userId: userId, after: cursor);
+        if (page.records.isEmpty) break;
+        for (final record in page.records) {
+          if (record.status != QazaStatus.pending) continue;
+          ids.add(record.id);
+          if (ids.length >= selectAllMatchingCap) break;
+        }
+        if (!page.hasMore) break;
+        cursor = page.records.last;
+      }
+      state = state.copyWith(selected: ids, selectingAll: false);
+    } catch (error) {
+      state = state.copyWith(
+        selectingAll: false,
+        error: error.toString(),
+      );
+    }
+  }
 
   void clearSelection() => state = state.copyWith(selected: const <String>{});
 

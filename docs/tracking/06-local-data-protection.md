@@ -3,6 +3,8 @@
 **Priority:** P0/P1  
 **Status:** **Merged — Device QA Pending**
 
+_Reconciled 2026-09-22 against `main` @ 505a828. Drift-backed local store with per-user namespacing and `retireUserData`; covered by `test/drift_qaza_local_store_test.dart`. Not verified on a device._
+
 ## Task checklist
 
 - [x] Evaluate database encryption

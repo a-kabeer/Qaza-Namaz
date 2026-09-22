@@ -1,6 +1,8 @@
 # Task 29 — Professional Global Color Theme
 
-**Status:** In Progress  
+**Status:** **Superseded — See PR #66**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. The palette from this task was replaced by the theme and graph colours in PR #66._
 **Created:** 2026-09-21  
 **Branch:** feat/professional-color-theme  
 **Scope:** Global visual color system only  
@@ -184,3 +186,8 @@ Task 29 is complete only when:
 - Mapped tertiary to completion/success semantics.
 - Updated progress ring to use completion color.
 - Added production palette tests.
+
+## Why this file is superseded
+
+The palette work tracked here was replaced by the theme and graph colours in PR #66.
+The unticked boxes are kept as history, not as outstanding work.

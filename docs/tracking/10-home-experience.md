@@ -3,6 +3,8 @@
 **Priority:** P1  
 **Status:** **Merged — Device QA Pending**
 
+_Reconciled 2026-09-22 against `main` @ 505a828. PR #61 and the #67 dashboard redesign are merged, with #71-#74 layered on top. `test/home_page_test.dart` covers the surface. The device build predates #71._
+
 ## Task scope
 
 Complete the Home experience gaps from Phase 4 of the master plan without rebuilding the existing Home architecture.

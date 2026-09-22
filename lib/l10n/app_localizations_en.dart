@@ -64,6 +64,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusCompleted => 'Completed';
 
   @override
+  String get qazaSelectAllMatching => 'Select all matching';
+
+  @override
+  String qazaSelectAllMatchingCapped(String count) {
+    return 'Selected the first $count matching records.';
+  }
+
+  @override
+  String qazaConfirmBulkTitle(String count) {
+    return 'Complete $count records?';
+  }
+
+  @override
+  String qazaConfirmBulkMessage(String count) {
+    return 'This marks $count pending prayers as completed. You can undo it straight afterwards, but not later.';
+  }
+
+  @override
+  String get qazaConfirmBulkAction => 'Complete them';
+
+  @override
+  String get errorNetwork =>
+      'No connection. Your Qaza are saved on this device and will sync when you are back online.';
+
+  @override
+  String get errorTimeout => 'That took too long. Try again in a moment.';
+
+  @override
+  String get errorPermission =>
+      'Permission is needed for this. Open Settings to grant it.';
+
+  @override
+  String get errorAuthentication => 'You need to be signed in for this.';
+
+  @override
+  String get errorValidation =>
+      'That input was not accepted. Check it and try again.';
+
+  @override
+  String get errorMalformedData =>
+      'That file is not a Qaza backup, or it is damaged.';
+
+  @override
+  String get errorStorage =>
+      'This device could not save the change. Free some space and try again.';
+
+  @override
+  String get errorUnknown => 'Something went wrong.';
+
+  @override
+  String get commonOpenSettings => 'Open Settings';
+
+  @override
+  String get qazaSortLabel => 'Sort';
+
+  @override
+  String get qazaSortOldestFirst => 'Oldest first';
+
+  @override
+  String get qazaSortNewestFirst => 'Newest first';
+
+  @override
   String get filterAll => 'All';
 
   @override

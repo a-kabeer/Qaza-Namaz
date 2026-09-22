@@ -1,7 +1,9 @@
 # Qaza navigation & information architecture
 
 **Priority:** P1  
-**Status:** **Merged — Device QA Pending**
+**Status:** **Merged**
+
+_Reconciled 2026-09-22 against `main` @ 505a828. PR #60 made Qaza a primary navigation destination; `workspace_shell.dart` and `test/workspace_test.dart` reflect it._
 
 ## Task checklist
 

@@ -63,6 +63,67 @@ class AppLocalizationsUr extends AppLocalizations {
   String get statusCompleted => 'مکمل';
 
   @override
+  String get qazaSelectAllMatching => 'سب مطابق منتخب کریں';
+
+  @override
+  String qazaSelectAllMatchingCapped(String count) {
+    return 'پہلے $count مطابق ریکارڈ منتخب کر لیے گئے۔';
+  }
+
+  @override
+  String qazaConfirmBulkTitle(String count) {
+    return '$count ریکارڈ مکمل کریں؟';
+  }
+
+  @override
+  String qazaConfirmBulkMessage(String count) {
+    return 'اس سے $count زیر التوا نمازیں مکمل شمار ہوں گی۔ آپ فوراً بعد واپس کر سکتے ہیں، بعد میں نہیں۔';
+  }
+
+  @override
+  String get qazaConfirmBulkAction => 'مکمل کریں';
+
+  @override
+  String get errorNetwork =>
+      'کوئی رابطہ نہیں۔ آپ کی قضا اس ڈیوائس پر محفوظ ہیں اور آن لائن ہوتے ہی سنک ہو جائیں گی۔';
+
+  @override
+  String get errorTimeout => 'بہت وقت لگ گیا۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔';
+
+  @override
+  String get errorPermission =>
+      'اس کے لیے اجازت درکار ہے۔ سیٹنگز میں جا کر اجازت دیں۔';
+
+  @override
+  String get errorAuthentication => 'اس کے لیے سائن ان ہونا ضروری ہے۔';
+
+  @override
+  String get errorValidation =>
+      'یہ انپٹ قبول نہیں ہوئی۔ جانچ کر دوبارہ کوشش کریں۔';
+
+  @override
+  String get errorMalformedData => 'یہ فائل قضا بیک اپ نہیں، یا خراب ہے۔';
+
+  @override
+  String get errorStorage =>
+      'ڈیوائس تبدیلی محفوظ نہیں کر سکا۔ کچھ جگہ خالی کر کے دوبارہ کوشش کریں۔';
+
+  @override
+  String get errorUnknown => 'کچھ غلط ہو گیا۔';
+
+  @override
+  String get commonOpenSettings => 'سیٹنگز کھولیں';
+
+  @override
+  String get qazaSortLabel => 'ترتیب';
+
+  @override
+  String get qazaSortOldestFirst => 'پہلے پرانی';
+
+  @override
+  String get qazaSortNewestFirst => 'پہلے نئی';
+
+  @override
   String get filterAll => 'سب';
 
   @override

@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
+import '../../core/diagnostics/diagnostics.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../l10n/app_localizations.dart';
@@ -92,9 +95,17 @@ class _QazaDataManagementScreenState
         _showMessage(
             'Import complete: ${applied.addedCount} added, ${applied.completedCount} completed, ${applied.unchangedCount} unchanged.');
       }
-    } catch (error) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.importData,
+            'import_failed',
+            error,
+            stack: stack,
+          );
       if (mounted) {
-        _showMessage(AppLocalizations.of(context).dataImportRejected('$error'));
+        // A damaged or wrong file is explained as such, rather than shown as
+        // a raw exception the user cannot act on.
+        _showMessage(AppError.from(error).message(context));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
