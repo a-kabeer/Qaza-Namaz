@@ -1,5 +1,4 @@
 import 'package:flutter_countries/flutter_countries.dart';
-import 'package:timezone_country/timezone_country.dart';
 
 import '../domain/prayer_times_models.dart';
 import 'location/city_search_provider.dart';
