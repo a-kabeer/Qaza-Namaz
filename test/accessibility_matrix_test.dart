@@ -121,10 +121,11 @@ void main() {
       ]);
       await _pumpTracker(tester, repository);
 
-      final controller = tester
-          .element(find.byType(QazaTrackerScreen))
-          .findAncestorWidgetOfExactType<ProviderScope>();
-      expect(controller, isNotNull);
+      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, AppLocalizationsEn().filterAll));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
 
       final handle = tester.ensureSemantics();
       expect(
@@ -143,10 +144,8 @@ void main() {
       ]);
       await _pumpTracker(tester, repository);
 
-      // Adding moved to the workspace action button, so the header carries
-      // no actions of its own; the record checkbox is what remains here.
       for (final finder in <Finder>[
-        find.byType(Checkbox).first,
+        find.byKey(const Key('qaza_record_complete_test-user_fajr_2025-03-04')),
       ]) {
         final size = tester.getSize(finder);
         expect(size.width, greaterThanOrEqualTo(48.0),
@@ -164,6 +163,8 @@ void main() {
       ]);
       await _pumpTracker(tester, repository);
 
+      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-03-04')));
+      await tester.pump();
       final checkbox = find.byType(Checkbox).first;
       final size = tester.getSize(checkbox);
       expect(size.width, greaterThanOrEqualTo(40.0));
@@ -206,13 +207,9 @@ void main() {
       ]);
       await _pumpTracker(tester, repository);
 
-      // Default filter is pending, so switch to All to see the completed row.
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const Key('qaza_tracker_status_filter')),
-          matching: find.text(AppLocalizationsEn().filterAll),
-        ),
-      );
+      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, AppLocalizationsEn().filterAll));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
 
@@ -232,7 +229,7 @@ void main() {
 
       expect(find.byKey(const Key('qaza_tracker_complete_selected')),
           findsNothing);
-      await tester.tap(find.byType(Checkbox).first);
+      await tester.longPress(find.byKey(const Key('qaza_record_test-user_fajr_2025-03-04')));
       await tester.pump();
       expect(find.byKey(const Key('qaza_tracker_complete_selected')),
           findsOneWidget);
