@@ -159,7 +159,19 @@ class QazaRestrictionService {
     final sunrise = at(PrayerName.sunrise);
     final sunset = day.sunset;
     final solarNoon = day.solarNoon;
-    if (sunset == null || solarNoon == null) return const <QazaRestrictionPeriod>[];
+    if (sunset == null || solarNoon == null) {
+      return const <QazaRestrictionPeriod>[];
+    }
+
+    tz.TZDateTime wall(DateTime value) => tz.TZDateTime(
+          location,
+          value.year,
+          value.month,
+          value.day,
+          value.hour,
+          value.minute,
+          value.second,
+        );
 
     return <QazaRestrictionPeriod>[
       QazaRestrictionPeriod(
@@ -169,13 +181,13 @@ class QazaRestrictionService {
       ),
       QazaRestrictionPeriod(
         type: RestrictionType.zawal,
-        start: solarNoon.subtract(policy.zawalBefore),
-        end: solarNoon.add(policy.zawalAfter),
+        start: wall(solarNoon).subtract(policy.zawalBefore),
+        end: wall(solarNoon).add(policy.zawalAfter),
       ),
       QazaRestrictionPeriod(
         type: RestrictionType.sunset,
-        start: sunset.subtract(policy.sunsetBefore),
-        end: sunset.add(policy.sunsetAfter),
+        start: wall(sunset).subtract(policy.sunsetBefore),
+        end: wall(sunset).add(policy.sunsetAfter),
       ),
     ];
   }
