@@ -787,34 +787,71 @@ class _RecordRow extends StatelessWidget {
 enum _RecordAction { edit, delete }
 
 class _BulkCompletionBar extends ConsumerStatefulWidget {
-  const _BulkCompletionBar({
-    required this.state,
-    required this.controller,
-  });
-
+  const _BulkCompletionBar({required this.state, required this.controller});
   final QazaTrackerState state;
   final QazaTrackerController controller;
-
   @override
   ConsumerState<_BulkCompletionBar> createState() => _BulkCompletionBarState();
 }
 
 class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   Timer? _ticker;
-
   @override
   void initState() {
     super.initState();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      ref.invalidate(qazaRestrictionEvaluationProvider);
+      if (mounted) ref.invalidate(qazaRestrictionEvaluationProvider);
     });
   }
-
   @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
+  void dispose() { _ticker?.cancel(); super.dispose(); }
+
+  Future<void> _complete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final count = widget.state.selected.length;
+    if (widget.state.selectionNeedsConfirmation) {
+      final confirmed = await confirmDestructive(
+        context,
+        title: l10n.qazaConfirmBulkTitle('$count'),
+        message: l10n.qazaConfirmBulkMessage('$count'),
+        confirmLabel: l10n.qazaConfirmBulkAction,
+      );
+      if (!confirmed || !context.mounted) return;
+    }
+    final batch = await widget.controller.completeSelectedWithUndo();
+    if (!context.mounted) return;
+    if (batch == null) {
+      final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
+      if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.qazaTartibBlocked(tartib!.nextPrayer!.localizedLabel(l10n)))));
+      }
+      return;
+    }
+    await showQazaUndoSnackBar(
+      context: context,
+      ref: ref,
+      userId: ref.read(requiredUserIdProvider),
+      recordIds: batch.recordIds,
+      completedAt: batch.completedAt,
+      onUndone: widget.controller.refresh,
+    );
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final count = widget.state.selected.length;
+    final confirmed = await confirmDestructive(
+      context,
+      title: l10n.qazaConfirmBulkTitle('$count'),
+      message: l10n.qazaConfirmBulkMessage('$count'),
+      confirmLabel: l10n.qazaDeleteRecord,
+    );
+    if (!confirmed || !context.mounted) return;
+    final deleted = await widget.controller.deleteSelectedWithRecovery();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(deleted.toString() + ' deleted. You can restore from History.')),
+    );
   }
 
   @override
@@ -822,173 +859,53 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
     final l10n = AppLocalizations.of(context);
     final evaluation = ref.watch(qazaRestrictionEvaluationProvider).valueOrNull;
     final restricted = evaluation?.isRestricted == true;
+    final busy = widget.state.completing || widget.state.recordMutating;
     final count = widget.state.selected.length;
-
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.fabClearance,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (restricted && evaluation?.type != null) ...[
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  '${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n'
-                  '${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-            Row(
-              children: [
-                TextButton(
-                  key: const Key('qaza_tracker_clear_selection'),
-                  onPressed: widget.state.completing
-                      ? null
-                      : widget.controller.clearSelection,
-                  child: Text(l10n.commonClear),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                // Compact on purpose: a third full-width button overflows this
-                // bar on a narrow phone, and this is a secondary action.
-                IconButton(
-                  key: const Key('qaza_tracker_select_all_matching'),
-                  tooltip: l10n.qazaSelectAllMatching,
-                  icon: widget.state.selectingAll
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.select_all_rounded),
-                  onPressed: widget.state.completing ||
-                          widget.state.selectingAll
-                      ? null
-                      : () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          await widget.controller.selectAllMatching();
-                          if (!context.mounted) return;
-                          final count = widget.state.selected.length;
-                          // Say so when the cap was reached, rather than
-                          // letting the count quietly mean something else.
-                          if (count >=
-                              QazaTrackerController.selectAllMatchingCap) {
-                            messenger
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(SnackBar(
-                                content: Text(
-                                  l10n.qazaSelectAllMatchingCapped('$count'),
-                                ),
-                              ));
-                          }
-                        },
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    key: const Key('qaza_tracker_complete_selected'),
-                    onPressed: widget.state.completing || restricted
-                        ? null
-                        : () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            // A large bulk completion is confirmed first: undo
-                            // exists, but it is a narrow window.
-                            if (widget.state.selectionNeedsConfirmation) {
-                              final confirmed = await confirmDestructive(
-                                context,
-                                title: l10n.qazaConfirmBulkTitle('$count'),
-                                message: l10n.qazaConfirmBulkMessage('$count'),
-                                confirmLabel: l10n.qazaConfirmBulkAction,
-                              );
-                              if (!confirmed || !context.mounted) return;
-                            }
-                            final batch = await widget.controller
-                                .completeSelectedWithUndo();
-                            if (batch == null) {
-                              final tartib =
-                                  ref.read(sahibAlTartibProvider).valueOrNull;
-                              if (tartib?.requiresOrder == true &&
-                                  tartib?.nextPrayer != null) {
-                                messenger
-                                  ..hideCurrentSnackBar()
-                                  ..showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        l10n.qazaTartibBlocked(
-                                          tartib!.nextPrayer!
-                                              .localizedLabel(l10n),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                              } else {
-                                final latest = ref
-                                    .read(qazaRestrictionEvaluationProvider)
-                                    .valueOrNull;
-                                if (latest?.isRestricted == true &&
-                                    latest?.type != null) {
-                                  messenger
-                                    ..hideCurrentSnackBar()
-                                    ..showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          PrayerTimesStrings.qazaRestricted(
-                                            context,
-                                            latest!.type!,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                } else if (ref
-                                        .read(qazaTrackerControllerProvider)
-                                        .error !=
-                                    null) {
-                                  messenger
-                                    ..hideCurrentSnackBar()
-                                    ..showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          ref
-                                              .read(
-                                                  qazaTrackerControllerProvider)
-                                              .error!,
-                                        ),
-                                      ),
-                                    );
-                                } else {
-                                  messenger.showSnackBar(
-                                    SnackBar(
-                                      content: Text(l10n.qazaCompletedCount(0)),
-                                    ),
-                                  );
-                                }
-                              }
-                              return;
-                            }
-
-                            await showQazaUndoSnackBar(
-                              context: context,
-                              ref: ref,
-                              userId: ref.read(requiredUserIdProvider),
-                              recordIds: batch.recordIds,
-                              completedAt: batch.completedAt,
-                              onUndone: widget.controller.refresh,
-                            );
-                          },
-                    child: Text(l10n.qazaCompleteCount(count)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (restricted && evaluation?.type != null)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text('${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}', style: Theme.of(context).textTheme.bodySmall),
                   ),
                 ),
-              ],
-            ),
-          ],
+              Row(
+                children: [
+                  TextButton(
+                    key: const Key('qaza_tracker_clear_selection'),
+                    onPressed: busy ? null : widget.controller.exitSelectionMode,
+                    child: Text(l10n.commonClear),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      key: const Key('qaza_tracker_complete_selected'),
+                      onPressed: busy || restricted ? null : () => _complete(context),
+                      child: Text(l10n.qazaCompleteCount(count)),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('qaza_tracker_delete_selected'),
+                      onPressed: busy ? null : () => _delete(context),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: Text(l10n.qazaDeleteRecord),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
