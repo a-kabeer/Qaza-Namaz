@@ -81,6 +81,13 @@ class OfflineCityDataSource implements OfflineLocationDataSource {
   }
 
   @override
+  Future<List<CitySearchResult>> popularCitiesInCountry(
+    String countryCode,
+  ) {
+    return searchCitiesInCountry('', countryCode: countryCode);
+  }
+
+  @override
   Future<List<CitySearchResult>> searchCities(String query) async {
     final normalized = query.trim();
     if (normalized.length < 2) {
