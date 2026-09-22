@@ -79,8 +79,7 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
     if (state.hasData &&
         (state.status == PrayerTimesStatus.loaded ||
             state.status == PrayerTimesStatus.loading ||
-            state.status == PrayerTimesStatus.refreshing ||
-            state.status == PrayerTimesStatus.offlineWithCache)) {
+            state.status == PrayerTimesStatus.refreshing)) {
       return _PrayerTimesContent(
         state: state,
         onOpenLocationPicker: _openLocationPicker,
@@ -120,7 +119,6 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         );
       case PrayerTimesStatus.loaded:
       case PrayerTimesStatus.refreshing:
-      case PrayerTimesStatus.offlineWithCache:
         return const _PrayerTimesLoadingSkeleton();
     }
 
