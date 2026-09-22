@@ -1,4 +1,5 @@
 import 'package:adhan_dart/adhan_dart.dart' as adhan;
+import 'package:hijri/hijri_calendar.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone_country/timezone_country.dart';
@@ -15,11 +16,16 @@ class PrayerTimeCalculator {
     required CalculationMethod method,
     required AsrMethod asrMethod,
     String? timezone,
+    String? countryCode,
   }) {
     final coordinates = adhan.Coordinates(latitude, longitude);
     final resolvedTimezone =
         timezone == null || timezone.trim().isEmpty
-            ? TimezoneConvert.nearestTimezone(latitude, longitude)
+            ? TimezoneConvert.nearestTimezone(
+                latitude,
+                longitude,
+                countryCode: countryCode,
+              )
             : timezone.trim();
 
     if (resolvedTimezone == null ||
@@ -40,6 +46,11 @@ class PrayerTimeCalculator {
 
     DateTime localize(DateTime value) => tz.TZDateTime.from(value, location);
 
+    final hijri = HijriCalendar.fromDate(date);
+    final solarNoonUtc = calculated.dhuhr.subtract(
+      Duration(minutes: parameters.methodAdjustments[adhan.Prayer.dhuhr] ?? 0),
+    );
+
     return PrayerDay(
       date: DateTime(date.year, date.month, date.day),
       timezone: resolvedTimezone,
@@ -51,12 +62,16 @@ class PrayerTimeCalculator {
         PrayerName.maghrib: _toPrayerTime(localize(calculated.maghrib)),
         PrayerName.isha: _toPrayerTime(localize(calculated.isha)),
       },
-      solarNoon: localize(calculated.dhuhr),
+      solarNoon: localize(solarNoonUtc),
       sunset: localize(calculated.sunset),
-      // The API used to supply Hijri metadata. The app's existing local
-      // calendar remains the source of truth, so callers fill this value.
-      hijriDate: const HijriDate(day: 0, month: '', year: 0),
+      hijriDate: HijriDate(
+        day: hijri.hDay,
+        month: hijri.getLongMonthName(),
+        year: hijri.hYear,
+      ),
       fetchedAt: DateTime.now().toUtc(),
+      resolvedCalculationMethodName:
+          method == CalculationMethod.recommended ? 'Automatic (Offline)' : null,
     );
   }
 
@@ -119,9 +134,7 @@ class PrayerTimeCalculator {
       ..madhab = asrMethod == AsrMethod.hanafi
           ? adhan.Madhab.hanafi
           : adhan.Madhab.shafi
-      ..highLatitudeRule = adhan.HighLatitudeRule.twilightAngle
-      // Existing AlAdhan integration returned minute-level values.
-      ..rounding = adhan.Rounding.nearest;
+      ..highLatitudeRule = adhan.HighLatitudeRule.twilightAngle;
 
     return parameters;
   }
