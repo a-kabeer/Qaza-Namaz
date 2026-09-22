@@ -1266,7 +1266,7 @@ class _PrayerTimesLoadingSkeleton extends StatelessWidget {
 }
 
 class _SkeletonRow extends StatelessWidget {
-  const const _SkeletonRow();
+  const _SkeletonRow();
 
   @override
   Widget build(BuildContext context) {
