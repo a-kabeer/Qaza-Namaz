@@ -5,6 +5,7 @@ import 'package:qaza_namaz/domain/entities/qaza_operation.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/qaza_operation_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_operation_repository.dart';
 import 'support/in_memory_qaza_repository.dart';
 
 class _FakeOperationRepository implements QazaOperationRepository {
