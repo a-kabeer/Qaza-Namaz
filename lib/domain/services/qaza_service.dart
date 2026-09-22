@@ -516,6 +516,7 @@ class QazaService {
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    QazaStatus? status,
   }) {
     if (repository is! QazaRecoveryRepository) {
       throw StateError('Qaza recovery is not supported by this repository.');
@@ -528,6 +529,7 @@ class QazaService {
       limit: limit,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
+      status: status,
     );
   }
 
@@ -569,7 +571,6 @@ class QazaService {
     required String userId,
     required String operationId,
     required DateTime expectedCreatedAt,
-    required List<String> candidateIds,
   }) {
     if (repository is! QazaRecoveryRepository) {
       throw StateError('Qaza recovery is not supported by this repository.');
@@ -578,7 +579,6 @@ class QazaService {
       userId: userId,
       operationId: operationId,
       expectedCreatedAt: expectedCreatedAt,
-      candidateIds: candidateIds,
     );
   }
 
