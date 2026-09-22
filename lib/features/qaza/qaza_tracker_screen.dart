@@ -123,11 +123,8 @@ class _StatusFilterBar extends StatelessWidget {
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
-    final lockedRecordId =
-        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: SegmentedButton<QazaStatusFilter>(
@@ -317,8 +314,12 @@ class _TrackerBody extends ConsumerWidget {
   final QazaTrackerController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final lockedRecordId =
+        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
+
 
     // The full state belongs to the first load only; a filter change keeps
     // the page that is already there.
@@ -382,7 +383,7 @@ class _TrackerBody extends ConsumerWidget {
           if (notification.metrics.extentAfter < 320) controller.loadMore();
           return false;
         },
-        child: ListView.builder(
+            child: ListView.builder(
           key: const Key('qaza_tracker_list'),
           physics: const AlwaysScrollableScrollPhysics(),
           // Keep the final prayer row (including Witr) above the
