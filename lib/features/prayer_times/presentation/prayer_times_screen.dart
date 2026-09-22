@@ -1236,15 +1236,15 @@ class _PrayerTimesLoadingSkeleton extends StatelessWidget {
         AppCard(
           child: Column(
             children: [
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
             ],
           ),
         ),
@@ -1252,11 +1252,11 @@ class _PrayerTimesLoadingSkeleton extends StatelessWidget {
         AppCard(
           child: Column(
             children: [
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
               SizedBox(height: 10),
-              _SkeletonRow(),
+              const _SkeletonRow(),
             ],
           ),
         ),
@@ -1266,7 +1266,7 @@ class _PrayerTimesLoadingSkeleton extends StatelessWidget {
 }
 
 class _SkeletonRow extends StatelessWidget {
-  const _SkeletonRow();
+  const const _SkeletonRow();
 
   @override
   Widget build(BuildContext context) {
