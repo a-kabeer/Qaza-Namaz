@@ -273,21 +273,39 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.homeTodayProgressHeader,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ),
-                  Text(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final title = Text(
+                    l10n.homeTodayProgressHeader,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  );
+                  final date = Text(
                     dateLabel,
                     style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+                  );
+                  if (constraints.maxWidth < 360) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        title,
+                        const SizedBox(height: 4),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: date,
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: title),
+                      const SizedBox(width: 12),
+                      date,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 14),
               LayoutBuilder(
@@ -484,10 +502,10 @@ class _NextQazaPanel extends StatelessWidget {
                     );
                   }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final details = Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           CircleAvatar(
                             radius: 26,
@@ -529,36 +547,108 @@ class _NextQazaPanel extends StatelessWidget {
                             tone: StatusChipTone.pending,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              key: const Key('home_complete_oldest_qaza'),
-                              onPressed: working
-                                  ? null
-                                  : () => onComplete(record, prayer),
-                              icon: const Icon(Icons.play_arrow_rounded),
-                              label: Text(
-                                working
-                                    ? l10n.completeInProgress
-                                    : l10n.homeCompleteQaza,
+                      );
+
+                      final complete = FilledButton.icon(
+                        key: const Key('home_complete_oldest_qaza'),
+                        onPressed:
+                            working ? null : () => onComplete(record, prayer),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          working
+                              ? l10n.completeInProgress
+                              : l10n.homeCompleteQaza,
+                        ),
+                      );
+                      final plan = OutlinedButton.icon(
+                        key: const Key('home_qaza_plan_button'),
+                        onPressed: onPlan,
+                        icon: const Icon(Icons.calendar_month_outlined),
+                        label: Text(l10n.homeQazaPlan),
+                      );
+
+                      if (constraints.maxWidth < 340) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 26,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.errorContainer,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.onErrorContainer,
+                                  child: Icon(_prayerIcon(prayer)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        prayer.localizedLabel(l10n),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      Text(
+                                        DateFormatters.formatGregorianDatePadded(
+                                          record.originalDate,
+                                        ),
+                                        key: const Key('home_oldest_qaza_date'),
+                                      ),
+                                      Text(
+                                        DateFormatters.hijriLabel(
+                                          record.originalDate,
+                                        ),
+                                        key: const Key(
+                                          'home_oldest_qaza_date_hijri',
+                                        ),
+                                        style:
+                                            Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: StatusChip(
+                                l10n.homeOldestPending,
+                                tone: StatusChipTone.pending,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          OutlinedButton.icon(
-                            key: const Key('home_qaza_plan_button'),
-                            onPressed: onPlan,
-                            icon: const Icon(
-                              Icons.calendar_month_outlined,
-                            ),
-                            label: Text(l10n.homeQazaPlan),
+                            const SizedBox(height: 12),
+                            complete,
+                            const SizedBox(height: 8),
+                            plan,
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          details,
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(child: complete),
+                              const SizedBox(width: 8),
+                              plan,
+                            ],
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   );
                 },
               );
@@ -632,7 +722,7 @@ class _OverallQazaSection extends StatelessWidget {
 
           final donut = _OverviewDonut(progress: progress.percentage);
 
-          if (constraints.maxWidth < 460) {
+          if (constraints.maxWidth < 520) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -739,12 +829,22 @@ class _StatLine extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(child: Text(label)),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+          Expanded(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
         ],
       ),
