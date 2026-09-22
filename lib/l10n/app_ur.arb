@@ -21,6 +21,7 @@
   "prayerWitr": "وتر",
 
   "statusPending": "باقی",
+  "statusDeleted": "حالیہ حذف شدہ",
   "statusCompleted": "مکمل",
   "qazaSelectAllMatching": "سب مطابق منتخب کریں",
   "qazaSelectAllMatchingCapped": "پہلے {count} مطابق ریکارڈ منتخب کر لیے گئے۔",
