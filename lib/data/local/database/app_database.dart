@@ -53,10 +53,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 2 establishes an explicit migration boundary for the
-  /// production database. Version 1 databases already contain the same
-  /// tables; the upgrade path below is intentionally data-preserving and
-  /// idempotently restores the indexes required by the paginated DAOs.
+  /// Schema version 4 adds recoverable deletion support indexes and the
+  /// nullable operationId provenance column without rewriting existing rows.
+  /// Older databases are upgraded in place and preserve all Qaza data.
   @override
   int get schemaVersion => 4;
 
