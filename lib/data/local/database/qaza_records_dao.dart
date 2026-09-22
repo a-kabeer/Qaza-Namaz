@@ -449,8 +449,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (matchLastAction) {
           predicates.add(row.updatedAt.equals(operationAt));
         } else {
-          predicates.add(
-              row.id.like('op_${operationId}_%'));
+          predicates.add(row.operationId.equals(operationId));
         }
         predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
         if (beforeOriginalDate != null) {
