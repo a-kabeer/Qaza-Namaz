@@ -3,6 +3,7 @@ import 'package:timezone_country/timezone_country.dart';
 
 import '../../domain/prayer_times_models.dart';
 import '../offline_location_data_source.dart';
+import 'city_search_provider.dart';
 
 abstract class PrayerLocationService {
   Future<PrayerLocation> getCurrentLocation({String? locale});
@@ -76,10 +77,15 @@ class GeolocatorPrayerLocationService implements PrayerLocationService {
 
     _validatePosition(position);
 
-    final nearestCity = await _dataSource.findNearestCity(
-      latitude: position.latitude,
-      longitude: position.longitude,
-    );
+    CitySearchResult? nearestCity;
+    try {
+      nearestCity = await _dataSource.findNearestCity(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    } catch (_) {
+      // City metadata is enrichment only; coordinates must remain usable.
+    }
 
     final countryCode = nearestCity?.countryCode;
     final timezone = nearestCity?.timezone ??
