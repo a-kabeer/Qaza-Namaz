@@ -94,6 +94,18 @@ class _FakeCitySearchProvider implements CitySearchProvider {
           timezone: 'Asia/Karachi',
         ),
       ];
+
+  @override
+  Future<List<CitySearchResult>> searchInCountry(
+    String query, {
+    String? countryCode,
+  }) async {
+    final results = await search(query);
+    if (countryCode == null || countryCode.isEmpty) return results;
+    return results
+        .where((city) => city.countryCode == countryCode)
+        .toList(growable: false);
+  }
 }
 
 class _FixedClock implements PrayerTimesClock {
