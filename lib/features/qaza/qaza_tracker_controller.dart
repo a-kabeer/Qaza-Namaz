@@ -374,6 +374,25 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
 
     final selectedIds = state.selected.toList(growable: false);
+    final selectedRecords = state.records
+        .where((record) => state.selected.contains(record.id))
+        .toList(growable: false);
+
+    final restrictionEvaluations = await ref
+        .read(qazaRestrictionServiceProvider)
+        .evaluateForPrayers(selectedRecords.map((record) => record.prayerType));
+    final restrictionBlocked = restrictionEvaluations.values
+        .where((evaluation) => evaluation.isRestricted)
+        .isNotEmpty;
+
+    if (restrictionBlocked) {
+      state = state.copyWith(
+        completing: false,
+        error: 'Qaza completion is restricted during a prohibited prayer time.',
+      );
+      return null;
+    }
+
     final completedAt = DateTime.now();
     state = state.copyWith(completing: true, clearError: true);
     try {
