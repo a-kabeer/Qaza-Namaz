@@ -10,6 +10,7 @@ import '../../core/widgets/date_display.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/services/qaza_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_undo_banner.dart';
@@ -86,20 +87,18 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
   PrayerType prayer = PrayerType.fajr;
   bool working = false;
 
-  AsyncValue<QazaRecord?> get selectedState =>
-      ref.watch(oldestPendingProvider(prayer));
-  QazaRecord? get selected => selectedState.valueOrNull;
-
   Future<void> refresh() async {
+    ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(oldestPendingProvider(prayer));
     ref.invalidate(progressSummaryProvider);
     await ref.read(oldestPendingProvider(prayer).future);
   }
 
-  Future<void> _complete() async {
-    final record = selected;
-    if (working || record == null) return;
-    final completedPrayer = prayer;
+  Future<void> _complete(
+    PrayerType completedPrayer,
+    QazaRecord record,
+  ) async {
+    if (working) return;
     final l10n = AppLocalizations.of(context);
     setState(() => working = true);
     try {
@@ -122,6 +121,17 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
         recordIds: [record.id],
         completedAt: completedAt,
       );
+    } on QazaTartibViolationException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.qazaTartibBlocked(
+              error.requiredPrayer.localizedLabel(l10n),
+            ),
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +144,13 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
 
   @override
   Widget build(BuildContext context) {
-    final state = selectedState;
+    final tartibState = ref.watch(sahibAlTartibProvider);
+    final tartib = tartibState.valueOrNull;
+    final lockedPrayer = tartib?.requiresOrder == true
+        ? tartib?.nextPrayer
+        : null;
+    final effectivePrayer = lockedPrayer ?? prayer;
+    final state = ref.watch(oldestPendingProvider(effectivePrayer));
     final record = state.valueOrNull;
     final l10n = AppLocalizations.of(context);
     final prefix = widget.keyPrefix;
@@ -142,23 +158,38 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (tartib?.requiresOrder == true && lockedPrayer != null) ...[
+          Card(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                l10n.qazaTartibRequiredMessage(
+                  tartib!.pendingFarzCount,
+                  lockedPrayer.localizedLabel(l10n),
+                ),
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         SizedBox(
           height: 52,
           child: ListView(
             key: Key('${prefix}_prayer_pills'),
             scrollDirection: Axis.horizontal,
             children: [
-              // One pill per prayer, in the Qaza page's own chip style.
-              // No "All" pill: this completes one prayer at a time, so there
-              // is no unfiltered state to offer.
               for (final item in PrayerType.values)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: 8),
                   child: FilterChip(
                     key: Key('${prefix}_prayer_pill_${item.name}'),
                     label: Text(item.localizedLabel(l10n)),
-                    selected: prayer == item,
-                    onSelected: working || state.isLoading
+                    selected: effectivePrayer == item,
+                    onSelected: working ||
+                            state.isLoading ||
+                            (lockedPrayer != null && item != lockedPrayer)
                         ? null
                         : (_) => setState(() => prayer = item),
                   ),
@@ -177,9 +208,10 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
               data: (_) {
                 if (record == null) {
                   return EmptyState(
-                      icon: Icons.check_circle_outline_rounded,
-                      title: l10n.completeNoPendingTitle,
-                      message: l10n.completeNoPendingMessage);
+                    icon: Icons.check_circle_outline_rounded,
+                    title: l10n.completeNoPendingTitle,
+                    message: l10n.completeNoPendingMessage,
+                  );
                 }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,29 +220,36 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
                       const CircleAvatar(child: Icon(Icons.mosque_outlined)),
                       const SizedBox(width: 12),
                       Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                                l10n.completePrayerQaza(
-                                    prayer.localizedLabel(l10n)),
-                                style: Theme.of(context).textTheme.titleLarge),
-                            Text(l10n.completeOldestSubtitle,
-                                style: Theme.of(context).textTheme.bodySmall),
-                          ])),
+                              l10n.completePrayerQaza(
+                                  effectivePrayer.localizedLabel(l10n)),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            Text(
+                              l10n.completeOldestSubtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
                     ]),
                     const SizedBox(height: 18),
                     Text(l10n.completeOriginalDate),
                     const SizedBox(height: 4),
-                    // Gregorian stays the source of truth and leads; the
-                    // Hijri reading of the same day sits under it.
-                    Text(formatAppDate(record.originalDate),
-                        key: Key('${prefix}_original_date'),
-                        style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      formatAppDate(record.originalDate),
+                      key: Key('${prefix}_original_date'),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 2),
-                    Text(DateFormatters.hijriLabel(record.originalDate),
-                        key: Key('${prefix}_original_date_hijri'),
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      DateFormatters.hijriLabel(record.originalDate),
+                      key: Key('${prefix}_original_date_hijri'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: 8),
                     Text(l10n.completeTimestampNote),
                   ],
@@ -226,8 +265,9 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
           icon: working
               ? Icons.hourglass_top_rounded
               : Icons.check_circle_rounded,
-          onPressed:
-              record == null || state.isLoading || working ? null : _complete,
+          onPressed: record == null || state.isLoading || working
+              ? null
+              : () => _complete(effectivePrayer, record),
           expand: true,
         ),
       ],
