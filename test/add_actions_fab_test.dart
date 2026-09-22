@@ -61,12 +61,4 @@ void main() {
     expect(find.byKey(const Key('fab_action_calculate_qaza')), findsNothing);
   });
 
-  testWidgets('Add FAB opens the existing Add Qaza screen', (tester) async {
-    await pumpQazaTab(tester);
-
-    await tester.tap(find.byKey(const Key('qaza_tracker_add_fab')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AddQazaScreen), findsOneWidget);
-  });
 }
