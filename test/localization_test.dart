@@ -266,6 +266,8 @@ void main() {
 
       final ur = AppLocalizationsUr();
       expect(find.text(ur.qazaTitle), findsWidgets);
+      await tester.tap(find.byKey(const Key('qaza_tracker_filter_button')));
+      await tester.pumpAndSettle();
       expect(find.widgetWithText(FilterChip, ur.prayerFajr), findsOneWidget);
       expect(find.text(ur.prayerFajr), findsWidgets);
       expect(find.text('Fajr'), findsNothing);
