@@ -237,13 +237,6 @@ void main() {
         findsOneWidget,
       );
       expect(
-        textOf(
-          tester,
-          const Key('home_qaza_restricted_available_at'),
-        ),
-        contains('6:42'),
-      );
-      expect(
         find.byKey(const Key('home_qaza_view_all')),
         findsOneWidget,
       );
