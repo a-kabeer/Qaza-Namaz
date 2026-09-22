@@ -122,7 +122,12 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
   Future<void> _restore() async {
     var location = await _repository.getSavedLocation();
     final settings = await _repository.getSavedSettings();
-    final notificationSettings = await _preferences.getNotificationSettings();
+    PrayerNotificationSettings notificationSettings;
+    try {
+      notificationSettings = await _preferences.getNotificationSettings();
+    } catch (_) {
+      notificationSettings = const PrayerNotificationSettings();
+    }
 
     if (!_isMounted) return;
 
@@ -420,6 +425,7 @@ class PrayerTimesController extends Notifier<PrayerTimesState> {
       clearTomorrow: true,
     );
     await _loadToday();
+    _syncScheduledNotifications();
   }
 
   Future<void> refresh() async {
