@@ -28,6 +28,8 @@ abstract class QazaRecoveryRepository {
     required String userId,
     required String operationId,
     required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
