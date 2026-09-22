@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/features/prayer_times/domain/prayer_time_calculator.dart';
 import '../lib/features/prayer_times/domain/prayer_times_models.dart';
 import '../lib/features/prayer_times/domain/prayer_times_repository.dart';
 import '../lib/features/prayer_times/domain/qaza_restriction_service.dart';
@@ -66,7 +65,6 @@ void main() {
   test('blocks the configured sunrise restriction', () async {
     final service = QazaRestrictionService(
       repository: _Repo(location, const PrayerSettings(), _day()),
-      calculator: const PrayerTimeCalculator(),
       now: () => DateTime.utc(2026, 9, 20, 0, 10),
     );
 
