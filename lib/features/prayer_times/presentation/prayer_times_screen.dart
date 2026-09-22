@@ -143,6 +143,8 @@ class _PrayerTimesContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final day = state.today!;
     final schedule = PrayerSchedule.evaluate(
       today: day,
@@ -155,257 +157,243 @@ class _PrayerTimesContent extends ConsumerWidget {
     final restrictionService = ref.read(qazaRestrictionServiceProvider);
     final periods = restrictionService.periodsForDay(day);
     final activeRestriction = _activeRestriction(periods, schedule.now);
+    final prayers =
+        PrayerName.values.where((item) => item.isCyclePrayer).toList();
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-      children: [
-        if (state.status == PrayerTimesStatus.refreshing) ...[
-          _InfoBanner(
-            icon: Icons.sync_rounded,
-            text: PrayerTimesStrings.refreshing(context),
-          ),
-          const SizedBox(height: 12),
-        ],
-        AppCard(
-          child: Column(
-            children: [
-              Text(
-                day.hijriDate.display,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                MaterialLocalizations.of(context).formatFullDate(day.date),
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                schedule.current == null
-                    ? PrayerTimesStrings.nextPrayer(context)
-                    : PrayerTimesStrings.currentPrayer(context),
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                PrayerTimesStrings.prayerName(
-                  context,
-                  schedule.current ?? schedule.next!,
-                ),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              if (schedule.next != null) ...[
-                const SizedBox(height: 3),
-                Text(
-                  PrayerTimesStrings.nextPrayer(context) +
-                      ': ' +
-                      PrayerTimesStrings.prayerName(context, schedule.next!),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              if (countdown != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  PrayerTimesStrings.countdown(countdown),
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: ListTile(
-            leading: Icon(
-              Icons.location_on_outlined,
-              color: Theme.of(context).colorScheme.primary,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: Column(
+        children: [
+          if (state.status == PrayerTimesStatus.refreshing) ...[
+            _InfoBanner(
+              icon: Icons.sync_rounded,
+              text: PrayerTimesStrings.refreshing(context),
             ),
-            title: Text(
-              state.location!.displayName,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            subtitle: Text(
-              state.settings.asrMethod == AsrMethod.hanafi
-                  ? PrayerTimesStrings.hanafi(context)
-                  : PrayerTimesStrings.standard(context),
-            ),
-            trailing: TextButton.icon(
-              onPressed: onEditLocation,
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: Text(PrayerTimesStrings.editLocation(context)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          PrayerTimesStrings.prayerTimes(context),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              for (final prayer
-                  in PrayerName.values.where((item) => item.isCyclePrayer))
-                _PrayerTimeRow(
-                  prayer: prayer,
-                  time: PrayerSchedule.moment(day, prayer),
-                  isCurrent: schedule.current == prayer,
-                  reminderEnabled:
-                      state.notificationSettings.enabledPrayers.contains(
-                    prayer,
-                  ),
-                  onReminderChanged: (enabled) => _togglePrayerReminder(
-                    context,
-                    ref,
-                    prayer,
-                    enabled,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                PrayerTimesStrings.restrictedTimes(context),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            if (activeRestriction != null)
-              _StatusPill(
-                text: PrayerTimesStrings.restrictedNow(context),
-              ),
+            const SizedBox(height: 6),
           ],
-        ),
-        const SizedBox(height: 8),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              for (var index = 0; index < periods.length; index++)
-                _RestrictedTimeRow(
-                  period: periods[index],
-                  isActive: periods[index] == activeRestriction,
-                  now: schedule.now,
-                  isLast: index == periods.length - 1,
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: ExpansionTile(
-            leading: const Icon(Icons.notifications_none_rounded),
-            title: Text(PrayerTimesStrings.restrictedNotifications(context)),
-            subtitle: Text(
-              state.notificationSettings.anyRestrictedReminder
-                  ? PrayerTimesStrings.notifications(context) + ': ON'
-                  : PrayerTimesStrings.notifications(context) + ': OFF',
-            ),
-            children: [
-              SwitchListTile(
-                title: Text(
-                  PrayerTimesStrings.restrictionType(
-                    context,
-                    RestrictionType.sunrise,
-                  ),
-                ),
-                value: state.notificationSettings.sunrise,
-                onChanged: (value) => _toggleRestrictionReminder(
-                  context,
-                  ref,
-                  RestrictionType.sunrise,
-                  value,
-                ),
-              ),
-              SwitchListTile(
-                title: Text(
-                  PrayerTimesStrings.restrictionType(
-                    context,
-                    RestrictionType.zawal,
-                  ),
-                ),
-                value: state.notificationSettings.zawal,
-                onChanged: (value) => _toggleRestrictionReminder(
-                  context,
-                  ref,
-                  RestrictionType.zawal,
-                  value,
-                ),
-              ),
-              SwitchListTile(
-                title: Text(
-                  PrayerTimesStrings.restrictionType(
-                    context,
-                    RestrictionType.sunset,
-                  ),
-                ),
-                value: state.notificationSettings.sunset,
-                onChanged: (value) => _toggleRestrictionReminder(
-                  context,
-                  ref,
-                  RestrictionType.sunset,
-                  value,
-                ),
-              ),
-              ListTile(
-                title: Text(PrayerTimesStrings.notifyBefore(context)),
-                subtitle: Text(
-                  switch (
-                      state.notificationSettings.restrictedLeadMinutes) {
-                    0 => PrayerTimesStrings.atStart(context),
-                    5 => PrayerTimesStrings.fiveMinutes(context),
-                    _ => PrayerTimesStrings.tenMinutes(context),
-                  },
-                ),
-                trailing: DropdownButton<int>(
-                  value: state.notificationSettings.restrictedLeadMinutes,
-                  underline: const SizedBox.shrink(),
-                  items: [
-                    DropdownMenuItem<int>(
-                      value: 0,
-                      child: Text(PrayerTimesStrings.atStart(context)),
+          Material(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onEditLocation,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 20,
+                      color: scheme.primary,
                     ),
-                    DropdownMenuItem<int>(
-                      value: 5,
-                      child: Text(PrayerTimesStrings.fiveMinutes(context)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        state.location!.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    DropdownMenuItem<int>(
-                      value: 10,
-                      child: Text(PrayerTimesStrings.tenMinutes(context)),
+                    TextButton.icon(
+                      onPressed: onEditLocation,
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 17),
+                      label: Text(PrayerTimesStrings.editLocation(context)),
                     ),
                   ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    unawaited(
-                      ref
-                          .read(
-                            prayerTimesControllerProvider.notifier,
-                          )
-                          .setRestrictedLeadMinutes(value),
-                    );
-                  },
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 7),
+          Material(
+            color: scheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: scheme.outlineVariant),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          MaterialLocalizations.of(context).formatShortDate(
+                            day.date,
+                          ),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          day.hijriDate.display,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (schedule.next != null) ...[
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          PrayerTimesStrings.nextPrayer(context),
+                          style: theme.textTheme.labelSmall,
+                        ),
+                        Text(
+                          '${PrayerTimesStrings.prayerName(context, schedule.next!)} • '
+                          '${DateFormat.jm().format(PrayerSchedule.moment(day, schedule.next!))}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (countdown != null)
+                          Text(
+                            PrayerTimesStrings.countdown(countdown),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 7),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  flex: 6,
+                  child: _CompactSectionCard(
+                    title: PrayerTimesStrings.prayerTimes(context),
+                    child: Column(
+                      children: [
+                        for (var index = 0; index < prayers.length; index++)
+                          Expanded(
+                            child: _PrayerTimeRow(
+                              prayer: prayers[index],
+                              time: PrayerSchedule.moment(day, prayers[index]),
+                              isCurrent: schedule.current == prayers[index],
+                              reminderEnabled: state
+                                  .notificationSettings.enabledPrayers
+                                  .contains(prayers[index]),
+                              onReminderChanged: (enabled) =>
+                                  _togglePrayerReminder(
+                                context,
+                                ref,
+                                prayers[index],
+                                enabled,
+                              ),
+                              isLast: index == prayers.length - 1,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Expanded(
+                  flex: 3,
+                  child: _CompactSectionCard(
+                    title: PrayerTimesStrings.restrictedTimes(context),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (activeRestriction != null)
+                          _StatusPill(
+                            text: PrayerTimesStrings.restrictedNow(context),
+                          ),
+                        PopupMenuButton<int>(
+                          tooltip: PrayerTimesStrings.notifyBefore(context),
+                          icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                          padding: EdgeInsets.zero,
+                          itemBuilder: (context) => [
+                            PopupMenuItem<int>(
+                              value: 0,
+                              child: Text(PrayerTimesStrings.atStart(context)),
+                            ),
+                            PopupMenuItem<int>(
+                              value: 5,
+                              child:
+                                  Text(PrayerTimesStrings.fiveMinutes(context)),
+                            ),
+                            PopupMenuItem<int>(
+                              value: 10,
+                              child:
+                                  Text(PrayerTimesStrings.tenMinutes(context)),
+                            ),
+                          ],
+                          onSelected: (value) => unawaited(
+                            ref
+                                .read(prayerTimesControllerProvider.notifier)
+                                .setRestrictedLeadMinutes(value),
+                          ),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        for (var index = 0; index < periods.length; index++)
+                          Expanded(
+                            child: _RestrictedTimeRow(
+                              period: periods[index],
+                              isActive: periods[index] == activeRestriction,
+                              now: schedule.now,
+                              isLast: index == periods.length - 1,
+                              reminderEnabled: _restrictionEnabled(
+                                state.notificationSettings,
+                                periods[index].type,
+                              ),
+                              onReminderChanged: (enabled) =>
+                                  _toggleRestrictionReminder(
+                                context,
+                                ref,
+                                periods[index].type,
+                                enabled,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  bool _restrictionEnabled(
+    PrayerNotificationSettings settings,
+    RestrictionType type,
+  ) {
+    return switch (type) {
+      RestrictionType.sunrise => settings.sunrise,
+      RestrictionType.zawal => settings.zawal,
+      RestrictionType.sunset => settings.sunset,
+      RestrictionType.otherConfiguredRestriction => false,
+    };
   }
 
   QazaRestrictionPeriod? _activeRestriction(
@@ -460,6 +448,52 @@ class _PrayerTimesContent extends ConsumerWidget {
           ),
         );
     }
+  }
+}
+
+class _CompactSectionCard extends StatelessWidget {
+  const _CompactSectionCard({
+    required this.title,
+    required this.child,
+    this.trailing,
+  });
+
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 5, 6, 1),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
   }
 }
 
