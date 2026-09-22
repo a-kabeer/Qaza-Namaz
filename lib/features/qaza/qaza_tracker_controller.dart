@@ -617,31 +617,61 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
 
     final selectedIds = state.selected.toList(growable: false);
-    final selectedRecords = state.records
-        .where((record) => state.selected.contains(record.id))
-        .toList(growable: false);
+    final service = ref.read(qazaServiceProvider);
+    final selectedRecords = await service.resolvePendingRecordsByIds(
+      userId: userId,
+      recordIds: selectedIds,
+    );
+    if (selectedRecords.length != selectedIds.length) {
+      state = state.copyWith(
+        selected: {for (final r in selectedRecords) r.id},
+        error: 'Some selected Qaza records are no longer pending.',
+      );
+      return null;
+    }
 
     final restrictionEvaluations = await ref
         .read(qazaRestrictionServiceProvider)
         .evaluateForPrayers(selectedRecords.map((record) => record.prayerType));
-    final restrictionBlocked = restrictionEvaluations.values
-        .where((evaluation) => evaluation.isRestricted)
-        .isNotEmpty;
-
-    if (restrictionBlocked) {
-      state = state.copyWith(completing: false, clearError: true);
+    if (restrictionEvaluations.values.any((evaluation) => evaluation.isRestricted)) {
+      state = state.copyWith(clearError: true);
       return null;
     }
 
-    final completedAt = DateTime.now();
+    final tartib = await service.sahibAlTartibState(userId: userId);
+    if (tartib.requiresOrder &&
+        (selectedIds.length != 1 ||
+            tartib.nextPending == null ||
+            tartib.nextPending!.id != selectedIds.single)) {
+      state = state.copyWith(clearError: true);
+      ref.invalidate(sahibAlTartibProvider);
+      return null;
+    }
+
+    final operation = await ref.read(qazaOperationServiceProvider).begin(
+          userId: userId,
+          type: QazaOperationType.bulkComplete,
+        );
     state = state.copyWith(completing: true, clearError: true);
     try {
-      final completed = await ref.read(qazaServiceProvider).completeSelected(
-            userId: userId,
-            recordIds: selectedIds,
-            completedAt: completedAt,
+      final completedAt = operation.createdAt;
+      final completed = await service.completeSelected(
+        userId: userId,
+        recordIds: selectedIds,
+        completedAt: completedAt,
+      );
+      await ref.read(qazaOperationServiceProvider).finish(
+            operation,
+            status: completed == selectedIds.length
+                ? QazaOperationStatus.completed
+                : QazaOperationStatus.partial,
+            affectedRecordCount: completed,
           );
-      state = state.copyWith(completing: false);
+      state = state.copyWith(
+        completing: false,
+        selectionMode: false,
+        selected: const <String>{},
+      );
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       await refresh();
@@ -652,13 +682,22 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         count: completed,
       );
     } on QazaTartibViolationException {
-      state = state.copyWith(
-        completing: false,
-        clearError: true,
-      );
+      await ref.read(qazaOperationServiceProvider).finish(
+            operation,
+            status: QazaOperationStatus.failed,
+            affectedRecordCount: 0,
+            note: 'blocked_by_order',
+          );
+      state = state.copyWith(completing: false, clearError: true);
       ref.invalidate(sahibAlTartibProvider);
       return null;
     } catch (error) {
+      await ref.read(qazaOperationServiceProvider).finish(
+            operation,
+            status: QazaOperationStatus.failed,
+            affectedRecordCount: 0,
+            note: error.toString(),
+          );
       state = state.copyWith(
         completing: false,
         error: error.toString(),
