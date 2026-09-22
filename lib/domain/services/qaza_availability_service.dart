@@ -6,7 +6,12 @@ import '../entities/qaza_record.dart';
 ///
 /// Duplicate identity is user + normalized date + prayer. Pending and completed
 /// Qaza records are both treated as already recorded.
-enum QazaEligibility { available, alreadyPrayed, alreadyRecorded }
+enum QazaEligibility {
+  available,
+  alreadyPrayed,
+  alreadyRecorded,
+  notYetDue,
+}
 
 class QazaPrayerKey {
   const QazaPrayerKey({
@@ -50,6 +55,7 @@ class QazaAvailabilityAnalysis {
     required this.total,
     required this.alreadyRecorded,
     required this.alreadyPrayed,
+    required this.notYetDueCount,
     required this.newCount,
     required this.blockedDateCount,
     required this.candidates,
@@ -60,6 +66,7 @@ class QazaAvailabilityAnalysis {
   final int total;
   final int alreadyRecorded;
   final int alreadyPrayed;
+  final int notYetDueCount;
   final int newCount;
 
   /// Requested dates on which no prayer remains eligible.
@@ -94,6 +101,7 @@ class QazaAvailabilityService {
     required PrayerType prayerType,
     Iterable<QazaRecord> existingRecords = const <QazaRecord>[],
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Set<QazaPrayerKey> timeBlockedKeys = const <QazaPrayerKey>{},
   }) {
     final key = QazaPrayerKey(
       userId: userId,
@@ -106,6 +114,7 @@ class QazaAvailabilityService {
     }
     final recorded = recordedKeys(existingRecords);
     if (recorded.contains(key)) return QazaEligibility.alreadyRecorded;
+    if (timeBlockedKeys.contains(key)) return QazaEligibility.notYetDue;
     return QazaEligibility.available;
   }
 
@@ -126,6 +135,7 @@ class QazaAvailabilityService {
     required DateTime date,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Set<QazaPrayerKey> timeBlockedKeys = const <QazaPrayerKey>{},
     Iterable<PrayerType> prayerTypes = PrayerType.values,
   }) =>
       [
@@ -136,6 +146,7 @@ class QazaAvailabilityService {
                 prayerType: prayer,
                 existingRecords: existingRecords,
                 prayedKeys: prayedKeys,
+                timeBlockedKeys: timeBlockedKeys,
               ) ==
               QazaEligibility.available)
             prayer,
@@ -146,6 +157,7 @@ class QazaAvailabilityService {
     required DateTime date,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Set<QazaPrayerKey> timeBlockedKeys = const <QazaPrayerKey>{},
     Iterable<PrayerType> prayerTypes = PrayerType.values,
   }) =>
       availablePrayers(
@@ -153,6 +165,7 @@ class QazaAvailabilityService {
         date: date,
         existingRecords: existingRecords,
         prayedKeys: prayedKeys,
+        timeBlockedKeys: timeBlockedKeys,
         prayerTypes: prayerTypes,
       ).isNotEmpty;
 
@@ -162,6 +175,7 @@ class QazaAvailabilityService {
     required Iterable<PrayerType> prayerTypes,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    Set<QazaPrayerKey> timeBlockedKeys = const <QazaPrayerKey>{},
   }) {
     final uniqueDates = dates.map(QazaDate.normalize).toSet().toList()..sort();
     final uniquePrayers = prayerTypes.toSet().toList();
@@ -170,6 +184,7 @@ class QazaAvailabilityService {
     final existingCandidates = <QazaPrayerKey>[];
     var alreadyRecorded = 0;
     var alreadyPrayed = 0;
+    var notYetDueCount = 0;
     var blockedDateCount = 0;
     final recorded = recordedKeys(existingRecords);
     final completed = completedKeys(existingRecords);
@@ -189,6 +204,8 @@ class QazaAvailabilityService {
         } else if (recorded.contains(key)) {
           alreadyRecorded++;
           existingCandidates.add(key);
+        } else if (timeBlockedKeys.contains(key)) {
+          notYetDueCount++;
         } else {
           newCandidates.add(key);
           eligibleOnDate++;
@@ -201,6 +218,7 @@ class QazaAvailabilityService {
       total: candidates.length,
       alreadyRecorded: alreadyRecorded,
       alreadyPrayed: alreadyPrayed,
+      notYetDueCount: notYetDueCount,
       newCount: newCandidates.length,
       blockedDateCount: blockedDateCount,
       candidates: List.unmodifiable(candidates),
