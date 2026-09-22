@@ -1,13 +1,12 @@
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:timezone_country/timezone_country.dart';
 
 import '../../domain/prayer_times_models.dart';
+import '../offline_location_data_source.dart';
 
 abstract class PrayerLocationService {
   Future<PrayerLocation> getCurrentLocation({String? locale});
-
   Future<bool> openAppSettings();
-
   Future<bool> openLocationSettings();
 }
 
@@ -33,11 +32,11 @@ class PrayerLocationException implements Exception {
 }
 
 class GeolocatorPrayerLocationService implements PrayerLocationService {
-  GeolocatorPrayerLocationService({
-    Geocoding? geocoding,
-  }) : _geocoding = geocoding ?? Geocoding();
+  const GeolocatorPrayerLocationService({
+    required OfflineLocationDataSource dataSource,
+  }) : _dataSource = dataSource;
 
-  final Geocoding _geocoding;
+  final OfflineLocationDataSource _dataSource;
 
   @override
   Future<PrayerLocation> getCurrentLocation({String? locale}) async {
@@ -77,6 +76,19 @@ class GeolocatorPrayerLocationService implements PrayerLocationService {
 
     _validatePosition(position);
 
+    final nearestCity = await _dataSource.findNearestCity(
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+
+    final countryCode = nearestCity?.countryCode;
+    final timezone = nearestCity?.timezone ??
+        TimezoneConvert.nearestTimezone(
+          position.latitude,
+          position.longitude,
+          countryCode: countryCode,
+        );
+
     final accuracyKind = switch (accuracyStatus) {
       LocationAccuracyStatus.reduced => LocationAccuracyKind.approximate,
       LocationAccuracyStatus.precise => LocationAccuracyKind.precise,
@@ -85,36 +97,14 @@ class GeolocatorPrayerLocationService implements PrayerLocationService {
           : LocationAccuracyKind.precise,
     };
 
-    String? country;
-    String? city;
-    String? region;
-    String? countryCode;
-
-    try {
-      final placemarks = await _geocoding.placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        country = _clean(placemark.country);
-        city = _clean(placemark.locality) ??
-            _clean(placemark.subAdministrativeArea) ??
-            _clean(placemark.administrativeArea);
-        region = _clean(placemark.administrativeArea);
-        countryCode = _clean(placemark.isoCountryCode);
-      }
-    } catch (_) {
-      // Reverse geocoding is metadata only. Coordinates remain usable.
-    }
-
     return PrayerLocation(
       latitude: position.latitude,
       longitude: position.longitude,
-      country: country,
-      city: city,
-      region: region,
-      countryCode: countryCode,
+      country: nearestCity?.country,
+      city: nearestCity?.name,
+      region: nearestCity?.region,
+      countryCode: nearestCity?.countryCode,
+      timezone: timezone,
       source: LocationSource.device,
       accuracyMeters:
           position.accuracy.isFinite ? position.accuracy : null,
@@ -144,10 +134,5 @@ class GeolocatorPrayerLocationService implements PrayerLocationService {
         'The device returned an unusable location.',
       );
     }
-  }
-
-  String? _clean(String? value) {
-    final cleaned = value?.trim();
-    return cleaned == null || cleaned.isEmpty ? null : cleaned;
   }
 }
