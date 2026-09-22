@@ -101,7 +101,13 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
         }
-        if (status != null) predicates.add(row.status.equals(status));
+        if (status == QazaStatus.deleted.name) {
+          predicates.add(row.status.equals(QazaStatus.deleted.name));
+        } else {
+          predicates.add(row.status.isNotIn(
+              [QazaStatus.deleted.name]));
+          if (status != null) predicates.add(row.status.equals(status));
+        }
         if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
         }
@@ -149,7 +155,13 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
         }
-        if (status != null) predicates.add(row.status.equals(status));
+        if (status == QazaStatus.deleted.name) {
+          predicates.add(row.status.equals(QazaStatus.deleted.name));
+        } else {
+          predicates.add(row.status.isNotIn(
+              [QazaStatus.deleted.name]));
+          if (status != null) predicates.add(row.status.equals(status));
+        }
         if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
         }
@@ -221,7 +233,13 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
         }
-        if (status != null) predicates.add(row.status.equals(status));
+        if (status == QazaStatus.deleted.name) {
+          predicates.add(row.status.equals(QazaStatus.deleted.name));
+        } else {
+          predicates.add(row.status.isNotIn(
+              [QazaStatus.deleted.name]));
+          if (status != null) predicates.add(row.status.equals(status));
+        }
         if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
         }
@@ -299,7 +317,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         (row) =>
             row.userId.equals(userId) &
             row.prayerType.equals(prayerType) &
-            row.originalDate.equals(originalDate),
+            row.originalDate.equals(originalDate) &
+            row.status.isNotIn([QazaStatus.deleted.name]),
       )
       ..limit(2);
     final rows = await query.get();
@@ -326,6 +345,177 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         status: QazaStatus.pending.name);
     return rows.isEmpty ? null : rows.first;
   }
+
+
+  Future<int> softDeleteByIds({
+    required String userId,
+    required List<String> ids,
+    required DateTime deletedAt,
+  }) async {
+    if (ids.isEmpty) return 0;
+    return transaction(() async {
+      var changed = 0;
+      for (final id in ids.toSet()) {
+        final row = await (select(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .getSingleOrNull();
+        if (row == null || row.status == QazaStatus.deleted.name) continue;
+        changed += await (update(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .write(QazaRecordsCompanion(
+              status: const Value(QazaStatus.deleted.name),
+              updatedAt: Value(deletedAt),
+            ));
+      }
+      return changed;
+    });
+  }
+
+  Future<int> restoreDeletedByIds({
+    required String userId,
+    required List<String> ids,
+    required DateTime restoredAt,
+  }) async {
+    if (ids.isEmpty) return 0;
+    return transaction(() async {
+      var changed = 0;
+      for (final id in ids.toSet()) {
+        final row = await (select(qazaRecords)
+              ..where((r) =>
+                  r.userId.equals(userId) &
+                  r.id.equals(id) &
+                  r.status.equals(QazaStatus.deleted.name)))
+            .getSingleOrNull();
+        if (row == null) continue;
+        final restoredStatus = row.completedAt == null
+            ? QazaStatus.pending.name
+            : QazaStatus.completed.name;
+        changed += await (update(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .write(QazaRecordsCompanion(
+              status: Value(restoredStatus),
+              updatedAt: Value(restoredAt),
+            ));
+      }
+      return changed;
+    });
+  }
+
+  Future<int> undoAddedOperation({
+    required String userId,
+    required DateTime expectedCreatedAt,
+    required List<String> candidateIds,
+  }) async {
+    if (candidateIds.isEmpty) return 0;
+    return transaction(() async {
+      var removed = 0;
+      for (final id in candidateIds.toSet()) {
+        final row = await (select(qazaRecords)
+              ..where((r) =>
+                  r.userId.equals(userId) &
+                  r.id.equals(id) &
+                  r.status.equals(QazaStatus.pending.name)))
+            .getSingleOrNull();
+        if (row == null ||
+            !row.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
+            !row.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
+          continue;
+        }
+        removed += await (delete(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .go();
+      }
+      return removed;
+    });
+  }
+
+  Future<QazaRecordsPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    int limit = defaultPageSize,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    _validatePage(limit, 0);
+    final query = select(qazaRecords)
+      ..where((row) {
+        final predicates = <Expression<bool>>[row.userId.equals(userId)];
+        if (matchLastAction) {
+          predicates.add(row.updatedAt.isSameMoment(operationAt));
+        } else {
+          predicates.add(
+              row.id.like('op_${operationId}_%'));
+        }
+        predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
+        if (beforeOriginalDate != null) {
+          predicates.add(
+              row.originalDate.isLessThanValue(beforeOriginalDate) |
+                  (row.originalDate.equals(beforeOriginalDate) &
+                      row.id.isSmallerThanValue(beforeId!)));
+        }
+        return predicates.reduce((a, b) => a & b);
+      })
+      ..orderBy([
+        (r) => OrderingTerm.desc(r.originalDate),
+        (r) => OrderingTerm.desc(r.id),
+      ])
+      ..limit(limit + 1);
+    final rows = await query.get();
+    final hasMore = rows.length > limit;
+    final visible = hasMore ? rows.take(limit) : rows;
+    return QazaRecordsPage(
+      records: visible.map(_toDomain).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
+  Future<QazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = defaultPageSize,
+    DateTime? beforeDeletedAt,
+    String? beforeId,
+  }) async {
+    _validatePage(limit, 0);
+    final query = select(qazaRecords)
+      ..where((row) {
+        final predicates = <Expression<bool>>[
+          row.userId.equals(userId),
+          row.status.equals(QazaStatus.deleted.name),
+        ];
+        if (beforeDeletedAt != null) {
+          predicates.add(
+              row.updatedAt.isSmallerThanValue(beforeDeletedAt) |
+                  (row.updatedAt.equals(beforeDeletedAt) &
+                      row.id.isSmallerThanValue(beforeId!)));
+        }
+        return predicates.reduce((a, b) => a & b);
+      })
+      ..orderBy([
+        (r) => OrderingTerm.desc(r.updatedAt),
+        (r) => OrderingTerm.desc(r.id),
+      ])
+      ..limit(limit + 1);
+    final rows = await query.get();
+    final hasMore = rows.length > limit;
+    final visible = hasMore ? rows.take(limit) : rows;
+    return QazaHistoryPage(
+      records: visible.map(_toDomain).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
+  Future<int> purgeDeletedBefore({
+    required String userId,
+    required DateTime cutoff,
+  }) =>
+      (delete(qazaRecords)
+            ..where((r) =>
+                r.userId.equals(userId) &
+                r.status.equals(QazaStatus.deleted.name) &
+                r.updatedAt.isSmallerThanValue(cutoff)))
+          .go();
 
   Future<void> replaceUserRecords(
       {required String userId,
@@ -445,7 +635,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (prayerType != null) {
       query.where(qazaRecords.prayerType.equals(prayerType));
     }
-    if (status != null) query.where(qazaRecords.status.equals(status));
+    if (status != null) {\n      query.where(qazaRecords.status.equals(status));\n    } else {\n      query.where(qazaRecords.status.isNotIn([QazaStatus.deleted.name]));\n    }
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
 
