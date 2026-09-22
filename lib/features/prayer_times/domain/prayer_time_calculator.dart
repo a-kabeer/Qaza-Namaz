@@ -62,8 +62,8 @@ class PrayerTimeCalculator {
         PrayerName.maghrib: _toPrayerTime(localize(calculated.maghrib)),
         PrayerName.isha: _toPrayerTime(localize(calculated.isha)),
       },
-      solarNoon: localize(solarNoonUtc),
-      sunset: localize(calculated.sunset),
+      solarNoon: _localWall(localize(solarNoonUtc)),
+      sunset: _localWall(localize(calculated.sunset)),
       hijriDate: HijriDate(
         day: hijri.hDay,
         month: hijri.getLongMonthName(),
@@ -141,6 +141,9 @@ class PrayerTimeCalculator {
 
   PrayerTime _toPrayerTime(DateTime value) =>
       PrayerTime(hour: value.hour, minute: value.minute);
+
+  DateTime _localWall(DateTime value) =>
+      DateTime(value.year, value.month, value.day, value.hour, value.minute, value.second);
 
   static bool _timezoneInitialized = false;
 
