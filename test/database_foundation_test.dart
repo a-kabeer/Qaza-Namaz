@@ -4,16 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 
 void main() {
-  test('AppDatabase opens at schema version 2', () async {
+  test('AppDatabase opens at schema version 4', () async {
     final database = AppDatabase(NativeDatabase.memory());
 
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 2);
+    expect(database.schemaVersion, 4);
     expect(database.allTables, hasLength(2));
 
     final rows = await database.customSelect('PRAGMA user_version').getSingle();
-    expect(rows.read<int>('user_version'), 2);
+    expect(rows.read<int>('user_version'), 4);
   });
 
   test('AppDatabase creates all required performance indexes', () async {
