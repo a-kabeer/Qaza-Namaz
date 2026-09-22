@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
@@ -723,8 +724,7 @@ class _PrayerLocationEditSheetState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(prayerTimesControllerProvider);
-    final canSaveCity =
-        _selectedCity != null || widget.state.location?.city != null;
+    final canSaveCity = _selectedCity != null;
 
     return Padding(
       padding: EdgeInsets.only(
