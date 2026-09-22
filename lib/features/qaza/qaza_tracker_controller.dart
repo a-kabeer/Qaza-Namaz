@@ -531,38 +531,25 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   }
 
   Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId) async {
-    if (state.completing) return null;
-    final record = state.records.where((r) => r.id == recordId).firstOrNull;
-    if (record == null || record.status != QazaStatus.pending) return null;
-    final userId = ref.read(activeUserIdProvider);
-    if (userId == null) return null;
-    final restrictions = await ref
-        .read(qazaRestrictionServiceProvider)
-        .evaluateForPrayers([record.prayerType]);
-    if (restrictions.values.any((e) => e.isRestricted)) return null;
-    final tartib = await ref.read(qazaServiceProvider).sahibAlTartibState(
-          userId: userId,
-        );
-    if (tartib.requiresOrder && tartib.nextPending?.id != recordId) return null;
-    final completedAt = DateTime.now();
-    try {
-      state = state.copyWith(completing: true, clearError: true);
-      await ref.read(qazaServiceProvider).completeRecord(
-            userId: userId,
-            recordId: recordId,
-            completedAt: completedAt,
-          );
-      ref.invalidate(sahibAlTartibProvider);
-      ref.invalidate(progressSummaryProvider);
-      await refresh();
-      return QazaCompletionBatch(
-        recordIds: [recordId],
-        completedAt: completedAt,
-        count: 1,
-      );
-    } finally {
-      state = state.copyWith(completing: false);
+    if (state.completing || state.recordMutating) return null;
+    final index = state.records.indexWhere((record) => record.id == recordId);
+    if (index < 0 || state.records[index].status != QazaStatus.pending) {
+      return null;
     }
+    final wasSelecting = state.selectionMode;
+    final previousSelection = Set<String>.of(state.selected);
+    state = state.copyWith(
+      selectionMode: true,
+      selected: <String>{recordId},
+    );
+    final batch = await completeSelectedWithUndo();
+    if (batch == null && !wasSelecting) {
+      state = state.copyWith(
+        selectionMode: false,
+        selected: previousSelection,
+      );
+    }
+    return batch;
   }
 
   Future<int> deleteSelectedWithRecovery() async {
