@@ -47,11 +47,19 @@ class FirebaseAuthRepository implements AuthRepository {
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
   })  : _auth = auth ?? FirebaseAuth.instance,
-        _googleSignIn =
-            googleSignIn ?? GoogleSignIn(serverClientId: googleServerClientId);
+        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
+
+  /// google_sign_in 7.x requires exactly one initialization before any other
+  /// GoogleSignIn method is called. Keep it lazy so constructing the repository
+  /// itself never triggers platform work.
+  late final Future<void> _googleSignInInitialization =
+      _googleSignIn.initialize(serverClientId: googleServerClientId);
+
+  Future<void> _ensureGoogleSignInInitialized() =>
+      _googleSignInInitialization;
 
   @override
   AppUser? get currentUser => _mapUser(_auth.currentUser);
@@ -66,9 +74,16 @@ class FirebaseAuthRepository implements AuthRepository {
 
       final account = await GoogleAuthFlow(
         beginGoogleSignIn: () async {
-          final googleUser = await _googleSignIn.signIn();
-          if (googleUser == null) return null;
-          final authentication = await googleUser.authentication;
+          await _ensureGoogleSignInInitialized();
+
+          if (!_googleSignIn.supportsAuthenticate()) {
+            throw StateError(
+              'Google Sign-In authentication is not supported on this platform.',
+            );
+          }
+
+          final googleUser = await _googleSignIn.authenticate();
+          final authentication = googleUser.authentication;
           return GoogleIdentityTokens(idToken: authentication.idToken);
         },
         signInToFirebase: (tokens) async {
@@ -95,6 +110,20 @@ class FirebaseAuthRepository implements AuthRepository {
       ).signIn();
 
       return account;
+    } on GoogleSignInException catch (error, stack) {
+      _debugLog(error, stack);
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        throw const AuthenticationCancelledException();
+      }
+      throw AuthenticationException(
+        source: 'google-sign-in',
+        code: error.code.name,
+        message: error.description?.trim().isNotEmpty == true
+            ? error.description!
+            : error.toString(),
+        cause: error,
+        stackTrace: stack,
+      );
     } on GoogleAuthFlowCancelledException {
       throw const AuthenticationCancelledException();
     } on AuthenticationException {
@@ -160,6 +189,7 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     await _auth.signOut();
+    await _ensureGoogleSignInInitialized();
     await _googleSignIn.signOut();
   }
 
