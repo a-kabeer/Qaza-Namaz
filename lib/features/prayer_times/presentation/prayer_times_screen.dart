@@ -15,7 +15,6 @@ import '../domain/prayer_schedule.dart';
 import '../domain/prayer_times_models.dart';
 import '../domain/qaza_restriction_service.dart';
 import '../prayer_times_providers.dart';
-import 'prayer_location_picker_screen.dart';
 import 'prayer_times_controller.dart';
 import 'prayer_times_localizations.dart';
 
