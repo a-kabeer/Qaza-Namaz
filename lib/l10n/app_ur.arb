@@ -124,6 +124,16 @@
   "qazaLoadError": "آپ کے قضا ریکارڈ لوڈ نہیں ہو سکے: {error}",
   "qazaLoadMoreError": "مزید ریکارڈ لوڈ نہیں ہو سکے: {error}",
   "qazaCompleteError": "منتخب قضا مکمل نہیں ہو سکی: {error}",
+  "qazaTartibRequiredTitle": "قضا میں ترتیب لازم ہے",
+  "qazaTartibRequiredMessage": "آپ کے ذمہ {count} فرض نمازیں قضا باقی ہیں۔ اس حکم کے مطابق دوسری باقی قضا نمازوں سے پہلے {prayer} کی قضا ادا کریں۔",
+  "@qazaTartibRequiredMessage": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "prayer": {"type": "String"}
+    }
+  },
+  "qazaTartibBlocked": "قضا میں ترتیب لازم ہے۔ پہلے {prayer} کی قضا ادا کریں۔",
+  "@qazaTartibBlocked": { "placeholders": { "prayer": {"type": "String"} } },
   "qazaCompletedOn": "{date} کو مکمل",
 
   "qazaCompleteCount": "{count, plural, =1{1 قضا مکمل کریں} other{{count} قضا مکمل کریں}}",
