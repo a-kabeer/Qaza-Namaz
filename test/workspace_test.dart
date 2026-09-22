@@ -64,7 +64,6 @@ void main() {
     // Home leads with the compact progress overview; Qaza actions live on the Qaza workspace.
     expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
     
-    expect(find.byKey(const Key('qaza_tracker_add_fab')), findsOneWidget);
     expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
   });
 
