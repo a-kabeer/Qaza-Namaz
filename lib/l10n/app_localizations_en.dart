@@ -64,6 +64,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusCompleted => 'Completed';
 
   @override
+  String get statusDeleted => 'Recently deleted';
+
+  @override
   String get qazaSelectAllMatching => 'Select all matching';
 
   @override
