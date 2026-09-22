@@ -796,7 +796,7 @@ class _PrayerLocationEditSheetState
                   ),
                   ButtonSegment<_EditLocationMode>(
                     value: _EditLocationMode.city,
-                    label: Text(PrayerTimesStrings.city(context)),
+                    label: Text(PrayerTimesStrings.selectCity(context)),
                     icon: const Icon(Icons.location_city_outlined, size: 18),
                   ),
                 ],
