@@ -72,28 +72,24 @@ void main() {
       expect((listView.padding as EdgeInsets).bottom, AppSpacing.fabClearance);
     });
 
-    testWidgets('Witr can be scrolled clear of the FAB', (tester) async {
+    testWidgets('the dashboard bottom can be scrolled clear of the FAB',
+        (tester) async {
       await pumpShell(tester, await ledger());
 
-      final witr = find.byKey(const Key('home_prayer_row_witr'));
+      final details = find.byKey(const Key('home_detailed_statistics'));
       await tester.scrollUntilVisible(
-        witr,
+        details,
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tester.drag(
-        find.byType(Scrollable).first,
-        const Offset(0, -600),
-      );
-      await tester.pumpAndSettle();
 
-      final witrRect = tester.getRect(witr);
+      final detailsRect = tester.getRect(details);
       final fabRect = tester.getRect(fab());
       expect(
-        witrRect.bottom,
+        detailsRect.bottom,
         lessThanOrEqualTo(fabRect.top),
-        reason: 'Witr must clear the FAB, not sit under it',
+        reason: 'the final Home dashboard card must clear the FAB',
       );
     });
   });
