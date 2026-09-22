@@ -79,8 +79,7 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
     if (state.hasData &&
         (state.status == PrayerTimesStatus.loaded ||
             state.status == PrayerTimesStatus.loading ||
-            state.status == PrayerTimesStatus.refreshing ||
-            state.status == PrayerTimesStatus.offlineWithCache)) {
+            state.status == PrayerTimesStatus.refreshing)) {
       return _PrayerTimesContent(
         state: state,
         onOpenLocationPicker: _openLocationPicker,
@@ -99,9 +98,9 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         return const _PrayerTimesLoadingSkeleton();
       case PrayerTimesStatus.loading:
         return const _PrayerTimesLoadingSkeleton();
-      case PrayerTimesStatus.apiError:
+      case PrayerTimesStatus.calculationError:
         return _PrayerErrorState(
-          message: state.message ?? PrayerTimesStrings.apiError(context),
+          message: state.message ?? PrayerTimesStrings.calculationError(context),
           onRetry: () => ref
               .read(prayerTimesControllerProvider.notifier)
               .refresh(),
@@ -120,7 +119,6 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
         );
       case PrayerTimesStatus.loaded:
       case PrayerTimesStatus.refreshing:
-      case PrayerTimesStatus.offlineWithCache:
         return const _PrayerTimesLoadingSkeleton();
     }
 
@@ -175,13 +173,7 @@ class _PrayerTimesContent extends ConsumerWidget {
             ],
           ),
         ),
-        if (state.status == PrayerTimesStatus.offlineWithCache) ...[
-          const SizedBox(height: 10),
-          _InfoBanner(
-            icon: Icons.cloud_off_rounded,
-            text: PrayerTimesStrings.offlineCached(context),
-          ),
-        ] else if (state.status == PrayerTimesStatus.refreshing) ...[
+        if (state.status == PrayerTimesStatus.refreshing) ...[
           const SizedBox(height: 10),
           _InfoBanner(
             icon: Icons.sync_rounded,
@@ -637,7 +629,7 @@ class _PrayerErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              PrayerTimesStrings.apiError(context),
+              PrayerTimesStrings.calculationError(context),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),

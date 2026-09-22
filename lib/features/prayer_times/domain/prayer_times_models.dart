@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 enum PrayerName {
   fajr,
   sunrise,
@@ -10,17 +8,6 @@ enum PrayerName {
 }
 
 extension PrayerNameX on PrayerName {
-  String get apiKey => switch (this) {
-        PrayerName.fajr => 'Fajr',
-        PrayerName.sunrise => 'Sunrise',
-        PrayerName.dhuhr => 'Dhuhr',
-        PrayerName.asr => 'Asr',
-        PrayerName.maghrib => 'Maghrib',
-        PrayerName.isha => 'Isha',
-      };
-
-  String get cacheKey => name;
-
   bool get isCyclePrayer =>
       this == PrayerName.fajr ||
       this == PrayerName.dhuhr ||
@@ -36,13 +23,6 @@ enum LocationAccuracyKind { unknown, approximate, precise }
 enum AsrMethod {
   standard,
   hanafi,
-}
-
-extension AsrMethodX on AsrMethod {
-  int get apiValue => switch (this) {
-        AsrMethod.standard => 0,
-        AsrMethod.hanafi => 1,
-      };
 }
 
 enum CalculationMethod {
@@ -73,33 +53,6 @@ enum CalculationMethod {
 }
 
 extension CalculationMethodX on CalculationMethod {
-  int? get apiId => switch (this) {
-        CalculationMethod.recommended => null,
-        CalculationMethod.jafari => 0,
-        CalculationMethod.karachi => 1,
-        CalculationMethod.isna => 2,
-        CalculationMethod.mwl => 3,
-        CalculationMethod.makkah => 4,
-        CalculationMethod.egyptian => 5,
-        CalculationMethod.tehran => 7,
-        CalculationMethod.gulf => 8,
-        CalculationMethod.kuwait => 9,
-        CalculationMethod.qatar => 10,
-        CalculationMethod.singapore => 11,
-        CalculationMethod.france => 12,
-        CalculationMethod.turkey => 13,
-        CalculationMethod.russia => 14,
-        CalculationMethod.moonsighting => 15,
-        CalculationMethod.dubai => 16,
-        CalculationMethod.jakim => 17,
-        CalculationMethod.tunisia => 18,
-        CalculationMethod.algeria => 19,
-        CalculationMethod.kemenag => 20,
-        CalculationMethod.morocco => 21,
-        CalculationMethod.portugal => 22,
-        CalculationMethod.jordan => 23,
-      };
-
   String get storageValue => name;
 
   static CalculationMethod fromStorage(String? value) {
@@ -307,6 +260,8 @@ class PrayerDay {
     required this.date,
     required this.timezone,
     required this.times,
+    this.solarNoon,
+    this.sunset,
     required this.hijriDate,
     required this.fetchedAt,
     this.resolvedCalculationMethodName,
@@ -315,6 +270,8 @@ class PrayerDay {
   final DateTime date;
   final String timezone;
   final Map<PrayerName, PrayerTime> times;
+  final DateTime? solarNoon;
+  final DateTime? sunset;
   final HijriDate hijriDate;
   final DateTime fetchedAt;
   final String? resolvedCalculationMethodName;
@@ -323,6 +280,8 @@ class PrayerDay {
     DateTime? date,
     String? timezone,
     Map<PrayerName, PrayerTime>? times,
+    DateTime? solarNoon,
+    DateTime? sunset,
     HijriDate? hijriDate,
     DateTime? fetchedAt,
     String? resolvedCalculationMethodName,
@@ -331,6 +290,8 @@ class PrayerDay {
       date: date ?? this.date,
       timezone: timezone ?? this.timezone,
       times: times ?? this.times,
+      solarNoon: solarNoon ?? this.solarNoon,
+      sunset: sunset ?? this.sunset,
       hijriDate: hijriDate ?? this.hijriDate,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       resolvedCalculationMethodName:
@@ -344,8 +305,10 @@ class PrayerDay {
         'timezone': timezone,
         'times': <String, dynamic>{
           for (final entry in times.entries)
-            entry.key.cacheKey: entry.value.toJson(),
+            entry.key.name: entry.value.toJson(),
         },
+        'solarNoon': solarNoon?.toIso8601String(),
+        'sunset': sunset?.toIso8601String(),
         'hijriDate': hijriDate.toJson(),
         'fetchedAt': fetchedAt.toIso8601String(),
         'resolvedCalculationMethodName': resolvedCalculationMethodName,
@@ -355,7 +318,7 @@ class PrayerDay {
     final rawTimes = Map<String, dynamic>.from(json['times'] as Map);
     final times = <PrayerName, PrayerTime>{};
     for (final prayer in PrayerName.values) {
-      final raw = rawTimes[prayer.cacheKey];
+      final raw = rawTimes[prayer.name];
       if (raw is Map) {
         times[prayer] = PrayerTime.fromJson(Map<String, dynamic>.from(raw));
       }
@@ -364,8 +327,15 @@ class PrayerDay {
       date: DateTime.parse(json['date'] as String),
       timezone: json['timezone'] as String,
       times: times,
+      solarNoon: json['solarNoon'] is String
+          ? DateTime.parse(json['solarNoon'] as String)
+          : null,
+      sunset: json['sunset'] is String
+          ? DateTime.parse(json['sunset'] as String)
+          : null,
       hijriDate: HijriDate.fromJson(
-          Map<String, dynamic>.from(json['hijriDate'] as Map)),
+        Map<String, dynamic>.from(json['hijriDate'] as Map),
+      ),
       fetchedAt: DateTime.parse(json['fetchedAt'] as String),
       resolvedCalculationMethodName:
           json['resolvedCalculationMethodName'] as String?,
@@ -380,6 +350,7 @@ class PrayerTimesRequest {
     required this.date,
     required this.method,
     required this.asrMethod,
+    this.timezone,
   });
 
   final double latitude;
@@ -387,12 +358,7 @@ class PrayerTimesRequest {
   final DateTime date;
   final CalculationMethod method;
   final AsrMethod asrMethod;
+  final String? timezone;
 
-  String get cacheKey {
-    final dateKey =
-        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    return '${latitude.toStringAsFixed(6)}_${longitude.toStringAsFixed(6)}_${dateKey}_${method.storageValue}_${asrMethod.name}';
-  }
 }
 
-String encodePrayerCache(Map<String, dynamic> data) => jsonEncode(data);

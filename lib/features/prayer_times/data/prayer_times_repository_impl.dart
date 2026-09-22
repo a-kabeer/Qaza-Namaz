@@ -1,22 +1,17 @@
+import '../domain/prayer_time_calculator.dart';
 import '../domain/prayer_times_models.dart';
 import '../domain/prayer_times_repository.dart';
-import 'prayer_times_cache.dart';
-import 'prayer_times_provider.dart';
+import 'prayer_times_preferences.dart';
 
 class PrayerTimesRepositoryImpl implements PrayerTimesRepository {
-  PrayerTimesRepositoryImpl({
-    required PrayerTimesProvider provider,
-    required PrayerTimesCache cache,
-  })  : _provider = provider,
-        _cache = cache;
+  const PrayerTimesRepositoryImpl({
+    required PrayerTimeCalculator calculator,
+    required PrayerTimesPreferences preferences,
+  })  : _calculator = calculator,
+        _preferences = preferences;
 
-  final PrayerTimesProvider _provider;
-  final PrayerTimesCache _cache;
-
-  @override
-  Future<PrayerDay?> getCachedPrayerTimes(PrayerTimesRequest request) async {
-    return _cache.getDay(request);
-  }
+  final PrayerTimeCalculator _calculator;
+  final PrayerTimesPreferences _preferences;
 
   @override
   Future<PrayerDay> getPrayerTimes({
@@ -25,36 +20,36 @@ class PrayerTimesRepositoryImpl implements PrayerTimesRepository {
     required DateTime date,
     required CalculationMethod method,
     required AsrMethod asrMethod,
-  }) async {
+    String? timezone,
+  }) {
     _validateCoordinates(latitude, longitude);
-
-    final request = PrayerTimesRequest(
-      latitude: latitude,
-      longitude: longitude,
-      date: date,
-      method: method,
-      asrMethod: asrMethod,
+    return Future.sync(
+      () => _calculator.calculate(
+        latitude: latitude,
+        longitude: longitude,
+        date: date,
+        method: method,
+        asrMethod: asrMethod,
+        timezone: timezone,
+      ),
     );
-    final day = await _provider.fetch(request);
-    await _cache.saveDay(request, day);
-    return day;
   }
 
   @override
-  Future<PrayerLocation?> getSavedLocation() => _cache.getLocation();
+  Future<PrayerLocation?> getSavedLocation() => _preferences.getLocation();
 
   @override
   Future<void> saveLocation(PrayerLocation location) async {
     _validateCoordinates(location.latitude, location.longitude);
-    await _cache.saveLocation(location);
+    await _preferences.saveLocation(location);
   }
 
   @override
-  Future<PrayerSettings> getSavedSettings() => _cache.getSettings();
+  Future<PrayerSettings> getSavedSettings() => _preferences.getSettings();
 
   @override
   Future<void> saveSettings(PrayerSettings settings) =>
-      _cache.saveSettings(settings);
+      _preferences.saveSettings(settings);
 
   void _validateCoordinates(double latitude, double longitude) {
     if (!latitude.isFinite ||

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../domain/prayer_times_models.dart';
+import '../domain/qaza_restriction_service.dart';
 
 class PrayerTimesStrings {
   const PrayerTimesStrings._();
@@ -49,8 +50,8 @@ class PrayerTimesStrings {
       _isUrdu(context) ? 'حنفی' : 'Hanafi';
 
   static String recommended(BuildContext context) => _isUrdu(context)
-      ? 'آپ کے مقام کے لیے تجویز کردہ'
-      : 'Recommended for your location';
+      ? 'خودکار (آف لائن)'
+      : 'Automatic (Offline)';
 
   static String searchCity(BuildContext context) =>
       _isUrdu(context) ? 'شہر تلاش کریں' : 'Search city';
@@ -79,16 +80,12 @@ class PrayerTimesStrings {
   static String save(BuildContext context) =>
       _isUrdu(context) ? 'محفوظ کریں' : 'Save';
 
-  static String offlineCached(BuildContext context) => _isUrdu(context)
-      ? 'آف لائن: محفوظ شدہ اوقات دکھائے جا رہے ہیں۔'
-      : 'Offline: showing saved prayer times.';
-
-  static String refreshing(BuildContext context) =>
+    static String refreshing(BuildContext context) =>
       _isUrdu(context) ? 'پس منظر میں تازہ کیا جا رہا ہے…' : 'Refreshing in background…';
 
-  static String apiError(BuildContext context) => _isUrdu(context)
-      ? 'اوقات لوڈ نہیں ہو سکے۔ اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔'
-      : 'Prayer times could not be loaded. Check your connection and try again.';
+  static String calculationError(BuildContext context) => _isUrdu(context)
+      ? 'نماز کے اوقات کا حساب نہیں ہو سکا۔ مقام اور ترتیبات چیک کریں۔'
+      : 'Prayer times could not be calculated. Check the location and settings.';
 
   static String locationError(BuildContext context) => _isUrdu(context)
       ? 'مقام حاصل نہیں ہو سکا۔ دوبارہ کوشش کریں یا دستی مقام منتخب کریں۔'
@@ -111,12 +108,12 @@ class PrayerTimesStrings {
       _isUrdu(context) ? 'دوبارہ کوشش کریں' : 'Try Again';
 
   static String attribution(BuildContext context) => _isUrdu(context)
-      ? 'شہر کی تلاش کا ڈیٹا Open-Meteo / GeoNames سے ہے۔'
-      : 'City search data: Open-Meteo / GeoNames.';
+      ? 'شہر اور مقام کا ڈیٹا آف لائن دستیاب ہے؛ انٹرنیٹ درکار نہیں۔'
+      : 'City and location data is available offline; no internet is required.';
 
   static String privacyNote(BuildContext context) => _isUrdu(context)
-      ? 'مقام نماز کے اوقات کے لیے استعمال ہوتا ہے۔ اسے Firebase یا analytics میں محفوظ نہیں کیا جاتا۔'
-      : 'Location is used for prayer-time requests and is not stored in Firebase or analytics.';
+      ? 'مقام صرف آپ کے آلے پر نماز کے اوقات کے مقامی حساب کے لیے استعمال ہوتا ہے۔'
+      : 'Location is used locally on your device to calculate prayer times.';
 
   static String approximateLocation(BuildContext context) =>
       _isUrdu(context) ? 'تقریبی مقام' : 'Approximate location';
@@ -129,6 +126,34 @@ class PrayerTimesStrings {
 
   static String invalidCoordinates(BuildContext context) =>
       _isUrdu(context) ? 'درست latitude اور longitude درج کریں۔' : 'Enter valid latitude and longitude.';
+
+  static String restrictionRemaining(BuildContext context, Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    final value = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    return _isUrdu(context) ? 'مکروہ وقت باقی: $value' : 'Restricted time remaining: $value';
+  }
+
+  static String restrictionType(BuildContext context, RestrictionType type) {
+    if (_isUrdu(context)) {
+      return switch (type) {
+        RestrictionType.sunrise => 'طلوعِ آفتاب',
+        RestrictionType.zawal => 'زوال',
+        RestrictionType.sunset => 'غروبِ آفتاب',
+        RestrictionType.otherConfiguredRestriction => 'مقررہ پابندی',
+      };
+    }
+    return switch (type) {
+      RestrictionType.sunrise => 'Sunrise',
+      RestrictionType.zawal => 'Zawal',
+      RestrictionType.sunset => 'Sunset',
+      RestrictionType.otherConfiguredRestriction => 'Configured restriction',
+    };
+  }
+
+  static String qazaRestricted(BuildContext context, RestrictionType type) => _isUrdu(context)
+      ? 'اس وقت ${restrictionType(context, type)} کے دوران قضا مکمل نہیں کی جا سکتی۔'
+      : 'Qaza completion is unavailable during ${restrictionType(context, type).toLowerCase()} restriction.';
 
   static String settingsSaved(BuildContext context) =>
       _isUrdu(context) ? 'نماز کے اوقات کی ترتیبات محفوظ ہو گئیں۔' : 'Prayer time settings saved.';
@@ -168,7 +193,7 @@ class PrayerTimesStrings {
     final urdu = _isUrdu(context);
     return switch (method) {
       CalculationMethod.recommended =>
-        urdu ? 'خودکار (AlAdhan)' : 'Automatic (AlAdhan)',
+        urdu ? 'خودکار (آف لائن)' : 'Automatic (Offline)',
       CalculationMethod.jafari => 'Jafari',
       CalculationMethod.karachi => urdu ? 'کراچی' : 'University of Islamic Sciences, Karachi',
       CalculationMethod.isna => 'ISNA',

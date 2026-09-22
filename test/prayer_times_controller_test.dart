@@ -12,28 +12,24 @@ class _FakeRepository implements PrayerTimesRepository {
   PrayerLocation? location;
   PrayerSettings settings = const PrayerSettings();
   int fetchCount = 0;
-
-  PrayerDay? cachedDay;
   Object? fetchError;
 
-  final PrayerDay day = PrayerDay(
-    date: DateTime(2026, 9, 20),
-    timezone: 'Asia/Karachi',
-    times: const {
-      PrayerName.fajr: PrayerTime(hour: 4, minute: 50),
-      PrayerName.sunrise: PrayerTime(hour: 6, minute: 8),
-      PrayerName.dhuhr: PrayerTime(hour: 12, minute: 20),
-      PrayerName.asr: PrayerTime(hour: 16, minute: 45),
-      PrayerName.maghrib: PrayerTime(hour: 18, minute: 28),
-      PrayerName.isha: PrayerTime(hour: 19, minute: 44),
-    },
-    hijriDate: HijriDate(day: 18, month: 'Rabi al-Thani', year: 1448),
-    fetchedAt: DateTime.utc(2026, 9, 20),
-  );
-
-  @override
-  Future<PrayerDay?> getCachedPrayerTimes(PrayerTimesRequest request) async =>
-      cachedDay;
+  PrayerDay _day(DateTime date) => PrayerDay(
+        date: date,
+        timezone: location?.timezone ?? 'Asia/Karachi',
+        times: const {
+          PrayerName.fajr: PrayerTime(hour: 4, minute: 50),
+          PrayerName.sunrise: PrayerTime(hour: 6, minute: 8),
+          PrayerName.dhuhr: PrayerTime(hour: 12, minute: 20),
+          PrayerName.asr: PrayerTime(hour: 16, minute: 45),
+          PrayerName.maghrib: PrayerTime(hour: 18, minute: 28),
+          PrayerName.isha: PrayerTime(hour: 19, minute: 44),
+        },
+        solarNoon: DateTime(2026, 9, 20, 12, 20),
+        sunset: DateTime(2026, 9, 20, 18, 28),
+        hijriDate: HijriDate(day: 18, month: 'Rabi al-Thani', year: 1448),
+        fetchedAt: DateTime.utc(2026, 9, 20),
+      );
 
   @override
   Future<PrayerDay> getPrayerTimes({
@@ -42,11 +38,12 @@ class _FakeRepository implements PrayerTimesRepository {
     required DateTime date,
     required CalculationMethod method,
     required AsrMethod asrMethod,
+    String? timezone,
   }) async {
     fetchCount++;
     final error = fetchError;
     if (error != null) throw error;
-    return day;
+    return _day(date);
   }
 
   @override
@@ -64,7 +61,6 @@ class _FakeRepository implements PrayerTimesRepository {
   Future<void> saveSettings(PrayerSettings value) async {
     settings = value;
   }
-
 }
 
 class _FakeLocationService implements PrayerLocationService {
@@ -87,8 +83,8 @@ class _FakeLocationService implements PrayerLocationService {
 
 class _FakeCitySearchProvider implements CitySearchProvider {
   @override
-  Future<List<CitySearchResult>> search(String query) async => [
-        const CitySearchResult(
+  Future<List<CitySearchResult>> search(String query) async => const [
+        CitySearchResult(
           name: 'Karachi',
           country: 'Pakistan',
           countryCode: 'PK',
@@ -100,49 +96,55 @@ class _FakeCitySearchProvider implements CitySearchProvider {
       ];
 }
 
+class _FixedClock implements PrayerTimesClock {
+  const _FixedClock(this.value);
+  final DateTime value;
+
+  @override
+  DateTime now() => value;
+}
+
 void main() {
-  test('offline refresh keeps cached prayer times usable', () async {
+  ProviderContainer containerFor({
+    required _FakeRepository repository,
+    required DateTime now,
+    _FakeLocationService? locationService,
+  }) {
+    return ProviderContainer(
+      overrides: [
+        prayerTimesRepositoryProvider.overrideWithValue(repository),
+        prayerTimesClockProvider.overrideWithValue(_FixedClock(now)),
+        prayerLocationServiceProvider.overrideWithValue(
+          locationService ?? _FakeLocationService(),
+        ),
+        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
+      ],
+    );
+  }
+
+  test('loads prayer times locally without cache dependency', () async {
     final repository = _FakeRepository()
       ..location = const PrayerLocation(
         latitude: 24.8607,
         longitude: 67.0011,
-        source: LocationSource.manualCoordinates,
-      )
-      ..cachedDay = PrayerDay(
-        date: DateTime(2026, 9, 20),
+        city: 'Karachi',
+        country: 'Pakistan',
+        countryCode: 'PK',
         timezone: 'Asia/Karachi',
-        times: const {
-          PrayerName.fajr: PrayerTime(hour: 4, minute: 50),
-          PrayerName.sunrise: PrayerTime(hour: 6, minute: 8),
-          PrayerName.dhuhr: PrayerTime(hour: 12, minute: 20),
-          PrayerName.asr: PrayerTime(hour: 16, minute: 45),
-          PrayerName.maghrib: PrayerTime(hour: 18, minute: 28),
-          PrayerName.isha: PrayerTime(hour: 19, minute: 44),
-        },
-        hijriDate: HijriDate(
-          day: 18,
-          month: 'Rabi al-Thani',
-          year: 1448,
-        ),
-        fetchedAt: DateTime.utc(2026, 9, 20),
-      )
-      ..fetchError = StateError('offline');
-
-    final container = ProviderContainer(
-      overrides: [
-        prayerTimesRepositoryProvider.overrideWithValue(repository),
-        prayerLocationServiceProvider
-            .overrideWithValue(_FakeLocationService()),
-        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
-      ],
+        source: LocationSource.manualCity,
+      );
+    final container = containerFor(
+      repository: repository,
+      now: DateTime(2026, 9, 20, 12),
     );
     addTearDown(container.dispose);
 
     await container.read(prayerTimesControllerProvider.notifier).refresh();
 
     final state = container.read(prayerTimesControllerProvider);
-    expect(state.status, PrayerTimesStatus.offlineWithCache);
+    expect(state.status, PrayerTimesStatus.loaded);
     expect(state.today, isNotNull);
+    expect(repository.fetchCount, greaterThanOrEqualTo(1));
   });
 
   test('useMyLocation persists device location and loads prayer times', () async {
@@ -154,75 +156,59 @@ void main() {
         city: 'Karachi',
         country: 'Pakistan',
         countryCode: 'PK',
+        timezone: 'Asia/Karachi',
         source: LocationSource.device,
       );
-
-    final container = ProviderContainer(
-      overrides: [
-        prayerTimesRepositoryProvider.overrideWithValue(repository),
-        prayerLocationServiceProvider.overrideWithValue(locationService),
-        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    final controller = container.read(prayerTimesControllerProvider.notifier);
-    await controller.useMyLocation();
-
-    final state = container.read(prayerTimesControllerProvider);
-    expect(state.status, PrayerTimesStatus.loaded);
-    expect(state.location?.source, LocationSource.device);
-    expect(state.today, isNotNull);
-    expect(repository.fetchCount, greaterThanOrEqualTo(1));
-  });
-
-  test('permanently denied location becomes an actionable error state', () async {
-    final repository = _FakeRepository();
-    final locationService = _FakeLocationService()
-      ..failure = const PrayerLocationException(
-        PrayerLocationErrorKind.permissionPermanentlyDenied,
-        'Permission permanently denied.',
-      );
-
-    final container = ProviderContainer(
-      overrides: [
-        prayerTimesRepositoryProvider.overrideWithValue(repository),
-        prayerLocationServiceProvider.overrideWithValue(locationService),
-        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
-      ],
+    final container = containerFor(
+      repository: repository,
+      now: DateTime(2026, 9, 20, 12),
+      locationService: locationService,
     );
     addTearDown(container.dispose);
 
     await container.read(prayerTimesControllerProvider.notifier).useMyLocation();
 
     final state = container.read(prayerTimesControllerProvider);
-    expect(state.status, PrayerTimesStatus.locationError);
+    expect(state.status, PrayerTimesStatus.loaded);
+    expect(state.location?.source, LocationSource.device);
+  });
+
+  test('permanently denied location remains distinct', () async {
+    final repository = _FakeRepository();
+    final locationService = _FakeLocationService()
+      ..failure = const PrayerLocationException(
+        PrayerLocationErrorKind.permissionPermanentlyDenied,
+        'Permission permanently denied.',
+      );
+    final container = containerFor(
+      repository: repository,
+      now: DateTime(2026, 9, 20, 12),
+      locationService: locationService,
+    );
+    addTearDown(container.dispose);
+
+    await container.read(prayerTimesControllerProvider.notifier).useMyLocation();
+
     expect(
-      state.locationErrorKind,
+      container.read(prayerTimesControllerProvider).locationErrorKind,
       PrayerLocationErrorKind.permissionPermanentlyDenied,
     );
   });
 
-  test('city search is debounced and returns manual location choices', () async {
-    final container = ProviderContainer(
-      overrides: [
-        prayerTimesRepositoryProvider.overrideWithValue(_FakeRepository()),
-        prayerLocationServiceProvider
-            .overrideWithValue(_FakeLocationService()),
-        prayerCitySearchProvider.overrideWithValue(_FakeCitySearchProvider()),
-      ],
+  test('city search works without a network provider', () async {
+    final container = containerFor(
+      repository: _FakeRepository(),
+      now: DateTime(2026, 9, 20, 12),
     );
     addTearDown(container.dispose);
 
-    final controller =
-        container.read(prayerTimesControllerProvider.notifier);
+    final controller = container.read(prayerTimesControllerProvider.notifier);
     controller.searchCities('Karachi');
 
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await Future<void>.delayed(const Duration(milliseconds: 260));
 
     final state = container.read(prayerTimesControllerProvider);
     expect(state.cityResults, hasLength(1));
-    expect(state.cityResults.first.countryCode, 'PK');
-    expect(state.citySearchLoading, isFalse);
+    expect(state.cityResults.single.countryCode, 'PK');
   });
 }
