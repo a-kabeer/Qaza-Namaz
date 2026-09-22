@@ -87,11 +87,16 @@ class PrayerTimesNotificationService {
       return;
     }
 
+    final firstDate = PrayerSchedule.localDate(
+      location.timezone!,
+      instant: _now(),
+    );
+
     for (var dayIndex = 0; dayIndex < _daysToSchedule; dayIndex++) {
       final date = DateTime(
-        DateTime.now().year,
-        DateTime.now().month,
-        DateTime.now().day + dayIndex,
+        firstDate.year,
+        firstDate.month,
+        firstDate.day + dayIndex,
       );
 
       final day = await _repository.getPrayerTimes(
