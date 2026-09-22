@@ -31,8 +31,8 @@ void main() {
 
     final added = await qazaService.recordQazaForDates(
       userId: 'test-user',
-      dates: [DateTime(2025, 1, 1), DateTime(2025, 1, 2), DateTime(2025, 1, 3)],
-      prayerTypes: [PrayerType.fajr],
+      dates: [DateTime(2025, 1, 1)],
+      prayerTypes: [PrayerType.fajr, PrayerType.zuhr, PrayerType.asr],
       operationId: operation.operationId,
       operationCreatedAt: operation.createdAt,
     );
