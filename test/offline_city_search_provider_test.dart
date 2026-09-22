@@ -19,6 +19,21 @@ class _FakeDataSource implements OfflineLocationDataSource {
       ];
 
   @override
+  Future<List<CitySearchResult>> searchCitiesInCountry(
+    String query, {
+    String? countryCode,
+  }) async {
+    final results = await searchCities(query);
+    if (countryCode == null || countryCode.isEmpty) return results;
+    return results
+        .where((city) => city.countryCode == countryCode)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<PrayerCountryOption>> getCountries() async => const [];
+
+  @override
   Future<CitySearchResult?> findNearestCity({
     required double latitude,
     required double longitude,
