@@ -885,6 +885,7 @@ class FirestoreQazaRepository
     return {
       'id': record.id,
       'userId': record.userId,
+      if (record.operationId != null) 'operationId': record.operationId,
       'prayerType': record.prayerType.name,
       'originalDate': QazaDate.key(record.originalDate),
       'status': record.status.name,
@@ -914,6 +915,7 @@ class FirestoreQazaRepository
     return QazaRecord(
       id: raw['id'] as String? ?? id,
       userId: raw['userId'] as String? ?? '',
+      operationId: raw['operationId'] as String?,
       prayerType: prayerType,
       originalDate: _originalDate(raw['originalDate'], id),
       status: status,
