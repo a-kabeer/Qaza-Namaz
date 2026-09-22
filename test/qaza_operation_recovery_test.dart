@@ -38,10 +38,10 @@ void main() {
     );
     await operationService.finish(operation, status: QazaOperationStatus.completed, affectedRecordCount: added);
     expect(added, 3);
-    expect(opRepo.values.single.recordCount, 3);
+    expect(opRepo.values.values.single.recordCount, 3);
 
     final pending = await repository.getRecords(userId: 'test-user', status: QazaStatus.pending);
-    await repository.updateRecord(pending[0].copyWith(updatedAt: clock.add(const Duration(minutes: 1))));
+    await repository.updateRecord(record: pending[0].copyWith(updatedAt: clock.add(const Duration(minutes: 1))));
     await repository.completeRecord(userId: 'test-user', recordId: pending[1].id, completedAt: clock.add(const Duration(minutes: 2)));
 
     final removed = await qazaService.undoAddedOperation(
@@ -56,8 +56,8 @@ void main() {
     expect(remaining.any((r) => r.status == QazaStatus.completed), isTrue);
 
     await operationService.finish(operation, status: QazaOperationStatus.partial, affectedRecordCount: removed);
-    expect(opRepo.values.single.recordCount, 3);
-    expect(opRepo.values.single.affectedRecordCount, 1);
+    expect(opRepo.values.values.single.recordCount, 3);
+    expect(opRepo.values.values.single.affectedRecordCount, 1);
   });
 
   test('soft delete is recoverable and excluded from normal reads', () async {
