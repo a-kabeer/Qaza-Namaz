@@ -3,6 +3,9 @@ import '../../core/constants/prayer_types.dart';
 import '../repositories/qaza_repository.dart';
 
 /// Recovery capability layered onto the existing Qaza repository.
+///
+/// Recovery remains bounded and local-first; it never requires materializing
+/// the complete Qaza ledger or storing record-id arrays in preferences.
 abstract class QazaRecoveryRepository {
   Future<int> softDeleteRecords({
     required String userId,
