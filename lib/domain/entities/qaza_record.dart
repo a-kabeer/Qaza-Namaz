@@ -23,15 +23,10 @@ class QazaRecord {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  /// Stable originating operation for records created by an import/add action.
-  /// Legacy records return null because they predate operation provenance.
-  String? get operationId {
-    const prefix = 'op_';
-    if (!id.startsWith(prefix)) return null;
-    final remainder = id.substring(prefix.length);
-    final separator = remainder.indexOf('_');
-    return separator <= 0 ? null : remainder.substring(0, separator);
-  }
+  /// Stable operation identity for records written by the current operation
+  /// system. The operation ID is derived from the write's creation timestamp,
+  /// so record identity remains the existing deterministic user/prayer/date key.
+  String get operationId => 'op_${createdAt.microsecondsSinceEpoch}';
 
   bool get isDeleted => status == QazaStatus.deleted;
 
