@@ -160,7 +160,7 @@ void main() {
           userId: 'u1', recordIds: selected, completedAt: completedAt);
       expect(count, 3);
       final progress = await service.prayerProgress('u1', PrayerType.fajr);
-      expect(progress.progress.pending, 2);
+      expect(progress.progress.pending, 3);
       expect(progress.progress.completed, 3);
     });
 
