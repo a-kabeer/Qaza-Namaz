@@ -12,6 +12,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/services/qaza_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'home_plan.dart';
@@ -50,6 +51,7 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
       );
 
       ref.invalidate(oldestPendingProvider(prayer));
+      ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(homeDailyProgressProvider);
 
@@ -95,6 +97,19 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
           ref.invalidate(homeDailyProgressProvider);
         },
       );
+    } on QazaTartibViolationException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.qazaTartibBlocked(
+                error.requiredPrayer.localizedLabel(l10n),
+              ),
+            ),
+          ),
+        );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -112,7 +127,10 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
     final l10n = AppLocalizations.of(context);
     final selection = ref.watch(homePrayerSelectionProvider);
     final selected = ref.watch(homeSelectedPrayerProvider);
-    final prayer = selected.prayer;
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final lockedPrayer =
+        tartib?.requiresOrder == true ? tartib?.nextPrayer : null;
+    final prayer = lockedPrayer ?? selected.prayer;
 
     return AppCard(
       key: const Key('home_oldest_qaza'),
@@ -129,6 +147,7 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
           const SizedBox(height: 10),
           _PrayerChoiceChips(
             selection: selection,
+            lockedPrayer: lockedPrayer,
             onAutomatic: () => ref
                 .read(homePrayerSelectionProvider.notifier)
                 .useAutomatic(),
@@ -154,11 +173,13 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
 class _PrayerChoiceChips extends StatelessWidget {
   const _PrayerChoiceChips({
     required this.selection,
+    required this.lockedPrayer,
     required this.onAutomatic,
     required this.onPrayerSelected,
   });
 
   final HomePrayerSelectionState selection;
+  final PrayerType? lockedPrayer;
   final VoidCallback onAutomatic;
   final ValueChanged<PrayerType> onPrayerSelected;
 
@@ -175,17 +196,19 @@ class _PrayerChoiceChips extends StatelessWidget {
           ChoiceChip(
             key: const Key('home_qaza_auto_chip'),
             label: Text(l10n.homeAuto),
-            selected: selection.mode == HomePrayerSelectionMode.automatic,
-            onSelected: (_) => onAutomatic(),
+            selected: selection.mode == HomePrayerSelectionMode.automatic &&
+                lockedPrayer == null,
+            onSelected: lockedPrayer == null ? (_) => onAutomatic() : null,
           ),
           for (final prayer in PrayerType.values) ...[
             const SizedBox(width: 8),
             ChoiceChip(
               key: Key('home_qaza_chip_' + prayer.name),
               label: Text(prayer.localizedLabel(l10n)),
-              selected: selection.mode == HomePrayerSelectionMode.manual &&
-                  selection.manualPrayer == prayer,
-              onSelected: (_) => onPrayerSelected(prayer),
+              selected: (lockedPrayer ?? selection.manualPrayer) == prayer,
+              onSelected: lockedPrayer != null && lockedPrayer != prayer
+                  ? null
+                  : (_) => onPrayerSelected(prayer),
             ),
           ],
         ],
