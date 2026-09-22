@@ -377,7 +377,7 @@
   "addQazaSelectedCount": "{count, plural, =1{1 دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟} other{{count} دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟}}",
   "addQazaDateCount": "{count, plural, =1{1 تاریخ} other{{count} تاریخیں}}",
   "addQazaCreatedMessage": "{count, plural, =1{1 ریکارڈ آپ کے کھاتے میں شامل ہو گیا۔} other{{count} ریکارڈ آپ کے کھاتے میں شامل ہو گئے۔}}",
-  "addQazaUnavailablePrayer": "{rakats} • ہر منتخب تاریخ پر پہلے سے درج یا ادا شدہ",
+  "addQazaUnavailablePrayer": "{rakats} • ہر منتخب تاریخ پر پہلے سے درج، ادا شدہ، یا نماز کا وقت ابھی ختم نہیں ہوا",
   "commonNone": "کوئی نہیں",
 
   "completeTitle": "قضا ادا کریں",
