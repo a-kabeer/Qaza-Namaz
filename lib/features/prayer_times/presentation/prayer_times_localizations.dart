@@ -158,6 +158,75 @@ class PrayerTimesStrings {
   static String settingsSaved(BuildContext context) =>
       _isUrdu(context) ? 'نماز کے اوقات کی ترتیبات محفوظ ہو گئیں۔' : 'Prayer time settings saved.';
 
+
+  static String editLocation(BuildContext context) =>
+      _isUrdu(context) ? 'مقام میں ترمیم' : 'Edit Location';
+
+  static String today(BuildContext context) =>
+      _isUrdu(context) ? 'آج' : 'Today';
+
+  static String prayerTimes(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات' : 'Prayer Times';
+
+  static String restrictedTimes(BuildContext context) =>
+      _isUrdu(context) ? 'ممنوع اوقات' : 'Restricted Times';
+
+  static String restrictedNow(BuildContext context) =>
+      _isUrdu(context) ? 'اس وقت ممنوع وقت ہے' : 'Restricted Now';
+
+  static String restrictedFor(BuildContext context, int minutes) =>
+      _isUrdu(context) ? '$minutes منٹ کی پابندی' : 'Restricted for $minutes min';
+
+  static String timeWindow(BuildContext context, String start, String end) =>
+      _isUrdu(context) ? '$start تا $end' : '$start — $end';
+
+  static String restrictedNotifications(BuildContext context) =>
+      _isUrdu(context) ? 'ممنوع اوقات کی یاد دہانیاں' : 'Restricted-time notifications';
+
+  static String notifyBefore(BuildContext context) =>
+      _isUrdu(context) ? 'کتنی دیر پہلے یاد دہانی؟' : 'Notify before restricted time';
+
+  static String atStart(BuildContext context) =>
+      _isUrdu(context) ? 'شروع ہوتے وقت' : 'At start';
+
+  static String fiveMinutes(BuildContext context) =>
+      _isUrdu(context) ? '5 منٹ پہلے' : '5 minutes before';
+
+  static String tenMinutes(BuildContext context) =>
+      _isUrdu(context) ? '10 منٹ پہلے' : '10 minutes before';
+
+  static String notifications(BuildContext context) =>
+      _isUrdu(context) ? 'یاد دہانیاں' : 'Notifications';
+
+  static String notificationPermissionDenied(BuildContext context) =>
+      _isUrdu(context)
+          ? 'یاد دہانی کے لیے نوٹیفکیشن کی اجازت درکار ہے۔'
+          : 'Notification permission is required for reminders.';
+
+  static String currentLocation(BuildContext context) =>
+      _isUrdu(context) ? 'موجودہ مقام' : 'Current Location';
+
+  static String selectCountryAndCity(BuildContext context) =>
+      _isUrdu(context) ? 'ملک اور شہر منتخب کریں' : 'Select Country & City';
+
+  static String selectCountry(BuildContext context) =>
+      _isUrdu(context) ? 'ملک منتخب کریں' : 'Select Country';
+
+  static String selectCity(BuildContext context) =>
+      _isUrdu(context) ? 'شہر منتخب کریں' : 'Select City';
+
+  static String searchCountry(BuildContext context) =>
+      _isUrdu(context) ? 'ملک تلاش کریں' : 'Search country';
+
+  static String chooseCityFirst(BuildContext context) =>
+      _isUrdu(context) ? 'پہلے ملک منتخب کریں۔' : 'Select a country first.';
+
+  static String currentLocationPermission(BuildContext context) =>
+      _isUrdu(context) ? 'مقام کی اجازت درکار ہوگی۔' : 'Location permission may be required.';
+
+  static String calculationSettings(BuildContext context) =>
+      _isUrdu(context) ? 'حساب کی ترتیبات' : 'Calculation Settings';
+
   static String countdown(Duration duration) {
     final seconds = duration.inSeconds;
     final hours = seconds ~/ 3600;
