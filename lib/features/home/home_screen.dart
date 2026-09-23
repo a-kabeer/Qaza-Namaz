@@ -18,6 +18,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/services/qaza_service.dart';
 import '../../features/calculator/calculator_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/qaza/qaza_navigation.dart';
@@ -238,21 +239,42 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
 
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      await showQazaUndoSnackBar(
-        context: context,
-        ref: ref,
-        userId: userId,
-        recordIds: [record.id],
-        completedAt: completedAt,
-        onUndone: () async {
-          ref.invalidate(progressSummaryProvider);
-          ref.invalidate(homeDailyProgressProvider);
-          ref.invalidate(oldestPendingProvider(prayer));
-          for (final range in HomeProgressRange.values) {
-            ref.invalidate(homeProgressHistoryProvider(range));
-          }
-        },
-      );
+      try {
+        await showQazaUndoSnackBar(
+          context: context,
+          ref: ref,
+          userId: userId,
+          recordIds: [record.id],
+          completedAt: completedAt,
+          onUndone: () async {
+            ref.invalidate(progressSummaryProvider);
+            ref.invalidate(homeDailyProgressProvider);
+            ref.invalidate(oldestPendingProvider(prayer));
+            ref.invalidate(sahibAlTartibProvider);
+            for (final range in HomeProgressRange.values) {
+              ref.invalidate(homeProgressHistoryProvider(range));
+            }
+          },
+        );
+      } catch (_) {
+        // Completion already succeeded. Undo registration is optional recovery
+        // metadata and must never turn a successful completion into failure.
+      }
+    } on QazaTartibViolationException catch (error) {
+      ref.invalidate(sahibAlTartibProvider);
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.qazaTartibBlocked(
+                error.requiredPrayer.localizedLabel(l10n),
+              ),
+            ),
+          ),
+        );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -628,10 +650,18 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       ),
     );
 
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final automaticTartib =
+        widget.selected.mode == HomePrayerSelectionMode.automatic &&
+        tartib?.requiresOrder == true &&
+        tartib?.nextPrayer != null;
+
     final header = Text(
-      widget.selected.mode == HomePrayerSelectionMode.automatic
-          ? l10n.homeNextQazaCurrentPrayer
-          : l10n.homeNextQaza,
+      automaticTartib
+          ? l10n.homeNextQaza
+          : widget.selected.mode == HomePrayerSelectionMode.automatic
+              ? l10n.homeNextQazaCurrentPrayer
+              : l10n.homeNextQaza,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
