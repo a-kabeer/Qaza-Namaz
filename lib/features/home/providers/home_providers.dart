@@ -102,10 +102,15 @@ DateTime homeLocalDateForLocation({
   required PrayerLocation? location,
   required DateTime instant,
 }) {
-  return homeLocalDayStartForLocation(
-    location: location,
-    instant: instant,
-  );
+  final timezone = location?.timezone;
+  if (timezone != null &&
+      timezone.isNotEmpty &&
+      PrayerSchedule.isKnownTimezone(timezone)) {
+    final local = PrayerSchedule.now(timezone, instant: instant);
+    return DateTime(local.year, local.month, local.day);
+  }
+  final local = instant.toLocal();
+  return DateTime(local.year, local.month, local.day);
 }
 
 DateTime homeLocalDayStartForLocation({
