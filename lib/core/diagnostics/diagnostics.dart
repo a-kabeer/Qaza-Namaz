@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Where a diagnostic came from.
 ///
@@ -56,7 +60,7 @@ class DiagnosticEvent {
   String toString() => '[${area.code}] $code'
       '${errorType == null ? '' : ' ($errorType)'}'
       '${message == null ? '' : ': $message'}'
-      '${stackTrace == null ? '' : '\\n$stackTrace'}';
+      '${stackTrace == null ? '' : '\n$stackTrace'}';
 
   @override
   bool operator ==(Object other) =>
@@ -91,7 +95,7 @@ final List<(RegExp, String)> _redactions = [
 ];
 
 /// Strips anything that could identify a person or their ledger.
-String? redactDiagnosticMessage(String? raw) {
+String? redactDiagnosticMessage(String? raw, {int maxLength = 200}) {
   if (raw == null) return null;
   var value = raw;
   for (final (pattern, replacement) in _redactions) {
@@ -99,9 +103,10 @@ String? redactDiagnosticMessage(String? raw) {
   }
   value = value.trim();
   if (value.isEmpty) return null;
-  // A cap, so a stack-like blob can never be smuggled through as a message.
-  const limit = 200;
-  return value.length <= limit ? value : '${value.substring(0, limit)}…';
+  // A cap, so oversized diagnostic text can never be persisted indefinitely.
+  return value.length <= maxLength
+      ? value
+      : '${value.substring(0, maxLength)}…';
 }
 
 /// Where diagnostics go.
@@ -135,7 +140,7 @@ DiagnosticEvent buildFailureEvent(
       code: code,
       errorType: error.runtimeType.toString(),
       message: redactDiagnosticMessage(error.toString()),
-      stackTrace: redactDiagnosticMessage(stack?.toString()),
+      stackTrace: redactDiagnosticMessage(stack?.toString(), maxLength: 4000),
       fatal: fatal,
     );
 
