@@ -3063,6 +3063,18 @@ abstract class AppLocalizations {
   /// **'Your Progress'**
   String get homeYourProgress;
 
+  /// No description provided for @homeRange1Day.
+  ///
+  /// In en, this message translates to:
+  /// **'1 Day'**
+  String get homeRange1Day;
+
+  /// No description provided for @homeRange3Days.
+  ///
+  /// In en, this message translates to:
+  /// **'3 Days'**
+  String get homeRange3Days;
+
   /// No description provided for @homeRange7Days.
   ///
   /// In en, this message translates to:
