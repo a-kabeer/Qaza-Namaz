@@ -27,6 +27,7 @@ import '../../prayer_times/presentation/prayer_times_localizations.dart';
 import '../../prayer_times/prayer_times_providers.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../qaza/completion/qaza_completion_state.dart';
+import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../qaza/qaza_undo_banner.dart';
 import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
@@ -718,6 +719,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
         )
         .toList(growable: false);
+    final tartibAsync = ref.watch(sahibAlTartibProvider);
 
     final prayerSelector = PopupMenuButton<String>(
       key: const Key('home_qaza_prayer_selector'),
@@ -771,7 +773,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       ),
     );
 
-    final tartibAsync = ref.watch(sahibAlTartibProvider);
     final tartib = tartibAsync.valueOrNull;
     final automaticTartib =
         widget.selected.mode == HomePrayerSelectionMode.automatic &&
