@@ -384,6 +384,36 @@ void main() {
   });
 
 
+  test('completed rows may converge to an earlier completion timestamp',
+      () async {
+    final original = DateTime(2026, 1, 1, 10);
+    final earlier = DateTime(2026, 1, 1, 6);
+    await dao.insertRecord(record(
+      id: 'done',
+      userId: 'user-a',
+      prayerType: 'fajr',
+      date: DateTime(2026, 1, 1),
+      status: 'completed',
+    ));
+    await dao.updateCompletedAt(
+      userId: 'user-a',
+      recordId: 'done',
+      completedAt: original,
+    );
+    expect(
+      await dao.completeByIds(
+        userId: 'user-a',
+        ids: ['done'],
+        completedAt: earlier,
+      ),
+      ['done'],
+    );
+    expect(
+      (await dao.findById(userId: 'user-a', id: 'done'))!.completedAt,
+      earlier,
+    );
+  });
+
   test('progress counts are grouped by prayer and status with user isolation',
       () async {
     await dao.insertRecords([
