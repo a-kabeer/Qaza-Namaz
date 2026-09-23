@@ -225,7 +225,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       key: const Key('home_today_progress'),
       padding: const EdgeInsets.all(16),
       child: daily.when(
-        loading: () => const _TodayProgressSkeleton(),
+        loading: () => const HomeTodayProgressSkeleton(),
         error: (_, __) => Row(
           children: [
             const Icon(Icons.refresh_rounded),
@@ -664,7 +664,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
             builder: (context, ref, _) {
               final fallback = ref.watch(homeFallbackPendingProvider);
               return fallback.when(
-                loading: () => const _NextQazaSkeleton(),
+                loading: () => const HomeNextQazaSkeleton(),
                 error: (_, __) => ErrorState(
                   key: const Key('home_oldest_qaza_error'),
                   message: l10n.completeLoadError,
@@ -692,7 +692,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
             builder: (context, ref, _) {
               final state = ref.watch(oldestPendingProvider(prayer));
               return state.when(
-                loading: () => const _NextQazaSkeleton(),
+                loading: () => const HomeNextQazaSkeleton(),
                 error: (_, __) => ErrorState(
                   key: const Key('home_oldest_qaza_error'),
                   message: l10n.completeLoadError,
