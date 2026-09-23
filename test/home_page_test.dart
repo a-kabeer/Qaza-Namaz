@@ -603,9 +603,21 @@ void main() {
         find.byKey(const Key('home_progress_chart')),
       );
       final tooltipItems = chart.data.lineTouchData.touchTooltipData
-          .getTooltipItems!([const FlSpot(2, 2)]);
+          .getTooltipItems!([
+        LineBarSpot(
+          chart.data.lineBarsData.first,
+          0,
+          const FlSpot(2, 2),
+        ),
+      ]);
       expect(tooltipItems.single!.text, contains('22 Sep 2026'));
       expect(tooltipItems.single!.text, contains('2 completed'));
+      expect(
+        tooltipItems.single!.textStyle.color,
+        Theme.of(tester.element(find.byKey(const Key('home_progress_chart'))))
+            .colorScheme
+            .onInverseSurface,
+      );
     });
   });
 
