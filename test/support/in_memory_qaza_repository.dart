@@ -85,6 +85,22 @@ class InMemoryQazaRepository
   }
 
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final wanted = recordIds.toSet();
+    if (wanted.isEmpty) return const <QazaRecord>[];
+    return [
+      for (final record in _records.values)
+        if (record.userId == userId &&
+            wanted.contains(record.id) &&
+            record.status == QazaStatus.pending)
+          record,
+    ];
+  }
+
+  @override
   Future<QazaRecord?> getOldestPending(
       {required String userId, required PrayerType prayerType}) async {
     final page = await getPage(
