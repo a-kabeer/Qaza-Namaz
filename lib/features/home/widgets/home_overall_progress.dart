@@ -5,6 +5,7 @@ import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class HomeOverallProgress extends StatelessWidget {
   const HomeOverallProgress({
@@ -62,19 +63,19 @@ class HomeOverallProgress extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
-              _StatLine(
+              HomeStatLine(
                 key: const Key('home_completed_value'),
                 label: l10n.homeCompleted,
                 value: DateFormatters.formatCount(progress.completed),
                 color: AppChartColors.of(context).completed,
               ),
-              _StatLine(
+              HomeStatLine(
                 key: const Key('home_pending_value'),
                 label: l10n.homePending,
                 value: DateFormatters.formatCount(progress.pending),
                 color: AppChartColors.of(context).pending,
               ),
-              _StatLine(
+              HomeStatLine(
                 key: const Key('home_total_value'),
                 label: l10n.homeStatTotal,
                 value: DateFormatters.formatCount(progress.total),
@@ -165,8 +166,8 @@ class _OverviewDonut extends StatelessWidget {
   }
 }
 
-class _StatLine extends StatelessWidget {
-  const _StatLine({
+class HomeStatLine extends StatelessWidget {
+  const HomeStatLine({
     super.key,
     required this.label,
     required this.value,
