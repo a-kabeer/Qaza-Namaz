@@ -109,12 +109,16 @@ class QazaService {
   }) async {
     final state = await tartib.evaluate(userId: userId);
     if (!state.requiresOrder || state.nextPending == null) return;
-    if (state.nextPending!.id != recordId) {
-      throw QazaTartibViolationException(
-        requiredPrayer: state.nextPending!.prayerType,
-        pendingFarzCount: state.pendingFarzCount,
-      );
+    if (await tartib.canCompleteRecordIds(
+      userId: userId,
+      recordIds: [recordId],
+    )) {
+      return;
     }
+    throw QazaTartibViolationException(
+      requiredPrayer: state.nextPending!.prayerType,
+      pendingFarzCount: state.pendingFarzCount,
+    );
   }
 
   Future<int> countCompletedBetween({
@@ -341,19 +345,15 @@ class QazaService {
   }) async {
     if (recordIds.isEmpty) return;
     final state = await tartib.evaluate(userId: userId);
-    if (state.requiresOrder) {
-      if (recordIds.length != 1 || state.nextPending == null) {
-        throw QazaTartibViolationException(
-          requiredPrayer: state.nextPrayer!,
-          pendingFarzCount: state.pendingFarzCount,
-        );
-      }
-      if (recordIds.single != state.nextPending!.id) {
-        throw QazaTartibViolationException(
-          requiredPrayer: state.nextPrayer!,
-          pendingFarzCount: state.pendingFarzCount,
-        );
-      }
+    if (state.requiresOrder &&
+        !(await tartib.canCompleteRecordIds(
+          userId: userId,
+          recordIds: recordIds,
+        ))) {
+      throw QazaTartibViolationException(
+        requiredPrayer: state.nextPrayer!,
+        pendingFarzCount: state.pendingFarzCount,
+      );
     }
     await repository.completeRecords(
       userId: userId,
