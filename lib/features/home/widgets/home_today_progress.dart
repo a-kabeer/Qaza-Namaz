@@ -26,6 +26,7 @@ import '../../prayer_times/prayer_times_providers.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../qaza/completion/qaza_completion_state.dart';
 import '../../qaza/qaza_undo_banner.dart';
+import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
 import 'home_skeleton.dart';
