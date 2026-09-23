@@ -1822,7 +1822,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeDetailedStatisticsSubtitle =>
-      'سال وار باقی، ماہانہ تاریخ اور مزید';
+      'مجموعی اور نماز وار تکمیل';
 
   @override
   String get homeChartNoData => 'اس مدت میں کوئی قضا مکمل نہیں ہوئی۔';
