@@ -144,48 +144,24 @@ class SahibAlTartibService {
     );
   }
 
-  /// Finds only the pending Witr records that are explicitly requested.
+  /// Resolves the explicitly requested pending records and keeps only Witr.
   ///
-  /// The lookup is keyset-paged and stops once all requested ids have been
-  /// found, avoiding a full-ledger materialization.
+  /// The repository contract uses bounded pages by default and can provide a
+  /// more direct indexed implementation where available.
   Future<Set<String>> _findPendingWitrIds({
     required String userId,
     required Set<String> requestedIds,
   }) async {
-    final pendingWitr = <String>{};
-    if (requestedIds.isEmpty) return pendingWitr;
-
-    DateTime? afterDate;
-    String? afterId;
-
-    while (pendingWitr.length < requestedIds.length) {
-      final page = await repository.getPage(
-        userId: userId,
-        limit: 500,
-        prayerType: PrayerType.witr,
-        status: QazaStatus.pending,
-        afterOriginalDate: afterDate,
-        afterId: afterId,
-      );
-
-      if (page.records.isEmpty) break;
-
-      for (final record in page.records) {
-        if (requestedIds.contains(record.id)) {
-          pendingWitr.add(record.id);
-        }
-      }
-
-      if (pendingWitr.length == requestedIds.length || !page.hasMore) {
-        break;
-      }
-
-      afterDate = page.nextOriginalDate;
-      afterId = page.nextId;
-    }
-
-    return pendingWitr;
+    final records = await repository.getPendingRecordsByIds(
+      userId: userId,
+      recordIds: requestedIds,
+    );
+    return {
+      for (final record in records)
+        if (record.prayerType == PrayerType.witr) record.id,
+    };
   }
+
 }
 
 /// Thrown when a completion request would violate the active Sahib al-Tartib
