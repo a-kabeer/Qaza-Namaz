@@ -132,8 +132,9 @@ class _PrayerTimesSetupDialogState
   Future<void> _chooseCity() async {
     if (_busy) return;
 
-    Navigator.of(context).pop();
-    await Navigator.of(context).push<void>(
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    await navigator.push<void>(
       MaterialPageRoute<void>(
         builder: (_) => const PrayerLocationPickerScreen(),
       ),
