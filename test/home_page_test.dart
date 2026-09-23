@@ -96,6 +96,7 @@ void main() {
     Size size = const Size(900, 2000),
     bool currentPrayer = true,
     QazaRestrictionEvaluation? restrictionEvaluation,
+    bool restrictionEvaluationFails = false,
     DateTime? now,
   }) async {
     tester.view.physicalSize = size;
@@ -115,7 +116,13 @@ void main() {
         homeCurrentPrayerProvider.overrideWith(
           _TestHomeCurrentPrayerNotifier.new,
         ),
-      if (restrictionEvaluation != null)
+      if (restrictionEvaluationFails)
+        qazaRestrictionEvaluationProvider.overrideWith(
+          (ref) => Future<QazaRestrictionEvaluation>.error(
+            StateError('restriction lookup failed'),
+          ),
+        )
+      else if (restrictionEvaluation != null)
         qazaRestrictionEvaluationProvider.overrideWith(
           (ref) async => restrictionEvaluation,
         ),
@@ -271,6 +278,43 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('تمام قضا دیکھیں'), findsOneWidget);
+    });
+
+    testWidgets(
+        'completion still works when the restriction lookup provider fails',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'f1',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.pending,
+        ),
+        _record(
+          'f2',
+          PrayerType.fajr,
+          DateTime(2026, 1, 2),
+          QazaStatus.pending,
+        ),
+      ]);
+
+      await pumpHome(
+        tester,
+        repository,
+        restrictionEvaluationFails: true,
+      );
+      expect(find.text('01 Jan 2026'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(
+        find.text('Qaza cannot be completed, please try again'),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('completing the displayed oldest Qaza updates Home',
