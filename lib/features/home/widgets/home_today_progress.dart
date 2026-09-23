@@ -13,6 +13,7 @@ import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
