@@ -328,7 +328,7 @@ class _TrackerBody extends ConsumerWidget {
 
   Future<bool> _completeSingle(BuildContext context, WidgetRef ref, QazaRecord record) async {
     final batch = await controller.completeRecordWithUndo(record.id);
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     final l10n = AppLocalizations.of(context);
     if (batch != null) {
       await showQazaUndoSnackBar(
