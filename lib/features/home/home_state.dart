@@ -109,3 +109,11 @@ DateTime homeEstimatedCompletionDate({
   required int dailyTarget,
   required int completedToday,
 }) => DateTime(now.year, now.month, now.day).add(
+      Duration(
+        days: homeDaysUntilCompletion(
+          pending: pending,
+          dailyTarget: dailyTarget,
+          completedToday: completedToday,
+        ),
+      ),
+    );
