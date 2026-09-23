@@ -1815,7 +1815,7 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.homePendingByPrayer,
+            l10n.homePrayerBreakdown,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
