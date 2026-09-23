@@ -677,16 +677,26 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                   row.userId.equals(userId) & row.id.equals(id)))
             .getSingleOrNull();
         if (current == null) continue;
-        // Home completion is an action on a pending row only. A stale
-        // completion request must never rewrite an already-completed record
-        // or any other non-pending status.
-        if (current.status != QazaStatus.pending.name) continue;
+        // Pending rows can be completed normally. An already-completed
+        // row may only move to an earlier completion timestamp so offline
+        // devices can still converge deterministically on the earliest
+        // completion. Equal/later stale requests are ignored.
+        if (current.status != QazaStatus.pending.name &&
+            current.status != QazaStatus.completed.name) {
+          continue;
+        }
+        if (current.status == QazaStatus.completed.name &&
+            current.completedAt != null &&
+            !completedAt.isBefore(current.completedAt!)) {
+          continue;
+        }
 
         final updated = await (update(qazaRecords)
               ..where((row) =>
                   row.userId.equals(userId) &
                   row.id.equals(id) &
-                  row.status.equals(QazaStatus.pending.name)))
+                  (row.status.equals(QazaStatus.pending.name) |
+                      row.status.equals(QazaStatus.completed.name))))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
