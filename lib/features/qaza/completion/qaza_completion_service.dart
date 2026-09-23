@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../domain/entities/qaza_completion_result.dart';
+
 import '../../../domain/services/qaza_service.dart';
 
 class QazaCompletionService {
