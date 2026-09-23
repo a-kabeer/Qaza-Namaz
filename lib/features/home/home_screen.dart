@@ -187,6 +187,31 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
     ref.invalidate(homeDailyProgressProvider);
   }
 
+  Future<QazaRestrictionEvaluation?> _restrictionForCompletion() async {
+    final current = ref.read(qazaRestrictionEvaluationProvider);
+
+    if (current.hasValue) {
+      return current.valueOrNull;
+    }
+
+    // The button is already rendered while this provider is loading or after
+    // a transient lookup failure. Reuse the same provider instead of running
+    // a second independent prayer-time lookup on tap.
+    if (current.hasError) {
+      ref.invalidate(qazaRestrictionEvaluationProvider);
+    }
+
+    try {
+      return await ref.read(qazaRestrictionEvaluationProvider.future);
+    } catch (_) {
+      // Restriction lookup is advisory when the UI could not resolve one; the
+      // previous Home behavior already exposed the completion action in this
+      // state. Do not convert that missing lookup into a generic completion
+      // failure.
+      return null;
+    }
+  }
+
   Future<void> _complete(QazaRecord record, PrayerType prayer) async {
     if (working) return;
     setState(() => working = true);
@@ -195,9 +220,8 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
     final completedAt = ref.read(homeNowProvider);
 
     try {
-      final restriction =
-          await ref.read(qazaRestrictionServiceProvider).evaluateCurrent();
-      if (restriction.isRestricted && restriction.type != null) {
+      final restriction = await _restrictionForCompletion();
+      if (restriction?.isRestricted == true && restriction?.type != null) {
         ref.invalidate(qazaRestrictionEvaluationProvider);
         if (mounted) {
           ScaffoldMessenger.of(context)
@@ -207,7 +231,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
                 content: Text(
                   PrayerTimesStrings.qazaRestricted(
                     context,
-                    restriction.type!,
+                    restriction!.type!,
                   ),
                 ),
               ),
