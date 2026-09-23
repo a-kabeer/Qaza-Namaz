@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../app/providers.dart';
+import '../../../app/providers.dart';
 import 'prayer_location_picker_screen.dart';
 import '../prayer_times_providers.dart';
 import 'prayer_times_controller.dart';
+import '../data/location/prayer_location_service.dart';
 import 'prayer_times_localizations.dart';
 
 class PrayerTimesSetupPromptPreferences {
