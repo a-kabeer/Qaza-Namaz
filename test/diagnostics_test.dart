@@ -90,7 +90,7 @@ void main() {
     });
 
     test('a long stack trace is capped after redaction', () {
-      final stack = StackTrace.fromString('safe-line\\n' + ('x' * 5000));
+      final stack = StackTrace.fromString('safe-line\\n' + ('safe-line ' * 1000));
       final event = buildFailureEvent(
         DiagnosticArea.qazaCompletion,
         'completion_failed',
