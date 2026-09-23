@@ -394,6 +394,50 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// Conditional mutation used by operation Undo/Remove. The WHERE clause
+  /// re-checks the complete precondition so an intervening completion/edit
+  /// cannot be overwritten by an older operation action.
+  Future<List<QazaRecord>> softDeletePendingIfUnchangedByIds({
+    required String userId,
+    required List<String> ids,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+  }) async {
+    if (ids.isEmpty) return const <QazaRecord>[];
+
+    final changed = <QazaRecord>[];
+    for (final id in ids.toSet()) {
+      final row = await (select(qazaRecords)
+            ..where((r) =>
+                r.userId.equals(userId) &
+                r.id.equals(id) &
+                r.status.equals(QazaStatus.pending.name) &
+                r.createdAt.equals(expectedCreatedAt) &
+                r.updatedAt.equals(expectedCreatedAt)))
+          .getSingleOrNull();
+      if (row == null) continue;
+
+      final count = await (update(qazaRecords)
+            ..where((r) =>
+                r.userId.equals(userId) &
+                r.id.equals(id) &
+                r.status.equals(QazaStatus.pending.name) &
+                r.createdAt.equals(expectedCreatedAt) &
+                r.updatedAt.equals(expectedCreatedAt)))
+          .write(QazaRecordsCompanion(
+        status: Value(QazaStatus.deleted.name),
+        updatedAt: Value(deletedAt),
+      ));
+      if (count > 0) {
+        changed.add(_toDomain(row).copyWith(
+          status: QazaStatus.deleted,
+          updatedAt: deletedAt,
+        ));
+      }
+    }
+    return changed;
+  }
+
   Future<int> restoreDeletedByIds({
     required String userId,
     required List<String> ids,
