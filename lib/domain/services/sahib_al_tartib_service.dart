@@ -1,14 +1,13 @@
 import '../../core/constants/prayer_types.dart';
-import '../entities/qaza_progress.dart';
+import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 
-/// Result of applying the Sahib al-Tartib threshold to a user's outstanding
-/// Qaza ledger.
+/// Current-day Sahib al-Tartib state.
 ///
-/// The threshold counts only the five daily Fard prayers. Witr is excluded
-/// from that count, but remains a Qaza prayer and therefore participates in
-/// chronological prayer order when order is required.
+/// The ordered chain is limited to today's five Fard prayers:
+/// Fajr -> Zuhr -> Asr -> Maghrib -> Isha.
+/// Witr is intentionally outside this chain.
 class SahibAlTartibState {
   const SahibAlTartibState({
     required this.pendingFarzCount,
@@ -16,7 +15,9 @@ class SahibAlTartibState {
     required this.nextPending,
   });
 
+  /// Number of today's pending Fard Qaza records.
   final int pendingFarzCount;
+
   final bool requiresOrder;
   final QazaRecord? nextPending;
 
@@ -25,8 +26,6 @@ class SahibAlTartibState {
 
 class SahibAlTartibService {
   const SahibAlTartibService(this.repository);
-
-  static const int threshold = 6;
 
   static const List<PrayerType> farzPrayers = <PrayerType>[
     PrayerType.fajr,
@@ -38,67 +37,80 @@ class SahibAlTartibService {
 
   final QazaRepository repository;
 
-  Future<SahibAlTartibState> evaluate({required String userId}) async {
-    final summary = await repository.getProgressSummary(userId: userId);
-    final pendingFarzCount = _pendingFarzCount(summary);
+  Future<SahibAlTartibState> evaluate({
+    required String userId,
+    DateTime? today,
+  }) async {
+    final todayDate = QazaDate.normalize(today ?? DateTime.now());
+    final page = await repository.getPage(
+      userId: userId,
+      limit: farzPrayers.length + 1,
+      status: QazaStatus.pending,
+      from: todayDate,
+      to: todayDate,
+    );
 
-    if (pendingFarzCount >= threshold || pendingFarzCount == 0) {
-      return SahibAlTartibState(
-        pendingFarzCount: pendingFarzCount,
+    final pendingByPrayer = <PrayerType, QazaRecord>{
+      for (final record in page.records)
+        if (farzPrayers.contains(record.prayerType))
+          record.prayerType: record,
+    };
+
+    final pendingFarzCount = pendingByPrayer.length;
+    if (pendingFarzCount == 0) {
+      return const SahibAlTartibState(
+        pendingFarzCount: 0,
         requiresOrder: false,
         nextPending: null,
       );
     }
 
     QazaRecord? next;
-    for (final prayer in PrayerType.values) {
-      final candidate = await repository.getOldestPending(
-        userId: userId,
-        prayerType: prayer,
-      );
-      if (candidate == null) continue;
-      if (next == null || _compare(candidate, next) < 0) {
-        next = candidate;
-      }
+    for (final prayer in farzPrayers) {
+      next = pendingByPrayer[prayer];
+      if (next != null) break;
     }
 
     return SahibAlTartibState(
       pendingFarzCount: pendingFarzCount,
-      requiresOrder: true,
+      requiresOrder: next != null,
       nextPending: next,
     );
   }
 
-  int _pendingFarzCount(QazaProgressSummary summary) {
-    var count = 0;
-    for (final prayer in farzPrayers) {
-      count += summary.byPrayer[prayer]?.progress.pending ?? 0;
-    }
-    return count;
-  }
+  /// Returns whether [recordIds] can be completed without violating the
+  /// current-day Sahib al-Tartib sequence.
+  ///
+  /// Witr is independent from the five-prayer chain, so a pending Witr from
+  /// today remains completable while a Fard prayer is waiting.
+  Future<bool> canCompleteRecordIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return true;
 
-  /// Orders Qaza by original calendar date and, on the same date, by the
-  /// prayer's actual daily sequence rather than enum/name ordering.
-  static int _compare(QazaRecord a, QazaRecord b) {
-    final date = a.originalDate.compareTo(b.originalDate);
-    if (date != 0) return date;
+    final state = await evaluate(userId: userId);
+    if (!state.requiresOrder || state.nextPending == null) return true;
 
-    final prayer = _prayerOrder(a.prayerType).compareTo(
-      _prayerOrder(b.prayerType),
+    final today = QazaDate.normalize(DateTime.now());
+    final page = await repository.getPage(
+      userId: userId,
+      limit: farzPrayers.length + 1,
+      status: QazaStatus.pending,
+      from: today,
+      to: today,
     );
-    if (prayer != 0) return prayer;
 
-    return a.id.compareTo(b.id);
+    final allowedIds = <String>{state.nextPending!.id};
+    allowedIds.addAll(
+      page.records
+          .where((record) => record.prayerType == PrayerType.witr)
+          .map((record) => record.id),
+    );
+
+    return ids.every(allowedIds.contains);
   }
-
-  static int _prayerOrder(PrayerType prayer) => switch (prayer) {
-        PrayerType.fajr => 0,
-        PrayerType.zuhr => 1,
-        PrayerType.asr => 2,
-        PrayerType.maghrib => 3,
-        PrayerType.isha => 4,
-        PrayerType.witr => 5,
-      };
 }
 
 /// Thrown when a completion request would violate the active Sahib al-Tartib
