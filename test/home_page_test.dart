@@ -157,20 +157,17 @@ void main() {
       expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_pending_by_prayer')), findsOneWidget);
       expect(find.byKey(const Key('home_your_progress')), findsOneWidget);
-      expect(find.byKey(const Key('home_detailed_statistics')), findsOneWidget);
+      expect(find.byKey(const Key('home_detailed_statistics')), findsNothing);
 
       final today = tester.getRect(find.byKey(const Key('home_today_progress')));
       final overall = tester.getRect(find.byKey(const Key('home_overall_qaza')));
       final pending =
           tester.getRect(find.byKey(const Key('home_pending_by_prayer')));
       final chart = tester.getRect(find.byKey(const Key('home_your_progress')));
-      final details =
-          tester.getRect(find.byKey(const Key('home_detailed_statistics')));
 
       expect(today.bottom, lessThanOrEqualTo(overall.top));
       expect(overall.bottom, lessThanOrEqualTo(pending.top));
       expect(pending.bottom, lessThanOrEqualTo(chart.top));
-      expect(chart.bottom, lessThanOrEqualTo(details.top));
     });
 
     testWidgets('does not add the removed slogan or Quranic content',
@@ -626,14 +623,105 @@ void main() {
   });
 
   group('details and empty state', () {
-    testWidgets('opens detailed statistics from the Home row', (tester) async {
+    testWidgets('opens detailed statistics from Overall Qaza View details',
+        (tester) async {
       await pumpHome(tester, await ledger());
 
-      await tester.tap(find.byKey(const Key('home_detailed_statistics')));
+      await tester.tap(find.byKey(const Key('home_overall_view_details')));
       await tester.pumpAndSettle();
 
+      expect(find.byKey(const Key('detailed_statistics_screen')), findsOneWidget);
+      expect(find.byKey(const Key('detailed_overall_statistics')), findsOneWidget);
       expect(find.text('View Detailed Statistics'), findsOneWidget);
       expect(find.text('Overall Qaza'), findsOneWidget);
+    });
+
+    testWidgets('detailed statistics stays in sync with the current provider',
+        (tester) async {
+      final repository = await ledger();
+      final container = await pumpHome(tester, repository);
+
+      await tester.tap(find.byKey(const Key('home_overall_view_details')));
+      await tester.pumpAndSettle();
+
+      expect(
+        textOf(tester, const Key('detailed_overall_completed')),
+        '3',
+      );
+      expect(
+        textOf(tester, const Key('detailed_overall_total')),
+        '5',
+      );
+
+      await repository.addRecords([
+        _record(
+          'z2',
+          PrayerType.zuhr,
+          DateTime(2026, 1, 6),
+          QazaStatus.completed,
+          completedAt: _stamp,
+        ),
+      ]);
+      container.invalidate(progressSummaryProvider);
+      await tester.pumpAndSettle();
+
+      expect(
+        textOf(tester, const Key('detailed_overall_completed')),
+        '4',
+      );
+      expect(
+        textOf(tester, const Key('detailed_overall_total')),
+        '6',
+      );
+      expect(
+        textOf(tester, const Key('detailed_prayer_completed_zuhr')),
+        '1',
+      );
+      expect(
+        textOf(tester, const Key('detailed_prayer_total_zuhr')),
+        '2',
+      );
+    });
+
+    testWidgets('shows complete prayer-wise statistics', (tester) async {
+      await pumpHome(tester, await ledger());
+
+      await tester.tap(find.byKey(const Key('home_overall_view_details')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('detailed_prayer_breakdown')), findsOneWidget);
+
+      for (final prayer in PrayerType.values) {
+        expect(
+          find.byKey(Key('detailed_prayer_progress_' + prayer.name)),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(Key('detailed_prayer_completed_' + prayer.name)),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(Key('detailed_prayer_pending_' + prayer.name)),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(Key('detailed_prayer_total_' + prayer.name)),
+          findsOneWidget,
+        );
+      }
+
+      expect(
+        textOf(tester, const Key('detailed_prayer_completed_fajr')),
+        '2',
+      );
+      expect(
+        textOf(tester, const Key('detailed_prayer_pending_fajr')),
+        '1',
+      );
+      expect(
+        textOf(tester, const Key('detailed_prayer_total_fajr')),
+        '3',
+      );
     });
 
     testWidgets('keeps existing empty ledger actions', (tester) async {
