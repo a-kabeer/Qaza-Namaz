@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/features/home/home_qaza_completion.dart';
+import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_times/domain/prayer_times_models.dart';
 
 PrayerDay _day(DateTime date) => PrayerDay(
