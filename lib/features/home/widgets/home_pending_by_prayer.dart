@@ -8,6 +8,7 @@ import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../l10n/prayer_type_l10n.dart';
+import '../../../core/widgets/progress_widgets.dart';
 
 import '../../qaza/qaza_navigation.dart';
 
