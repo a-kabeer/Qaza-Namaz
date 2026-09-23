@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_scaffold.dart';
-import '../../../core/widgets/sync_status.dart';
 import '../../../l10n/app_localizations.dart';
 
 class HomeAllCompletedState extends StatelessWidget {
@@ -25,80 +22,71 @@ class HomeAllCompletedState extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
 
-    return ListView(
+    return AppCard(
       key: const Key('home_all_completed_state'),
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        AppSpacing.fabClearance,
-      ),
-      children: [
-        const SyncStatus(),
-        const SizedBox(height: 6),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: scheme.primaryContainer,
-                    foregroundColor: scheme.onPrimaryContainer,
-                    child: const Icon(Icons.check_rounded, size: 38),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.homeOverallQaza,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.homeCompleted,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 20),
-                  _StatRow(
-                    label: l10n.homeCompleted,
-                    value: completed.toString(),
-                  ),
-                  _StatRow(
-                    label: l10n.homeStatTotal,
-                    value: total.toString(),
-                  ),
-                  const SizedBox(height: 20),
-                  AppButton(
-                    key: const Key('home_all_completed_calculate'),
-                    expand: true,
-                    icon: Icons.calculate_outlined,
-                    label: l10n.homeCalculateQaza,
-                    onPressed: onCalculate,
-                  ),
-                  const SizedBox(height: 12),
-                  AppButton(
-                    key: const Key('home_all_completed_add'),
-                    expand: true,
-                    secondary: true,
-                    icon: Icons.add_rounded,
-                    label: l10n.homeAddManually,
-                    onPressed: onAdd,
-                  ),
-                ],
-              ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: scheme.primaryContainer,
+            foregroundColor: scheme.onPrimaryContainer,
+            child: const Icon(Icons.check_rounded, size: 30),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.homeOverallQaza,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.homeCompleted,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                _StatRow(
+                  label: l10n.homeCompleted,
+                  value: completed.toString(),
+                ),
+                _StatRow(
+                  label: l10n.homeStatTotal,
+                  value: total.toString(),
+                ),
+                const SizedBox(height: 10),
+                Text(l10n.completeNoPendingMessage),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      key: const Key('home_all_completed_calculate'),
+                      onPressed: onCalculate,
+                      icon: const Icon(Icons.calculate_outlined),
+                      label: Text(l10n.homeCalculateQaza),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('home_all_completed_add'),
+                      onPressed: onAdd,
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(l10n.homeAddManually),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -112,7 +100,7 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Expanded(child: Text(label)),
