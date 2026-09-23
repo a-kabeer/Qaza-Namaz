@@ -639,11 +639,5 @@
   "homeDetailedStatistics": "View Detailed Statistics",
   "homeDetailedStatisticsSubtitle": "Overall and prayer-wise completion",
   "homeChartNoData": "No completed Qaza in this period.",
-  "homeTodayDate": "Today",
-  "homeCurrentPrayerLabel": "Current prayer: {prayer}",
-  "@homeCurrentPrayerLabel": { "placeholders": { "prayer": {"type": "String"} } },
-  "homeSahibOrderLabel": "Sahib al-Tartib: {prayer}",
-  "@homeSahibOrderLabel": { "placeholders": { "prayer": {"type": "String"} } },
-  "homeAllCompletedTitle": "All Qaza Completed",
-  "homeAllCompletedMessage": "All recorded Qaza prayers are complete. You can add new Qaza records whenever needed."
+  "homeTodayDate": "Today"
 }
