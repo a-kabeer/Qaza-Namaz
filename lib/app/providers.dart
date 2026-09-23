@@ -4,6 +4,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -178,8 +179,11 @@ final qazaPrayerTimeBlockedResolverProvider =
 /// Debug output by default. A crash-reporting backend is added by overriding
 /// this provider with a `FanOutDiagnostics([const DebugDiagnostics(), ...])`,
 /// which is the only change the rest of the app needs.
-final diagnosticsProvider =
-    Provider<DiagnosticsService>((ref) => const DebugDiagnostics());
+final diagnosticsProvider = Provider<DiagnosticsService>(
+  (ref) => kReleaseMode
+      ? PersistentDiagnostics()
+      : const DebugDiagnostics(),
+);
 
 final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
