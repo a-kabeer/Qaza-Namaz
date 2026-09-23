@@ -450,6 +450,30 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<LocalQazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    final page = await _database.qazaRecordsDao.getOperationPage(
+      userId: userId,
+      operationId: operationId,
+      matchLastAction: matchLastAction,
+      operationAt: operationAt,
+      status: status,
+      limit: limit,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+    );
+    return LocalQazaPage(records: page.records, hasMore: page.hasMore);
+  }
+
+  @override
   Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
@@ -518,9 +542,3 @@ class DriftQazaLocalStore extends QazaLocalStore {
             : Value(op.targetRecordId),
         completedAt: op.completedAt == null
             ? const Value.absent()
-            : Value(op.completedAt),
-        attempts: Value(op.attempts),
-        lastError:
-            op.lastError == null ? const Value.absent() : Value(op.lastError),
-      );
-}
