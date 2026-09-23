@@ -202,6 +202,14 @@ final homeSelectedPrayerProvider = Provider.autoDispose<HomeSelectedPrayerState>
     );
   }
 
+  final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+  if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: tartib!.nextPrayer,
+    );
+  }
+
   return HomeSelectedPrayerState(
     mode: selection.mode,
     prayer: ref.watch(homeCurrentPrayerProvider).prayer,
