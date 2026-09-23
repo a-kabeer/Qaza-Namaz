@@ -3122,6 +3122,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today'**
   String get homeTodayDate;
+
+  String homeCurrentPrayerLabel(String prayer);
+
+  String homeSahibOrderLabel(String prayer);
 }
 
 class _AppLocalizationsDelegate
