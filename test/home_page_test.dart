@@ -190,14 +190,13 @@ void main() {
   });
 
   group('today progress and next Qaza', () {
-    testWidgets('shows daily donut and current prayer oldest pending',
-        (tester) async {
+    testWidgets('shows daily donut and Sahib required Qaza', (tester) async {
       await pumpHome(tester, await ledger());
 
       expect(find.byKey(const Key('home_today_donut')), findsOneWidget);
       expect(find.byKey(const Key('home_today_percent')), findsOneWidget);
       expect(find.byKey(const Key('home_today_count')), findsOneWidget);
-      expect(find.text('Next Qaza (Current Prayer)'), findsOneWidget);
+      expect(find.text('Next Qaza'), findsOneWidget);
       expect(find.text('Fajr'), findsWidgets);
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
@@ -300,11 +299,18 @@ void main() {
       expect(find.text('02 Jan 2026'), findsOneWidget);
     });
 
-    testWidgets('handles missing current prayer without crashing',
+    testWidgets('handles missing current prayer in non-Sahib mode without crashing',
         (tester) async {
+      final repository = await ledger();
+      await repository.addRecords([
+        _record('f4', PrayerType.fajr, DateTime(2026, 1, 10), QazaStatus.pending),
+        _record('f5', PrayerType.fajr, DateTime(2026, 1, 11), QazaStatus.pending),
+        _record('f6', PrayerType.fajr, DateTime(2026, 1, 12), QazaStatus.pending),
+        _record('f7', PrayerType.fajr, DateTime(2026, 1, 13), QazaStatus.pending),
+      ]);
       await pumpHome(
         tester,
-        await ledger(),
+        repository,
         currentPrayer: false,
       );
 

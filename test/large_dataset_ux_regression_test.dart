@@ -97,6 +97,16 @@ class _CountingRepository implements QazaRepository {
   }
 
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      delegate.getPendingRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
+
+  @override
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,

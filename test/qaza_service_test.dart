@@ -315,123 +315,134 @@ void main() {
       expect(progress.percentage, 0);
     });
 
-    test('orders only current-day Fard prayers from Fajr to Isha', () async {
-      final today = QazaDate.normalize(DateTime.now());
+    test('applies the Sahib al-Tartib threshold to all pending Fard prayers',
+        () async {
       final tartib = service.tartib;
 
-      for (final prayer in [
-        PrayerType.fajr,
-        PrayerType.zuhr,
-        PrayerType.asr,
-        PrayerType.maghrib,
-        PrayerType.isha,
-        PrayerType.witr,
-      ]) {
+      expect((await tartib.evaluate(userId: 'u1')).pendingFarzCount, 0);
+      expect((await tartib.evaluate(userId: 'u1')).requiresOrder, isFalse);
+
+      for (var day = 1; day <= 5; day++) {
         await service.recordQaza(
           userId: 'u1',
-          prayerType: prayer,
-          originalDate: today,
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2024, 1, day),
         );
       }
 
-      final state = await tartib.evaluate(userId: 'u1');
+      var state = await tartib.evaluate(userId: 'u1');
       expect(state.pendingFarzCount, 5);
       expect(state.requiresOrder, isTrue);
-      expect(state.nextPrayer, PrayerType.fajr);
-
-      final ordered = <PrayerType>[];
-      for (var i = 0; i < 5; i++) {
-        final current = await tartib.evaluate(userId: 'u1');
-        ordered.add(current.nextPrayer!);
-        await service.completeRecord(
-          userId: 'u1',
-          recordId: current.nextPending!.id,
-          completedAt: DateTime.now(),
-        );
-      }
-
-      expect(
-        ordered,
-        [
-          PrayerType.fajr,
-          PrayerType.zuhr,
-          PrayerType.asr,
-          PrayerType.maghrib,
-          PrayerType.isha,
-        ],
-      );
-      expect((await tartib.evaluate(userId: 'u1')).requiresOrder, isFalse);
-    });
-
-    test('starts with the earliest pending prayer when an earlier prayer was already prayed',
-        () async {
-      final today = QazaDate.normalize(DateTime.now());
-
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.zuhr,
-        originalDate: today,
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.asr,
-        originalDate: today,
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.isha,
-        originalDate: today,
-      );
-
-      final state = await service.tartib.evaluate(userId: 'u1');
-      expect(state.pendingFarzCount, 3);
-      expect(state.nextPrayer, PrayerType.zuhr);
-    });
-
-    test('ignores older pending Fard records for the current-day sequence',
-        () async {
-      final today = QazaDate.normalize(DateTime.now());
-      final yesterday = today.subtract(const Duration(days: 1));
 
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.fajr,
-        originalDate: yesterday,
+        originalDate: DateTime(2024, 1, 6),
+      );
+
+      state = await tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 6);
+      expect(state.requiresOrder, isFalse);
+    });
+
+    test('excludes Witr from the six-Fard threshold', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.witr,
+        originalDate: DateTime(2024, 1, 1),
+      );
+
+      for (var day = 1; day <= 5; day++) {
+        await service.recordQaza(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2024, 1, day + 1),
+        );
+      }
+
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 5);
+      expect(state.requiresOrder, isTrue);
+    });
+
+    test('applies tartib even when all pending Fard are historical', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2020, 1, 1),
       );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.zuhr,
-        originalDate: today,
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.asr,
-        originalDate: today,
+        originalDate: DateTime(2020, 1, 2),
       );
 
       final state = await service.tartib.evaluate(userId: 'u1');
       expect(state.pendingFarzCount, 2);
-      expect(state.nextPrayer, PrayerType.zuhr);
+      expect(state.requiresOrder, isTrue);
+      expect(state.nextPrayer, PrayerType.fajr);
+      expect(state.nextPending?.originalDate, DateTime(2020, 1, 1));
     });
 
-    test('blocks a later current-day Fard but allows Witr independently',
+    test('does not apply tartib when global Fard count is six even if today has one',
         () async {
-      final today = QazaDate.normalize(DateTime.now());
+      for (var day = 1; day <= 5; day++) {
+        await service.recordQaza(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2020, 1, day),
+        );
+      }
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.zuhr,
+        originalDate: DateTime.now(),
+      );
 
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 6);
+      expect(state.requiresOrder, isFalse);
+      expect(state.nextPending, isNull);
+    });
+
+    test('orders required Qaza by date then Fard prayer sequence then id',
+        () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.isha,
+        originalDate: DateTime(2024, 1, 1),
+      );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.fajr,
-        originalDate: today,
+        originalDate: DateTime(2024, 1, 1),
       );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.zuhr,
-        originalDate: today,
+        originalDate: DateTime(2024, 1, 2),
+      );
+
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.nextPrayer, PrayerType.fajr);
+      expect(state.nextPending?.originalDate, DateTime(2024, 1, 1));
+    });
+
+    test('blocks a later Fard but allows pending Witr independently', () async {
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2024, 1, 1),
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.zuhr,
+        originalDate: DateTime(2024, 1, 2),
       );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.witr,
-        originalDate: today,
+        originalDate: DateTime(2019, 1, 1),
       );
 
       final zuhr = (await service.repository.getRecords(
@@ -463,45 +474,92 @@ void main() {
       await service.completeRecord(
         userId: 'u1',
         recordId: witr.id,
-        completedAt: DateTime.now(),
+        completedAt: DateTime(2026, 9, 23, 20),
       );
 
       expect(
         () => service.completeRecord(
           userId: 'u1',
           recordId: zuhr.id,
-          completedAt: DateTime.now(),
+          completedAt: DateTime(2026, 9, 23, 20),
         ),
         throwsA(isA<QazaTartibViolationException>()),
       );
     });
 
-    test('bulk completion cannot bypass the current-day Fard order', () async {
-      final today = QazaDate.normalize(DateTime.now());
-
-      for (final prayer in [PrayerType.fajr, PrayerType.zuhr, PrayerType.asr]) {
+    test('bulk completion can include the required Fard and pending Witr only',
+        () async {
+      final fard = [
+        PrayerType.fajr,
+        PrayerType.zuhr,
+        PrayerType.asr,
+      ];
+      for (var index = 0; index < fard.length; index++) {
         await service.recordQaza(
           userId: 'u1',
-          prayerType: prayer,
-          originalDate: today,
+          prayerType: fard[index],
+          originalDate: DateTime(2024, 1, index + 1),
+        );
+      }
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.witr,
+        originalDate: DateTime(2024, 1, 10),
+      );
+
+      final records =
+          await service.repository.getRecords(userId: 'u1', status: QazaStatus.pending);
+      final required = records.firstWhere((record) => record.prayerType == PrayerType.fajr);
+      final witr = records.firstWhere((record) => record.prayerType == PrayerType.witr);
+      final laterFard = records.firstWhere((record) => record.prayerType == PrayerType.zuhr);
+
+      expect(
+        await service.tartib.canCompleteRecordIds(
+          userId: 'u1',
+          recordIds: [required.id, witr.id],
+        ),
+        isTrue,
+      );
+      expect(
+        await service.tartib.canCompleteRecordIds(
+          userId: 'u1',
+          recordIds: [required.id, laterFard.id],
+        ),
+        isFalse,
+      );
+    });
+
+    test('threshold transitions are recalculated after completion', () async {
+      for (var day = 1; day <= 6; day++) {
+        await service.recordQaza(
+          userId: 'u1',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2024, 2, day),
         );
       }
 
+      expect(
+        (await service.tartib.evaluate(userId: 'u1')).requiresOrder,
+        isFalse,
+      );
+
       final records = await service.repository.getRecords(
         userId: 'u1',
+        prayerType: PrayerType.fajr,
         status: QazaStatus.pending,
       );
-      final ids = records.map((record) => record.id).toList();
-
-      expect(
-        () => service.completeRecords(
-          userId: 'u1',
-          recordIds: ids,
-          completedAt: DateTime.now(),
-        ),
-        throwsA(isA<QazaTartibViolationException>()),
+      await service.completeRecord(
+        userId: 'u1',
+        recordId: records.last.id,
+        completedAt: DateTime(2026, 9, 23, 20),
       );
+
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 5);
+      expect(state.requiresOrder, isTrue);
+      expect(state.nextPending?.originalDate, DateTime(2024, 2, 1));
     });
+
 
 
   });
