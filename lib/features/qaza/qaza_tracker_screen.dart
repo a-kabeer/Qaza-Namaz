@@ -406,7 +406,7 @@ class _TrackerBody extends ConsumerWidget {
                         ? (record.status == QazaStatus.pending
                             ? () => controller.toggleSelection(record.id)
                             : null)
-                        : (record.status == QazaStatus.pending
+                        : (record.status == QazaStatus.pending && canAct
                             ? () => _completeSingle(context, ref, record)
                             : null),
                     onLongPress: record.status == QazaStatus.pending &&
