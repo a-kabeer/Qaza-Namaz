@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,6 +96,7 @@ void main() {
     Size size = const Size(900, 2000),
     bool currentPrayer = true,
     QazaRestrictionEvaluation? restrictionEvaluation,
+    DateTime? now,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -103,6 +105,7 @@ void main() {
     final overrides = <Override>[
       qazaRepositoryProvider.overrideWithValue(repository),
       activeUserIdProvider.overrideWithValue('u1'),
+      if (now != null) homeNowProvider.overrideWithValue(now),
       authStateProvider.overrideWith(
         (ref) => Stream.value(
           const AppUser(id: 'u1', email: 'u1@example.com'),
@@ -525,18 +528,100 @@ void main() {
       expect(find.byKey(const Key('home_pending_by_prayer')), findsOneWidget);
     });
 
-    testWidgets('graph has range controls and is data-driven', (tester) async {
-      await pumpHome(tester, await ledger());
+    testWidgets('graph supports 1-day and 3-day daily completed history',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'sep20',
+          PrayerType.fajr,
+          DateTime(2026, 9, 1),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 20),
+        ),
+        _record(
+          'sep21',
+          PrayerType.zuhr,
+          DateTime(2026, 9, 2),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 21),
+        ),
+        _record(
+          'sep22a',
+          PrayerType.asr,
+          DateTime(2026, 9, 3),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 22),
+        ),
+        _record(
+          'sep22b',
+          PrayerType.isha,
+          DateTime(2026, 9, 4),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 22),
+        ),
+      ]);
+
+      final container = await pumpHome(
+        tester,
+        repository,
+        now: DateTime(2026, 9, 22),
+      );
 
       expect(find.byKey(const Key('home_progress_range')), findsOneWidget);
+      expect(find.text('1 Day'), findsOneWidget);
+      expect(find.text('3 Days'), findsOneWidget);
       expect(find.text('7 Days'), findsOneWidget);
       expect(find.text('30 Days'), findsOneWidget);
       expect(find.text('Monthly'), findsOneWidget);
-      expect(find.byKey(const Key('home_progress_chart')), findsOneWidget);
 
-      await tester.tap(find.text('30 Days'));
+      final oneDay = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.oneDay).future);
+      expect(oneDay.length, 1);
+      expect(oneDay.single.start, DateTime(2026, 9, 22));
+      expect(oneDay.single.count, 2);
+
+      await tester.tap(find.text('3 Days'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('home_progress_chart')), findsOneWidget);
+
+      final threeDays = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.threeDays).future);
+      expect(threeDays.length, 3);
+      expect(
+        threeDays.map((point) => point.start),
+        [
+          DateTime(2026, 9, 20),
+          DateTime(2026, 9, 21),
+          DateTime(2026, 9, 22),
+        ],
+      );
+      expect(
+        threeDays.map((point) => point.count),
+        [1, 1, 2],
+      );
+
+      final chart = tester.widget<LineChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_progress_chart')),
+          matching: find.byType(LineChart),
+        ),
+      );
+      final tooltipItems = chart.data.lineTouchData.touchTooltipData
+          .getTooltipItems!([
+        LineBarSpot(
+          chart.data.lineBarsData.first,
+          0,
+          const FlSpot(2, 2),
+        ),
+      ]);
+      expect(tooltipItems.single!.text, contains('22 Sep 2026'));
+      expect(tooltipItems.single!.text, contains('2 completed'));
+      expect(
+        tooltipItems.single!.textStyle.color,
+        Theme.of(tester.element(find.byKey(const Key('home_progress_chart'))))
+            .colorScheme
+            .onInverseSurface,
+      );
     });
   });
 
