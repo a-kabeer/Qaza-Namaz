@@ -259,9 +259,11 @@ class InMemoryQazaRepository
       return QazaCompletionResult.notFound;
     }
     if (current.status == QazaStatus.completed) {
-      return QazaCompletionResult.alreadyCompleted;
-    }
-    if (current.status != QazaStatus.pending) {
+      if (current.completedAt != null &&
+          !completedAt.isBefore(current.completedAt!)) {
+        return QazaCompletionResult.alreadyCompleted;
+      }
+    } else if (current.status != QazaStatus.pending) {
       return QazaCompletionResult.notFound;
     }
 
