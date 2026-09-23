@@ -10,13 +10,13 @@ import '../../features/calculator/calculator_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
 import '../../l10n/app_localizations.dart';
 import 'home_controller.dart';
-import 'home_empty_state.dart';
-import 'home_overall_progress.dart';
-import 'home_pending_by_prayer.dart';
-import 'home_progress_history.dart';
-import 'home_skeleton.dart';
-import 'home_statistics_summary.dart';
-import 'home_today_progress.dart';
+import 'widgets/home_empty_state.dart';
+import 'widgets/home_overall_progress.dart';
+import 'widgets/home_pending_by_prayer.dart';
+import 'widgets/home_progress_history.dart';
+import 'widgets/home_skeleton.dart';
+import 'widgets/home_statistics_summary.dart';
+import 'widgets/home_today_progress.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
