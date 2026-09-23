@@ -208,10 +208,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
     if (result != QazaCompletionResult.completed) {
       try {
-        ref.read(homeControllerProvider).afterCompletion(
-              pendingBefore:
-                  result == QazaCompletionResult.alreadyCompleted ? 1 : 0,
-            );
+        ref.read(homeControllerProvider).afterStaleCompletion();
       } catch (error, stack) {
         diagnostics.recordFailure(
           DiagnosticArea.qazaCompletion,
