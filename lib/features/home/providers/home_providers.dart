@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
@@ -101,15 +102,50 @@ DateTime homeLocalDateForLocation({
   required PrayerLocation? location,
   required DateTime instant,
 }) {
+  return homeLocalDayStartForLocation(
+    location: location,
+    instant: instant,
+  );
+}
+
+DateTime homeLocalDayStartForLocation({
+  required PrayerLocation? location,
+  required DateTime instant,
+}) {
   final timezone = location?.timezone;
   if (timezone != null &&
       timezone.isNotEmpty &&
       PrayerSchedule.isKnownTimezone(timezone)) {
-    return PrayerSchedule.localDate(timezone, instant: instant);
+    final local = PrayerSchedule.now(timezone, instant: instant);
+    final zone = tz.getLocation(timezone);
+    return tz.TZDateTime(zone, local.year, local.month, local.day);
   }
   final local = instant.toLocal();
   return DateTime(local.year, local.month, local.day);
 }
+
+DateTime homeLocalDayStartForDate({
+  required PrayerLocation? location,
+  required DateTime date,
+}) {
+  final timezone = location?.timezone;
+  if (timezone != null &&
+      timezone.isNotEmpty &&
+      PrayerSchedule.isKnownTimezone(timezone)) {
+    final zone = tz.getLocation(timezone);
+    return tz.TZDateTime(zone, date.year, date.month, date.day);
+  }
+  return DateTime(date.year, date.month, date.day);
+}
+
+DateTime homeLocalDayEndForDate({
+  required PrayerLocation? location,
+  required DateTime date,
+}) =>
+    homeLocalDayStartForDate(
+      location: location,
+      date: DateTime(date.year, date.month, date.day + 1),
+    );
 
 final homeLocalDateProvider = Provider<DateTime>((ref) {
   final now = ref.watch(homeNowProvider);
@@ -127,8 +163,15 @@ final homeDailyProgressProvider =
     return HomeDailyProgress(completed: 0, target: target);
   }
 
-  final start = today;
-  final end = start.add(const Duration(days: 1));
+  final location = ref.watch(prayerTimesControllerProvider).location;
+  final start = homeLocalDayStartForDate(
+    location: location,
+    date: today,
+  );
+  final end = homeLocalDayEndForDate(
+    location: location,
+    date: today,
+  );
   final completed = await ref.read(qazaServiceProvider).countCompletedBetween(
         userId: userId,
         from: start,
@@ -142,6 +185,7 @@ final homeProgressHistoryProvider =
   (ref, range) async {
     final userId = ref.watch(activeUserIdProvider);
     final today = ref.watch(homeLocalDateProvider);
+    final location = ref.watch(prayerTimesControllerProvider).location;
     if (userId == null) return const <HomeProgressPoint>[];
 
     List<DateTime> starts;
@@ -172,10 +216,20 @@ final homeProgressHistoryProvider =
       for (var i = 0; i < starts.length; i++)
         ref.read(qazaServiceProvider).countCompletedBetween(
               userId: userId,
-              from: starts[i],
-              to: range == HomeProgressRange.monthly
-                  ? DateTime(starts[i].year, starts[i].month + 1)
-                  : starts[i].add(const Duration(days: 1)),
+              from: homeLocalDayStartForDate(
+                location: location,
+                date: starts[i],
+              ),
+              to: homeLocalDayStartForDate(
+                location: location,
+                date: range == HomeProgressRange.monthly
+                    ? DateTime(starts[i].year, starts[i].month + 1)
+                    : DateTime(
+                        starts[i].year,
+                        starts[i].month,
+                        starts[i].day + 1,
+                      ),
+              ),
             ),
     ]);
 
