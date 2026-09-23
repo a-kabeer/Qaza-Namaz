@@ -165,6 +165,43 @@ class DriftQazaLocalStore extends QazaLocalStore {
       );
 
   @override
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+    return _database.transaction(() async {
+      final changed =
+          await _database.qazaRecordsDao.softDeletePendingIfUnchangedByIds(
+        userId: userId,
+        ids: recordIds,
+        expectedCreatedAt: expectedCreatedAt,
+        deletedAt: deletedAt,
+      );
+      if (changed.isEmpty) return const <QazaRecord>[];
+
+      final ops = <PendingSyncOp>[
+        for (final record in changed)
+          PendingSyncOp(
+            id: 'soft_delete_' + record.id + '_' + operationId,
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: deletedAt,
+            targetRecordId: record.id,
+            record: record,
+          ),
+      ];
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
+      return changed;
+    });
+  }
+
+  @override
   Future<bool> updateRecord(QazaRecord record) => _database.transaction(
         () => _database.qazaRecordsDao.updateRecord(record),
       );
