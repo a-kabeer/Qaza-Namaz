@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../prayer_times/prayer_times_providers.dart';
-import 'home_providers.dart';
+import 'providers/home_providers.dart';
 import 'home_state.dart';
 
 class HomeController {
