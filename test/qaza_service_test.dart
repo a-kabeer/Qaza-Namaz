@@ -315,114 +315,194 @@ void main() {
       expect(progress.percentage, 0);
     });
 
-    test('applies the Sahib al-Tartib threshold to pending Fard prayers only',
-        () async {
+    test('orders only current-day Fard prayers from Fajr to Isha', () async {
+      final today = QazaDate.normalize(DateTime.now());
       final tartib = service.tartib;
-      expect((await tartib.evaluate(userId: 'u1')).requiresOrder, isFalse);
 
-      for (var day = 1; day <= 5; day++) {
+      for (final prayer in [
+        PrayerType.fajr,
+        PrayerType.zuhr,
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.isha,
+        PrayerType.witr,
+      ]) {
         await service.recordQaza(
           userId: 'u1',
-          prayerType: PrayerType.fajr,
-          originalDate: DateTime(2024, 1, day),
+          prayerType: prayer,
+          originalDate: today,
         );
       }
+
+      final state = await tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 5);
+      expect(state.requiresOrder, isTrue);
+      expect(state.nextPrayer, PrayerType.fajr);
+
+      final ordered = <PrayerType>[];
+      for (var i = 0; i < 5; i++) {
+        final current = await tartib.evaluate(userId: 'u1');
+        ordered.add(current.nextPrayer!);
+        await service.completeRecord(
+          userId: 'u1',
+          recordId: current.nextPending!.id,
+          completedAt: DateTime.now(),
+        );
+      }
+
+      expect(
+        ordered,
+        [
+          PrayerType.fajr,
+          PrayerType.zuhr,
+          PrayerType.asr,
+          PrayerType.maghrib,
+          PrayerType.isha,
+        ],
+      );
+      expect((await tartib.evaluate(userId: 'u1')).requiresOrder, isFalse);
+    });
+
+    test('starts with the earliest pending prayer when an earlier prayer was already prayed',
+        () async {
+      final today = QazaDate.normalize(DateTime.now());
+
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.zuhr,
+        originalDate: today,
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.asr,
+        originalDate: today,
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.isha,
+        originalDate: today,
+      );
+
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 3);
+      expect(state.nextPrayer, PrayerType.zuhr);
+    });
+
+    test('ignores older pending Fard records for the current-day sequence',
+        () async {
+      final today = QazaDate.normalize(DateTime.now());
+      final yesterday = today.subtract(const Duration(days: 1));
+
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: yesterday,
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.zuhr,
+        originalDate: today,
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.asr,
+        originalDate: today,
+      );
+
+      final state = await service.tartib.evaluate(userId: 'u1');
+      expect(state.pendingFarzCount, 2);
+      expect(state.nextPrayer, PrayerType.zuhr);
+    });
+
+    test('blocks a later current-day Fard but allows Witr independently',
+        () async {
+      final today = QazaDate.normalize(DateTime.now());
+
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.fajr,
+        originalDate: today,
+      );
+      await service.recordQaza(
+        userId: 'u1',
+        prayerType: PrayerType.zuhr,
+        originalDate: today,
+      );
       await service.recordQaza(
         userId: 'u1',
         prayerType: PrayerType.witr,
-        originalDate: DateTime(2024, 1, 1),
-      );
-
-      final withFiveFarz = await tartib.evaluate(userId: 'u1');
-      expect(withFiveFarz.pendingFarzCount, 5);
-      expect(withFiveFarz.requiresOrder, isTrue);
-
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.fajr,
-        originalDate: DateTime(2024, 1, 6),
-      );
-
-      final withSixFarz = await tartib.evaluate(userId: 'u1');
-      expect(withSixFarz.pendingFarzCount, 6);
-      expect(withSixFarz.requiresOrder, isFalse);
-    });
-
-    test('uses actual prayer order when dates are identical', () async {
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.zuhr,
-        originalDate: DateTime(2024, 2, 1),
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.fajr,
-        originalDate: DateTime(2024, 2, 1),
-      );
-
-      final next = await service.oldestPendingOverall(userId: 'u1');
-      expect(next?.prayerType, PrayerType.fajr);
-    });
-
-    test('blocks completion of a later prayer while tartib is required',
-        () async {
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.fajr,
-        originalDate: DateTime(2024, 3, 1),
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.zuhr,
-        originalDate: DateTime(2024, 3, 1),
+        originalDate: today,
       );
 
       final zuhr = (await service.repository.getRecords(
         userId: 'u1',
         prayerType: PrayerType.zuhr,
         status: QazaStatus.pending,
-      ))
-          .single;
+      )).single;
+      final witr = (await service.repository.getRecords(
+        userId: 'u1',
+        prayerType: PrayerType.witr,
+        status: QazaStatus.pending,
+      )).single;
+
+      expect(
+        await service.tartib.canCompleteRecordIds(
+          userId: 'u1',
+          recordIds: [zuhr.id],
+        ),
+        isFalse,
+      );
+      expect(
+        await service.tartib.canCompleteRecordIds(
+          userId: 'u1',
+          recordIds: [witr.id],
+        ),
+        isTrue,
+      );
+
+      await service.completeRecord(
+        userId: 'u1',
+        recordId: witr.id,
+        completedAt: DateTime.now(),
+      );
 
       expect(
         () => service.completeRecord(
           userId: 'u1',
           recordId: zuhr.id,
-          completedAt: DateTime(2026, 9, 22),
+          completedAt: DateTime.now(),
         ),
         throwsA(isA<QazaTartibViolationException>()),
       );
     });
 
-    test('allows the required next prayer while tartib is active', () async {
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.fajr,
-        originalDate: DateTime(2024, 4, 1),
-      );
-      await service.recordQaza(
-        userId: 'u1',
-        prayerType: PrayerType.zuhr,
-        originalDate: DateTime(2024, 4, 1),
-      );
+    test('bulk completion cannot bypass the current-day Fard order', () async {
+      final today = QazaDate.normalize(DateTime.now());
 
-      final fajr = (await service.repository.getRecords(
+      for (final prayer in [PrayerType.fajr, PrayerType.zuhr, PrayerType.asr]) {
+        await service.recordQaza(
+          userId: 'u1',
+          prayerType: prayer,
+          originalDate: today,
+        );
+      }
+
+      final records = await service.repository.getRecords(
         userId: 'u1',
-        prayerType: PrayerType.fajr,
         status: QazaStatus.pending,
-      ))
-          .single;
-
-      await service.completeRecord(
-        userId: 'u1',
-        recordId: fajr.id,
-        completedAt: DateTime(2026, 9, 22),
       );
+      final ids = records.map((record) => record.id).toList();
 
-      final state = await service.sahibAlTartibState(userId: 'u1');
-      expect(state.requiresOrder, isTrue);
-      expect(state.nextPrayer, PrayerType.zuhr);
+      expect(
+        () => service.completeRecords(
+          userId: 'u1',
+          recordIds: ids,
+          completedAt: DateTime.now(),
+        ),
+        throwsA(isA<QazaTartibViolationException>()),
+      );
     });
+
 
   });
 }
