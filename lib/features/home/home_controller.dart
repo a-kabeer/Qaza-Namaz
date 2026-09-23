@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../prayer_times/prayer_times_providers.dart';
 import 'providers/home_providers.dart';
 import 'home_state.dart';
@@ -12,6 +13,8 @@ class HomeController {
   final Ref ref;
 
   void invalidateDashboard() {
+    ref.invalidate(homeNowProvider);
+    ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDailyProgressProvider);
     for (final prayer in PrayerType.values) {
@@ -24,7 +27,79 @@ class HomeController {
 
   Future<void> refresh() async {
     invalidateDashboard();
-    await ref.read(progressSummaryProvider.future);
+    ref.invalidate(homeCurrentPrayerProvider);
+    ref.invalidate(sahibAlTartibProvider);
+    ref.invalidate(qazaRestrictionEvaluationProvider);
+    ref.invalidate(homeFallbackPendingProvider);
+
+    await _refreshRequired(
+      progressSummaryProvider,
+      'home_summary_refresh_failed',
+    );
+
+    final activeRange = ref.read(homeProgressRangeProvider);
+    await _refreshOptional(
+      homeDailyProgressProvider,
+      'home_daily_progress_refresh_failed',
+    );
+    await _refreshOptional(
+      sahibAlTartibProvider,
+      'home_sahib_al_tartib_refresh_failed',
+    );
+    await _refreshOptional(
+      homeProgressHistoryProvider(activeRange),
+      'home_progress_history_refresh_failed',
+    );
+    await _refreshOptional(
+      qazaRestrictionEvaluationProvider,
+      'home_restriction_refresh_failed',
+    );
+
+    final selected = ref.read(homeSelectedPrayerProvider);
+    if (selected.prayer != null) {
+      await _refreshOptional(
+        oldestPendingProvider(selected.prayer!),
+        'home_next_qaza_refresh_failed',
+      );
+    } else {
+      await _refreshOptional(
+        homeFallbackPendingProvider,
+        'home_fallback_qaza_refresh_failed',
+      );
+    }
+  }
+
+  Future<void> _refreshRequired<T>(
+    FutureProvider<T> provider,
+    String code,
+  ) async {
+    try {
+      await ref.read(provider.future);
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        code,
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> _refreshOptional<T>(
+    FutureProvider<T> provider,
+    String code,
+  ) async {
+    try {
+      await ref.read(provider.future);
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        code,
+        error,
+        stack: stack,
+      );
+    }
   }
 
   void afterCompletion({
@@ -38,7 +113,6 @@ class HomeController {
       ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
     }
   }
-
 
   void afterStaleCompletion() {
     invalidateDashboard();
