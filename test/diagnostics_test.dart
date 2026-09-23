@@ -65,22 +65,42 @@ void main() {
   });
 
   group('recording', () {
-    test('a failure keeps the type and the redacted message only', () {
+    test('a failure keeps type, redacted message and stack', () {
       final sink = BufferedDiagnostics();
+      final stack = StackTrace.current;
 
       sink.recordFailure(
-        DiagnosticArea.auth,
-        'sign_in_failed',
-        StateError('rejected for someone@example.com'),
+        DiagnosticArea.qazaCompletion,
+        'completion_failed',
+        StateError('rejected for someone@example.com on 2026-09-22'),
+        stack: stack,
       );
 
       final event = sink.events.single;
-      expect(event.area, DiagnosticArea.auth);
-      expect(event.code, 'sign_in_failed');
+      expect(event.area, DiagnosticArea.qazaCompletion);
+      expect(event.code, 'completion_failed');
       expect(event.errorType, 'StateError');
       expect(event.message, contains('<email>'));
+      expect(event.message, contains('<date>'));
       expect(event.message, isNot(contains('someone@example.com')));
+      expect(event.stackTrace, isNotNull);
+      expect(event.stackTrace, contains('diagnostics_test.dart'));
+      expect(event.stackTrace, isNot(contains('someone@example.com')));
       expect(event.fatal, isFalse);
+    });
+
+    test('a long stack trace is capped after redaction', () {
+      final stack = StackTrace.fromString('safe-line\\n' + ('x' * 5000));
+      final event = buildFailureEvent(
+        DiagnosticArea.qazaCompletion,
+        'completion_failed',
+        const StateError('boom'),
+        stack: stack,
+      );
+
+      expect(event.stackTrace, isNotNull);
+      expect(event.stackTrace!.length, lessThanOrEqualTo(4001));
+      expect(event.stackTrace, endsWith('…'));
     });
 
     test('a fatal failure is marked as one', () {
