@@ -376,6 +376,54 @@ abstract class QazaLocalStore {
     );
   }
 
+  /// Atomically applies the safe undo/removal predicate used by an
+  /// addition operation: still pending and never updated since creation.
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    final snapshot = await load();
+    final records =
+        List<QazaRecord>.of(snapshot.recordsByUser[userId] ?? const []);
+    final wanted = recordIds.toSet();
+    final changed = <QazaRecord>[];
+
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      if (!wanted.contains(record.id) ||
+          record.status != QazaStatus.pending ||
+          !record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
+          !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
+        continue;
+      }
+      final deleted = record.copyWith(
+        status: QazaStatus.deleted,
+        updatedAt: deletedAt,
+      );
+      records[index] = deleted;
+      changed.add(deleted);
+    }
+
+    if (changed.isEmpty) return const <QazaRecord>[];
+
+    final ops = <PendingSyncOp>[
+      for (final record in changed)
+        PendingSyncOp(
+          id: 'soft_delete_' + record.id + '_' + operationId,
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: deletedAt,
+          targetRecordId: record.id,
+          record: record,
+        ),
+    ];
+    await saveRecordsAndOutbox(userId, records, ops);
+    return changed;
+  }
+
   Future<bool> updateRecord(QazaRecord record) async {
     final snapshot = await load();
     final records = List<QazaRecord>.of(
