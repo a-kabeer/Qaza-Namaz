@@ -1822,7 +1822,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeDetailedStatisticsSubtitle =>
-      'Year-wise pending, monthly history, and more';
+      'Overall and prayer-wise completion';
 
   @override
   String get homeChartNoData => 'No completed Qaza in this period.';
