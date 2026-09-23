@@ -636,7 +636,7 @@
   "homeRange30Days": "30 Days",
   "homeRangeMonthly": "Monthly",
   "homeDetailedStatistics": "View Detailed Statistics",
-  "homeDetailedStatisticsSubtitle": "Year-wise pending, monthly history, and more",
+  "homeDetailedStatisticsSubtitle": "Overall and prayer-wise completion",
   "homeChartNoData": "No completed Qaza in this period.",
   "homeTodayDate": "Today"
 }
