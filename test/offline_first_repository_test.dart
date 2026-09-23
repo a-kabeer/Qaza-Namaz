@@ -8,6 +8,7 @@ import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'support/in_memory_qaza_local_store.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -379,13 +380,17 @@ class _FailingRepository
   }
 
   @override
-  Future<void> completeRecord(
-      {required String userId,
-      required String recordId,
-      required DateTime completedAt}) {
+  Future<QazaCompletionResult> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) {
     if (failWrites) return Future.error(StateError('simulated remote outage'));
     return _delegate.completeRecord(
-        userId: userId, recordId: recordId, completedAt: completedAt);
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+    );
   }
 
   @override
