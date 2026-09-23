@@ -6,6 +6,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/date_formatters.dart';
+import '../../../l10n/prayer_type_l10n.dart';
+
 import '../../qaza/qaza_navigation.dart';
 
 class HomePendingByPrayer extends ConsumerWidget {
@@ -117,7 +120,7 @@ class _PrayerPendingBar extends StatelessWidget {
               SizedBox(
                 width: 28,
                 child: Icon(
-                  _prayerIcon(prayer),
+                  homePrayerIcon(prayer),
                   size: 20,
                   color: charts.forPrayer(prayer),
                 ),
@@ -165,5 +168,22 @@ class _PrayerPendingBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+IconData homePrayerIcon(PrayerType prayer) {
+  switch (prayer) {
+    case PrayerType.fajr:
+      return Icons.wb_twilight_outlined;
+    case PrayerType.zuhr:
+      return Icons.wb_sunny_outlined;
+    case PrayerType.asr:
+      return Icons.sunny_snowing;
+    case PrayerType.maghrib:
+      return Icons.wb_twilight;
+    case PrayerType.isha:
+      return Icons.nightlight_outlined;
+    case PrayerType.witr:
+      return Icons.nightlight_round;
   }
 }
