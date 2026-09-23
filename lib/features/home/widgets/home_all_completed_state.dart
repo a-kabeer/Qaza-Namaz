@@ -61,8 +61,6 @@ class HomeAllCompletedState extends StatelessWidget {
                   label: l10n.homeStatTotal,
                   value: total.toString(),
                 ),
-                const SizedBox(height: 10),
-                Text(l10n.completeNoPendingMessage),
                 const SizedBox(height: 14),
                 Wrap(
                   spacing: 8,
