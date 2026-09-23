@@ -386,7 +386,9 @@ abstract class QazaLocalStore {
           record: record,
         ),
     ];
-    await saveRecordsAndOutbox(userId, records, ops);
+    await saveRecords(userId, records);
+    final existingOutbox = await loadOutbox(userId);
+    await saveOutbox(userId, [...existingOutbox, ...ops]);
     return changed;
   }
 
