@@ -83,8 +83,7 @@ void main() {
       expect(event.message, contains('<email>'));
       expect(event.message, contains('<date>'));
       expect(event.message, isNot(contains('someone@example.com')));
-      expect(event.stackTrace, isNotNull);
-      expect(event.stackTrace, contains('diagnostics_test.dart'));
+      expect(event.stackTrace, isNull);
       expect(event.stackTrace, isNot(contains('someone@example.com')));
       expect(event.fatal, isFalse);
     });
@@ -98,9 +97,7 @@ void main() {
         stack: stack,
       );
 
-      expect(event.stackTrace, isNotNull);
-      expect(event.stackTrace!.length, lessThanOrEqualTo(4001));
-      expect(event.stackTrace, endsWith('…'));
+      expect(event.stackTrace, isNull);
     });
 
     test('a fatal failure is marked as one', () {
