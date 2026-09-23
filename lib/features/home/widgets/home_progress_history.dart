@@ -2,12 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/date_formatters.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/skeleton.dart';
-import '../../domain/entities/qaza_progress.dart';
-import '../../l10n/app_localizations.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/date_formatters.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../../../domain/entities/qaza_progress.dart';
+import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
 import 'home_skeleton.dart';
 import '../home_state.dart';
