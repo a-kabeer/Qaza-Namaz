@@ -117,12 +117,14 @@ class _CountingRemote extends InMemoryQazaRepository {
     required String userId,
     required String recordId,
     required DateTime completedAt,
-  }) =>
-      _delegate.completeRecord(
-        userId: userId,
-        recordId: recordId,
-        completedAt: completedAt,
-      );
+  }) async {
+    await completeRecords(
+      userId: userId,
+      recordIds: [recordId],
+      completedAt: completedAt,
+    );
+    return QazaCompletionResult.completed;
+  }
 }
 
 void main() {
