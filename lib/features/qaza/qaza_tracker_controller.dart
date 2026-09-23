@@ -625,11 +625,10 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
       return null;
     }
 
-    final tartib = await service.sahibAlTartibState(userId: userId);
-    if (tartib.requiresOrder &&
-        (selectedIds.length != 1 ||
-            tartib.nextPending == null ||
-            tartib.nextPending!.id != selectedIds.single)) {
+    if (!await service.tartib.canCompleteRecordIds(
+      userId: userId,
+      recordIds: selectedIds,
+    )) {
       state = state.copyWith(clearError: true);
       ref.invalidate(sahibAlTartibProvider);
       return null;
