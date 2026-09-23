@@ -2,6 +2,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
+import '../entities/qaza_completion_result.dart';
 import '../repositories/qaza_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
 import '../repositories/qaza_recovery_repository.dart';
@@ -323,7 +324,7 @@ class QazaService {
 
   Future<void> addRecords(List<QazaRecord> records) =>
       repository.addRecords(records);
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
@@ -332,7 +333,7 @@ class QazaService {
       userId: userId,
       recordId: recordId,
     );
-    await repository.completeRecord(
+    return repository.completeRecord(
       userId: userId,
       recordId: recordId,
       completedAt: completedAt,
