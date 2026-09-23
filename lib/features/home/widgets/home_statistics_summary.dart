@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
-import '../../../core/theme/app_theme.dart';import '../../../core/utils/date_formatters.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/app_scaffold.dart';
