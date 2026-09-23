@@ -278,63 +278,6 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     }
   }
 
-  bool _isManualPrayerAllowed(
-    PrayerType prayer,
-    AsyncValue<SahibAlTartibState> tartibAsync,
-  ) {
-    if (prayer == PrayerType.witr) return true;
-    final tartib = tartibAsync.valueOrNull;
-    if (!tartibAsync.hasValue || tartib == null) return false;
-    if (!tartib.requiresOrder) return true;
-    return tartib.nextPrayer == prayer;
-  }
-
-  PopupMenuItem<String> _buildPrayerMenuItem(
-    BuildContext context,
-    PrayerType item,
-    AsyncValue<SahibAlTartibState> tartibAsync,
-    AppLocalizations l10n,
-  ) {
-    final tartib = tartibAsync.valueOrNull;
-    final isWitr = item == PrayerType.witr;
-    final loadingOrFailed = !tartibAsync.hasValue;
-    final allowed = isWitr ||
-        (!loadingOrFailed &&
-            (!tartib!.requiresOrder || tartib.nextPrayer == item));
-    final explanation = loadingOrFailed
-        ? l10n.completeLoadError
-        : tartib!.requiresOrder && tartib.nextPrayer != null
-            ? l10n.qazaTartibBlocked(
-                tartib.nextPrayer!.localizedLabel(l10n),
-              )
-            : '';
-
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          !allowed
-              ? Icons.lock_outline_rounded
-              : widget.selected.prayer == item
-                  ? Icons.check_rounded
-                  : _prayerIcon(item),
-          size: 18,
-        ),
-        const SizedBox(width: 8),
-        Text(item.localizedLabel(l10n)),
-      ],
-    );
-
-    return PopupMenuItem<String>(
-      key: Key('home_qaza_prayer_option_' + item.name),
-      value: item.name,
-      enabled: allowed,
-      child: !allowed && explanation.isNotEmpty
-          ? Tooltip(message: explanation, child: child)
-          : child,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -637,6 +580,63 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
 
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Timer? _restrictionTicker;
+
+  bool _isManualPrayerAllowed(
+    PrayerType prayer,
+    AsyncValue<SahibAlTartibState> tartibAsync,
+  ) {
+    if (prayer == PrayerType.witr) return true;
+    final tartib = tartibAsync.valueOrNull;
+    if (!tartibAsync.hasValue || tartib == null) return false;
+    if (!tartib.requiresOrder) return true;
+    return tartib.nextPrayer == prayer;
+  }
+
+  PopupMenuItem<String> _buildPrayerMenuItem(
+    BuildContext context,
+    PrayerType item,
+    AsyncValue<SahibAlTartibState> tartibAsync,
+    AppLocalizations l10n,
+  ) {
+    final tartib = tartibAsync.valueOrNull;
+    final isWitr = item == PrayerType.witr;
+    final loadingOrFailed = !tartibAsync.hasValue;
+    final allowed = isWitr ||
+        (!loadingOrFailed &&
+            (!tartib!.requiresOrder || tartib.nextPrayer == item));
+    final explanation = loadingOrFailed
+        ? l10n.completeLoadError
+        : tartib!.requiresOrder && tartib.nextPrayer != null
+            ? l10n.qazaTartibBlocked(
+                tartib.nextPrayer!.localizedLabel(l10n),
+              )
+            : '';
+
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          !allowed
+              ? Icons.lock_outline_rounded
+              : widget.selected.prayer == item
+                  ? Icons.check_rounded
+                  : _prayerIcon(item),
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(item.localizedLabel(l10n)),
+      ],
+    );
+
+    return PopupMenuItem<String>(
+      key: Key('home_qaza_prayer_option_' + item.name),
+      value: item.name,
+      enabled: allowed,
+      child: !allowed && explanation.isNotEmpty
+          ? Tooltip(message: explanation, child: child)
+          : child,
+    );
+  }
   QazaRestrictionEvaluation? _lastRestriction;
   bool _restrictionInvalidated = false;
 
