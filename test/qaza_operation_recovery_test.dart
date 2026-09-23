@@ -21,6 +21,37 @@ class _FakeOperationRepository implements QazaOperationRepository {
 }
 
 void main() {
+
+  test('legacy manualAdd is normalized and snapshots round-trip immutably',
+      () async {
+    final repository = InMemoryQazaRepository();
+    final opRepo = _FakeOperationRepository();
+    final service = QazaOperationService(
+      opRepo,
+      now: () => DateTime(2026, 3, 1, 10),
+    );
+    final input = <String, dynamic>{
+      'selectionMode': 'single',
+      'dates': ['2026-02-01'],
+      'nested': <String, dynamic>{'prayers': ['fajr']},
+    };
+    final operation = await service.begin(
+      userId: 'test-user',
+      type: QazaOperationType.singleDateAdd,
+      inputSnapshot: input,
+    );
+    (input['dates'] as List<String>).add('2026-02-02');
+
+    expect(operation.inputSnapshot!['dates'], ['2026-02-01']);
+    expect(
+      QazaOperation.fromJson({
+        ...operation.toJson(),
+        'type': 'manualAdd',
+      }).type,
+      QazaOperationType.singleDateAdd,
+    );
+  });
+
   test('one operation groups an import and safe undo preserves changed rows', () async {
     final repository = InMemoryQazaRepository();
     final opRepo = _FakeOperationRepository();
@@ -53,7 +84,15 @@ void main() {
 
     final remaining = await repository.getRecords(userId: 'test-user');
     expect(remaining, hasLength(2));
-    expect(remaining.any((r) => r.status == QazaStatus.completed), isTrue);
+    expect(
+      remaining.any((r) => r.status == QazaStatus.completed),
+      isTrue,
+    );
+    final deleted =
+        (await repository.getRecentlyDeletedPage(userId: 'test-user'))
+            .records;
+    expect(deleted, hasLength(1));
+    expect(deleted.single.operationId, operation.operationId);
 
     operation = await operationService.finish(operation, status: QazaOperationStatus.partial, affectedRecordCount: removed);
     expect(opRepo.values.values.single.recordCount, 3);

@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 import 'database/app_database.dart';
 import 'qaza_local_store.dart';
 
@@ -140,6 +141,43 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<LocalQazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    final page = await _database.qazaRecordsDao.getOperationPage(
+      userId: userId,
+      operationId: operationId,
+      matchLastAction: matchLastAction,
+      operationAt: operationAt,
+      status: status,
+      limit: limit,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+    );
+    return LocalQazaPage(
+      records: page.records,
+      hasMore: page.hasMore,
+    );
+  }
+
+  @override
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) =>
+      _database.qazaRecordsDao.getOperationSummary(
+        userId: userId,
+        operationId: operationId,
+      );
+
+  @override
   Future<bool> hasRecordCombination({
     required String userId,
     required PrayerType prayerType,
@@ -152,6 +190,45 @@ class DriftQazaLocalStore extends QazaLocalStore {
         originalDate: originalDate,
         excludingRecordId: excludingRecordId,
       );
+
+  @override
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+
+    return _database.transaction(() async {
+      final changed =
+          await _database.qazaRecordsDao.softDeletePendingIfUnchangedByIds(
+        userId: userId,
+        ids: recordIds,
+        expectedCreatedAt: expectedCreatedAt,
+        deletedAt: deletedAt,
+      );
+      if (changed.isEmpty) return const <QazaRecord>[];
+
+      final ops = <PendingSyncOp>[
+        for (final record in changed)
+          PendingSyncOp(
+            id: 'soft_delete_' + record.id + '_' + operationId,
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: deletedAt,
+            targetRecordId: record.id,
+            record: record,
+          ),
+      ];
+
+      await _database.syncOutboxDao.putAll(
+        ops.map(_toOpCompanion).toList(growable: false),
+      );
+      return changed;
+    });
+  }
 
   @override
   Future<bool> updateRecord(QazaRecord record) => _database.transaction(

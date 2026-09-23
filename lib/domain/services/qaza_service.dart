@@ -626,6 +626,36 @@ class QazaService {
     );
   }
 
+  Future<int> removeAddition({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).removeAddition(
+      userId: userId,
+      operationId: operationId,
+      expectedCreatedAt: expectedCreatedAt,
+      deletedAt: deletedAt,
+    );
+  }
+
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).getOperationSummary(
+      userId: userId,
+      operationId: operationId,
+    );
+  }
+
   Future<int> purgeDeletedBefore({
     required String userId,
     required DateTime cutoff,

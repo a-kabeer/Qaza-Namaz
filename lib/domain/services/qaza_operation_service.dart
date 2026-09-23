@@ -16,6 +16,7 @@ class QazaOperationService {
   Future<QazaOperation> begin({
     required String userId,
     required QazaOperationType type,
+    Map<String, dynamic>? inputSnapshot,
   }) async {
     final timestamp = _now();
     final op = QazaOperation(
@@ -25,9 +26,35 @@ class QazaOperationService {
       status: QazaOperationStatus.running,
       createdAt: timestamp,
       updatedAt: timestamp,
+      inputSnapshot: inputSnapshot == null
+          ? null
+          : _freezeMap(inputSnapshot),
     );
     await repository.save(op);
     return op;
+  }
+
+  static Map<String, dynamic> _freezeMap(
+    Map<String, dynamic> source,
+  ) =>
+      Map.unmodifiable({
+        for (final entry in source.entries)
+          entry.key: _freezeValue(entry.value),
+      });
+
+  static dynamic _freezeValue(dynamic value) {
+    if (value is Map) {
+      return Map.unmodifiable({
+        for (final entry in value.entries)
+          entry.key.toString(): _freezeValue(entry.value),
+      });
+    }
+    if (value is Iterable) {
+      return List.unmodifiable(
+        value.map(_freezeValue),
+      );
+    }
+    return value;
   }
 
   Future<QazaOperation> finish(

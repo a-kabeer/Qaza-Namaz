@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 
 /// Remote operations the outbox can replay.
 ///
@@ -242,6 +243,57 @@ abstract class QazaLocalStore {
         records: records.take(limit).toList(growable: false), hasMore: hasMore);
   }
 
+  /// Operation-scoped pagination. A null status intentionally includes
+  /// soft-deleted records so Operation Details can show the complete lifecycle.
+  Future<LocalQazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError(
+        'beforeOriginalDate and beforeId must be provided together',
+      );
+    }
+
+    final snapshot = await load();
+    var records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    )..removeWhere((record) {
+        final actionMatch = matchLastAction
+            ? record.updatedAt.isAtSameMomentAs(operationAt)
+            : record.operationId == operationId;
+        final statusMatch = status == null || record.status == status;
+        return !actionMatch || !statusMatch;
+      })
+      ..sort((a, b) {
+        final d = b.originalDate.compareTo(a.originalDate);
+        return d != 0 ? d : b.id.compareTo(a.id);
+      });
+
+    if (beforeOriginalDate != null) {
+      records = records.where((record) {
+        return record.originalDate.isBefore(beforeOriginalDate) ||
+            (record.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
+                record.id.compareTo(beforeId!) < 0);
+      }).toList();
+    }
+
+    final hasMore = records.length > limit;
+    return LocalQazaPage(
+      records: records.take(limit).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
     required List<String> ids,
@@ -285,6 +337,93 @@ abstract class QazaLocalStore {
           record.originalDate.month == originalDate.month &&
           record.originalDate.day == originalDate.day &&
           record.id != excludingRecordId,
+    );
+  }
+
+  /// Safe fallback implementation for non-database stores.
+  /// The Drift implementation performs the predicate atomically in SQLite.
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+    final wanted = recordIds.toSet();
+    final changed = <QazaRecord>[];
+
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      if (!wanted.contains(record.id) ||
+          record.status != QazaStatus.pending ||
+          !record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
+          !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
+        continue;
+      }
+      final deleted = record.copyWith(
+        status: QazaStatus.deleted,
+        updatedAt: deletedAt,
+      );
+      records[index] = deleted;
+      changed.add(deleted);
+    }
+
+    if (changed.isEmpty) return const <QazaRecord>[];
+
+    final ops = <PendingSyncOp>[
+      for (final record in changed)
+        PendingSyncOp(
+          id: 'soft_delete_' + record.id + '_' + operationId,
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: deletedAt,
+          targetRecordId: record.id,
+          record: record,
+        ),
+    ];
+    await saveRecords(userId, records);
+    final existingOutbox = await loadOutbox(userId);
+    await saveOutbox(userId, [...existingOutbox, ...ops]);
+    return changed;
+  }
+
+  /// Aggregate operation counts for stores without a SQL backend.
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) async {
+    final snapshot = await load();
+    final records =
+        snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
+    var pending = 0;
+    var completed = 0;
+    var deleted = 0;
+    var unchangedPending = 0;
+
+    for (final record in records) {
+      if (record.operationId != operationId) continue;
+      switch (record.status) {
+        case QazaStatus.pending:
+          pending++;
+          if (record.createdAt.isAtSameMomentAs(record.updatedAt)) {
+            unchangedPending++;
+          }
+        case QazaStatus.completed:
+          completed++;
+        case QazaStatus.deleted:
+          deleted++;
+      }
+    }
+    return QazaOperationSummary(
+      pending: pending,
+      completed: completed,
+      deleted: deleted,
+      unchangedPending: unchangedPending,
     );
   }
 

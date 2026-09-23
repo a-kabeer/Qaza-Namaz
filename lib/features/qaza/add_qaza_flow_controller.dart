@@ -308,14 +308,27 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
         return 0;
       }
 
-      final operationType = switch (ref.read(calendarControllerProvider).selectionMode) {
-        DateSelectionMode.single => QazaOperationType.manualAdd,
+      final selectionMode = ref.read(calendarControllerProvider).selectionMode;
+      final operationType = switch (selectionMode) {
+        DateSelectionMode.single => QazaOperationType.singleDateAdd,
         DateSelectionMode.range => QazaOperationType.rangeAdd,
         DateSelectionMode.multiple => QazaOperationType.multipleDateAdd,
+      };
+      final inputSnapshot = <String, dynamic>{
+        'version': 1,
+        'selectionMode': selectionMode.name,
+        'dates': dates
+            .map((date) => DateTime(date.year, date.month, date.day).toIso8601String())
+            .toList(growable: false),
+        'prayers': [
+          for (final prayer in PrayerType.values)
+            if (prayers.contains(prayer)) prayer.name,
+        ],
       };
       final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: ref.read(requiredUserIdProvider),
             type: operationType,
+            inputSnapshot: inputSnapshot,
           );
       var processed = 0;
       try {

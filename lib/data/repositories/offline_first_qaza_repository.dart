@@ -756,6 +756,10 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     required String operationId,
   }) async {
     if (recordIds.isEmpty || userId != _activeUserId) return 0;
+    await ensureHydrated();
+    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    if (userId != _activeUserId) return 0;
     final records = await _localStore.getRecordsByIds(
       userId: userId,
       ids: recordIds,
@@ -807,6 +811,10 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     required String operationId,
   }) async {
     if (recordIds.isEmpty || userId != _activeUserId) return 0;
+    await ensureHydrated();
+    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    if (userId != _activeUserId) return 0;
     final records = await _localStore.getRecordsByIds(
       userId: userId,
       ids: recordIds,
@@ -814,6 +822,14 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     var changed = 0;
     for (final record in records) {
       if (!record.isDeleted) continue;
+      final duplicate = await _localStore.hasRecordCombination(
+        userId: userId,
+        prayerType: record.prayerType,
+        originalDate: record.originalDate,
+        excludingRecordId: record.id,
+      );
+      if (duplicate) continue;
+
       final restored = record.copyWith(
         status: record.completedAt == null
             ? QazaStatus.pending
@@ -857,50 +873,94 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     required String userId,
     required String operationId,
     required DateTime expectedCreatedAt,
+  }) =>
+      _removeUnchangedPendingFromOperation(
+        userId: userId,
+        operationId: operationId,
+        expectedCreatedAt: expectedCreatedAt,
+        deletedAt: _now(),
+      );
+
+  @override
+  Future<int> removeAddition({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+  }) =>
+      _removeUnchangedPendingFromOperation(
+        userId: userId,
+        operationId: operationId,
+        expectedCreatedAt: expectedCreatedAt,
+        deletedAt: deletedAt,
+      );
+
+  Future<int> _removeUnchangedPendingFromOperation({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
   }) async {
     if (userId != _activeUserId) return 0;
+    await ensureHydrated();
+    await _ensureLoaded();
+    await _ensureOutboxLoaded();
+    if (userId != _activeUserId) return 0;
+
     DateTime? cursorDate;
     String? cursorId;
     var removed = 0;
+
     while (true) {
-      final page = await getPage(
+      final page = await _localStore.getOperationPage(
         userId: userId,
-        limit: 200,
+        operationId: operationId,
+        matchLastAction: false,
+        operationAt: expectedCreatedAt,
         status: QazaStatus.pending,
-        afterOriginalDate: cursorDate,
-        afterId: cursorId,
+        limit: 200,
+        beforeOriginalDate: cursorDate,
+        beforeId: cursorId,
       );
       if (page.records.isEmpty) break;
-      for (final record in page.records) {
-        if (record.operationId != operationId ||
-            !record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
-            !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
-          continue;
-        }
-        final syncOp = PendingSyncOp(
-          id: 'undo_import_${record.id}_${operationId}',
-          type: SyncOpType.delete,
+
+      final ids = <String>[
+        for (final record in page.records)
+          if (record.createdAt.isAtSameMomentAs(expectedCreatedAt) &&
+              record.updatedAt.isAtSameMomentAs(expectedCreatedAt))
+            record.id,
+      ];
+
+      if (ids.isNotEmpty) {
+        final changed = await _localStore.softDeletePendingIfUnchanged(
           userId: userId,
-          queuedAt: _now(),
-          targetRecordId: record.id,
-          record: record,
+          recordIds: ids,
+          expectedCreatedAt: expectedCreatedAt,
+          deletedAt: deletedAt,
+          operationId: operationId,
         );
-        final ok = await _localStore.deleteRecordAndOutbox(
-          userId: userId,
-          recordId: record.id,
-          operation: syncOp,
-        );
-        if (ok) {
-          _records.remove(record.id);
-          _outbox.add(syncOp);
-          removed++;
+        for (final record in changed) {
+          _records[record.id] = record;
+          _outbox.add(
+            PendingSyncOp(
+              id: 'soft_delete_' + record.id + '_' + operationId,
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: deletedAt,
+              targetRecordId: record.id,
+              record: record,
+            ),
+          );
         }
+        removed += changed.length;
+        _outboxLoaded = true;
       }
+
       if (!page.hasMore) break;
       cursorDate = page.nextOriginalDate;
       cursorId = page.nextId;
     }
-    _outboxLoaded = true;
+
     if (removed > 0) {
       _emitPending();
       if (_isOnline && _connectivityKnown) {
@@ -914,7 +974,6 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   }
 
   @override
-  @override
   Future<QazaPage> getOperationPage({
     required String userId,
     required String operationId,
@@ -925,44 +984,45 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     DateTime? beforeOriginalDate,
     String? beforeId,
   }) async {
-    if (userId != _activeUserId) return const QazaPage(records: [], hasMore: false);
-    await ensureHydrated();
-    DateTime? cursorDate = beforeOriginalDate;
-    String? cursorId = beforeId;
-    final matches = <QazaRecord>[];
-    while (matches.length < limit) {
-      final page = await getHistoryPage(
-        userId: userId,
-        limit: 200,
-        status: status,
-        beforeOriginalDate: cursorDate,
-        beforeId: cursorId,
-      );
-      if (page.records.isEmpty) break;
-      var reachedLimit = false;
-      var moreAfterMatch = false;
-      for (var index = 0; index < page.records.length; index++) {
-        final record = page.records[index];
-        final match = matchLastAction
-            ? record.updatedAt.isAtSameMomentAs(operationAt)
-            : record.operationId == operationId;
-        if (!match) continue;
-        matches.add(record);
-        if (matches.length == limit) {
-          reachedLimit = true;
-          moreAfterMatch = index + 1 < page.records.length || page.hasMore;
-          break;
-        }
-      }
-      if (reachedLimit) {
-        return QazaPage(records: matches, hasMore: moreAfterMatch);
-      }
-      if (!page.hasMore) break;
-      cursorDate = page.nextOriginalDate;
-      cursorId = page.nextId;
+    if (userId != _activeUserId) {
+      return const QazaPage(records: [], hasMore: false);
     }
-    return QazaPage(records: matches, hasMore: false);
+    await ensureHydrated();
+    final generation = _sessionGeneration;
+    final page = await _localStore.getOperationPage(
+      userId: userId,
+      operationId: operationId,
+      matchLastAction: matchLastAction,
+      operationAt: operationAt,
+      status: status,
+      limit: limit,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return const QazaPage(records: [], hasMore: false);
+    }
+    return QazaPage(records: page.records, hasMore: page.hasMore);
   }
+
+  @override
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) async {
+    if (userId != _activeUserId) return const QazaOperationSummary();
+    await ensureHydrated();
+    final generation = _sessionGeneration;
+    final summary = await _localStore.getOperationSummary(
+      userId: userId,
+      operationId: operationId,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return const QazaOperationSummary();
+    }
+    return summary;
+  }
+
   @override
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,

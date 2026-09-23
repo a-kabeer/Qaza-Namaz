@@ -330,17 +330,76 @@ class InMemoryQazaRepository
 
   @override
   Future<int> undoAddedOperation({
-    required String userId, required String operationId, required DateTime expectedCreatedAt,
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+  }) =>
+      removeAddition(
+        userId: userId,
+        operationId: operationId,
+        expectedCreatedAt: expectedCreatedAt,
+        deletedAt: DateTime.now(),
+      );
+
+  @override
+  Future<int> removeAddition({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
   }) async {
-    final ids = _records.values
-        .where((r) => r.userId == userId && r.status == QazaStatus.pending &&
-            r.operationId == operationId &&
-            r.createdAt.isAtSameMomentAs(expectedCreatedAt) &&
-            r.updatedAt.isAtSameMomentAs(expectedCreatedAt))
-        .map((r) => r.id)
-        .toList();
-    for (final id in ids) _records.remove(id);
-    return ids.length;
+    var changed = 0;
+    for (final entry in _records.entries.toList()) {
+      final current = entry.value;
+      if (current.userId != userId ||
+          current.status != QazaStatus.pending ||
+          current.operationId != operationId ||
+          !current.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
+          !current.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
+        continue;
+      }
+      _records[entry.key] = current.copyWith(
+        status: QazaStatus.deleted,
+        updatedAt: deletedAt,
+      );
+      changed++;
+    }
+    return changed;
+  }
+
+  @override
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) async {
+    var pending = 0;
+    var completed = 0;
+    var deleted = 0;
+    var unchangedPending = 0;
+
+    for (final record in _records.values) {
+      if (record.userId != userId || record.operationId != operationId) {
+        continue;
+      }
+      switch (record.status) {
+        case QazaStatus.pending:
+          pending++;
+          if (record.createdAt.isAtSameMomentAs(record.updatedAt)) {
+            unchangedPending++;
+          }
+        case QazaStatus.completed:
+          completed++;
+        case QazaStatus.deleted:
+          deleted++;
+      }
+    }
+
+    return QazaOperationSummary(
+      pending: pending,
+      completed: completed,
+      deleted: deleted,
+      unchangedPending: unchangedPending,
+    );
   }
 
   @override
