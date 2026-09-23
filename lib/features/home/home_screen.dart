@@ -2309,9 +2309,9 @@ class _HomePendingByPrayerSkeletonCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            for (var i = 0; i < 5; i++) ...[
+            for (var i = 0; i < PrayerType.values.length; i++) ...[
               const _HomePendingPrayerSkeletonRow(),
-              if (i != 4) const SizedBox(height: 2),
+              if (i != PrayerType.values.length - 1) const SizedBox(height: 2),
             ],
           ],
         ),
@@ -2371,10 +2371,41 @@ class _HomeProgressSkeletonCard extends StatelessWidget {
           children: [
             const SkeletonText(width: 150, height: 20),
             const SizedBox(height: 10),
-            const SkeletonBox(
-              width: double.infinity,
-              height: 42,
-              borderRadius: BorderRadius.all(Radius.circular(12)),
+            const SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  SkeletonBox(
+                    width: 54,
+                    height: 40,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  SizedBox(width: 4),
+                  SkeletonBox(
+                    width: 62,
+                    height: 40,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  SizedBox(width: 4),
+                  SkeletonBox(
+                    width: 62,
+                    height: 40,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  SizedBox(width: 4),
+                  SkeletonBox(
+                    width: 70,
+                    height: 40,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                  SizedBox(width: 4),
+                  SkeletonBox(
+                    width: 70,
+                    height: 40,
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             LayoutBuilder(
