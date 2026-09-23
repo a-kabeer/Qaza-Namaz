@@ -137,6 +137,58 @@ abstract class QazaLocalStore {
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
   /// Bounded keyset page for soft-deleted records, ordered by deletion time.
+  /// Operation-scoped pagination. Unlike normal History reads, a null
+  /// status intentionally includes soft-deleted records so Operation Details
+  /// can present a complete lifecycle without changing global query semantics.
+  Future<LocalQazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    QazaStatus? status,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+  }) async {
+    if (limit < 1 || limit > 500) {
+      throw ArgumentError.value(limit, 'limit');
+    }
+    if ((beforeOriginalDate == null) != (beforeId == null)) {
+      throw ArgumentError(
+          'beforeOriginalDate and beforeId must be provided together');
+    }
+
+    final snapshot = await load();
+    var records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    )..removeWhere((record) {
+        final actionMatch = matchLastAction
+            ? record.updatedAt.isAtSameMomentAs(operationAt)
+            : record.operationId == operationId;
+        final statusMatch = status == null || record.status == status;
+        return !actionMatch || !statusMatch;
+      });
+
+    records.sort((a, b) {
+      final date = b.originalDate.compareTo(a.originalDate);
+      return date != 0 ? date : b.id.compareTo(a.id);
+    });
+
+    if (beforeOriginalDate != null) {
+      records = records.where((record) {
+        return record.originalDate.isBefore(beforeOriginalDate!) ||
+            (record.originalDate.isAtSameMomentAs(beforeOriginalDate!) &&
+                record.id.compareTo(beforeId!) < 0);
+      }).toList();
+    }
+
+    final hasMore = records.length > limit;
+    return LocalQazaPage(
+      records: records.take(limit).toList(growable: false),
+      hasMore: hasMore,
+    );
+  }
+
   Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
