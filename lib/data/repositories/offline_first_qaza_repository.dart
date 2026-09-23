@@ -932,15 +932,13 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       ];
 
       if (ids.isNotEmpty) {
-        final changed =
-            await _localStore.softDeletePendingIfUnchanged(
+        final changed = await _localStore.softDeletePendingIfUnchanged(
           userId: userId,
           recordIds: ids,
           expectedCreatedAt: expectedCreatedAt,
           deletedAt: deletedAt,
           operationId: operationId,
         );
-
         for (final record in changed) {
           _records[record.id] = record;
           _outbox.add(
@@ -1077,3 +1075,115 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       if (!page.hasMore) break;
       cursorDeletedAt = page.records.last.updatedAt;
       cursorId = page.records.last.id;
+    }
+    _outboxLoaded = true;
+    if (removed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(_syncEngine?.synchronize(userId, requestRerun: true) ?? Future<void>.value());
+      }
+    }
+    return removed;
+  }
+  @override
+  Future<void> resetUserRecords({required String userId}) async {
+    if (userId != _activeUserId) {
+      throw StateError('Cannot reset Qaza records for a non-active user.');
+    }
+
+    final operation = PendingSyncOp(
+      id: 'reset_${userId}_${DateTime.now().microsecondsSinceEpoch}',
+      type: SyncOpType.reset,
+      userId: userId,
+      queuedAt: _now(),
+    );
+
+    await _localStore.retireUserData(userId: userId);
+    await _localStore.appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      [operation],
+    );
+
+    _records.clear();
+    _outbox
+      ..clear()
+      ..add(operation);
+    _loaded = true;
+    _outboxLoaded = true;
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+  }
+
+  Future<void> syncNow() async {
+    final userId = _activeUserId;
+    if (userId == null) return;
+
+    // Stream<bool> events are delivered asynchronously. Allow a pending
+    // connectivity notification to settle before deciding whether we are
+    // currently offline.
+    await Future<void>.delayed(Duration.zero);
+
+    if (!_isOnline) {
+      _emit(
+        SyncState(
+          status: SyncStatus.offline,
+          pendingCount: _outbox.length,
+        ),
+      );
+      return;
+    }
+    await _syncEngine?.synchronize(userId, requestRerun: true);
+  }
+
+  void _emit(SyncState state) {
+    _state = state;
+    if (!_stateController.isClosed) {
+      _stateController.add(state);
+    }
+  }
+
+  void _emitPending() {
+    if (_activeUserId == null) return;
+    _emit(
+      SyncState(
+        status: _isOnline ? SyncStatus.pendingSync : SyncStatus.offline,
+        pendingCount: _outbox.length,
+      ),
+    );
+  }
+
+  void _onConnectivityChanged(bool online) {
+    _connectivityKnown = true;
+    _isOnline = online;
+    if (!online) {
+      _emit(
+        SyncState(
+          status: SyncStatus.offline,
+          pendingCount: _outbox.length,
+        ),
+      );
+      return;
+    }
+
+    final userId = _activeUserId;
+    if (userId != null) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+  }
+
+  void dispose() {
+    _syncEngine?.dispose();
+    unawaited(_connectivitySubscription?.cancel());
+    unawaited(_stateController.close());
+  }
+}
