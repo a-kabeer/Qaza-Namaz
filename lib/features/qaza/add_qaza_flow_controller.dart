@@ -318,7 +318,7 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
         'version': 1,
         'selectionMode': selectionMode.name,
         'dates': dates
-            .map((date) => QazaDate.normalize(date).toIso8601String())
+            .map((date) => DateTime(date.year, date.month, date.day).toIso8601String())
             .toList(growable: false),
         'prayers': [
           for (final prayer in PrayerType.values)
