@@ -13,6 +13,7 @@ enum DiagnosticArea {
   sync,
   importData,
   databaseMigration,
+  qazaCompletion,
   uncaught;
 
   String get code => name;
@@ -31,6 +32,7 @@ class DiagnosticEvent {
     this.errorType,
     this.message,
     this.fatal = false,
+    this.stackTrace,
   });
 
   final DiagnosticArea area;
@@ -46,10 +48,15 @@ class DiagnosticEvent {
 
   final bool fatal;
 
+  /// The captured stack trace after the same redaction and size cap as the
+  /// message. Kept optional so non-failure events remain lightweight.
+  final String? stackTrace;
+
   @override
   String toString() => '[${area.code}] $code'
       '${errorType == null ? '' : ' ($errorType)'}'
-      '${message == null ? '' : ': $message'}';
+      '${message == null ? '' : ': $message'}'
+      '${stackTrace == null ? '' : '\\n$stackTrace'}';
 
   @override
   bool operator ==(Object other) =>
@@ -58,10 +65,12 @@ class DiagnosticEvent {
       other.code == code &&
       other.errorType == errorType &&
       other.message == message &&
-      other.fatal == fatal;
+      other.fatal == fatal &&
+      other.stackTrace == stackTrace;
 
   @override
-  int get hashCode => Object.hash(area, code, errorType, message, fatal);
+  int get hashCode =>
+      Object.hash(area, code, errorType, message, fatal, stackTrace);
 }
 
 /// Patterns that must never reach a diagnostics sink.
@@ -118,6 +127,7 @@ DiagnosticEvent buildFailureEvent(
   DiagnosticArea area,
   String code,
   Object error, {
+  StackTrace? stack,
   bool fatal = false,
 }) =>
     DiagnosticEvent(
@@ -125,6 +135,7 @@ DiagnosticEvent buildFailureEvent(
       code: code,
       errorType: error.runtimeType.toString(),
       message: redactDiagnosticMessage(error.toString()),
+      stackTrace: redactDiagnosticMessage(stack?.toString()),
       fatal: fatal,
     );
 
@@ -180,7 +191,7 @@ class DebugDiagnostics implements DiagnosticsService {
   @override
   void recordFailure(DiagnosticArea area, String code, Object error,
       {StackTrace? stack, bool fatal = false}) {
-    _emit(buildFailureEvent(area, code, error, fatal: fatal));
+    _emit(buildFailureEvent(area, code, error, stack: stack, fatal: fatal));
     if (kDebugMode && stack != null) debugPrintStack(stackTrace: stack);
   }
 
