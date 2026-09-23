@@ -227,6 +227,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
       }
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(homeDailyProgressProvider);
+      ref.invalidate(sahibAlTartibProvider);
       for (final range in HomeProgressRange.values) {
         ref.invalidate(homeProgressHistoryProvider(range));
       }
