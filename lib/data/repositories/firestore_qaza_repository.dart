@@ -110,6 +110,28 @@ class FirestoreQazaRepository
   }
 
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
+    if (ids.isEmpty) return const <QazaRecord>[];
+
+    final records = <QazaRecord>[];
+    // Firestore limits whereIn values; keep the lookup bounded to the
+    // explicitly requested ids rather than reading the user's ledger.
+    for (var start = 0; start < ids.length; start += 10) {
+      final end = start + 10 < ids.length ? start + 10 : ids.length;
+      final snapshot = await _recordsCollection(userId)
+          .where(FieldPath.documentId, whereIn: ids.sublist(start, end))
+          .where('status', isEqualTo: QazaStatus.pending.name)
+          .get();
+      records.addAll(snapshot.docs.map(_fromDocument));
+    }
+    return records;
+  }
+
+  @override
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
