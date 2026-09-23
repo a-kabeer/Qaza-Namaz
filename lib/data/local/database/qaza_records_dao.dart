@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../../domain/repositories/qaza_recovery_repository.dart';
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
 
@@ -456,6 +457,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     required String operationId,
     required bool matchLastAction,
     required DateTime operationAt,
+    QazaStatus? status,
     int limit = defaultPageSize,
     DateTime? beforeOriginalDate,
     String? beforeId,
@@ -469,7 +471,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         } else {
           predicates.add(row.operationId.equals(operationId));
         }
-        predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
+        if (status != null) {
+          predicates.add(row.status.equals(status.name));
+        }
         if (beforeOriginalDate != null) {
           predicates.add(
               row.originalDate.isSmallerThanValue(beforeOriginalDate) |
@@ -489,6 +493,58 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return QazaRecordsPage(
       records: visible.map(_toDomain).toList(growable: false),
       hasMore: hasMore,
+    );
+  }
+
+  /// Returns operation counts directly from SQLite so History never
+  /// materializes an entire operation just to render its summary.
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) async {
+    final countExpression = qazaRecords.id.count();
+    final grouped = selectOnly(qazaRecords)
+      ..addColumns([qazaRecords.status, countExpression])
+      ..where(
+        qazaRecords.userId.equals(userId) &
+            qazaRecords.operationId.equals(operationId),
+      )
+      ..groupBy([qazaRecords.status]);
+    final rows = await grouped.get();
+
+    var pending = 0;
+    var completed = 0;
+    var deleted = 0;
+    for (final row in rows) {
+      final status = row.read(qazaRecords.status);
+      final count = row.read(countExpression) ?? 0;
+      switch (status) {
+        case QazaStatus.pending.name:
+          pending += count;
+        case QazaStatus.completed.name:
+          completed += count;
+        case QazaStatus.deleted.name:
+          deleted += count;
+      }
+    }
+
+    final unchangedExpression = qazaRecords.id.count();
+    final unchangedQuery = selectOnly(qazaRecords)
+      ..addColumns([unchangedExpression])
+      ..where(
+        qazaRecords.userId.equals(userId) &
+            qazaRecords.operationId.equals(operationId) &
+            qazaRecords.status.equals(QazaStatus.pending.name) &
+            qazaRecords.createdAt.equalsExp(qazaRecords.updatedAt),
+      );
+    final unchangedPending =
+        (await unchangedQuery.getSingle()).read(unchangedExpression) ?? 0;
+
+    return QazaOperationSummary(
+      pending: pending,
+      completed: completed,
+      deleted: deleted,
+      unchangedPending: unchangedPending,
     );
   }
 
