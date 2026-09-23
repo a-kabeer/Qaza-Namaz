@@ -289,7 +289,15 @@ class InMemoryQazaRepository
     for (final id in recordIds) {
       final r = _records[id];
       if (r == null || r.userId != userId) continue;
-      if (r.status != QazaStatus.pending) continue;
+      if (r.status != QazaStatus.pending &&
+          r.status != QazaStatus.completed) {
+        continue;
+      }
+      if (r.status == QazaStatus.completed &&
+          r.completedAt != null &&
+          !completedAt.isBefore(r.completedAt!)) {
+        continue;
+      }
       final updated = r.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
