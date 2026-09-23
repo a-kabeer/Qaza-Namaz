@@ -3033,6 +3033,12 @@ abstract class AppLocalizations {
   /// **'Pending by Prayer'**
   String get homePendingByPrayer;
 
+  /// No description provided for @homePrayerBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Breakdown'**
+  String get homePrayerBreakdown;
+
   /// No description provided for @homeViewDetails.
   ///
   /// In en, this message translates to:

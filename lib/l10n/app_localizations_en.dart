@@ -1788,6 +1788,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePendingByPrayer => 'Pending by Prayer';
 
   @override
+  String get homePrayerBreakdown => 'Prayer Breakdown';
+
+  @override
   String get homeViewDetails => 'View details';
 
   @override
@@ -1822,7 +1825,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeDetailedStatisticsSubtitle =>
-      'Year-wise pending, monthly history, and more';
+      'Overall and prayer-wise completion';
 
   @override
   String get homeChartNoData => 'No completed Qaza in this period.';

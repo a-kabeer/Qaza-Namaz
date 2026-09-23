@@ -1788,6 +1788,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homePendingByPrayer => 'نماز کے لحاظ سے باقی';
 
   @override
+  String get homePrayerBreakdown => 'نماز وار جائزہ';
+
+  @override
   String get homeViewDetails => 'تفصیلات دیکھیں';
 
   @override
@@ -1822,7 +1825,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeDetailedStatisticsSubtitle =>
-      'سال وار باقی، ماہانہ تاریخ اور مزید';
+      'مجموعی اور نماز وار تکمیل';
 
   @override
   String get homeChartNoData => 'اس مدت میں کوئی قضا مکمل نہیں ہوئی۔';
