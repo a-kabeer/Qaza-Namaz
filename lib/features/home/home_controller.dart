@@ -70,7 +70,7 @@ class HomeController {
   }
 
   Future<void> _refreshRequired<T>(
-    FutureProvider<T> provider,
+    AutoDisposeFutureProvider<T> provider,
     String code,
   ) async {
     try {
@@ -87,7 +87,7 @@ class HomeController {
   }
 
   Future<void> _refreshOptional<T>(
-    FutureProvider<T> provider,
+    AutoDisposeFutureProvider<T> provider,
     String code,
   ) async {
     try {
