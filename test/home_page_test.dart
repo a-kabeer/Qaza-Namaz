@@ -365,7 +365,7 @@ void main() {
       );
       expect(find.byKey(const Key('home_setup_prayer_times')), findsOneWidget);
       expect(find.text('Fajr'), findsWidgets);
-      expect(find.text('10 Jan 2026'), findsOneWidget);
+      expect(find.text('01 Jan 2026'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
