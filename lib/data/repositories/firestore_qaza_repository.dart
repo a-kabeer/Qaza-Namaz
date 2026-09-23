@@ -7,6 +7,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
 import '../local/qaza_local_store.dart';
+import '../../domain/entities/qaza_completion_result.dart';
 import '../sync/qaza_sync_remote_data_source.dart';
 
 class FirestoreQazaRepository
@@ -256,19 +257,25 @@ class FirestoreQazaRepository
   }
 
   @override
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
   }) async {
     final reference = _recordsCollection(userId).doc(recordId);
+    var result = QazaCompletionResult.notFound;
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(reference);
       if (!snapshot.exists) return;
       final record = _fromDocument(snapshot);
-      if (record.userId != userId || record.status == QazaStatus.completed) {
+      if (record.userId != userId) return;
+      if (record.status != QazaStatus.pending) {
+        if (record.status == QazaStatus.completed) {
+          result = QazaCompletionResult.alreadyCompleted;
+        }
         return;
       }
+
       final completed = record.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
@@ -279,7 +286,9 @@ class FirestoreQazaRepository
         _toMap(completed, serverUpdatedAt: true),
         SetOptions(merge: false),
       );
+      result = QazaCompletionResult.completed;
     });
+    return result;
   }
 
   @override
