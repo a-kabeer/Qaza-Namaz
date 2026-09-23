@@ -239,7 +239,13 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
     PrayerTimesState? prayerTimesState;
     try {
       prayerTimesState = ref.watch(prayerTimesControllerProvider);
-    } catch (_) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        'home_current_prayer_state_read_failed',
+        error,
+        stack: stack,
+      );
       prayerTimesState = null;
     }
 
