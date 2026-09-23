@@ -1806,7 +1806,6 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final charts = AppChartColors.of(context);
 
     return AppCard(
       key: const Key('detailed_prayer_breakdown'),
