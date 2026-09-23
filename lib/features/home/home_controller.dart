@@ -39,6 +39,14 @@ class HomeController {
     }
   }
 
+
+  void afterStaleCompletion() {
+    invalidateDashboard();
+    ref.invalidate(sahibAlTartibProvider);
+    ref.invalidate(homeFallbackPendingProvider);
+    ref.invalidate(qazaRestrictionEvaluationProvider);
+  }
+
   void afterUndo(PrayerType prayer) {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
