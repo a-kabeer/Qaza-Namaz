@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../onboarding/splash_screen.dart';
 import '../settings/app_lock_gate.dart';
 import '../onboarding/welcome_screen.dart';
+import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../shell/workspace_shell.dart';
 import 'authentication_screen.dart';
 import 'guest_session.dart';
@@ -167,7 +168,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     // A guest reaches the workspace on the same footing as an account: the
     // ledger is local, but every screen works.
     if (user == null && isGuest) {
-      return const AppLockGate(child: WorkspaceShell());
+      return const AppLockGate(
+        child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+      );
     }
 
     if (user == null) {
@@ -181,6 +184,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return const AppLockGate(child: WorkspaceShell());
+    return const AppLockGate(
+      child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+    );
   }
 }

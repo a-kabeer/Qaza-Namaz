@@ -23,6 +23,7 @@ import '../../features/calculator/calculator_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/qaza/qaza_navigation.dart';
 import '../../features/prayer_times/domain/qaza_restriction_service.dart';
+import '../../features/prayer_times/presentation/prayer_location_picker_screen.dart';
 import '../../features/prayer_times/prayer_times_providers.dart';
 import '../../features/prayer_times/presentation/prayer_times_localizations.dart';
 import '../../l10n/app_localizations.dart';
@@ -187,6 +188,20 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
     ref.invalidate(homeDailyProgressProvider);
   }
 
+  Future<void> _openPrayerTimeSetup() async {
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => const PrayerLocationPickerScreen(),
+      ),
+    );
+    if (!mounted) return;
+    ref.invalidate(qazaRestrictionEvaluationProvider);
+    ref.invalidate(homeCurrentPrayerProvider);
+    ref.invalidate(homeFallbackPendingProvider);
+  }
+
   Future<QazaRestrictionEvaluation?> _restrictionForCompletion() async {
     final current = ref.read(qazaRestrictionEvaluationProvider);
 
@@ -252,6 +267,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(homeDailyProgressProvider);
       ref.invalidate(sahibAlTartibProvider);
+      ref.invalidate(homeFallbackPendingProvider);
       for (final range in HomeProgressRange.values) {
         ref.invalidate(homeProgressHistoryProvider(range));
       }
@@ -275,6 +291,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
             ref.invalidate(progressSummaryProvider);
             ref.invalidate(homeDailyProgressProvider);
             ref.invalidate(oldestPendingProvider(prayer));
+            ref.invalidate(homeFallbackPendingProvider);
             ref.invalidate(sahibAlTartibProvider);
             for (final range in HomeProgressRange.values) {
               ref.invalidate(homeProgressHistoryProvider(range));
@@ -391,6 +408,7 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
                     working: working,
                     onComplete: _complete,
                     onPlan: _showPlanDialog,
+                    onSetupPrayerTimes: _openPrayerTimeSetup,
                   );
 
                   if (constraints.maxWidth < 500) {
@@ -599,6 +617,7 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
     required this.working,
     required this.onComplete,
     required this.onPlan,
+    required this.onSetupPrayerTimes,
   });
 
   final QazaProgressSummary summary;
@@ -606,6 +625,7 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   final bool working;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
   final VoidCallback onPlan;
+  final Future<void> Function() onSetupPrayerTimes;
 
   @override
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
@@ -756,7 +776,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       automaticTartib
           ? l10n.homeNextQaza
           : widget.selected.mode == HomePrayerSelectionMode.automatic
-              ? l10n.homeNextQazaCurrentPrayer
+              ? (prayer == null ? l10n.homeNextQaza : l10n.homeNextQazaCurrentPrayer)
               : l10n.homeNextQaza,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
@@ -775,9 +795,32 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
         ),
         const SizedBox(height: 10),
         if (prayer == null)
-          Text(
-            l10n.homePrayerTimeUnavailable,
-            key: const Key('home_qaza_prayer_time_unavailable'),
+          Consumer(
+            builder: (context, ref, _) {
+              final fallback = ref.watch(homeFallbackPendingProvider);
+              return fallback.when(
+                loading: () => const _NextQazaSkeleton(),
+                error: (_, __) => ErrorState(
+                  key: const Key('home_oldest_qaza_error'),
+                  message: l10n.completeLoadError,
+                  onRetry: () => ref.invalidate(homeFallbackPendingProvider),
+                ),
+                data: (record) {
+                  if (record == null) {
+                    return Text(
+                      l10n.completeNoPendingTitle,
+                      key: const Key('home_oldest_qaza_empty'),
+                    );
+                  }
+                  return _HomeFallbackNextQaza(
+                    record: record,
+                    onComplete: widget.onComplete,
+                    onPlan: widget.onPlan,
+                    onSetupPrayerTimes: widget.onSetupPrayerTimes,
+                  );
+                },
+              );
+            },
           )
         else
           Consumer(
@@ -1079,6 +1122,129 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
               );
             },
           ),
+      ],
+    );
+  }
+}
+
+class _HomeFallbackNextQaza extends StatelessWidget {
+  const _HomeFallbackNextQaza({
+    required this.record,
+    required this.onComplete,
+    required this.onPlan,
+    required this.onSetupPrayerTimes,
+  });
+
+  final QazaRecord record;
+  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+  final VoidCallback onPlan;
+  final Future<void> Function() onSetupPrayerTimes;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          key: const Key('home_qaza_prayer_time_setup'),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.schedule_outlined, color: scheme.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      PrayerTimesStrings.setupRequired(context),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      key: const Key('home_setup_prayer_times'),
+                      onPressed: onSetupPrayerTimes,
+                      icon: const Icon(Icons.settings_outlined, size: 18),
+                      label: Text(PrayerTimesStrings.setupAction(context)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: scheme.errorContainer,
+              foregroundColor: scheme.onErrorContainer,
+              child: Icon(_prayerIcon(record.prayerType)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    record.prayerType.localizedLabel(l10n),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    DateFormatters.formatGregorianDatePadded(record.originalDate),
+                    key: const Key('home_oldest_qaza_date'),
+                  ),
+                  Text(
+                    DateFormatters.hijriLabel(record.originalDate),
+                    key: const Key('home_oldest_qaza_date_hijri'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            StatusChip(
+              l10n.homeOldestPending,
+              tone: StatusChipTone.pending,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                key: const Key('home_complete_oldest_qaza'),
+                onPressed: () => onComplete(record, record.prayerType),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(l10n.homeCompleteQaza),
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              key: const Key('home_qaza_plan_button'),
+              onPressed: onPlan,
+              icon: const Icon(Icons.calendar_month_outlined),
+              label: Text(l10n.homeQazaPlan),
+            ),
+          ],
+        ),
       ],
     );
   }
