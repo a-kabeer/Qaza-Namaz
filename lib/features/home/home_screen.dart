@@ -2379,9 +2379,8 @@ class _HomeProgressSkeletonCard extends StatelessWidget {
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
-                final width = constraints.maxWidth.clamp(240.0, 680.0);
                 return SkeletonBox(
-                  width: width,
+                  width: constraints.maxWidth,
                   height: 190,
                   borderRadius: const BorderRadius.all(
                     Radius.circular(12),
