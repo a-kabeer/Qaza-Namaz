@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 
