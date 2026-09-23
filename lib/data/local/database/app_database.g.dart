@@ -985,7 +985,7 @@ typedef $$QazaRecordsTableCreateCompanionBuilder = QazaRecordsCompanion
     Function({
   required String id,
   required String userId,
-  Value<String?> operationId = const Value.absent(),
+  Value<String?> operationId,
   required String prayerType,
   required DateTime originalDate,
   required String status,
