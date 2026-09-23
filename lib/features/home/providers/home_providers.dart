@@ -4,14 +4,14 @@ import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../app/providers.dart';
-import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_record.dart';
-import '../prayer_times/domain/prayer_schedule.dart';
-import '../prayer_times/domain/prayer_times_models.dart';
-import '../prayer_times/prayer_times_providers.dart';
-import '../prayer_times/presentation/prayer_times_controller.dart';
-import 'home_state.dart';
+import '../../../app/providers.dart';
+import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/qaza_record.dart';
+import '../../prayer_times/domain/prayer_schedule.dart';
+import '../../prayer_times/domain/prayer_times_models.dart';
+import '../../prayer_times/prayer_times_providers.dart';
+import '../../prayer_times/presentation/prayer_times_controller.dart';
+import '../home_state.dart';
 
 class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
   static const _keyPrefix = 'qaza_home_daily_target_';
