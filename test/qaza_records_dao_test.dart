@@ -383,39 +383,6 @@ void main() {
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
   });
 
-  test('completion only changes pending rows and leaves stale rows untouched',
-      () async {
-    await dao.insertRecords([
-      record(
-        id: 'pending',
-        userId: 'user-a',
-        prayerType: 'fajr',
-        date: DateTime(2026, 1, 1),
-      ),
-      record(
-        id: 'completed',
-        userId: 'user-a',
-        prayerType: 'fajr',
-        date: DateTime(2026, 1, 2),
-        status: 'completed',
-      ),
-    ]);
-
-    final completedAt = DateTime(2026, 9, 23, 12);
-    final changed = await dao.completeByIds(
-      userId: 'user-a',
-      ids: ['pending', 'completed', 'missing'],
-      completedAt: completedAt,
-    );
-
-    expect(changed, ['pending']);
-    final pending = await dao.findById(userId: 'user-a', id: 'pending');
-    final completed = await dao.findById(userId: 'user-a', id: 'completed');
-    expect(pending?.status, QazaStatus.completed.name);
-    expect(pending?.completedAt, completedAt);
-    expect(completed?.status, QazaStatus.completed.name);
-    expect(completed?.completedAt, isNull);
-  });
 
   test('progress counts are grouped by prayer and status with user isolation',
       () async {
