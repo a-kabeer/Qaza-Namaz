@@ -3,6 +3,7 @@ import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_recovery_repository.dart';
@@ -15,6 +16,8 @@ class InMemoryQazaRepository
   final Map<String, List<QazaRemoteChange>> _changesByUser = {};
   final Map<String, int> _generations = {};
   int _changeSequence = 0;
+  Object? completionFailure;
+  StackTrace? completionFailureStack;
 
   @override
   Future<List<QazaRecord>> getRecords(
@@ -238,12 +241,45 @@ class InMemoryQazaRepository
   }
 
   @override
-  Future<void> completeRecord(
-          {required String userId,
-          required String recordId,
-          required DateTime completedAt}) =>
-      completeRecords(
-          userId: userId, recordIds: [recordId], completedAt: completedAt);
+  Future<QazaCompletionResult> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    final failure = completionFailure;
+    if (failure != null) {
+      Error.throwWithStackTrace(
+        failure,
+        completionFailureStack ?? StackTrace.current,
+      );
+    }
+
+    final current = _records[recordId];
+    if (current == null || current.userId != userId) {
+      return QazaCompletionResult.notFound;
+    }
+    if (current.status == QazaStatus.completed) {
+      if (current.completedAt != null &&
+          !completedAt.isBefore(current.completedAt!)) {
+        return QazaCompletionResult.alreadyCompleted;
+      }
+    } else if (current.status != QazaStatus.pending) {
+      return QazaCompletionResult.notFound;
+    }
+
+    final updated = current.copyWith(
+      status: QazaStatus.completed,
+      completedAt: completedAt,
+      updatedAt: completedAt,
+    );
+    _records[recordId] = updated;
+    _recordChange(
+      userId: userId,
+      type: QazaRemoteChangeType.complete,
+      records: [updated],
+    );
+    return QazaCompletionResult.completed;
+  }
   @override
   Future<void> completeRecords(
       {required String userId,
@@ -253,13 +289,13 @@ class InMemoryQazaRepository
     for (final id in recordIds) {
       final r = _records[id];
       if (r == null || r.userId != userId) continue;
-      if (r.status == QazaStatus.completed) {
-        if (r.completedAt == null || completedAt.isBefore(r.completedAt!)) {
-          final updated =
-              r.copyWith(completedAt: completedAt, updatedAt: completedAt);
-          _records[id] = updated;
-          changed.add(updated);
-        }
+      if (r.status != QazaStatus.pending &&
+          r.status != QazaStatus.completed) {
+        continue;
+      }
+      if (r.status == QazaStatus.completed &&
+          r.completedAt != null &&
+          !completedAt.isBefore(r.completedAt!)) {
         continue;
       }
       final updated = r.copyWith(

@@ -4,6 +4,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
@@ -651,16 +652,86 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   }
 
   @override
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
-  }) =>
-      completeRecords(
+  }) async {
+    if (recordId.isEmpty || userId != _activeUserId) {
+      return QazaCompletionResult.notFound;
+    }
+
+    final generation = _sessionGeneration;
+    await ensureHydrated();
+    await _ensureOutboxLoaded();
+
+    final changed = await _localStore.completeRecords(
+      userId: userId,
+      recordIds: [recordId],
+      completedAt: completedAt,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return QazaCompletionResult.notFound;
+    }
+
+    if (changed.isEmpty) {
+      final current = await _localStore.getRecordsByIds(
         userId: userId,
-        recordIds: [recordId],
-        completedAt: completedAt,
+        ids: [recordId],
       );
+      if (current.any((record) =>
+          record.userId == userId &&
+          record.id == recordId &&
+          record.status == QazaStatus.completed)) {
+        return QazaCompletionResult.alreadyCompleted;
+      }
+      return QazaCompletionResult.notFound;
+    }
+
+    final changedRecords = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: changed,
+    );
+    if (changedRecords.isEmpty) {
+      return QazaCompletionResult.notFound;
+    }
+
+    final queuedAt = _now();
+    final operations = <PendingSyncOp>[
+      for (final record in changedRecords)
+        PendingSyncOp(
+          id: 'complete_${record.id}',
+          type: SyncOpType.complete,
+          userId: userId,
+          queuedAt: queuedAt,
+          targetRecordId: record.id,
+          completedAt: record.completedAt ?? completedAt,
+          record: record,
+        ),
+    ];
+
+    await _localStore.appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      operations,
+    );
+
+    for (final record in changedRecords) {
+      _records[record.id] = record;
+    }
+    _outbox.addAll(operations);
+    _outboxLoaded = true;
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+
+    return QazaCompletionResult.completed;
+  }
 
   @override
   Future<void> completeRecords({

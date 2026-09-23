@@ -383,6 +383,8 @@ void main() {
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 5)));
   });
 
+
+
   test('progress counts are grouped by prayer and status with user isolation',
       () async {
     await dao.insertRecords([

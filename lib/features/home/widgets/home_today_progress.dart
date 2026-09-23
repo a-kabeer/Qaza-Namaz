@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_button.dart';
@@ -17,6 +18,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_progress.dart';
+import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
 import '../../prayer_times/domain/qaza_restriction_service.dart';
@@ -123,11 +125,15 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
     try {
       return await ref.read(qazaRestrictionEvaluationProvider.future);
-    } catch (_) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'restriction_lookup_failed',
+        error,
+        stack: stack,
+      );
       // Restriction lookup is advisory when the UI could not resolve one; the
-      // previous Home behavior already exposed the completion action in this
-      // state. Do not convert that missing lookup into a generic completion
-      // failure.
+      // completion action remains available in this state.
       return null;
     }
   }
@@ -137,40 +143,19 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
     final userId = ref.read(requiredUserIdProvider);
     final completedAt = ref.read(homeNowProvider);
+    final diagnostics = ref.read(diagnosticsProvider);
 
+    QazaCompletionResult result;
     try {
       final restriction = await _restrictionForCompletion();
-
-      await ref.read(qazaCompletionControllerProvider.notifier).completeRecord(
+      result = await ref
+          .read(qazaCompletionControllerProvider.notifier)
+          .completeRecord(
             userId: userId,
             recordId: record.id,
             completedAt: completedAt,
             restriction: restriction,
           );
-
-      final pendingBefore =
-          widget.summary.byPrayer[prayer]?.progress.pending ?? 0;
-      ref.read(homeControllerProvider).afterCompletion(
-            pendingBefore: pendingBefore,
-          );
-
-      if (!mounted) return;
-      HapticFeedback.mediumImpact();
-
-      try {
-        await showQazaUndoSnackBar(
-          context: context,
-          ref: ref,
-          userId: userId,
-          recordIds: [record.id],
-          completedAt: completedAt,
-          onUndone: () async {
-            ref.read(homeControllerProvider).afterUndo(prayer);
-          },
-        );
-      } catch (_) {
-        // Completion succeeded; undo registration is optional recovery UI.
-      }
     } on QazaCompletionRestrictedException catch (error) {
       ref.invalidate(qazaRestrictionEvaluationProvider);
       if (!mounted) return;
@@ -186,6 +171,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
             ),
           ),
         );
+      return;
     } on QazaTartibViolationException catch (error) {
       ref.invalidate(sahibAlTartibProvider);
       if (!mounted) return;
@@ -201,7 +187,14 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
             ),
           ),
         );
-    } catch (_) {
+      return;
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'completion_failed',
+        error,
+        stack: stack,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -210,6 +203,76 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
             content: Text(AppLocalizations.of(context).completeFailed),
           ),
         );
+      return;
+    }
+
+    if (result != QazaCompletionResult.completed) {
+      try {
+        ref.read(homeControllerProvider).afterStaleCompletion();
+      } catch (error, stack) {
+        diagnostics.recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'post_completion_refresh_failed',
+          error,
+          stack: stack,
+        );
+      }
+
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.completeNoPendingTitle +
+                  ' ' +
+                  l10n.completeNoPendingMessage,
+            ),
+          ),
+        );
+      return;
+    }
+
+    // Persistence has confirmed the completion. From this point onward,
+    // refresh and undo UI failures must never be presented as completion
+    // failures.
+    try {
+      ref.read(homeControllerProvider).afterCompletion(
+            pendingBefore:
+                widget.summary.byPrayer[prayer]?.progress.pending ?? 0,
+          );
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'post_completion_refresh_failed',
+        error,
+        stack: stack,
+      );
+    }
+
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+
+    try {
+      await showQazaUndoSnackBar(
+        context: context,
+        ref: ref,
+        userId: userId,
+        recordIds: [record.id],
+        completedAt: completedAt,
+        onUndone: () async {
+          ref.read(homeControllerProvider).afterUndo(prayer);
+        },
+      );
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'undo_ui_failed',
+        error,
+        stack: stack,
+      );
+      // Completion succeeded; undo registration is optional recovery UI.
     }
   }
 

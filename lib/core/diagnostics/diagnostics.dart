@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Where a diagnostic came from.
 ///
@@ -13,6 +17,7 @@ enum DiagnosticArea {
   sync,
   importData,
   databaseMigration,
+  qazaCompletion,
   uncaught;
 
   String get code => name;
@@ -31,6 +36,7 @@ class DiagnosticEvent {
     this.errorType,
     this.message,
     this.fatal = false,
+    this.stackTrace,
   });
 
   final DiagnosticArea area;
@@ -46,10 +52,15 @@ class DiagnosticEvent {
 
   final bool fatal;
 
+  /// The captured stack trace after the same redaction and size cap as the
+  /// message. Kept optional so non-failure events remain lightweight.
+  final String? stackTrace;
+
   @override
   String toString() => '[${area.code}] $code'
       '${errorType == null ? '' : ' ($errorType)'}'
-      '${message == null ? '' : ': $message'}';
+      '${message == null ? '' : ': $message'}'
+      '${stackTrace == null ? '' : '\n$stackTrace'}';
 
   @override
   bool operator ==(Object other) =>
@@ -58,10 +69,12 @@ class DiagnosticEvent {
       other.code == code &&
       other.errorType == errorType &&
       other.message == message &&
-      other.fatal == fatal;
+      other.fatal == fatal &&
+      other.stackTrace == stackTrace;
 
   @override
-  int get hashCode => Object.hash(area, code, errorType, message, fatal);
+  int get hashCode =>
+      Object.hash(area, code, errorType, message, fatal, stackTrace);
 }
 
 /// Patterns that must never reach a diagnostics sink.
@@ -82,7 +95,7 @@ final List<(RegExp, String)> _redactions = [
 ];
 
 /// Strips anything that could identify a person or their ledger.
-String? redactDiagnosticMessage(String? raw) {
+String? redactDiagnosticMessage(String? raw, {int maxLength = 200}) {
   if (raw == null) return null;
   var value = raw;
   for (final (pattern, replacement) in _redactions) {
@@ -90,9 +103,10 @@ String? redactDiagnosticMessage(String? raw) {
   }
   value = value.trim();
   if (value.isEmpty) return null;
-  // A cap, so a stack-like blob can never be smuggled through as a message.
-  const limit = 200;
-  return value.length <= limit ? value : '${value.substring(0, limit)}…';
+  // A cap, so oversized diagnostic text can never be persisted indefinitely.
+  return value.length <= maxLength
+      ? value
+      : '${value.substring(0, maxLength)}…';
 }
 
 /// Where diagnostics go.
@@ -118,6 +132,7 @@ DiagnosticEvent buildFailureEvent(
   DiagnosticArea area,
   String code,
   Object error, {
+  StackTrace? stack,
   bool fatal = false,
 }) =>
     DiagnosticEvent(
@@ -125,6 +140,7 @@ DiagnosticEvent buildFailureEvent(
       code: code,
       errorType: error.runtimeType.toString(),
       message: redactDiagnosticMessage(error.toString()),
+      stackTrace: redactDiagnosticMessage(stack?.toString(), maxLength: 4000),
       fatal: fatal,
     );
 
@@ -166,6 +182,68 @@ class BufferedDiagnostics implements DiagnosticsService {
   }
 }
 
+class PersistentDiagnostics implements DiagnosticsService {
+  PersistentDiagnostics({
+    this.capacity = 50,
+    this.storageKey = 'qaza_diagnostic_events',
+  });
+
+  final int capacity;
+  final String storageKey;
+  final List<DiagnosticEvent> _events = <DiagnosticEvent>[];
+  Future<void> _writeChain = Future<void>.value();
+
+  void _persist() {
+    final snapshot = _events.map((event) => <String, Object?>{
+      'area': event.area.code,
+      'code': event.code,
+      'errorType': event.errorType,
+      'message': event.message,
+      'fatal': event.fatal,
+      'stackTrace': event.stackTrace,
+    }).toList(growable: false);
+
+    _writeChain = _writeChain.then((_) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(storageKey, jsonEncode(snapshot));
+      } catch (_) {
+        // Diagnostics must never cause a user-visible failure.
+      }
+    });
+  }
+
+  @override
+  void recordFailure(
+    DiagnosticArea area,
+    String code,
+    Object error, {
+    StackTrace? stack,
+    bool fatal = false,
+  }) {
+    _events.add(buildFailureEvent(
+      area,
+      code,
+      error,
+      stack: stack,
+      fatal: fatal,
+    ));
+    if (_events.length > capacity) {
+      _events.removeAt(0);
+    }
+    _persist();
+  }
+
+  @override
+  void recordEvent(DiagnosticArea area, String code) {
+    _events.add(DiagnosticEvent(area: area, code: code));
+    if (_events.length > capacity) {
+      _events.removeAt(0);
+    }
+    _persist();
+  }
+}
+
 /// Prints in debug builds and does nothing in release.
 ///
 /// The app's current behaviour, behind the same port, so wiring a backend
@@ -180,7 +258,7 @@ class DebugDiagnostics implements DiagnosticsService {
   @override
   void recordFailure(DiagnosticArea area, String code, Object error,
       {StackTrace? stack, bool fatal = false}) {
-    _emit(buildFailureEvent(area, code, error, fatal: fatal));
+    _emit(buildFailureEvent(area, code, error, stack: stack, fatal: fatal));
     if (kDebugMode && stack != null) debugPrintStack(stackTrace: stack);
   }
 

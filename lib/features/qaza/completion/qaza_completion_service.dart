@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/services/qaza_service.dart';
 
 class QazaCompletionService {
@@ -8,7 +9,7 @@ class QazaCompletionService {
 
   final QazaService _qazaService;
 
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,

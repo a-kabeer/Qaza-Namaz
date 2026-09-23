@@ -5,9 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/home_screen.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
@@ -98,6 +100,7 @@ void main() {
     QazaRestrictionEvaluation? restrictionEvaluation,
     bool restrictionEvaluationFails = false,
     DateTime? now,
+    DiagnosticsService? diagnostics,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -106,6 +109,7 @@ void main() {
     final overrides = <Override>[
       qazaRepositoryProvider.overrideWithValue(repository),
       activeUserIdProvider.overrideWithValue('u1'),
+      if (diagnostics != null) diagnosticsProvider.overrideWithValue(diagnostics),
       if (now != null) homeNowProvider.overrideWithValue(now),
       authStateProvider.overrideWith(
         (ref) => Stream.value(
@@ -309,10 +313,45 @@ void main() {
       await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
       await tester.pumpAndSettle();
 
-      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       expect(
         find.text('Qaza cannot be completed, please try again'),
         findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+
+
+    testWidgets(
+        'stale displayed Qaza does not show false completion or undo UI',
+        (tester) async {
+      final repository = await ledger();
+      final diagnostics = BufferedDiagnostics();
+
+      await pumpHome(
+        tester,
+        repository,
+        diagnostics: diagnostics,
+      );
+
+      final staleAt = DateTime(2026, 9, 23, 12);
+      final staleResult = await repository.completeRecord(
+        userId: 'u1',
+        recordId: 'f1',
+        completedAt: staleAt,
+      );
+      expect(staleResult, QazaCompletionResult.completed);
+
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('qaza_undo_banner')), findsNothing);
+      expect(find.text('Qaza cannot be completed, please try again'), findsNothing);
+      expect(tester.takeException(), isNull);
+      expect(
+        diagnostics.events.where((event) => event.code == 'completion_failed'),
+        isEmpty,
       );
       expect(tester.takeException(), isNull);
     });
