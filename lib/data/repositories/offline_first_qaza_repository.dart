@@ -930,18 +930,47 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
               record.updatedAt.isAtSameMomentAs(expectedCreatedAt))
             record.id,
       ];
+
       if (ids.isNotEmpty) {
-        removed += await softDeleteRecords(
+        final changed =
+            await _localStore.softDeletePendingIfUnchanged(
           userId: userId,
           recordIds: ids,
+          expectedCreatedAt: expectedCreatedAt,
           deletedAt: deletedAt,
           operationId: operationId,
         );
+
+        for (final record in changed) {
+          _records[record.id] = record;
+          _outbox.add(
+            PendingSyncOp(
+              id: 'soft_delete_' + record.id + '_' + operationId,
+              type: SyncOpType.update,
+              userId: userId,
+              queuedAt: deletedAt,
+              targetRecordId: record.id,
+              record: record,
+            ),
+          );
+        }
+        removed += changed.length;
+        _outboxLoaded = true;
       }
 
       if (!page.hasMore) break;
       cursorDate = page.nextOriginalDate;
       cursorId = page.nextId;
+    }
+
+    if (removed > 0) {
+      _emitPending();
+      if (_isOnline && _connectivityKnown) {
+        unawaited(
+          _syncEngine?.synchronize(userId, requestRerun: true) ??
+              Future<void>.value(),
+        );
+      }
     }
     return removed;
   }
@@ -1048,36 +1077,3 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       if (!page.hasMore) break;
       cursorDeletedAt = page.records.last.updatedAt;
       cursorId = page.records.last.id;
-    }
-    _outboxLoaded = true;
-    if (removed > 0) {
-      _emitPending();
-      if (_isOnline && _connectivityKnown) {
-        unawaited(_syncEngine?.synchronize(userId, requestRerun: true) ?? Future<void>.value());
-      }
-    }
-    return removed;
-  }
-  @override
-  Future<void> resetUserRecords({required String userId}) async {
-    if (userId != _activeUserId) {
-      throw StateError('Cannot reset Qaza records for a non-active user.');
-    }
-
-    final operation = PendingSyncOp(
-      id: 'reset_${userId}_${DateTime.now().microsecondsSinceEpoch}',
-      type: SyncOpType.reset,
-      userId: userId,
-      queuedAt: _now(),
-    );
-
-    await _localStore.retireUserData(userId: userId);
-    await _localStore.appendRecordsAndOutbox(
-      userId,
-      const <QazaRecord>[],
-      [operation],
-    );
-
-    _records.clear();
-    _outbox
-      ..clear()
