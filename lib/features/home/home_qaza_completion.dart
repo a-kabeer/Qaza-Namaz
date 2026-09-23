@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../prayer_times/domain/prayer_schedule.dart';
 import '../prayer_times/domain/prayer_times_models.dart';
