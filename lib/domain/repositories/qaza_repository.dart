@@ -54,6 +54,44 @@ abstract interface class QazaRepository {
     required PrayerType prayerType,
   });
 
+  /// Resolves only the requested pending records using bounded keyset pages.
+  ///
+  /// Implementations can override this with a direct indexed lookup. The
+  /// default keeps the contract available to lightweight repositories without
+  /// requiring them to materialize the full ledger.
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    var remaining = recordIds.toSet();
+    if (remaining.isEmpty) return const <QazaRecord>[];
+
+    final result = <QazaRecord>[];
+    DateTime? afterDate;
+    String? afterId;
+
+    while (remaining.isNotEmpty) {
+      final page = await getPage(
+        userId: userId,
+        limit: 500,
+        status: QazaStatus.pending,
+        afterOriginalDate: afterDate,
+        afterId: afterId,
+      );
+      if (page.records.isEmpty) break;
+
+      for (final record in page.records) {
+        if (remaining.remove(record.id)) result.add(record);
+      }
+
+      if (!page.hasMore) break;
+      afterDate = page.nextOriginalDate;
+      afterId = page.nextId;
+    }
+
+    return result;
+  }
+
   Future<QazaHistoryPage> getHistoryPage({
     required String userId,
     int limit = 50,
