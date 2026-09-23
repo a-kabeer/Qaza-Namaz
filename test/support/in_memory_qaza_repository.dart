@@ -16,6 +16,8 @@ class InMemoryQazaRepository
   final Map<String, List<QazaRemoteChange>> _changesByUser = {};
   final Map<String, int> _generations = {};
   int _changeSequence = 0;
+  Object? completionFailure;
+  StackTrace? completionFailureStack;
 
   @override
   Future<List<QazaRecord>> getRecords(
@@ -244,6 +246,14 @@ class InMemoryQazaRepository
     required String recordId,
     required DateTime completedAt,
   }) async {
+    final failure = completionFailure;
+    if (failure != null) {
+      Error.throwWithStackTrace(
+        failure,
+        completionFailureStack ?? StackTrace.current,
+      );
+    }
+
     final current = _records[recordId];
     if (current == null || current.userId != userId) {
       return QazaCompletionResult.notFound;
