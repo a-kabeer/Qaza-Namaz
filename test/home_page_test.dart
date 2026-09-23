@@ -414,7 +414,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('qaza_undo_banner')), findsNothing);
-      expect(find.text('Qaza could not be completed. Please try again'), findsNothing);
+      expect(find.text(AppLocalizations.of(context).completeFailed), findsNothing);
       expect(find.text('No pending Qaza for this prayer.'), findsOneWidget);
       expect(
         diagnostics.events.where((event) => event.code == 'completion_failed'),
