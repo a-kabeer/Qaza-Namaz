@@ -493,7 +493,12 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     try {
       final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: userId,
-            type: QazaOperationType.bulkDelete,
+            type: QazaOperationType.singleRecordDelete,
+            inputSnapshot: {
+              'version': 1,
+              'recordId': recordId,
+              'reason': 'controlled_correction',
+            },
           );
       try {
         final deletedAt = operation.createdAt;
