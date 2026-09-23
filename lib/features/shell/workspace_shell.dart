@@ -94,10 +94,13 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
       });
     });
 
-    ref.listen<WorkspaceDestination>(workspaceDestinationProvider, (previous, next) {
-      if (previous == null || previous == next || !mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
-    });
+    ref.listen<WorkspaceDestination>(
+      workspaceDestinationProvider,
+      (previous, next) {
+        if (previous == null || previous == next || !mounted) return;
+        ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+      },
+    );
 
     final destination = ref.watch(workspaceDestinationProvider);
     final index = destination.index;
