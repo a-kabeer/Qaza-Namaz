@@ -64,8 +64,8 @@ class QazaTrackerScreen extends ConsumerWidget {
                 if (!state.selectionMode) ...[
                   const SizedBox(height: AppSpacing.sm),
                   TabBar(
-                    onTap: (_) =>
-                        ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar(),
+                    onTap: (_) => ScaffoldMessenger.maybeOf(context)
+                        ?.hideCurrentSnackBar(),
                     tabs: [
                       Tab(text: 'Pending'),
                       Tab(text: 'History'),
