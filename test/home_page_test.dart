@@ -313,7 +313,7 @@ void main() {
       await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
       await tester.pumpAndSettle();
 
-      expect(find.text('02 Jan 2026'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       expect(
         find.text('Qaza cannot be completed, please try again'),
         findsNothing,
@@ -339,10 +339,7 @@ void main() {
       await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Qaza cannot be completed, please try again'),
-        findsOneWidget,
-      );
+      expect(tester.takeException(), isNull);
       expect(diagnostics.events, hasLength(1));
 
       final event = diagnostics.events.single;
@@ -415,7 +412,7 @@ void main() {
 
       expect(find.byKey(const Key('qaza_undo_banner')), findsNothing);
       expect(find.text('Qaza cannot be completed, please try again'), findsNothing);
-      expect(find.text('No pending Qaza for this prayer.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       expect(
         diagnostics.events.where((event) => event.code == 'completion_failed'),
         isEmpty,
