@@ -562,13 +562,12 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     for (final row in rows) {
       final status = row.read(qazaRecords.status);
       final count = row.read(countExpression) ?? 0;
-      switch (status) {
-        case QazaStatus.pending.name:
-          pending += count;
-        case QazaStatus.completed.name:
-          completed += count;
-        case QazaStatus.deleted.name:
-          deleted += count;
+      if (status == QazaStatus.pending.name) {
+        pending += count;
+      } else if (status == QazaStatus.completed.name) {
+        completed += count;
+      } else if (status == QazaStatus.deleted.name) {
+        deleted += count;
       }
     }
 
