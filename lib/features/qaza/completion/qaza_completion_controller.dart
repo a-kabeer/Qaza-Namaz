@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../domain/entities/qaza_completion_result.dart';
+
 import '../../prayer_times/domain/qaza_restriction_service.dart';
 import 'qaza_completion_policy.dart';
 import 'qaza_completion_service.dart';
@@ -11,7 +13,7 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
   @override
   QazaCompletionState build() => const QazaCompletionState();
 
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
@@ -22,11 +24,11 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
     state = state.copyWith(isWorking: true);
     try {
       _policy.ensureAllowed(restriction);
-      await ref.read(qazaCompletionServiceProvider).completeRecord(
-            userId: userId,
-            recordId: recordId,
-            completedAt: completedAt,
-          );
+      return await ref.read(qazaCompletionServiceProvider).completeRecord(
+        userId: userId,
+        recordId: recordId,
+        completedAt: completedAt,
+      );
     } finally {
       state = state.copyWith(isWorking: false);
     }
