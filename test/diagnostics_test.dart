@@ -94,7 +94,7 @@ void main() {
       final event = buildFailureEvent(
         DiagnosticArea.qazaCompletion,
         'completion_failed',
-        const StateError('boom'),
+        StateError('boom'),
         stack: stack,
       );
 
