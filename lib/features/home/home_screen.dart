@@ -1183,7 +1183,6 @@ class _PendingByPrayerSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final charts = AppChartColors.of(context);
-    final totalPending = summary.overall.pending;
     final pendingPrayers = PrayerType.values
         .where(
           (prayer) => (summary.byPrayer[prayer]?.progress.pending ?? 0) > 0,
@@ -1236,8 +1235,7 @@ class _PendingByPrayerSection extends ConsumerWidget {
             for (final prayer in pendingPrayers)
               _PrayerPendingBar(
                 prayer: prayer,
-                pending: summary.byPrayer[prayer]?.progress.pending ?? 0,
-                totalPending: totalPending,
+                progress: summary.byPrayer[prayer]!.progress,
                 charts: charts,
                 onTap: () => openQazaForPrayer(ref, prayer),
               ),
@@ -1250,15 +1248,13 @@ class _PendingByPrayerSection extends ConsumerWidget {
 class _PrayerPendingBar extends StatelessWidget {
   const _PrayerPendingBar({
     required this.prayer,
-    required this.pending,
-    required this.totalPending,
+    required this.progress,
     required this.charts,
     required this.onTap,
   });
 
   final PrayerType prayer;
-  final int pending;
-  final int totalPending;
+  final QazaProgress progress;
   final AppChartColors charts;
   final VoidCallback onTap;
 
@@ -1266,11 +1262,11 @@ class _PrayerPendingBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final fraction = totalPending <= 0
+    final fraction = progress.total <= 0
         ? 0.0
-        : (pending / totalPending).clamp(0.0, 1.0).toDouble();
+        : (progress.pending / progress.total).clamp(0.0, 1.0).toDouble();
     final prayerLabel = prayer.localizedLabel(l10n);
-    final pendingLabel = DateFormatters.formatCount(pending);
+    final pendingLabel = DateFormatters.formatCount(progress.pending);
 
     return Semantics(
       key: Key('home_pending_prayer_semantics_' + prayer.name),
