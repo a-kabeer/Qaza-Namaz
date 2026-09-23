@@ -34,6 +34,7 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
     await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(builder: (_) => page),
