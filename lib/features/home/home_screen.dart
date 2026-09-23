@@ -2276,6 +2276,28 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 16),
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(
+                  width: 20,
+                  height: 20,
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonText(width: 210, height: 16),
+                      SizedBox(height: 5),
+                      SkeletonText(width: 120, height: 12),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
