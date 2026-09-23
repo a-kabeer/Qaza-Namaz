@@ -81,11 +81,11 @@ class QazaService {
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
 
-  /// Returns the next Qaza allowed by the active Sahib al-Tartib rule.
+  /// Returns the next Qaza allowed by the current-day Sahib al-Tartib rule.
   ///
-  /// When fewer than six Fard prayers are pending, the next prayer is selected
-  /// by date and the actual prayer sequence. Otherwise the existing bounded
-  /// repository ordering is preserved.
+  /// When today's Fard Qaza records exist, Sahib al-Tartib selects the first
+  /// pending prayer in Fajr -> Zuhr -> Asr -> Maghrib -> Isha order. Otherwise
+  /// the existing bounded repository ordering is preserved.
   Future<QazaRecord?> oldestPendingOverall({required String userId}) async {
     final tartibState = await tartib.evaluate(userId: userId);
     if (tartibState.requiresOrder) return tartibState.nextPending;
