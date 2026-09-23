@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
+import '../entities/qaza_completion_result.dart';
 
 class QazaPage {
   const QazaPage({required this.records, required this.hasMore});
@@ -127,7 +128,11 @@ abstract interface class QazaRepository {
     required String recordId,
   });
 
-  Future<void> completeRecord({
+  /// Attempts to complete one record and reports the persistence outcome.
+  ///
+  /// Expected stale-state outcomes are returned; unexpected technical failures
+  /// remain exceptions.
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
