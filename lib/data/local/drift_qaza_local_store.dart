@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 import 'database/app_database.dart';
 import 'qaza_local_store.dart';
 
@@ -138,6 +139,16 @@ class DriftQazaLocalStore extends QazaLocalStore {
       },
     );
   }
+
+  @override
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) =>
+      _database.qazaRecordsDao.getOperationSummary(
+        userId: userId,
+        operationId: operationId,
+      );
 
   @override
   Future<bool> hasRecordCombination({
