@@ -38,11 +38,48 @@ void main() {
       );
 
       expect(
+        homeDaysUntilCompletion(
+          pending: 6,
+          dailyTarget: 5,
+          completedToday: 5,
+        ),
+        2,
+      );
+
+      expect(
+        homeDaysUntilCompletion(
+          pending: 4,
+          dailyTarget: 5,
+          completedToday: 0,
+        ),
+        0,
+      );
+
+      expect(
+        homeDaysUntilCompletion(
+          pending: 0,
+          dailyTarget: 5,
+          completedToday: 0,
+        ),
+        0,
+      );
+
+      expect(
         homeEstimatedCompletionDate(
           now: now,
           pending: 11,
           dailyTarget: 5,
           completedToday: 0,
+        ),
+        DateTime(2026, 9, 23),
+      );
+
+      expect(
+        homeEstimatedCompletionDate(
+          now: DateTime(2026, 9, 21, 23, 45),
+          pending: 6,
+          dailyTarget: 5,
+          completedToday: 5,
         ),
         DateTime(2026, 9, 23),
       );
