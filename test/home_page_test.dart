@@ -201,6 +201,7 @@ void main() {
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
+      expect(find.byKey(const Key('home_estimated_completion')), findsOneWidget);
     });
 
     testWidgets(
