@@ -1788,6 +1788,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homePendingByPrayer => 'نماز کے لحاظ سے باقی';
 
   @override
+  String get homePrayerBreakdown => 'نماز وار جائزہ';
+
+  @override
   String get homeViewDetails => 'تفصیلات دیکھیں';
 
   @override
