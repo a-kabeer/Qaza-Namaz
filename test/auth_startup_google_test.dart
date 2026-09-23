@@ -11,6 +11,7 @@ import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/auth/auth_gate.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
 import 'package:qaza_namaz/features/onboarding/welcome_screen.dart';
+import 'package:qaza_namaz/features/prayer_times/presentation/prayer_times_setup_prompt.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 
 import 'support/in_memory_qaza_repository.dart';
@@ -92,6 +93,29 @@ void main() {
 
     expect(find.byType(WorkspaceShell), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
+  });
+
+  testWidgets('shows prayer-time setup after account entry', (tester) async {
+    final auth = StartupAuthRepository(
+      const AppUser(id: 'setup-user', email: 'setup@example.com'),
+    );
+    addTearDown(auth.dispose);
+
+    await pumpStartup(tester, auth.account, auth);
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WorkspaceShell), findsOneWidget);
+    expect(
+      find.byKey(const Key('prayer_times_setup_prompt')),
+      findsOneWidget,
+    );
+    expect(find.text('Set up prayer times'), findsOneWidget);
+    expect(find.text('Use My Location'), findsOneWidget);
+    expect(find.text('Choose City'), findsOneWidget);
+    expect(find.text('Not Now'), findsOneWidget);
   });
 
   testWidgets('startup Google failure shows the real diagnostic',
