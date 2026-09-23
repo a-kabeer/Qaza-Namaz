@@ -796,16 +796,30 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
               ),
         ),
         if (widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            widget.selected.currentPrayer != null)
+            widget.selected.currentPrayer != null) ...[
           Text(
-            l10n.homeNextQazaCurrentPrayer +
-                ': ' +
-                widget.selected.currentPrayer!.localizedLabel(l10n),
+            l10n.homeCurrentPrayerLabel(
+              widget.selected.currentPrayer!.localizedLabel(l10n),
+            ),
             key: const Key('home_current_prayer'),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
+          if (widget.selected.source ==
+                  HomePrayerSelectionSource.sahibAlTartib &&
+              widget.selected.prayer != null)
+            Text(
+              l10n.homeSahibOrderLabel(
+                widget.selected.prayer!.localizedLabel(l10n),
+              ),
+              key: const Key('home_sahib_selection'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+        ],
       ],
     );
 
