@@ -413,7 +413,7 @@ void main() {
       expect(find.byKey(const Key('qaza_tracker_empty')), findsNothing);
     });
 
-    testWidgets('record actions expose edit and delete without changing selection',
+    testWidgets('pending rows expose no individual edit or delete actions',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
@@ -425,38 +425,13 @@ void main() {
         find.byKey(const Key(
           'qaza_record_actions_test-user_fajr_2025-01-01',
         )),
-        findsOneWidget,
+        findsNothing,
       );
-
-      await tester.tap(
-        find.byKey(const Key(
-          'qaza_record_actions_test-user_fajr_2025-01-01',
-        )),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Edit'), findsOneWidget);
-      expect(find.text('Delete'), findsOneWidget);
-
-      await tester.tap(find.text('Edit').last);
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('qaza_record_edit_save')),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const Key('qaza_record_edit_save')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Qaza record updated.'), findsOneWidget);
-      expect(
-        find.byKey(const Key(
-          'qaza_record_actions_test-user_fajr_2025-01-01',
-        )),
-        findsOneWidget,
-      );
+      expect(find.text('Edit'), findsNothing);
+      expect(find.text('Delete'), findsNothing);
     });
 
-    testWidgets('delete action requires confirmation', (tester) async {
+    testWidgets('tap on a pending row completes it', (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
@@ -464,32 +439,41 @@ void main() {
       await pump(tester, repository);
 
       await tester.tap(
-        find.byKey(const Key(
-          'qaza_record_actions_test-user_fajr_2025-01-01',
-        )),
+        find.byKey(
+          const Key('qaza_record_test-user_fajr_2025-01-01'),
+        ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete').last);
-      await tester.pumpAndSettle();
 
-      expect(find.text(AppLocalizationsEn().qazaDeleteRecordTitle), findsOneWidget);
-      await tester.tap(find.text('Delete').last);
-      await tester.pumpAndSettle();
-
+      final completed =
+          await repository.getRecords(
+            userId: 'test-user',
+            status: QazaStatus.completed,
+          );
+      expect(completed, hasLength(1));
       expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
     });
 
-    testWidgets('tap completion circle completes the oldest record', (tester) async {
+    testWidgets('swipe on a pending row completes it', (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(prayer: PrayerType.fajr, date: DateTime(2025, 1, 1)),
       ]);
       await pump(tester, repository);
 
-      await tester.tap(find.byKey(const Key('qaza_record_complete_test-user_fajr_2025-01-01')));
+      await tester.drag(
+        find.byKey(
+          const Key('qaza_record_test-user_fajr_2025-01-01'),
+        ),
+        const Offset(-500, 0),
+      );
       await tester.pumpAndSettle();
 
-      final completed = await repository.getRecords(userId: 'test-user', status: QazaStatus.completed);
+      final completed =
+          await repository.getRecords(
+            userId: 'test-user',
+            status: QazaStatus.completed,
+          );
       expect(completed, hasLength(1));
       expect(find.byKey(const Key('qaza_tracker_empty')), findsOneWidget);
     });
