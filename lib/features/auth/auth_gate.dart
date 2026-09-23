@@ -184,6 +184,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
       );
     }
 
-    return const AppLockGate(child: WorkspaceShell());
+    return const AppLockGate(
+      child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+    );
   }
 }
