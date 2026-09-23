@@ -560,9 +560,23 @@ class CalculatorController extends Notifier<CalculatorState> {
       clearError: true,
     );
     try {
+      final inputSnapshot = <String, dynamic>{
+        'version': 1,
+        'dob': state.dob?.toIso8601String(),
+        'balighMode': state.balighMode.name,
+        'balighAge': state.balighAge,
+        'balighDate': state.balighDate?.toIso8601String(),
+        'prayerStartMode': state.prayerStartMode.name,
+        'prayerStartAge': state.prayerStartAge,
+        'prayerStartDate': state.prayerStartDate?.toIso8601String(),
+        'includeWitr': state.includeWitr,
+        'calculationStartDate': calculation.startDate.toIso8601String(),
+        'calculationEndDate': calculation.endDate.toIso8601String(),
+      };
       final operation = await ref.read(qazaOperationServiceProvider).begin(
             userId: ref.read(requiredUserIdProvider),
             type: QazaOperationType.calculatorImport,
+            inputSnapshot: inputSnapshot,
           );
       try {
         final added = await ref.read(qazaServiceProvider).recordQazaForDates(
