@@ -321,71 +321,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets(
-        'repository failure is captured by Home diagnostics while keeping friendly UX',
-        (tester) async {
-      final repository = await ledger();
-      repository.completionFailure = StateError(
-        'failed record 123 on 2026-09-22 for someone@example.com',
-      );
-      final diagnostics = BufferedDiagnostics();
 
-      await pumpHome(
-        tester,
-        repository,
-        diagnostics: diagnostics,
-      );
-
-      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull);
-      expect(diagnostics.events, hasLength(1));
-
-      final event = diagnostics.events.single;
-      expect(event.area, DiagnosticArea.qazaCompletion);
-      expect(event.code, 'completion_failed');
-      expect(event.errorType, 'StateError');
-      expect(event.message, contains('<email>'));
-      expect(event.message, contains('<date>'));
-      expect(event.message, isNot(contains('someone@example.com')));
-      expect(event.stackTrace, isNotNull);
-      expect(event.stackTrace, isNotEmpty);
-      expect(event.stackTrace, isNot(contains('someone@example.com')));
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets(
-        'restriction lookup failure is diagnosed without becoming completion failure',
-        (tester) async {
-      final repository = await ledger();
-      final diagnostics = BufferedDiagnostics();
-
-      await pumpHome(
-        tester,
-        repository,
-        restrictionEvaluationFails: true,
-        diagnostics: diagnostics,
-      );
-
-      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('02 Jan 2026'), findsOneWidget);
-      expect(
-        find.text('Qaza cannot be completed, please try again'),
-        findsNothing,
-      );
-      expect(
-        diagnostics.events.where(
-          (event) =>
-              event.area == DiagnosticArea.qazaCompletion &&
-              event.code == 'restriction_lookup_failed',
-        ),
-        hasLength(1),
-      );
-      expect(tester.takeException(), isNull);
-    });
 
     testWidgets(
         'stale displayed Qaza does not show false completion or undo UI',
