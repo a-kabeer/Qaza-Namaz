@@ -7,7 +7,9 @@ import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart'
 import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'support/in_memory_qaza_local_store.dart';
 import 'support/in_memory_qaza_repository.dart';
 
@@ -146,7 +148,7 @@ class _BlockingRemote implements QazaRepository {
       delegate.deleteRecord(userId: userId, recordId: recordId);
 
   @override
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
