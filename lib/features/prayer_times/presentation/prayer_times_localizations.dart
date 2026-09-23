@@ -12,6 +12,30 @@ class PrayerTimesStrings {
   static String title(BuildContext context) =>
       _isUrdu(context) ? 'نماز کے اوقات' : 'Prayer Times';
 
+  static String setupTitle(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات سیٹ کریں' : 'Set up prayer times';
+
+  static String setupMessage(BuildContext context) => _isUrdu(context)
+      ? 'خودکار نماز کے انتخاب کے لیے اپنا مقام استعمال کریں یا شہر منتخب کریں۔'
+      : 'Use your location or choose your city to enable automatic prayer selection.';
+
+  static String setupUseLocation(BuildContext context) =>
+      _isUrdu(context) ? 'میرا مقام استعمال کریں' : 'Use My Location';
+
+  static String setupChooseCity(BuildContext context) =>
+      _isUrdu(context) ? 'شہر منتخب کریں' : 'Choose City';
+
+  static String setupNotNow(BuildContext context) =>
+      _isUrdu(context) ? 'ابھی نہیں' : 'Not Now';
+
+  static String setupRequired(BuildContext context) =>
+      _isUrdu(context)
+          ? 'خودکار انتخاب کے لیے نماز کے اوقات درکار ہیں۔'
+          : 'Automatic selection needs prayer times.';
+
+  static String setupAction(BuildContext context) =>
+      _isUrdu(context) ? 'نماز کے اوقات سیٹ کریں' : 'Set Up Prayer Times';
+
   static String locationUnavailable(BuildContext context) => _isUrdu(context)
       ? 'نماز کے اوقات دیکھنے کے لیے مقام منتخب کریں۔'
       : 'Choose a location to see prayer times.';
