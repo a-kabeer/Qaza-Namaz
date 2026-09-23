@@ -396,9 +396,80 @@ class _TodayProgressSectionState extends ConsumerState<_TodayProgressSection> {
                   );
                 },
               ),
+              if (widget.summary.overall.pending > 0) ...[
+                const SizedBox(height: 16),
+                _EstimatedCompletion(
+                  date: homeEstimatedCompletionDate(
+                    now: now,
+                    pending: widget.summary.overall.pending,
+                    dailyTarget: progress.target,
+                    completedToday: progress.completed,
+                  ),
+                  dailyTarget: progress.target,
+                ),
+              ],
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _EstimatedCompletion extends StatelessWidget {
+  const _EstimatedCompletion({
+    required this.date,
+    required this.dailyTarget,
+  });
+
+  final DateTime date;
+  final int dailyTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      key: const Key('home_estimated_completion'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.event_available_outlined,
+            size: 20,
+            color: scheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.homeEstimatedCompletion(
+                    DateFormatters.formatGregorianDatePadded(date),
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.homeDailyTarget + ': ' + l10n.homePerDay(dailyTarget),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
