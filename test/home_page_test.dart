@@ -601,7 +601,10 @@ void main() {
       );
 
       final chart = tester.widget<LineChart>(
-        find.byKey(const Key('home_progress_chart')),
+        find.descendant(
+          of: find.byKey(const Key('home_progress_chart')),
+          matching: find.byType(LineChart),
+        ),
       );
       final tooltipItems = chart.data.lineTouchData.touchTooltipData
           .getTooltipItems!([
