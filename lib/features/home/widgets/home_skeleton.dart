@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/prayer_types.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/skeleton.dart';
 
 class HomeSkeleton extends StatelessWidget {
