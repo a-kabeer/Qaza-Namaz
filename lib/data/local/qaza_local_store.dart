@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_recovery_repository.dart';
 
 /// Remote operations the outbox can replay.
 ///
@@ -97,6 +98,41 @@ class LocalQazaHistoryPage {
 
 abstract class QazaLocalStore {
   Future<OfflineCacheSnapshot> load();
+  /// Operation summaries are aggregate data. Database-backed stores override
+  /// this with a SQL query; the fallback remains correct for lightweight stores.
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) async {
+    final snapshot = await load();
+    final records =
+        snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
+    var pending = 0;
+    var completed = 0;
+    var deleted = 0;
+    var unchangedPending = 0;
+    for (final record in records) {
+      if (record.operationId != operationId) continue;
+      switch (record.status) {
+        case QazaStatus.pending:
+          pending++;
+          if (record.createdAt.isAtSameMomentAs(record.updatedAt)) {
+            unchangedPending++;
+          }
+        case QazaStatus.completed:
+          completed++;
+        case QazaStatus.deleted:
+          deleted++;
+      }
+    }
+    return QazaOperationSummary(
+      pending: pending,
+      completed: completed,
+      deleted: deleted,
+      unchangedPending: unchangedPending,
+    );
+  }
+
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
@@ -498,43 +534,3 @@ abstract class QazaLocalStore {
 
     if (changed.isNotEmpty) await saveRecords(userId, records);
     return changed;
-  }
-
-  /// Adds records without removing anything already stored.
-  ///
-  /// The default rewrites the user's rows because a plain store has no other
-  /// way; database-backed stores override it with an insert.
-  Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
-    if (records.isEmpty) return;
-    final snapshot = await load();
-    final byId = <String, QazaRecord>{
-      for (final record
-          in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
-        record.id: record,
-    };
-    for (final record in records) {
-      if (record.userId == userId) {
-        byId[record.id] = record;
-      }
-    }
-    await saveRecords(userId, byId.values.toList(growable: false));
-  }
-
-  Future<void> appendRecords(String userId, List<QazaRecord> records) async {
-    if (records.isEmpty) return;
-    final snapshot = await load();
-    final existing = List<QazaRecord>.of(
-        snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
-    final known = {for (final record in existing) record.id};
-    for (final record in records) {
-      if (known.add(record.id)) existing.add(record);
-    }
-    await saveRecords(userId, existing);
-  }
-
-  Future<void> saveRecordsAndOutbox(
-      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
-    await saveRecords(userId, records);
-    await saveOutbox(userId, ops);
-  }
-}
