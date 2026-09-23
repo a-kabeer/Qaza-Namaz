@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_record.dart';
 import '../prayer_times/domain/prayer_schedule.dart';
 import '../prayer_times/domain/prayer_times_models.dart';
 import '../prayer_times/prayer_times_providers.dart';
@@ -194,6 +195,17 @@ class HomeSelectedPrayerState {
 ///
 /// Automatic mode follows Prayer Time. Manual mode follows the selected chip
 /// until the user switches back to Auto.
+/// Fallback used only when Automatic mode cannot resolve the current prayer.
+///
+/// The Qaza service owns the ordering rules, so this keeps Sahib al-Tartib
+/// and the normal oldest-first ordering in one place.
+final homeFallbackPendingProvider =
+    FutureProvider.autoDispose<QazaRecord?>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  if (userId == null) return null;
+  return ref.read(qazaServiceProvider).oldestPendingOverall(userId: userId);
+});
+
 final homeSelectedPrayerProvider = Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
   if (selection.mode == HomePrayerSelectionMode.manual) {
