@@ -11,7 +11,6 @@ import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/services/qaza_service.dart';
-import 'qaza_record_editor.dart';
 import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
@@ -322,75 +321,39 @@ class _FilterSheet extends StatelessWidget {
 
 
 
-Future<void> _editTrackerRecord(
-  BuildContext context,
-  QazaTrackerController controller,
-  QazaRecord record,
-  AppLocalizations l10n,
-) async {
-  final edited = await showQazaRecordEditor(context, record: record);
-  if (edited == null || !context.mounted) return;
-  try {
-    await controller.updateRecord(edited);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.qazaRecordUpdated)),
-    );
-  } catch (_) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.qazaRecordUpdateFailed)),
-    );
-  }
-}
-
-Future<void> _deleteTrackerRecord(
-  BuildContext context,
-  QazaTrackerController controller,
-  QazaRecord record,
-  AppLocalizations l10n,
-) async {
-  final confirmed = await confirmDestructive(
-    context,
-    title: l10n.qazaDeleteRecordTitle,
-    message: l10n.qazaDeleteRecordMessage(
-      DateFormatters.formatGregorianDatePadded(record.originalDate),
-      record.prayerType.localizedLabel(l10n),
-    ),
-    confirmLabel: l10n.qazaDeleteRecord,
-  );
-  if (!confirmed || !context.mounted) return;
-  try {
-    await controller.deleteRecord(record.id);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.qazaRecordDeleted)),
-    );
-  } catch (_) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.qazaRecordDeleteFailed)),
-    );
-  }
-}
-
 class _TrackerBody extends ConsumerWidget {
   const _TrackerBody({required this.state, required this.controller});
   final QazaTrackerState state;
   final QazaTrackerController controller;
 
-  Future<void> _completeSingle(BuildContext context, WidgetRef ref, QazaRecord record) async {
+  Future<bool> _completeSingle(BuildContext context, WidgetRef ref, QazaRecord record) async {
     final batch = await controller.completeRecordWithUndo(record.id);
     if (!context.mounted) return;
     final l10n = AppLocalizations.of(context);
     if (batch != null) {
-      await showQazaUndoSnackBar(context: context, ref: ref, userId: ref.read(requiredUserIdProvider), recordIds: batch.recordIds, completedAt: batch.completedAt, onUndone: controller.refresh);
-      return;
+      await showQazaUndoSnackBar(
+        context: context,
+        ref: ref,
+        userId: ref.read(requiredUserIdProvider),
+        recordIds: batch.recordIds,
+        completedAt: batch.completedAt,
+        onUndone: controller.refresh,
+      );
+      return true;
     }
     final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
     if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.qazaTartibBlocked(tartib!.nextPrayer!.localizedLabel(l10n)))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.qazaTartibBlocked(
+              tartib!.nextPrayer!.localizedLabel(l10n),
+            ),
+          ),
+        ),
+      );
     }
+    return false;
   }
 
   @override
@@ -437,11 +400,24 @@ class _TrackerBody extends ConsumerWidget {
                     busy: state.completing || state.recordMutating,
                     canAct: canAct,
                     onTap: state.selectionMode
-                        ? (record.status == QazaStatus.pending ? () => controller.toggleSelection(record.id) : null)
-                        : (record.status == QazaStatus.pending ? () => _completeSingle(context, ref, record) : null),
-                    onLongPress: record.status == QazaStatus.pending && (lockedRecordId == null || record.id == lockedRecordId) ? () => controller.enterSelectionMode(record.id) : null,
-                    onEdit: () => _editTrackerRecord(context, controller, record, l10n),
-                    onDelete: () => _deleteTrackerRecord(context, controller, record, l10n),
+                        ? (record.status == QazaStatus.pending
+                            ? () => controller.toggleSelection(record.id)
+                            : null)
+                        : (record.status == QazaStatus.pending
+                            ? () => _completeSingle(context, ref, record)
+                            : null),
+                    onLongPress: record.status == QazaStatus.pending &&
+                            (lockedRecordId == null ||
+                                record.id == lockedRecordId)
+                        ? () => controller.enterSelectionMode(record.id)
+                        : null,
+                    onSwipeComplete: state.selectionMode ||
+                            record.status != QazaStatus.pending ||
+                            !canAct ||
+                            state.completing ||
+                            state.recordMutating
+                        ? null
+                        : () => _completeSingle(context, ref, record),
                   );
                 },
               ),
@@ -518,9 +494,9 @@ class _RecordRow extends StatelessWidget {
     required this.onLongPress,
     required this.busy,
     required this.canAct,
-    required this.onEdit,
-    required this.onDelete,
+    this.onSwipeComplete,
   });
+
   final QazaRecord record;
   final bool selected;
   final bool selectionMode;
@@ -528,21 +504,28 @@ class _RecordRow extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool busy;
   final bool canAct;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final Future<bool> Function()? onSwipeComplete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final completed = record.status == QazaStatus.completed;
-    final originalDate = DateFormatters.formatGregorianDatePadded(record.originalDate);
-    return Semantics(
+    final originalDate =
+        DateFormatters.formatGregorianDatePadded(record.originalDate);
+
+    final tile = Semantics(
       selected: selected,
       button: record.status == QazaStatus.pending,
-      label: '$originalDate, ${record.prayerType.localizedLabel(l10n)}, ${record.status.localizedLabel(l10n)}',
+      label: originalDate +
+          ', ' +
+          record.prayerType.localizedLabel(l10n) +
+          ', ' +
+          record.status.localizedLabel(l10n),
       hint: record.status == QazaStatus.pending
-          ? (selectionMode ? 'Tap to select or unselect.' : 'Tap to complete. Long press to select.')
+          ? (selectionMode
+              ? 'Tap to select or unselect.'
+              : 'Tap to complete. Swipe to complete. Long press to select.')
           : null,
       child: ListTile(
         key: Key('qaza_record_' + record.id),
@@ -550,51 +533,111 @@ class _RecordRow extends StatelessWidget {
         leading: selectionMode
             ? Checkbox(
                 value: selected,
-                onChanged: onTap == null || busy ? null : (_) => onTap!(),
+                onChanged:
+                    onTap == null || busy ? null : (_) => onTap!(),
               )
             : IconButton(
                 key: Key('qaza_record_complete_' + record.id),
-                tooltip: completed ? l10n.statusCompleted : l10n.qazaCompleteCount(1),
-                onPressed: completed || !canAct || busy ? null : onTap,
+                tooltip: completed
+                    ? l10n.statusCompleted
+                    : l10n.qazaCompleteCount(1),
+                onPressed:
+                    completed || !canAct || busy ? null : onTap,
                 icon: Icon(
-                  completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: completed ? theme.colorScheme.primary : theme.colorScheme.outline,
+                  completed
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: completed
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
                 ),
               ),
         title: Text(originalDate),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(record.prayerType.localizedLabel(l10n), style: theme.textTheme.titleSmall),
-            Text(DateFormatters.hijriLabel(record.originalDate), style: theme.textTheme.bodySmall),
-            Text(record.status.localizedLabel(l10n), style: theme.textTheme.bodySmall),
+            Text(
+              record.prayerType.localizedLabel(l10n),
+              style: theme.textTheme.titleSmall,
+            ),
+            Text(
+              DateFormatters.hijriLabel(record.originalDate),
+              style: theme.textTheme.bodySmall,
+            ),
+            Text(
+              record.status.localizedLabel(l10n),
+              style: theme.textTheme.bodySmall,
+            ),
             if (completed && record.completedAt != null)
-              Text(l10n.qazaCompletedOn(DateFormatters.formatGregorianDatePadded(record.completedAt!)), style: theme.textTheme.bodySmall),
+              Text(
+                l10n.qazaCompletedOn(
+                  DateFormatters.formatGregorianDatePadded(
+                    record.completedAt!,
+                  ),
+                ),
+                style: theme.textTheme.bodySmall,
+              ),
           ],
         ),
         isThreeLine: true,
-        trailing: PopupMenuButton<_RecordAction>(
-          key: Key('qaza_record_actions_' + record.id),
-          enabled: !busy,
-          tooltip: l10n.qazaRecordActions,
-          onSelected: (action) {
-            switch (action) {
-              case _RecordAction.edit: onEdit(); break;
-              case _RecordAction.delete: onDelete(); break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(value: _RecordAction.edit, child: Text(l10n.qazaEditRecord)),
-            PopupMenuItem(value: _RecordAction.delete, child: Text(l10n.qazaDeleteRecord)),
-          ],
-        ),
-        onTap: selectionMode ? onTap : null,
+        onTap: onTap,
         onLongPress: onLongPress,
+      ),
+    );
+
+    final canSwipe =
+        !selectionMode &&
+        record.status == QazaStatus.pending &&
+        canAct &&
+        !busy &&
+        onSwipeComplete != null;
+
+    if (!canSwipe) return tile;
+
+    return Dismissible(
+      key: Key('qaza_record_swipe_' + record.id),
+      direction: DismissDirection.endToStart,
+      dismissThresholds: const {
+        DismissDirection.endToStart: 0.32,
+      },
+      resizeDuration: const Duration(milliseconds: 120),
+      background: const _CompletionSwipeBackground(),
+      confirmDismiss: (_) => onSwipeComplete!(),
+      child: tile,
+    );
+  }
+}
+
+class _CompletionSwipeBackground extends StatelessWidget {
+  const _CompletionSwipeBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      alignment: AlignmentDirectional.centerStart,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_rounded, color: scheme.onPrimary),
+          const SizedBox(width: 8),
+          Text(
+            l10n.qazaCompleteCount(1),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onPrimary,
+                ),
+          ),
+        ],
       ),
     );
   }
 }
-enum _RecordAction { edit, delete }
 
 class _BulkCompletionBar extends ConsumerStatefulWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
@@ -647,24 +690,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
     );
   }
 
-  Future<void> _delete(BuildContext context) async {
-    final l10n = AppLocalizations.of(context);
-    final count = widget.state.selected.length;
-    final _urdu = Localizations.localeOf(context).languageCode == 'ur';
-    final confirmed = await confirmDestructive(
-      context,
-      title: _urdu ? count.toString() + ' قضا حذف کریں؟' : 'Delete ' + count.toString() + ' Qaza records?',
-      message: _urdu ? 'یہ ریکارڈ History سے 30 دن تک بحال کیے جا سکتے ہیں۔' : 'These records can be restored from History for 30 days.',
-      confirmLabel: l10n.qazaDeleteRecord,
-    );
-    if (!confirmed || !context.mounted) return;
-    final deleted = await widget.controller.deleteSelectedWithRecovery();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_urdu ? deleted.toString() + ' ریکارڈ حذف ہوئے۔ History سے بحال کر سکتے ہیں۔' : deleted.toString() + ' deleted. You can restore from History.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -704,15 +729,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                       child: Text(l10n.qazaCompleteCount(count)),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      key: const Key('qaza_tracker_delete_selected'),
-                      onPressed: busy ? null : () => _delete(context),
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      label: Text(l10n.qazaDeleteRecord),
-                    ),
-                  ),
+
                 ],
               ),
             ],
