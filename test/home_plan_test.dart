@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qaza_namaz/features/home/home_plan.dart';
+import 'package:qaza_namaz/features/home/home_state.dart';
 
 void main() {
   group('Home Qaza plan estimates', () {
