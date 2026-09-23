@@ -73,6 +73,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   }
 
   Future<void> _push(Widget page) async {
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
     await Navigator.push<void>(
       context,
       MaterialPageRoute(builder: (_) => page),
@@ -92,6 +93,14 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         if (mounted) showBackupPrompt(context, ref);
       });
     });
+
+    ref.listen<WorkspaceDestination>(
+      workspaceDestinationProvider,
+      (previous, next) {
+        if (previous == null || previous == next || !mounted) return;
+        ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+      },
+    );
 
     final destination = ref.watch(workspaceDestinationProvider);
     final index = destination.index;

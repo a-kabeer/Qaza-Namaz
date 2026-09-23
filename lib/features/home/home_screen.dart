@@ -34,6 +34,7 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {
+    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
     await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(builder: (_) => page),
@@ -102,13 +103,10 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _OverallQazaSection(
                   progress: summary.overall,
-                  onDetails: () => Navigator.push<void>(
+                  onDetails: () => _open(
                     context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => _DetailedStatisticsScreen(
-                        summary: summary,
-                      ),
-                    ),
+                    ref,
+                    _DetailedStatisticsScreen(summary: summary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -117,13 +115,10 @@ class HomeScreen extends ConsumerWidget {
                 const _HomeProgressChartSection(),
                 const SizedBox(height: 12),
                 _DetailedStatisticsCard(
-                  onTap: () => Navigator.push<void>(
+                  onTap: () => _open(
                     context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => _DetailedStatisticsScreen(
-                        summary: summary,
-                      ),
-                    ),
+                    ref,
+                    _DetailedStatisticsScreen(summary: summary),
                   ),
                 ),
               ],

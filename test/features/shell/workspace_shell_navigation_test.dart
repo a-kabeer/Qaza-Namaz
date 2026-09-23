@@ -39,4 +39,55 @@ void main() {
 
     expect(labels, const ['Home', 'Qaza', 'Prayer Times', 'Knowledge', 'Settings']);
   });
+
+  testWidgets('navigation and Qaza tab changes dismiss transient Snackbars',
+      (tester) async {
+    final repository = InMemoryQazaRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          qazaRepositoryProvider.overrideWithValue(repository),
+          activeUserIdProvider.overrideWithValue('test-user'),
+          authStateProvider.overrideWith(
+            (ref) => Stream.value(
+              const AppUser(id: 'test-user', email: 'test@example.com'),
+            ),
+          ),
+        ],
+        child: const TestApp(home: WorkspaceShell()),
+      ),
+    );
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump();
+
+    final shellContext = tester.element(find.byType(WorkspaceShell));
+    final messenger = ScaffoldMessenger.of(shellContext);
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('stale workspace feedback')),
+    );
+    await tester.pump();
+
+    expect(find.text('stale workspace feedback'), findsOneWidget);
+
+    await tester.tap(find.text('Qaza').first);
+    await tester.pump();
+
+    expect(find.text('stale workspace feedback'), findsNothing);
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('stale qaza feedback')),
+    );
+    await tester.pump();
+
+    expect(find.text('stale qaza feedback'), findsOneWidget);
+
+    await tester.tap(find.text('History').first);
+    await tester.pump();
+
+    expect(find.text('stale qaza feedback'), findsNothing);
+  });
+
 }
