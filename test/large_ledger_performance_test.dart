@@ -118,7 +118,7 @@ class _CountingRemote extends InMemoryQazaRepository {
     required String recordId,
     required DateTime completedAt,
   }) =>
-      return _delegate.completeRecord(
+      _delegate.completeRecord(
         userId: userId,
         recordId: recordId,
         completedAt: completedAt,
