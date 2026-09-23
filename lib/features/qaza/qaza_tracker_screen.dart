@@ -391,7 +391,10 @@ class _TrackerBody extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   if (index >= state.records.length) return const Padding(padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm), child: Column(children: [_TrackerSkeletonRow(), _TrackerSkeletonRow(), _TrackerSkeletonRow()]));
                   final record = state.records[index];
-                  final canAct = record.status == QazaStatus.pending && (lockedRecordId == null || record.id == lockedRecordId);
+                  final canAct = record.status == QazaStatus.pending &&
+                      (lockedRecordId == null ||
+                          record.id == lockedRecordId ||
+                          record.prayerType == PrayerType.witr);
                   return _RecordRow(
                     key: Key('qaza_record_row_' + record.id),
                     record: record,
@@ -408,7 +411,8 @@ class _TrackerBody extends ConsumerWidget {
                             : null),
                     onLongPress: record.status == QazaStatus.pending &&
                             (lockedRecordId == null ||
-                                record.id == lockedRecordId)
+                                record.id == lockedRecordId ||
+                                record.prayerType == PrayerType.witr)
                         ? () => controller.enterSelectionMode(record.id)
                         : null,
                     onSwipeComplete: state.selectionMode ||
