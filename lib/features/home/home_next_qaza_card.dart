@@ -41,34 +41,66 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
       // Completion remains valid even when today's aggregate cannot be read.
     }
 
+    String userId;
+    DateTime completedAt;
     try {
-      final userId = ref.read(requiredUserIdProvider);
-      final completedAt = ref.read(homeNowProvider);
+      userId = ref.read(requiredUserIdProvider);
+      completedAt = ref.read(homeNowProvider);
       await ref.read(qazaServiceProvider).completeRecord(
         userId: userId,
         recordId: record.id,
         completedAt: completedAt,
       );
-
-      ref.invalidate(oldestPendingProvider(prayer));
-      ref.invalidate(sahibAlTartibProvider);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(homeDailyProgressProvider);
-
-      if (!mounted) return;
-      HapticFeedback.mediumImpact();
-
-      HomeDailyProgress? after;
-      try {
-        after = await ref.read(homeDailyProgressProvider.future);
-      } catch (_) {
-        after = null;
+    } on QazaTartibViolationException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                l10n.qazaTartibBlocked(
+                  error.requiredPrayer.localizedLabel(l10n),
+                ),
+              ),
+            ),
+          );
       }
+      if (mounted) setState(() => working = false);
+      return;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(l10n.completeFailed)),
+          );
+      }
+      if (mounted) setState(() => working = false);
+      return;
+    }
 
-      if (before != null &&
-          after != null &&
-          before.completed < before.target &&
-          after.completed >= after.target) {
+    // The Qaza is now successfully completed. Everything below is UI/cache
+    // follow-up and must not turn a successful completion into a failure.
+    ref.invalidate(oldestPendingProvider(prayer));
+    ref.invalidate(sahibAlTartibProvider);
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(homeDailyProgressProvider);
+
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+
+    HomeDailyProgress? after;
+    try {
+      after = await ref.read(homeDailyProgressProvider.future);
+    } catch (_) {
+      after = null;
+    }
+
+    if (before != null &&
+        after != null &&
+        before.completed < before.target &&
+        after.completed >= after.target) {
+      try {
         final shouldCelebrate = await ref
             .read(homeQazaPlanProvider.notifier)
             .claimDailyTargetCelebration(
@@ -84,9 +116,13 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
             builder: (_) => const _DailyTargetReachedDialog(),
           );
         }
+      } catch (_) {
+        // Celebration is optional and must not affect completion success.
       }
+    }
 
-      if (!mounted) return;
+    if (!mounted) return;
+    try {
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
@@ -98,29 +134,11 @@ class _HomeOldestQazaCardState extends ConsumerState<HomeOldestQazaCard> {
           ref.invalidate(sahibAlTartibProvider);
         },
       );
-    } on QazaTartibViolationException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              l10n.qazaTartibBlocked(
-                error.requiredPrayer.localizedLabel(l10n),
-              ),
-            ),
-          ),
-        );
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(l10n.completeFailed)),
-        );
-    } finally {
-      if (mounted) setState(() => working = false);
+      // Undo UI persistence is optional; completion has already succeeded.
     }
+
+    if (mounted) setState(() => working = false);
   }
 
   @override
