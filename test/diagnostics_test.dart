@@ -88,16 +88,16 @@ void main() {
       expect(event.fatal, isFalse);
     });
 
-    test('a long stack trace is capped after redaction', () {
-      final stack = StackTrace.fromString('safe-line\\n' + ('safe-line ' * 1000));
+    test('long stack is preserved for diagnostics', () {
+      final stack = StackTrace.fromString('safe-line\n' + ('safe-line ' * 1000));
       final event = buildFailureEvent(
         DiagnosticArea.qazaCompletion,
         'completion_failed',
         StateError('boom'),
         stack: stack,
       );
-
-      expect(event.stackTrace, isNull);
+      expect(event.stackTrace, isNotNull);
+      expect(event.stackTrace!.length, lessThanOrEqualTo(4001));
     });
 
     test('a fatal failure is marked as one', () {
