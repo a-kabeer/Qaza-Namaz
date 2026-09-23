@@ -375,7 +375,7 @@ void main() {
       expect(find.byKey(const Key('home_overall_percent')), findsOneWidget);
     });
 
-    testWidgets('shows only pending prayers with decreasing bars and counts',
+    testWidgets('shows only pending prayers with prayer-specific pending ratios and counts',
         (tester) async {
       await pumpHome(tester, await ledger());
 
@@ -412,13 +412,78 @@ void main() {
       final zuhrBar = tester.widget<LinearProgressIndicator>(
         find.byKey(const Key('home_pending_bar_zuhr')),
       );
-      expect(fajrBar.value, closeTo(0.5, 0.0001));
-      expect(zuhrBar.value, closeTo(0.5, 0.0001));
+      expect(fajrBar.value, closeTo(1 / 3, 0.0001));
+      expect(zuhrBar.value, closeTo(1.0, 0.0001));
       expect(find.text('1').evaluate(), isNotEmpty);
       expect(
         find.byKey(const Key('home_pending_by_prayer_view_all')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('uses each prayer total independently for pending bars', (tester) async {
+      final repository = InMemoryQazaRepository();
+      final records = <QazaRecord>[];
+
+      for (var i = 0; i < 10; i++) {
+        records.add(_record(
+          'f-p-$i',
+          PrayerType.fajr,
+          DateTime(2020, 1, 1 + i),
+          QazaStatus.pending,
+        ));
+        records.add(_record(
+          'f-c-$i',
+          PrayerType.fajr,
+          DateTime(2020, 2, 1 + i),
+          QazaStatus.completed,
+          completedAt: _stamp,
+        ));
+      }
+
+      for (var i = 0; i < 5; i++) {
+        records.add(_record(
+          'z-p-$i',
+          PrayerType.zuhr,
+          DateTime(2021, 1, 1 + i),
+          QazaStatus.pending,
+        ));
+      }
+
+      for (var i = 0; i < 2; i++) {
+        records.add(_record(
+          'a-p-$i',
+          PrayerType.asr,
+          DateTime(2022, 1, 1 + i),
+          QazaStatus.pending,
+        ));
+      }
+      for (var i = 0; i < 18; i++) {
+        records.add(_record(
+          'a-c-$i',
+          PrayerType.asr,
+          DateTime(2022, 2, 1 + i),
+          QazaStatus.completed,
+          completedAt: _stamp,
+        ));
+      }
+
+      await repository.addRecords(records);
+      await pumpHome(tester, repository);
+
+      final fajrBar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_pending_bar_fajr')),
+      );
+      final zuhrBar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_pending_bar_zuhr')),
+      );
+      final asrBar = tester.widget<LinearProgressIndicator>(
+        find.byKey(const Key('home_pending_bar_asr')),
+      );
+
+      expect(fajrBar.value, closeTo(0.5, 0.0001));
+      expect(zuhrBar.value, closeTo(1.0, 0.0001));
+      expect(asrBar.value, closeTo(0.1, 0.0001));
     });
 
     testWidgets('shows a compact empty state when no Qaza is pending',
