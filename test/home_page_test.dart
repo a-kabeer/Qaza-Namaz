@@ -476,7 +476,10 @@ void main() {
       await pumpHome(tester, repository);
 
       expect(find.byKey(const Key('home_overall_donut')), findsOneWidget);
-      expect(find.text('0%'), findsOneWidget);
+      final overallPercent = tester.widget<Text>(
+        find.byKey(const Key('home_overall_percent')),
+      );
+      expect(overallPercent.data, '0%');
     });
 
     testWidgets('shows completed, pending and total with donut', (tester) async {
