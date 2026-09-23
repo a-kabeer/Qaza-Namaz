@@ -21,6 +21,7 @@ import '../../../domain/entities/qaza_progress.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
+import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../prayer_times/domain/qaza_restriction_service.dart';
 import '../../prayer_times/presentation/prayer_location_picker_screen.dart';
 import '../../prayer_times/presentation/prayer_times_localizations.dart';
@@ -143,7 +144,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     if (ref.read(qazaCompletionControllerProvider).isWorking) return;
 
     final userId = ref.read(requiredUserIdProvider);
-    final completedAt = ref.read(homeNowProvider);
+    final completedAt = ref.read(prayerTimesClockProvider).now();
     final diagnostics = ref.read(diagnosticsProvider);
 
     QazaCompletionResult result;
