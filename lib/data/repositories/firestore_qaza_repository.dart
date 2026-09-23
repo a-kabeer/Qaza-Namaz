@@ -269,10 +269,14 @@ class FirestoreQazaRepository
       if (!snapshot.exists) return;
       final record = _fromDocument(snapshot);
       if (record.userId != userId) return;
-      if (record.status != QazaStatus.pending) {
-        if (record.status == QazaStatus.completed) {
-          result = QazaCompletionResult.alreadyCompleted;
-        }
+      if (record.status != QazaStatus.pending &&
+          record.status != QazaStatus.completed) {
+        return;
+      }
+      if (record.status == QazaStatus.completed &&
+          record.completedAt != null &&
+          !completedAt.isBefore(record.completedAt!)) {
+        result = QazaCompletionResult.alreadyCompleted;
         return;
       }
 
