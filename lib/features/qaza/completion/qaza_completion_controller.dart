@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/qaza_completion_result.dart';
-
 import '../../prayer_times/domain/qaza_restriction_service.dart';
 import 'qaza_completion_policy.dart';
 import 'qaza_completion_service.dart';
@@ -19,12 +18,14 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
     required DateTime completedAt,
     required QazaRestrictionEvaluation? restriction,
   }) async {
-    if (state.isWorking) return;
+    if (state.isWorking) {
+      throw StateError('Qaza completion is already in progress.');
+    }
 
     state = state.copyWith(isWorking: true);
     try {
       _policy.ensureAllowed(restriction);
-      return await ref.read(qazaCompletionServiceProvider).completeRecord(
+      return ref.read(qazaCompletionServiceProvider).completeRecord(
         userId: userId,
         recordId: recordId,
         completedAt: completedAt,
