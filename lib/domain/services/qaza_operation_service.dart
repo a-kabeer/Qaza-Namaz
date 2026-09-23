@@ -16,6 +16,7 @@ class QazaOperationService {
   Future<QazaOperation> begin({
     required String userId,
     required QazaOperationType type,
+    Map<String, dynamic>? inputSnapshot,
   }) async {
     final timestamp = _now();
     final op = QazaOperation(
@@ -25,6 +26,9 @@ class QazaOperationService {
       status: QazaOperationStatus.running,
       createdAt: timestamp,
       updatedAt: timestamp,
+      inputSnapshot: inputSnapshot == null
+          ? null
+          : Map<String, dynamic>.unmodifiable(inputSnapshot),
     );
     await repository.save(op);
     return op;
