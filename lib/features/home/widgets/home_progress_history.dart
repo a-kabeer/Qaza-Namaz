@@ -81,7 +81,7 @@ class _HomeProgressChartSectionState
           ),
           const SizedBox(height: 16),
           data.when(
-            loading: () => const _ChartSkeleton(),
+            loading: () => const HomeChartSkeleton(),
             error: (_, __) => Text(l10n.homeProgressError),
             data: (points) {
               if (points.every((point) => point.count == 0)) {
