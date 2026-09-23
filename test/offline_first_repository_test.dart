@@ -306,6 +306,15 @@ class _FailingRepository
           {required String userId, required PrayerType prayerType}) =>
       _delegate.getOldestPending(userId: userId, prayerType: prayerType);
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      _delegate.getPendingRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
+  @override
   Future<QazaHistoryPage> getHistoryPage(
           {required String userId,
           int limit = 50,
