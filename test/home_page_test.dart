@@ -148,6 +148,14 @@ void main() {
     return tester.widget<Text>(finder.last).data!;
   }
 
+  String firstTextOf(WidgetTester tester, Key key) {
+    final finder = find.descendant(
+      of: find.byKey(key),
+      matching: find.byType(Text),
+    );
+    return tester.widget<Text>(finder.first).data!;
+  }
+
   group('reference dashboard layout', () {
     testWidgets('renders the reference sections in order', (tester) async {
       await pumpHome(tester, await ledger());
@@ -674,11 +682,11 @@ void main() {
         '6',
       );
       expect(
-        textOf(tester, const Key('detailed_prayer_completed_zuhr')),
+        firstTextOf(tester, const Key('detailed_prayer_completed_zuhr')),
         '1',
       );
       expect(
-        textOf(tester, const Key('detailed_prayer_total_zuhr')),
+        firstTextOf(tester, const Key('detailed_prayer_total_zuhr')),
         '2',
       );
     });
@@ -711,15 +719,15 @@ void main() {
       }
 
       expect(
-        textOf(tester, const Key('detailed_prayer_completed_fajr')),
+        firstTextOf(tester, const Key('detailed_prayer_completed_fajr')),
         '2',
       );
       expect(
-        textOf(tester, const Key('detailed_prayer_pending_fajr')),
+        firstTextOf(tester, const Key('detailed_prayer_pending_fajr')),
         '1',
       );
       expect(
-        textOf(tester, const Key('detailed_prayer_total_fajr')),
+        firstTextOf(tester, const Key('detailed_prayer_total_fajr')),
         '3',
       );
     });
