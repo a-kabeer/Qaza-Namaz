@@ -1788,6 +1788,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePendingByPrayer => 'Pending by Prayer';
 
   @override
+  String get homePrayerBreakdown => 'Prayer Breakdown';
+
+  @override
   String get homeViewDetails => 'View details';
 
   @override
