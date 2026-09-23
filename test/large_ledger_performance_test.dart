@@ -8,6 +8,7 @@ import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart'
 import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/data/sync/sync_state.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 
 import 'support/in_memory_qaza_local_store.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -112,14 +113,14 @@ class _CountingRemote extends InMemoryQazaRepository {
   }
 
   @override
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
   }) =>
-      completeRecords(
+      return _delegate.completeRecord(
         userId: userId,
-        recordIds: [recordId],
+        recordId: recordId,
         completedAt: completedAt,
       );
 }
