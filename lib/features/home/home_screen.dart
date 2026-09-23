@@ -1366,29 +1366,40 @@ class _HomeProgressChartSectionState
                 ),
           ),
           const SizedBox(height: 10),
-          SegmentedButton<HomeProgressRange>(
-            key: const Key('home_progress_range'),
-            segments: [
-              ButtonSegment<HomeProgressRange>(
-                value: HomeProgressRange.sevenDays,
-                label: Text(l10n.homeRange7Days),
-              ),
-              ButtonSegment<HomeProgressRange>(
-                value: HomeProgressRange.thirtyDays,
-                label: Text(l10n.homeRange30Days),
-              ),
-              ButtonSegment<HomeProgressRange>(
-                value: HomeProgressRange.monthly,
-                label: Text(l10n.homeRangeMonthly),
-              ),
-            ],
-            selected: {range},
-            onSelectionChanged: (selection) {
-              setState(() {
-                range = selection.single;
-                selectedIndex = null;
-              });
-            },
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<HomeProgressRange>(
+              key: const Key('home_progress_range'),
+              segments: [
+                ButtonSegment<HomeProgressRange>(
+                  value: HomeProgressRange.oneDay,
+                  label: Text(l10n.homeRange1Day),
+                ),
+                ButtonSegment<HomeProgressRange>(
+                  value: HomeProgressRange.threeDays,
+                  label: Text(l10n.homeRange3Days),
+                ),
+                ButtonSegment<HomeProgressRange>(
+                  value: HomeProgressRange.sevenDays,
+                  label: Text(l10n.homeRange7Days),
+                ),
+                ButtonSegment<HomeProgressRange>(
+                  value: HomeProgressRange.thirtyDays,
+                  label: Text(l10n.homeRange30Days),
+                ),
+                ButtonSegment<HomeProgressRange>(
+                  value: HomeProgressRange.monthly,
+                  label: Text(l10n.homeRangeMonthly),
+                ),
+              ],
+              selected: {range},
+              onSelectionChanged: (selection) {
+                setState(() {
+                  range = selection.single;
+                  selectedIndex = null;
+                });
+              },
+            ),
           ),
           const SizedBox(height: 16),
           data.when(
@@ -1418,14 +1429,54 @@ class _HomeProgressChartSectionState
                   if (selected != null)
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        DateFormatters.gregorianMonthName(selected.start.month) +
-                            ' ' +
-                            selected.start.day.toString() +
-                            ': ' +
-                            DateFormatters.formatCount(selected.count),
+                      child: Container(
                         key: const Key('home_chart_selected_value'),
-                        style: Theme.of(context).textTheme.bodySmall,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outlineVariant,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormatters.formatGregorianDatePadded(
+                                selected.start,
+                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            Text(
+                              l10n.homeCompletedCount(selected.count),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   const SizedBox(height: 4),
@@ -1473,19 +1524,41 @@ class _HomeProgressChartSectionState
                         lineTouchData: LineTouchData(
                           handleBuiltInTouches: true,
                           touchTooltipData: LineTouchTooltipData(
+                            getTooltipColor: (_) =>
+                                Theme.of(context).colorScheme.inverseSurface,
+                            tooltipBorder: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
+                            ),
+                            tooltipPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
                             getTooltipItems: (spots) => spots
                                 .map(
-                                  (spot) => LineTooltipItem(
-                                    DateFormatters.formatCount(
-                                      spot.y.round(),
-                                    ),
-                                    TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  (spot) {
+                                    final index = spot.x
+                                        .round()
+                                        .clamp(0, points.length - 1)
+                                        .toInt();
+                                    final point = points[index];
+                                    return LineTooltipItem(
+                                      DateFormatters.formatGregorianDatePadded(
+                                            point.start,
+                                          ) +
+                                          '\n' +
+                                          l10n.homeCompletedCount(point.count),
+                                      TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onInverseSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    );
+                                  },
                                 )
                                 .toList(),
                           ),
