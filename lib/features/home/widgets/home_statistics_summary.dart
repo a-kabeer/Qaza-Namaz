@@ -7,6 +7,10 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
+import '../../../core/widgets/app_scaffold.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../l10n/prayer_type_l10n.dart';
+
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import 'home_skeleton.dart';
@@ -135,19 +139,19 @@ class _DetailedOverallStatistics extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            _StatLine(
+            HomeStatLine(
               key: const Key('detailed_overall_completed'),
               label: l10n.homeCompleted,
               value: DateFormatters.formatCount(progress.completed),
               color: charts.completed,
             ),
-            _StatLine(
+            HomeStatLine(
               key: const Key('detailed_overall_pending'),
               label: l10n.homePending,
               value: DateFormatters.formatCount(progress.pending),
               color: charts.pending,
             ),
-            _StatLine(
+            HomeStatLine(
               key: const Key('detailed_overall_total'),
               label: l10n.homeStatTotal,
               value: DateFormatters.formatCount(progress.total),
@@ -243,7 +247,7 @@ class _DetailedPrayerRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
-                _prayerIcon(prayer),
+                homePrayerIcon(prayer),
                 size: 20,
                 color: accent,
               ),
@@ -344,5 +348,22 @@ class _DetailedMetric extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+IconData homePrayerIcon(PrayerType prayer) {
+  switch (prayer) {
+    case PrayerType.fajr:
+      return Icons.wb_twilight_outlined;
+    case PrayerType.zuhr:
+      return Icons.wb_sunny_outlined;
+    case PrayerType.asr:
+      return Icons.sunny_snowing;
+    case PrayerType.maghrib:
+      return Icons.wb_twilight;
+    case PrayerType.isha:
+      return Icons.nightlight_outlined;
+    case PrayerType.witr:
+      return Icons.nightlight_round;
   }
 }
