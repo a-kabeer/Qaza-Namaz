@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'support/in_memory_qaza_repository.dart';
@@ -146,7 +148,7 @@ class _CountingRepository implements QazaRepository {
       delegate.deleteRecord(userId: userId, recordId: recordId);
 
   @override
-  Future<void> completeRecord({
+  Future<QazaCompletionResult> completeRecord({
     required String userId,
     required String recordId,
     required DateTime completedAt,
