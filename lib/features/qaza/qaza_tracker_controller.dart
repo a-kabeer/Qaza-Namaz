@@ -667,10 +667,34 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
       ref.invalidate(progressSummaryProvider);
       await refresh();
       if (completed == 0) return null;
-      return QazaCompletionBatch(
+
+      // Completion is already durable. Metadata lookup is a separate stage so
+      // a diagnostic/read failure cannot be reported as a failed completion.
+      final completedRecords = await service.getRecordsByIds(
+        userId: userId,
         recordIds: selectedIds,
+      );
+      final undoableRecords = completedRecords
+          .where(
+            (record) =>
+                record.status == QazaStatus.completed &&
+                record.completionId != null &&
+                record.completionId!.isNotEmpty,
+          )
+          .toList(growable: false);
+      if (undoableRecords.isEmpty) {
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'completion_marker_lookup_empty',
+          StateError('No completion marker was returned after completion.'),
+          stack: StackTrace.current,
+        );
+        return null;
+      }
+      return QazaCompletionBatch(
+        completedRecords: undoableRecords,
         completedAt: completedAt,
-        count: completed,
+        count: undoableRecords.length,
       );
     } on QazaTartibViolationException {
       await ref.read(qazaOperationServiceProvider).finish(
