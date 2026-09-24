@@ -20,6 +20,8 @@ class SyncOutbox extends Table {
 
   DateTimeColumn get completedAt => dateTime().nullable()();
 
+  TextColumn get completionId => text().nullable()();
+
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 
   TextColumn get lastError => text().nullable()();

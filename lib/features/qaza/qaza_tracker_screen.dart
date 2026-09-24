@@ -10,8 +10,6 @@ import '../../core/errors/app_error_messages.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
-import '../../domain/services/qaza_service.dart';
-import '../../core/widgets/progress_widgets.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
@@ -335,8 +333,7 @@ class _TrackerBody extends ConsumerWidget {
         context: context,
         ref: ref,
         userId: ref.read(requiredUserIdProvider),
-        recordIds: batch.recordIds,
-        completedAt: batch.completedAt,
+        records: batch.completedRecords,
         onUndone: controller.refresh,
       );
       return true;
@@ -688,8 +685,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
       context: context,
       ref: ref,
       userId: ref.read(requiredUserIdProvider),
-      recordIds: batch.recordIds,
-      completedAt: batch.completedAt,
+      records: batch.completedRecords,
       onUndone: widget.controller.refresh,
     );
   }

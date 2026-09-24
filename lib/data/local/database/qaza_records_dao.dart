@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../../core/utils/qaza_completion_id.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
 import 'app_database.dart';
 import 'tables/qaza_records.dart';
@@ -700,6 +701,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
+          completionId: Value(newQazaCompletionId()),
           updatedAt: Value(completedAt),
         ));
         if (updated > 0) changed.add(id);
@@ -710,23 +712,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<QazaRecord>> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
-    if (expectedCompletedAt.isEmpty) return const <QazaRecord>[];
+    if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
 
     return transaction(() async {
       final changed = <QazaRecord>[];
-      for (final entry in expectedCompletedAt.entries) {
+      for (final entry in expectedCompletionIds.entries) {
         final current = await (select(qazaRecords)
               ..where((row) =>
                   row.userId.equals(userId) & row.id.equals(entry.key)))
             .getSingleOrNull();
         if (current == null ||
             current.status != QazaStatus.completed.name ||
-            current.completedAt == null ||
-            !current.completedAt!.isAtSameMomentAs(entry.value) ||
-            !current.updatedAt.isAtSameMomentAs(entry.value)) {
+            current.completionId != entry.value) {
           continue;
         }
 
@@ -736,6 +736,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.pending.name),
           completedAt: Value(null),
+          completionId: Value(null),
           updatedAt: Value(undoneAt),
         ));
         if (updated > 0) {
@@ -749,6 +750,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             originalDate: current.originalDate,
             status: QazaStatus.pending,
             completedAt: null,
+            completionId: null,
             createdAt: current.createdAt,
             updatedAt: undoneAt,
           ));
@@ -823,6 +825,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             orElse: () => throw StateError(
                 'Unknown Qaza status "${row.status}" in local database.')),
         completedAt: row.completedAt,
+        completionId: row.completionId,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       );

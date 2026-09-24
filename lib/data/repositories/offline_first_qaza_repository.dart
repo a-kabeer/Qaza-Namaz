@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
@@ -387,6 +388,26 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   }
 
   @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    if (userId != _activeUserId) return const <QazaRecord>[];
+    await ensureHydrated();
+    final generation = _sessionGeneration;
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: ids.toList(growable: false),
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return const <QazaRecord>[];
+    }
+    return records;
+  }
+
+  @override
   Future<List<QazaRecord>> getPendingRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
@@ -572,26 +593,36 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           'A Qaza record already exists for this prayer and date.');
     }
 
+    var recordToPersist = record;
+    if (current.status == QazaStatus.completed &&
+        record.status == QazaStatus.completed &&
+        current.completionId != null &&
+        record.completionId == current.completionId) {
+      recordToPersist = record.copyWith(
+        completionId: newQazaCompletionId(),
+      );
+    }
+
     final operation = PendingSyncOp(
       id: 'update_' +
-          record.id +
+          recordToPersist.id +
           '_' +
-          record.updatedAt.microsecondsSinceEpoch.toString(),
+          recordToPersist.updatedAt.microsecondsSinceEpoch.toString(),
       type: SyncOpType.update,
       userId: userId,
-      queuedAt: record.updatedAt,
-      record: record,
-      targetRecordId: record.id,
+      queuedAt: recordToPersist.updatedAt,
+      record: recordToPersist,
+      targetRecordId: recordToPersist.id,
     );
     final changed = await _localStore.updateRecordAndOutbox(
       userId: userId,
-      record: record,
+      record: recordToPersist,
       operation: operation,
     );
     if (!changed) return;
     if (generation != _sessionGeneration || userId != _activeUserId) return;
 
-    _records[record.id] = record;
+    _records[recordToPersist.id] = recordToPersist;
     _outbox.add(operation);
     _outboxLoaded = true;
     _emitPending();
@@ -747,6 +778,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           queuedAt: queuedAt,
           targetRecordId: record.id,
           completedAt: record.completedAt ?? completedAt,
+          completionId: record.completionId,
           record: record,
         ),
     ];
@@ -823,6 +855,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           queuedAt: queuedAt,
           targetRecordId: record.id,
           completedAt: record.completedAt ?? completedAt,
+          completionId: record.completionId,
           record: record,
         ),
     ];
@@ -851,16 +884,16 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   @override
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
-    if (expectedCompletedAt.isEmpty || userId != _activeUserId) return 0;
+    if (expectedCompletionIds.isEmpty || userId != _activeUserId) return 0;
 
     final generation = _sessionGeneration;
     await _ensureOutboxLoaded();
-    final changedRecords = await _localStore.undoCompletions(
+    final changedRecords = await _localStore.undoCompletionsAndQueue(
       userId: userId,
-      expectedCompletedAt: expectedCompletedAt,
+      expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
     if (generation != _sessionGeneration || userId != _activeUserId) return 0;
@@ -869,20 +902,18 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     final operations = <PendingSyncOp>[
       for (final record in changedRecords)
         PendingSyncOp(
-          id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+          id: 'undo_' +
+              record.id +
+              '_' +
+              record.updatedAt.microsecondsSinceEpoch.toString(),
           type: SyncOpType.update,
           userId: userId,
           queuedAt: record.updatedAt,
           targetRecordId: record.id,
+          completionId: expectedCompletionIds[record.id],
           record: record,
         ),
     ];
-    await _localStore.appendRecordsAndOutbox(
-      userId,
-      const <QazaRecord>[],
-      operations,
-    );
-
     for (final record in changedRecords) {
       _records[record.id] = record;
     }

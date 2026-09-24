@@ -41,11 +41,12 @@ void main() {
     );
     await repository.syncNow();
 
+    final completed = (await repository.getRecords(userId: 'u1')).single;
     final undoneAt = base.add(const Duration(minutes: 2));
     final undone = await repository.undoCompletions(
       userId: 'u1',
-      expectedCompletedAt: {
-        'u1_fajr_2026-01-01': completedAt,
+      expectedCompletionIds: {
+        'u1_fajr_2026-01-01': completed.completionId!,
       },
       undoneAt: undoneAt,
     );
@@ -100,8 +101,8 @@ void main() {
 
     final undone = await repository.undoCompletions(
       userId: 'u1',
-      expectedCompletedAt: {
-        'u1_fajr_2026-01-01': completedAt,
+      expectedCompletionIds: {
+        'u1_fajr_2026-01-01': completed.completionId!,
       },
       undoneAt: base.add(const Duration(minutes: 4)),
     );

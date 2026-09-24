@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
 
 /// Remote operations the outbox can replay.
@@ -18,6 +19,7 @@ class PendingSyncOp {
       this.record,
       this.targetRecordId,
       this.completedAt,
+      this.completionId,
       this.attempts = 0,
       this.lastError});
   final String id;
@@ -27,6 +29,8 @@ class PendingSyncOp {
   final QazaRecord? record;
   final String? targetRecordId;
   final DateTime? completedAt;
+  /// Completion marker carried by completion ops and expected by Undo ops.
+  final String? completionId;
   final int attempts;
   final String? lastError;
   PendingSyncOp copyWith({int? attempts, String? lastError}) => PendingSyncOp(
@@ -37,6 +41,7 @@ class PendingSyncOp {
       record: record,
       targetRecordId: targetRecordId,
       completedAt: completedAt,
+      completionId: completionId ?? this.completionId,
       attempts: attempts ?? this.attempts,
       lastError: lastError ?? this.lastError);
   Map<String, dynamic> toJson() => {
@@ -47,6 +52,7 @@ class PendingSyncOp {
         'record': record?.toJson(),
         'targetRecordId': targetRecordId,
         'completedAt': completedAt?.toIso8601String(),
+        'completionId': completionId,
         'attempts': attempts,
         'lastError': lastError
       };
@@ -64,6 +70,7 @@ class PendingSyncOp {
       completedAt: json['completedAt'] == null
           ? null
           : DateTime.parse(json['completedAt'] as String),
+      completionId: json['completionId'] as String?,
       attempts: (json['attempts'] as num?)?.toInt() ?? 0,
       lastError: json['lastError'] as String?);
 }
@@ -594,6 +601,7 @@ abstract class QazaLocalStore {
       records[index] = record.copyWith(
           status: QazaStatus.completed,
           completedAt: completedAt,
+          completionId: newQazaCompletionId(),
           updatedAt: completedAt);
       changed.add(record.id);
     }
@@ -601,14 +609,53 @@ abstract class QazaLocalStore {
     return changed;
   }
 
-  /// Reverts only records whose completion timestamp and last update
-  /// still match the completion captured by the active undo window.
-  Future<List<QazaRecord>> undoCompletions({
+  /// Reverts only records whose completion marker still matches the active
+  /// undo window. Server-side update timestamps are deliberately ignored.
+  /// Restores matching completions and queues their sync operations.
+  ///
+  /// Database-backed stores override this so the state change and outbox write
+  /// share one transaction.
+  Future<List<QazaRecord>> undoCompletionsAndQueue({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
-    if (expectedCompletedAt.isEmpty) return const <QazaRecord>[];
+    final changed = await undoCompletions(
+      userId: userId,
+      expectedCompletionIds: expectedCompletionIds,
+      undoneAt: undoneAt,
+    );
+    if (changed.isEmpty) return changed;
+
+    final operations = <PendingSyncOp>[
+      for (final record in changed)
+        PendingSyncOp(
+          id: 'undo_' +
+              record.id +
+              '_' +
+              record.updatedAt.microsecondsSinceEpoch.toString(),
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: record.updatedAt,
+          targetRecordId: record.id,
+          completionId: expectedCompletionIds[record.id],
+          record: record,
+        ),
+    ];
+    await appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      operations,
+    );
+    return changed;
+  }
+
+  Future<List<QazaRecord>> undoCompletions({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
     final snapshot = await load();
     final records = List<QazaRecord>.of(
       snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
@@ -617,18 +664,17 @@ abstract class QazaLocalStore {
 
     for (var index = 0; index < records.length; index++) {
       final record = records[index];
-      final expected = expectedCompletedAt[record.id];
+      final expected = expectedCompletionIds[record.id];
       if (expected == null ||
           record.status != QazaStatus.completed ||
-          record.completedAt == null ||
-          !record.completedAt!.isAtSameMomentAs(expected) ||
-          !record.updatedAt.isAtSameMomentAs(expected)) {
+          record.completionId != expected) {
         continue;
       }
 
       final undone = record.copyWith(
         status: QazaStatus.pending,
-        completedAt: null,
+        clearCompletedAt: true,
+        clearCompletionId: true,
         updatedAt: undoneAt,
       );
       records[index] = undone;

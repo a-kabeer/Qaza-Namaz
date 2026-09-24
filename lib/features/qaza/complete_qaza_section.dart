@@ -14,6 +14,7 @@ import '../../domain/services/qaza_service.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_completion_result.dart';
 import '../prayer_times/prayer_times_providers.dart';
+import '../home/home_controller.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
 import 'completion/qaza_completion_controller.dart';
 import 'completion/qaza_completion_state.dart';
@@ -202,6 +203,7 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     // Written and durable. Nothing below may be reported as a completion
     // failure.
     try {
+      ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(oldestPendingProvider(completedPrayer));
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
@@ -218,12 +220,20 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     HapticFeedback.mediumImpact();
 
     try {
+      final completedRecord = (await ref.read(qazaServiceProvider).getRecordsByIds(
+        userId: userId,
+        recordIds: [record.id],
+      )).where(
+        (item) =>
+            item.status == QazaStatus.completed &&
+            item.completionId != null &&
+            item.completionId!.isNotEmpty,
+      );
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
         userId: userId,
-        recordIds: [record.id],
-        completedAt: completedAt,
+        records: completedRecord,
         onUndone: refresh,
       );
     } catch (error, stack) {

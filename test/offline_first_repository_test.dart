@@ -284,6 +284,16 @@ class _FailingRepository
       _delegate.getRecords(
           userId: userId, prayerType: prayerType, status: status);
   @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      _delegate.getRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
+
+  @override
   Future<QazaPage> getPage(
           {required String userId,
           int limit = 50,

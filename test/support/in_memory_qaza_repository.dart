@@ -1,4 +1,5 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/utils/qaza_completion_id.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
@@ -85,6 +86,18 @@ class InMemoryQazaRepository
       date = page.nextOriginalDate;
       id = page.nextId;
     }
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final wanted = recordIds.toSet();
+    return [
+      for (final record in _records.values)
+        if (record.userId == userId && wanted.contains(record.id)) record,
+    ];
   }
 
   @override
@@ -270,6 +283,7 @@ class InMemoryQazaRepository
     final updated = current.copyWith(
       status: QazaStatus.completed,
       completedAt: completedAt,
+      completionId: newQazaCompletionId(),
       updatedAt: completedAt,
     );
     _records[recordId] = updated;
@@ -301,6 +315,7 @@ class InMemoryQazaRepository
       final updated = r.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
+        completionId: newQazaCompletionId(),
         updatedAt: completedAt,
       );
       _records[id] = updated;
@@ -318,24 +333,23 @@ class InMemoryQazaRepository
   @override
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
     var changedCount = 0;
     final changed = <QazaRecord>[];
-    for (final entry in expectedCompletedAt.entries) {
+    for (final entry in expectedCompletionIds.entries) {
       final current = _records[entry.key];
       if (current == null ||
           current.userId != userId ||
           current.status != QazaStatus.completed ||
-          current.completedAt == null ||
-          !current.completedAt!.isAtSameMomentAs(entry.value) ||
-          !current.updatedAt.isAtSameMomentAs(entry.value)) {
+          current.completionId != entry.value) {
         continue;
       }
       final pending = current.copyWith(
         status: QazaStatus.pending,
-        completedAt: null,
+        clearCompletedAt: true,
+        clearCompletionId: true,
         updatedAt: undoneAt,
       );
       _records[entry.key] = pending;
@@ -584,9 +598,19 @@ class InMemoryQazaRepository
         );
       case SyncOpType.update:
         for (final operation in operations) {
-          if (operation.record != null) {
-            await updateRecord(record: operation.record!);
+          final record = operation.record;
+          if (record == null) continue;
+          final current = _records[record.id];
+          final isCompletionUndo = operation.completionId != null &&
+              record.status == QazaStatus.pending &&
+              record.completionId == null &&
+              current != null &&
+              current.status == QazaStatus.completed &&
+              current.completionId == operation.completionId;
+          if (operation.completionId != null && !isCompletionUndo) {
+            continue;
           }
+          await updateRecord(record: record);
         }
         final updateLatest = await getLatestChange(userId: userId);
         if (updateLatest == null) {
@@ -608,14 +632,28 @@ class InMemoryQazaRepository
         }
         return deleteLatest;
       case SyncOpType.complete:
-        await completeRecords(
-          userId: userId,
-          recordIds: [
-            for (final operation in operations)
-              if (operation.targetRecordId != null) operation.targetRecordId!,
-          ],
-          completedAt: operations.first.completedAt ?? DateTime.now(),
-        );
+        final changed = <QazaRecord>[];
+        for (final operation in operations) {
+          final record = operation.record;
+          if (record == null || record.userId != userId) continue;
+          final current = _records[record.id];
+          if (current == null) continue;
+          if (current.status == QazaStatus.completed &&
+              current.completedAt != null &&
+              record.completedAt != null &&
+              !record.completedAt!.isBefore(current.completedAt!)) {
+            continue;
+          }
+          _records[record.id] = record;
+          changed.add(record);
+        }
+        if (changed.isNotEmpty) {
+          _recordChange(
+            userId: userId,
+            type: QazaRemoteChangeType.complete,
+            records: changed,
+          );
+        }
         final latest = await getLatestChange(userId: userId);
         if (latest == null) {
           throw StateError('completion produced no remote change');

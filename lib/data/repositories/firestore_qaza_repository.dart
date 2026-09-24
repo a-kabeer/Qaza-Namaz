@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_repository.dart';
@@ -108,6 +109,25 @@ class FirestoreQazaRepository
       records: docs.map(_fromDocument).toList(growable: false),
       hasMore: hasMore,
     );
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
+    if (ids.isEmpty) return const <QazaRecord>[];
+
+    final records = <QazaRecord>[];
+    for (var start = 0; start < ids.length; start += 10) {
+      final end = start + 10 < ids.length ? start + 10 : ids.length;
+      final snapshot = await _recordsCollection(userId)
+          .where(FieldPath.documentId, whereIn: ids.sublist(start, end))
+          .get();
+      records.addAll(snapshot.docs.map(_fromDocument));
+    }
+    return records;
   }
 
   @override
@@ -283,6 +303,7 @@ class FirestoreQazaRepository
       final completed = record.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
+        completionId: newQazaCompletionId(),
         updatedAt: completedAt,
       );
       transaction.set(
@@ -313,14 +334,14 @@ class FirestoreQazaRepository
   @override
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
-    if (expectedCompletedAt.isEmpty) return 0;
-    if (expectedCompletedAt.length > maxBatchSize) {
+    if (expectedCompletionIds.isEmpty) return 0;
+    if (expectedCompletionIds.length > maxBatchSize) {
       throw ArgumentError.value(
-        expectedCompletedAt.length,
-        'expectedCompletedAt',
+        expectedCompletionIds.length,
+        'expectedCompletionIds',
         'Undo batch cannot exceed maxBatchSize records.',
       );
     }
@@ -330,15 +351,15 @@ class FirestoreQazaRepository
       throw StateError('Remote reset is currently in progress.');
     }
 
-    final ids = expectedCompletedAt.keys.toList()..sort();
+    final ids = expectedCompletionIds.keys.toList()..sort();
     final hashOperations = <PendingSyncOp>[
       for (final id in ids)
         PendingSyncOp(
-          id: 'undo_' + id + '_' +
-              expectedCompletedAt[id]!.microsecondsSinceEpoch.toString(),
+          id: 'undo_' + id + '_' + expectedCompletionIds[id]!,
+          completionId: expectedCompletionIds[id],
           type: SyncOpType.update,
           userId: userId,
-          queuedAt: expectedCompletedAt[id]!,
+          queuedAt: undoneAt,
           targetRecordId: id,
         ),
     ];
@@ -366,18 +387,17 @@ class FirestoreQazaRepository
         final snapshot = snapshots[id]!;
         if (!snapshot.exists) continue;
         final current = _fromDocument(snapshot);
-        final expected = expectedCompletedAt[id];
+        final expected = expectedCompletionIds[id];
         if (expected == null ||
             current.status != QazaStatus.completed ||
-            current.completedAt == null ||
-            !current.completedAt!.isAtSameMomentAs(expected) ||
-            !current.updatedAt.isAtSameMomentAs(expected)) {
+            current.completionId != expected) {
           continue;
         }
 
         final pending = current.copyWith(
           status: QazaStatus.pending,
-          completedAt: null,
+          clearCompletedAt: true,
+          clearCompletionId: true,
           updatedAt: undoneAt,
         );
         restored.add(pending);
@@ -577,6 +597,9 @@ class FirestoreQazaRepository
       );
     }
 
+    // Completion operations carry the exact completion marker produced by
+    // the originating local completion. Never mint a new marker on replay.
+
     final reset = await getResetState(userId: userId);
     if (reset.inProgress) {
       throw StateError('Remote reset is currently in progress.');
@@ -692,7 +715,15 @@ class FirestoreQazaRepository
             throw StateError('Sync update contains an invalid record.');
           }
           final current = snapshot.exists ? _fromDocument(snapshot) : null;
+          final isCompletionUndo = operation.completionId != null &&
+              record.status == QazaStatus.pending &&
+              record.completionId == null &&
+              current != null &&
+              current.status == QazaStatus.completed &&
+              current.completionId == operation.completionId;
+
           if (current != null &&
+              !isCompletionUndo &&
               current.updatedAt.isAfter(record.updatedAt)) {
             rejected.add(current);
             continue;
@@ -924,6 +955,7 @@ class FirestoreQazaRepository
       'prayerType': record.prayerType.name,
       'originalDate': QazaDate.key(record.originalDate),
       'status': record.status.name,
+      'completionId': record.completionId,
       'completedAt': record.completedAt == null
           ? null
           : Timestamp.fromDate(record.completedAt!),
@@ -954,6 +986,7 @@ class FirestoreQazaRepository
       prayerType: prayerType,
       originalDate: _originalDate(raw['originalDate'], id),
       status: status,
+      completionId: raw['completionId'] as String?,
       completedAt: _nullableTimestamp(raw['completedAt']),
       createdAt: _timestamp(raw['createdAt'], 'createdAt'),
       updatedAt: _timestamp(raw['updatedAt'], 'updatedAt'),

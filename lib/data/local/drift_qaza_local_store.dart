@@ -451,14 +451,54 @@ class DriftQazaLocalStore extends QazaLocalStore {
   @override
   Future<List<QazaRecord>> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) =>
       _database.qazaRecordsDao.undoCompletions(
         userId: userId,
-        expectedCompletedAt: expectedCompletedAt,
+        expectedCompletionIds: expectedCompletionIds,
         undoneAt: undoneAt,
       );
+
+  @override
+  Future<List<QazaRecord>> undoCompletionsAndQueue({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) {
+      return const <QazaRecord>[];
+    }
+
+    return _database.transaction(() async {
+      final changed = await _database.qazaRecordsDao.undoCompletions(
+        userId: userId,
+        expectedCompletionIds: expectedCompletionIds,
+        undoneAt: undoneAt,
+      );
+      if (changed.isEmpty) return const <QazaRecord>[];
+
+      final operations = <PendingSyncOp>[
+        for (final record in changed)
+          PendingSyncOp(
+            id: 'undo_' +
+                record.id +
+                '_' +
+                record.updatedAt.microsecondsSinceEpoch.toString(),
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: record.updatedAt,
+            targetRecordId: record.id,
+            completionId: expectedCompletionIds[record.id],
+            record: record,
+          ),
+      ];
+      await _database.syncOutboxDao.putAll(
+        operations.map(_toOpCompanion).toList(growable: false),
+      );
+      return changed;
+    });
+  }
 
   @override
   Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
@@ -537,6 +577,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
               ),
         targetRecordId: row.targetRecordId,
         completedAt: row.completedAt,
+        completionId: row.completionId,
         attempts: row.attempts,
         lastError: row.lastError,
       );
@@ -552,6 +593,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
         completedAt: record.completedAt == null
             ? const Value.absent()
             : Value(record.completedAt),
+        completionId: record.completionId == null
+            ? const Value.absent()
+            : Value(record.completionId),
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       );
@@ -571,6 +615,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
         completedAt: op.completedAt == null
             ? const Value.absent()
             : Value(op.completedAt),
+        completionId: op.completionId == null
+            ? const Value.absent()
+            : Value(op.completionId),
         attempts: Value(op.attempts),
         lastError:
             op.lastError == null ? const Value.absent() : Value(op.lastError),

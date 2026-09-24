@@ -11,6 +11,7 @@ class QazaRecord {
     required this.originalDate,
     this.status = QazaStatus.pending,
     this.completedAt,
+    this.completionId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -22,6 +23,8 @@ class QazaRecord {
   final DateTime originalDate;
   final QazaStatus status;
   final DateTime? completedAt;
+  /// Stable marker identifying the specific completion event.
+  final String? completionId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -37,7 +40,10 @@ class QazaRecord {
     DateTime? originalDate,
     QazaStatus? status,
     DateTime? completedAt,
+    String? completionId,
     DateTime? createdAt,
+    bool clearCompletedAt = false,
+    bool clearCompletionId = false,
     DateTime? updatedAt,
   }) {
     return QazaRecord(
@@ -47,7 +53,8 @@ class QazaRecord {
       prayerType: prayerType ?? this.prayerType,
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
+      completionId: clearCompletionId ? null : completionId ?? this.completionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -64,6 +71,7 @@ class QazaRecord {
         'originalDate': originalDate.toIso8601String(),
         'status': status.name,
         'completedAt': completedAt?.toIso8601String(),
+        'completionId': completionId,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -81,6 +89,7 @@ class QazaRecord {
         completedAt: json['completedAt'] == null
             ? null
             : DateTime.parse(json['completedAt'] as String),
+        completionId: json['completionId'] as String?,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );

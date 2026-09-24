@@ -1,5 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
@@ -85,6 +86,15 @@ class QazaService {
   Future<QazaRecord?> oldestPending(
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
+
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      repository.getRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
 
   /// Returns the next Qaza under the global Sahib al-Tartib rule.
   ///
@@ -310,12 +320,29 @@ class QazaService {
       throw const QazaDuplicateRecordException();
     }
 
-    await repository.updateRecord(
-      record: record.copyWith(
-        originalDate: normalizedDate,
-        updatedAt: DateTime.now(),
-      ),
+    var recordToUpdate = record.copyWith(
+      originalDate: normalizedDate,
+      updatedAt: DateTime.now(),
     );
+
+    // An explicit local edit to an already-completed Qaza starts a new
+    // completion version. This invalidates an older Undo action while leaving
+    // server-only timestamp reconciliation marker-stable.
+    final current = (await repository.getRecordsByIds(
+      userId: userId,
+      recordIds: [record.id],
+    )).firstOrNull;
+    if (current != null &&
+        current.status == QazaStatus.completed &&
+        recordToUpdate.status == QazaStatus.completed &&
+        current.completionId != null &&
+        recordToUpdate.completionId == current.completionId) {
+      recordToUpdate = recordToUpdate.copyWith(
+        completionId: newQazaCompletionId(),
+      );
+    }
+
+    await repository.updateRecord(record: recordToUpdate);
   }
 
   Future<void> deleteRecord({
@@ -386,11 +413,11 @@ class QazaService {
 
   /// Reverts only the completions captured by an active undo window.
   ///
-  /// The persistence layer re-checks the exact completion timestamp so an old
-  /// undo can never overwrite a later edit or conflict resolution.
+  /// The persistence layer re-checks the exact completion marker so an old
+  /// undo can never overwrite a later completion or conflict resolution.
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) {
     if (repository is! QazaUndoRepository) {
@@ -398,7 +425,7 @@ class QazaService {
     }
     return (repository as QazaUndoRepository).undoCompletions(
       userId: userId,
-      expectedCompletedAt: expectedCompletedAt,
+      expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
   }

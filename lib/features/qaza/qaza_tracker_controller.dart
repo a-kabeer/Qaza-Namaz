@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_operation.dart';
@@ -180,18 +181,21 @@ class QazaTrackerFilterRequest {
 final qazaTrackerFilterRequestProvider =
     StateProvider<QazaTrackerFilterRequest?>((ref) => null);
 
-/// Result of one bulk completion action, including the exact timestamp
-/// needed to make its undo safe.
+/// Result of one completion action, including the exact completed records
+/// whose completion markers make its Undo safe.
 class QazaCompletionBatch {
   const QazaCompletionBatch({
-    required this.recordIds,
+    required this.completedRecords,
     required this.completedAt,
     required this.count,
   });
 
-  final List<String> recordIds;
+  final List<QazaRecord> completedRecords;
   final DateTime completedAt;
   final int count;
+
+  List<String> get recordIds =>
+      completedRecords.map((record) => record.id).toList(growable: false);
 }
 
 /// Owns the Qaza workspace: filters, bounded paging, selection and bulk
@@ -601,7 +605,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   }
 
   /// Completes the selected records and returns the batch metadata needed
-  /// for a safe, timestamp-bound undo action.
+  /// for a safe, completion-marker-bound Undo action.
   Future<QazaCompletionBatch?> completeSelectedWithUndo() async {
     final userId = ref.read(activeUserIdProvider);
     if (userId == null || state.selected.isEmpty || state.completing) {
@@ -667,10 +671,46 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
       ref.invalidate(progressSummaryProvider);
       await refresh();
       if (completed == 0) return null;
+
+      // Completion is already durable. Metadata lookup is a separate stage so
+      // a diagnostic/read failure cannot be reported as a failed completion.
+      List<QazaRecord> undoableRecords;
+      try {
+        final completedRecords = await service.getRecordsByIds(
+          userId: userId,
+          recordIds: selectedIds,
+        );
+        undoableRecords = completedRecords
+            .where(
+              (record) =>
+                  record.status == QazaStatus.completed &&
+                  record.completionId != null &&
+                  record.completionId!.isNotEmpty,
+            )
+            .toList(growable: false);
+      } catch (error, stack) {
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'completion_marker_lookup_failed',
+          error,
+          stack: stack,
+        );
+        undoableRecords = const <QazaRecord>[];
+      }
+
+      if (undoableRecords.isEmpty) {
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'completion_marker_lookup_empty',
+          StateError('No completion marker was returned after completion.'),
+          stack: StackTrace.current,
+        );
+        return null;
+      }
       return QazaCompletionBatch(
-        recordIds: selectedIds,
+        completedRecords: undoableRecords,
         completedAt: completedAt,
-        count: completed,
+        count: undoableRecords.length,
       );
     } on QazaTartibViolationException {
       await ref.read(qazaOperationServiceProvider).finish(
