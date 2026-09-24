@@ -611,6 +611,45 @@ abstract class QazaLocalStore {
 
   /// Reverts only records whose completion marker still matches the active
   /// undo window. Server-side update timestamps are deliberately ignored.
+  /// Restores matching completions and queues their sync operations.
+  ///
+  /// Database-backed stores override this so the state change and outbox write
+  /// share one transaction.
+  Future<List<QazaRecord>> undoCompletionsAndQueue({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime undoneAt,
+  }) async {
+    final changed = await undoCompletions(
+      userId: userId,
+      expectedCompletionIds: expectedCompletionIds,
+      undoneAt: undoneAt,
+    );
+    if (changed.isEmpty) return changed;
+
+    final operations = <PendingSyncOp>[
+      for (final record in changed)
+        PendingSyncOp(
+          id: 'undo_' +
+              record.id +
+              '_' +
+              record.updatedAt.microsecondsSinceEpoch.toString(),
+          type: SyncOpType.update,
+          userId: userId,
+          queuedAt: record.updatedAt,
+          targetRecordId: record.id,
+          completionId: expectedCompletionIds[record.id],
+          record: record,
+        ),
+    ];
+    await appendRecordsAndOutbox(
+      userId,
+      const <QazaRecord>[],
+      operations,
+    );
+    return changed;
+  }
+
   Future<List<QazaRecord>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
