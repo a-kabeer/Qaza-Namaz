@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
