@@ -285,14 +285,19 @@ void main() {
   });
 
   group('when sign-in does not succeed', () {
-    testWidgets('a Google cancellation is surfaced with configuration guidance', (tester) async {
+    testWidgets('a Google cancellation is surfaced with configuration guidance',
+        (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       final container = await openSettings(tester);
 
       await tapSignIn(tester);
 
-      expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
-      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
+      expect(
+        find.textContaining('SHA-1/SHA-256'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsNothing);
       expect(container.read(isGuestProvider), isTrue);
       expect(onSettings(tester), isTrue);
     });
