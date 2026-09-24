@@ -38,11 +38,13 @@ class AuthenticationCancelledException extends AuthenticationException {
           message: 'Google Sign-In was cancelled by the user.',
         );
 
-  AuthenticationCancelledException.withDescription(String description)
-      : this._(
-          userInitiated: false,
-          message: description.trim(),
-        );
+  factory AuthenticationCancelledException.withDescription(
+    String description,
+  ) =>
+      AuthenticationCancelledException._(
+        userInitiated: false,
+        message: description.trim(),
+      );
 
   const AuthenticationCancelledException._({
     required this.userInitiated,
