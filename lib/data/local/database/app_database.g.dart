@@ -48,6 +48,12 @@ class $QazaRecordsTable extends QazaRecords
   late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
       'completed_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _completionIdMeta =
+      const VerificationMeta('completionId');
+  @override
+  late final GeneratedColumn<String> completionId = GeneratedColumn<String>(
+      'completion_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -69,6 +75,7 @@ class $QazaRecordsTable extends QazaRecords
         originalDate,
         status,
         completedAt,
+        completionId,
         createdAt,
         updatedAt
       ];
@@ -127,6 +134,12 @@ class $QazaRecordsTable extends QazaRecords
           completedAt.isAcceptableOrUnknown(
               data['completed_at']!, _completedAtMeta));
     }
+    if (data.containsKey('completion_id')) {
+      context.handle(
+          _completionIdMeta,
+          completionId.isAcceptableOrUnknown(
+              data['completion_id']!, _completionIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -166,6 +179,8 @@ class $QazaRecordsTable extends QazaRecords
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       completedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
+      completionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}completion_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -187,6 +202,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   final DateTime originalDate;
   final String status;
   final DateTime? completedAt;
+  final String? completionId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const QazaRecordRow(
@@ -197,6 +213,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       required this.originalDate,
       required this.status,
       this.completedAt,
+      this.completionId,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -212,6 +229,9 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || completionId != null) {
+      map['completion_id'] = Variable<String>(completionId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -231,6 +251,9 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      completionId: completionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completionId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -247,6 +270,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       originalDate: serializer.fromJson<DateTime>(json['originalDate']),
       status: serializer.fromJson<String>(json['status']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      completionId: serializer.fromJson<String?>(json['completionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -262,6 +286,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       'originalDate': serializer.toJson<DateTime>(originalDate),
       'status': serializer.toJson<String>(status),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'completionId': serializer.toJson<String?>(completionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -275,6 +300,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           DateTime? originalDate,
           String? status,
           Value<DateTime?> completedAt = const Value.absent(),
+          Value<String?> completionId = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       QazaRecordRow(
@@ -285,6 +311,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
         originalDate: originalDate ?? this.originalDate,
         status: status ?? this.status,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
+        completionId: completionId.present ? completionId.value : this.completionId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -301,6 +328,9 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       status: data.status.present ? data.status.value : this.status,
       completedAt:
           data.completedAt.present ? data.completedAt.value : this.completedAt,
+      completionId: data.completionId.present
+          ? data.completionId.value
+          : this.completionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -316,6 +346,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           ..write('originalDate: $originalDate, ')
           ..write('status: $status, ')
           ..write('completedAt: $completedAt, ')
+          ..write('completionId: $completionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -324,7 +355,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
 
   @override
   int get hashCode => Object.hash(id, userId, operationId, prayerType,
-      originalDate, status, completedAt, createdAt, updatedAt);
+      originalDate, status, completedAt, completionId, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -336,6 +367,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           other.originalDate == this.originalDate &&
           other.status == this.status &&
           other.completedAt == this.completedAt &&
+          other.completionId == this.completionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -348,6 +380,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   final Value<DateTime> originalDate;
   final Value<String> status;
   final Value<DateTime?> completedAt;
+  final Value<String?> completionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -359,6 +392,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     this.originalDate = const Value.absent(),
     this.status = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.completionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -371,6 +405,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     required DateTime originalDate,
     required String status,
     this.completedAt = const Value.absent(),
+    this.completionId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -390,6 +425,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     Expression<DateTime>? originalDate,
     Expression<String>? status,
     Expression<DateTime>? completedAt,
+    Expression<String>? completionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -402,6 +438,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       if (originalDate != null) 'original_date': originalDate,
       if (status != null) 'status': status,
       if (completedAt != null) 'completed_at': completedAt,
+      if (completionId != null) 'completion_id': completionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -416,6 +453,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       Value<DateTime>? originalDate,
       Value<String>? status,
       Value<DateTime?>? completedAt,
+      Value<String?>? completionId,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -427,6 +465,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
       completedAt: completedAt ?? this.completedAt,
+      completionId: completionId ?? this.completionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -456,6 +495,9 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (completionId.present) {
+      map['completion_id'] = Variable<String>(completionId.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -532,6 +574,12 @@ class $SyncOutboxTable extends SyncOutbox
   late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
       'completed_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _completionIdMeta =
+      const VerificationMeta('completionId');
+  @override
+  late final GeneratedColumn<String> completionId = GeneratedColumn<String>(
+      'completion_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _attemptsMeta =
       const VerificationMeta('attempts');
   @override
@@ -555,6 +603,7 @@ class $SyncOutboxTable extends SyncOutbox
         recordJson,
         targetRecordId,
         completedAt,
+        completionId,
         attempts,
         lastError
       ];
@@ -609,6 +658,12 @@ class $SyncOutboxTable extends SyncOutbox
           completedAt.isAcceptableOrUnknown(
               data['completed_at']!, _completedAtMeta));
     }
+    if (data.containsKey('completion_id')) {
+      context.handle(
+          _completionIdMeta,
+          completionId.isAcceptableOrUnknown(
+              data['completion_id']!, _completionIdMeta));
+    }
     if (data.containsKey('attempts')) {
       context.handle(_attemptsMeta,
           attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta));
@@ -640,6 +695,8 @@ class $SyncOutboxTable extends SyncOutbox
           DriftSqlType.string, data['${effectivePrefix}target_record_id']),
       completedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
+      completionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}completion_id']),
       attempts: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}attempts'])!,
       lastError: attachedDatabase.typeMapping
@@ -661,6 +718,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
   final String? recordJson;
   final String? targetRecordId;
   final DateTime? completedAt;
+  final String? completionId;
   final int attempts;
   final String? lastError;
   const SyncOutboxData(
@@ -671,6 +729,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
       this.recordJson,
       this.targetRecordId,
       this.completedAt,
+      this.completionId,
       required this.attempts,
       this.lastError});
   @override
@@ -688,6 +747,9 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
     }
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || completionId != null) {
+      map['completion_id'] = Variable<String>(completionId);
     }
     map['attempts'] = Variable<int>(attempts);
     if (!nullToAbsent || lastError != null) {
@@ -711,6 +773,9 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      completionId: completionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completionId),
       attempts: Value(attempts),
       lastError: lastError == null && nullToAbsent
           ? const Value.absent()
@@ -729,6 +794,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
       recordJson: serializer.fromJson<String?>(json['recordJson']),
       targetRecordId: serializer.fromJson<String?>(json['targetRecordId']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      completionId: serializer.fromJson<String?>(json['completionId']),
       attempts: serializer.fromJson<int>(json['attempts']),
       lastError: serializer.fromJson<String?>(json['lastError']),
     );
@@ -744,6 +810,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
       'recordJson': serializer.toJson<String?>(recordJson),
       'targetRecordId': serializer.toJson<String?>(targetRecordId),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'completionId': serializer.toJson<String?>(completionId),
       'attempts': serializer.toJson<int>(attempts),
       'lastError': serializer.toJson<String?>(lastError),
     };
@@ -757,6 +824,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
           Value<String?> recordJson = const Value.absent(),
           Value<String?> targetRecordId = const Value.absent(),
           Value<DateTime?> completedAt = const Value.absent(),
+          Value<String?> completionId = const Value.absent(),
           int? attempts,
           Value<String?> lastError = const Value.absent()}) =>
       SyncOutboxData(
@@ -768,6 +836,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
         targetRecordId:
             targetRecordId.present ? targetRecordId.value : this.targetRecordId,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
+        completionId: completionId.present ? completionId.value : this.completionId,
         attempts: attempts ?? this.attempts,
         lastError: lastError.present ? lastError.value : this.lastError,
       );
@@ -784,6 +853,9 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
           : this.targetRecordId,
       completedAt:
           data.completedAt.present ? data.completedAt.value : this.completedAt,
+      completionId: data.completionId.present
+          ? data.completionId.value
+          : this.completionId,
       attempts: data.attempts.present ? data.attempts.value : this.attempts,
       lastError: data.lastError.present ? data.lastError.value : this.lastError,
     );
@@ -799,6 +871,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
           ..write('recordJson: $recordJson, ')
           ..write('targetRecordId: $targetRecordId, ')
           ..write('completedAt: $completedAt, ')
+          ..write('completionId: $completionId, ')
           ..write('attempts: $attempts, ')
           ..write('lastError: $lastError')
           ..write(')'))
@@ -807,7 +880,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
 
   @override
   int get hashCode => Object.hash(id, userId, type, queuedAt, recordJson,
-      targetRecordId, completedAt, attempts, lastError);
+      targetRecordId, completedAt, completionId, attempts, lastError);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -819,6 +892,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
           other.recordJson == this.recordJson &&
           other.targetRecordId == this.targetRecordId &&
           other.completedAt == this.completedAt &&
+          other.completionId == this.completionId &&
           other.attempts == this.attempts &&
           other.lastError == this.lastError);
 }
@@ -831,6 +905,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
   final Value<String?> recordJson;
   final Value<String?> targetRecordId;
   final Value<DateTime?> completedAt;
+  final Value<String?> completionId;
   final Value<int> attempts;
   final Value<String?> lastError;
   final Value<int> rowid;
@@ -842,6 +917,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
     this.recordJson = const Value.absent(),
     this.targetRecordId = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.completionId = const Value.absent(),
     this.attempts = const Value.absent(),
     this.lastError = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -854,6 +930,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
     this.recordJson = const Value.absent(),
     this.targetRecordId = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.completionId = const Value.absent(),
     this.attempts = const Value.absent(),
     this.lastError = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -869,6 +946,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
     Expression<String>? recordJson,
     Expression<String>? targetRecordId,
     Expression<DateTime>? completedAt,
+    Expression<String>? completionId,
     Expression<int>? attempts,
     Expression<String>? lastError,
     Expression<int>? rowid,
@@ -881,6 +959,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
       if (recordJson != null) 'record_json': recordJson,
       if (targetRecordId != null) 'target_record_id': targetRecordId,
       if (completedAt != null) 'completed_at': completedAt,
+      if (completionId != null) 'completion_id': completionId,
       if (attempts != null) 'attempts': attempts,
       if (lastError != null) 'last_error': lastError,
       if (rowid != null) 'rowid': rowid,
@@ -895,6 +974,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
       Value<String?>? recordJson,
       Value<String?>? targetRecordId,
       Value<DateTime?>? completedAt,
+      Value<String?>? completionId,
       Value<int>? attempts,
       Value<String?>? lastError,
       Value<int>? rowid}) {
@@ -906,6 +986,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
       recordJson: recordJson ?? this.recordJson,
       targetRecordId: targetRecordId ?? this.targetRecordId,
       completedAt: completedAt ?? this.completedAt,
+      completionId: completionId ?? this.completionId,
       attempts: attempts ?? this.attempts,
       lastError: lastError ?? this.lastError,
       rowid: rowid ?? this.rowid,
@@ -936,6 +1017,9 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (completionId.present) {
+      map['completion_id'] = Variable<String>(completionId.value);
+    }
     if (attempts.present) {
       map['attempts'] = Variable<int>(attempts.value);
     }
@@ -958,6 +1042,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
           ..write('recordJson: $recordJson, ')
           ..write('targetRecordId: $targetRecordId, ')
           ..write('completedAt: $completedAt, ')
+          ..write('completionId: $completionId, ')
           ..write('attempts: $attempts, ')
           ..write('lastError: $lastError, ')
           ..write('rowid: $rowid')
