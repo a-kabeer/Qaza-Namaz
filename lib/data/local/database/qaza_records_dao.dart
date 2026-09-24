@@ -701,6 +701,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
+          completionId: Value(newQazaCompletionId()),
           updatedAt: Value(completedAt),
         ));
         if (updated > 0) changed.add(id);
