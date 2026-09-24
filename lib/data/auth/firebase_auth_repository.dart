@@ -161,7 +161,7 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<GoogleSignInAccount> _authenticateWithCredentialManagerRecovery() async {
     try {
       return await _googleSignIn.authenticate();
-    } on GoogleSignInException catch (error, stack) {
+    } on GoogleSignInException catch (error) {
       final description = error.description;
       if (!_isCredentialManagerReauthFailure(description)) rethrow;
 
@@ -172,11 +172,9 @@ class FirebaseAuthRepository implements AuthRepository {
         // replace the original authentication failure.
       }
 
-      try {
-        return await _googleSignIn.authenticate();
-      } catch (_) {
-        Error.throwWithStackTrace(error, stack);
-      }
+      // Retry exactly once. If it still fails, let the second failure travel
+      // to the normal mapping/diagnostics path so we do not hide new details.
+      return _googleSignIn.authenticate();
     }
   }
 
