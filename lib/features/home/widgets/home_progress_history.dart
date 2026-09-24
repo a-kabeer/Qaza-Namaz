@@ -276,7 +276,7 @@ class _HomeProgressChartSectionState
                     fontSize: 14,
                   ),
                   textDirection: textDirection,
-                  offset: const Offset(0, 10),
+                  offset: const Offset(0, 48),
                 ),
               ),
             ],
