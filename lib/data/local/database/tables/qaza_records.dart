@@ -20,6 +20,8 @@ class QazaRecords extends Table {
 
   DateTimeColumn get completedAt => dateTime().nullable()();
 
+  TextColumn get completionId => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();
