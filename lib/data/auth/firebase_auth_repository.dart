@@ -32,15 +32,23 @@ class AuthenticationException implements Exception {
 }
 
 class AuthenticationCancelledException extends AuthenticationException {
-  const AuthenticationCancelledException()
-      : super(
-          source: 'google',
-          code: 'cancelled',
-          message:
-              'Google Sign-In was cancelled. If you selected an account and '
-              'the sign-in did not finish, check the Firebase Google provider, '
-              'Android package name, and SHA-1/SHA-256 signing certificate.',
+  const AuthenticationCancelledException({
+    this.userInitiated = true,
+    String? description,
+  }) : super(
+          source: 'google-sign-in',
+          code: 'canceled',
+          message: description != null && description.trim().isNotEmpty
+              ? description
+              : 'Google Sign-In was cancelled by the user.',
         );
+
+  /// True only when the platform gives us no indication of another cause.
+  ///
+  /// google_sign_in documents [canceled] as user cancellation. When the
+  /// platform supplies a description, preserve it because it may contain
+  /// actionable information about the failure.
+  final bool userInitiated;
 
   @override
   String toString() => message;
@@ -118,14 +126,16 @@ class FirebaseAuthRepository implements AuthRepository {
       return account;
     } catch (error, stack) {
       final mapped = mapSignInFailure(error, stack: stack);
+
+      // Preserve the original platform/Firebase failure in diagnostics before
+      // any UI-friendly mapping occurs. Structured GoogleSignInException
+      // fields such as code/description are essential when diagnosing the
+      // Android OAuth/Credential Manager boundary.
+      _debugLog(error, stack);
+
       // A failure that already knows which stage it came from travels
       // unchanged; re-wrapping it would bury the stage it names.
       if (mapped == null) rethrow;
-      // The Android Credential Manager path can surface some OAuth
-      // configuration failures as `canceled` after account selection, so the
-      // cancellation must remain observable and diagnosable rather than being
-      // silently discarded.
-      _debugLog(error, stack);
       throw mapped;
     }
   }
@@ -184,12 +194,18 @@ class FirebaseAuthRepository implements AuthRepository {
   }) {
     if (error is GoogleSignInException) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthenticationCancelledException();
+        final description = error.description;
+        return AuthenticationCancelledException(
+          userInitiated:
+              description == null || description.trim().isEmpty,
+          description: description,
+        );
       }
+
       return AuthenticationException(
         source: 'google-sign-in',
         code: error.code.name,
-        message: _describe(error.description, error),
+        message: _googleFailureMessage(error),
         cause: error,
         stackTrace: stack,
       );
@@ -223,6 +239,18 @@ class FirebaseAuthRepository implements AuthRepository {
       cause: error,
       stackTrace: stack,
     );
+  }
+
+  static String _googleFailureMessage(GoogleSignInException error) {
+    final description = error.description?.trim();
+    final details = error.details;
+
+    if (description != null && description.isNotEmpty) {
+      if (details == null) return description;
+      return '$description (details: ${details.toString()})';
+    }
+    if (details != null) return details.toString();
+    return error.toString();
   }
 
   static String _describe(String? message, Object fallback) =>
