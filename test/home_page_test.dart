@@ -863,7 +863,7 @@ void main() {
       expect(chart.data.maxY, greaterThanOrEqualTo(25));
 
       final rect = tester.getRect(find.byKey(const Key('home_progress_chart')));
-      await tester.tapAt(rect.center);
+      await tester.tapAt(Offset(rect.right - 24, rect.bottom - 60));
       await tester.pump();
 
       expect(find.byKey(const Key('home_chart_selected_value')), findsOneWidget);
@@ -1032,6 +1032,17 @@ void main() {
       expect(find.text('مجموعی قضا'), findsOneWidget);
       expect(find.text('نماز کے لحاظ سے باقی'), findsOneWidget);
       expect(find.text('آپ کی پیش رفت'), findsOneWidget);
+      expect(find.byType(BarChart), findsOneWidget);
+      expect(
+        Directionality.of(
+          tester.element(find.byKey(const Key('home_your_progress'))),
+        ),
+        TextDirection.rtl,
+      );
+      expect(
+        chartOf(tester).data.barGroups,
+        isNotEmpty,
+      );
       expect(tester.takeException(), isNull);
     });
 
