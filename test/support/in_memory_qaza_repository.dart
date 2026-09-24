@@ -598,9 +598,19 @@ class InMemoryQazaRepository
         );
       case SyncOpType.update:
         for (final operation in operations) {
-          if (operation.record != null) {
-            await updateRecord(record: operation.record!);
+          final record = operation.record;
+          if (record == null) continue;
+          final current = _records[record.id];
+          final isCompletionUndo = operation.completionId != null &&
+              record.status == QazaStatus.pending &&
+              record.completionId == null &&
+              current != null &&
+              current.status == QazaStatus.completed &&
+              current.completionId == operation.completionId;
+          if (operation.completionId != null && !isCompletionUndo) {
+            continue;
           }
+          await updateRecord(record: record);
         }
         final updateLatest = await getLatestChange(userId: userId);
         if (updateLatest == null) {
