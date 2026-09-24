@@ -60,10 +60,42 @@ Future<void> main() async {
     // Debug builds use the Firebase debug provider; release builds use Play
     // Integrity, which is the one startup step that behaves differently in a
     // release build and so the one most likely to stall in one.
+    final appCheckProvider =
+        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity;
+
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      androidProvider: appCheckProvider,
     );
+    diagnostics.recordEvent(
+      DiagnosticArea.startup,
+      'app_check_activated_${kDebugMode ? 'debug' : 'play_integrity'}',
+    );
+
+    // The debug provider can fail independently of Firebase initialization.
+    // Probe token acquisition in debug builds so a missing/invalid debug token
+    // is distinguishable from an OAuth or Firebase Auth failure. Never log the
+    // token itself.
+    if (kDebugMode) {
+      try {
+        final token = await FirebaseAppCheck.instance
+            .getToken()
+            .timeout(const Duration(seconds: 3));
+        if (token == null || token.isEmpty) {
+          throw StateError('Firebase App Check returned no debug token.');
+        }
+        diagnostics.recordEvent(
+          DiagnosticArea.startup,
+          'app_check_debug_token_ready',
+        );
+      } catch (error, stack) {
+        diagnostics.recordFailure(
+          DiagnosticArea.startup,
+          'app_check_debug_token_failed',
+          error,
+          stack: stack,
+        );
+      }
+    }
   });
 
   // Complete the legacy migration before any repository can read the local
