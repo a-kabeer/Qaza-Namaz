@@ -307,7 +307,7 @@ void main() {
   );
 
   test(
-    'Google cancellation keeps guest mode and does not show an auth failure',
+    'Google cancellation keeps guest mode and surfaces configuration guidance',
     () async {
       final (container, auth, migration) = await makeContainer(
         guestData: true,
@@ -323,7 +323,7 @@ void main() {
       expect(container.read(guestUpgradePendingProvider), isFalse);
       expect(
         container.read(guestUpgradeControllerProvider).error,
-        isNull,
+        contains('SHA-1/SHA-256'),
       );
       expect(migration.migrateCalls, 0);
       expect(migration.retireCalls, 0);

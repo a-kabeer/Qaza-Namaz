@@ -97,6 +97,12 @@ void main() {
       isNot(contains('_googleSignIn.signIn()')),
       reason: 'The pre-7.x signIn() API must not be used.',
     );
+    expect(
+      repository,
+      contains('Google Sign-In was cancelled.'),
+      reason:
+          'Android configuration errors can surface as canceled and must stay visible.',
+    );
 
     final authConfig =
         File('lib/data/auth/google_auth_config.dart').readAsStringSync();

@@ -278,21 +278,26 @@ void main() {
       expect(migration.retireCalls, 0, reason: 'guest data must survive');
       expect(container.read(isGuestProvider), isTrue);
       expect(onSettings(tester), isTrue);
-      // Staying a guest is a choice, not a failure.
+      // Keeping guest data is an explicit user decision, not an auth failure.
       expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
       expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
     });
   });
 
   group('when sign-in does not succeed', () {
-    testWidgets('a cancellation is not reported as a failure', (tester) async {
+    testWidgets('a Google cancellation is surfaced with configuration guidance',
+        (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       final container = await openSettings(tester);
 
       await tapSignIn(tester);
 
-      expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
-      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
+      expect(
+        find.textContaining('SHA-1/SHA-256'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsNothing);
       expect(container.read(isGuestProvider), isTrue);
       expect(onSettings(tester), isTrue);
     });
@@ -345,12 +350,13 @@ void main() {
       expect(onSettings(tester), isTrue);
     });
 
-    testWidgets('a retry after a cancellation also works', (tester) async {
+    testWidgets('a retry after a Google cancellation also works', (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       migration.guestData = false;
       await openSettings(tester);
       await tapSignIn(tester);
-      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
+      expect(find.textContaining('SHA-1/SHA-256'), findsOneWidget);
 
       auth.signInFailure = null;
       await tapSignIn(tester);

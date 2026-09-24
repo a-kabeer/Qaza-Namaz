@@ -84,19 +84,21 @@ void main() {
       expect(mapped!.message.trim(), isNotEmpty);
     });
 
-    test('a cancellation is a cancellation, from either source', () {
-      expect(
-        FirebaseAuthRepository.mapSignInFailure(
-          const GoogleSignInException(code: GoogleSignInExceptionCode.canceled),
-        ),
-        isA<AuthenticationCancelledException>(),
+    test('Google cancellation remains observable with configuration guidance', () {
+      final mapped = FirebaseAuthRepository.mapSignInFailure(
+        const GoogleSignInException(code: GoogleSignInExceptionCode.canceled),
       );
-      expect(
-        FirebaseAuthRepository.mapSignInFailure(
-          const GoogleAuthFlowCancelledException(),
-        ),
-        isA<AuthenticationCancelledException>(),
+
+      expect(mapped, isA<AuthenticationCancelledException>());
+      expect(mapped!.code, 'cancelled');
+      expect(mapped.message, contains('SHA-1'));
+      expect(mapped.message, contains('Firebase Google provider'));
+
+      final flowCancelled = FirebaseAuthRepository.mapSignInFailure(
+        const GoogleAuthFlowCancelledException(),
       );
+      expect(flowCancelled, isA<AuthenticationCancelledException>());
+      expect(flowCancelled!.message, contains('SHA-256'));
     });
 
     test('a Firebase Auth failure keeps the Firebase code', () {

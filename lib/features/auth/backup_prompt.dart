@@ -148,8 +148,9 @@ void _reportBackupSignIn(BuildContext context, WidgetRef ref) {
     return;
   }
 
-  // No error and still a guest: the user cancelled at the Google chooser, or
-  // chose Keep Guest Data. Neither is a failure.
+  // No error and still a guest: the user completed an explicit Keep Guest
+  // Data decision. A Google SDK cancellation/error is surfaced above so OAuth
+  // configuration problems are not silently discarded.
   if (ref.read(isGuestProvider)) {
     messenger
       ..hideCurrentSnackBar()

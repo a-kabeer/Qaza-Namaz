@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/auth/auth_gate.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
@@ -136,6 +137,30 @@ void main() {
     expect(find.textContaining('firebase-auth/operation-not-allowed'),
         findsOneWidget);
   });
+
+  testWidgets(
+    'startup Google cancellation remains visible for configuration troubleshooting',
+    (tester) async {
+      final auth = StartupAuthRepository(
+        const AppUser(id: 'cancelled-user', email: 'cancelled@example.com'),
+        signInFailure: const AuthenticationCancelledException(),
+      );
+      addTearDown(auth.dispose);
+
+      await pumpStartup(tester, auth.account, auth);
+      await tester.tap(find.text('Get Started'));
+      await tester.pump();
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.textContaining('SHA-1/SHA-256'),
+        findsOneWidget,
+      );
+    },
+  );
+
 
   testWidgets('startup Google sign-in creates a new account through Firebase',
       (tester) async {
