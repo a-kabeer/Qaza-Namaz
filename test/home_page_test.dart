@@ -172,6 +172,8 @@ void main() {
       await pumpHome(tester, await ledger());
 
       expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
+      expect(find.byKey(const Key('sync_status_bar')), findsNothing);
+      expect(find.byKey(const Key('sync_retry_button')), findsNothing);
       expect(find.byKey(const Key('home_today_progress')), findsOneWidget);
       expect(find.byKey(const Key('home_overall_qaza')), findsOneWidget);
       expect(find.byKey(const Key('home_pending_by_prayer')), findsOneWidget);
@@ -628,6 +630,8 @@ void main() {
       await pumpHome(tester, repository);
 
       expect(find.byKey(const Key('home_all_completed_state')), findsOneWidget);
+      expect(find.byKey(const Key('sync_status_bar')), findsNothing);
+      expect(find.byKey(const Key('sync_retry_button')), findsNothing);
       expect(
         find.byKey(const Key('home_overall_donut')),
         findsOneWidget,
