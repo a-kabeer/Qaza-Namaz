@@ -74,6 +74,16 @@ class _BlockingRemote implements QazaRepository {
   }
 
   @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      delegate.getRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
+
+  @override
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
