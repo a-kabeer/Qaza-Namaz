@@ -637,7 +637,7 @@ class InMemoryQazaRepository
           final record = operation.record;
           if (record == null || record.userId != userId) continue;
           final current = _records[record.id];
-          if (current == null) {
+if (current == null) {
             continue;
           }
           if (current.status == QazaStatus.completed &&
