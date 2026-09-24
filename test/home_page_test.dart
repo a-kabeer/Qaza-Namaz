@@ -868,7 +868,12 @@ void main() {
       expect(chart.data.maxY, greaterThanOrEqualTo(25));
 
       final rect = tester.getRect(find.byKey(const Key('home_progress_chart')));
-      await tester.tapAt(Offset(rect.right - 24, rect.bottom - 60));
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * 0.93,
+          rect.top + rect.height * 0.45,
+        ),
+      );
       await tester.pump();
 
       expect(find.byKey(const Key('home_chart_selected_value')), findsOneWidget);
