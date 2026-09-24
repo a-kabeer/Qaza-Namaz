@@ -21,12 +21,14 @@ import '../../../domain/entities/qaza_progress.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
+import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../prayer_times/domain/qaza_restriction_service.dart';
 import '../../prayer_times/presentation/prayer_location_picker_screen.dart';
 import '../../prayer_times/presentation/prayer_times_localizations.dart';
 import '../../prayer_times/prayer_times_providers.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../qaza/completion/qaza_completion_state.dart';
+import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../qaza/qaza_undo_banner.dart';
 import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
@@ -142,7 +144,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     if (ref.read(qazaCompletionControllerProvider).isWorking) return;
 
     final userId = ref.read(requiredUserIdProvider);
-    final completedAt = ref.read(homeNowProvider);
+    final completedAt = ref.read(prayerTimesClockProvider).now();
     final diagnostics = ref.read(diagnosticsProvider);
 
     QazaCompletionResult result;
@@ -282,10 +284,24 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     final working = ref.watch(qazaCompletionControllerProvider).isWorking;
     final daily = ref.watch(homeDailyProgressProvider);
     final selected = ref.watch(homeSelectedPrayerProvider);
-    final now = ref.watch(homeNowProvider);
-    final dateLabel = DateFormatters.weekdayShortNames[now.weekday - 1] +
+    final today = ref.watch(homeLocalDateProvider);
+
+    ref.listen<AsyncValue<HomeDailyProgress>>(
+      homeDailyProgressProvider,
+      (previous, next) {
+        if (!next.hasError || next.error == previous?.error) return;
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.uncaught,
+          'home_daily_progress_failed',
+          next.error!,
+          stack: next.stackTrace,
+        );
+      },
+    );
+
+    final dateLabel = DateFormatters.weekdayShortNames[today.weekday - 1] +
         ', ' +
-        DateFormatters.formatGregorianDatePadded(now);
+        DateFormatters.formatGregorianDatePadded(today);
 
     return AppCard(
       key: const Key('home_today_progress'),
@@ -390,7 +406,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
                 const SizedBox(height: 16),
                 _EstimatedCompletion(
                   date: homeEstimatedCompletionDate(
-                    now: now,
+                    now: today,
                     pending: widget.summary.overall.pending,
                     dailyTarget: progress.target,
                     completedToday: progress.completed,
@@ -564,6 +580,63 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
 
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Timer? _restrictionTicker;
+
+  bool _isManualPrayerAllowed(
+    PrayerType prayer,
+    AsyncValue<SahibAlTartibState> tartibAsync,
+  ) {
+    if (prayer == PrayerType.witr) return true;
+    final tartib = tartibAsync.valueOrNull;
+    if (!tartibAsync.hasValue || tartib == null) return false;
+    if (!tartib.requiresOrder) return true;
+    return tartib.nextPrayer == prayer;
+  }
+
+  PopupMenuItem<String> _buildPrayerMenuItem(
+    BuildContext context,
+    PrayerType item,
+    AsyncValue<SahibAlTartibState> tartibAsync,
+    AppLocalizations l10n,
+  ) {
+    final tartib = tartibAsync.valueOrNull;
+    final isWitr = item == PrayerType.witr;
+    final loadingOrFailed = !tartibAsync.hasValue;
+    final allowed = isWitr ||
+        (!loadingOrFailed &&
+            (!tartib!.requiresOrder || tartib.nextPrayer == item));
+    final explanation = loadingOrFailed
+        ? l10n.completeLoadError
+        : tartib!.requiresOrder && tartib.nextPrayer != null
+            ? l10n.qazaTartibBlocked(
+                tartib.nextPrayer!.localizedLabel(l10n),
+              )
+            : '';
+
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          !allowed
+              ? Icons.lock_outline_rounded
+              : widget.selected.prayer == item
+                  ? Icons.check_rounded
+                  : _prayerIcon(item),
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(item.localizedLabel(l10n)),
+      ],
+    );
+
+    return PopupMenuItem<String>(
+      key: Key('home_qaza_prayer_option_' + item.name),
+      value: item.name,
+      enabled: allowed,
+      child: !allowed && explanation.isNotEmpty
+          ? Tooltip(message: explanation, child: child)
+          : child,
+    );
+  }
   QazaRestrictionEvaluation? _lastRestriction;
   bool _restrictionInvalidated = false;
 
@@ -580,7 +653,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       if (current?.isRestricted != true) return;
 
       final end = current?.end;
-      if (end != null && !DateTime.now().isBefore(end)) {
+      if (end != null &&
+          !ref.read(prayerTimesClockProvider).now().isBefore(end)) {
         if (!_restrictionInvalidated) {
           _restrictionInvalidated = true;
           ref.invalidate(qazaRestrictionEvaluationProvider);
@@ -604,7 +678,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final end = restriction.end;
     final remaining = end == null
         ? restriction.remaining
-        : end.difference(DateTime.now());
+        : end.difference(ref.read(prayerTimesClockProvider).now());
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
@@ -623,6 +697,19 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
     final restrictionAsync = ref.watch(qazaRestrictionEvaluationProvider);
+
+    ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
+      qazaRestrictionEvaluationProvider,
+      (previous, next) {
+        if (!next.hasError || next.error == previous?.error) return;
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.uncaught,
+          'home_restriction_evaluation_failed',
+          next.error!,
+          stack: next.stackTrace,
+        );
+      },
+    );
     final restriction =
         _lastRestriction ?? restrictionAsync.valueOrNull;
     final restrictedRestriction =
@@ -633,6 +720,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
         )
         .toList(growable: false);
+    final tartibAsync = ref.watch(sahibAlTartibProvider);
 
     final prayerSelector = PopupMenuButton<String>(
       key: const Key('home_qaza_prayer_selector'),
@@ -669,22 +757,11 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           ),
         ),
         for (final item in pendingPrayers)
-          PopupMenuItem<String>(
-            key: Key('home_qaza_prayer_option_' + item.name),
-            value: item.name,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  widget.selected.prayer == item
-                      ? Icons.check_rounded
-                      : _prayerIcon(item),
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(item.localizedLabel(l10n)),
-              ],
-            ),
+          _buildPrayerMenuItem(
+            context,
+            item,
+            tartibAsync,
+            l10n,
           ),
       ],
       child: Chip(
@@ -697,21 +774,53 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       ),
     );
 
-    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final tartib = tartibAsync.valueOrNull;
     final automaticTartib =
         widget.selected.mode == HomePrayerSelectionMode.automatic &&
         tartib?.requiresOrder == true &&
         tartib?.nextPrayer != null;
 
-    final header = Text(
-      automaticTartib
-          ? l10n.homeNextQaza
-          : widget.selected.mode == HomePrayerSelectionMode.automatic
-              ? (prayer == null ? l10n.homeNextQaza : l10n.homeNextQazaCurrentPrayer)
-              : l10n.homeNextQaza,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+    final header = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          automaticTartib
+              ? l10n.homeNextQaza
+              : widget.selected.mode == HomePrayerSelectionMode.automatic
+                  ? (prayer == null
+                      ? l10n.homeNextQaza
+                      : l10n.homeNextQazaCurrentPrayer)
+                  : l10n.homeNextQaza,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        if (widget.selected.mode == HomePrayerSelectionMode.automatic &&
+            widget.selected.currentPrayer != null) ...[
+          Text(
+            l10n.homeCurrentPrayerLabel(
+              widget.selected.currentPrayer!.localizedLabel(l10n),
+            ),
+            key: const Key('home_current_prayer'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
+          if (widget.selected.source ==
+                  HomePrayerSelectionSource.sahibAlTartib &&
+              widget.selected.prayer != null)
+            Text(
+              l10n.homeSahibOrderLabel(
+                widget.selected.prayer!.localizedLabel(l10n),
+              ),
+              key: const Key('home_sahib_selection'),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+        ],
+      ],
     );
 
     return Column(
@@ -945,7 +1054,13 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
 
                       final complete = FilledButton.icon(
                         key: const Key('home_complete_oldest_qaza'),
-                        onPressed: widget.working
+                        onPressed: widget.working ||
+                                (widget.selected.mode ==
+                                        HomePrayerSelectionMode.manual &&
+                                    !_isManualPrayerAllowed(
+                                      prayer,
+                                      tartibAsync,
+                                    ))
                             ? null
                             : () => widget.onComplete(record, prayer),
                         icon: const Icon(Icons.play_arrow_rounded),

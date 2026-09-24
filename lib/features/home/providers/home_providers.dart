@@ -4,9 +4,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../prayer_times/domain/prayer_schedule.dart';
 import '../../prayer_times/domain/prayer_times_models.dart';
@@ -90,20 +92,91 @@ final homeQazaPlanProvider =
   HomeQazaPlanNotifier.new,
 );
 
-final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
+final homeProgressRangeProvider =
+    StateProvider<HomeProgressRange>((ref) => HomeProgressRange.sevenDays);
+
+final homeNowProvider =
+    Provider<DateTime>((ref) => ref.watch(prayerTimesClockProvider).now());
+
+DateTime homeLocalDateForLocation({
+  required PrayerLocation? location,
+  required DateTime instant,
+}) {
+  final timezone = location?.timezone;
+  if (timezone != null &&
+      timezone.isNotEmpty &&
+      PrayerSchedule.isKnownTimezone(timezone)) {
+    final local = PrayerSchedule.now(timezone, instant: instant);
+    return DateTime(local.year, local.month, local.day);
+  }
+  final local = instant.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
+
+DateTime homeLocalDayStartForLocation({
+  required PrayerLocation? location,
+  required DateTime instant,
+}) {
+  final timezone = location?.timezone;
+  if (timezone != null &&
+      timezone.isNotEmpty &&
+      PrayerSchedule.isKnownTimezone(timezone)) {
+    final local = PrayerSchedule.now(timezone, instant: instant);
+    final zone = tz.getLocation(timezone);
+    return tz.TZDateTime(zone, local.year, local.month, local.day);
+  }
+  final local = instant.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
+
+DateTime homeLocalDayStartForDate({
+  required PrayerLocation? location,
+  required DateTime date,
+}) {
+  final timezone = location?.timezone;
+  if (timezone != null &&
+      timezone.isNotEmpty &&
+      PrayerSchedule.isKnownTimezone(timezone)) {
+    final zone = tz.getLocation(timezone);
+    return tz.TZDateTime(zone, date.year, date.month, date.day);
+  }
+  return DateTime(date.year, date.month, date.day);
+}
+
+DateTime homeLocalDayEndForDate({
+  required PrayerLocation? location,
+  required DateTime date,
+}) =>
+    homeLocalDayStartForDate(
+      location: location,
+      date: DateTime(date.year, date.month, date.day + 1),
+    );
+
+final homeLocalDateProvider = Provider<DateTime>((ref) {
+  final now = ref.watch(homeNowProvider);
+  final location = ref.watch(prayerTimesControllerProvider).location;
+  return homeLocalDateForLocation(location: location, instant: now);
+});
 
 final homeDailyProgressProvider =
     FutureProvider.autoDispose<HomeDailyProgress>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
   final target = ref.watch(homeQazaPlanProvider).dailyTarget;
-  final now = ref.watch(homeNowProvider);
+  final today = ref.watch(homeLocalDateProvider);
 
   if (userId == null) {
     return HomeDailyProgress(completed: 0, target: target);
   }
 
-  final start = DateTime(now.year, now.month, now.day);
-  final end = start.add(const Duration(days: 1));
+  final location = ref.watch(prayerTimesControllerProvider).location;
+  final start = homeLocalDayStartForDate(
+    location: location,
+    date: today,
+  );
+  final end = homeLocalDayEndForDate(
+    location: location,
+    date: today,
+  );
   final completed = await ref.read(qazaServiceProvider).countCompletedBetween(
         userId: userId,
         from: start,
@@ -116,10 +189,9 @@ final homeProgressHistoryProvider =
     FutureProvider.autoDispose.family<List<HomeProgressPoint>, HomeProgressRange>(
   (ref, range) async {
     final userId = ref.watch(activeUserIdProvider);
-    final now = ref.watch(homeNowProvider);
+    final today = ref.watch(homeLocalDateProvider);
+    final location = ref.watch(prayerTimesControllerProvider).location;
     if (userId == null) return const <HomeProgressPoint>[];
-
-    final today = DateTime(now.year, now.month, now.day);
 
     List<DateTime> starts;
     switch (range) {
@@ -149,10 +221,20 @@ final homeProgressHistoryProvider =
       for (var i = 0; i < starts.length; i++)
         ref.read(qazaServiceProvider).countCompletedBetween(
               userId: userId,
-              from: starts[i],
-              to: range == HomeProgressRange.monthly
-                  ? DateTime(starts[i].year, starts[i].month + 1)
-                  : starts[i].add(const Duration(days: 1)),
+              from: homeLocalDayStartForDate(
+                location: location,
+                date: starts[i],
+              ),
+              to: homeLocalDayStartForDate(
+                location: location,
+                date: range == HomeProgressRange.monthly
+                    ? DateTime(starts[i].year, starts[i].month + 1)
+                    : DateTime(
+                        starts[i].year,
+                        starts[i].month,
+                        starts[i].day + 1,
+                      ),
+              ),
             ),
     ]);
 
@@ -216,13 +298,22 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
     PrayerTimesState? prayerTimesState;
     try {
       prayerTimesState = ref.watch(prayerTimesControllerProvider);
-    } catch (_) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        'home_current_prayer_state_read_failed',
+        error,
+        stack: stack,
+      );
       prayerTimesState = null;
     }
 
     _stopTicker();
 
-    final initial = _safeResolve(prayerTimesState, DateTime.now());
+    final initial = _safeResolve(
+      prayerTimesState,
+      ref.read(prayerTimesClockProvider).now(),
+    );
 
     _startTicker();
     ref.onCancel(_stopTicker);
@@ -258,12 +349,21 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
     PrayerTimesState? prayerTimesState;
     try {
       prayerTimesState = ref.read(prayerTimesControllerProvider);
-    } catch (_) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        'home_current_prayer_state_read_failed',
+        error,
+        stack: stack,
+      );
       prayerTimesState = null;
     }
 
     state = HomeCurrentPrayerState(
-      prayer: _safeResolve(prayerTimesState, DateTime.now()),
+      prayer: _safeResolve(
+        prayerTimesState,
+        ref.read(prayerTimesClockProvider).now(),
+      ),
     );
   }
 
@@ -280,8 +380,14 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
         tomorrow: state.tomorrow,
         now: now,
       );
-    } catch (_) {
-      // Home must remain usable while Prayer Times is unavailable or booting.
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+        DiagnosticArea.uncaught,
+        'home_current_prayer_resolution_failed',
+        error,
+        stack: stack,
+      );
+      // Home remains usable while Prayer Times is unavailable or booting.
       return null;
     }
   }
@@ -302,10 +408,14 @@ final homeFallbackPendingProvider =
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
+  final currentPrayer = ref.watch(homeCurrentPrayerProvider).prayer;
+
   if (selection.mode == HomePrayerSelectionMode.manual) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: selection.manualPrayer,
+      currentPrayer: currentPrayer,
+      source: HomePrayerSelectionSource.manual,
     );
   }
 
@@ -314,11 +424,17 @@ final homeSelectedPrayerProvider =
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: tartib!.nextPrayer,
+      currentPrayer: currentPrayer,
+      source: HomePrayerSelectionSource.sahibAlTartib,
     );
   }
 
   return HomeSelectedPrayerState(
     mode: selection.mode,
-    prayer: ref.watch(homeCurrentPrayerProvider).prayer,
+    prayer: currentPrayer,
+    currentPrayer: currentPrayer,
+    source: currentPrayer == null
+        ? HomePrayerSelectionSource.unavailable
+        : HomePrayerSelectionSource.currentPrayer,
   );
 });

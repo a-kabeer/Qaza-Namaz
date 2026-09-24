@@ -49,6 +49,13 @@ enum HomePrayerSelectionMode {
   manual,
 }
 
+enum HomePrayerSelectionSource {
+  manual,
+  sahibAlTartib,
+  currentPrayer,
+  unavailable,
+}
+
 class HomePrayerSelectionState {
   const HomePrayerSelectionState({
     this.mode = HomePrayerSelectionMode.automatic,
@@ -84,10 +91,14 @@ class HomeSelectedPrayerState {
   const HomeSelectedPrayerState({
     required this.mode,
     this.prayer,
+    this.currentPrayer,
+    this.source = HomePrayerSelectionSource.unavailable,
   });
 
   final HomePrayerSelectionMode mode;
   final PrayerType? prayer;
+  final PrayerType? currentPrayer;
+  final HomePrayerSelectionSource source;
 }
 
 int homeDaysUntilCompletion({

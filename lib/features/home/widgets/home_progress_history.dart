@@ -2,10 +2,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/providers.dart';
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../../core/widgets/state_widgets.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
@@ -22,14 +25,27 @@ class HomeProgressHistory extends ConsumerStatefulWidget {
 
 class _HomeProgressChartSectionState
     extends ConsumerState<HomeProgressHistory> {
-  HomeProgressRange range = HomeProgressRange.sevenDays;
   int? selectedIndex;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final charts = AppChartColors.of(context);
+    final range = ref.watch(homeProgressRangeProvider);
     final data = ref.watch(homeProgressHistoryProvider(range));
+
+    ref.listen<AsyncValue<List<HomeProgressPoint>>>(
+      homeProgressHistoryProvider(range),
+      (previous, next) {
+        if (!next.hasError || next.error == previous?.error) return;
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.uncaught,
+          'home_progress_history_failed',
+          next.error!,
+          stack: next.stackTrace,
+        );
+      },
+    );
 
     return AppCard(
       key: const Key('home_your_progress'),
@@ -72,17 +88,22 @@ class _HomeProgressChartSectionState
               ],
               selected: {range},
               onSelectionChanged: (selection) {
-                setState(() {
-                  range = selection.single;
-                  selectedIndex = null;
-                });
+                setState(() => selectedIndex = null);
+                ref.read(homeProgressRangeProvider.notifier).state =
+                    selection.single;
               },
             ),
           ),
           const SizedBox(height: 16),
           data.when(
             loading: () => const HomeChartSkeleton(),
-            error: (_, __) => Text(l10n.homeProgressError),
+            error: (_, __) => ErrorState(
+              key: const Key('home_progress_history_error'),
+              message: l10n.homeProgressError,
+              onRetry: () => ref.invalidate(
+                homeProgressHistoryProvider(range),
+              ),
+            ),
             data: (points) {
               if (points.every((point) => point.count == 0)) {
                 return Padding(

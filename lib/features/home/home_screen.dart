@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../core/widgets/sync_status.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/calculator/calculator_screen.dart';
+import '../../features/settings/notifications_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
+import '../../features/settings/account_screen.dart';
 import '../../l10n/app_localizations.dart';
 import 'home_controller.dart';
+import 'widgets/home_all_completed_state.dart';
 import 'widgets/home_empty_state.dart';
 import 'widgets/home_overall_progress.dart';
 import 'widgets/home_pending_by_prayer.dart';
@@ -35,8 +40,43 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(progressSummaryProvider);
 
+    ref.listen<AsyncValue<QazaProgressSummary>>(
+      progressSummaryProvider,
+      (previous, next) {
+        if (!next.hasError || next.error == previous?.error) return;
+        ref.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.uncaught,
+          'home_summary_failed',
+          next.error!,
+          stack: next.stackTrace,
+        );
+      },
+    );
+
     return AppScaffold(
       title: l10n.homeTitle,
+      actions: [
+        IconButton(
+          key: const Key('home_notifications'),
+          tooltip: l10n.notificationsTitle,
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () => _open(
+            context,
+            ref,
+            const NotificationsScreen(),
+          ),
+        ),
+        IconButton(
+          key: const Key('home_account'),
+          tooltip: l10n.accountTitle,
+          icon: const Icon(Icons.account_circle_outlined),
+          onPressed: () => _open(
+            context,
+            ref,
+            const AccountScreen(),
+          ),
+        ),
+      ],
       body: summaryAsync.when(
         loading: () => const HomeSkeleton(),
         error: (_, __) => HomeError(
@@ -62,6 +102,8 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
+    final allCompleted = summary.overall.pending == 0;
+
     return ListView(
       key: const Key('home_dashboard'),
       physics: const AlwaysScrollableScrollPhysics(),
@@ -78,8 +120,21 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                HomeTodayProgress(summary: summary),
-                const SizedBox(height: 12),
+                const SyncStatus(),
+                if (allCompleted) ...[
+                  const SizedBox(height: 6),
+                  HomeAllCompletedState(
+                    completed: summary.overall.completed,
+                    total: summary.overall.total,
+                    onCalculate: () =>
+                        _open(context, ref, const CalculatorScreen()),
+                    onAdd: () => _open(context, ref, const AddQazaScreen()),
+                  ),
+                  const SizedBox(height: 12),
+                ] else ...[
+                  HomeTodayProgress(summary: summary),
+                  const SizedBox(height: 12),
+                ],
                 HomeOverallProgress(
                   progress: summary.overall,
                   onDetails: () => _open(
@@ -88,9 +143,11 @@ class HomeScreen extends ConsumerWidget {
                     const HomeStatisticsSummaryScreen(),
                   ),
                 ),
-                const SizedBox(height: 12),
-                HomePendingByPrayer(summary: summary),
-                const SizedBox(height: 12),
+                if (!allCompleted) ...[
+                  const SizedBox(height: 12),
+                  HomePendingByPrayer(summary: summary),
+                  const SizedBox(height: 12),
+                ],
                 const HomeProgressHistory(),
                 const SizedBox(height: 12),
               ],

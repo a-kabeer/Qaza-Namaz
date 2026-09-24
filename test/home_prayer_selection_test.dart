@@ -81,4 +81,28 @@ void main() {
       PrayerType.isha,
     );
   });
+
+  test('Home date follows the prayer-location timezone', () {
+    const location = PrayerLocation(
+      latitude: 24.86,
+      longitude: 67.01,
+      timezone: 'Asia/Karachi',
+    );
+
+    expect(
+      homeLocalDateForLocation(
+        location: location,
+        instant: DateTime.utc(2026, 9, 23, 19, 30),
+      ),
+      DateTime(2026, 9, 24),
+    );
+
+    expect(
+      homeLocalDateForLocation(
+        location: location,
+        instant: DateTime.utc(2026, 9, 23, 18, 30),
+      ),
+      DateTime(2026, 9, 23),
+    );
+  });
 }

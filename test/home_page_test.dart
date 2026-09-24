@@ -208,6 +208,7 @@ void main() {
       expect(find.byKey(const Key('home_today_percent')), findsOneWidget);
       expect(find.byKey(const Key('home_today_count')), findsOneWidget);
       expect(find.text('Next Qaza'), findsOneWidget);
+      expect(find.byKey(const Key('home_current_prayer')), findsOneWidget);
       expect(find.text('Fajr'), findsWidgets);
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
@@ -410,53 +411,77 @@ void main() {
   });
 
   group('home prayer selection', () {
-    testWidgets('allows selecting any prayer with pending Qaza', (tester) async {
+    testWidgets('disables non-required Fard under Sahib al-Tartib', (tester) async {
       await pumpHome(tester, await ledger());
 
       await tester.tap(find.byKey(const Key('home_qaza_prayer_selector')));
       await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const Key('home_qaza_prayer_option_auto')),
-        findsOneWidget,
-      );
-      expect(
+      final fajr = tester.widget<PopupMenuItem<String>>(
         find.byKey(const Key('home_qaza_prayer_option_fajr')),
-        findsOneWidget,
       );
-      expect(
+      final zuhr = tester.widget<PopupMenuItem<String>>(
         find.byKey(const Key('home_qaza_prayer_option_zuhr')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_prayer_option_asr')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_prayer_option_maghrib')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_prayer_option_isha')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_prayer_option_witr')),
-        findsNothing,
       );
 
-      await tester.tap(
-        find.byKey(const Key('home_qaza_prayer_option_zuhr')),
+      expect(fajr.enabled, isTrue);
+      expect(zuhr.enabled, isFalse);
+      expect(
+        find.byIcon(Icons.lock_outline_rounded),
+        findsOneWidget,
       );
+    });
+
+    testWidgets('keeps Witr independently selectable', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'w1',
+          PrayerType.witr,
+          DateTime(2026, 1, 4),
+          QazaStatus.pending,
+        ),
+      ]);
+
+      await pumpHome(tester, repository);
+
+      await tester.tap(find.byKey(const Key('home_qaza_prayer_selector')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Next Qaza'), findsOneWidget);
-      expect(find.text('Zuhr'), findsWidgets);
+      final witr = tester.widget<PopupMenuItem<String>>(
+        find.byKey(const Key('home_qaza_prayer_option_witr')),
+      );
+      expect(witr.enabled, isTrue);
+
+      await tester.tap(find.byKey(const Key('home_qaza_prayer_option_witr')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Witr'), findsWidgets);
       expect(find.text('04 Jan 2026'), findsOneWidget);
     });
   });
 
   group('overall and prayer graphs', () {
+    testWidgets('renders 0% donut for an all-pending ledger', (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'f1',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.pending,
+        ),
+      ]);
+
+      await pumpHome(tester, repository);
+
+      expect(find.byKey(const Key('home_overall_donut')), findsOneWidget);
+      final overallPercent = tester.widget<Text>(
+        find.byKey(const Key('home_overall_percent')),
+      );
+      expect(overallPercent.data, '0%');
+    });
+
     testWidgets('shows completed, pending and total with donut', (tester) async {
       await pumpHome(tester, await ledger());
 
@@ -587,7 +612,7 @@ void main() {
       expect(asrBar.value, closeTo(0.1, 0.0001));
     });
 
-    testWidgets('shows a compact empty state when no Qaza is pending',
+    testWidgets('shows dedicated all-completed state and keeps 100% donut',
         (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
@@ -602,16 +627,25 @@ void main() {
 
       await pumpHome(tester, repository);
 
+      expect(find.byKey(const Key('home_all_completed_state')), findsOneWidget);
       expect(
-        find.byKey(const Key('home_pending_by_prayer_empty')),
+        find.byKey(const Key('home_overall_donut')),
         findsOneWidget,
       );
-      for (final prayer in PrayerType.values) {
-        expect(
-          find.byKey(Key('home_pending_prayer_' + prayer.name)),
-          findsNothing,
-        );
-      }
+      expect(
+        find.byKey(const Key('home_overall_percent')),
+        findsOneWidget,
+      );
+      expect(find.text('100%'), findsOneWidget);
+      expect(
+        find.byKey(const Key('home_pending_by_prayer')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('home_all_completed_add')), findsOneWidget);
+      expect(
+        find.byKey(const Key('home_all_completed_calculate')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('opens the existing Qaza workspace from View all',

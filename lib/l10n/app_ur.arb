@@ -563,5 +563,9 @@
   "homeDetailedStatistics": "تفصیلی اعداد و شمار",
   "homeDetailedStatisticsSubtitle": "مجموعی اور نماز وار تکمیل",
   "homeChartNoData": "اس مدت میں کوئی قضا مکمل نہیں ہوئی۔",
-  "homeTodayDate": "آج"
+  "homeTodayDate": "آج",
+  "homeCurrentPrayerLabel": "موجودہ نماز: {prayer}",
+  "@homeCurrentPrayerLabel": { "placeholders": { "prayer": {"type": "String"} } },
+  "homeSahibOrderLabel": "صاحبِ ترتیب: {prayer}",
+  "@homeSahibOrderLabel": { "placeholders": { "prayer": {"type": "String"} } }
 }

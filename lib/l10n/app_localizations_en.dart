@@ -1832,4 +1832,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeTodayDate => 'Today';
+
+  @override
+  String homeCurrentPrayerLabel(String prayer) => 'Current prayer: $prayer';
+
+  @override
+  String homeSahibOrderLabel(String prayer) => 'Sahib al-Tartib: $prayer';
 }
