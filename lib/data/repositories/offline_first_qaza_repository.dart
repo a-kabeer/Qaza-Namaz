@@ -535,7 +535,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
         continue;
       }
 
-      _records[recordToPersist.id] = recordToPersist;
+      _records[record.id] = record;
       fresh.add(record);
     }
 
