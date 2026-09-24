@@ -24,6 +24,7 @@ service cloud.firestore {
         'originalDate',
         'status',
         'completedAt',
+        'completionId',
         'createdAt',
         'updatedAt',
         'syncGeneration'
@@ -51,9 +52,23 @@ service cloud.firestore {
       )
       && data.status in ['pending', 'completed', 'deleted']
       && (
-        (data.status == 'pending' && data.completedAt == null)
-        || (data.status == 'completed' && data.completedAt is timestamp)
-        || (data.status == 'deleted' && (data.completedAt == null || data.completedAt is timestamp))
+        (data.status == 'pending'
+          && data.completedAt == null
+          && (!data.keys().hasAny(['completionId']) || data.completionId == null))
+        || (data.status == 'completed'
+          && data.completedAt is timestamp
+          && (!data.keys().hasAny(['completionId'])
+            || data.completionId == null
+            || (data.completionId is string
+              && data.completionId.size() > 0
+              && data.completionId.size() <= 256)))
+        || (data.status == 'deleted'
+          && (data.completedAt == null || data.completedAt is timestamp)
+          && (!data.keys().hasAny(['completionId'])
+            || data.completionId == null
+            || (data.completionId is string
+              && data.completionId.size() > 0
+              && data.completionId.size() <= 256)))
       )
       && data.createdAt is timestamp
       && data.updatedAt is timestamp
