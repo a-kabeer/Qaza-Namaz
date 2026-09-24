@@ -279,13 +279,13 @@ void main() {
       expect(container.read(isGuestProvider), isTrue);
       expect(onSettings(tester), isTrue);
       // Staying a guest is a choice, not a failure.
-      expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
-      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
     });
   });
 
   group('when sign-in does not succeed', () {
-    testWidgets('a cancellation is not reported as a failure', (tester) async {
+    testWidgets('a Google cancellation is surfaced with configuration guidance', (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       final container = await openSettings(tester);
 
@@ -345,7 +345,7 @@ void main() {
       expect(onSettings(tester), isTrue);
     });
 
-    testWidgets('a retry after a cancellation also works', (tester) async {
+    testWidgets('a retry after a Google cancellation also works', (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       migration.guestData = false;
       await openSettings(tester);
