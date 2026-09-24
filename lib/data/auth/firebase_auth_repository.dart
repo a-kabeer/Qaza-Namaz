@@ -245,14 +245,14 @@ class FirebaseAuthRepository implements AuthRepository {
 
   static String _googleFailureMessage(GoogleSignInException error) {
     final description = error.description?.trim();
-    final details = error.details;
-
     if (description != null && description.isNotEmpty) {
-      if (details == null) return description;
-      return '$description (details: ${details.toString()})';
+      return description;
     }
-    if (details != null) return details.toString();
-    return error.toString();
+
+    // Keep GoogleSignInException.details out of the UI. The original exception
+    // is already captured by diagnostics, where the redaction pipeline applies.
+    return 'Google Sign-In failed with ${error.code.name}. '
+        'See diagnostics for the underlying platform details.';
   }
 
   static String _describe(String? message, Object fallback) =>
