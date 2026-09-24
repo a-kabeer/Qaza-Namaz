@@ -243,6 +243,29 @@ final homePrayerSelectionProvider =
   HomePrayerSelectionNotifier.new,
 );
 
+class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
+  @override
+  HomePrayerSelectionState build() => const HomePrayerSelectionState();
+
+  void selectPrayer(PrayerType prayer) {
+    state = HomePrayerSelectionState(
+      mode: HomePrayerSelectionMode.manual,
+      manualPrayer: prayer,
+    );
+  }
+
+  void useAutomatic() {
+    state = const HomePrayerSelectionState(
+      mode: HomePrayerSelectionMode.automatic,
+    );
+  }
+}
+
+final homePrayerSelectionProvider =
+    NotifierProvider<HomePrayerSelectionNotifier, HomePrayerSelectionState>(
+  HomePrayerSelectionNotifier.new,
+);
+
 PrayerType? currentHomePrayerForSchedule({
   required PrayerDay today,
   PrayerDay? tomorrow,
