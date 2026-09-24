@@ -461,6 +461,46 @@ class DriftQazaLocalStore extends QazaLocalStore {
       );
 
   @override
+  Future<List<QazaRecord>> undoCompletionsAndQueue({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime undoneAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) {
+      return const <QazaRecord>[];
+    }
+
+    return _database.transaction(() async {
+      final changed = await _database.qazaRecordsDao.undoCompletions(
+        userId: userId,
+        expectedCompletionIds: expectedCompletionIds,
+        undoneAt: undoneAt,
+      );
+      if (changed.isEmpty) return const <QazaRecord>[];
+
+      final operations = <PendingSyncOp>[
+        for (final record in changed)
+          PendingSyncOp(
+            id: 'undo_' +
+                record.id +
+                '_' +
+                record.updatedAt.microsecondsSinceEpoch.toString(),
+            type: SyncOpType.update,
+            userId: userId,
+            queuedAt: record.updatedAt,
+            targetRecordId: record.id,
+            completionId: expectedCompletionIds[record.id],
+            record: record,
+          ),
+      ];
+      await _database.syncOutboxDao.putAll(
+        operations.map(_toOpCompanion).toList(growable: false),
+      );
+      return changed;
+    });
+  }
+
+  @override
   Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
     if (records.isEmpty) return;
     for (final record in records) {
