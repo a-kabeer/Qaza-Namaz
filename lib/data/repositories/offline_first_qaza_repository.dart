@@ -622,7 +622,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     if (!changed) return;
     if (generation != _sessionGeneration || userId != _activeUserId) return;
 
-    _records[record.id] = record;
+    _records[recordToPersist.id] = recordToPersist;
     _outbox.add(operation);
     _outboxLoaded = true;
     _emitPending();
