@@ -86,6 +86,15 @@ class QazaService {
           {required String userId, required PrayerType prayerType}) =>
       repository.getOldestPending(userId: userId, prayerType: prayerType);
 
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) =>
+      repository.getRecordsByIds(
+        userId: userId,
+        recordIds: recordIds,
+      );
+
   /// Returns the next Qaza under the global Sahib al-Tartib rule.
   ///
   /// When fewer than six Fard Qaza remain, the tartib service chooses the
