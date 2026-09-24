@@ -29,7 +29,10 @@ def run(command: list[str]) -> str:
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or exc.stdout).strip()
         raise SystemExit(f"Command failed: {command[0]} {detail}") from exc
-    return result.stdout
+    # Android SDK tools may write human-readable diagnostics to either
+    # stream; certificate extraction must inspect both without exposing
+    # sensitive command arguments.
+    return result.stdout + ("\n" + result.stderr if result.stderr else "")
 
 
 def normalize_fingerprint(value: str) -> str:
@@ -93,10 +96,21 @@ def apk_audit(apk: Path) -> tuple[str, str, str]:
     sha1 = ""
     sha256 = ""
     for line in output.splitlines():
-        if "Signer #1 certificate SHA-256 digest:" in line:
-            sha256 = normalize_fingerprint(line.split(":", 1)[1])
-        elif "Signer #1 certificate SHA-1 digest:" in line:
-            sha1 = normalize_fingerprint(line.split(":", 1)[1])
+        match = re.search(
+            r"certificate\s+SHA-256\s+digest\s*:\s*([0-9A-Fa-f:]+)",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            sha256 = normalize_fingerprint(match.group(1))
+            continue
+        match = re.search(
+            r"certificate\s+SHA-1\s+digest\s*:\s*([0-9A-Fa-f:]+)",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            sha1 = normalize_fingerprint(match.group(1))
 
     if not sha256:
         raise SystemExit("Could not extract the APK signing certificate SHA-256.")
