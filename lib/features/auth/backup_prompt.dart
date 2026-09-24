@@ -139,7 +139,6 @@ void _reportBackupSignIn(BuildContext context, WidgetRef ref) {
         // The real diagnostic, not a generic stand-in: a missing SHA-1 and a
         // dropped network connection need different answers from the user.
         content: Text(l10n.backupSignInFailedReason(state.error!)),
-        duration: const Duration(seconds: 8),
         action: SnackBarAction(
           label: l10n.commonRetry,
           onPressed: () => startBackupSignIn(context, ref),
