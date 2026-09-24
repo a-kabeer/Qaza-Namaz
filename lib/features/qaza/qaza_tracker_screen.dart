@@ -335,8 +335,7 @@ class _TrackerBody extends ConsumerWidget {
         context: context,
         ref: ref,
         userId: ref.read(requiredUserIdProvider),
-        recordIds: batch.recordIds,
-        completedAt: batch.completedAt,
+        records: batch.completedRecords,
         onUndone: controller.refresh,
       );
       return true;
