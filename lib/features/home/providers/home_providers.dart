@@ -238,11 +238,6 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
   },
 );
 
-final homePrayerSelectionProvider =
-    NotifierProvider<HomePrayerSelectionNotifier, HomePrayerSelectionState>(
-  HomePrayerSelectionNotifier.new,
-);
-
 class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   @override
   HomePrayerSelectionState build() => const HomePrayerSelectionState();
