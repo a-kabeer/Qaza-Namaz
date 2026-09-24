@@ -53,11 +53,10 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 4 adds recoverable deletion support indexes and the
-  /// nullable operationId provenance column without rewriting existing rows.
+  /// Schema version 5 adds the completion marker used by reliable Undo.
   /// Older databases are upgraded in place and preserve all Qaza data.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +74,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3 || from < 4) {
             await _ensureRecoveryIndexes();
+          }
+          if (from < 5) {
+            await m.addColumn(qazaRecords, qazaRecords.completionId);
+            await m.addColumn(syncOutbox, syncOutbox.completionId);
           }
         },
       );
