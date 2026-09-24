@@ -1829,12 +1829,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeYourProgress => 'Your Progress';
 
   @override
-  String get homeRange1Day => '1 Day';
-
-  @override
-  String get homeRange3Days => '3 Days';
-
-  @override
   String get homeRange7Days => '7 Days';
 
   @override
