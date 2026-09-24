@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
@@ -36,10 +37,13 @@ class QazaService {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
     QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver,
+    DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository),
-        prayerTimeBlockedResolver = prayerTimeBlockedResolver;
+        prayerTimeBlockedResolver = prayerTimeBlockedResolver,
+        _diagnostics = diagnostics;
   final QazaRepository repository;
+  final DiagnosticsService _diagnostics;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
   final QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver;
@@ -109,12 +113,28 @@ class QazaService {
     required String userId,
     required String recordId,
   }) async {
-    final state = await tartib.evaluate(userId: userId);
-    if (!state.requiresOrder || state.nextPending == null) return;
-    if (await tartib.canCompleteRecordIds(
-      userId: userId,
-      recordIds: [recordId],
-    )) {
+    final SahibAlTartibState state;
+    final bool allowed;
+    try {
+      state = await tartib.evaluate(userId: userId);
+      if (!state.requiresOrder || state.nextPending == null) return;
+      allowed = await tartib.canCompleteRecordIds(
+        userId: userId,
+        recordIds: [recordId],
+      );
+    } catch (error, stack) {
+      // The ordering rule could not be read. That is not a violation and not
+      // a persistence failure; it is reported and rethrown so the caller can
+      // say which of the two it was.
+      _diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'tartib_check_failed',
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
+    if (allowed) {
       return;
     }
     throw QazaTartibViolationException(

@@ -187,6 +187,7 @@ final diagnosticsProvider = Provider<DiagnosticsService>(
 
 final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
+      diagnostics: ref.watch(diagnosticsProvider),
       prayerTimeBlockedResolver: ({
         required userId,
         required dates,

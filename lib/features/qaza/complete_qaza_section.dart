@@ -11,6 +11,12 @@ import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_service.dart';
+import '../../core/diagnostics/diagnostics.dart';
+import '../../domain/entities/qaza_completion_result.dart';
+import '../prayer_times/prayer_times_providers.dart';
+import '../prayer_times/presentation/prayer_times_localizations.dart';
+import 'completion/qaza_completion_controller.dart';
+import 'completion/qaza_completion_state.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_undo_banner.dart';
@@ -94,27 +100,124 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     await ref.read(oldestPendingProvider(prayer).future);
   }
 
+  /// Completes one record through the shared completion controller.
+  ///
+  /// This used to be a second, independent implementation that called
+  /// `QazaService` directly and wrapped persistence, refresh, haptics and the
+  /// undo snackbar in a single try/catch. Anything failing after the record
+  /// was already written — a refresh, a haptic, the undo bar — was caught by
+  /// that one `catch` and shown as "Qaza cannot be completed", and the real
+  /// exception was discarded. The stages are separated here, and the generic
+  /// failure message now belongs to persistence alone.
   Future<void> _complete(
     PrayerType completedPrayer,
     QazaRecord record,
   ) async {
     if (working) return;
+    if (ref.read(qazaCompletionControllerProvider).isWorking) return;
+
     final l10n = AppLocalizations.of(context);
-    setState(() => working = true);
+    final diagnostics = ref.read(diagnosticsProvider);
+    final String userId;
+    final DateTime completedAt;
     try {
-      final userId = ref.read(requiredUserIdProvider);
-      final completedAt = DateTime.now();
-      await ref.read(qazaServiceProvider).completeRecord(
+      userId = ref.read(requiredUserIdProvider);
+      completedAt = ref.read(prayerTimesClockProvider).now();
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'completion_start',
+        error,
+        stack: stack,
+      );
+      return;
+    }
+
+    setState(() => working = true);
+
+    QazaCompletionResult result;
+    try {
+      result = await ref
+          .read(qazaCompletionControllerProvider.notifier)
+          .completeRecord(
             userId: userId,
             recordId: record.id,
             completedAt: completedAt,
+            restriction: ref.read(qazaRestrictionEvaluationProvider).valueOrNull,
           );
+    } on QazaCompletionRestrictedException catch (error) {
+      ref.invalidate(qazaRestrictionEvaluationProvider);
+      if (mounted) {
+        setState(() => working = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              PrayerTimesStrings.qazaRestricted(context, error.restriction.type!),
+            ),
+          ),
+        );
+      }
+      return;
+    } on QazaTartibViolationException catch (error) {
+      ref.invalidate(sahibAlTartibProvider);
+      if (mounted) {
+        setState(() => working = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n.qazaTartibBlocked(error.requiredPrayer.localizedLabel(l10n)),
+            ),
+          ),
+        );
+      }
+      return;
+    } catch (error, stack) {
+      // Reached only when persistence itself failed, which is the one case
+      // that earns the generic message.
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'completion_failed',
+        error,
+        stack: stack,
+      );
+      if (mounted) {
+        setState(() => working = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.completeFailed)),
+        );
+      }
+      return;
+    }
+
+    if (mounted) setState(() => working = false);
+
+    if (result != QazaCompletionResult.completed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.completeNoPendingMessage)),
+      );
+      return;
+    }
+
+    // Written and durable. Nothing below may be reported as a completion
+    // failure.
+    try {
       ref.invalidate(oldestPendingProvider(completedPrayer));
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
-      if (!mounted) return;
-      HapticFeedback.mediumImpact();
-      if (!mounted) return;
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'post_completion_refresh_failed',
+        error,
+        stack: stack,
+      );
+    }
+
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+
+    try {
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
@@ -123,24 +226,13 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
         completedAt: completedAt,
         onUndone: refresh,
       );
-    } on QazaTartibViolationException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.qazaTartibBlocked(
-              error.requiredPrayer.localizedLabel(l10n),
-            ),
-          ),
-        ),
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'undo_ui_failed',
+        error,
+        stack: stack,
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.completeFailed)),
-      );
-    } finally {
-      if (mounted) setState(() => working = false);
     }
   }
 

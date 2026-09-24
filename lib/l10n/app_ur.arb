@@ -479,6 +479,8 @@
   "settingsBackupSignIn": "بیک اپ / سائن ان",
   "settingsBackupSignInSubtitle": "آپ مہمان کے طور پر ایپ استعمال کر رہے ہیں۔ قضا کا بیک اپ لینے کے لیے سائن ان کریں۔",
   "backupSignInFailed": "سائن ان ناکام رہا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔",
+  "backupSignInCancelled": "سائن ان منسوخ ہو گیا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔",
+  "backupSignInFailedReason": "سائن ان ناکام رہا: {reason} آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔",
   "backupMigrationDone": "{count, plural, =0{سائن ان ہو گیا۔ آپ کی پیش رفت کا بیک اپ لی لیا گیا ہے۔} other{سائن ان ہو گیا۔ {count} ریکارڈز آپ کے اکاؤنٹ میں شامل ہوئے۔}}",
   "settingsAboutSection": "تعارف",
   "settingsAboutSubtitle": "ایپ کی معلومات اور ورژن کی تفصیل۔",

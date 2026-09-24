@@ -128,7 +128,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.qazaCompletion,
-            'restriction_lookup_failed',
+            'restriction_check_failed',
             error,
             stack: stack,
           );

@@ -1541,6 +1541,15 @@ class AppLocalizationsUr extends AppLocalizations {
       'سائن ان ناکام رہا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
 
   @override
+  String get backupSignInCancelled =>
+      'سائن ان منسوخ ہو گیا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String backupSignInFailedReason(String reason) {
+    return 'سائن ان ناکام رہا: $reason آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+  }
+
+  @override
   String backupMigrationDone(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

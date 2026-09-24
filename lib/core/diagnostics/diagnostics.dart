@@ -173,7 +173,7 @@ class BufferedDiagnostics implements DiagnosticsService {
   @override
   void recordFailure(DiagnosticArea area, String code, Object error,
       {StackTrace? stack, bool fatal = false}) {
-    _add(buildFailureEvent(area, code, error, fatal: fatal));
+    _add(buildFailureEvent(area, code, error, stack: stack, fatal: fatal));
   }
 
   @override

@@ -39,9 +39,34 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   bool _userActionStarted = false;
   bool _disposed = false;
 
+  /// Where the transition currently in progress was started from.
+  ///
+  /// Held on the controller rather than threaded through every call: a
+  /// transition has one origin from the tap that starts it until it resolves,
+  /// and every state emitted in between has to carry it or `AuthGate` loses
+  /// track of whose screen it is allowed to replace.
+  GuestUpgradeOrigin _origin = GuestUpgradeOrigin.startup;
+
+  /// Emits a state stamped with the current [_origin].
+  void _emit({
+    bool running = false,
+    AppUser? pendingAccount,
+    GuestMigrationResult migration = GuestMigrationResult.none,
+    String? error,
+  }) {
+    state = GuestUpgradeState(
+      running: running,
+      pendingAccount: pendingAccount,
+      migration: migration,
+      error: error,
+      origin: _origin,
+    );
+  }
+
   @override
   GuestUpgradeState build() {
     _disposed = false;
+    _origin = GuestUpgradeOrigin.startup;
     ref.onDispose(() => _disposed = true);
     Future.microtask(_restorePendingDecision);
     return const GuestUpgradeState(restoring: true);
@@ -76,7 +101,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
           await prefs.remove(_pendingDecisionKey);
         }
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
-        state = const GuestUpgradeState();
+        _emit();
         return;
       }
 
@@ -85,24 +110,22 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
           decoded['accountId'] != currentUser.id) {
         await prefs.remove(_pendingDecisionKey);
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
-        state = const GuestUpgradeState();
+        _emit();
         return;
       }
 
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
-      state = GuestUpgradeState(pendingAccount: currentUser);
+      _emit(pendingAccount: currentUser);
     } catch (error) {
       if (_disposed) return;
-      state = GuestUpgradeState(
-        error: 'Could not restore the pending sign-in decision: $error',
-      );
+      _emit(error: 'Could not restore the pending sign-in decision: $error');
     } finally {
       // Whatever happened above — an early return because the user got there
       // first, a throw, or a timeout — restoration is over. Leaving this flag
       // set strands the app on the splash screen with no way out, so it is
       // cleared here rather than on each individual path.
       if (!_disposed && state.restoring) {
-        state = GuestUpgradeState(
+        _emit(
           running: state.running,
           pendingAccount: state.pendingAccount,
           migration: state.migration,
@@ -117,16 +140,19 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   /// For a guest, the ledger barrier is set before Firebase authentication so
   /// an authStateChanges event cannot switch normal app reads to the account
   /// before the explicit data decision.
-  Future<bool> signInAndMigrate() async {
+  Future<bool> signInAndMigrate({
+    GuestUpgradeOrigin origin = GuestUpgradeOrigin.startup,
+  }) async {
     if (state.running || state.pendingAccount != null) return false;
     _userActionStarted = true;
+    _origin = origin;
 
     // Resolve persisted guest mode before starting Firebase auth. Otherwise a
     // cold-start tap can authenticate directly into the account namespace and
     // leave the guest ledger stranded on the device.
     final wasGuest =
         await ref.read(guestSessionProvider.notifier).ensureRestored();
-    state = const GuestUpgradeState(running: true);
+    _emit(running: true);
 
     if (wasGuest) {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
@@ -136,7 +162,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       final account = await ref.read(authRepositoryProvider).signInWithGoogle();
 
       if (!wasGuest) {
-        state = const GuestUpgradeState();
+        _emit();
         return true;
       }
 
@@ -151,14 +177,12 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
         _refreshDerivedState();
-        state = const GuestUpgradeState(
-          migration: GuestMigrationResult.none,
-        );
+        _emit(migration: GuestMigrationResult.none);
         return true;
       }
 
       await _persistPendingDecision(account.id);
-      state = GuestUpgradeState(pendingAccount: account);
+      _emit(pendingAccount: account);
       return true;
     } on AuthenticationCancelledException {
       if (wasGuest) {
@@ -167,7 +191,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       }
       // A user cancellation is not an authentication/configuration failure.
       // Keep the current session exactly where it was before the attempt.
-      state = const GuestUpgradeState();
+      _emit();
       return false;
     } catch (error) {
       // A guest must never be left partially switched into an authenticated
@@ -184,7 +208,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         await _clearPendingDecision();
       }
 
-      state = GuestUpgradeState(error: error.toString());
+      _emit(error: error.toString());
       return false;
     }
   }
@@ -194,7 +218,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     final account = state.pendingAccount;
     if (account == null || state.running) return false;
 
-    state = GuestUpgradeState(running: true, pendingAccount: account);
+    _emit(running: true, pendingAccount: account);
     try {
       final result = await ref.read(guestMigrationServiceProvider).migrate(
             guestUserId: guestUserId,
@@ -212,15 +236,12 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       await _clearPendingDecision();
       _refreshDerivedState();
 
-      state = GuestUpgradeState(migration: result);
+      _emit(migration: result);
       return true;
     } catch (error) {
       // Keep Firebase account + guest barrier in place. The user can retry;
       // guest data has not been retired.
-      state = GuestUpgradeState(
-        pendingAccount: account,
-        error: error.toString(),
-      );
+      _emit(pendingAccount: account, error: error.toString());
       return false;
     }
   }
@@ -230,7 +251,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     final account = state.pendingAccount;
     if (account == null || state.running) return false;
 
-    state = GuestUpgradeState(running: true, pendingAccount: account);
+    _emit(running: true, pendingAccount: account);
     try {
       await ref
           .read(guestMigrationServiceProvider)
@@ -241,13 +262,10 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       await _clearPendingDecision();
       _refreshDerivedState();
 
-      state = const GuestUpgradeState();
+      _emit();
       return true;
     } catch (error) {
-      state = GuestUpgradeState(
-        pendingAccount: account,
-        error: error.toString(),
-      );
+      _emit(pendingAccount: account, error: error.toString());
       return false;
     }
   }
@@ -257,7 +275,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     final account = state.pendingAccount;
     if (account == null || state.running) return false;
 
-    state = GuestUpgradeState(running: true, pendingAccount: account);
+    _emit(running: true, pendingAccount: account);
     Object? signOutError;
     try {
       await ref.read(authRepositoryProvider).signOut();
@@ -273,11 +291,11 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       await _clearPendingDecision();
       // Firebase is definitely signed out; keep the guest workspace as the
       // final state even if the Google SDK reported a secondary sign-out issue.
-      state = const GuestUpgradeState();
+      _emit();
       return true;
     }
 
-    state = GuestUpgradeState(
+    _emit(
       pendingAccount: account,
       error: signOutError?.toString() ??
           'Could not cancel the Google account transition.',
@@ -313,6 +331,18 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
   }
 }
 
+/// Where the guest -> account transition was started from.
+///
+/// [startup] is the pre-auth journey `AuthGate` owns: Welcome ->
+/// Authentication -> decision -> Home. [inApp] is a sign-in the user began
+/// from a screen they were already using, such as Settings. The distinction
+/// exists because `AuthGate` replaces the whole app with the startup
+/// Authentication navigator while a transition is unresolved; doing that to
+/// someone who tapped "Back up / Sign in" in Settings throws them out of the
+/// screen they were on, and a failure there should leave them exactly where
+/// they were, free to retry.
+enum GuestUpgradeOrigin { startup, inApp }
+
 class GuestUpgradeState {
   const GuestUpgradeState({
     this.restoring = false,
@@ -320,6 +350,7 @@ class GuestUpgradeState {
     this.pendingAccount,
     this.migration = GuestMigrationResult.none,
     this.error,
+    this.origin = GuestUpgradeOrigin.startup,
   });
 
   final bool restoring;
@@ -327,6 +358,7 @@ class GuestUpgradeState {
   final AppUser? pendingAccount;
   final GuestMigrationResult migration;
   final String? error;
+  final GuestUpgradeOrigin origin;
 
   bool get awaitingDecision => pendingAccount != null;
 }

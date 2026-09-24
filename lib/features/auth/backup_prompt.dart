@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
+import 'authentication_screen.dart';
 import 'guest_upgrade_controller.dart';
 
 /// Whether the backup prompt has been answered already.
@@ -87,20 +88,82 @@ Future<void> showBackupPrompt(BuildContext context, WidgetRef ref) async {
   await startBackupSignIn(context, ref);
 }
 
-/// Signs in and reports what happened, from the prompt or from Settings.
+/// Signs in and reports what actually happened, from the prompt or Settings.
+///
+/// This used to report two outcomes: success, meaning
+/// "{migrationDone}", and everything else, meaning
+/// "{signInFailed}". Both were wrong.
+/// A guest with existing records does not finish signing in at this point —
+/// they still owe a Merge / Use Account / Keep Guest decision — so the done
+/// message appeared before anything had been migrated. And the failure branch
+/// swallowed the real error and also fired on a plain cancellation.
+///
+/// Started as [GuestUpgradeOrigin.inApp] so `AuthGate` leaves the caller's
+/// screen alone; the pending decision is resolved on a route pushed above it,
+/// and a failure leaves the user where they were with a Retry.
 Future<void> startBackupSignIn(BuildContext context, WidgetRef ref) async {
-  final l10n = AppLocalizations.of(context);
-  final messenger = ScaffoldMessenger.of(context);
   final controller = ref.read(guestUpgradeControllerProvider.notifier);
 
-  final ok = await controller.signInAndMigrate();
-  final migration = ref.read(guestUpgradeControllerProvider).migration;
+  await controller.signInAndMigrate(origin: GuestUpgradeOrigin.inApp);
+  if (!context.mounted) return;
+
+  // A guest with records now owes an explicit data decision. Nothing has been
+  // merged, and nothing may be reported as done until they make it.
+  if (ref.read(guestUpgradeControllerProvider).awaitingDecision) {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const AuthenticationScreen(closeWhenDecided: true),
+      ),
+    );
+    if (!context.mounted) return;
+  }
+
+  _reportBackupSignIn(context, ref);
+}
+
+/// Reports the settled outcome, and offers a retry on anything recoverable.
+void _reportBackupSignIn(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  final state = ref.read(guestUpgradeControllerProvider);
+
+  // Still owed: the user backed out of the decision without choosing. Their
+  // guest data is untouched and the decision survives, so say nothing.
+  if (state.awaitingDecision) return;
+
+  if (state.error != null) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        key: const Key('backup_sign_in_failed'),
+        // The real diagnostic, not a generic stand-in: a missing SHA-1 and a
+        // dropped network connection need different answers from the user.
+        content: Text(l10n.backupSignInFailedReason(state.error!)),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: l10n.commonRetry,
+          onPressed: () => startBackupSignIn(context, ref),
+        ),
+      ));
+    return;
+  }
+
+  // No error and still a guest: the user cancelled at the Google chooser, or
+  // chose Keep Guest Data. Neither is a failure.
+  if (ref.read(isGuestProvider)) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        key: const Key('backup_sign_in_cancelled'),
+        content: Text(l10n.backupSignInCancelled),
+      ));
+    return;
+  }
 
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
-      content: Text(ok
-          ? l10n.backupMigrationDone(migration.added)
-          : l10n.backupSignInFailed),
+      key: const Key('backup_sign_in_done'),
+      content: Text(l10n.backupMigrationDone(state.migration.added)),
     ));
 }

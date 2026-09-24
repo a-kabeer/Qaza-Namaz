@@ -552,6 +552,15 @@
   "settingsBackupSignIn": "Back up / Sign in",
   "settingsBackupSignInSubtitle": "You are using the app as a guest. Sign in to back up your Qaza.",
   "backupSignInFailed": "Sign-in failed. Your progress is still on this device.",
+  "backupSignInCancelled": "Sign-in canceled. Your progress is still on this device.",
+  "backupSignInFailedReason": "Sign-in failed: {reason} Your progress is still on this device.",
+  "@backupSignInFailedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "backupMigrationDone": "{count, plural, =0{Signed in. Your progress is backed up.} =1{Signed in. 1 record was added to your account.} other{Signed in. {count} records were added to your account.}}",
   "@backupMigrationDone": {"placeholders": {"count": {"type": "int"}}},
   "settingsAboutSection": "About",

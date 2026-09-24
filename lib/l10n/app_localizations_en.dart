@@ -1542,6 +1542,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sign-in failed. Your progress is still on this device.';
 
   @override
+  String get backupSignInCancelled =>
+      'Sign-in canceled. Your progress is still on this device.';
+
+  @override
+  String backupSignInFailedReason(String reason) {
+    return 'Sign-in failed: $reason Your progress is still on this device.';
+  }
+
+  @override
   String backupMigrationDone(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

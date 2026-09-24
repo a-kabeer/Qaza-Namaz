@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -56,12 +57,30 @@ class FirebaseAuthRepository implements AuthRepository {
   final DiagnosticsService _diagnostics;
 
   /// google_sign_in 7.x requires exactly one initialization before any other
-  /// GoogleSignIn method is called. Keep it lazy so constructing the repository
-  /// itself never triggers platform work.
-  late final Future<void> _googleSignInInitialization =
-      _googleSignIn.initialize(serverClientId: googleServerClientId);
+  /// GoogleSignIn method is called. Kept lazy so constructing the repository
+  /// never triggers platform work.
+  Future<void>? _googleSignInInitialization;
 
-  Future<void> _ensureGoogleSignInInitialized() => _googleSignInInitialization;
+  /// Initializes the Google SDK once, and only once, per successful attempt.
+  ///
+  /// The future is cached so concurrent callers share one initialization and a
+  /// second sign-in never re-initializes. A *failed* attempt is uncached
+  /// instead: caching it would make the first transient failure permanent for
+  /// the life of the app, and every retry the user is offered would fail
+  /// without ever reaching the platform again.
+  Future<void> _ensureGoogleSignInInitialized() {
+    final pending = _googleSignInInitialization;
+    if (pending != null) return pending;
+
+    final attempt = _googleSignIn
+        .initialize(serverClientId: googleServerClientId)
+        .catchError((Object error, StackTrace stack) {
+      _googleSignInInitialization = null;
+      Error.throwWithStackTrace(error, stack);
+    });
+    _googleSignInInitialization = attempt;
+    return attempt;
+  }
 
   @override
   AppUser? get currentUser => _mapUser(_auth.currentUser);
@@ -78,91 +97,132 @@ class FirebaseAuthRepository implements AuthRepository {
         beginGoogleSignIn: () async {
           await _ensureGoogleSignInInitialized();
 
-          if (!_googleSignIn.supportsAuthenticate()) {
-            throw StateError(
-              'Google Sign-In authentication is not supported on this platform.',
-            );
-          }
+          requireAuthenticateSupport(_googleSignIn.supportsAuthenticate());
 
           final googleUser = await _googleSignIn.authenticate();
           final authentication = googleUser.authentication;
           return GoogleIdentityTokens(idToken: authentication.idToken);
         },
         signInToFirebase: (tokens) async {
-          final idToken = tokens.idToken;
-          if (idToken == null || idToken.isEmpty) {
-            throw StateError(
-              'Google Sign-In completed without an ID token. '
-              'Check the Android OAuth client, SHA-1/SHA-256 fingerprints, '
-              'package ID, and Firebase Google provider configuration.',
-            );
-          }
+          final idToken = requireIdToken(tokens.idToken);
 
           final credential = GoogleAuthProvider.credential(idToken: idToken);
           final result = await _auth.signInWithCredential(credential);
-          final user = result.user;
-          if (user == null) {
-            throw StateError(
-              'Firebase Authentication returned no user after Google '
-              'credential sign-in.',
-            );
-          }
-          return _mapUser(user)!;
+          return requireFirebaseUser(_mapUser(result.user));
         },
       ).signIn();
 
       return account;
-    } on GoogleSignInException catch (error, stack) {
-      _debugLog(error, stack);
+    } catch (error, stack) {
+      final mapped = mapSignInFailure(error, stack: stack);
+      // A failure that already knows which stage it came from travels
+      // unchanged; re-wrapping it would bury the stage it names.
+      if (mapped == null) rethrow;
+      // A cancellation is a choice, not a fault, so it is not recorded.
+      if (mapped is! AuthenticationCancelledException) _debugLog(error, stack);
+      throw mapped;
+    }
+  }
+
+  /// The platform cannot run the interactive Google flow at all.
+  @visibleForTesting
+  static void requireAuthenticateSupport(bool supported) {
+    if (supported) return;
+    throw const AuthenticationException(
+      source: 'google-sign-in',
+      code: 'unsupported-platform',
+      message:
+          'Google Sign-In authentication is not supported on this platform.',
+    );
+  }
+
+  /// Google finished, but handed back nothing Firebase can use.
+  ///
+  /// This is the signature of a signing certificate the Firebase project does
+  /// not know: the account chooser completes normally and the ID token comes
+  /// back null. It earns its own code because it is the one failure the user
+  /// cannot do anything about and the developer can.
+  @visibleForTesting
+  static String requireIdToken(String? idToken) {
+    if (idToken != null && idToken.isNotEmpty) return idToken;
+    throw const AuthenticationException(
+      source: 'google-sign-in',
+      code: 'missing-id-token',
+      message: 'Google Sign-In completed without an ID token. '
+          'Check the Android OAuth client, SHA-1/SHA-256 fingerprints, '
+          'package ID, and Firebase Google provider configuration.',
+    );
+  }
+
+  /// Firebase accepted the credential but produced no user.
+  @visibleForTesting
+  static AppUser requireFirebaseUser(AppUser? user) {
+    if (user != null) return user;
+    throw const AuthenticationException(
+      source: 'firebase-auth',
+      code: 'no-user',
+      message:
+          'Firebase Authentication returned no user after Google credential '
+          'sign-in.',
+    );
+  }
+
+  /// Names the stage a raw sign-in failure came from.
+  ///
+  /// Returns null when [error] is already an [AuthenticationException], which
+  /// means it carries its own stage and must be rethrown untouched.
+  @visibleForTesting
+  static AuthenticationException? mapSignInFailure(
+    Object error, {
+    StackTrace? stack,
+  }) {
+    if (error is GoogleSignInException) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        throw const AuthenticationCancelledException();
+        return const AuthenticationCancelledException();
       }
-      throw AuthenticationException(
+      return AuthenticationException(
         source: 'google-sign-in',
         code: error.code.name,
-        message: error.description?.trim().isNotEmpty == true
-            ? error.description!
-            : error.toString(),
-        cause: error,
-        stackTrace: stack,
-      );
-    } on GoogleAuthFlowCancelledException {
-      throw const AuthenticationCancelledException();
-    } on AuthenticationException {
-      rethrow;
-    } on FirebaseAuthException catch (error, stack) {
-      _debugLog(error, stack);
-      throw AuthenticationException(
-        source: 'firebase-auth',
-        code: error.code,
-        message: error.message?.trim().isNotEmpty == true
-            ? error.message!
-            : error.toString(),
-        cause: error,
-        stackTrace: stack,
-      );
-    } on PlatformException catch (error, stack) {
-      _debugLog(error, stack);
-      throw AuthenticationException(
-        source: 'platform',
-        code: error.code,
-        message: error.message?.trim().isNotEmpty == true
-            ? error.message!
-            : error.toString(),
-        cause: error,
-        stackTrace: stack,
-      );
-    } catch (error, stack) {
-      _debugLog(error, stack);
-      throw AuthenticationException(
-        source: 'google',
-        code: error.runtimeType.toString(),
-        message: error.toString(),
+        message: _describe(error.description, error),
         cause: error,
         stackTrace: stack,
       );
     }
+    if (error is GoogleAuthFlowCancelledException) {
+      return const AuthenticationCancelledException();
+    }
+    if (error is AuthenticationException) return null;
+    if (error is FirebaseAuthException) {
+      return AuthenticationException(
+        source: 'firebase-auth',
+        code: error.code,
+        message: _describe(error.message, error),
+        cause: error,
+        stackTrace: stack,
+      );
+    }
+    if (error is PlatformException) {
+      return AuthenticationException(
+        source: 'platform',
+        code: error.code,
+        message: _describe(error.message, error),
+        cause: error,
+        stackTrace: stack,
+      );
+    }
+    return AuthenticationException(
+      source: 'google',
+      code: error.runtimeType.toString(),
+      message: error.toString(),
+      cause: error,
+      stackTrace: stack,
+    );
   }
+
+  static String _describe(String? message, Object fallback) =>
+      message != null && message.trim().isNotEmpty
+          ? message
+          : fallback.toString();
 
   void _validateFirebaseConfiguration() {
     final options = Firebase.app().options;

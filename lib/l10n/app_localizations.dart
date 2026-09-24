@@ -2642,6 +2642,18 @@ abstract class AppLocalizations {
   /// **'Sign-in failed. Your progress is still on this device.'**
   String get backupSignInFailed;
 
+  /// No description provided for @backupSignInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in canceled. Your progress is still on this device.'**
+  String get backupSignInCancelled;
+
+  /// No description provided for @backupSignInFailedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed: {reason} Your progress is still on this device.'**
+  String backupSignInFailedReason(String reason);
+
   /// No description provided for @backupMigrationDone.
   ///
   /// In en, this message translates to:

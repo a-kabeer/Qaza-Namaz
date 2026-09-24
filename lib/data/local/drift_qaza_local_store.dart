@@ -419,27 +419,13 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required List<String> ids,
   }) async {
     if (ids.isEmpty) return const <QazaRecord>[];
-    final rows = await _database.qazaRecordsDao.getByIds(
-      userId: userId,
-      ids: ids,
-    );
-    return rows.map((row) => QazaRecord(
-          id: row.id,
-          userId: row.userId,
-          operationId: row.operationId,
-          prayerType: PrayerType.values.firstWhere(
-            (value) => value.name == row.prayerType,
-            orElse: () => throw StateError('Unknown prayer type: ${row.prayerType}'),
-          ),
-          originalDate: row.originalDate,
-          status: QazaStatus.values.firstWhere(
-            (value) => value.name == row.status,
-            orElse: () => throw StateError('Unknown Qaza status: ${row.status}'),
-          ),
-          completedAt: row.completedAt,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-        )).toList(growable: false);
+    // The DAO already decodes its rows into domain records. This used to
+    // rebuild them a second time, re-parsing the enums off a QazaRecord as if
+    // it were a table row; `value.name == record.prayerType` compares a String
+    // to a PrayerType, which is never equal, so every non-empty lookup threw
+    // "Unknown prayer type". That is the exception Home was reporting as
+    // "Qaza cannot be completed" after the record had in fact been saved.
+    return _database.qazaRecordsDao.getByIds(userId: userId, ids: ids);
   }
 
   @override

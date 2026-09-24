@@ -8,7 +8,15 @@ import 'guest_session.dart';
 import 'guest_upgrade_controller.dart';
 
 class AuthenticationScreen extends ConsumerStatefulWidget {
-  const AuthenticationScreen({super.key});
+  const AuthenticationScreen({super.key, this.closeWhenDecided = false});
+
+  /// Pop this route once the guest data decision is settled.
+  ///
+  /// Set when the screen is pushed from inside the app - from Settings, say -
+  /// purely to collect the Merge / Use Account / Keep Guest choice. The
+  /// startup journey leaves it false, because there `AuthGate` decides what
+  /// comes next and this route is not on anyone's stack.
+  final bool closeWhenDecided;
 
   @override
   ConsumerState<AuthenticationScreen> createState() =>
@@ -17,6 +25,17 @@ class AuthenticationScreen extends ConsumerStatefulWidget {
 
 class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   String? notice;
+
+  /// Closes an in-app decision route as soon as the decision is settled.
+  void _popWhenDecided(GuestUpgradeState? previous, GuestUpgradeState next) {
+    if (!widget.closeWhenDecided) return;
+    if (previous?.awaitingDecision != true) return;
+    if (next.awaitingDecision || next.running) return;
+    if (!mounted) return;
+    // Merge, Use Account and Keep Guest all land here; whichever it was, the
+    // caller reports the outcome on the screen underneath.
+    Navigator.of(context).maybePop();
+  }
 
   Future<void> _google() async {
     if (ref.read(guestUpgradeControllerProvider).running) return;
@@ -45,6 +64,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     final l10n = AppLocalizations.of(context);
     final scheme = theme.colorScheme;
     final upgrade = ref.watch(guestUpgradeControllerProvider);
+    ref.listen<GuestUpgradeState>(guestUpgradeControllerProvider, _popWhenDecided);
 
     if (upgrade.restoring) {
       return const Scaffold(
@@ -282,6 +302,7 @@ class _GuestAccountChoice extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               _DecisionCard(
+                actionKey: const Key('guest_decision_merge'),
                 title: 'Merge Data',
                 description: 'Combine guest and account records. Duplicate '
                     'prayer/date combinations become one record; completed '
@@ -294,6 +315,7 @@ class _GuestAccountChoice extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _DecisionCard(
+                actionKey: const Key('guest_decision_use_account'),
                 title: 'Use Account Data',
                 description:
                     'Keep the Google account ledger as-is. Guest records are '
@@ -304,6 +326,7 @@ class _GuestAccountChoice extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _DecisionCard(
+                actionKey: const Key('guest_decision_keep_guest'),
                 title: 'Keep Guest Data / Cancel Sign-In',
                 description:
                     'Sign out of the Google account and continue in guest mode. '
@@ -333,6 +356,7 @@ class _GuestAccountChoice extends StatelessWidget {
 
 class _DecisionCard extends StatelessWidget {
   const _DecisionCard({
+    required this.actionKey,
     required this.title,
     required this.description,
     required this.buttonLabel,
@@ -344,6 +368,7 @@ class _DecisionCard extends StatelessWidget {
   final String title;
   final String description;
   final String buttonLabel;
+  final Key actionKey;
   final IconData icon;
   final VoidCallback? onPressed;
   final bool filled;
@@ -379,9 +404,14 @@ class _DecisionCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             if (filled)
-              FilledButton(onPressed: onPressed, child: Text(buttonLabel))
+              FilledButton(
+                key: actionKey,
+                onPressed: onPressed,
+                child: Text(buttonLabel),
+              )
             else
               OutlinedButton(
+                key: actionKey,
                 onPressed: onPressed,
                 child: Text(buttonLabel),
               ),

@@ -152,9 +152,19 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     // Firebase can become authenticated before the guest data decision is
     // complete. Keep the user on the auth/decision surface until that state is
     // resolved rather than entering the account workspace early.
-    if (upgrade.running ||
-        upgrade.awaitingDecision ||
-        (upgrade.error != null && isGuest)) {
+    //
+    // Only for a transition that started here, though. A sign-in begun from
+    // Settings is resolved on top of the screen the user was already on, so
+    // taking the whole app over would drop them out of it — and, on a
+    // failure, strand them on the startup Authentication screen instead of
+    // letting them retry where they were. The guest-upgrade barrier keeps the
+    // ledger on the guest namespace either way, so the workspace below stays
+    // correct while an in-app decision is still open.
+    final startupTransition = upgrade.origin == GuestUpgradeOrigin.startup;
+    if (startupTransition &&
+        (upgrade.running ||
+            upgrade.awaitingDecision ||
+            (upgrade.error != null && isGuest))) {
       // Keep this as the same pre-auth Navigator used by the Welcome route.
       // If the transition started from Welcome, the Authentication route was
       // already pushed and remains intact across this auth-state rebuild.

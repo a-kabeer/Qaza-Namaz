@@ -662,23 +662,53 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     }
 
     final generation = _sessionGeneration;
+    // Hydration talks to the network. It must never be able to fail a
+    // completion: the local write below is what the user is asking for, and
+    // it works offline. `ensureHydrated` swallows and reports its own
+    // failures for exactly this reason.
     await ensureHydrated();
     await _ensureOutboxLoaded();
 
-    final changed = await _localStore.completeRecords(
-      userId: userId,
-      recordIds: [recordId],
-      completedAt: completedAt,
-    );
+    // Stage 1 — the local write. This is the only stage whose failure means
+    // the Qaza was genuinely not completed.
+    final List<String> changed;
+    try {
+      changed = await _localStore.completeRecords(
+        userId: userId,
+        recordIds: [recordId],
+        completedAt: completedAt,
+      );
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'local_completion_failed',
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
     if (generation != _sessionGeneration || userId != _activeUserId) {
       return QazaCompletionResult.notFound;
     }
 
     if (changed.isEmpty) {
-      final current = await _localStore.getRecordsByIds(
-        userId: userId,
-        ids: [recordId],
-      );
+      // Stage 2 — nothing changed, so establish whether it was already
+      // completed or simply is not there.
+      final List<QazaRecord> current;
+      try {
+        current = await _localStore.getRecordsByIds(
+          userId: userId,
+          ids: [recordId],
+        );
+      } catch (error, stack) {
+        _diagnostics.recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'changed_record_lookup_failed',
+          error,
+          stack: stack,
+        );
+        rethrow;
+      }
       if (current.any((record) =>
           record.userId == userId &&
           record.id == recordId &&
@@ -688,10 +718,21 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       return QazaCompletionResult.notFound;
     }
 
-    final changedRecords = await _localStore.getRecordsByIds(
-      userId: userId,
-      ids: changed,
-    );
+    final List<QazaRecord> changedRecords;
+    try {
+      changedRecords = await _localStore.getRecordsByIds(
+        userId: userId,
+        ids: changed,
+      );
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'changed_record_lookup_failed',
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
     if (changedRecords.isEmpty) {
       return QazaCompletionResult.notFound;
     }
@@ -710,11 +751,25 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
         ),
     ];
 
-    await _localStore.appendRecordsAndOutbox(
-      userId,
-      const <QazaRecord>[],
-      operations,
-    );
+    // Stage 3 — queue the change for the cloud. The record is already
+    // completed locally at this point, so a failure here is reported and
+    // rethrown for visibility, but the caller must not present it as "the
+    // Qaza was not completed" — see the note on the return below.
+    try {
+      await _localStore.appendRecordsAndOutbox(
+        userId,
+        const <QazaRecord>[],
+        operations,
+      );
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'outbox_write_failed',
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
 
     for (final record in changedRecords) {
       _records[record.id] = record;
@@ -723,6 +778,8 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     _outboxLoaded = true;
     _emitPending();
 
+    // Deliberately not awaited: the completion is durable locally and a sync
+    // failure must never undo it or fail this call.
     if (_isOnline && _connectivityKnown) {
       unawaited(
         _syncEngine?.synchronize(userId, requestRerun: true) ??

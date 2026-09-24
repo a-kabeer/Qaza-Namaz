@@ -129,10 +129,16 @@ def env_secret(name: str | None, description: str) -> str | None:
 
 def print_firebase_comparison(
     config_path: Path, package: str, sha1: str
-) -> None:
+) -> bool:
+    """Reports whether this signing certificate is registered with Firebase.
+
+    Returns False when the answer is "no" or "cannot tell". An unregistered
+    certificate is the exact cause of a Google sign-in that opens the account
+    chooser, completes, and then hands back no ID token.
+    """
     if not config_path.exists():
         print("Firebase SHA-1 comparison: SKIPPED (config not found)")
-        return
+        return False
 
     registered = firebase_sha1s(config_path, package)
     matched = bool(sha1 and sha1 in registered)
@@ -144,6 +150,7 @@ def print_firebase_comparison(
             "signing certificate. This affects Google/Firebase authentication; "
             "it does not by itself determine Android package-install identity."
         )
+    return matched
 
 
 def main() -> int:
@@ -162,6 +169,16 @@ def main() -> int:
         type=Path,
         default=Path("android/app/google-services.json"),
     )
+    parser.add_argument(
+        "--require-firebase-match",
+        action="store_true",
+        help=(
+            "Exit non-zero unless this signing certificate's SHA-1 is "
+            "registered as an Android OAuth client in google-services.json. "
+            "An artifact signed with an unregistered certificate cannot "
+            "complete Google Sign-In, so shipping one is a build failure."
+        ),
+    )
     args = parser.parse_args()
 
     if args.apk:
@@ -169,8 +186,23 @@ def main() -> int:
         print(f"Package ID: {package}")
         print(f"APK SHA-1: {sha1 or 'unavailable'}")
         print(f"APK SHA-256: {sha256}")
+        if args.firebase_package and package not in ("unknown", args.firebase_package):
+            raise SystemExit(
+                f"APK package ID {package} does not match the expected "
+                f"Firebase package {args.firebase_package}."
+            )
+        matched = False
         if package != "unknown":
-            print_firebase_comparison(args.firebase_config, package, sha1)
+            matched = print_firebase_comparison(
+                args.firebase_config, package, sha1
+            )
+        if args.require_firebase_match and not matched:
+            raise SystemExit(
+                "Signing certificate is not registered in Firebase. Add "
+                f"SHA-1 {sha1 or 'unavailable'} (and the matching SHA-256) to "
+                f"the Android app for {package} in the Firebase console, then "
+                "download the updated google-services.json."
+            )
         return 0
 
     if not args.alias:

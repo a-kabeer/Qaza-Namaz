@@ -133,6 +133,53 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      # The identity of the artifact, read back out of the APK rather than
+      # assumed from the project files. A debug APK signed with a certificate
+      # Firebase does not know completes the Google account chooser and then
+      # returns no ID token, which is indistinguishable, on the device, from
+      # the app being broken.
+      - name: Extract debug APK signing identity
+        id: debug_identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/android_signing_audit.py \
+            --apk build/app/outputs/flutter-apk/app-debug.apk \
+            --firebase-package com.example.qaza_namaz_task1_flutter \
+            | tee debug-signing-identity.txt
+          if grep -q 'Firebase SHA-1 match: YES' debug-signing-identity.txt; then
+            echo "registered=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "registered=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A hosted runner generates a throwaway debug keystore on first use, so
+      # its SHA-1 can never match a registered one. Supply the team's debug
+      # keystore as ANDROID_DEBUG_KEYSTORE_BASE64 to make this a hard gate;
+      # without it the identity is reported but cannot be judged.
+      - name: Enforce debug certificate registration
+        shell: bash
+        env:
+          DEBUG_KEYSTORE_SUPPLIED: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 != '' }}
+          REGISTERED: ${{ steps.debug_identity.outputs.registered }}
+        run: |
+          set -euo pipefail
+          if [ "$DEBUG_KEYSTORE_SUPPLIED" != "true" ]; then
+            echo "::notice::Debug keystore not supplied; this runner's ephemeral debug certificate cannot be matched against Firebase."
+            exit 0
+          fi
+          if [ "$REGISTERED" != "true" ]; then
+            echo "::error::The debug signing certificate is not registered as an Android OAuth client in Firebase. Google Sign-In will fail on every debug install."
+            exit 1
+          fi
+          echo "Debug signing certificate is registered in Firebase."
+
+      - name: Upload debug signing identity
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-signing-identity
+          path: debug-signing-identity.txt
+
       - name: Audit Android OAuth configuration
         shell: bash
         run: |
@@ -250,12 +297,15 @@ jobs:
         if: steps.release_signing.outputs.configured == 'true'
         run: flutter build apk --release
 
+      # Strict: a release APK whose certificate Firebase does not know ships
+      # with Google Sign-In permanently broken for every user who installs it.
       - name: Audit signed release APK
         if: steps.release_signing.outputs.configured == 'true'
         run: |
           python3 tools/android_signing_audit.py \
             --apk build/app/outputs/flutter-apk/app-release.apk \
-            --firebase-package com.example.qaza_namaz_task1_flutter
+            --firebase-package com.example.qaza_namaz_task1_flutter \
+            --require-firebase-match
 
       - name: Build release AAB
         if: steps.release_signing.outputs.configured == 'true'

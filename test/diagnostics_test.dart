@@ -83,7 +83,10 @@ void main() {
       expect(event.message, contains('<email>'));
       expect(event.message, contains('<date>'));
       expect(event.message, isNot(contains('someone@example.com')));
-      expect(event.stackTrace, isNull);
+      // The stack is the point of a failure diagnostic, so it is kept, and
+      // it goes through the same redaction as the message.
+      expect(event.stackTrace, isNotNull);
+      expect(event.stackTrace, contains('main.<anonymous closure>'));
       expect(event.stackTrace, isNot(contains('someone@example.com')));
       expect(event.fatal, isFalse);
     });
