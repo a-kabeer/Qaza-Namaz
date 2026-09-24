@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/auth/auth_gate.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
