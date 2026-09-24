@@ -845,7 +845,7 @@ void main() {
             PrayerType.witr,
             DateTime(2026, 2, i + 1),
             QazaStatus.completed,
-            completedAt: DateTime(2026, 9, 22),
+            completedAt: DateTime(2026, 9, 19),
           ),
         );
       }
@@ -863,25 +863,20 @@ void main() {
         chart.data.barGroups
             .map((group) => group.barRods.single.toY.toInt())
             .toList(),
-        [0, 0, 0, 0, 1, 0, 25],
+        [0, 0, 0, 25, 1, 0, 0],
       );
       expect(chart.data.maxY, greaterThanOrEqualTo(25));
 
       final rect = tester.getRect(find.byKey(const Key('home_progress_chart')));
-      await tester.tapAt(
-        Offset(
-          rect.left + rect.width * 0.93,
-          rect.top + rect.height * 0.45,
-        ),
-      );
+      await tester.tapAt(rect.center);
       await tester.pump();
 
       expect(find.byKey(const Key('home_chart_selected_value')), findsOneWidget);
 
       final selected = chart.data.barTouchData.touchTooltipData.getTooltipItem!(
-        chart.data.barGroups.last,
-        6,
-        chart.data.barGroups.last.barRods.single,
+        chart.data.barGroups[3],
+        3,
+        chart.data.barGroups[3].barRods.single,
         0,
       );
       expect(selected, isNotNull);
