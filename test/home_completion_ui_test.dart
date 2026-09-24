@@ -134,6 +134,7 @@ void main() {
     await tapComplete(tester);
 
     expect(find.text(_failureMessage), findsNothing);
+    expect(find.text('Fajr Qaza for 01 Jan 2026 completed.'), findsOneWidget);
     final summary = await repository.getProgressSummary(userId: 'u1');
     expect(summary.overall.completed, 1);
     expect(summary.overall.pending, 2);
