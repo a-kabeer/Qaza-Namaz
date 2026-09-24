@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/utils/qaza_date.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_operation.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
@@ -605,7 +605,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   }
 
   /// Completes the selected records and returns the batch metadata needed
-  /// for a safe, timestamp-bound undo action.
+  /// for a safe, completion-marker-bound Undo action.
   Future<QazaCompletionBatch?> completeSelectedWithUndo() async {
     final userId = ref.read(activeUserIdProvider);
     if (userId == null || state.selected.isEmpty || state.completing) {
