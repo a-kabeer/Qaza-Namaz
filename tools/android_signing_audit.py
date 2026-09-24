@@ -54,10 +54,40 @@ def firebase_sha1s(config_path: Path, package: str) -> list[str]:
     return sorted(set(values))
 
 
+def _android_sdk_tool(name: str) -> str | None:
+    """Resolve an Android SDK command from PATH or installed build-tools."""
+    direct = shutil.which(name)
+    if direct:
+        return direct
+
+    sdk_roots = [
+        os.environ.get("ANDROID_SDK_ROOT"),
+        os.environ.get("ANDROID_HOME"),
+        "/usr/local/lib/android/sdk",
+    ]
+    for root in sdk_roots:
+        if not root:
+            continue
+        build_tools = Path(root) / "build-tools"
+        if not build_tools.is_dir():
+            continue
+        candidates = sorted(
+            (p for p in build_tools.glob(f"*/{name}") if p.is_file()),
+            reverse=True,
+        )
+        if candidates:
+            return str(candidates[0])
+
+    return None
+
+
 def apk_audit(apk: Path) -> tuple[str, str, str]:
-    apksigner = shutil.which("apksigner")
+    apksigner = _android_sdk_tool("apksigner")
     if not apksigner:
-        raise SystemExit("apksigner was not found in the Android SDK environment.")
+        raise SystemExit(
+            "apksigner was not found on PATH or in the installed Android SDK "
+            "build-tools."
+        )
 
     output = run([apksigner, "verify", "--print-certs", str(apk)])
     sha1 = ""
@@ -72,7 +102,7 @@ def apk_audit(apk: Path) -> tuple[str, str, str]:
         raise SystemExit("Could not extract the APK signing certificate SHA-256.")
 
     package = "unknown"
-    aapt = shutil.which("aapt2") or shutil.which("aapt")
+    aapt = _android_sdk_tool("aapt2") or _android_sdk_tool("aapt")
     if aapt:
         badging = run([aapt, "dump", "badging", str(apk)])
         match = re.search(r"package: name='([^']+)'", badging)
