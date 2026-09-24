@@ -26,6 +26,9 @@ class HomeProgressHistory extends ConsumerStatefulWidget {
 
 class _HomeProgressChartSectionState
     extends ConsumerState<HomeProgressHistory> {
+  static const double _chartContainerHeight = 280;
+  static const double _chartVisualHeight = 210;
+
   int? selectedIndex;
 
   @override
@@ -33,6 +36,8 @@ class _HomeProgressChartSectionState
     final l10n = AppLocalizations.of(context);
     final charts = AppChartColors.of(context);
     final range = ref.watch(homeProgressRangeProvider);
+    final weekStart = ref.watch(homeProgressWeekProvider);
+    final dailyTarget = ref.watch(homeQazaPlanProvider).dailyTarget;
     final data = ref.watch(homeProgressHistoryProvider(range));
 
     ref.listen<AsyncValue<List<HomeProgressPoint>>>(
@@ -40,11 +45,11 @@ class _HomeProgressChartSectionState
       (previous, next) {
         if (!next.hasError || next.error == previous?.error) return;
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.uncaught,
-          'home_progress_history_failed',
-          next.error!,
-          stack: next.stackTrace,
-        );
+              DiagnosticArea.uncaught,
+              'home_progress_history_failed',
+              next.error!,
+              stack: next.stackTrace,
+            );
       },
     );
 
@@ -61,41 +66,45 @@ class _HomeProgressChartSectionState
                 ),
           ),
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<HomeProgressRange>(
-              key: const Key('home_progress_range'),
-              segments: [
-                ButtonSegment<HomeProgressRange>(
-                  value: HomeProgressRange.sevenDays,
-                  label: Text(l10n.homeRange7Days),
-                ),
-                ButtonSegment<HomeProgressRange>(
-                  value: HomeProgressRange.thirtyDays,
-                  label: Text(l10n.homeRange30Days),
-                ),
-                ButtonSegment<HomeProgressRange>(
-                  value: HomeProgressRange.monthly,
-                  label: Text(l10n.homeRangeMonthly),
-                ),
-              ],
-              selected: {range},
-              onSelectionChanged: (selection) {
-                setState(() => selectedIndex = null);
-                ref.read(homeProgressRangeProvider.notifier).state =
-                    selection.single;
-              },
+          Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SegmentedButton<HomeProgressRange>(
+                key: const Key('home_progress_range'),
+                segments: [
+                  ButtonSegment<HomeProgressRange>(
+                    value: HomeProgressRange.sevenDays,
+                    label: Text(l10n.homeRange7Days),
+                  ),
+                  ButtonSegment<HomeProgressRange>(
+                    value: HomeProgressRange.thirtyDays,
+                    label: Text(l10n.homeRange30Days),
+                  ),
+                  ButtonSegment<HomeProgressRange>(
+                    value: HomeProgressRange.monthly,
+                    label: Text(l10n.homeRangeMonthly),
+                  ),
+                ],
+                selected: {range},
+                onSelectionChanged: (selection) {
+                  setState(() => selectedIndex = null);
+                  ref
+                      .read(homeProgressWeekProvider.notifier)
+                      .resetToCurrentWeek();
+                  ref.read(homeProgressRangeProvider.notifier).state =
+                      selection.single;
+                },
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           data.when(
             loading: () => const HomeChartSkeleton(),
             error: (_, __) => ErrorState(
               key: const Key('home_progress_history_error'),
               message: l10n.homeProgressError,
-              onRetry: () => ref.invalidate(
-                homeProgressHistoryProvider(range),
-              ),
+              onRetry: () =>
+                  ref.invalidate(homeProgressHistoryProvider(range)),
             ),
             data: (points) {
               if (points.isEmpty) {
@@ -111,67 +120,21 @@ class _HomeProgressChartSectionState
                 );
               }
 
-              final hasCompletedData =
-                  points.any((point) => point.count > 0);
-              final selected = selectedIndex == null
-                  ? null
-                  : points[
-                      selectedIndex!.clamp(0, points.length - 1).toInt()
-                    ];
+              final hasCompletedData = points.any((point) => point.count > 0);
 
               return Column(
                 children: [
-                  if (selected != null)
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Container(
-                        key: const Key('home_chart_selected_value'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .outlineVariant,
+                  if (range == HomeProgressRange.sevenDays) ...[
+                    Text(
+                      _weekRangeLabel(weekStart),
+                      key: const Key('home_progress_week_range'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _selectionLabel(selected, range),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            Text(
-                              l10n.homeCompletedCount(selected.count),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ),
+                    const SizedBox(height: 8),
+                  ],
                   if (!hasCompletedData)
                     Padding(
                       key: const Key('home_progress_zero_state'),
@@ -186,17 +149,40 @@ class _HomeProgressChartSectionState
                     ),
                   SizedBox(
                     key: const Key('home_progress_chart'),
-                    height: 220,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final chartWidth = math.max(
-                          constraints.maxWidth,
-                          points.length * _slotWidth(range),
-                        );
+                    height: _chartContainerHeight,
+                    width: double.infinity,
+                    child: GestureDetector(
+                      key: const Key('home_progress_week_gesture'),
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragEnd: range == HomeProgressRange.sevenDays
+                          ? (details) {
+                              final velocity = details.primaryVelocity ?? 0;
+                              if (velocity < -250) {
+                                setState(() => selectedIndex = null);
+                                ref
+                                    .read(homeProgressWeekProvider.notifier)
+                                    .nextWeek();
+                              } else if (velocity > 250) {
+                                setState(() => selectedIndex = null);
+                                ref
+                                    .read(homeProgressWeekProvider.notifier)
+                                    .previousWeek();
+                              }
+                            }
+                          : null,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final chartWidth =
+                              range == HomeProgressRange.sevenDays
+                                  ? constraints.maxWidth
+                                  : math.max(
+                                      constraints.maxWidth,
+                                      points.length * _slotWidth(range),
+                                    );
 
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
+                          final chart = SizedBox(
+                            key: const Key('home_progress_chart_visual'),
+                            height: _chartVisualHeight,
                             width: chartWidth,
                             child: Semantics(
                               label: l10n.homeYourProgress,
@@ -206,14 +192,30 @@ class _HomeProgressChartSectionState
                                   points,
                                   range,
                                   charts,
+                                  dailyTarget,
                                   l10n,
                                 ),
                                 duration: Duration.zero,
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+
+                          if (range == HomeProgressRange.sevenDays) {
+                            return Align(
+                              alignment: Alignment.topCenter,
+                              child: chart,
+                            );
+                          }
+
+                          return Align(
+                            alignment: Alignment.topCenter,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: chart,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -236,12 +238,14 @@ class _HomeProgressChartSectionState
     List<HomeProgressPoint> points,
     HomeProgressRange range,
     AppChartColors charts,
+    int dailyTarget,
     AppLocalizations l10n,
   ) {
     final axisInterval = _axisInterval(points);
     final maxY = _chartMaxY(points, axisInterval);
     final textStyle = Theme.of(context).textTheme.labelSmall;
     final colorScheme = Theme.of(context).colorScheme;
+    final textDirection = Directionality.of(context);
 
     return BarChartData(
       minY: 0,
@@ -252,6 +256,8 @@ class _HomeProgressChartSectionState
         for (var i = 0; i < points.length; i++)
           BarChartGroupData(
             x: i,
+            showingTooltipIndicators:
+                selectedIndex == i ? const [0] : const [],
             barRods: [
               BarChartRodData(
                 toY: points[i].count.toDouble(),
@@ -259,6 +265,18 @@ class _HomeProgressChartSectionState
                 color: charts.primary,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(4),
+                ),
+                label: BarChartRodLabel(
+                  show: range == HomeProgressRange.sevenDays &&
+                      points[i].count >= dailyTarget,
+                  text: '✓',
+                  style: TextStyle(
+                    color: charts.completed,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                  textDirection: textDirection,
+                  offset: const Offset(0, 48),
                 ),
               ),
             ],
@@ -298,7 +316,7 @@ class _HomeProgressChartSectionState
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: range == HomeProgressRange.sevenDays ? 40 : 28,
+            reservedSize: range == HomeProgressRange.sevenDays ? 34 : 28,
             getTitlesWidget: (value, meta) => _bottomTitle(
               value,
               meta,
@@ -311,27 +329,36 @@ class _HomeProgressChartSectionState
       borderData: FlBorderData(show: false),
       barTouchData: BarTouchData(
         enabled: true,
-        handleBuiltInTouches: true,
+        handleBuiltInTouches: false,
         touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (_) => colorScheme.inverseSurface,
+          direction: TooltipDirection.top,
+          tooltipMargin: 18,
+          getTooltipColor: (_) => colorScheme.primaryContainer,
           tooltipBorder: BorderSide(
             color: colorScheme.outlineVariant,
           ),
           tooltipPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
+            horizontal: 10,
+            vertical: 6,
           ),
           fitInsideHorizontally: true,
           fitInsideVertically: true,
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final index = groupIndex.clamp(0, points.length - 1);
             final point = points[index];
+            final weekday =
+                DateFormatters.weekdayShortNames[point.start.weekday - 1];
             return BarTooltipItem(
-              '${_selectionLabel(point, range)}\n'
-              '${l10n.homeCompletedCount(point.count)}',
+              DateFormatters.formatCount(point.count) +
+                  ' ' +
+                  l10n.qazaTitle +
+                  ' — ' +
+                  point.start.day.toString() +
+                  ' ' +
+                  weekday,
               TextStyle(
-                color: colorScheme.onInverseSurface,
-                fontWeight: FontWeight.w600,
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w700,
               ),
             );
           },
@@ -350,8 +377,7 @@ class _HomeProgressChartSectionState
   double _axisInterval(List<HomeProgressPoint> points) {
     final maxValue = points.fold<int>(
       0,
-      (maxValue, point) =>
-          point.count > maxValue ? point.count : maxValue,
+      (maxValue, point) => point.count > maxValue ? point.count : maxValue,
     );
     if (maxValue <= 4) return 1;
 
@@ -375,8 +401,7 @@ class _HomeProgressChartSectionState
   ) {
     final maxValue = points.fold<int>(
       0,
-      (maxValue, point) =>
-          point.count > maxValue ? point.count : maxValue,
+      (maxValue, point) => point.count > maxValue ? point.count : maxValue,
     );
     if (maxValue <= 0) return 1;
     return math.max(
@@ -385,13 +410,39 @@ class _HomeProgressChartSectionState
     );
   }
 
-  String _selectionLabel(
-    HomeProgressPoint point,
-    HomeProgressRange range,
-  ) =>
-      range == HomeProgressRange.monthly
-          ? '${DateFormatters.gregorianMonthName(point.start.month)} ${point.start.year}'
-          : DateFormatters.formatGregorianDatePadded(point.start);
+  String _weekRangeLabel(DateTime start) {
+    final end = start.add(const Duration(days: 6));
+    final startMonth = DateFormatters.gregorianMonthFullName(start.month);
+    final endMonth = DateFormatters.gregorianMonthFullName(end.month);
+
+    if (start.year == end.year && start.month == end.month) {
+      return startMonth +
+          ' ' +
+          start.day.toString() +
+          ' – ' +
+          end.day.toString();
+    }
+    if (start.year == end.year) {
+      return startMonth +
+          ' ' +
+          start.day.toString() +
+          ' – ' +
+          endMonth +
+          ' ' +
+          end.day.toString();
+    }
+    return startMonth +
+        ' ' +
+        start.day.toString() +
+        ', ' +
+        start.year.toString() +
+        ' – ' +
+        endMonth +
+        ' ' +
+        end.day.toString() +
+        ', ' +
+        end.year.toString();
+  }
 
   Widget _bottomTitle(
     double value,
@@ -411,12 +462,12 @@ class _HomeProgressChartSectionState
     final String label;
     switch (range) {
       case HomeProgressRange.sevenDays:
-        label =
-            '${DateFormatters.weekdayShortNames[point.start.weekday - 1]}\n'
-            '${point.start.day} ${DateFormatters.gregorianMonthName(point.start.month)}';
+        label = DateFormatters.weekdayShortNames[point.start.weekday - 1];
       case HomeProgressRange.thirtyDays:
         label =
-            '${point.start.day} ${DateFormatters.gregorianMonthName(point.start.month)}';
+            point.start.day.toString() +
+            ' ' +
+            DateFormatters.gregorianMonthName(point.start.month);
       case HomeProgressRange.monthly:
         label = DateFormatters.gregorianMonthName(point.start.month);
     }
@@ -427,7 +478,7 @@ class _HomeProgressChartSectionState
       child: Text(
         label,
         textAlign: TextAlign.center,
-        maxLines: 2,
+        maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall,
       ),
@@ -457,10 +508,16 @@ class HomeChartSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SkeletonBox(
-      width: double.infinity,
-      height: 220,
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+    return const SizedBox(
+      height: 280,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SkeletonBox(
+          width: double.infinity,
+          height: 210,
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+        ),
+      ),
     );
   }
 }

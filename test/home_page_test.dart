@@ -685,6 +685,32 @@ void main() {
       expect(find.text('30 Days'), findsOneWidget);
       expect(find.text('Monthly'), findsOneWidget);
       expect(rangeButton.segments, hasLength(3));
+
+      final selector = tester.getRect(
+        find.byKey(const Key('home_progress_range')),
+      );
+      final progress = tester.getRect(
+        find.byKey(const Key('home_your_progress')),
+      );
+      expect((selector.center.dx - progress.center.dx).abs(), lessThan(2));
+    });
+
+    testWidgets('7 Days date range is above the chart',
+        (tester) async {
+      await pumpHome(
+        tester,
+        await ledger(),
+        now: DateTime(2026, 9, 22),
+      );
+
+      final rangeRect = tester.getRect(
+        find.byKey(const Key('home_progress_week_range')),
+      );
+      final chartRect = tester.getRect(
+        find.byKey(const Key('home_progress_chart')),
+      );
+      expect(rangeRect.bottom, lessThanOrEqualTo(chartRect.top));
+      expect(find.text('September 20 – 26'), findsOneWidget);
     });
 
     testWidgets('7 Days renders one daily bar for each day', (tester) async {
@@ -732,7 +758,7 @@ void main() {
         chart.data.barGroups
             .map((group) => group.barRods.single.toY.toInt())
             .toList(),
-        [0, 0, 0, 0, 1, 1, 2],
+        [1, 1, 2, 0, 0, 0, 0],
       );
       expect(chart.data.minY, 0);
       expect(chart.data.maxY, greaterThanOrEqualTo(2));
@@ -750,8 +776,65 @@ void main() {
       final points = await container
           .read(homeProgressHistoryProvider(HomeProgressRange.sevenDays).future);
       expect(points, hasLength(7));
-      expect(points.last.start, DateTime(2026, 9, 22));
-      expect(points.last.count, 2);
+      expect(points.first.start, DateTime(2026, 9, 20));
+      expect(points.first.count, 1);
+      expect(points.last.start, DateTime(2026, 9, 26));
+      expect(points.last.count, 0);
+      expect(find.text('September 20 – 26'), findsOneWidget);
+    });
+
+    testWidgets('7 Days supports exact one-week swipe navigation',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'current-week',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 20),
+        ),
+        _record(
+          'next-week',
+          PrayerType.zuhr,
+          DateTime(2026, 1, 2),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 27),
+        ),
+      ]);
+
+      final container = await pumpHome(
+        tester,
+        repository,
+        now: DateTime(2026, 9, 22),
+      );
+
+      expect(find.text('September 20 – 26'), findsOneWidget);
+
+      await tester.fling(
+        find.byKey(const Key('home_progress_week_gesture')),
+        const Offset(-350, 0),
+        1200,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('September 27 – October 3'), findsOneWidget);
+      final nextWeek = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.sevenDays).future);
+      expect(nextWeek.first.start, DateTime(2026, 9, 27));
+      expect(nextWeek.first.count, 1);
+
+      await tester.fling(
+        find.byKey(const Key('home_progress_week_gesture')),
+        const Offset(350, 0),
+        1200,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('September 20 – 26'), findsOneWidget);
+      final previousWeek = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.sevenDays).future);
+      expect(previousWeek.first.start, DateTime(2026, 9, 20));
     });
 
     testWidgets('30 Days keeps all 30 bars while reducing labels',
@@ -845,7 +928,7 @@ void main() {
             PrayerType.witr,
             DateTime(2026, 2, i + 1),
             QazaStatus.completed,
-            completedAt: DateTime(2026, 9, 19),
+            completedAt: DateTime(2026, 9, 23),
           ),
         );
       }
@@ -863,9 +946,27 @@ void main() {
         chart.data.barGroups
             .map((group) => group.barRods.single.toY.toInt())
             .toList(),
-        [0, 0, 0, 25, 1, 0, 0],
+        [1, 0, 0, 25, 0, 0, 0],
       );
       expect(chart.data.maxY, greaterThanOrEqualTo(25));
+      expect(
+        tester.getRect(find.byKey(const Key('home_progress_chart'))).height,
+        280,
+      );
+      expect(
+        tester
+            .getRect(find.byKey(const Key('home_progress_chart_visual')))
+            .height,
+        210,
+      );
+      expect(
+        chart.data.barGroups[3].barRods.single.label.show,
+        isTrue,
+      );
+      expect(
+        chart.data.barGroups[3].barRods.single.label.text,
+        '✓',
+      );
 
       final rect = tester.getRect(find.byKey(const Key('home_progress_chart')));
       await tester.tapAt(
@@ -876,17 +977,21 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byKey(const Key('home_chart_selected_value')), findsOneWidget);
+      expect(find.byKey(const Key('home_chart_selected_value')), findsNothing);
+      expect(
+        chartOf(tester).data.barGroups[3].showingTooltipIndicators,
+        [0],
+      );
 
-      final selected = chart.data.barTouchData.touchTooltipData.getTooltipItem!(
+      final selected =
+          chartOf(tester).data.barTouchData.touchTooltipData.getTooltipItem!(
         chart.data.barGroups[3],
         3,
         chart.data.barGroups[3].barRods.single,
         0,
       );
       expect(selected, isNotNull);
-      expect(selected!.text, contains('25 completed'));
-      expect(selected.text, contains('19 Sep 2026'));
+      expect(selected!.text, '25 Qaza — 23 Wed');
     });
 
     testWidgets('shows the empty history state when no points exist',
