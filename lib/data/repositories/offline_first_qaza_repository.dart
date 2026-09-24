@@ -844,6 +844,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           queuedAt: queuedAt,
           targetRecordId: record.id,
           completedAt: record.completedAt ?? completedAt,
+          completionId: record.completionId,
           record: record,
         ),
     ];
@@ -875,7 +876,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
-    if (expectedCompletedAt.isEmpty || userId != _activeUserId) return 0;
+    if (expectedCompletionIds.isEmpty || userId != _activeUserId) return 0;
 
     final generation = _sessionGeneration;
     await _ensureOutboxLoaded();
@@ -895,6 +896,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           userId: userId,
           queuedAt: record.updatedAt,
           targetRecordId: record.id,
+          completionId: expectedCompletionIds[record.id],
           record: record,
         ),
     ];
