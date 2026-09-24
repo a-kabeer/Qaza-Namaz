@@ -231,10 +231,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     const HomeStatisticsSummaryScreen(),
                   ),
                 ),
+                const SizedBox(height: 16),
                 if (!allCompleted) ...[
-                  const SizedBox(height: 12),
                   HomePendingByPrayer(summary: summary),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                 ],
                 const HomeProgressHistory(),
                 const SizedBox(height: 12),

@@ -94,6 +94,29 @@ final homeQazaPlanProvider =
 final homeProgressRangeProvider =
     StateProvider<HomeProgressRange>((ref) => HomeProgressRange.sevenDays);
 
+class HomeProgressWeekNotifier extends Notifier<DateTime> {
+  @override
+  DateTime build() =>
+      homeProgressWeekStartForDate(ref.watch(homeLocalDateProvider));
+
+  void nextWeek() {
+    state = state.add(const Duration(days: 7));
+  }
+
+  void previousWeek() {
+    state = state.subtract(const Duration(days: 7));
+  }
+
+  void resetToCurrentWeek() {
+    state = homeProgressWeekStartForDate(ref.read(homeLocalDateProvider));
+  }
+}
+
+final homeProgressWeekProvider =
+    NotifierProvider<HomeProgressWeekNotifier, DateTime>(
+  HomeProgressWeekNotifier.new,
+);
+
 final homeNowProvider =
     Provider<DateTime>((ref) => ref.watch(prayerTimesClockProvider).now());
 
@@ -189,6 +212,7 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
   (ref, range) async {
     final userId = ref.watch(activeUserIdProvider);
     final today = ref.watch(homeLocalDateProvider);
+    final weekStart = ref.watch(homeProgressWeekProvider);
     final location = ref.watch(prayerTimesControllerProvider).location;
     if (userId == null) return const <HomeProgressPoint>[];
 
@@ -196,7 +220,7 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
     switch (range) {
       case HomeProgressRange.sevenDays:
         starts = [
-          for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i)),
+          for (var i = 0; i < 7; i++) weekStart.add(Duration(days: i)),
         ];
       case HomeProgressRange.thirtyDays:
         starts = [
