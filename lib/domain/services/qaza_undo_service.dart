@@ -292,15 +292,11 @@ class QazaUndoManager {
 
       return QazaUndoResult(batch: batch, count: count);
     } catch (error, stack) {
+      // Clearing the stale/consumed action is best-effort and must never mask
+      // the original failure or its stack trace.
       try {
         await _store.clear(userId: userId);
-      } catch (clearError, clearStack) {
-        final cleanup = QazaUndoException(
-          reason: QazaUndoFailureReason.failed,
-          cause: clearError,
-        );
-        Error.throwWithStackTrace(cleanup, clearStack);
-      }
+      } catch (_) {}
 
       if (error is QazaUndoException) rethrow;
 
