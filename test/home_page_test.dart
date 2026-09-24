@@ -168,6 +168,9 @@ void main() {
     return tester.widget<Text>(finder.first).data!;
   }
 
+  BarChart chartOf(WidgetTester tester) =>
+      tester.widget<BarChart>(find.byType(BarChart));
+
   group('reference dashboard layout', () {
     testWidgets('renders the reference sections in order', (tester) async {
       await pumpHome(tester, await ledger());
@@ -664,9 +667,6 @@ void main() {
 
       expect(find.byKey(const Key('home_pending_by_prayer')), findsOneWidget);
     });
-
-    BarChart chartOf(WidgetTester tester) =>
-        tester.widget<BarChart>(find.byType(BarChart));
 
     testWidgets('shows only supported ranges and defaults to 7 Days',
         (tester) async {
