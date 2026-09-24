@@ -880,7 +880,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
 
     final generation = _sessionGeneration;
     await _ensureOutboxLoaded();
-    final changedRecords = await _localStore.undoCompletions(
+    final changedRecords = await _localStore.undoCompletionsAndQueue(
       userId: userId,
       expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
@@ -891,7 +891,10 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     final operations = <PendingSyncOp>[
       for (final record in changedRecords)
         PendingSyncOp(
-          id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+          id: 'undo_' +
+              record.id +
+              '_' +
+              record.updatedAt.microsecondsSinceEpoch.toString(),
           type: SyncOpType.update,
           userId: userId,
           queuedAt: record.updatedAt,
@@ -900,12 +903,6 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           record: record,
         ),
     ];
-    await _localStore.appendRecordsAndOutbox(
-      userId,
-      const <QazaRecord>[],
-      operations,
-    );
-
     for (final record in changedRecords) {
       _records[record.id] = record;
     }
