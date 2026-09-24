@@ -193,7 +193,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       // A genuine user cancellation is a normal end to the flow and should
       // not create an alarming error banner. If the platform attached a
       // description, preserve it as an actionable diagnostic instead.
-      _emit(error: error.userInitiated ? null : error.message);
+      _emit(error: error.userInitiated ? null : error.diagnostic);
       return false;
     } catch (error) {
       // A guest must never be left partially switched into an authenticated
