@@ -1,4 +1,5 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/utils/qaza_completion_id.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/data/sync/qaza_sync_remote_data_source.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
@@ -85,6 +86,18 @@ class InMemoryQazaRepository
       date = page.nextOriginalDate;
       id = page.nextId;
     }
+  }
+
+  @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final wanted = recordIds.toSet();
+    return [
+      for (final record in _records.values)
+        if (record.userId == userId && wanted.contains(record.id)) record,
+    ];
   }
 
   @override
@@ -270,6 +283,7 @@ class InMemoryQazaRepository
     final updated = current.copyWith(
       status: QazaStatus.completed,
       completedAt: completedAt,
+      completionId: newQazaCompletionId(),
       updatedAt: completedAt,
     );
     _records[recordId] = updated;
@@ -301,6 +315,7 @@ class InMemoryQazaRepository
       final updated = r.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
+        completionId: newQazaCompletionId(),
         updatedAt: completedAt,
       );
       _records[id] = updated;
@@ -318,24 +333,23 @@ class InMemoryQazaRepository
   @override
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
     var changedCount = 0;
     final changed = <QazaRecord>[];
-    for (final entry in expectedCompletedAt.entries) {
+    for (final entry in expectedCompletionIds.entries) {
       final current = _records[entry.key];
       if (current == null ||
           current.userId != userId ||
           current.status != QazaStatus.completed ||
-          current.completedAt == null ||
-          !current.completedAt!.isAtSameMomentAs(entry.value) ||
-          !current.updatedAt.isAtSameMomentAs(entry.value)) {
+          current.completionId != entry.value) {
         continue;
       }
       final pending = current.copyWith(
         status: QazaStatus.pending,
-        completedAt: null,
+        clearCompletedAt: true,
+        clearCompletionId: true,
         updatedAt: undoneAt,
       );
       _records[entry.key] = pending;
