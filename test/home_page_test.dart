@@ -991,7 +991,6 @@ void main() {
         0,
       );
       expect(selected, isNotNull);
-      expect(selected, isNotNull);
       expect(selected!.text, '25 Qaza — 23 Wed');
     });
 
