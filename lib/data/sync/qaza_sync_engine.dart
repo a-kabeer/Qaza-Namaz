@@ -416,6 +416,7 @@ class QazaSyncEngine {
               userId: userId,
               queuedAt: remoteRecord.updatedAt,
               targetRecordId: remoteRecord.id,
+              completionId: remoteRecord.completionId,
               record: remoteRecord,
             );
           } else if (localRecord.updatedAt.isAfter(remoteRecord.updatedAt)) {
@@ -460,6 +461,7 @@ class QazaSyncEngine {
               userId: userId,
               queuedAt: localRecord.updatedAt,
               targetRecordId: localRecord.id,
+              completionId: localRecord.completionId,
               record: localRecord,
             );
           } else {
