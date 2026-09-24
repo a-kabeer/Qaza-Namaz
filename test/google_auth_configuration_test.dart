@@ -99,9 +99,19 @@ void main() {
     );
     expect(
       repository,
-      contains('Google Sign-In was cancelled.'),
+      contains('GoogleSignInExceptionCode.canceled'),
+      reason: 'Google cancellation must be handled explicitly.',
+    );
+    expect(
+      repository,
+      contains('userInitiated'),
       reason:
-          'Android configuration errors can surface as canceled and must stay visible.',
+          'Genuine user cancellation must remain distinct from diagnosable failures.',
+    );
+    expect(
+      repository,
+      contains('Structured GoogleSignInException'),
+      reason: 'Raw Google exception context must be preserved for diagnosis.',
     );
 
     final authConfig =
