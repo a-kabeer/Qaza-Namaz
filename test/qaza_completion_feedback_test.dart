@@ -44,6 +44,37 @@ void main() {
     expect(restored, 'Fajr Qaza for 01 Jan 2026 restored.');
   });
 
+  testWidgets('English bulk completion message is exact', (tester) async {
+    final bulk = QazaUndoBatch(
+      entries: [
+        for (var index = 0; index < 3; index++)
+          QazaUndoEntry(
+            recordId: 'r$index',
+            completionId: 'c$index',
+            prayerType: PrayerType.fajr,
+            originalDate: DateTime(2026, 1, index + 1),
+          ),
+      ],
+      expiresAt: DateTime(2026, 1, 2),
+    );
+
+    late String message;
+    await tester.pumpWidget(
+      TestApp(
+        theme: AppTheme.light(locale: const Locale('en')),
+        locale: const Locale('en'),
+        home: Builder(
+          builder: (context) {
+            message = qazaCompletionSuccessMessage(context, bulk);
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    expect(message, '3 Qaza completed.');
+  });
+
   testWidgets('Urdu completion, restore, and stale messages are localized',
       (tester) async {
     late String completed;
