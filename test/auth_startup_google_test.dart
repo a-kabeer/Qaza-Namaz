@@ -137,6 +137,30 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets(
+    'startup Google cancellation remains visible for configuration troubleshooting',
+    (tester) async {
+      final auth = StartupAuthRepository(
+        const AppUser(id: 'cancelled-user', email: 'cancelled@example.com'),
+        signInFailure: const AuthenticationCancelledException(),
+      );
+      addTearDown(auth.dispose);
+
+      await pumpStartup(tester, auth.account, auth);
+      await tester.tap(find.text('Get Started'));
+      await tester.pump();
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.textContaining('SHA-1/SHA-256'),
+        findsOneWidget,
+      );
+    },
+  );
+
+
   testWidgets('startup Google sign-in creates a new account through Firebase',
       (tester) async {
     final auth = StartupAuthRepository(
