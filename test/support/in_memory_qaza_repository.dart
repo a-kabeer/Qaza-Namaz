@@ -632,14 +632,27 @@ class InMemoryQazaRepository
         }
         return deleteLatest;
       case SyncOpType.complete:
-        await completeRecords(
-          userId: userId,
-          recordIds: [
-            for (final operation in operations)
-              if (operation.targetRecordId != null) operation.targetRecordId!,
-          ],
-          completedAt: operations.first.completedAt ?? DateTime.now(),
-        );
+        final changed = <QazaRecord>[];
+        for (final operation in operations) {
+          final record = operation.record;
+          if (record == null || record.userId != userId) continue;
+          final current = _records[record.id];
+          if (current == null ||
+              (current.status == QazaStatus.completed &&
+                  current.completionId != null &&
+                  current.completionId != record.completionId)) {
+            continue;
+          }
+          _records[record.id] = record;
+          changed.add(record);
+        }
+        if (changed.isNotEmpty) {
+          _recordChange(
+            userId: userId,
+            type: QazaRemoteChangeType.complete,
+            records: changed,
+          );
+        }
         final latest = await getLatestChange(userId: userId);
         if (latest == null) {
           throw StateError('completion produced no remote change');
