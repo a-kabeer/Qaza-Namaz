@@ -1,6 +1,7 @@
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/utils/qaza_completion_id.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 
 /// Ephemeral QazaLocalStore used by tests as a deterministic local-store double.
@@ -169,6 +170,7 @@ class InMemoryQazaLocalStore extends QazaLocalStore {
       records[index] = record.copyWith(
           status: QazaStatus.completed,
           completedAt: completedAt,
+          completionId: newQazaCompletionId(),
           updatedAt: completedAt);
       changed.add(record.id);
     }
