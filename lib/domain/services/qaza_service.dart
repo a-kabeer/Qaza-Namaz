@@ -390,7 +390,7 @@ class QazaService {
   /// undo can never overwrite a later edit or conflict resolution.
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) {
     if (repository is! QazaUndoRepository) {
@@ -398,7 +398,7 @@ class QazaService {
     }
     return (repository as QazaUndoRepository).undoCompletions(
       userId: userId,
-      expectedCompletedAt: expectedCompletedAt,
+      expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
   }
