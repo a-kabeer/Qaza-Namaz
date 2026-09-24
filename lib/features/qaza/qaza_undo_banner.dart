@@ -103,12 +103,21 @@ class _QazaUndoBannerState extends ConsumerState<QazaUndoBanner> {
           );
       if (!mounted) return;
 
-      ref.read(homeControllerProvider).invalidateDashboard();
-      ref.invalidate(progressSummaryProvider);
-      for (final prayer in PrayerType.values) {
-        ref.invalidate(oldestPendingProvider(prayer));
+      try {
+        ref.read(homeControllerProvider).invalidateDashboard();
+        ref.invalidate(progressSummaryProvider);
+        for (final prayer in PrayerType.values) {
+          ref.invalidate(oldestPendingProvider(prayer));
+        }
+        await widget.onUndone?.call();
+      } catch (error, stack) {
+        diagnostics.recordFailure(
+          DiagnosticArea.qazaCompletion,
+          'post_undo_refresh_failed',
+          error,
+          stack: stack,
+        );
       }
-      await widget.onUndone?.call();
       if (!mounted) return;
 
       setState(() {
@@ -229,12 +238,21 @@ Future<void> _undoFromSnack({
         );
     if (!context.mounted) return;
 
-    ref.read(homeControllerProvider).invalidateDashboard();
-    ref.invalidate(progressSummaryProvider);
-    for (final prayer in PrayerType.values) {
-      ref.invalidate(oldestPendingProvider(prayer));
+    try {
+      ref.read(homeControllerProvider).invalidateDashboard();
+      ref.invalidate(progressSummaryProvider);
+      for (final prayer in PrayerType.values) {
+        ref.invalidate(oldestPendingProvider(prayer));
+      }
+      await onUndone?.call();
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'post_undo_refresh_failed',
+        error,
+        stack: stack,
+      );
     }
-    await onUndone?.call();
     if (!context.mounted) return;
 
     final l10n = AppLocalizations.of(context);
