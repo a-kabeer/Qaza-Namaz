@@ -200,11 +200,16 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get statusPending;
 
+  /// No description provided for @statusDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently deleted'**
+  String get statusDeleted;
+
   /// No description provided for @statusCompleted.
   ///
   /// In en, this message translates to:
   /// **'Completed'**
-  String get statusDeleted;
   String get statusCompleted;
 
   /// No description provided for @qazaSelectAllMatching.
@@ -876,7 +881,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaDeleteRecordMessage.
   ///
   /// In en, this message translates to:
-  /// **'Permanently delete the {prayer} Qaza from {date}? This cannot be undone.'**
+  /// **'Move the {prayer} Qaza from {date} to Recently Deleted? You can restore it for 30 days.'**
   String qazaDeleteRecordMessage(Object date, Object prayer);
 
   /// No description provided for @qazaRecordUpdated.
@@ -900,7 +905,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaRecordDeleted.
   ///
   /// In en, this message translates to:
-  /// **'Qaza record deleted.'**
+  /// **'Qaza moved to Recently Deleted.'**
   String get qazaRecordDeleted;
 
   /// No description provided for @qazaRecordDeleteFailed.
@@ -3108,7 +3113,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeDetailedStatisticsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Year-wise pending, monthly history, and more'**
+  /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
 
   /// No description provided for @homeChartNoData.

@@ -61,10 +61,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusPending => 'Pending';
 
   @override
-  String get statusCompleted => 'Completed';
+  String get statusDeleted => 'Recently deleted';
 
   @override
-  String get statusDeleted => 'Recently deleted';
+  String get statusCompleted => 'Completed';
 
   @override
   String get qazaSelectAllMatching => 'Select all matching';

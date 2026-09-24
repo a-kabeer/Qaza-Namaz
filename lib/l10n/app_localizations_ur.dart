@@ -60,10 +60,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get statusPending => 'باقی';
 
   @override
-  String get statusCompleted => 'مکمل';
+  String get statusDeleted => 'حالیہ حذف شدہ';
 
   @override
-  String get statusDeleted => 'حالیہ حذف شدہ';
+  String get statusCompleted => 'مکمل';
 
   @override
   String get qazaSelectAllMatching => 'سب مطابق منتخب کریں';
@@ -1824,8 +1824,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeDetailedStatistics => 'تفصیلی اعداد و شمار';
 
   @override
-  String get homeDetailedStatisticsSubtitle =>
-      'مجموعی اور نماز وار تکمیل';
+  String get homeDetailedStatisticsSubtitle => 'مجموعی اور نماز وار تکمیل';
 
   @override
   String get homeChartNoData => 'اس مدت میں کوئی قضا مکمل نہیں ہوئی۔';
