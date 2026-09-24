@@ -97,6 +97,13 @@ void main() {
     );
     expect(
       repository,
+      contains('_authenticateWithCredentialManagerRecovery()'),
+      reason:
+          'Credential Manager [16] failures must get one stale-state recovery retry.',
+    );
+
+    expect(
+      repository,
       isNot(contains('_googleSignIn.signIn()')),
       reason: 'The pre-7.x signIn() API must not be used.',
     );
