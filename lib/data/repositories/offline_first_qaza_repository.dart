@@ -387,6 +387,26 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   }
 
   @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    if (userId != _activeUserId) return const <QazaRecord>[];
+    await ensureHydrated();
+    final generation = _sessionGeneration;
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return const <QazaRecord>[];
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: ids.toList(growable: false),
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return const <QazaRecord>[];
+    }
+    return records;
+  }
+
+  @override
   Future<List<QazaRecord>> getPendingRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
