@@ -42,6 +42,8 @@ class QazaRecord {
     DateTime? completedAt,
     String? completionId,
     DateTime? createdAt,
+    bool clearCompletedAt = false,
+    bool clearCompletionId = false,
     DateTime? updatedAt,
   }) {
     return QazaRecord(
@@ -51,8 +53,8 @@ class QazaRecord {
       prayerType: prayerType ?? this.prayerType,
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
-      completedAt: completedAt ?? this.completedAt,
-      completionId: completionId ?? this.completionId,
+      completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
+      completionId: clearCompletionId ? null : completionId ?? this.completionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
