@@ -259,6 +259,7 @@ class SharedPreferencesToDriftMigrator {
       row.originalDate == record.originalDate &&
       row.status == record.status.name &&
       row.completedAt == record.completedAt &&
+      row.completionId == record.completionId &&
       row.createdAt == record.createdAt &&
       row.updatedAt == record.updatedAt;
 }
