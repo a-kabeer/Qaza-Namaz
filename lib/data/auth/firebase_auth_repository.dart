@@ -98,7 +98,7 @@ class FirebaseAuthRepository implements AuthRepository {
     if (pending != null) return pending;
 
     final attempt = _googleSignIn
-        .initialize(serverClientId: googleServerClientId)
+        .initialize()
         .catchError((Object error, StackTrace stack) {
       _googleSignInInitialization = null;
       Error.throwWithStackTrace(error, stack);
@@ -212,6 +212,14 @@ class FirebaseAuthRepository implements AuthRepository {
         if (description == null || description.isEmpty) {
           return const AuthenticationCancelledException();
         }
+        if (_isCredentialManagerReauthFailure(description)) {
+          return AuthenticationCancelledException.withDescription(
+            'Google Sign-In could not re-authenticate the selected account. '
+            'This is not a normal cancellation. Check that the Android app '
+            'package name and signing certificate SHA-1 are registered for '
+            'this exact build in Firebase/Google Cloud, then retry.',
+          );
+        }
         return AuthenticationCancelledException.withDescription(description);
       }
 
@@ -253,6 +261,16 @@ class FirebaseAuthRepository implements AuthRepository {
       stackTrace: stack,
     );
   }
+
+  static bool _isCredentialManagerReauthFailure(String description) {
+    final normalized = description.toLowerCase();
+    return normalized.contains('[16]') &&
+        normalized.contains('account reauth failed');
+  }
+
+  @visibleForTesting
+  static bool isCredentialManagerReauthFailure(String description) =>
+      _isCredentialManagerReauthFailure(description);
 
   static String _googleFailureMessage(GoogleSignInException error) {
     final description = error.description?.trim();
