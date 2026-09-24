@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_card.dart';
+import '../home/home_controller.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
