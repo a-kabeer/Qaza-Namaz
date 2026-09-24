@@ -61,8 +61,7 @@ class _BrokenUndoManager extends QazaUndoManager {
   @override
   Future<QazaUndoBatch?> register({
     required String userId,
-    required Iterable<String> recordIds,
-    required DateTime completedAt,
+    required Iterable<QazaRecord> records,
   }) async =>
       throw StateError('undo registration failed');
 }
