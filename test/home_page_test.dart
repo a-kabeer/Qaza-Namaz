@@ -879,7 +879,8 @@ void main() {
         chart.data.barGroups.last.barRods.single,
         0,
       );
-      expect(selected.text, contains('25 completed'));
+      expect(selected, isNotNull);
+      expect(selected!.text, contains('25 completed'));
       expect(selected.text, contains('22 Sep 2026'));
     });
 
@@ -907,7 +908,7 @@ void main() {
       expect(find.byType(BarChart), findsNothing);
       expect(tester.takeException(), isNull);
     });
-
+  });
 
   group('details and empty state', () {
     testWidgets('opens detailed statistics from Overall Qaza View details',
