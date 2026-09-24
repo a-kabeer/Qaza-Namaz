@@ -684,8 +684,7 @@ void main() {
       expect(find.text('7 Days'), findsOneWidget);
       expect(find.text('30 Days'), findsOneWidget);
       expect(find.text('Monthly'), findsOneWidget);
-      expect(find.text('1 Day'), findsNothing);
-      expect(find.text('3 Days'), findsNothing);
+      expect(rangeButton.segments, hasLength(3));
     });
 
     testWidgets('7 Days renders one daily bar for each day', (tester) async {
@@ -737,6 +736,12 @@ void main() {
       );
       expect(chart.data.minY, 0);
       expect(chart.data.maxY, greaterThanOrEqualTo(2));
+      expect(
+        chart.data.barGroups.first.barRods.single.color,
+        AppChartColors.of(
+          tester.element(find.byKey(const Key('home_progress_chart'))),
+        ).primary,
+      );
       expect(
         chart.data.titlesData.leftTitles.sideTitles.showTitles,
         isTrue,
