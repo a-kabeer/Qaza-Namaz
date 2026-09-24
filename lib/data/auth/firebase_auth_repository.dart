@@ -36,7 +36,10 @@ class AuthenticationCancelledException extends AuthenticationException {
       : super(
           source: 'google',
           code: 'cancelled',
-          message: 'Google Sign-In was cancelled by the user.',
+          message:
+              'Google Sign-In was cancelled. If you selected an account and '
+              'the sign-in did not finish, check the Firebase Google provider, '
+              'Android package name, and SHA-1/SHA-256 signing certificate.',
         );
 
   @override
@@ -118,8 +121,11 @@ class FirebaseAuthRepository implements AuthRepository {
       // A failure that already knows which stage it came from travels
       // unchanged; re-wrapping it would bury the stage it names.
       if (mapped == null) rethrow;
-      // A cancellation is a choice, not a fault, so it is not recorded.
-      if (mapped is! AuthenticationCancelledException) _debugLog(error, stack);
+      // The Android Credential Manager path can surface some OAuth
+      // configuration failures as `canceled` after account selection, so the
+      // cancellation must remain observable and diagnosable rather than being
+      // silently discarded.
+      _debugLog(error, stack);
       throw mapped;
     }
   }
