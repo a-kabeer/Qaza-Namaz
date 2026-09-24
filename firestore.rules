@@ -198,10 +198,6 @@ service cloud.firestore {
               && request.resource.data.status == 'pending'
               && request.resource.data.completedAt == null
               && request.resource.data.updatedAt > resource.data.updatedAt
-              && (
-                !resource.data.keys().hasAny(['completionId'])
-                || request.resource.data.completionId == resource.data.completionId
-              )
             )
             || (
               resource.data.status == 'completed'
