@@ -139,7 +139,7 @@ void main() {
   });
 
   testWidgets(
-    'startup Google cancellation remains visible for configuration troubleshooting',
+    'startup Google cancellation does not show an error banner',
     (tester) async {
       final auth = StartupAuthRepository(
         const AppUser(id: 'cancelled-user', email: 'cancelled@example.com'),
@@ -154,8 +154,39 @@ void main() {
       await tester.pump();
       await tester.pump();
 
+      expect(find.textContaining('Authentication failed'), findsNothing);
+      expect(find.textContaining('SHA-1/SHA-256'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'startup Google configuration failure shows stage and code',
+    (tester) async {
+      final auth = StartupAuthRepository(
+        const AppUser(id: 'config-failed-user', email: 'config@example.com'),
+        signInFailure: const AuthenticationException(
+          source: 'google-sign-in',
+          code: 'clientConfigurationError',
+          message: 'serverClientId is invalid for this Android app',
+        ),
+      );
+      addTearDown(auth.dispose);
+
+      await pumpStartup(tester, auth.account, auth);
+      await tester.tap(find.text('Get Started'));
+      await tester.pump();
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pump();
+      await tester.pump();
+
       expect(
-        find.textContaining('SHA-1/SHA-256'),
+        find.textContaining(
+          'google-sign-in/clientConfigurationError',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('serverClientId is invalid'),
         findsOneWidget,
       );
     },

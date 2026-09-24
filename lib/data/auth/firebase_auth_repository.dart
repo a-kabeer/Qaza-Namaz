@@ -33,17 +33,39 @@ class AuthenticationException implements Exception {
 
 class AuthenticationCancelledException extends AuthenticationException {
   const AuthenticationCancelledException()
-      : super(
-          source: 'google',
-          code: 'cancelled',
-          message:
-              'Google Sign-In was cancelled. If you selected an account and '
-              'the sign-in did not finish, check the Firebase Google provider, '
-              'Android package name, and SHA-1/SHA-256 signing certificate.',
+      : this._(
+          userInitiated: true,
+          message: 'Google Sign-In was cancelled by the user.',
         );
 
+  factory AuthenticationCancelledException.withDescription(
+    String description,
+  ) =>
+      AuthenticationCancelledException._(
+        userInitiated: false,
+        message: description.trim(),
+      );
+
+  const AuthenticationCancelledException._({
+    required this.userInitiated,
+    required String message,
+  }) : super(
+          source: 'google-sign-in',
+          code: 'canceled',
+          message: message,
+        );
+
+  /// True only when the platform gives us no indication of another cause.
+  ///
+  /// google_sign_in documents [canceled] as user cancellation. When the
+  /// platform supplies a description, preserve it because it may contain
+  /// actionable information about the failure.
+  final bool userInitiated;
+
   @override
-  String toString() => message;
+  String toString() => userInitiated
+      ? message
+      : 'Authentication failed ($diagnostic)';
 }
 
 class FirebaseAuthRepository implements AuthRepository {
@@ -118,14 +140,16 @@ class FirebaseAuthRepository implements AuthRepository {
       return account;
     } catch (error, stack) {
       final mapped = mapSignInFailure(error, stack: stack);
+
+      // Preserve the original platform/Firebase failure in diagnostics before
+      // any UI-friendly mapping occurs. Structured GoogleSignInException
+      // fields such as code/description are essential when diagnosing the
+      // Android OAuth/Credential Manager boundary.
+      _debugLog(error, stack);
+
       // A failure that already knows which stage it came from travels
       // unchanged; re-wrapping it would bury the stage it names.
       if (mapped == null) rethrow;
-      // The Android Credential Manager path can surface some OAuth
-      // configuration failures as `canceled` after account selection, so the
-      // cancellation must remain observable and diagnosable rather than being
-      // silently discarded.
-      _debugLog(error, stack);
       throw mapped;
     }
   }
@@ -184,12 +208,17 @@ class FirebaseAuthRepository implements AuthRepository {
   }) {
     if (error is GoogleSignInException) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthenticationCancelledException();
+        final description = error.description?.trim();
+        if (description == null || description.isEmpty) {
+          return const AuthenticationCancelledException();
+        }
+        return AuthenticationCancelledException.withDescription(description);
       }
+
       return AuthenticationException(
         source: 'google-sign-in',
         code: error.code.name,
-        message: _describe(error.description, error),
+        message: _googleFailureMessage(error),
         cause: error,
         stackTrace: stack,
       );
@@ -223,6 +252,18 @@ class FirebaseAuthRepository implements AuthRepository {
       cause: error,
       stackTrace: stack,
     );
+  }
+
+  static String _googleFailureMessage(GoogleSignInException error) {
+    final description = error.description?.trim();
+    if (description != null && description.isNotEmpty) {
+      return description;
+    }
+
+    // Keep GoogleSignInException.details out of the UI. The original exception
+    // is already captured by diagnostics, where the redaction pipeline applies.
+    return 'Google Sign-In failed with ${error.code.name}. '
+        'See diagnostics for the underlying platform details.';
   }
 
   static String _describe(String? message, Object fallback) =>

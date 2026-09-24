@@ -9,10 +9,11 @@ import 'package:qaza_namaz/domain/entities/app_user.dart';
 
 /// Every way Google sign-in can fail, and the stage each one reports.
 ///
-/// The value of a distinct code is operational: "missing-id-token" means an
-/// unregistered SHA-1 and is the developer's to fix, "network-error" is the
-/// user's connection, and "cancelled" is not a failure at all. Collapsing
-/// them into one message is what makes a sign-in bug unfixable from a report.
+/// The value of a distinct code is operational: a missing ID token can indicate
+/// an OAuth certificate/configuration mismatch, a Firebase code identifies the
+/// Auth-stage failure, and genuine cancellation remains a normal user action.
+/// Collapsing them into one message is what makes a sign-in bug unfixable from
+/// a report.
 void main() {
   group('stage preconditions', () {
     test('an unsupported platform is named as such', () {
@@ -73,7 +74,7 @@ void main() {
       expect(mapped.message, 'Bad OAuth client.');
     });
 
-    test('a Google SDK failure with no description still says something', () {
+    test('a Google SDK failure with no description still reports its code', () {
       final mapped = FirebaseAuthRepository.mapSignInFailure(
         const GoogleSignInException(
           code: GoogleSignInExceptionCode.unknownError,
@@ -81,24 +82,50 @@ void main() {
         ),
       );
 
-      expect(mapped!.message.trim(), isNotEmpty);
+      expect(mapped!.message, contains('unknownError'));
     });
 
-    test('Google cancellation remains observable with configuration guidance', () {
+    test('genuine Google cancellation is identified as user initiated', () {
       final mapped = FirebaseAuthRepository.mapSignInFailure(
         const GoogleSignInException(code: GoogleSignInExceptionCode.canceled),
       );
 
       expect(mapped, isA<AuthenticationCancelledException>());
-      expect(mapped!.code, 'cancelled');
-      expect(mapped.message, contains('SHA-1'));
-      expect(mapped.message, contains('Firebase Google provider'));
+      final cancellation = mapped! as AuthenticationCancelledException;
+      expect(cancellation.code, 'canceled');
+      expect(cancellation.userInitiated, isTrue);
+      expect(cancellation.message, 'Google Sign-In was cancelled by the user.');
 
       final flowCancelled = FirebaseAuthRepository.mapSignInFailure(
         const GoogleAuthFlowCancelledException(),
       );
       expect(flowCancelled, isA<AuthenticationCancelledException>());
-      expect(flowCancelled!.message, contains('SHA-256'));
+      expect(
+        (flowCancelled! as AuthenticationCancelledException).userInitiated,
+        isTrue,
+      );
+    });
+
+    test('cancellation with platform description stays diagnosable', () {
+      final mapped = FirebaseAuthRepository.mapSignInFailure(
+        const GoogleSignInException(
+          code: GoogleSignInExceptionCode.canceled,
+          description: 'Credential Manager returned a configuration failure',
+        ),
+      );
+
+      expect(mapped, isA<AuthenticationCancelledException>());
+      final cancellation = mapped! as AuthenticationCancelledException;
+      expect(cancellation.userInitiated, isFalse);
+      expect(cancellation.diagnostic, contains('google-sign-in/canceled'));
+      expect(
+        cancellation.diagnostic,
+        contains('Credential Manager returned a configuration failure'),
+      );
+      expect(
+        cancellation.toString(),
+        contains('Authentication failed (google-sign-in/canceled'),
+      );
     });
 
     test('a Firebase Auth failure keeps the Firebase code', () {

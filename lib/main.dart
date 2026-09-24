@@ -60,10 +60,17 @@ Future<void> main() async {
     // Debug builds use the Firebase debug provider; release builds use Play
     // Integrity, which is the one startup step that behaves differently in a
     // release build and so the one most likely to stall in one.
+    final appCheckProvider =
+        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity;
+
     await FirebaseAppCheck.instance.activate(
-      androidProvider:
-          kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+      androidProvider: appCheckProvider,
     );
+    diagnostics.recordEvent(
+      DiagnosticArea.startup,
+      'app_check_activated_${kDebugMode ? 'debug' : 'play_integrity'}',
+    );
+
   });
 
   // Complete the legacy migration before any repository can read the local
@@ -81,6 +88,35 @@ Future<void> main() async {
   });
 
   runApp(const ProviderScope(child: QazaNamazApp()));
+
+  // Do not delay the first frame for App Check diagnostics. The application
+  // remains usable while the debug-token probe runs independently.
+  if (kDebugMode) {
+    _auditDebugAppCheckToken(diagnostics);
+  }
+}
+
+/// Probes debug App Check token readiness without ever logging the token.
+Future<void> _auditDebugAppCheckToken(DiagnosticsService diagnostics) async {
+  try {
+    final token = await FirebaseAppCheck.instance
+        .getToken()
+        .timeout(const Duration(seconds: 3));
+    if (token == null || token.isEmpty) {
+      throw StateError('Firebase App Check returned no debug token.');
+    }
+    diagnostics.recordEvent(
+      DiagnosticArea.startup,
+      'app_check_debug_token_ready',
+    );
+  } catch (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.startup,
+      'app_check_debug_token_failed',
+      error,
+      stack: stack,
+    );
+  }
 }
 
 /// Runs one startup step, bounded and non-fatal.

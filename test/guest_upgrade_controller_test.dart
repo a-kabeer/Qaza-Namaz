@@ -307,7 +307,7 @@ void main() {
   );
 
   test(
-    'Google cancellation keeps guest mode and surfaces configuration guidance',
+    'genuine Google cancellation keeps guest mode and stays silent',
     () async {
       final (container, auth, migration) = await makeContainer(
         guestData: true,
@@ -321,9 +321,32 @@ void main() {
       expect(container.read(guestSessionProvider), isTrue);
       expect(container.read(activeUserIdProvider), guestUserId);
       expect(container.read(guestUpgradePendingProvider), isFalse);
+      expect(container.read(guestUpgradeControllerProvider).error, isNull);
+      expect(migration.migrateCalls, 0);
+      expect(migration.retireCalls, 0);
+    },
+  );
+
+  test(
+    'Google cancellation with a platform description stays diagnosable',
+    () async {
+      final (container, auth, migration) = await makeContainer(
+        guestData: true,
+        signInFailure: AuthenticationCancelledException.withDescription(
+          'Credential Manager returned a configuration failure',
+        ),
+      );
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isFalse);
+      expect(auth.currentUser, isNull);
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
+      expect(container.read(guestUpgradePendingProvider), isFalse);
       expect(
         container.read(guestUpgradeControllerProvider).error,
-        contains('SHA-1/SHA-256'),
+        'google-sign-in/canceled: Credential Manager returned a configuration failure',
       );
       expect(migration.migrateCalls, 0);
       expect(migration.retireCalls, 0);
