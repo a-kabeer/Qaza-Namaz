@@ -271,10 +271,17 @@ class QazaUndoManager {
         );
       }
       if (expectedBatch != null && !batch.matches(expectedBatch)) {
+        await _store.clear(userId: userId);
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.staleBatch,
         );
       }
+
+      // Once the active action has been accepted for this tap, consume it
+      // before the persistence call. Any target change, zero-count result, or
+      // exception must remove the stale Undo action rather than leaving a
+      // misleading retryable action behind.
+      await _store.clear(userId: userId);
 
       final count = await service.undoCompletions(
         userId: userId,
