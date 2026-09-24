@@ -285,16 +285,36 @@ void main() {
   });
 
   group('when sign-in does not succeed', () {
-    testWidgets('a Google cancellation is surfaced with configuration guidance',
+    testWidgets('a genuine Google cancellation is reported as cancellation',
         (tester) async {
       auth.signInFailure = const AuthenticationCancelledException();
       final container = await openSettings(tester);
 
       await tapSignIn(tester);
 
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
+      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
+      expect(container.read(isGuestProvider), isTrue);
+      expect(onSettings(tester), isTrue);
+    });
+
+    testWidgets('a diagnosable Google cancellation shows its actual stage',
+        (tester) async {
+      auth.signInFailure =
+          AuthenticationCancelledException.withDescription(
+        'Credential Manager returned a configuration failure',
+      );
+      final container = await openSettings(tester);
+
+      await tapSignIn(tester);
+
       expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
       expect(
-        find.textContaining('SHA-1/SHA-256'),
+        find.textContaining('google-sign-in/canceled'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Credential Manager returned a configuration failure'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('backup_sign_in_cancelled')), findsNothing);
@@ -355,8 +375,8 @@ void main() {
       migration.guestData = false;
       await openSettings(tester);
       await tapSignIn(tester);
-      expect(find.byKey(const Key('backup_sign_in_failed')), findsOneWidget);
-      expect(find.textContaining('SHA-1/SHA-256'), findsOneWidget);
+      expect(find.byKey(const Key('backup_sign_in_failed')), findsNothing);
+      expect(find.byKey(const Key('backup_sign_in_cancelled')), findsOneWidget);
 
       auth.signInFailure = null;
       await tapSignIn(tester);
