@@ -72,8 +72,7 @@ class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
     required int target,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final dateKey =
-        '${date.year.toString().padLeft(4, '0')}-'
+    final dateKey = '${date.year.toString().padLeft(4, '0')}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
     final key = 'qaza_home_daily_target_celebrated_$userId';
@@ -185,8 +184,8 @@ final homeDailyProgressProvider =
   return HomeDailyProgress(completed: completed, target: target);
 });
 
-final homeProgressHistoryProvider =
-    FutureProvider.autoDispose.family<List<HomeProgressPoint>, HomeProgressRange>(
+final homeProgressHistoryProvider = FutureProvider.autoDispose
+    .family<List<HomeProgressPoint>, HomeProgressRange>(
   (ref, range) async {
     final userId = ref.watch(activeUserIdProvider);
     final today = ref.watch(homeLocalDateProvider);
@@ -263,8 +262,8 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 }
 
-final homePrayerSelectionProvider = NotifierProvider<
-    HomePrayerSelectionNotifier, HomePrayerSelectionState>(
+final homePrayerSelectionProvider =
+    NotifierProvider<HomePrayerSelectionNotifier, HomePrayerSelectionState>(
   HomePrayerSelectionNotifier.new,
 );
 
@@ -289,7 +288,8 @@ PrayerType? currentHomePrayerForSchedule({
   };
 }
 
-class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerState> {
+class HomeCurrentPrayerNotifier
+    extends AutoDisposeNotifier<HomeCurrentPrayerState> {
   Timer? _timer;
   AppLifecycleListener? _lifecycle;
 
@@ -300,11 +300,11 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
       prayerTimesState = ref.watch(prayerTimesControllerProvider);
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.uncaught,
-        'home_current_prayer_state_read_failed',
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.uncaught,
+            'home_current_prayer_state_read_failed',
+            error,
+            stack: stack,
+          );
       prayerTimesState = null;
     }
 
@@ -351,11 +351,11 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
       prayerTimesState = ref.read(prayerTimesControllerProvider);
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.uncaught,
-        'home_current_prayer_state_read_failed',
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.uncaught,
+            'home_current_prayer_state_read_failed',
+            error,
+            stack: stack,
+          );
       prayerTimesState = null;
     }
 
@@ -382,11 +382,11 @@ class HomeCurrentPrayerNotifier extends AutoDisposeNotifier<HomeCurrentPrayerSta
       );
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.uncaught,
-        'home_current_prayer_resolution_failed',
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.uncaught,
+            'home_current_prayer_resolution_failed',
+            error,
+            stack: stack,
+          );
       // Home remains usable while Prayer Times is unavailable or booting.
       return null;
     }
@@ -419,11 +419,27 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
-  if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+  final tartibAsync = ref.watch(sahibAlTartibProvider);
+  final tartib = tartibAsync.valueOrNull;
+
+  // Automatic selection is held to the same rule as manual selection. Until
+  // Sahib al-Tartib has resolved, the ordering constraint is unknown, so
+  // offering the current prayer could propose a Fard the rule forbids. The
+  // manual menu already refuses in this state; this is where automatic used
+  // to disagree with it.
+  if (!tartibAsync.hasValue || tartib == null) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
-      prayer: tartib!.nextPrayer,
+      prayer: null,
+      currentPrayer: currentPrayer,
+      source: HomePrayerSelectionSource.tartibUnavailable,
+    );
+  }
+
+  if (tartib.requiresOrder && tartib.nextPrayer != null) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: tartib.nextPrayer,
       currentPrayer: currentPrayer,
       source: HomePrayerSelectionSource.sahibAlTartib,
     );

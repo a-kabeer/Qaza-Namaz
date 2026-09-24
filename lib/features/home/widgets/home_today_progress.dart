@@ -28,7 +28,6 @@ import '../../prayer_times/presentation/prayer_times_localizations.dart';
 import '../../prayer_times/prayer_times_providers.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../qaza/completion/qaza_completion_state.dart';
-import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../qaza/qaza_undo_banner.dart';
 import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
@@ -42,8 +41,7 @@ class HomeTodayProgress extends ConsumerStatefulWidget {
   final QazaProgressSummary summary;
 
   @override
-  ConsumerState<HomeTodayProgress> createState() =>
-      _HomeTodayProgressState();
+  ConsumerState<HomeTodayProgress> createState() => _HomeTodayProgressState();
 }
 
 class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
@@ -129,11 +127,11 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       return await ref.read(qazaRestrictionEvaluationProvider.future);
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.qazaCompletion,
-        'restriction_lookup_failed',
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.qazaCompletion,
+            'restriction_lookup_failed',
+            error,
+            stack: stack,
+          );
       // Restriction lookup is advisory when the UI could not resolve one; the
       // completion action remains available in this state.
       return null;
@@ -227,9 +225,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         ..showSnackBar(
           SnackBar(
             content: Text(
-              l10n.completeNoPendingTitle +
-                  ' ' +
-                  l10n.completeNoPendingMessage,
+              l10n.completeNoPendingTitle + ' ' + l10n.completeNoPendingMessage,
             ),
           ),
         );
@@ -291,17 +287,13 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       (previous, next) {
         if (!next.hasError || next.error == previous?.error) return;
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.uncaught,
-          'home_daily_progress_failed',
-          next.error!,
-          stack: next.stackTrace,
-        );
+              DiagnosticArea.uncaught,
+              'home_daily_progress_failed',
+              next.error!,
+              stack: next.stackTrace,
+            );
       },
     );
-
-    final dateLabel = DateFormatters.weekdayShortNames[today.weekday - 1] +
-        ', ' +
-        DateFormatters.formatGregorianDatePadded(today);
 
     return AppCard(
       key: const Key('home_today_progress'),
@@ -332,9 +324,29 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
                           fontWeight: FontWeight.w700,
                         ),
                   );
-                  final date = Text(
-                    dateLabel,
-                    style: Theme.of(context).textTheme.bodySmall,
+                  // Gregorian leads and carries the weekday, month and year,
+                  // localized by Material so Urdu reads as Urdu rather than
+                  // English month names in an Urdu sentence. The Hijri
+                  // reading of the same day sits underneath as secondary.
+                  final date = Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        MaterialLocalizations.of(context).formatFullDate(today),
+                        key: const Key('home_today_date'),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        DateFormatters.hijriLabel(today),
+                        key: const Key('home_today_date_hijri'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
                   );
                   if (constraints.maxWidth < 360) {
                     return Column(
@@ -498,8 +510,11 @@ class _TodayDonut extends StatelessWidget {
     final percent = (progress * 100).round();
 
     return Semantics(
-      label: percent.toString() + '%, ' +
-          completed.toString() + ' of ' + target.toString(),
+      label: percent.toString() +
+          '%, ' +
+          completed.toString() +
+          ' of ' +
+          target.toString(),
       child: SizedBox(
         key: const Key('home_today_donut'),
         width: 150,
@@ -578,6 +593,76 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
 }
 
+/// Shown while the ordering rule is unknown, in place of any Fard action.
+///
+/// Two states rather than one, because they call for different things: a
+/// check still running is worth waiting for, a failed one is worth retrying.
+class _TartibUnavailable extends StatelessWidget {
+  const _TartibUnavailable({required this.loading, required this.onRetry});
+
+  final bool loading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('home_tartib_unavailable'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (loading)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Icon(Icons.lock_clock_rounded, color: theme.colorScheme.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  loading
+                      ? l10n.homeTartibCheckingTitle
+                      : l10n.homeTartibFailedTitle,
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  loading
+                      ? l10n.homeTartibCheckingBody
+                      : l10n.homeTartibFailedBody,
+                  style: theme.textTheme.bodySmall,
+                ),
+                if (!loading) ...[
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      key: const Key('home_tartib_retry'),
+                      onPressed: onRetry,
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Timer? _restrictionTicker;
 
@@ -637,6 +722,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           : child,
     );
   }
+
   QazaRestrictionEvaluation? _lastRestriction;
   bool _restrictionInvalidated = false;
 
@@ -647,8 +733,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
 
-      final current =
-          _lastRestriction ??
+      final current = _lastRestriction ??
           ref.read(qazaRestrictionEvaluationProvider).valueOrNull;
       if (current?.isRestricted != true) return;
 
@@ -703,15 +788,14 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       (previous, next) {
         if (!next.hasError || next.error == previous?.error) return;
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.uncaught,
-          'home_restriction_evaluation_failed',
-          next.error!,
-          stack: next.stackTrace,
-        );
+              DiagnosticArea.uncaught,
+              'home_restriction_evaluation_failed',
+              next.error!,
+              stack: next.stackTrace,
+            );
       },
     );
-    final restriction =
-        _lastRestriction ?? restrictionAsync.valueOrNull;
+    final restriction = _lastRestriction ?? restrictionAsync.valueOrNull;
     final restrictedRestriction =
         restriction?.isRestricted == true ? restriction : null;
     final restrictedType = restriction?.type;
@@ -777,8 +861,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final tartib = tartibAsync.valueOrNull;
     final automaticTartib =
         widget.selected.mode == HomePrayerSelectionMode.automatic &&
-        tartib?.requiresOrder == true &&
-        tartib?.nextPrayer != null;
+            tartib?.requiresOrder == true &&
+            tartib?.nextPrayer != null;
 
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -834,7 +918,16 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           ],
         ),
         const SizedBox(height: 10),
-        if (prayer == null)
+        // Until Sahib al-Tartib has resolved, no Fard prayer may be offered —
+        // not the current prayer, and not the oldest pending overall. Witr is
+        // unaffected and stays reachable from the prayer menu.
+        if (widget.selected.source ==
+            HomePrayerSelectionSource.tartibUnavailable)
+          _TartibUnavailable(
+            loading: tartibAsync.isLoading,
+            onRetry: () => ref.invalidate(sahibAlTartibProvider),
+          )
+        else if (prayer == null)
           Consumer(
             builder: (context, ref, _) {
               final fallback = ref.watch(homeFallbackPendingProvider);
@@ -914,8 +1007,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       PrayerTimesStrings
@@ -944,14 +1036,14 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                     Text(
                                       PrayerTimesStrings.restrictionRemaining(
                                         context,
-                                        _liveRestrictionRemaining(restrictedRestriction),
+                                        _liveRestrictionRemaining(
+                                            restrictedRestriction),
                                       ),
                                       key: const Key(
                                         'home_qaza_restricted_remaining',
                                       ),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
                                     ),
                                     if (timeLabel != null) ...[
                                       const SizedBox(height: 2),
@@ -1037,7 +1129,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                   key: const Key('home_oldest_qaza_date'),
                                 ),
                                 Text(
-                                  DateFormatters.hijriLabel(record.originalDate),
+                                  DateFormatters.hijriLabel(
+                                      record.originalDate),
                                   key: const Key('home_oldest_qaza_date_hijri'),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
@@ -1089,7 +1182,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                                   backgroundColor: Theme.of(context)
                                       .colorScheme
                                       .errorContainer,
-                                foregroundColor: Theme.of(context)
+                                  foregroundColor: Theme.of(context)
                                       .colorScheme
                                       .onErrorContainer,
                                   child: Icon(_prayerIcon(prayer)),
@@ -1253,7 +1346,8 @@ class _HomeFallbackNextQaza extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    DateFormatters.formatGregorianDatePadded(record.originalDate),
+                    DateFormatters.formatGregorianDatePadded(
+                        record.originalDate),
                     key: const Key('home_oldest_qaza_date'),
                   ),
                   Text(

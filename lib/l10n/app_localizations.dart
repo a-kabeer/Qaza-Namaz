@@ -296,6 +296,30 @@ abstract class AppLocalizations {
   /// **'Open Settings'**
   String get commonOpenSettings;
 
+  /// No description provided for @homeTartibCheckingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the prayer order'**
+  String get homeTartibCheckingTitle;
+
+  /// No description provided for @homeTartibCheckingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sahib al-Tartib decides which Fard prayer comes next. One moment.'**
+  String get homeTartibCheckingBody;
+
+  /// No description provided for @homeTartibFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check the prayer order'**
+  String get homeTartibFailedTitle;
+
+  /// No description provided for @homeTartibFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Fard prayers are held back until the order is known, so nothing is completed out of sequence. Witr can still be completed from the prayer menu.'**
+  String get homeTartibFailedBody;
+
   /// No description provided for @qazaSortLabel.
   ///
   /// In en, this message translates to:
@@ -3128,8 +3152,16 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get homeTodayDate;
 
+  /// No description provided for @homeCurrentPrayerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current prayer: {prayer}'**
   String homeCurrentPrayerLabel(String prayer);
 
+  /// No description provided for @homeSahibOrderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sahib al-Tartib: {prayer}'**
   String homeSahibOrderLabel(String prayer);
 }
 

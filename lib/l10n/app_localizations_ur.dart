@@ -118,6 +118,20 @@ class AppLocalizationsUr extends AppLocalizations {
   String get commonOpenSettings => 'سیٹنگز کھولیں';
 
   @override
+  String get homeTartibCheckingTitle => 'نماز کی ترتیب جانچی جا رہی ہے';
+
+  @override
+  String get homeTartibCheckingBody =>
+      'صاحب الترتیب طے کرتا ہے کہ اگلی فرض نماز کون سی ہے۔ ایک لمحہ۔';
+
+  @override
+  String get homeTartibFailedTitle => 'نماز کی ترتیب جانچی نہیں جا سکی';
+
+  @override
+  String get homeTartibFailedBody =>
+      'ترتیب معلوم ہونے تک فرض نمازیں روک لی گئی ہیں تاکہ کوئی نماز بے ترتیب مکمل نہ ہو۔ وتر اب بھی مینیو سے مکمل کی جا سکتی ہے۔';
+
+  @override
   String get qazaSortLabel => 'ترتیب';
 
   @override
@@ -1833,8 +1847,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeTodayDate => 'آج';
 
   @override
-  String homeCurrentPrayerLabel(String prayer) => 'موجودہ نماز: $prayer';
+  String homeCurrentPrayerLabel(String prayer) {
+    return 'موجودہ نماز: $prayer';
+  }
 
   @override
-  String homeSahibOrderLabel(String prayer) => 'صاحبِ ترتیب: $prayer';
+  String homeSahibOrderLabel(String prayer) {
+    return 'صاحبِ ترتیب: $prayer';
+  }
 }

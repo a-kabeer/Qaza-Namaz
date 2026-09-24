@@ -53,6 +53,14 @@ enum HomePrayerSelectionSource {
   manual,
   sahibAlTartib,
   currentPrayer,
+
+  /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
+  ///
+  /// Distinct from [unavailable]: there is nothing wrong with the ledger, the
+  /// ordering rule simply is not known yet. Retrying is worthwhile, which is
+  /// why the UI tells these two apart.
+  tartibUnavailable,
+
   unavailable,
 }
 
@@ -119,7 +127,8 @@ DateTime homeEstimatedCompletionDate({
   required int pending,
   required int dailyTarget,
   required int completedToday,
-}) => DateTime(now.year, now.month, now.day).add(
+}) =>
+    DateTime(now.year, now.month, now.day).add(
       Duration(
         days: homeDaysUntilCompletion(
           pending: pending,

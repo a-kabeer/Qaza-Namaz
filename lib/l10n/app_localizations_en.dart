@@ -120,6 +120,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOpenSettings => 'Open Settings';
 
   @override
+  String get homeTartibCheckingTitle => 'Checking the prayer order';
+
+  @override
+  String get homeTartibCheckingBody =>
+      'Sahib al-Tartib decides which Fard prayer comes next. One moment.';
+
+  @override
+  String get homeTartibFailedTitle => 'Could not check the prayer order';
+
+  @override
+  String get homeTartibFailedBody =>
+      'Fard prayers are held back until the order is known, so nothing is completed out of sequence. Witr can still be completed from the prayer menu.';
+
+  @override
   String get qazaSortLabel => 'Sort';
 
   @override
@@ -1834,8 +1848,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTodayDate => 'Today';
 
   @override
-  String homeCurrentPrayerLabel(String prayer) => 'Current prayer: $prayer';
+  String homeCurrentPrayerLabel(String prayer) {
+    return 'Current prayer: $prayer';
+  }
 
   @override
-  String homeSahibOrderLabel(String prayer) => 'Sahib al-Tartib: $prayer';
+  String homeSahibOrderLabel(String prayer) {
+    return 'Sahib al-Tartib: $prayer';
+  }
 }

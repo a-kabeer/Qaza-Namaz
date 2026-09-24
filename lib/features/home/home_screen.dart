@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,7 +15,9 @@ import '../../features/settings/notifications_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/settings/account_screen.dart';
 import '../../l10n/app_localizations.dart';
+import '../prayer_times/prayer_times_providers.dart';
 import 'home_controller.dart';
+import 'providers/home_providers.dart';
 import 'widgets/home_all_completed_state.dart';
 import 'widgets/home_empty_state.dart';
 import 'widgets/home_overall_progress.dart';
@@ -23,8 +27,94 @@ import 'widgets/home_skeleton.dart';
 import 'widgets/home_statistics_summary.dart';
 import 'widgets/home_today_progress.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
+  /// The local date the dashboard was last built for.
+  ///
+  /// Home is a screen people leave open. Everything on it that says "today" —
+  /// the date, daily progress, the history window — is derived from this, so
+  /// when the day turns underneath it the whole dashboard is stale until
+  /// something says so.
+  DateTime? _renderedDate;
+  Timer? _midnightTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _renderedDate = ref.read(homeLocalDateProvider);
+      _scheduleMidnight();
+    });
+  }
+
+  @override
+  void dispose() {
+    _midnightTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // Coming back from the background is the other way the day turns without
+    // this screen noticing: the process may have been suspended for hours.
+    unawaited(ref.read(prayerTimesControllerProvider.notifier).tick());
+    _refreshIfDayTurned();
+    _scheduleMidnight();
+  }
+
+  /// Arms a timer for the next local midnight in the prayer location's zone.
+  ///
+  /// The location's timezone rather than the device's, because that is the
+  /// zone the prayer schedule and every "today" on this page are computed in;
+  /// a traveller whose phone has moved on should still see their chosen
+  /// location's day.
+  void _scheduleMidnight() {
+    _midnightTimer?.cancel();
+    if (!mounted) return;
+
+    final location = ref.read(prayerTimesControllerProvider).location;
+    final now = ref.read(prayerTimesClockProvider).now();
+    final today = homeLocalDateForLocation(location: location, instant: now);
+    final nextMidnight =
+        homeLocalDayEndForDate(location: location, date: today);
+
+    // A second past the boundary, so the clock has unambiguously rolled over
+    // by the time the date is read again.
+    var wait = nextMidnight.difference(now) + const Duration(seconds: 1);
+    if (wait.isNegative) wait = const Duration(seconds: 1);
+
+    _midnightTimer = Timer(wait, () {
+      if (!mounted) return;
+      _refreshIfDayTurned();
+      _scheduleMidnight();
+    });
+  }
+
+  /// Rebuilds the dashboard when, and only when, the local date has changed.
+  void _refreshIfDayTurned() {
+    if (!mounted) return;
+    // The clock is read through a provider, so it has to be invalidated
+    // before the new date can be observed.
+    ref.invalidate(homeNowProvider);
+    final current = ref.read(homeLocalDateProvider);
+    if (_renderedDate != null && current == _renderedDate) return;
+
+    _renderedDate = current;
+    ref.read(homeControllerProvider).invalidateDashboard();
+    ref.invalidate(sahibAlTartibProvider);
+    ref.invalidate(qazaRestrictionEvaluationProvider);
+  }
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {
     ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
@@ -36,7 +126,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(progressSummaryProvider);
 
@@ -45,11 +135,11 @@ class HomeScreen extends ConsumerWidget {
       (previous, next) {
         if (!next.hasError || next.error == previous?.error) return;
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.uncaught,
-          'home_summary_failed',
-          next.error!,
-          stack: next.stackTrace,
-        );
+              DiagnosticArea.uncaught,
+              'home_summary_failed',
+              next.error!,
+              stack: next.stackTrace,
+            );
       },
     );
 
