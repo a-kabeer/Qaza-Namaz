@@ -51,7 +51,9 @@ class AuthenticationCancelledException extends AuthenticationException {
   final bool userInitiated;
 
   @override
-  String toString() => message;
+  String toString() => userInitiated
+      ? message
+      : 'Authentication failed ($diagnostic)';
 }
 
 class FirebaseAuthRepository implements AuthRepository {
