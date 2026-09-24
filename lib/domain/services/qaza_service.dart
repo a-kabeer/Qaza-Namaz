@@ -395,8 +395,8 @@ class QazaService {
 
   /// Reverts only the completions captured by an active undo window.
   ///
-  /// The persistence layer re-checks the exact completion timestamp so an old
-  /// undo can never overwrite a later edit or conflict resolution.
+  /// The persistence layer re-checks the exact completion marker so an old
+  /// undo can never overwrite a later completion or conflict resolution.
   Future<int> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
