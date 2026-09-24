@@ -1829,12 +1829,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeYourProgress => 'آپ کی پیش رفت';
 
   @override
-  String get homeRange1Day => '1 دن';
-
-  @override
-  String get homeRange3Days => '3 دن';
-
-  @override
   String get homeRange7Days => '7 دن';
 
   @override

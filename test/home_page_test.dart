@@ -13,6 +13,7 @@ import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/home_screen.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
+import 'package:qaza_namaz/features/home/widgets/home_progress_history.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_times/domain/qaza_restriction_service.dart';
 import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
@@ -166,6 +167,9 @@ void main() {
     );
     return tester.widget<Text>(finder.first).data!;
   }
+
+  BarChart chartOf(WidgetTester tester) =>
+      tester.widget<BarChart>(find.byType(BarChart));
 
   group('reference dashboard layout', () {
     testWidgets('renders the reference sections in order', (tester) async {
@@ -664,8 +668,26 @@ void main() {
       expect(find.byKey(const Key('home_pending_by_prayer')), findsOneWidget);
     });
 
-    testWidgets('graph supports 1-day and 3-day daily completed history',
+    testWidgets('shows only supported ranges and defaults to 7 Days',
         (tester) async {
+      await pumpHome(tester, await ledger());
+
+      final rangeButton =
+          tester.widget<SegmentedButton<HomeProgressRange>>(
+        find.byKey(const Key('home_progress_range')),
+      );
+
+      expect(
+        rangeButton.selected,
+        {HomeProgressRange.sevenDays},
+      );
+      expect(find.text('7 Days'), findsOneWidget);
+      expect(find.text('30 Days'), findsOneWidget);
+      expect(find.text('Monthly'), findsOneWidget);
+      expect(rangeButton.segments, hasLength(3));
+    });
+
+    testWidgets('7 Days renders one daily bar for each day', (tester) async {
       final repository = InMemoryQazaRepository();
       await repository.addRecords([
         _record(
@@ -703,61 +725,193 @@ void main() {
         repository,
         now: DateTime(2026, 9, 22),
       );
+      final chart = chartOf(tester);
 
-      expect(find.byKey(const Key('home_progress_range')), findsOneWidget);
-      expect(find.text('1 Day'), findsOneWidget);
-      expect(find.text('3 Days'), findsOneWidget);
-      expect(find.text('7 Days'), findsOneWidget);
-      expect(find.text('30 Days'), findsOneWidget);
-      expect(find.text('Monthly'), findsOneWidget);
-
-      final oneDay = await container
-          .read(homeProgressHistoryProvider(HomeProgressRange.oneDay).future);
-      expect(oneDay.length, 1);
-      expect(oneDay.single.start, DateTime(2026, 9, 22));
-      expect(oneDay.single.count, 2);
-
-      await tester.tap(find.text('3 Days'));
-      await tester.pumpAndSettle();
-
-      final threeDays = await container
-          .read(homeProgressHistoryProvider(HomeProgressRange.threeDays).future);
-      expect(threeDays.length, 3);
+      expect(chart.data.barGroups, hasLength(7));
       expect(
-        threeDays.map((point) => point.start),
-        [
-          DateTime(2026, 9, 20),
-          DateTime(2026, 9, 21),
-          DateTime(2026, 9, 22),
-        ],
+        chart.data.barGroups
+            .map((group) => group.barRods.single.toY.toInt())
+            .toList(),
+        [0, 0, 0, 0, 1, 1, 2],
+      );
+      expect(chart.data.minY, 0);
+      expect(chart.data.maxY, greaterThanOrEqualTo(2));
+      expect(
+        chart.data.barGroups.first.barRods.single.color,
+        AppChartColors.of(
+          tester.element(find.byKey(const Key('home_progress_chart'))),
+        ).primary,
       );
       expect(
-        threeDays.map((point) => point.count),
-        [1, 1, 2],
+        chart.data.titlesData.leftTitles.sideTitles.showTitles,
+        isTrue,
       );
 
-      final chart = tester.widget<LineChart>(
-        find.descendant(
-          of: find.byKey(const Key('home_progress_chart')),
-          matching: find.byType(LineChart),
+      final points = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.sevenDays).future);
+      expect(points, hasLength(7));
+      expect(points.last.start, DateTime(2026, 9, 22));
+      expect(points.last.count, 2);
+    });
+
+    testWidgets('30 Days keeps all 30 bars while reducing labels',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      await repository.addRecords([
+        _record(
+          'aug30',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 8, 30),
         ),
-      );
-      final tooltipItems = chart.data.lineTouchData.touchTooltipData
-          .getTooltipItems!([
-        LineBarSpot(
-          chart.data.lineBarsData.first,
-          0,
-          const FlSpot(2, 2),
+        _record(
+          'sep10',
+          PrayerType.zuhr,
+          DateTime(2026, 1, 2),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 10),
+        ),
+        _record(
+          'sep22',
+          PrayerType.asr,
+          DateTime(2026, 1, 3),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 22),
         ),
       ]);
-      expect(tooltipItems.single!.text, contains('22 Sep 2026'));
-      expect(tooltipItems.single!.text, contains('2 completed'));
-      expect(
-        tooltipItems.single!.textStyle.color,
-        Theme.of(tester.element(find.byKey(const Key('home_progress_chart'))))
-            .colorScheme
-            .onInverseSurface,
+
+      await pumpHome(
+        tester,
+        repository,
+        now: DateTime(2026, 9, 22),
       );
+      await tester.tap(find.text('30 Days'));
+      await tester.pumpAndSettle();
+
+      final chart = chartOf(tester);
+      expect(chart.data.barGroups, hasLength(30));
+      expect(chart.data.maxY, greaterThanOrEqualTo(1));
+      expect(
+        chart.data.titlesData.bottomTitles.sideTitles.showTitles,
+        isTrue,
+      );
+      expect(
+        chart.data.barGroups
+            .where((group) => group.barRods.single.toY > 0)
+            .length,
+        3,
+      );
+    });
+
+    testWidgets('Monthly renders the last 12 calendar months',
+        (tester) async {
+      final repository = await ledger();
+
+      final container = await pumpHome(
+        tester,
+        repository,
+        now: DateTime(2026, 9, 22),
+      );
+      await tester.tap(find.text('Monthly'));
+      await tester.pumpAndSettle();
+
+      final chart = chartOf(tester);
+      expect(chart.data.barGroups, hasLength(12));
+
+      final points = await container
+          .read(homeProgressHistoryProvider(HomeProgressRange.monthly).future);
+      expect(points.first.start, DateTime(2025, 10, 1));
+      expect(points.last.start, DateTime(2026, 9, 1));
+      expect(points.last.count, 3);
+    });
+
+    testWidgets('supports zero, sparse, partial and high completion values',
+        (tester) async {
+      final repository = InMemoryQazaRepository();
+      final records = <QazaRecord>[
+        _record(
+          'sparse',
+          PrayerType.fajr,
+          DateTime(2026, 1, 1),
+          QazaStatus.completed,
+          completedAt: DateTime(2026, 9, 20),
+        ),
+      ];
+      for (var i = 0; i < 25; i++) {
+        records.add(
+          _record(
+            'high-$i',
+            PrayerType.witr,
+            DateTime(2026, 2, i + 1),
+            QazaStatus.completed,
+            completedAt: DateTime(2026, 9, 19),
+          ),
+        );
+      }
+      await repository.addRecords(records);
+
+      await pumpHome(
+        tester,
+        repository,
+        now: DateTime(2026, 9, 22),
+      );
+      final chart = chartOf(tester);
+
+      expect(chart.data.barGroups, hasLength(7));
+      expect(
+        chart.data.barGroups
+            .map((group) => group.barRods.single.toY.toInt())
+            .toList(),
+        [0, 0, 0, 25, 1, 0, 0],
+      );
+      expect(chart.data.maxY, greaterThanOrEqualTo(25));
+
+      final rect = tester.getRect(find.byKey(const Key('home_progress_chart')));
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * 0.5 + 20,
+          rect.top + 60,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('home_chart_selected_value')), findsOneWidget);
+
+      final selected = chart.data.barTouchData.touchTooltipData.getTooltipItem!(
+        chart.data.barGroups[3],
+        3,
+        chart.data.barGroups[3].barRods.single,
+        0,
+      );
+      expect(selected, isNotNull);
+      expect(selected!.text, contains('25 completed'));
+      expect(selected.text, contains('19 Sep 2026'));
+    });
+
+    testWidgets('shows the empty history state when no points exist',
+        (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          activeUserIdProvider.overrideWithValue(null),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: TestApp(
+            theme: AppTheme.light(),
+            home: const HomeProgressHistory(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home_progress_no_points')), findsOneWidget);
+      expect(find.byType(BarChart), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -889,6 +1043,17 @@ void main() {
       expect(find.text('مجموعی قضا'), findsOneWidget);
       expect(find.text('نماز کے لحاظ سے باقی'), findsOneWidget);
       expect(find.text('آپ کی پیش رفت'), findsOneWidget);
+      expect(find.byType(BarChart), findsOneWidget);
+      expect(
+        Directionality.of(
+          tester.element(find.byKey(const Key('home_your_progress'))),
+        ),
+        TextDirection.rtl,
+      );
+      expect(
+        chartOf(tester).data.barGroups,
+        isNotEmpty,
+      );
       expect(tester.takeException(), isNull);
     });
 

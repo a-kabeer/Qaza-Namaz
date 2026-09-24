@@ -194,12 +194,6 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
 
     List<DateTime> starts;
     switch (range) {
-      case HomeProgressRange.oneDay:
-        starts = [today];
-      case HomeProgressRange.threeDays:
-        starts = [
-          for (var i = 2; i >= 0; i--) today.subtract(Duration(days: i)),
-        ];
       case HomeProgressRange.sevenDays:
         starts = [
           for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i)),

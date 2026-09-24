@@ -27,8 +27,6 @@ class HomeDailyProgress {
 }
 
 enum HomeProgressRange {
-  oneDay,
-  threeDays,
   sevenDays,
   thirtyDays,
   monthly,
