@@ -8,7 +8,6 @@ import '../../core/diagnostics/diagnostics.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
-import '../../core/widgets/sync_status.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/calculator/calculator_screen.dart';
 import '../../features/settings/notifications_screen.dart';
@@ -210,7 +209,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SyncStatus(),
                 if (allCompleted) ...[
                   const SizedBox(height: 6),
                   HomeAllCompletedState(
