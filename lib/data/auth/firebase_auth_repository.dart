@@ -32,15 +32,25 @@ class AuthenticationException implements Exception {
 }
 
 class AuthenticationCancelledException extends AuthenticationException {
-  const AuthenticationCancelledException({
-    this.userInitiated = true,
-    String? description,
+  const AuthenticationCancelledException()
+      : this._(
+          userInitiated: true,
+          message: 'Google Sign-In was cancelled by the user.',
+        );
+
+  AuthenticationCancelledException.withDescription(String description)
+      : this._(
+          userInitiated: false,
+          message: description.trim(),
+        );
+
+  const AuthenticationCancelledException._({
+    required this.userInitiated,
+    required String message,
   }) : super(
           source: 'google-sign-in',
           code: 'canceled',
-          message: description != null && description.trim().isNotEmpty
-              ? description
-              : 'Google Sign-In was cancelled by the user.',
+          message: message,
         );
 
   /// True only when the platform gives us no indication of another cause.
@@ -196,12 +206,11 @@ class FirebaseAuthRepository implements AuthRepository {
   }) {
     if (error is GoogleSignInException) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        final description = error.description;
-        return AuthenticationCancelledException(
-          userInitiated:
-              description == null || description.trim().isEmpty,
-          description: description,
-        );
+        final description = error.description?.trim();
+        if (description == null || description.isEmpty) {
+          return const AuthenticationCancelledException();
+        }
+        return AuthenticationCancelledException.withDescription(description);
       }
 
       return AuthenticationException(
