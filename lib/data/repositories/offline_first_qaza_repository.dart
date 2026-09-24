@@ -767,6 +767,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           queuedAt: queuedAt,
           targetRecordId: record.id,
           completedAt: record.completedAt ?? completedAt,
+          completionId: record.completionId,
           record: record,
         ),
     ];
@@ -871,7 +872,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
   @override
   Future<int> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
     if (expectedCompletedAt.isEmpty || userId != _activeUserId) return 0;
@@ -880,7 +881,7 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
     await _ensureOutboxLoaded();
     final changedRecords = await _localStore.undoCompletions(
       userId: userId,
-      expectedCompletedAt: expectedCompletedAt,
+      expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
     if (generation != _sessionGeneration || userId != _activeUserId) return 0;
