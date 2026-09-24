@@ -218,12 +218,20 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
     HapticFeedback.mediumImpact();
 
     try {
+      final completedRecord = (await ref.read(qazaServiceProvider).getRecordsByIds(
+        userId: userId,
+        recordIds: [record.id],
+      )).where(
+        (item) =>
+            item.status == QazaStatus.completed &&
+            item.completionId != null &&
+            item.completionId!.isNotEmpty,
+      );
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
         userId: userId,
-        recordIds: [record.id],
-        completedAt: completedAt,
+        records: completedRecord,
         onUndone: refresh,
       );
     } catch (error, stack) {
