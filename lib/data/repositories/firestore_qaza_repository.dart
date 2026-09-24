@@ -597,6 +597,9 @@ class FirestoreQazaRepository
       );
     }
 
+    // Completion operations carry the exact completion marker produced by
+    // the originating local completion. Never mint a new marker on replay.
+
     final reset = await getResetState(userId: userId);
     if (reset.inProgress) {
       throw StateError('Remote reset is currently in progress.');
@@ -712,7 +715,15 @@ class FirestoreQazaRepository
             throw StateError('Sync update contains an invalid record.');
           }
           final current = snapshot.exists ? _fromDocument(snapshot) : null;
+          final isCompletionUndo = operation.completionId != null &&
+              record.status == QazaStatus.pending &&
+              record.completionId == null &&
+              current != null &&
+              current.status == QazaStatus.completed &&
+              current.completionId == operation.completionId;
+
           if (current != null &&
+              !isCompletionUndo &&
               current.updatedAt.isAfter(record.updatedAt)) {
             rejected.add(current);
             continue;
