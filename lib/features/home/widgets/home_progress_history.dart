@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +13,8 @@ import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
-import '../providers/home_providers.dart';
-import 'home_skeleton.dart';
 import '../home_state.dart';
+import '../providers/home_providers.dart';
 
 class HomeProgressHistory extends ConsumerStatefulWidget {
   const HomeProgressHistory();
@@ -66,14 +67,6 @@ class _HomeProgressChartSectionState
               key: const Key('home_progress_range'),
               segments: [
                 ButtonSegment<HomeProgressRange>(
-                  value: HomeProgressRange.oneDay,
-                  label: Text(l10n.homeRange1Day),
-                ),
-                ButtonSegment<HomeProgressRange>(
-                  value: HomeProgressRange.threeDays,
-                  label: Text(l10n.homeRange3Days),
-                ),
-                ButtonSegment<HomeProgressRange>(
                   value: HomeProgressRange.sevenDays,
                   label: Text(l10n.homeRange7Days),
                 ),
@@ -105,8 +98,9 @@ class _HomeProgressChartSectionState
               ),
             ),
             data: (points) {
-              if (points.every((point) => point.count == 0)) {
+              if (points.isEmpty) {
                 return Padding(
+                  key: const Key('home_progress_no_points'),
                   padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Center(
                     child: Text(
@@ -117,7 +111,9 @@ class _HomeProgressChartSectionState
                 );
               }
 
-              final selected = selectedIndex == null || points.isEmpty
+              final hasCompletedData =
+                  points.any((point) => point.count > 0);
+              final selected = selectedIndex == null
                   ? null
                   : points[
                       selectedIndex!.clamp(0, points.length - 1).toInt()
@@ -149,9 +145,7 @@ class _HomeProgressChartSectionState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              DateFormatters.formatGregorianDatePadded(
-                                selected.start,
-                              ),
+                              _selectionLabel(selected, range),
                               style: Theme.of(context)
                                   .textTheme
                                   .labelLarge
@@ -178,120 +172,48 @@ class _HomeProgressChartSectionState
                         ),
                       ),
                     ),
-                  const SizedBox(height: 4),
+                  if (!hasCompletedData)
+                    Padding(
+                      key: const Key('home_progress_zero_state'),
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          l10n.homeChartNoData,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ),
                   SizedBox(
                     key: const Key('home_progress_chart'),
-                    height: 190,
-                    child: LineChart(
-                      LineChartData(
-                        minX: 0,
-                        maxX: points.length <= 1
-                            ? 1
-                            : (points.length - 1).toDouble(),
-                        minY: 0,
-                        maxY: _maxY(points),
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: false,
-                          horizontalInterval: _gridInterval(points),
-                          getDrawingHorizontalLine: (_) => FlLine(
-                            color: charts.grid,
-                            strokeWidth: 1,
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          leftTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: _labelInterval(points),
-                              reservedSize: 28,
-                              getTitlesWidget: (value, meta) =>
-                                  _bottomTitle(value, meta, points),
-                            ),
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        lineTouchData: LineTouchData(
-                          handleBuiltInTouches: true,
-                          touchTooltipData: LineTouchTooltipData(
-                            getTooltipColor: (_) =>
-                                Theme.of(context).colorScheme.inverseSurface,
-                            tooltipBorder: BorderSide(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outlineVariant,
-                            ),
-                            tooltipPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            fitInsideHorizontally: true,
-                            fitInsideVertically: true,
-                            getTooltipItems: (spots) => spots
-                                .map(
-                                  (spot) {
-                                    final index = spot.x
-                                        .round()
-                                        .clamp(0, points.length - 1)
-                                        .toInt();
-                                    final point = points[index];
-                                    return LineTooltipItem(
-                                      DateFormatters.formatGregorianDatePadded(
-                                            point.start,
-                                          ) +
-                                          '\n' +
-                                          l10n.homeCompletedCount(point.count),
-                                      TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onInverseSurface,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    );
-                                  },
-                                )
-                                .toList(),
-                          ),
-                          touchCallback: (_, response) {
-                            final spots = response?.lineBarSpots;
-                            if (spots == null || spots.isEmpty) return;
-                            final index = spots.first.x.round();
-                            if (index != selectedIndex) {
-                              setState(() => selectedIndex = index);
-                            }
-                          },
-                        ),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: [
-                              for (var i = 0; i < points.length; i++)
-                                FlSpot(
-                                  i.toDouble(),
-                                  points[i].count.toDouble(),
+                    height: 220,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final chartWidth = math.max(
+                          constraints.maxWidth,
+                          points.length * _slotWidth(range),
+                        );
+
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: chartWidth,
+                            child: Semantics(
+                              label: l10n.homeYourProgress,
+                              child: BarChart(
+                                _chartData(
+                                  context,
+                                  points,
+                                  range,
+                                  charts,
+                                  l10n,
                                 ),
-                            ],
-                            isCurved: true,
-                            color: charts.primary,
-                            barWidth: 2.5,
-                            isStrokeCapRound: true,
-                            dotData: const FlDotData(show: true),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              color: charts.primary.withValues(alpha: 0.12),
+                                duration: Duration.zero,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                      duration: Duration.zero,
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -303,54 +225,230 @@ class _HomeProgressChartSectionState
     );
   }
 
-  double _maxY(List<HomeProgressPoint> points) {
+  double _slotWidth(HomeProgressRange range) => switch (range) {
+        HomeProgressRange.sevenDays => 44,
+        HomeProgressRange.thirtyDays => 22,
+        HomeProgressRange.monthly => 44,
+      };
+
+  BarChartData _chartData(
+    BuildContext context,
+    List<HomeProgressPoint> points,
+    HomeProgressRange range,
+    AppChartColors charts,
+    AppLocalizations l10n,
+  ) {
+    final axisInterval = _axisInterval(points);
+    final maxY = _chartMaxY(points, axisInterval);
+    final textStyle = Theme.of(context).textTheme.labelSmall;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return BarChartData(
+      minY: 0,
+      maxY: maxY,
+      alignment: BarChartAlignment.spaceAround,
+      groupsSpace: 4,
+      barGroups: [
+        for (var i = 0; i < points.length; i++)
+          BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: points[i].count.toDouble(),
+                width: range == HomeProgressRange.thirtyDays ? 12 : 20,
+                color: charts.primary,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
+              ),
+            ],
+          ),
+      ],
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        horizontalInterval: axisInterval,
+        getDrawingHorizontalLine: (_) => FlLine(
+          color: charts.grid,
+          strokeWidth: 1,
+        ),
+      ),
+      titlesData: FlTitlesData(
+        topTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        rightTitles: const AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 38,
+            interval: axisInterval,
+            getTitlesWidget: (value, meta) => SideTitleWidget(
+              meta: meta,
+              space: 6,
+              child: Text(
+                DateFormatters.formatCount(value.round()),
+                style: textStyle,
+              ),
+            ),
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: range == HomeProgressRange.sevenDays ? 40 : 28,
+            getTitlesWidget: (value, meta) => _bottomTitle(
+              value,
+              meta,
+              points,
+              range,
+            ),
+          ),
+        ),
+      ),
+      borderData: FlBorderData(show: false),
+      barTouchData: BarTouchData(
+        enabled: true,
+        handleBuiltInTouches: true,
+        touchTooltipData: BarTouchTooltipData(
+          getTooltipColor: (_) => colorScheme.inverseSurface,
+          tooltipBorder: BorderSide(
+            color: colorScheme.outlineVariant,
+          ),
+          tooltipPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          fitInsideHorizontally: true,
+          fitInsideVertically: true,
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            final index = groupIndex.clamp(0, points.length - 1);
+            final point = points[index];
+            return BarTooltipItem(
+              '${_selectionLabel(point, range)}\n'
+              '${l10n.homeCompletedCount(point.count)}',
+              TextStyle(
+                color: colorScheme.onInverseSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            );
+          },
+        ),
+        touchCallback: (_, response) {
+          final index = response?.spot?.touchedBarGroupIndex;
+          if (index == null || index < 0 || index >= points.length) return;
+          if (index != selectedIndex) {
+            setState(() => selectedIndex = index);
+          }
+        },
+      ),
+    );
+  }
+
+  double _axisInterval(List<HomeProgressPoint> points) {
     final maxValue = points.fold<int>(
       0,
       (maxValue, point) =>
           point.count > maxValue ? point.count : maxValue,
     );
-    return maxValue <= 0 ? 1 : (maxValue * 1.2).ceilToDouble();
+    if (maxValue <= 4) return 1;
+
+    final raw = maxValue / 4;
+    final magnitude =
+        math.pow(10, (math.log(raw) / math.ln10).floor()).toDouble();
+    final normalized = raw / magnitude;
+    final nice = normalized <= 1
+        ? 1
+        : normalized <= 2
+            ? 2
+            : normalized <= 5
+                ? 5
+                : 10;
+    return nice * magnitude;
   }
 
-  double _gridInterval(List<HomeProgressPoint> points) {
-    final maxY = _maxY(points);
-    return maxY <= 4 ? 1 : (maxY / 4).ceilToDouble();
+  double _chartMaxY(
+    List<HomeProgressPoint> points,
+    double interval,
+  ) {
+    final maxValue = points.fold<int>(
+      0,
+      (maxValue, point) =>
+          point.count > maxValue ? point.count : maxValue,
+    );
+    if (maxValue <= 0) return 1;
+    return math.max(
+      interval,
+      (maxValue / interval).ceil() * interval,
+    );
   }
 
-  double _labelInterval(List<HomeProgressPoint> points) {
-    if (points.length <= 7) return 1;
-    return (points.length / 4).ceilToDouble();
-  }
+  String _selectionLabel(
+    HomeProgressPoint point,
+    HomeProgressRange range,
+  ) =>
+      range == HomeProgressRange.monthly
+          ? '${DateFormatters.gregorianMonthName(point.start.month)} ${point.start.year}'
+          : DateFormatters.formatGregorianDatePadded(point.start);
 
   Widget _bottomTitle(
     double value,
     TitleMeta meta,
     List<HomeProgressPoint> points,
+    HomeProgressRange range,
   ) {
     final index = value.round();
     if (index < 0 ||
         index >= points.length ||
-        (value - index).abs() > 0.01) {
+        (value - index).abs() > 0.01 ||
+        !_shouldShowLabel(index, points.length, range)) {
       return const SizedBox.shrink();
     }
 
     final point = points[index];
-    final label = points.length <= 7
-        ? point.start.day.toString() +
-            ' ' +
-            DateFormatters.gregorianMonthName(point.start.month)
-        : point.start.day == 1
-            ? DateFormatters.gregorianMonthName(point.start.month)
-            : point.start.day.toString();
+    final String label;
+    switch (range) {
+      case HomeProgressRange.sevenDays:
+        label =
+            '${DateFormatters.weekdayShortNames[point.start.weekday - 1]}\n'
+            '${point.start.day} ${DateFormatters.gregorianMonthName(point.start.month)}';
+      case HomeProgressRange.thirtyDays:
+        label =
+            '${point.start.day} ${DateFormatters.gregorianMonthName(point.start.month)}';
+      case HomeProgressRange.monthly:
+        label = DateFormatters.gregorianMonthName(point.start.month);
+    }
 
     return SideTitleWidget(
       meta: meta,
       space: 6,
       child: Text(
         label,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall,
       ),
     );
+  }
+
+  bool _shouldShowLabel(
+    int index,
+    int length,
+    HomeProgressRange range,
+  ) {
+    switch (range) {
+      case HomeProgressRange.sevenDays:
+        return true;
+      case HomeProgressRange.thirtyDays:
+        return index == 0 ||
+            index == length - 1 ||
+            index % 5 == 0;
+      case HomeProgressRange.monthly:
+        return true;
+    }
   }
 }
 
@@ -361,7 +459,7 @@ class HomeChartSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SkeletonBox(
       width: double.infinity,
-      height: 190,
+      height: 220,
       borderRadius: BorderRadius.all(Radius.circular(12)),
     );
   }
