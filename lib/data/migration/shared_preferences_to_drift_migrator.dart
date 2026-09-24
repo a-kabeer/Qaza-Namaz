@@ -246,6 +246,9 @@ class SharedPreferencesToDriftMigrator {
         completedAt: record.completedAt == null
             ? const Value.absent()
             : Value(record.completedAt),
+        completionId: record.completionId == null
+            ? const Value.absent()
+            : Value(record.completionId),
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       );
