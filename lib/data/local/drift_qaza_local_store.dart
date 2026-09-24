@@ -451,12 +451,12 @@ class DriftQazaLocalStore extends QazaLocalStore {
   @override
   Future<List<QazaRecord>> undoCompletions({
     required String userId,
-    required Map<String, DateTime> expectedCompletedAt,
+    required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) =>
       _database.qazaRecordsDao.undoCompletions(
         userId: userId,
-        expectedCompletedAt: expectedCompletedAt,
+        expectedCompletionIds: expectedCompletionIds,
         undoneAt: undoneAt,
       );
 
@@ -537,6 +537,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
               ),
         targetRecordId: row.targetRecordId,
         completedAt: row.completedAt,
+        completionId: row.completionId,
         attempts: row.attempts,
         lastError: row.lastError,
       );
@@ -552,6 +553,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
         completedAt: record.completedAt == null
             ? const Value.absent()
             : Value(record.completedAt),
+        completionId: record.completionId == null
+            ? const Value.absent()
+            : Value(record.completionId),
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       );
@@ -571,6 +575,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
         completedAt: op.completedAt == null
             ? const Value.absent()
             : Value(op.completedAt),
+        completionId: op.completionId == null
+            ? const Value.absent()
+            : Value(op.completionId),
         attempts: Value(op.attempts),
         lastError:
             op.lastError == null ? const Value.absent() : Value(op.lastError),
