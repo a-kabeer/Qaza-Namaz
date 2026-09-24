@@ -71,31 +71,6 @@ Future<void> main() async {
       'app_check_activated_${kDebugMode ? 'debug' : 'play_integrity'}',
     );
 
-    // The debug provider can fail independently of Firebase initialization.
-    // Probe token acquisition in debug builds so a missing/invalid debug token
-    // is distinguishable from an OAuth or Firebase Auth failure. Never log the
-    // token itself.
-    if (kDebugMode) {
-      try {
-        final token = await FirebaseAppCheck.instance
-            .getToken()
-            .timeout(const Duration(seconds: 3));
-        if (token == null || token.isEmpty) {
-          throw StateError('Firebase App Check returned no debug token.');
-        }
-        diagnostics.recordEvent(
-          DiagnosticArea.startup,
-          'app_check_debug_token_ready',
-        );
-      } catch (error, stack) {
-        diagnostics.recordFailure(
-          DiagnosticArea.startup,
-          'app_check_debug_token_failed',
-          error,
-          stack: stack,
-        );
-      }
-    }
   });
 
   // Complete the legacy migration before any repository can read the local
@@ -113,6 +88,35 @@ Future<void> main() async {
   });
 
   runApp(const ProviderScope(child: QazaNamazApp()));
+
+  // Do not delay the first frame for App Check diagnostics. The application
+  // remains usable while the debug-token probe runs independently.
+  if (kDebugMode) {
+    _auditDebugAppCheckToken(diagnostics);
+  }
+}
+
+/// Probes debug App Check token readiness without ever logging the token.
+Future<void> _auditDebugAppCheckToken(DiagnosticsService diagnostics) async {
+  try {
+    final token = await FirebaseAppCheck.instance
+        .getToken()
+        .timeout(const Duration(seconds: 3));
+    if (token == null || token.isEmpty) {
+      throw StateError('Firebase App Check returned no debug token.');
+    }
+    diagnostics.recordEvent(
+      DiagnosticArea.startup,
+      'app_check_debug_token_ready',
+    );
+  } catch (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.startup,
+      'app_check_debug_token_failed',
+      error,
+      stack: stack,
+    );
+  }
 }
 
 /// Runs one startup step, bounded and non-fatal.
