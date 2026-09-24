@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/diagnostics/diagnostics.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/app_snackbar.dart';
 import '../features/auth/auth_gate.dart';
 import '../features/settings/app_lock_controller.dart';
 import '../features/notifications/notification_controller.dart';
@@ -63,6 +64,7 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => AppScaffoldMessenger(child: child!),
       home: const AuthGate(),
     );
   }

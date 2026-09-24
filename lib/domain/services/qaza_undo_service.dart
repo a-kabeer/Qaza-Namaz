@@ -157,7 +157,7 @@ class QazaUndoBatch {
 class QazaUndoStore {
   const QazaUndoStore();
 
-  static const Duration window = Duration(seconds: 10);
+  static const Duration window = Duration(seconds: 5);
   static const String _keyPrefix = 'qaza_undo_v2_';
 
   String _key(String userId) => '$_keyPrefix$userId';

@@ -203,7 +203,6 @@ Future<void> showQazaUndoSnackBar({
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        duration: QazaUndoStore.window,
         content: Text(qazaCompletionSuccessMessage(context, batch)),
         action: SnackBarAction(
           label: l10n.qazaUndoAction,

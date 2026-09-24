@@ -48,16 +48,17 @@ void main() {
     await manager.register(userId: 'u1', records: [completed]);
 
     final restored = QazaUndoManager(
-      now: () => base.add(const Duration(seconds: 5)),
+      now: () => base.add(const Duration(seconds: 4)),
     );
     final batch = await restored.restore(userId: 'u1');
     expect(batch, isNotNull);
     expect(batch!.completionIds, {'r1': 'completion-1'});
 
     final expired = QazaUndoManager(
-      now: () => base.add(const Duration(seconds: 10)),
+      now: () => base.add(const Duration(seconds: 5)),
     );
     expect(await expired.restore(userId: 'u1'), isNull);
+    expect(QazaUndoStore.window, const Duration(seconds: 5));
   });
 
   test('undo restores a single completion using only its completionId',

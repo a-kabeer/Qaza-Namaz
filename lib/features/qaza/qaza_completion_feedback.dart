@@ -53,7 +53,7 @@ String qazaUndoFailureMessage(
   if (Localizations.localeOf(context).languageCode == 'ur') {
     return switch (reason) {
       QazaUndoFailureReason.expired =>
-        'واپس کرنے کا 10 سیکنڈ کا وقت ختم ہو گیا۔',
+        'واپس کرنے کا 5 سیکنڈ کا وقت ختم ہو گیا۔',
       QazaUndoFailureReason.staleBatch =>
         'واپس کرنے کا یہ اختیار اب دستیاب نہیں کیونکہ اس کے بعد ایک نیا Undo عمل ہوا ہے۔',
       QazaUndoFailureReason.targetChanged =>
@@ -65,7 +65,7 @@ String qazaUndoFailureMessage(
 
   return switch (reason) {
     QazaUndoFailureReason.expired =>
-      'Undo is no longer available because the 10-second window has ended.',
+      'Undo is no longer available because the 5-second window has ended.',
     QazaUndoFailureReason.staleBatch =>
       'Undo is no longer available because a newer Undo action replaced it.',
     QazaUndoFailureReason.targetChanged =>
