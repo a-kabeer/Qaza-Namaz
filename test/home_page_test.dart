@@ -886,7 +886,7 @@ void main() {
       );
       expect(selected, isNotNull);
       expect(selected!.text, contains('25 completed'));
-      expect(selected.text, contains('22 Sep 2026'));
+      expect(selected.text, contains('19 Sep 2026'));
     });
 
     testWidgets('shows the empty history state when no points exist',
