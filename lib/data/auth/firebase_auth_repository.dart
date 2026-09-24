@@ -124,7 +124,7 @@ class FirebaseAuthRepository implements AuthRepository {
 
           requireAuthenticateSupport(_googleSignIn.supportsAuthenticate());
 
-          final googleUser = await _googleSignIn.authenticate();
+          final googleUser = await _authenticateWithCredentialManagerRecovery();
           final authentication = googleUser.authentication;
           return GoogleIdentityTokens(idToken: authentication.idToken);
         },
@@ -151,6 +151,32 @@ class FirebaseAuthRepository implements AuthRepository {
       // unchanged; re-wrapping it would bury the stage it names.
       if (mapped == null) rethrow;
       throw mapped;
+    }
+  }
+
+  /// Android Credential Manager can return [16] Account reauth failed
+  /// when stale credential state cannot be re-authenticated. The Android
+  /// google_sign_in implementation maps signOut() to clearCredentialState(),
+  /// so clear that state and retry exactly once before surfacing the failure.
+  Future<GoogleSignInAccount> _authenticateWithCredentialManagerRecovery() async {
+    try {
+      return await _googleSignIn.authenticate();
+    } on GoogleSignInException catch (error, stack) {
+      final description = error.description;
+      if (!_isCredentialManagerReauthFailure(description)) rethrow;
+
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {
+        // Clearing Credential Manager state is a recovery aid, not a reason to
+        // replace the original authentication failure.
+      }
+
+      try {
+        return await _googleSignIn.authenticate();
+      } catch (_) {
+        Error.throwWithStackTrace(error, stack);
+      }
     }
   }
 
