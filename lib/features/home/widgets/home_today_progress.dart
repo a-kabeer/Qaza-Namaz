@@ -253,12 +253,29 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     HapticFeedback.mediumImpact();
 
     try {
+      final completedRecords = await ref.read(qazaServiceProvider).getRecordsByIds(
+            userId: userId,
+            recordIds: [record.id],
+          );
+      final completedRecord = completedRecords.where(
+        (candidate) =>
+            candidate.id == record.id &&
+            candidate.status == QazaStatus.completed &&
+            candidate.completionId != null &&
+            candidate.completionId!.isNotEmpty,
+      ).firstOrNull;
+
+      if (completedRecord == null) {
+        throw StateError(
+          'Completed Qaza record is missing its completion marker.',
+        );
+      }
+
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
         userId: userId,
-        recordIds: [record.id],
-        completedAt: completedAt,
+        records: [completedRecord],
         onUndone: () async {
           ref.read(homeControllerProvider).afterUndo(prayer);
         },
