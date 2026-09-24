@@ -1,5 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
@@ -319,12 +320,29 @@ class QazaService {
       throw const QazaDuplicateRecordException();
     }
 
-    await repository.updateRecord(
-      record: record.copyWith(
-        originalDate: normalizedDate,
-        updatedAt: DateTime.now(),
-      ),
+    var recordToUpdate = record.copyWith(
+      originalDate: normalizedDate,
+      updatedAt: DateTime.now(),
     );
+
+    // An explicit local edit to an already-completed Qaza starts a new
+    // completion version. This invalidates an older Undo action while leaving
+    // server-only timestamp reconciliation marker-stable.
+    final current = (await repository.getRecordsByIds(
+      userId: userId,
+      recordIds: [record.id],
+    )).firstOrNull;
+    if (current != null &&
+        current.status == QazaStatus.completed &&
+        recordToUpdate.status == QazaStatus.completed &&
+        current.completionId != null &&
+        recordToUpdate.completionId == current.completionId) {
+      recordToUpdate = recordToUpdate.copyWith(
+        completionId: newQazaCompletionId(),
+      );
+    }
+
+    await repository.updateRecord(record: recordToUpdate);
   }
 
   Future<void> deleteRecord({
