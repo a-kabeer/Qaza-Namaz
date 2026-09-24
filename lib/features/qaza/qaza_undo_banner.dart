@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_card.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
+import 'qaza_completion_feedback.dart';
 
 /// Persists and surfaces the currently active completion undo window.
 class QazaUndoBanner extends ConsumerStatefulWidget {
@@ -90,20 +92,48 @@ class _QazaUndoBannerState extends ConsumerState<QazaUndoBanner> {
     if (userId == null) return;
 
     final messenger = ScaffoldMessenger.maybeOf(context);
-    final l10n = AppLocalizations.of(context);
-    final count = await ref.read(qazaUndoManagerProvider).undo(
-          userId: userId,
-          service: ref.read(qazaServiceProvider),
-          expectedBatch: expectedBatch,
-        );
-    if (!mounted) return;
+    final diagnostics = ref.read(diagnosticsProvider);
 
-    if (count > 0) {
+    try {
+      final result = await ref.read(qazaUndoManagerProvider).undo(
+            userId: userId,
+            service: ref.read(qazaServiceProvider),
+            expectedBatch: expectedBatch,
+          );
+      if (!mounted) return;
+
+      ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
       for (final prayer in PrayerType.values) {
         ref.invalidate(oldestPendingProvider(prayer));
       }
       await widget.onUndone?.call();
+      if (!mounted) return;
+
+      setState(() {
+        _loadedUserId = userId;
+        _restoreFuture = Future<QazaUndoBatch?>.value(null);
+      });
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              qazaUndoSuccessMessage(
+                context,
+                result.batch,
+                result.count,
+              ),
+            ),
+          ),
+        );
+    } on QazaUndoException catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'undo_failed_${error.reason.name}',
+        error.cause ?? error,
+        stack: stack,
+      );
       if (!mounted) return;
       setState(() {
         _loadedUserId = userId;
@@ -112,7 +142,33 @@ class _QazaUndoBannerState extends ConsumerState<QazaUndoBanner> {
       messenger
         ?..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text(l10n.qazaUndoCount(count))),
+          SnackBar(
+            content: Text(qazaUndoFailureMessage(context, error.reason)),
+          ),
+        );
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.qazaCompletion,
+        'undo_failed',
+        error,
+        stack: stack,
+      );
+      if (!mounted) return;
+      setState(() {
+        _loadedUserId = userId;
+        _restoreFuture = Future<QazaUndoBatch?>.value(null);
+      });
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              qazaUndoFailureMessage(
+                context,
+                QazaUndoFailureReason.failed,
+              ),
+            ),
+          ),
         );
     }
   }
@@ -122,14 +178,12 @@ Future<void> showQazaUndoSnackBar({
   required BuildContext context,
   required WidgetRef ref,
   required String userId,
-  required Iterable<String> recordIds,
-  required DateTime completedAt,
+  required Iterable<QazaRecord> records,
   Future<void> Function()? onUndone,
 }) async {
   final batch = await ref.read(qazaUndoManagerProvider).register(
         userId: userId,
-        recordIds: recordIds,
-        completedAt: completedAt,
+        records: records,
       );
   if (batch == null || !context.mounted) return;
 
@@ -139,7 +193,7 @@ Future<void> showQazaUndoSnackBar({
     ..showSnackBar(
       SnackBar(
         duration: QazaUndoStore.window,
-        content: Text(l10n.qazaUndoAvailable(batch.recordIds.length)),
+        content: Text(qazaCompletionSuccessMessage(context, batch)),
         action: SnackBarAction(
           label: l10n.qazaUndoAction,
           onPressed: () {
@@ -165,24 +219,67 @@ Future<void> _undoFromSnack({
   required QazaUndoBatch batch,
   Future<void> Function()? onUndone,
 }) async {
-  final count = await ref.read(qazaUndoManagerProvider).undo(
-        userId: userId,
-        service: ref.read(qazaServiceProvider),
-        expectedBatch: batch,
+  final diagnostics = ref.read(diagnosticsProvider);
+  try {
+    final result = await ref.read(qazaUndoManagerProvider).undo(
+          userId: userId,
+          service: ref.read(qazaServiceProvider),
+          expectedBatch: batch,
+        );
+    if (!context.mounted) return;
+
+    ref.read(homeControllerProvider).invalidateDashboard();
+    ref.invalidate(progressSummaryProvider);
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
+    await onUndone?.call();
+    if (!context.mounted) return;
+
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            qazaUndoSuccessMessage(context, result.batch, result.count),
+          ),
+        ),
       );
-  if (!context.mounted || count == 0) return;
-
-  ref.invalidate(progressSummaryProvider);
-  for (final prayer in PrayerType.values) {
-    ref.invalidate(oldestPendingProvider(prayer));
-  }
-  await onUndone?.call();
-  if (!context.mounted) return;
-
-  final l10n = AppLocalizations.of(context);
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(content: Text(l10n.qazaUndoCount(count))),
+  } on QazaUndoException catch (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.qazaCompletion,
+      'undo_failed_${error.reason.name}',
+      error.cause ?? error,
+      stack: stack,
     );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(qazaUndoFailureMessage(context, error.reason)),
+        ),
+      );
+  } catch (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.qazaCompletion,
+      'undo_failed',
+      error,
+      stack: stack,
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            qazaUndoFailureMessage(
+              context,
+              QazaUndoFailureReason.failed,
+            ),
+          ),
+        ),
+      );
+  }
 }
