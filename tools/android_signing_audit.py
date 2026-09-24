@@ -29,7 +29,10 @@ def run(command: list[str]) -> str:
     except subprocess.CalledProcessError as exc:
         detail = (exc.stderr or exc.stdout).strip()
         raise SystemExit(f"Command failed: {command[0]} {detail}") from exc
-    return result.stdout
+    # Android SDK tools may write human-readable diagnostics to either
+    # stream; certificate extraction must inspect both without exposing
+    # sensitive command arguments.
+    return result.stdout + ("\n" + result.stderr if result.stderr else "")
 
 
 def normalize_fingerprint(value: str) -> str:
@@ -54,25 +57,66 @@ def firebase_sha1s(config_path: Path, package: str) -> list[str]:
     return sorted(set(values))
 
 
+def _android_sdk_tool(name: str) -> str | None:
+    """Resolve an Android SDK command from PATH or installed build-tools."""
+    direct = shutil.which(name)
+    if direct:
+        return direct
+
+    sdk_roots = [
+        os.environ.get("ANDROID_SDK_ROOT"),
+        os.environ.get("ANDROID_HOME"),
+        "/usr/local/lib/android/sdk",
+    ]
+    for root in sdk_roots:
+        if not root:
+            continue
+        build_tools = Path(root) / "build-tools"
+        if not build_tools.is_dir():
+            continue
+        candidates = sorted(
+            (p for p in build_tools.glob(f"*/{name}") if p.is_file()),
+            reverse=True,
+        )
+        if candidates:
+            return str(candidates[0])
+
+    return None
+
+
 def apk_audit(apk: Path) -> tuple[str, str, str]:
-    apksigner = shutil.which("apksigner")
+    apksigner = _android_sdk_tool("apksigner")
     if not apksigner:
-        raise SystemExit("apksigner was not found in the Android SDK environment.")
+        raise SystemExit(
+            "apksigner was not found on PATH or in the installed Android SDK "
+            "build-tools."
+        )
 
     output = run([apksigner, "verify", "--print-certs", str(apk)])
     sha1 = ""
     sha256 = ""
     for line in output.splitlines():
-        if "Signer #1 certificate SHA-256 digest:" in line:
-            sha256 = normalize_fingerprint(line.split(":", 1)[1])
-        elif "Signer #1 certificate SHA-1 digest:" in line:
-            sha1 = normalize_fingerprint(line.split(":", 1)[1])
+        match = re.search(
+            r"certificate\s+SHA-256\s+digest\s*:\s*([0-9A-Fa-f:]+)",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            sha256 = normalize_fingerprint(match.group(1))
+            continue
+        match = re.search(
+            r"certificate\s+SHA-1\s+digest\s*:\s*([0-9A-Fa-f:]+)",
+            line,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            sha1 = normalize_fingerprint(match.group(1))
 
     if not sha256:
         raise SystemExit("Could not extract the APK signing certificate SHA-256.")
 
     package = "unknown"
-    aapt = shutil.which("aapt2") or shutil.which("aapt")
+    aapt = _android_sdk_tool("aapt2") or _android_sdk_tool("aapt")
     if aapt:
         badging = run([aapt, "dump", "badging", str(apk)])
         match = re.search(r"package: name='([^']+)'", badging)

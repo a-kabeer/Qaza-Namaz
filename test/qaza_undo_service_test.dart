@@ -143,8 +143,8 @@ void main() {
       ),
     );
 
-    expect(
-      () => manager.undo(
+    await expectLater(
+      manager.undo(
         userId: 'u1',
         service: service,
         expectedBatch: oldBatch,
@@ -180,8 +180,8 @@ void main() {
     await manager.register(userId: 'u1', records: [completed]);
     await repository.deleteRecord(userId: 'u1', recordId: 'r1');
 
-    expect(
-      () => manager.undo(userId: 'u1', service: service),
+    await expectLater(
+      manager.undo(userId: 'u1', service: service),
       throwsA(
         isA<QazaUndoException>().having(
           (error) => error.reason,
@@ -220,8 +220,8 @@ void main() {
     final newer = (await repository.getRecords(userId: 'u1')).single;
     await manager.register(userId: 'u1', records: [newer]);
 
-    expect(
-      () => manager.undo(
+    await expectLater(
+      manager.undo(
         userId: 'u1',
         service: service,
         expectedBatch: oldBatch,
@@ -299,8 +299,8 @@ void main() {
       ),
     );
 
-    expect(
-      () => manager.undo(userId: 'u1', service: service),
+    await expectLater(
+      manager.undo(userId: 'u1', service: service),
       throwsA(isA<QazaUndoException>()),
     );
     expect(await manager.restore(userId: 'u1'), isNull);

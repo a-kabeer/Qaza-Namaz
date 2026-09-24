@@ -637,10 +637,18 @@ class InMemoryQazaRepository
           final record = operation.record;
           if (record == null || record.userId != userId) continue;
           final current = _records[record.id];
-          if (current == null ||
-              (current.status == QazaStatus.completed &&
-                  current.completionId != null &&
-                  current.completionId != record.completionId)) {
+          if (current == null) {
+            continue;
+          }
+          if (current.status == QazaStatus.completed &&
+              (
+                // existing completionId mismatch guard or
+                (current.completionId != null && current.completionId != record.completionId) ||
+                // timestamp-based guard from incoming branch
+                (current.completedAt != null && record.completedAt != null && !record.completedAt!.isBefore(current.completedAt!))
+              )) {
+            continue;
+          }
             continue;
           }
           _records[record.id] = record;

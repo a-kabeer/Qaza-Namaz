@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../core/utils/qaza_completion_id.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
@@ -592,26 +593,36 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
           'A Qaza record already exists for this prayer and date.');
     }
 
+    var recordToPersist = record;
+    if (current.status == QazaStatus.completed &&
+        record.status == QazaStatus.completed &&
+        current.completionId != null &&
+        record.completionId == current.completionId) {
+      recordToPersist = record.copyWith(
+        completionId: newQazaCompletionId(),
+      );
+    }
+
     final operation = PendingSyncOp(
       id: 'update_' +
-          record.id +
+          recordToPersist.id +
           '_' +
-          record.updatedAt.microsecondsSinceEpoch.toString(),
+          recordToPersist.updatedAt.microsecondsSinceEpoch.toString(),
       type: SyncOpType.update,
       userId: userId,
-      queuedAt: record.updatedAt,
-      record: record,
-      targetRecordId: record.id,
+      queuedAt: recordToPersist.updatedAt,
+      record: recordToPersist,
+      targetRecordId: recordToPersist.id,
     );
     final changed = await _localStore.updateRecordAndOutbox(
       userId: userId,
-      record: record,
+      record: recordToPersist,
       operation: operation,
     );
     if (!changed) return;
     if (generation != _sessionGeneration || userId != _activeUserId) return;
 
-    _records[record.id] = record;
+    _records[recordToPersist.id] = recordToPersist;
     _outbox.add(operation);
     _outboxLoaded = true;
     _emitPending();
