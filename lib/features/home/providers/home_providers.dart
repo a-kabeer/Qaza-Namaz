@@ -194,12 +194,6 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
 
     List<DateTime> starts;
     switch (range) {
-      case HomeProgressRange.oneDay:
-        starts = [today];
-      case HomeProgressRange.threeDays:
-        starts = [
-          for (var i = 2; i >= 0; i--) today.subtract(Duration(days: i)),
-        ];
       case HomeProgressRange.sevenDays:
         starts = [
           for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i)),
@@ -243,24 +237,6 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
     ];
   },
 );
-
-class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
-  @override
-  HomePrayerSelectionState build() => const HomePrayerSelectionState();
-
-  void selectPrayer(PrayerType prayer) {
-    state = HomePrayerSelectionState(
-      mode: HomePrayerSelectionMode.manual,
-      manualPrayer: prayer,
-    );
-  }
-
-  void useAutomatic() {
-    state = const HomePrayerSelectionState(
-      mode: HomePrayerSelectionMode.automatic,
-    );
-  }
-}
 
 final homePrayerSelectionProvider =
     NotifierProvider<HomePrayerSelectionNotifier, HomePrayerSelectionState>(
