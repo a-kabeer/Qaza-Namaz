@@ -189,10 +189,11 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
-      // On Android, `canceled` can also mean an OAuth configuration failure
-      // after account selection. Surface the message so a real configuration
-      // problem is not indistinguishable from a user tapping Cancel.
-      _emit(error: error.message);
+
+      // A genuine user cancellation is a normal end to the flow and should
+      // not create an alarming error banner. If the platform attached a
+      // description, preserve it as an actionable diagnostic instead.
+      _emit(error: error.userInitiated ? null : error.message);
       return false;
     } catch (error) {
       // A guest must never be left partially switched into an authenticated
