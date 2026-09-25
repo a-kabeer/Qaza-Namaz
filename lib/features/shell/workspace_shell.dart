@@ -12,7 +12,7 @@ import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// The five destinations are the primary navigation.
+/// The four destinations are the primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
@@ -128,7 +128,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
                 label: l10n.navQaza),
-            NavigationDestination(
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
