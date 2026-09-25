@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../auth/auth_startup_state.dart';
+import '../auth/authentication_screen.dart';
+import '../auth/guest_upgrade_controller.dart';
 import '../../domain/services/profile_rules.dart';
 import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../settings/app_lock_gate.dart';
@@ -24,6 +26,12 @@ class StartupGate extends ConsumerWidget {
       error: (_, __) => _buildSignedOut(context, ref),
       data: (user) {
         if (user == null) return _buildSignedOut(context, ref);
+
+        final upgrade = ref.watch(guestUpgradeControllerProvider);
+        if (upgrade.restoring) return const SplashScreen();
+        if (upgrade.awaitingDecision) {
+          return const AuthenticationScreen(closeWhenDecided: true);
+        }
 
         final pendingOnboarding =
             ref.watch(pendingNewGoogleUserProvider(user.id));
