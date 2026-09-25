@@ -562,12 +562,14 @@ void main() {
       // The third decision card is below the initial viewport of the lazy
       // ListView on CI. Scroll it into view before asserting its contents.
       await tester.scrollUntilVisible(
-        find.text('Cancel'),
+        find.byKey(const Key('guest_decision_keep_guest')),
         300,
       );
       await tester.pump();
-      expect(find.text('Cancel'), findsWidgets);
-      expect(find.text('Cancel'), findsWidgets);
+      expect(
+        find.byKey(const Key('guest_decision_keep_guest')),
+        findsOneWidget,
+      );
     },
   );
 
