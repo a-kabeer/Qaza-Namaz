@@ -16,15 +16,23 @@ class UserProfileMigration {
     final prefs = preferences ?? await SharedPreferences.getInstance();
 
     final existingRaw = prefs.getString(UserProfile.storageKey);
+    UserProfile? existing;
     if (existingRaw != null && existingRaw.isNotEmpty) {
-      // A completed/new profile is authoritative. Legacy calculator snapshots
-      // are no longer needed once a profile exists.
-      await _removeLegacySnapshots(prefs);
-      return;
+      try {
+        existing = UserProfile.fromJson(
+          jsonDecode(existingRaw) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        existing = null;
+      }
     }
 
     final snapshots = <Map<String, dynamic>>[];
-    for (final key in prefs.getKeys()) {
+    final legacyKeys = prefs.getKeys()
+        .where((key) => key.startsWith(_calculatorPrefix))
+        .toList()
+      ..sort();
+    for (final key in legacyKeys) {
       if (!key.startsWith(_calculatorPrefix)) continue;
       final raw = prefs.getString(key);
       if (raw == null || raw.isEmpty) continue;
@@ -39,8 +47,8 @@ class UserProfileMigration {
 
     if (snapshots.isEmpty) return;
 
-    // Prefer the most recently useful snapshot by iterating in stable key
-    // order. A legacy app normally has one active calculator snapshot.
+    // A legacy install normally has one active snapshot. Stable ordering keeps
+    // migration deterministic if more than one account-scoped snapshot exists.
     final snapshot = snapshots.first;
     final locale = prefs.getString('qaza_locale');
     final dob = _parseDate(snapshot['dob']);
@@ -67,14 +75,14 @@ class UserProfileMigration {
             : null;
 
     final profile = UserProfile(
-      languageCode: LocaleCodeValidator.normalize(locale),
-      dateOfBirth: dob,
-      pubertyAge: migratedPuberty,
-      startPrayingAge: startAge,
-      // School of thought was not part of the legacy calculator. "Other"
-      // preserves the user's old Witr choice without claiming a Madhab.
-      madhab: oldWitr == null ? null : Madhab.other,
-      witrIncluded: oldWitr,
+      languageCode: existing?.languageCode ??
+          LocaleCodeValidator.normalize(locale),
+      gender: existing?.gender,
+      madhab: existing?.madhab ?? (oldWitr == null ? null : Madhab.other),
+      dateOfBirth: existing?.dateOfBirth ?? dob,
+      pubertyAge: existing?.pubertyAge ?? migratedPuberty,
+      startPrayingAge: existing?.startPrayingAge ?? startAge,
+      witrIncluded: existing?.witrIncluded ?? oldWitr,
       onboardingCompleted: false,
     );
 
