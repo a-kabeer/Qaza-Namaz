@@ -23,7 +23,7 @@ class StartupGate extends ConsumerWidget {
       loading: () => const SplashScreen(),
       error: (_, __) => _buildSignedOut(ref),
       data: (user) {
-        if (user == null) return _buildSignedOut(ref);
+        if (user == null) return _buildSignedOut(context, ref);
 
         final pendingOnboarding =
             ref.watch(pendingNewGoogleUserProvider(user.id));
@@ -56,7 +56,7 @@ class StartupGate extends ConsumerWidget {
     );
   }
 
-  Widget _buildSignedOut(WidgetRef ref) {
+  Widget _buildSignedOut(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
     return profileAsync.when(
       loading: () => const SplashScreen(),
