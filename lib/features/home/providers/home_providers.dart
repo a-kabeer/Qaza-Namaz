@@ -136,7 +136,6 @@ final homeDailyProgressProvider =
     return HomeDailyProgress(completed: 0, target: target);
   }
 
-  final location = ref.watch(prayerTimesControllerProvider).location;
   final start = homeLocalDayStartForDate(
     location: location,
     date: today,
