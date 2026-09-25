@@ -47,8 +47,10 @@ final backupPromptSeenProvider =
 
 /// True when a guest has recorded their first Qaza and has not answered yet.
 final shouldOfferBackupProvider = Provider<bool>((ref) {
-  return ref.watch(activeUserIdProvider) == guestUserId &&
-      !ref.watch(backupPromptSeenProvider);
+  if (ref.watch(activeUserIdProvider) != guestUserId) return false;
+  if (ref.watch(backupPromptSeenProvider)) return false;
+  final summary = ref.watch(progressSummaryProvider).valueOrNull;
+  return (summary?.overall.total ?? 0) > 0;
 });
 
 /// Offers a guest a backup once they have something worth backing up.
