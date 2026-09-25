@@ -1,6 +1,4 @@
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -82,12 +80,9 @@ class SettingsScreen extends ConsumerWidget {
                   final profile =
                       ref.read(userProfileProvider).valueOrNull;
                   if (profile != null && profile.languageCode != selected) {
-                    unawaited(
-                      ref.read(userProfileRepositoryProvider).save(
-                            profile.copyWith(languageCode: selected),
-                          ),
+                    ref.read(userProfileRepositoryProvider).save(
+                      profile.copyWith(languageCode: selected),
                     );
-                    ref.invalidate(userProfileProvider);
                   }
                 },
               ),
@@ -148,35 +143,3 @@ class _ResetQazaCounterRow extends ConsumerWidget {
                 done
                     ? l10n.settingsResetCounterDone
                     : l10n.settingsResetCounterFailed(error ?? ''),
-              ),
-            ),
-          );
-      },
-    );
-  }
-}
-
-class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AppScaffold(
-      title: l10n.settingsAboutSection,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ListTile(
-            title: Text(l10n.appTitle),
-            subtitle: Text(l10n.settingsAppDescription),
-          ),
-          ListTile(
-            title: Text(l10n.commonVersion),
-            subtitle: Text(appDisplayVersion),
-          ),
-        ],
-      ),
-    );
-  }
-}
