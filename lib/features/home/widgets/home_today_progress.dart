@@ -717,10 +717,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     );
 
     final tartib = tartibAsync.valueOrNull;
-    final automaticTartib =
-        widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            tartib?.requiresOrder == true &&
-            tartib?.nextPrayer != null;
 
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
