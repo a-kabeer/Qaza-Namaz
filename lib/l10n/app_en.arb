@@ -546,7 +546,7 @@
   "splashTagline": "A calm place for prayer accountability",
   "accountTitle": "Account",
   "accountSignInMethod": "Sign-in method",
-  "accountGoogleAuth": "Google authentication",
+  "accountGoogleAuth": "Google",
   "accountSignedInWithGoogle": "Signed in with Google",
   "accountStatus": "Account status",
   "accountSignedIn": "Signed in",
@@ -556,7 +556,7 @@
   "accountNotAvailable": "Not available",
   "accountSignOut": "Sign out",
   "accountSignOutPrompt": "Sign out?",
-  "accountSignOutExplanation": "Signing out returns you to the welcome screen. Your saved Qaza records are NOT deleted and will be restored the next time you sign in.",
+  "accountSignOutExplanation": "Signing out disconnects your Google account. Your Qaza progress remains on this device.",
   "dataTitle": "Export & Import",
   "dataExportTitle": "Export data",
   "dataExportBody": "Save a versioned JSON copy of your Qaza ledger. Nothing is uploaded by the export action.",
@@ -811,10 +811,10 @@
     }
   },
   "authContinueAsGuest": "Continue as Guest",
-  "authGuestNote": "You can sign in later to back up your progress.",
+  "authGuestNote": "You can sign in with Google later to keep your progress with your account.",
   "backupPromptTitle": "Keep your progress safe",
-  "backupPromptBody": "Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.",
-  "backupPromptConfirm": "Back Up My Progress",
+  "backupPromptBody": "Sign in with Google to keep your Qaza progress available with your account.",
+  "backupPromptConfirm": "Continue with Google",
   "backupPromptDismiss": "Not Now",
   "settingsBackupSignIn": "Back up / Sign in",
   "settingsBackupSignInSubtitle": "You are using the app as a guest. Sign in to back up your Qaza.",
@@ -828,7 +828,7 @@
       }
     }
   },
-  "backupMigrationDone": "{count, plural, =0{Signed in. Your progress is backed up.} =1{Signed in. 1 record was added to your account.} other{Signed in. {count} records were added to your account.}}",
+  "backupMigrationDone": "{count, plural, =0{Signed in. Your Qaza progress is now linked to your account.} =1{Signed in. Your Qaza progress is now linked to your account.} other{Signed in. Your Qaza progress is now linked to your account.}}",
   "@backupMigrationDone": {
     "placeholders": {
       "count": {

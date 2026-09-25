@@ -761,7 +761,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountSignInMethod => 'سائن اِن کا طریقہ';
 
   @override
-  String get accountGoogleAuth => 'گوگل توثیق';
+  String get accountGoogleAuth => 'گوگل';
 
   @override
   String get accountSignedInWithGoogle => 'گوگل سے سائن اِن ہیں';
@@ -793,7 +793,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountSignOutExplanation =>
-      'سائن آؤٹ کرنے پر آپ خوش آمدید اسکرین پر واپس آ جائیں گے۔ آپ کے محفوظ قضا ریکارڈ حذف نہیں ہوتے اور اگلی بار سائن اِن پر بحال ہو جائیں گے۔';
+      'سائن آؤٹ کرنے سے آپ کا گوگل اکاؤنٹ منقطع ہو جائے گا۔ آپ کی قضا پیش رفت اس ڈیوائس پر برقرار رہے گی۔';
 
   @override
   String get dataTitle => 'برآمد و درآمد';
@@ -1277,17 +1277,17 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get authGuestNote =>
-      'اپنی پیش رفت کا بیک اپ لینے کے لیے بعد میں سائن ان کر سکتے ہیں۔';
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے بعد میں گوگل سے سائن اِن کر سکتے ہیں۔';
 
   @override
   String get backupPromptTitle => 'اپنی پیش رفت محفوظ رکھیں';
 
   @override
   String get backupPromptBody =>
-      'آپ کی قضا پیش رفت اس ڈیوائس پر محفوظ ہے۔ بیک اپ لینے اور دوسرے ڈیوائس پر بحال کرنے کے لیے سائن ان کریں۔';
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے گوگل سے سائن اِن کریں۔';
 
   @override
-  String get backupPromptConfirm => 'میری پیش رفت کا بیک اپ لیں';
+  String get backupPromptConfirm => 'گوگل سے جاری رکھیں';
 
   @override
   String get backupPromptDismiss => 'ابھی نہیں';
@@ -1317,8 +1317,8 @@ class AppLocalizationsUr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'سائن ان ہو گیا۔ $count ریکارڈز آپ کے اکاؤنٹ میں شامل ہوئے۔',
-      zero: 'سائن ان ہو گیا۔ آپ کی پیش رفت کا بیک اپ لی لیا گیا ہے۔',
+      other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
+      zero: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
     );
     return '$_temp0';
   }

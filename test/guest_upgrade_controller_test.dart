@@ -90,6 +90,7 @@ class NoopLocalStore extends QazaLocalStore {
 class FakeGuestMigrationService extends GuestMigrationService {
   FakeGuestMigrationService({
     required this.guestData,
+    this.accountData = true,
     this.failMigration = false,
     this.failRetire = false,
   }) : super(
@@ -98,16 +99,24 @@ class FakeGuestMigrationService extends GuestMigrationService {
         );
 
   bool guestData;
+  bool accountData;
   bool failMigration;
   bool failRetire;
   int migrateCalls = 0;
   int retireCalls = 0;
   int hasGuestDataCalls = 0;
+  int hasAccountDataCalls = 0;
 
   @override
   Future<bool> hasGuestData({required String guestUserId}) async {
     hasGuestDataCalls++;
     return guestData;
+  }
+
+  @override
+  Future<bool> hasAccountData({required String accountUserId}) async {
+    hasAccountDataCalls++;
+    return accountData;
   }
 
   @override
@@ -146,6 +155,7 @@ void main() {
   Future<(ProviderContainer, FakeAuthRepository, FakeGuestMigrationService)>
       makeContainer({
     required bool guestData,
+    bool accountData = true,
     bool? failMigration,
     bool? failRetire,
     Object? signInFailure,
@@ -154,6 +164,7 @@ void main() {
     auth.signInFailure = signInFailure;
     final migration = FakeGuestMigrationService(
       guestData: guestData,
+      accountData: accountData,
       failMigration: failMigration ?? false,
       failRetire: failRetire ?? false,
     );
@@ -389,6 +400,32 @@ void main() {
         container.read(guestUpgradeControllerProvider).error,
         contains('firebase-auth/operation-not-allowed'),
       );
+    },
+  );
+
+  test(
+    'local profile ledger is adopted automatically by a new Google account',
+    () async {
+      final (container, auth, migration) = await makeContainer(
+        guestData: true,
+        accountData: false,
+      );
+
+      // A completed local profile uses the local ledger without setting the
+      // persisted guest-session flag.
+      await container.read(guestSessionProvider.notifier).end();
+
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isTrue);
+      expect(migration.hasGuestDataCalls, 1);
+      expect(migration.hasAccountDataCalls, 1);
+      expect(migration.migrateCalls, 1);
+      expect(migration.retireCalls, 1);
+      expect(container.read(guestUpgradePendingProvider), isFalse);
+      expect(container.read(activeUserIdProvider), auth.account.id);
+      expect(container.read(isGuestProvider), isFalse);
     },
   );
 

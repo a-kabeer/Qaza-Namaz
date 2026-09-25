@@ -16,6 +16,7 @@ import '../../domain/entities/qaza_completion_result.dart';
 import '../prayer_times/prayer_times_providers.dart';
 import '../home/home_controller.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
+import '../auth/backup_prompt.dart';
 import 'completion/qaza_completion_controller.dart';
 import 'completion/qaza_completion_state.dart';
 import '../../l10n/app_localizations.dart';
@@ -243,6 +244,12 @@ class _CompleteQazaSectionState extends ConsumerState<CompleteQazaSection> {
         error,
         stack: stack,
       );
+    }
+
+    // Completion is already durable locally. Account sign-in is an independent,
+    // optional step and must never turn a successful completion into an error.
+    if (ref.read(shouldOfferBackupProvider)) {
+      await showBackupPrompt(context, ref);
     }
   }
 

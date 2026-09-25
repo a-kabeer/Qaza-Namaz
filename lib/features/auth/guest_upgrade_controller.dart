@@ -147,32 +147,35 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     _userActionStarted = true;
     _origin = origin;
 
-    // Resolve persisted guest mode before starting Firebase auth. Otherwise a
-    // cold-start tap can authenticate directly into the account namespace and
-    // leave the guest ledger stranded on the device.
+    // Profile-created Qaza records use the same reserved local ledger as the
+    // guest workspace. Detect that ledger explicitly, not only the persisted
+    // guest-session flag, so signing in cannot make existing local progress
+    // disappear into an empty account namespace.
     final wasGuest =
         await ref.read(guestSessionProvider.notifier).ensureRestored();
+    final hasLocalLedgerData = await ref
+        .read(guestMigrationServiceProvider)
+        .hasGuestData(guestUserId: guestUserId);
+    final requiresLocalTransition = wasGuest || hasLocalLedgerData;
+
     _emit(running: true);
 
-    if (wasGuest) {
+    if (requiresLocalTransition) {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
     }
 
     try {
       final account = await ref.read(authRepositoryProvider).signInWithGoogle();
 
-      if (!wasGuest) {
+      if (!requiresLocalTransition) {
         _emit();
         return true;
       }
 
-      final hasGuestData = await ref
-          .read(guestMigrationServiceProvider)
-          .hasGuestData(guestUserId: guestUserId);
-
-      if (!hasGuestData) {
-        // End guest mode before lowering the barrier so activeUserIdProvider
-        // changes directly from the reserved guest ledger to the account.
+      if (!hasLocalLedgerData) {
+        // There is no local Qaza ledger to migrate. End guest mode (when
+        // applicable) before lowering the barrier so the active account
+        // namespace becomes authoritative.
         await ref.read(guestSessionProvider.notifier).end();
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
@@ -181,11 +184,35 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         return true;
       }
 
+      // A brand-new account has no competing Qaza data, so adopt the local
+      // ledger automatically. An account that already contains data still
+      // requires the existing explicit Merge / Use Account / Keep Guest choice.
+      final hasAccountData = await ref
+          .read(guestMigrationServiceProvider)
+          .hasAccountData(accountUserId: account.id);
+
+      if (!hasAccountData) {
+        final migration = await ref.read(guestMigrationServiceProvider).migrate(
+              guestUserId: guestUserId,
+              accountUserId: account.id,
+            );
+
+        await ref
+            .read(guestMigrationServiceProvider)
+            .retireGuestData(guestUserId: guestUserId);
+        await ref.read(guestSessionProvider.notifier).end();
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        await _clearPendingDecision();
+        _refreshDerivedState();
+        _emit(migration: migration);
+        return true;
+      }
+
       await _persistPendingDecision(account.id);
       _emit(pendingAccount: account);
       return true;
     } on AuthenticationCancelledException catch (error) {
-      if (wasGuest) {
+      if (requiresLocalTransition) {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
@@ -196,9 +223,9 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       _emit(error: error.userInitiated ? null : error.diagnostic);
       return false;
     } catch (error) {
-      // A guest must never be left partially switched into an authenticated
-      // account after a failed sign-in/preflight operation.
-      if (wasGuest) {
+      // Never leave the local ledger behind an authenticated session when the
+      // account transition could not be completed.
+      if (requiresLocalTransition) {
         try {
           if (ref.read(authRepositoryProvider).currentUser != null) {
             await ref.read(authRepositoryProvider).signOut();
