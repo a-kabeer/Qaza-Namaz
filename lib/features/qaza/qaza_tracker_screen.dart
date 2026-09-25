@@ -385,8 +385,9 @@ class _TrackerBody extends ConsumerWidget {
             onRefresh: controller.refresh,
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
-                if (notification.metrics.extentAfter < 320)
+                if (notification.metrics.extentAfter < 320) {
                   controller.loadMore();
+                }
                 return false;
               },
               child: ListView.builder(
