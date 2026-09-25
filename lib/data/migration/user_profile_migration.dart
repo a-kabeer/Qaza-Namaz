@@ -52,8 +52,13 @@ class UserProfileMigration {
     final snapshot = snapshots.first;
     final locale = prefs.getString('qaza_locale');
     final dob = _parseDate(snapshot['dob']);
-    final oldPuberty = (snapshot['balighAge'] as num?)?.toInt();
-    final oldPrayerStart = (snapshot['prayerStartAge'] as num?)?.toInt();
+    final balighMode = snapshot['balighMode'] as String? ?? 'age';
+    final prayerStartMode = snapshot['prayerStartMode'] as String? ?? 'age';
+    final oldPuberty =
+        balighMode == 'age' ? (snapshot['balighAge'] as num?)?.toInt() : null;
+    final oldPrayerStart = prayerStartMode == 'age'
+        ? (snapshot['prayerStartAge'] as num?)?.toInt()
+        : null;
     final oldWitr = snapshot['includeWitr'] as bool?;
 
     var startAge = oldPrayerStart;
