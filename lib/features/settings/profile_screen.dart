@@ -42,7 +42,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _GoogleAccountSection(ref: ref),
+                child: const _GoogleAccountSection(),
               ),
               const SizedBox(height: 4),
               const Divider(height: 1),
@@ -75,9 +75,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 }
 
 class _GoogleAccountSection extends ConsumerWidget {
-  const _GoogleAccountSection({required this.ref});
-
-  final WidgetRef ref;
+  const _GoogleAccountSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -110,11 +108,6 @@ class _GoogleAccountSection extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.backupPromptBody,
-              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
             SizedBox(
