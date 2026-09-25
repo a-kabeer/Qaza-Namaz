@@ -272,6 +272,11 @@ final isGuestProvider = Provider<bool>((ref) =>
 /// preferences — is scoped by this, so guest data is isolated by the same
 /// mechanism that isolates one account from another.
 final activeUserIdProvider = Provider<String?>((ref) {
+  // During an in-progress guest-to-account decision, Firebase may already
+  // expose the account UID. Keep reads on the guest ledger until the user
+  // explicitly chooses merge, account-only, or cancel.
+  if (ref.watch(guestUpgradePendingProvider)) return guestUserId;
+
   final signedIn = ref.watch(currentUserProvider)?.id;
   if (signedIn != null) return signedIn;
 
