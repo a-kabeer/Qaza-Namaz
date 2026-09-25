@@ -1,8 +1,5 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     // No Kotlin Gradle Plugin: `android.builtInKotlin=true` means AGP 9
     // compiles this module's Kotlin itself.
     // The Flutter Gradle Plugin must be applied after the Android plugin.
@@ -34,7 +31,6 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
     compileSdk = 36
-    // Use the locally installed NDK (r28) instead of auto-installing r27.
     ndkVersion = "28.2.13676358"
 
     compileOptions {
@@ -46,7 +42,6 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/projects/installing#application-id).
         applicationId = "com.example.qaza_namaz_task1_flutter"
-        // Firebase Authentication requires Android API 23 or higher.
         minSdkVersion = flutter.minSdkVersion
         // Google Play requires Android 16 / API 36+ for new apps and updates
         // submitted from 31 August 2026 onward.
@@ -70,16 +65,11 @@ android {
 
     buildTypes {
         release {
-            // Never fall back to the debug key. A release build is either
-            // signed with the configured production keystore or fails clearly.
             signingConfig = signingConfigs.release
         }
     }
 }
 
-// Built-in Kotlin configures itself through the top-level `kotlin` extension
-// AGP registers, not through a block inside `android`. It has to agree with
-// `compileOptions` above or AGP rejects the mismatch.
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
