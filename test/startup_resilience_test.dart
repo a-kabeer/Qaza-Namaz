@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,8 +27,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProfileProvider.overrideWithValue(
-            AsyncValue<UserProfile?>.data(profile),
+          userProfileProvider.overrideWith(
+            (ref) => Future<UserProfile?>.value(profile),
           ),
           qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
           activeUserIdProvider.overrideWithValue(UserProfile.localLedgerUserId),
