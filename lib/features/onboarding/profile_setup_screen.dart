@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
+import '../auth/auth_startup_state.dart';
+import '../auth/guest_upgrade_controller.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
@@ -67,10 +69,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ),
     );
 
-    if (!mounted || added != true) return;
+    if (!mounted || added == null) return;
 
     await ref.read(userProfileRepositoryProvider).save(finalizedProfile);
+    await AuthStartupState.clear();
     ref.invalidate(userProfileProvider);
+    // The startup controller holds the in-session new-account handoff. Once
+    // profile setup is complete, discard that transient state as well so a
+    // fresh StartupGate resolves the authenticated account to Home.
+    ref.invalidate(guestUpgradeControllerProvider);
 
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -85,8 +92,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     QazaPlan plan,
     void Function(int processed, int total) onProgress,
   ) async {
+    final userId =
+        ref.read(authRepositoryProvider).currentUser?.id ??
+        UserProfile.localLedgerUserId;
+
     await ref.read(qazaServiceProvider).recordQazaForDates(
-          userId: UserProfile.localLedgerUserId,
+          userId: userId,
           dates: _planDates(plan),
           prayerTypes: _planPrayerTypes(plan),
           batchSize: 500,

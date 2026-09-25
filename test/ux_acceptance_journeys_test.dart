@@ -9,8 +9,11 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
+import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/auth/auth_gate.dart';
+import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
@@ -75,6 +78,9 @@ void main() {
     final container = ProviderContainer(overrides: [
       authRepositoryProvider.overrideWithValue(auth),
       qazaRepositoryProvider.overrideWithValue(repository),
+      guestMigrationServiceProvider.overrideWithValue(
+        _JourneyGuestMigrationService(),
+      ),
       calendarTodayProvider.overrideWithValue(today),
     ]);
     addTearDown(container.dispose);
@@ -130,7 +136,8 @@ void main() {
     await start(tester, home: const StartupGate());
 
     expect(find.byType(LanguageSelectionScreen), findsOneWidget);
-    expect(find.text('Continue with Google'), findsNothing);
+    expect(find.byKey(const Key('onboarding_sign_in_google')), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsOneWidget);
     expect(find.text('Continue as Guest'), findsNothing);
 
     await tapKey(tester, 'onboarding_language_en');
@@ -138,6 +145,60 @@ void main() {
   });
 
   // ---------------------------------------------------------------- 2
+  testWidgets('journey: existing Google account skips setup from language',
+      (tester) async {
+    await start(tester, home: const StartupGate());
+
+    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WorkspaceShell), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+  });
+
+  // ---------------------------------------------------------------- 3
+  testWidgets('journey: new Google account enters profile setup',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    auth = _JourneyAuth(isNewUser: true);
+    repository = InMemoryQazaRepository();
+    final container = ProviderContainer(overrides: [
+      authRepositoryProvider.overrideWithValue(auth),
+      qazaRepositoryProvider.overrideWithValue(repository),
+      guestMigrationServiceProvider.overrideWithValue(
+        _JourneyGuestMigrationService(),
+      ),
+      calendarTodayProvider.overrideWithValue(today),
+    ]);
+    addTearDown(container.dispose);
+    addTearDown(auth.dispose);
+
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const TestApp(home: StartupGate()),
+    ));
+    await tester.pump(AuthGate.splashDuration);
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(find.byType(WorkspaceShell), findsNothing);
+  });
+
+  // ---------------------------------------------------------------- 4
   testWidgets('journey: manual Qaza, from empty ledger to a record',
       (tester) async {
     final container =
@@ -228,6 +289,8 @@ void main() {
   });
 
   // ---------------------------------------------------------------- 5
+  // Google account authentication never implicitly moves the active ledger;
+  // the reconciliation decision remains the only migration boundary.
   testWidgets('journey: guest conversion keeps the guest ledger',
       (tester) async {
     final container = await start(
@@ -294,8 +357,40 @@ void main() {
   });
 }
 
+class _JourneyNoopLocalStore extends QazaLocalStore {
+  @override
+  Future<OfflineCacheSnapshot> load() async =>
+      const OfflineCacheSnapshot();
+
+  @override
+  Future<void> saveRecords(String userId, List<QazaRecord> records) async {}
+
+  @override
+  Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {}
+
+  @override
+  Future<void> saveLastSync(String userId, DateTime? lastSync) async {}
+
+  @override
+  Future<void> retireUserData({required String userId}) async {}
+}
+
+class _JourneyGuestMigrationService extends GuestMigrationService {
+  _JourneyGuestMigrationService()
+      : super(
+          localStore: _JourneyNoopLocalStore(),
+          remoteRepository: InMemoryQazaRepository(),
+        );
+
+  @override
+  Future<bool> hasGuestData({required String guestUserId}) async => false;
+}
+
 /// Signed out until a journey signs in.
-class _JourneyAuth implements AuthRepository {
+class _JourneyAuth implements AuthRepository, DetailedAuthRepository {
+  _JourneyAuth({this.isNewUser = false});
+
+  final bool isNewUser;
   final _controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
 
@@ -318,6 +413,13 @@ class _JourneyAuth implements AuthRepository {
     emit(const AppUser(id: 'account-1', email: 'user@example.com'));
     return _current!;
   }
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogleDetails() async =>
+      GoogleSignInResult(
+        user: await signInWithGoogle(),
+        isNewUser: isNewUser,
+      );
 
   @override
   Future<void> signOut() async => emit(null);

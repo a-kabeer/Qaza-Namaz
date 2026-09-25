@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,13 +13,14 @@ import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
+import 'package:qaza_namaz/features/auth/auth_startup_state.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 import 'support/test_app.dart';
 
-class FakeAuthRepository implements AuthRepository {
+class FakeAuthRepository implements AuthRepository, DetailedAuthRepository {
   FakeAuthRepository({
     this.account = const AppUser(
       id: 'account-1',
@@ -26,10 +28,12 @@ class FakeAuthRepository implements AuthRepository {
     ),
     AppUser? currentUser,
     this.waitForInitialAuth,
+    this.isNewUser = false,
   }) : _current = currentUser;
 
   final AppUser account;
   final Future<void>? waitForInitialAuth;
+  final bool isNewUser;
   final controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
   Object? signInFailure;
@@ -51,6 +55,13 @@ class FakeAuthRepository implements AuthRepository {
     controller.add(account);
     return account;
   }
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogleDetails() async =>
+      GoogleSignInResult(
+        user: await signInWithGoogle(),
+        isNewUser: isNewUser,
+      );
 
   @override
   Future<void> signOut() async {
@@ -90,7 +101,6 @@ class NoopLocalStore extends QazaLocalStore {
 class FakeGuestMigrationService extends GuestMigrationService {
   FakeGuestMigrationService({
     required this.guestData,
-    this.accountData = true,
     this.failMigration = false,
     this.failRetire = false,
   }) : super(
@@ -99,24 +109,16 @@ class FakeGuestMigrationService extends GuestMigrationService {
         );
 
   bool guestData;
-  bool accountData;
   bool failMigration;
   bool failRetire;
   int migrateCalls = 0;
   int retireCalls = 0;
   int hasGuestDataCalls = 0;
-  int hasAccountDataCalls = 0;
 
   @override
   Future<bool> hasGuestData({required String guestUserId}) async {
     hasGuestDataCalls++;
     return guestData;
-  }
-
-  @override
-  Future<bool> hasAccountData({required String accountUserId}) async {
-    hasAccountDataCalls++;
-    return accountData;
   }
 
   @override
@@ -155,7 +157,6 @@ void main() {
   Future<(ProviderContainer, FakeAuthRepository, FakeGuestMigrationService)>
       makeContainer({
     required bool guestData,
-    bool accountData = true,
     bool? failMigration,
     bool? failRetire,
     Object? signInFailure,
@@ -164,7 +165,6 @@ void main() {
     auth.signInFailure = signInFailure;
     final migration = FakeGuestMigrationService(
       guestData: guestData,
-      accountData: accountData,
       failMigration: failMigration ?? false,
       failRetire: failRetire ?? false,
     );
@@ -365,6 +365,101 @@ void main() {
   );
 
   test(
+    'new Google account starts the normal onboarding flow',
+    () async {
+      final auth = FakeAuthRepository(
+        isNewUser: true,
+        account: const AppUser(
+          id: 'new-account',
+          email: 'new@example.com',
+        ),
+      );
+      final migration = FakeGuestMigrationService(guestData: false);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      await container.read(guestSessionProvider.notifier).start();
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isTrue);
+      expect(
+        await AuthStartupState.isPendingFor('new-account'),
+        isTrue,
+      );
+      expect(container.read(guestSessionProvider), isFalse);
+      expect(container.read(guestUpgradePendingProvider), isFalse);
+      expect(container.read(guestUpgradeControllerProvider).newAccount, isTrue);
+    },
+  );
+
+  test(
+    'new Google account with guest data requires an explicit reconciliation choice',
+    () async {
+      final auth = FakeAuthRepository(
+        isNewUser: true,
+        account: const AppUser(
+          id: 'new-account-with-data',
+          email: 'new-with-data@example.com',
+        ),
+      );
+      final migration = FakeGuestMigrationService(guestData: true);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      await container.read(guestSessionProvider.notifier).start();
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isTrue);
+      expect(migration.migrateCalls, 0);
+      expect(migration.retireCalls, 0);
+
+      final state = container.read(guestUpgradeControllerProvider);
+      expect(state.pendingAccount?.id, auth.account.id);
+      expect(state.newAccount, isTrue);
+      expect(container.read(guestSessionProvider), isTrue);
+      expect(container.read(activeUserIdProvider), guestUserId);
+      expect(
+        await AuthStartupState.isPendingFor('new-account-with-data'),
+        isTrue,
+      );
+
+      await container.read(authStateProvider.future);
+      expect(await controller.mergeData(), isTrue);
+      expect(migration.migrateCalls, 1);
+      expect(migration.retireCalls, 1);
+      expect(container.read(guestSessionProvider), isFalse);
+      expect(container.read(activeUserIdProvider), 'new-account-with-data');
+      expect(
+        await AuthStartupState.isPendingFor('new-account-with-data'),
+        isTrue,
+      );
+      expect(container.read(guestUpgradeControllerProvider).newAccount, isTrue);
+    },
+  );
+
+  test(
     'guest sign-in with empty ledger ends guest mode without migration',
     () async {
       final (container, auth, migration) =
@@ -400,32 +495,6 @@ void main() {
         container.read(guestUpgradeControllerProvider).error,
         contains('firebase-auth/operation-not-allowed'),
       );
-    },
-  );
-
-  test(
-    'local profile ledger is adopted automatically by a new Google account',
-    () async {
-      final (container, auth, migration) = await makeContainer(
-        guestData: true,
-        accountData: false,
-      );
-
-      // A completed local profile uses the local ledger without setting the
-      // persisted guest-session flag.
-      await container.read(guestSessionProvider.notifier).end();
-
-      final controller =
-          container.read(guestUpgradeControllerProvider.notifier);
-
-      expect(await controller.signInAndMigrate(), isTrue);
-      expect(migration.hasGuestDataCalls, 1);
-      expect(migration.hasAccountDataCalls, 1);
-      expect(migration.migrateCalls, 1);
-      expect(migration.retireCalls, 1);
-      expect(container.read(guestUpgradePendingProvider), isFalse);
-      expect(container.read(activeUserIdProvider), auth.account.id);
-      expect(container.read(isGuestProvider), isFalse);
     },
   );
 
@@ -543,19 +612,22 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Guest progress found'), findsOneWidget);
-      expect(find.text('Merge Data'), findsNWidgets(2));
-      expect(find.text('Use Account Data'), findsNWidgets(2));
+      expect(find.text('Previous Qaza records found'), findsOneWidget);
+      expect(find.text('Keep Previous + Add New'), findsNWidgets(2));
+      expect(find.text('Keep Previous Records'), findsNWidgets(2));
 
       // The third decision card is below the initial viewport of the lazy
       // ListView on CI. Scroll it into view before asserting its contents.
       await tester.scrollUntilVisible(
-        find.text('Keep Guest Data / Cancel Sign-In'),
+        find.byKey(const Key('guest_decision_keep_guest')),
         300,
       );
       await tester.pump();
-      expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
-      expect(find.text('Keep Guest Data'), findsOneWidget);
+      expect(
+        find.byKey(const Key('guest_decision_keep_guest')),
+        findsOneWidget,
+      );
+      expect(find.text('Cancel'), findsWidgets);
     },
   );
 
