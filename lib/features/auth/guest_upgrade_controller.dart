@@ -159,6 +159,9 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     }
   }
 
+  /// Reads only the guest namespace and only when an operation actually
+  /// needs to know whether local Qaza data exists. Ordinary startup without a
+  /// pending upgrade marker must not instantiate the local database.
   Future<bool> hasLocalQazaData() async {
     final page = await ref.read(qazaLocalStoreProvider).getPage(
           userId: guestUserId,
