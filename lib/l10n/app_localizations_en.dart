@@ -1859,4 +1859,116 @@ class AppLocalizationsEn extends AppLocalizations {
   String homeSahibOrderLabel(String prayer) {
     return 'Sahib al-Tartib: $prayer';
   }
+
+  @override
+  String get profileLanguageTitle => "Choose your language";
+
+  @override
+  String get profileLanguageIntro => "Select the language you want to use throughout the app.";
+
+  @override
+  String get profileSetupTitle => "Set up your profile";
+
+  @override
+  String get profileTitle => "Profile";
+
+  @override
+  String get profileIntro => "These details personalize your Qaza plan and are used by the app's prayer rules.";
+
+  @override
+  String get profileSettingsSubtitle => "Your prayer profile and Qaza plan settings.";
+
+  @override
+  String get profileGender => "Gender";
+
+  @override
+  String get profileMale => "Male";
+
+  @override
+  String get profileFemale => "Female";
+
+  @override
+  String get profileMadhab => "Madhab / School of Thought";
+
+  @override
+  String get profileHanafi => "Hanafi";
+
+  @override
+  String get profileShafi => "Shafi";
+
+  @override
+  String get profileMaliki => "Maliki";
+
+  @override
+  String get profileHanbali => "Hanbali";
+
+  @override
+  String get profileOther => "Other";
+
+  @override
+  String get profileDateOfBirth => "Date of Birth";
+
+  @override
+  String get profileSelectDate => "Select date";
+
+  @override
+  String get profileSelectDobHelp => "Select your date of birth";
+
+  @override
+  String get profileHijriHint => "Hijri date is shown after you select the Gregorian date.";
+
+  @override
+  String get profilePubertyAge => "Puberty Age";
+
+  @override
+  String get profileStartPrayingAge => "Start Praying Age";
+
+  @override
+  String get profileSelectGenderFirst => "Select gender first";
+
+  @override
+  String get profileSelectPubertyFirst => "Select puberty age first";
+
+  @override
+  String get profileSelectDobFirst => "Select date of birth first";
+
+  @override
+  String get profileWitr => "Witr";
+
+  @override
+  String get profileWitrOptional => "For Other, you can choose whether Witr is included.";
+
+  @override
+  String get profileWitrIncluded => "Included";
+
+  @override
+  String get profileWitrExcluded => "Not included";
+
+  @override
+  String get profileSubmit => "Continue";
+
+  @override
+  String get profileSave => "Save Changes";
+
+  @override
+  String get profileErrorLanguage => "Please select a language.";
+
+  @override
+  String get profileErrorGender => "Please select your gender.";
+
+  @override
+  String get profileErrorMadhab => "Please select your school of thought.";
+
+  @override
+  String get profileErrorDob => "Please enter a valid date of birth.";
+
+  @override
+  String get profileErrorPuberty => "Please select a valid puberty age for the selected gender.";
+
+  @override
+  String get profileErrorStartPraying => "Please select a valid praying start age.";
+
+  @override
+  String get profileErrorWitr => "Please select a valid Witr setting.";
+
 }
