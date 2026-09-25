@@ -4,7 +4,7 @@ Date: 2026-09-19
 
 ## Scope and evidence
 
-This audit covered the repository tree, production Dart/Flutter code, tests, Android configuration, assets, localization, persistence, sync, notification wiring, dependencies, and project documentation.
+This audit covered the repository tree, production Dart/Flutter code, tests, Android configuration, assets, localization, persistence, sync, dependencies, and project documentation.
 
 Evidence sources used:
 - Full recursive Git tree at audit branch HEAD.
@@ -83,7 +83,6 @@ Updated both English and Urdu ARB files and the checked-in generated localizatio
 These obsolete root-level point-in-time task status files were moved under the established historical archive rather than destroyed:
 - `CALCULATOR_3_STEP_STATUS.md`
 - `CALCULATOR_PART11_STATUS.md`
-- `NOTIFICATIONS_SETTINGS_STATUS.md`
 - `QAZA_CALENDAR_UX_STATUS.md`
 
 Archived copies are now under `docs/archive/`.
@@ -106,7 +105,6 @@ The current dependencies were checked against active Dart/native configuration. 
 - connectivity_plus
 - Riverpod
 - file_picker
-- flutter_local_notifications + timezone integration
 - hijri
 - intl / flutter_localizations
 
@@ -140,7 +138,6 @@ This preserves backward compatibility for existing installations.
 No Android plugin, permission, manifest receiver, Gradle configuration, Firebase configuration, or native resource was removed because active runtime usage was confirmed or could not be disproven safely.
 
 The following were explicitly preserved:
-- notification permissions and scheduled-notification receivers
 - Firebase Google Services integration
 - Google Sign-In integration
 - Drift/SQLite configuration
@@ -184,7 +181,6 @@ The cleanup therefore focused on removing dead/duplicate architecture rather tha
 - `lib/domain/services/qaza_service.dart` — canonical business boundary.
 - `QazaRepository.getRecords/history` compatibility APIs — retained because migration/data-transfer compatibility still depends on the repository boundary.
 - SharedPreferences settings/migration code — active and not interchangeable with the Qaza database.
-- Notification controller and native notification integration — active.
 - Full test-era task files that still exercise current behavior — retained unless their coverage was proven to be duplicate/dead.
 
 ## Verification status

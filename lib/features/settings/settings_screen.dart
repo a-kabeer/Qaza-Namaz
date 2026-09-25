@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,9 +9,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
-import '../notifications/notification_controller.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'qaza_reset_controller.dart';
 
@@ -45,17 +42,6 @@ class SettingsScreen extends ConsumerWidget {
               title: l10n.profileTitle,
               subtitle: l10n.profileSettingsSubtitle,
               onTap: () => open(const ProfileScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: SettingsNavRow(
-              key: const Key('settings_notifications'),
-              icon: Icons.notifications_none_rounded,
-              title: l10n.notificationsTitle,
-              subtitle: l10n.settingsNotificationsRowSubtitle,
-              onTap: () => open(const NotificationsScreen()),
             ),
           ),
           const SizedBox(height: 12),
