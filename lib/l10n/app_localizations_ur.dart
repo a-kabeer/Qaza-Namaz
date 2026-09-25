@@ -1318,6 +1318,7 @@ class AppLocalizationsUr extends AppLocalizations {
       count,
       locale: localeName,
       other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
+      one: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
       zero: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
     );
     return '$_temp0';
@@ -1623,144 +1624,152 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get profileLanguageTitle => "اپنی زبان منتخب کریں";
+  String get profileLanguageTitle => 'اپنی زبان منتخب کریں';
 
   @override
-  String get profileLanguageIntro => "ایپ میں استعمال ہونے والی زبان منتخب کریں۔";
+  String get profileLanguageIntro =>
+      'ایپ میں استعمال ہونے والی زبان منتخب کریں۔';
 
   @override
-  String get profileSetupTitle => "اپنا پروفائل مکمل کریں";
+  String get profileSetupTitle => 'اپنا پروفائل مکمل کریں';
 
   @override
-  String get profileTitle => "پروفائل";
+  String get profileTitle => 'پروفائل';
 
   @override
-  String get profileIntro => "یہ معلومات آپ کے قضا پلان اور نماز سے متعلق قواعد کے لیے استعمال ہوں گی۔";
+  String get profileIntro =>
+      'یہ معلومات آپ کے قضا پلان اور نماز سے متعلق قواعد کے لیے استعمال ہوں گی۔';
 
   @override
-  String get profileSettingsSubtitle => "آپ کی نماز پروفائل اور قضا پلان کی ترتیبات۔";
+  String get profileSettingsSubtitle =>
+      'آپ کی نماز پروفائل اور قضا پلان کی ترتیبات۔';
 
   @override
-  String get profileGender => "صنف";
+  String get profileGender => 'صنف';
 
   @override
-  String get profileMale => "مرد";
+  String get profileMale => 'مرد';
 
   @override
-  String get profileFemale => "خاتون";
+  String get profileFemale => 'خاتون';
 
   @override
-  String get profileMadhab => "مذہب / فقہی مکتب";
+  String get profileMadhab => 'مذہب / فقہی مکتب';
 
   @override
-  String get profileHanafi => "حنفی";
+  String get profileHanafi => 'حنفی';
 
   @override
-  String get profileShafi => "شافعی";
+  String get profileShafi => 'شافعی';
 
   @override
-  String get profileMaliki => "مالکی";
+  String get profileMaliki => 'مالکی';
 
   @override
-  String get profileHanbali => "حنبلی";
+  String get profileHanbali => 'حنبلی';
 
   @override
-  String get profileOther => "دیگر";
+  String get profileOther => 'دیگر';
 
   @override
-  String get profileDateOfBirth => "تاریخ پیدائش";
+  String get profileDateOfBirth => 'تاریخ پیدائش';
 
   @override
-  String get profileSelectDate => "تاریخ منتخب کریں";
+  String get profileSelectDate => 'تاریخ منتخب کریں';
 
   @override
-  String get profileSelectDobHelp => "اپنی تاریخ پیدائش منتخب کریں";
+  String get profileSelectDobHelp => 'اپنی تاریخ پیدائش منتخب کریں';
 
   @override
-  String get profileHijriHint => "گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔";
+  String get profileHijriHint =>
+      'گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔';
 
   @override
-  String get profilePubertyAge => "بلوغت کی عمر";
+  String get profilePubertyAge => 'بلوغت کی عمر';
 
   @override
-  String get profileStartPrayingAge => "نماز شروع کرنے کی عمر";
+  String get profileStartPrayingAge => 'نماز شروع کرنے کی عمر';
 
   @override
-  String get profileSelectGenderFirst => "پہلے صنف منتخب کریں";
+  String get profileSelectGenderFirst => 'پہلے صنف منتخب کریں';
 
   @override
-  String get profileSelectPubertyFirst => "پہلے بلوغت کی عمر منتخب کریں";
+  String get profileSelectPubertyFirst => 'پہلے بلوغت کی عمر منتخب کریں';
 
   @override
-  String get profileSelectDobFirst => "پہلے تاریخ پیدائش منتخب کریں";
+  String get profileSelectDobFirst => 'پہلے تاریخ پیدائش منتخب کریں';
 
   @override
-  String get profileWitr => "وتر";
+  String get profileWitr => 'وتر';
 
   @override
-  String get profileWitrOptional => "دیگر کے لیے آپ منتخب کر سکتے ہیں کہ وتر شامل ہوں یا نہیں۔";
+  String get profileWitrOptional =>
+      'دیگر کے لیے آپ منتخب کر سکتے ہیں کہ وتر شامل ہوں یا نہیں۔';
 
   @override
-  String get profileWitrIncluded => "شامل";
+  String get profileWitrIncluded => 'شامل';
 
   @override
-  String get profileWitrExcluded => "شامل نہیں";
+  String get profileWitrExcluded => 'شامل نہیں';
 
   @override
-  String get profileSubmit => "جاری رکھیں";
+  String get profileSubmit => 'جاری رکھیں';
 
   @override
-  String get profileSave => "تبدیلیاں محفوظ کریں";
+  String get profileSave => 'تبدیلیاں محفوظ کریں';
 
   @override
-  String get qazaReviewTitle => "اپنا قضا پلان دیکھیں";
+  String get qazaReviewTitle => 'اپنا قضا پلان دیکھیں';
 
   @override
-  String get qazaReviewSubtitle => "قضا ٹریکر میں شامل کرنے سے پہلے اپنی تفصیلات کا جائزہ لیں۔";
+  String get qazaReviewSubtitle =>
+      'قضا ٹریکر میں شامل کرنے سے پہلے اپنی تفصیلات کا جائزہ لیں۔';
 
   @override
-  String get qazaReviewTotal => "کل اندازاً قضا نمازیں";
+  String get qazaReviewTotal => 'کل اندازاً قضا نمازیں';
 
   @override
-  String get qazaReviewPeriod => "قضا کی مدت";
+  String get qazaReviewPeriod => 'قضا کی مدت';
 
   @override
-  String get qazaReviewBreakdown => "نماز وار تفصیل";
+  String get qazaReviewBreakdown => 'نماز وار تفصیل';
 
   @override
-  String get qazaReviewNote => "یہ آپ کے پروفائل کی معلومات کی بنیاد پر قضا نمازوں کا اندازہ ہے۔";
+  String get qazaReviewNote =>
+      'یہ آپ کے پروفائل کی معلومات کی بنیاد پر قضا نمازوں کا اندازہ ہے۔';
 
   @override
-  String get qazaReviewEdit => "اپنی تفصیلات میں ترمیم کریں";
+  String get qazaReviewEdit => 'اپنی تفصیلات میں ترمیم کریں';
 
   @override
-  String get qazaReviewAdd => "قضا کو میرے ٹریکر میں شامل کریں";
+  String get qazaReviewAdd => 'قضا کو میرے ٹریکر میں شامل کریں';
 
   @override
-  String get qazaReviewAdding => "قضا شامل ہو رہی ہے…";
+  String get qazaReviewAdding => 'قضا شامل ہو رہی ہے…';
 
   @override
-  String get qazaReviewError => "قضا شامل نہیں ہو سکی۔ دوبارہ کوشش کریں۔";
+  String get qazaReviewError => 'قضا شامل نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
 
   @override
-  String get profileErrorLanguage => "براہ کرم زبان منتخب کریں۔";
+  String get profileErrorLanguage => 'براہ کرم زبان منتخب کریں۔';
 
   @override
-  String get profileErrorGender => "براہ کرم اپنی صنف منتخب کریں۔";
+  String get profileErrorGender => 'براہ کرم اپنی صنف منتخب کریں۔';
 
   @override
-  String get profileErrorMadhab => "براہ کرم اپنا فقہی مکتب منتخب کریں۔";
+  String get profileErrorMadhab => 'براہ کرم اپنا فقہی مکتب منتخب کریں۔';
 
   @override
-  String get profileErrorDob => "براہ کرم درست تاریخ پیدائش درج کریں۔";
+  String get profileErrorDob => 'براہ کرم درست تاریخ پیدائش درج کریں۔';
 
   @override
-  String get profileErrorPuberty => "منتخب صنف کے لیے درست بلوغت کی عمر منتخب کریں۔";
+  String get profileErrorPuberty =>
+      'منتخب صنف کے لیے درست بلوغت کی عمر منتخب کریں۔';
 
   @override
-  String get profileErrorStartPraying => "براہ کرم نماز شروع کرنے کی درست عمر منتخب کریں۔";
+  String get profileErrorStartPraying =>
+      'براہ کرم نماز شروع کرنے کی درست عمر منتخب کریں۔';
 
   @override
-  String get profileErrorWitr => "براہ کرم وتر کی درست ترتیب منتخب کریں۔";
-
+  String get profileErrorWitr => 'براہ کرم وتر کی درست ترتیب منتخب کریں۔';
 }

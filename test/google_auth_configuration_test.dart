@@ -97,9 +97,23 @@ void main() {
     );
     expect(
       repository,
-      contains('_authenticateWithCredentialManagerRecovery()'),
+      contains('authenticateOnce()'),
+      reason: 'The interactive flow is entered through one named call.',
+    );
+    expect(
+      repository,
+      isNot(contains('return _googleSignIn.authenticate();')),
       reason:
-          'Credential Manager [16] failures must get one stale-state recovery retry.',
+          'A second authenticate() is a second account chooser for one tap. '
+          'google_sign_in_single_chooser_test pins the behaviour; this keeps '
+          'the retry from being reintroduced by hand.',
+    );
+    expect(
+      repository,
+      contains('await requireRegisteredBuild();'),
+      reason:
+          'The build must be checked against the registered OAuth clients '
+          'before an account chooser can open.',
     );
 
     expect(

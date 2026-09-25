@@ -278,7 +278,14 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
       }
       await AuthStartupState.clear();
 
-      _emit(error: error.toString());
+      // A stage-named failure - an unregistered signing certificate, a
+      // Credential Manager reauth refusal - already reads as a diagnosis.
+      // Anything else falls back to its own toString().
+      _emit(
+        error: error is AuthenticationException
+            ? error.diagnostic
+            : error.toString(),
+      );
       return false;
     }
   }
