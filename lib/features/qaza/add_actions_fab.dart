@@ -8,23 +8,21 @@ import '../../l10n/app_localizations.dart';
 /// The plus rotates an eighth of a turn to become the cross, which is the
 /// Material idiom for this control and gives the open and close states one
 /// continuous animation rather than two icons swapping.
-class AddActionsFab extends StatefulWidget {
-  const AddActionsFab({
+class AddQazaFab extends StatefulWidget {
+  const AddQazaFab({
     super.key,
     required this.onAddQaza,
-    required this.onCalculateQaza,
   });
 
   final VoidCallback onAddQaza;
-  final VoidCallback onCalculateQaza;
 
   static const Duration _duration = Duration(milliseconds: 200);
 
   @override
-  State<AddActionsFab> createState() => _AddActionsFabState();
+  State<AddQazaFab> createState() => _AddQazaFabState();
 }
 
-class _AddActionsFabState extends State<AddActionsFab> {
+class _AddQazaFabState extends State<AddQazaFab> {
   bool _open = false;
 
   void _toggle() => setState(() => _open = !_open);
@@ -47,11 +45,11 @@ class _AddActionsFabState extends State<AddActionsFab> {
         // The actions take no space at all while closed, so the plus keeps
         // its usual position.
         AnimatedSize(
-          duration: AddActionsFab._duration,
+          duration: AddQazaFab._duration,
           curve: Curves.easeOutCubic,
           alignment: Alignment.bottomCenter,
           child: AnimatedOpacity(
-            duration: AddActionsFab._duration,
+            duration: AddQazaFab._duration,
             opacity: _open ? 1 : 0,
             child: _open
                 ? Column(
@@ -65,13 +63,6 @@ class _AddActionsFabState extends State<AddActionsFab> {
                         onPressed: () => _run(widget.onAddQaza),
                       ),
                       const SizedBox(height: 12),
-                      _MenuAction(
-                        actionKey: const Key('fab_action_calculate_qaza'),
-                        icon: Icons.calculate_outlined,
-                        label: l10n.homeCalculateQaza,
-                        onPressed: () => _run(widget.onCalculateQaza),
-                      ),
-                      const SizedBox(height: 12),
                     ],
                   )
                 : const SizedBox(width: 0, height: 0),
@@ -83,7 +74,7 @@ class _AddActionsFabState extends State<AddActionsFab> {
           tooltip: _open ? l10n.commonClose : l10n.qazaAddTooltip,
           onPressed: _toggle,
           child: AnimatedRotation(
-            duration: AddActionsFab._duration,
+            duration: AddQazaFab._duration,
             curve: Curves.easeOutCubic,
             // An eighth of a turn takes the plus exactly onto the cross.
             turns: _open ? 0.125 : 0,
