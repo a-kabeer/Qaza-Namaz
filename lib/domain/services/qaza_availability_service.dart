@@ -140,6 +140,7 @@ class QazaAvailabilityService {
                 date: date,
                 prayerType: prayer,
                 existingRecords: existingRecords,
+                prayedKeys: prayedKeys,
               ) ==
               QazaEligibility.available)
             prayer,
@@ -166,9 +167,9 @@ class QazaAvailabilityService {
     required Iterable<PrayerType> prayerTypes,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
-    Set<QazaPrayerKey> timeBlockedKeys = const <QazaPrayerKey>{},
   }) {
     final uniqueDates = dates.map(QazaDate.normalize).toSet().toList()..sort();
+    final uniquePrayers = prayerTypes.toSet().toList();
     final candidates = <QazaPrayerKey>[];
     final newCandidates = <QazaPrayerKey>[];
     final existingCandidates = <QazaPrayerKey>[];
