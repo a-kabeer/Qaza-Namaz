@@ -10,7 +10,7 @@ import 'package:qaza_namaz/features/settings/profile_screen.dart';
 
 import '../../support/test_app.dart';
 
-const _profile = UserProfile(
+final _profile = UserProfile(
   languageCode: 'en',
   gender: Gender.male,
   madhab: Madhab.hanafi,
