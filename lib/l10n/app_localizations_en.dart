@@ -764,7 +764,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSignInMethod => 'Sign-in method';
 
   @override
-  String get accountGoogleAuth => 'Google authentication';
+  String get accountGoogleAuth => 'Google';
 
   @override
   String get accountSignedInWithGoogle => 'Signed in with Google';
@@ -796,7 +796,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSignOutExplanation =>
-      'Signing out returns you to the welcome screen. Your saved Qaza records are NOT deleted and will be restored the next time you sign in.';
+      'Signing out disconnects your Google account. Your Qaza progress remains on this device.';
 
   @override
   String get dataTitle => 'Export & Import';
@@ -1278,17 +1278,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueAsGuest => 'Continue as Guest';
 
   @override
-  String get authGuestNote => 'You can sign in later to back up your progress.';
+  String get authGuestNote => 'You can sign in with Google later to keep your progress with your account.';
 
   @override
   String get backupPromptTitle => 'Keep your progress safe';
 
   @override
   String get backupPromptBody =>
-      'Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.';
+      'Sign in with Google to keep your Qaza progress available with your account.';
 
   @override
-  String get backupPromptConfirm => 'Back Up My Progress';
+  String get backupPromptConfirm => 'Continue with Google';
 
   @override
   String get backupPromptDismiss => 'Not Now';
@@ -1318,9 +1318,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Signed in. $count records were added to your account.',
-      one: 'Signed in. 1 record was added to your account.',
-      zero: 'Signed in. Your progress is backed up.',
+      other: 'Signed in. Your Qaza progress is now linked to your account.',
+      one: 'Signed in. Your Qaza progress is now linked to your account.',
+      zero: 'Signed in. Your Qaza progress is now linked to your account.',
     );
     return '$_temp0';
   }

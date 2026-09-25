@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'authentication_screen.dart';
+import 'guest_session.dart';
 import 'guest_upgrade_controller.dart';
 
 /// Whether the backup prompt has been answered already.
@@ -46,7 +47,7 @@ final backupPromptSeenProvider =
 
 /// True when a guest has recorded their first Qaza and has not answered yet.
 final shouldOfferBackupProvider = Provider<bool>((ref) {
-  if (!ref.watch(isGuestProvider)) return false;
+  if (ref.watch(activeUserIdProvider) != guestUserId) return false;
   if (ref.watch(backupPromptSeenProvider)) return false;
   final summary = ref.watch(progressSummaryProvider).valueOrNull;
   return (summary?.overall.total ?? 0) > 0;
@@ -57,6 +58,8 @@ final shouldOfferBackupProvider = Provider<bool>((ref) {
 /// Non-blocking in both senses: it is dismissible, and declining leaves every
 /// part of the app working exactly as before.
 Future<void> showBackupPrompt(BuildContext context, WidgetRef ref) async {
+  if (!ref.read(shouldOfferBackupProvider)) return;
+
   final l10n = AppLocalizations.of(context);
   // Marked before the dialog resolves: however it is answered, and even if
   // the app is killed while it is open, it is not offered again.
@@ -138,7 +141,7 @@ void _reportBackupSignIn(BuildContext context, WidgetRef ref) {
         key: const Key('backup_sign_in_failed'),
         // The real diagnostic, not a generic stand-in: a missing SHA-1 and a
         // dropped network connection need different answers from the user.
-        content: Text(l10n.backupSignInFailedReason(state.error!)),
+        content: Text(l10n.backupSignInFailed),
         action: SnackBarAction(
           label: l10n.commonRetry,
           onPressed: () => startBackupSignIn(context, ref),
