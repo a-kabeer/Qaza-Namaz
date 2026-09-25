@@ -51,14 +51,30 @@ void main() {
     return container;
   }
 
-  testWidgets('Qaza uses a single Add FAB', (tester) async {
+  testWidgets('Qaza starts with expanded Add Qaza FAB and contracts after 4 seconds',
+      (tester) async {
     await pumpQazaTab(tester);
 
     expect(find.byKey(const Key('qaza_tracker_add_fab')), findsOneWidget);
-    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    expect(find.byKey(const Key('add_qaza_fab_expanded')), findsOneWidget);
+    expect(find.text('Add Qaza +'), findsOneWidget);
+    expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsNothing);
     expect(find.byKey(const Key('add_actions_fab')), findsNothing);
     expect(find.byKey(const Key('fab_action_add_qaza')), findsNothing);
     expect(find.byKey(const Key('fab_action_calculate_qaza')), findsNothing);
+
+    await tester.pump(const Duration(seconds: 3, milliseconds: 999));
+    expect(find.byKey(const Key('add_qaza_fab_expanded')), findsOneWidget);
+    expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(find.byKey(const Key('add_qaza_fab_expanded')), findsOneWidget);
+    expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsOneWidget);
+
+    await tester.pump(AddQazaFab.animationDuration);
+    expect(find.byKey(const Key('add_qaza_fab_expanded')), findsNothing);
+    expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsOneWidget);
+    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
   });
 
 }
