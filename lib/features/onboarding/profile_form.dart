@@ -205,7 +205,7 @@ class _ProfileFormState extends State<ProfileForm> {
             builder: (context) {
               final hijri = HijriCalendar.fromDate(profile.dateOfBirth!);
               return Text(
-                '${l10n.profileHijriHint} ${hijri.hDay}/${hijri.hMonth}/${hijri.hYear}H',
+                l10n.hijriDate(hijri.hDay, hijri.hMonth, hijri.hYear),
                 style: Theme.of(context).textTheme.bodySmall,
               );
             },
