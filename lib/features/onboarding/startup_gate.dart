@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../domain/services/profile_rules.dart';
 import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../settings/app_lock_gate.dart';
 import '../shell/workspace_shell.dart';
@@ -32,7 +33,11 @@ class StartupGate extends ConsumerWidget {
           });
         }
 
-        if (!profile.isComplete) {
+        final validation = ProfileRules.validate(
+          profile,
+          today: DateTime.now(),
+        );
+        if (!profile.isComplete || !validation.isValid) {
           return ProfileSetupScreen(
             languageCode: profile.languageCode,
             initialProfile: profile,
