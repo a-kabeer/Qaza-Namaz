@@ -7,7 +7,7 @@ import '../../domain/entities/user_profile.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 
-typedef QazaReviewConfirm = Future<int> Function(
+typedef QazaReviewConfirm = Future<void> Function(
   void Function(int processed, int total) onProgress,
 );
 
@@ -42,7 +42,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
     });
 
     try {
-      final added = await widget.onConfirm((processed, total) {
+      await widget.onConfirm((processed, total) {
         if (!mounted) return;
         setState(() {
           _processed = processed;
@@ -50,7 +50,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
         });
       });
       if (!mounted) return;
-      Navigator.of(context).pop(added);
+      Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -64,7 +64,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final size = MediaQuery.sizeOf(context);
-    final maxHeight = size.height * 0.70;
+    final maxHeight = (size.height - 180).clamp(280.0, 600.0).toDouble();
 
     return PopScope(
       canPop: false,
