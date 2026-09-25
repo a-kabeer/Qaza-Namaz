@@ -102,7 +102,14 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       if (_userActionStarted) return;
 
-      if (marker == null || !guestPersisted || currentUser == null) {
+      final localQazaExists =
+          await ref.read(guestMigrationServiceProvider).hasGuestData(
+                guestUserId: guestUserId,
+              );
+
+      if (marker == null ||
+          currentUser == null ||
+          (!guestPersisted && !localQazaExists)) {
         if (marker != null) {
           await prefs.remove(_pendingDecisionKey);
         }
@@ -120,8 +127,15 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         return;
       }
 
+      final summary = localQazaExists
+          ? await ref.read(guestMigrationServiceProvider).summarize(
+                guestUserId: guestUserId,
+                accountUserId: currentUser.id,
+              )
+          : GuestDataSummary.empty;
+
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
-      _emit(pendingAccount: currentUser);
+      _emit(pendingAccount: currentUser, summary: summary);
     } catch (error) {
       if (_disposed) return;
       _emit(error: 'Could not restore the pending sign-in decision: $error');
