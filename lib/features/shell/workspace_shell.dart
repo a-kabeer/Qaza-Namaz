@@ -14,7 +14,7 @@ import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// Calculator remains contextual; the other five destinations are primary navigation.
+/// The five destinations are the primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
@@ -126,7 +126,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         floatingActionButton:
             destination == WorkspaceDestination.qaza ||
                     (destination == WorkspaceDestination.home && hasQazaRecords)
-                ? AddActionsFab(
+                ? AddQazaFab(
                     onAddQaza: () => _push(const AddQazaScreen()),
                   )
                 : null,
