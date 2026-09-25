@@ -136,6 +136,22 @@ class OfflineFirstQazaRepository
   }
 
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    _validateActive(userId);
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: recordIds.toList(growable: false),
+    );
+    return records
+        .where((record) => record.status == QazaStatus.pending)
+        .toList(growable: false);
+  }
+
+  @override
   Future<QazaHistoryPage> getHistoryPage({
     required String userId,
     int limit = 50,
