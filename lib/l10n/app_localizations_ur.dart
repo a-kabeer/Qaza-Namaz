@@ -21,18 +21,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get navKnowledge => 'معلومات';
 
   @override
-  String get settingsRemindersSection => 'یاد دہانیاں';
-
-  @override
-  String get settingsRemindersSubtitle => 'قضا مکمل کرنے کی روزانہ یاد دہانی۔';
-
-  @override
-  String get settingsBackupSection => 'ڈیٹا اور اسٹوریج';
-
-  @override
-  String get settingsBackupSubtitle => 'کلاؤڈ سنک، برآمد اور درآمد۔';
-
-  @override
   String get navSettings => 'ترتیبات';
 
   @override
@@ -61,14 +49,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get statusCompleted => 'مکمل';
-
-  @override
-  String get qazaSelectAllMatching => 'سب مطابق منتخب کریں';
-
-  @override
-  String qazaSelectAllMatchingCapped(String count) {
-    return 'پہلے $count مطابق ریکارڈ منتخب کر لیے گئے۔';
-  }
 
   @override
   String qazaConfirmBulkTitle(String count) {
@@ -112,9 +92,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get errorUnknown => 'کچھ غلط ہو گیا۔';
 
   @override
-  String get commonOpenSettings => 'سیٹنگز کھولیں';
-
-  @override
   String get homeTartibCheckingTitle => 'نماز کی ترتیب جانچی جا رہی ہے';
 
   @override
@@ -129,9 +106,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'ترتیب معلوم ہونے تک فرض نمازیں روک لی گئی ہیں تاکہ کوئی نماز بے ترتیب مکمل نہ ہو۔ وتر اب بھی مینیو سے مکمل کی جا سکتی ہے۔';
 
   @override
-  String get qazaSortLabel => 'ترتیب';
-
-  @override
   String get qazaSortOldestFirst => 'پہلے پرانی';
 
   @override
@@ -144,70 +118,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get commonRetry => 'دوبارہ کوشش کریں';
 
   @override
-  String get commonTotal => 'کل';
-
-  @override
   String get commonVersion => 'ورژن';
 
   @override
   String get stateErrorTitle => 'کچھ غلط ہو گیا';
-
-  @override
-  String get prayerRakatFajr => 'فجر • 2 رکعت فرض';
-
-  @override
-  String get prayerRakatZuhr => 'ظہر • 4 رکعت فرض';
-
-  @override
-  String get prayerRakatAsr => 'عصر • 4 رکعت فرض';
-
-  @override
-  String get prayerRakatMaghrib => 'مغرب • 3 رکعت فرض';
-
-  @override
-  String get prayerRakatIsha => 'عشاء • 4 رکعت فرض';
-
-  @override
-  String get prayerRakatWitr => 'وتر • 3 رکعت واجب • مستقل';
-
-  @override
-  String get syncSettingUp => 'ترتیب دی جا رہی ہے';
-
-  @override
-  String get syncSettingUpDetail =>
-      'اس ڈیوائس پر آپ کے قضا ریکارڈ تیار کیے جا رہے ہیں۔';
-
-  @override
-  String get syncRestoring => 'بحال کیا جا رہا ہے';
-
-  @override
-  String get syncRestoringDetail =>
-      'آپ کے محفوظ قضا ریکارڈ اس ڈیوائس پر لائے جا رہے ہیں۔';
-
-  @override
-  String get syncSynced => 'سنک شدہ';
-
-  @override
-  String syncSyncedAt(String timestamp) {
-    return 'سنک شدہ • $timestamp';
-  }
-
-  @override
-  String get syncSyncing => 'سنک ہو رہا ہے';
-
-  @override
-  String get syncSaved => 'محفوظ';
-
-  @override
-  String get syncSavedDetail =>
-      'آپ کی تبدیلیاں اس ڈیوائس پر محفوظ ہیں اور خود بخود سنک ہو جائیں گی۔';
-
-  @override
-  String get syncErrorLabel => 'سنک میں مسئلہ';
-
-  @override
-  String get syncErrorDetail =>
-      'آپ کی تبدیلیاں اس ڈیوائس پر محفوظ ہیں۔ ہم خود بخود دوبارہ کوشش کریں گے۔';
 
   @override
   String get commonClose => 'بند کریں';
@@ -223,9 +137,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get commonClear => 'صاف کریں';
-
-  @override
-  String get commonBack => 'واپس';
 
   @override
   String get commonContinue => 'جاری رکھیں';
@@ -248,73 +159,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeHeadingSetup => 'اپنا قضا سفر شروع کریں';
 
   @override
-  String get homeHeadingPending => 'جاری رکھیں';
-
-  @override
-  String get homeHeadingCompleted => 'آپ کی تمام قضا مکمل ہے';
-
-  @override
   String get homeSetupMessage => 'آپ نے اب تک کوئی قضا نماز شامل نہیں کی۔';
 
   @override
   String get homeCompleteQaza => 'قضا ادا کریں';
 
   @override
-  String get homeAddNewQaza => 'نئی قضا شامل کریں';
-
-  @override
-  String get homeAddManually => 'دستی طور پر قضا شامل کریں';
-
-  @override
   String get homeStatTotal => 'کل';
-
-  @override
-  String get homeAddQaza => 'قضا شامل کریں';
-
-  @override
-  String homeCompletedCount(int count) {
-    return '$count مکمل';
-  }
-
-  @override
-  String get homeProgressTitle => 'آپ کی پیش رفت';
 
   @override
   String get homeProgressError =>
       'آپ کی قضا کی پیش رفت لوڈ نہیں ہو سکی۔ دوبارہ کوشش کے لیے نیچے کھینچیں۔';
 
   @override
-  String get homeTodayProgress => 'آج کی پیش رفت';
-
-  @override
-  String homeDailyProgress(int completed, int target) {
-    return '$completed / $target مکمل';
-  }
-
-  @override
-  String homeDailyRemaining(int count) {
-    return '$count باقی';
-  }
-
-  @override
   String get homeQazaPlan => 'قضا کا منصوبہ';
 
   @override
-  String get homeCompleteOldestQaza => 'سب سے پرانی قضا مکمل کریں';
-
-  @override
   String get homeAuto => 'خودکار';
-
-  @override
-  String get homePrayerTimeUnavailable =>
-      'خودکار نماز کا انتخاب دستیاب نہیں جب تک نماز کے اوقات سیٹ نہ کیے جائیں۔';
-
-  @override
-  String get homeQazaTargetReachedTitle => 'الحمدللہ!';
-
-  @override
-  String get homeQazaTargetReachedMessage =>
-      'آپ نے آج کا اپنا قضا منصوبہ مکمل کر لیا ہے۔\nاللہ تعالیٰ آپ کی کوششیں قبول فرمائے۔';
 
   @override
   String get homeDailyTarget => 'روزانہ ہدف';
@@ -333,18 +194,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeNextQaza => 'اگلی قضا';
 
   @override
-  String get homeCompleteNextQaza => 'اگلی قضا مکمل کریں';
-
-  @override
-  String get homeViewAllQaza => 'تمام قضا دیکھیں';
-
-  @override
   String get homeDailyProgressError => 'آج کی پیش رفت لوڈ نہیں ہو سکی۔';
-
-  @override
-  String progressPendingCompleted(String pending, String completed) {
-    return '$pending باقی • $completed مکمل';
-  }
 
   @override
   String progressCompletedPending(String completed, String pending) {
@@ -358,9 +208,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get qazaProgressLabel => 'پیش رفت';
 
   @override
-  String get qazaAddTooltip => 'قضا شامل کریں';
-
-  @override
   String get qazaDateFilterAny => 'اصل تاریخ: کوئی بھی';
 
   @override
@@ -370,9 +217,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String qazaDateFilterRange(String from, String to) {
     return '$from — $to';
   }
-
-  @override
-  String get qazaLoading => 'آپ کے قضا ریکارڈ لوڈ ہو رہے ہیں...';
 
   @override
   String get qazaEmptyTitle => 'ابھی کوئی قضا ریکارڈ نہیں';
@@ -390,24 +234,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get qazaResetFilters => 'فلٹرز ری سیٹ کریں';
-
-  @override
-  String qazaLoadError(String error) {
-    return 'آپ کے قضا ریکارڈ لوڈ نہیں ہو سکے: $error';
-  }
-
-  @override
-  String qazaLoadMoreError(String error) {
-    return 'مزید ریکارڈ لوڈ نہیں ہو سکے: $error';
-  }
-
-  @override
-  String qazaCompleteError(String error) {
-    return 'منتخب قضا مکمل نہیں ہو سکی: $error';
-  }
-
-  @override
-  String get qazaTartibRequiredTitle => 'قضا میں ترتیب لازم ہے';
 
   @override
   String qazaTartibRequiredMessage(int count, String prayer) {
@@ -436,15 +262,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get qazaRecordActions => 'ریکارڈ کے اعمال';
-
-  @override
-  String get qazaEditRecord => 'ترمیم';
-
-  @override
-  String get qazaDeleteRecord => 'حذف کریں';
-
-  @override
   String get qazaEditRecordTitle => 'قضا میں ترمیم';
 
   @override
@@ -458,33 +275,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get qazaSaveChanges => 'تبدیلیاں محفوظ کریں';
-
-  @override
-  String get qazaDeleteRecordTitle => 'قضا ریکارڈ حذف کریں؟';
-
-  @override
-  String qazaDeleteRecordMessage(Object date, Object prayer) {
-    return '$date کی $prayer قضا کو حالیہ حذف شدہ میں منتقل کریں؟ آپ اسے 30 دن تک بحال کر سکتے ہیں۔';
-  }
-
-  @override
-  String get qazaRecordUpdated => 'قضا ریکارڈ اپ ڈیٹ ہو گیا۔';
-
-  @override
-  String qazaDuplicateRecord(Object date, Object prayer) {
-    return '$date کی $prayer قضا پہلے سے موجود ہے۔';
-  }
-
-  @override
-  String get qazaRecordUpdateFailed =>
-      'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
-
-  @override
-  String get qazaRecordDeleted => 'قضا حالیہ حذف شدہ میں منتقل کر دی گئی ہے۔';
-
-  @override
-  String get qazaRecordDeleteFailed =>
-      'قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
 
   @override
   String get qazaUndoAction => 'واپس کریں';
@@ -501,344 +291,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String qazaUndoCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count قضا دوبارہ باقی ہو گئیں۔',
-      one: '1 قضا دوبارہ باقی ہو گئی۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String qazaCompletedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count قضا مکمل ہو گئیں۔',
-      one: '1 قضا مکمل ہو گئی۔',
-      zero: 'کچھ مکمل نہیں ہوا۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get calendarSelectYear => 'سال منتخب کریں';
-
-  @override
-  String get calendarSelectHint =>
-      'منتخب کرنے کے لیے دستیاب تاریخ پر ٹیپ کریں۔';
-
-  @override
-  String calendarSelectedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count تاریخیں منتخب۔',
-      one: '1 تاریخ منتخب۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get authTitle => 'سائن اِن';
-
-  @override
-  String get authWelcomeBack => 'خوش آمدید';
-
-  @override
-  String get authSubtitle =>
-      'اپنے قضا نماز ٹریکر تک رسائی کے لیے سائن اِن کریں۔';
-
-  @override
-  String get authContinueWithGoogle => 'گوگل سے جاری رکھیں';
-
-  @override
-  String get authSigningIn => 'سائن اِن ہو رہا ہے...';
-
-  @override
-  String get authProviderNote =>
-      'اس وقت گوگل ہی منسلک توثیقی فراہم کنندہ ہے۔ سائن اِن کی حالت فائربیس سے خود بخود بحال ہو جاتی ہے۔';
-
-  @override
-  String get authHelpTooltip => 'توثیق میں مدد';
-
-  @override
-  String get authHelpTitle => 'توثیق';
-
-  @override
-  String get authHelpBody =>
-      'اس ریلیز میں گوگل سائن اِن ہی منسلک توثیقی طریقہ ہے۔ آپ کا قضا ڈیٹا اسی فائربیس اکاؤنٹ سے منسلک رہتا ہے جس سے آپ سائن اِن کرتے ہیں۔';
-
-  @override
-  String get authDismiss => 'بند کریں';
-
-  @override
-  String get authFailed => 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
-
-  @override
-  String get welcomeTagline => 'روحانی عبادت اور نماز کی پابندی';
-
-  @override
-  String get welcomeHeadline =>
-      'اپنی چھوٹی ہوئی نمازوں کا وضاحت اور تسلسل کے ساتھ حساب رکھیں۔';
-
-  @override
-  String get welcomeBody =>
-      'اپنی قضا نمازیں درج کریں، ادا کریں اور ان کا حساب رکھیں — ایک ایک نماز کر کے۔';
-
-  @override
-  String get welcomeGetStarted => 'شروع کریں';
-
-  @override
-  String get welcomeSignIn => 'پہلے سے اکاؤنٹ ہے؟ سائن اِن کریں';
-
-  @override
   String get splashTagline => 'نماز کی پابندی کے لیے ایک پُرسکون جگہ';
-
-  @override
-  String get accountTitle => 'اکاؤنٹ';
-
-  @override
-  String get accountSignInMethod => 'سائن اِن کا طریقہ';
-
-  @override
-  String get accountGoogleAuth => 'گوگل';
-
-  @override
-  String get accountSignedInWithGoogle => 'گوگل سے سائن اِن ہیں';
-
-  @override
-  String get accountStatus => 'اکاؤنٹ کی حالت';
-
-  @override
-  String get accountSignedIn => 'سائن اِن ہیں';
-
-  @override
-  String get accountRecordsRetained =>
-      'آپ کے محفوظ قضا ریکارڈ موجود رہیں گے اور اگلی بار سائن اِن پر بحال ہو جائیں گے۔';
-
-  @override
-  String get accountDeveloperContext => 'ڈویلپر تفصیلات';
-
-  @override
-  String get accountFirebaseUid => 'فائربیس UID';
-
-  @override
-  String get accountNotAvailable => 'دستیاب نہیں';
-
-  @override
-  String get accountSignOut => 'سائن آؤٹ';
-
-  @override
-  String get accountSignOutPrompt => 'سائن آؤٹ کریں؟';
-
-  @override
-  String get accountSignOutExplanation =>
-      'سائن آؤٹ کرنے سے آپ کا گوگل اکاؤنٹ منقطع ہو جائے گا۔ آپ کی قضا پیش رفت اس ڈیوائس پر برقرار رہے گی۔';
-
-  @override
-  String get dataTitle => 'برآمد و درآمد';
-
-  @override
-  String get dataExportTitle => 'ڈیٹا برآمد کریں';
-
-  @override
-  String get dataExportBody =>
-      'اپنے قضا کھاتے کی ایک JSON نقل محفوظ کریں۔ برآمد کرنے سے کچھ اپ لوڈ نہیں ہوتا۔';
-
-  @override
-  String get dataExportAction => 'برآمد';
-
-  @override
-  String get dataExportDialogTitle => 'قضا ڈیٹا برآمد محفوظ کریں';
-
-  @override
-  String get dataExportSaved => 'برآمد کامیابی سے محفوظ ہو گئی۔';
-
-  @override
-  String get dataExportCanceled =>
-      'برآمد منسوخ ہوئی۔ آپ کا ڈیٹا تبدیل نہیں ہوا۔';
-
-  @override
-  String get dataExportSignInRequired =>
-      'اپنا قضا ڈیٹا برآمد کرنے سے پہلے سائن اِن کریں۔';
-
-  @override
-  String dataExportFailed(String error) {
-    return 'برآمد ناکام: $error';
-  }
-
-  @override
-  String get dataImportTitle => 'ڈیٹا درآمد کریں';
-
-  @override
-  String get dataImportBody =>
-      'کوئی JSON برآمد کھولیں، اس کی مکمل جانچ کریں، انضمام کا جائزہ لیں، پھر اسے اس اکاؤنٹ پر لاگو کریں۔';
-
-  @override
-  String get dataImportAction => 'درآمد';
-
-  @override
-  String get dataImportReviewTitle => 'ڈیٹا درآمد کا جائزہ';
-
-  @override
-  String get dataImportCanceled =>
-      'درآمد منسوخ ہوئی۔ آپ کا ڈیٹا تبدیل نہیں ہوا۔';
-
-  @override
-  String get dataImportSignInRequired =>
-      'ڈیٹا درآمد کرنے سے پہلے سائن اِن کریں۔';
-
-  @override
-  String get dataImportEmptyFile => 'منتخب فائل خالی یا ناقابلِ مطالعہ ہے۔';
-
-  @override
-  String dataImportRejected(String error) {
-    return 'درآمد مسترد: $error\nکوئی جزوی درآمد لاگو نہیں ہوئی۔';
-  }
-
-  @override
-  String dataImportComplete(int added, int completed, int unchanged) {
-    return 'درآمد مکمل: $added شامل، $completed مکمل، $unchanged بغیر تبدیلی۔';
-  }
-
-  @override
-  String get dataProcessing => 'ڈیٹا پر کام ہو رہا ہے…';
-
-  @override
-  String get dataSafetyTitle => 'ڈیٹا کی حفاظت';
-
-  @override
-  String get dataSafetyBody =>
-      'برآمد کرنے سے کلاؤڈ ڈیٹا حذف نہیں ہوتا۔ درآمد سے موجودہ ریکارڈ ختم نہیں ہوتے۔ سائن آؤٹ ڈیٹا حذف کرنا نہیں، اور ایپ اَن انسٹال کرنے سے کلاؤڈ ریکارڈ حذف نہیں ہوتے۔';
-
-  @override
-  String get dataRemapNote =>
-      'درآمد شدہ ریکارڈ موجودہ سائن اِن اکاؤنٹ سے منسلک کر دیے جاتے ہیں۔ اس کے بعد موجودہ لوکل-فرسٹ سنک پرت پس منظر میں فائرسٹور سے تصدیق کرتی ہے۔';
-
-  @override
-  String get addQazaTitle => 'قضا شامل کریں';
-
-  @override
-  String get addQazaStep1 => 'مرحلہ 1 از 3 • تاریخیں منتخب کریں';
-
-  @override
-  String get addQazaStep2 => 'مرحلہ 2 از 3 • چھوٹی ہوئی نمازیں منتخب کریں';
-
-  @override
-  String get addQazaStep3 => 'مرحلہ 3 از 3 • جائزہ اور اضافہ';
-
-  @override
-  String get addQazaModeSingle => 'ایک';
-
-  @override
-  String get addQazaModeRange => 'دورانیہ';
-
-  @override
-  String get addQazaModeMultiple => 'متعدد';
-
-  @override
-  String get addQazaModeSingleTitle => 'ایک تاریخ';
-
-  @override
-  String get addQazaModeRangeTitle => 'تاریخوں کا دورانیہ';
-
-  @override
-  String get addQazaModeMultipleTitle => 'متعدد تاریخیں';
-
-  @override
-  String get addQazaChooseSingle => 'ایک تاریخ منتخب کریں';
-
-  @override
-  String get addQazaChooseRange => 'تاریخوں کا دورانیہ منتخب کریں';
-
-  @override
-  String get addQazaChooseMultiple => 'متعدد تاریخیں منتخب کریں';
-
-  @override
-  String get addQazaAvailabilityNote =>
-      'کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔';
-
-  @override
-  String get addQazaStepNameDates => 'تاریخیں منتخب کریں';
-
-  @override
-  String get addQazaStepNamePrayers => 'قضا نمازیں';
-
-  @override
-  String get addQazaStepNameReview => 'جائزہ';
-
-  @override
-  String addQazaStepSemantics(int step, String name) {
-    return 'مرحلہ $step: $name';
-  }
-
-  @override
-  String addQazaPartialAvailability(int available, int total) {
-    return '$total میں سے $available تاریخوں پر دستیاب';
-  }
-
-  @override
-  String get addQazaAvailableEveryDate => 'ہر منتخب تاریخ پر دستیاب';
-
-  @override
-  String get addQazaEligibleOnlyNote =>
-      'صرف اہل تاریخ اور نماز کے مجموعے شامل کیے جائیں گے۔ پہلے سے ریکارڈ شدہ چھوڑ دیے جائیں گے۔';
-
-  @override
-  String addQazaAddCount(String count) {
-    return '$count قضا شامل کریں';
-  }
 
   @override
   String get addQazaNothingNew =>
       'شامل کرنے کو کچھ نیا نہیں — یہ مجموعے پہلے سے ریکارڈ ہیں۔';
-
-  @override
-  String get addQazaChecking => 'آپ کا لیڈجر جانچا جا رہا ہے...';
-
-  @override
-  String get addQazaNextPrayers => 'اگلا: جائزہ اور اضافہ';
-
-  @override
-  String get addQazaPrayersHeading => 'چھوٹی ہوئی نمازیں';
-
-  @override
-  String get addQazaSelectAll => 'سب منتخب کریں';
-
-  @override
-  String get addQazaAllSelected => 'سب منتخب ہیں';
-
-  @override
-  String get addQazaReviewHeading => 'جائزہ اور اضافہ';
-
-  @override
-  String get addQazaReviewNote =>
-      'خلاصے کی تصدیق کریں، پھر یہ قضا ریکارڈ اپنے کھاتے میں شامل کریں۔';
-
-  @override
-  String get addQazaCombinationNote =>
-      'ہر تاریخ اور نماز کا جوڑ ایک الگ باقی ریکارڈ بنتا ہے۔ پہلے سے موجود جوڑ خود بخود چھوڑ دیے جاتے ہیں۔';
-
-  @override
-  String get addQazaSelectionLabel => 'انتخاب';
-
-  @override
-  String get addQazaDatesLabel => 'تاریخیں';
-
-  @override
-  String get addQazaDateCountLabel => 'تاریخوں کی تعداد';
-
-  @override
-  String get addQazaDateRangeLabel => 'تاریخوں کا دورانیہ';
-
-  @override
-  String get addQazaPrayersLabel => 'نمازیں';
-
-  @override
-  String get addQazaPrayersPerDateLabel => 'فی تاریخ نمازیں';
 
   @override
   String get addQazaExistingLabel => 'پہلے سے موجود جوڑ';
@@ -847,35 +304,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaNewRecordsLabel => 'نئے ریکارڈ';
 
   @override
-  String get addQazaNewQazaLabel => 'نئے قضا ریکارڈ';
-
-  @override
   String get addQazaInProgress => 'قضا شامل ہو رہی ہے...';
-
-  @override
-  String get addQazaCreatedTitle => 'قضا ریکارڈ بن گئے';
-
-  @override
-  String addQazaSelectedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟',
-      one: '1 دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String addQazaDateCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count تاریخیں',
-      one: '1 تاریخ',
-    );
-    return '$_temp0';
-  }
 
   @override
   String addQazaCreatedMessage(int count) {
@@ -889,27 +318,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String addQazaUnavailablePrayer(String rakats) {
-    return '$rakats • ہر منتخب تاریخ پر پہلے سے درج، ادا شدہ، یا نماز کا وقت ابھی ختم نہیں ہوا';
-  }
-
-  @override
-  String get commonNone => 'کوئی نہیں';
-
-  @override
-  String get completeTitle => 'قضا ادا کریں';
-
-  @override
-  String get completeHeading => 'سب سے پرانا باقی ریکارڈ مکمل کریں';
-
-  @override
-  String get completeIntro =>
-      'ایک وقت میں ایک ریکارڈ مکمل کریں۔ کامیابی کے بعد اگلا پرانا ریکارڈ فوراً دکھایا جاتا ہے۔';
-
-  @override
-  String get completeLoading => 'سب سے پرانا باقی ریکارڈ لوڈ ہو رہا ہے…';
-
-  @override
   String get completeLoadError => 'آپ کا قضا ریکارڈ لوڈ نہیں ہو سکا۔';
 
   @override
@@ -920,37 +328,10 @@ class AppLocalizationsUr extends AppLocalizations {
       'کوئی اور نماز منتخب کریں یا پہلے قضا ریکارڈ شامل کریں۔';
 
   @override
-  String get completeOldestSubtitle => 'تازہ ترین باقی ریکارڈ';
-
-  @override
-  String get completeOriginalDate => 'اصل چھوٹنے کی تاریخ';
-
-  @override
-  String get completeTimestampNote => 'ادائیگی کا وقت الگ محفوظ کیا جاتا ہے۔';
-
-  @override
-  String get completeAction => 'تازہ ترین قضا ادا کریں';
-
-  @override
   String get completeInProgress => 'مکمل ہو رہا ہے...';
 
   @override
   String get completeFailed => 'قضا مکمل نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
-
-  @override
-  String completePrayerQaza(String prayer) {
-    return '$prayer کی قضا';
-  }
-
-  @override
-  String completeSuccess(String prayer) {
-    return '$prayer کی قضا کامیابی سے مکمل ہوئی۔';
-  }
-
-  @override
-  String completeSuccessNext(String prayer) {
-    return '$prayer کی قضا مکمل ہوئی • اگلا پرانا ریکارڈ تیار ہے۔';
-  }
 
   @override
   String get knowledgeBaseTitle => 'معلومات';
@@ -1022,32 +403,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeArticleNotFound => 'مضمون نہیں ملا۔';
 
   @override
-  String get settingsAccountSection => 'اکاؤنٹ';
-
-  @override
-  String get settingsAccountSubtitle =>
-      'اپنے سائن اِن اور اکاؤنٹ کی تفصیلات سنبھالیں۔';
-
-  @override
-  String get settingsGoogleSignIn => 'گوگل سائن اِن';
-
-  @override
-  String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
-
-  @override
-  String get settingsDataSection => 'ڈیٹا و اسٹوریج';
-
-  @override
-  String get settingsDataSubtitle =>
-      'اپنے قضا ڈیٹا کو سنک، بیک اپ، برآمد اور درآمد کریں۔';
-
-  @override
-  String get settingsDataCloud => 'ڈیٹا و کلاؤڈ';
-
-  @override
-  String get settingsDataCloudSubtitle => 'سنک، برآمد اور درآمد کی حالت';
-
-  @override
   String get settingsResetCounterTitle => 'قضا کاؤنٹر ری سیٹ کریں';
 
   @override
@@ -1089,62 +444,7 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get authContinueAsGuest => 'مہمان کے طور پر جاری رکھیں';
-
-  @override
-  String get authGuestNote =>
-      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے بعد میں گوگل سے سائن اِن کر سکتے ہیں۔';
-
-  @override
-  String get backupPromptTitle => 'اپنی پیش رفت محفوظ رکھیں';
-
-  @override
-  String get backupPromptBody =>
-      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے گوگل سے سائن اِن کریں۔';
-
-  @override
-  String get backupPromptConfirm => 'گوگل سے جاری رکھیں';
-
-  @override
-  String get backupPromptDismiss => 'ابھی نہیں';
-
-  @override
-  String get settingsBackupSignIn => 'بیک اپ / سائن ان';
-
-  @override
-  String get settingsBackupSignInSubtitle =>
-      'آپ مہمان کے طور پر ایپ استعمال کر رہے ہیں۔ قضا کا بیک اپ لینے کے لیے سائن ان کریں۔';
-
-  @override
-  String get backupSignInFailed =>
-      'سائن ان ناکام رہا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
-
-  @override
-  String get backupSignInCancelled =>
-      'سائن ان منسوخ ہو گیا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
-
-  @override
-  String backupSignInFailedReason(String reason) {
-    return 'سائن ان ناکام رہا: $reason آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
-  }
-
-  @override
-  String backupMigrationDone(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
-      one: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
-      zero: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get settingsAboutSection => 'تعارف';
-
-  @override
-  String get settingsAboutSubtitle => 'ایپ کی معلومات اور ورژن کی تفصیل۔';
 
   @override
   String settingsAboutRowSubtitle(String version) {
@@ -1155,136 +455,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsAppDescription => 'اسلامی نماز قضا ٹریکر';
 
   @override
-  String get cloudSyncTitle => 'کلاؤڈ سنک';
-
-  @override
-  String get cloudSyncNow => 'ابھی سنک کریں';
-
-  @override
-  String get cloudPendingChanges => 'زیرِ التوا تبدیلیاں';
-
-  @override
-  String get cloudLastSynced => 'آخری سنک';
-
-  @override
-  String get cloudExportImportSubtitle =>
-      'صارف کے اختیار میں JSON بیک اپ اور محفوظ بحالی۔ ان اقدامات سے کلاؤڈ ڈیٹا حذف نہیں ہوتا۔';
-
-  @override
-  String get cloudInactive => 'اس بلڈ میں آف لائن اسٹوریج فعال نہیں ہے۔';
-
-  @override
-  String get cloudBootstrapping =>
-      'اس ڈیوائس پر آپ کے قضا ریکارڈ ترتیب دیے جا رہے ہیں…';
-
-  @override
-  String get cloudHydrating =>
-      'آپ کے محفوظ قضا ریکارڈ اس ڈیوائس پر بحال کیے جا رہے ہیں…';
-
-  @override
-  String get cloudSynced => 'آپ کے تمام قضا ریکارڈ کلاؤڈ میں محفوظ ہیں۔';
-
-  @override
-  String get cloudSyncing => 'آپ کا کھاتہ سنک ہو رہا ہے…';
-
-  @override
-  String get cloudOffline =>
-      'آف لائن — ریکارڈ اس ڈیوائس پر محفوظ ہیں اور خود بخود سنک ہو جائیں گے۔';
-
-  @override
-  String cloudPendingCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count تبدیلیاں سنک کی منتظر ہیں۔',
-      one: '1 تبدیلی سنک کی منتظر ہے۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get cloudSyncProblem =>
-      'سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
-
-  @override
-  String get cloudQazaCount => 'قضا ریکارڈز کی تعداد';
-
-  @override
-  String cloudQazaCountValue(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count قضا ریکارڈز',
-      one: '1 قضا ریکارڈ',
-      zero: 'کوئی قضا ریکارڈ نہیں',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get cloudBackupStatus => 'کلاؤڈ بیک اپ';
-
-  @override
-  String get cloudBackupDeleted =>
-      'کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔';
-
-  @override
-  String get cloudLocalVsCloudTitle => 'لوکل اور کلاؤڈ ڈیٹا';
-
-  @override
-  String get cloudLocalVsCloudBody =>
-      'آپ کے قضا ریکارڈ آف لائن استعمال کے لیے اس ڈیوائس پر محفوظ رہتے ہیں۔ سائن اِن ہونے پر تبدیلیاں آپ کے نجی کلاؤڈ اکاؤنٹ سے سنک ہو سکتی ہیں۔ برآمد ایک لوکل بیک اپ ہے؛ کلاؤڈ ڈیٹا حذف کرنے سے لوکل ریکارڈز حذف نہیں ہوتے۔';
-
-  @override
-  String get cloudDeleteTitle => 'کلاؤڈ ڈیٹا حذف کریں';
-
-  @override
-  String get cloudDeleteBody =>
-      'یہ آپ کے کلاؤڈ اکاؤنٹ سے قضا ریکارڈز مستقل طور پر حذف کر دے گا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار رہیں گے۔ یہ عمل واپس نہیں ہو سکتا۔ اگر بیک اپ درکار ہو سکتا ہے تو پہلے ڈیٹا برآمد کر لیں۔';
-
-  @override
-  String get cloudDeleteAcknowledge =>
-      'میں سمجھتا/سمجھتی ہوں کہ کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔';
-
-  @override
-  String get cloudDeleteAction => 'کلاؤڈ ڈیٹا حذف کریں';
-
-  @override
-  String get cloudDeleteDone =>
-      'کلاؤڈ قضا ڈیٹا حذف ہو گیا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار ہیں۔';
-
-  @override
-  String get cloudDeleteFailed =>
-      'کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔';
-
-  @override
-  String get cloudDeleteSignInRequired =>
-      'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
-
-  @override
   String get settingsTitle => 'ترتیبات';
-
-  @override
-  String get settingsPreferences => 'ترجیحات';
-
-  @override
-  String get settingsPreferencesSubtitle => 'زبان اور ظاہری شکل کی ترتیبات۔';
-
-  @override
-  String get settingsAppearance => 'ظاہری شکل';
-
-  @override
-  String get settingsAppearanceSubtitle =>
-      'منتخب کریں کہ ایپ اس ڈیوائس پر کیسی نظر آئے۔';
-
-  @override
-  String get settingsThemeSystem => 'سسٹم';
-
-  @override
-  String get settingsThemeLight => 'روشن';
-
-  @override
-  String get settingsThemeDark => 'تاریک';
 
   @override
   String get settingsLanguage => 'زبان';
@@ -1294,10 +465,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'ایپ میں استعمال ہونے والی زبان منتخب کریں۔';
 
   @override
-  String get settingsLanguageNote =>
-      'نماز کے نام اور ہجری تاریخیں منتخب زبان کے مطابق ہوں گی۔ اردو دائیں سے بائیں لکھی جاتی ہے۔';
-
-  @override
   String get languageEnglish => 'English';
 
   @override
@@ -1305,9 +472,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeTodayProgressHeader => 'آج کی پیش رفت';
-
-  @override
-  String get homeNextQazaCurrentPrayer => 'اگلی قضا (موجودہ نماز)';
 
   @override
   String get homeOldestPending => 'سب سے پرانی باقی';
@@ -1335,17 +499,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeDetailedStatistics => 'تفصیلی اعداد و شمار';
-
-  @override
-  String get homeDetailedStatisticsSubtitle => 'مجموعی اور نماز وار تکمیل';
-
-  @override
-  String get homeTodayDate => 'آج';
-
-  @override
-  String homeCurrentPrayerLabel(String prayer) {
-    return 'موجودہ نماز: $prayer';
-  }
 
   @override
   String homeSahibOrderLabel(String prayer) {
@@ -1408,10 +561,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileSelectDobHelp => 'اپنی تاریخ پیدائش منتخب کریں';
-
-  @override
-  String get profileHijriHint =>
-      'گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔';
 
   @override
   String get profilePubertyAge => 'بلوغت کی عمر';

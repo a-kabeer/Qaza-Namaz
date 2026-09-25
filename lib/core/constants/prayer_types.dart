@@ -25,5 +25,3 @@ extension PrayerTypeX on PrayerType {
     }
   }
 }
-
-const allPrayerTypes = PrayerType.values;

@@ -16,10 +16,6 @@ final knowledgeBaseRepositoryProvider = Provider<KnowledgeBaseRepository>(
   (ref) => BundledKnowledgeBaseRepository(),
 );
 
-final knowledgeBaseCategoriesProvider = Provider<List<KnowledgeCategory>>(
-  (ref) => List.unmodifiable(KnowledgeCategory.values),
-);
-
 final knowledgeArticlesProvider = FutureProvider<List<KnowledgeArticle>>(
   (ref) => ref.watch(knowledgeBaseRepositoryProvider).getArticles(),
 );
@@ -132,15 +128,6 @@ final knowledgeFilteredArticlesProvider =
 final knowledgeArticleProvider =
     FutureProvider.family<KnowledgeArticle?, String>((ref, id) {
   return ref.watch(knowledgeBaseRepositoryProvider).getArticleById(id);
-});
-
-final selectedKnowledgeArticleProvider =
-    FutureProvider<KnowledgeArticle?>((ref) async {
-  final id = ref.watch(knowledgeSelectedArticleIdProvider);
-  if (id == null || id.trim().isEmpty) {
-    return null;
-  }
-  return ref.watch(knowledgeArticleProvider(id).future);
 });
 
 final knowledgeRelatedArticlesProvider =

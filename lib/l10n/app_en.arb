@@ -7,10 +7,6 @@
   "navHome": "Home",
   "navQaza": "Qaza",
   "navKnowledge": "Knowledge",
-  "settingsRemindersSection": "Reminders",
-  "settingsRemindersSubtitle": "Daily reminder to complete your Qaza.",
-  "settingsBackupSection": "Data & Storage",
-  "settingsBackupSubtitle": "Cloud sync, export and import.",
   "navSettings": "Settings",
   "prayerFajr": "Fajr",
   "prayerZuhr": "Zuhr",
@@ -21,15 +17,6 @@
   "statusPending": "Pending",
   "statusDeleted": "Recently deleted",
   "statusCompleted": "Completed",
-  "qazaSelectAllMatching": "Select all matching",
-  "qazaSelectAllMatchingCapped": "Selected the first {count} matching records.",
-  "@qazaSelectAllMatchingCapped": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
   "qazaConfirmBulkTitle": "Complete {count} records?",
   "@qazaConfirmBulkTitle": {
     "placeholders": {
@@ -55,49 +42,21 @@
   "errorMalformedData": "That file is not a Qaza backup, or it is damaged.",
   "errorStorage": "This device could not save the change. Free some space and try again.",
   "errorUnknown": "Something went wrong.",
-  "commonOpenSettings": "Open Settings",
   "homeTartibCheckingTitle": "Checking the prayer order",
   "homeTartibCheckingBody": "Sahib al-Tartib decides which Fard prayer comes next. One moment.",
   "homeTartibFailedTitle": "Could not check the prayer order",
   "homeTartibFailedBody": "Fard prayers are held back until the order is known, so nothing is completed out of sequence. Witr can still be completed from the prayer menu.",
-  "qazaSortLabel": "Sort",
   "qazaSortOldestFirst": "Oldest first",
   "qazaSortNewestFirst": "Newest first",
   "filterAll": "All",
   "commonRetry": "Retry",
-  "commonTotal": "Total",
   "commonVersion": "Version",
   "stateErrorTitle": "Something went wrong",
-  "prayerRakatFajr": "Fajr • 2 Rakat Fard",
-  "prayerRakatZuhr": "Zuhr • 4 Rakat Fard",
-  "prayerRakatAsr": "Asr • 4 Rakat Fard",
-  "prayerRakatMaghrib": "Maghrib • 3 Rakat Fard",
-  "prayerRakatIsha": "Isha • 4 Rakat Fard",
-  "prayerRakatWitr": "Witr • 3 Rakat Wajib • Independent",
-  "syncSettingUp": "Setting up",
-  "syncSettingUpDetail": "Preparing your Qaza records on this device.",
-  "syncRestoring": "Restoring",
-  "syncRestoringDetail": "Bringing your saved Qaza records to this device.",
-  "syncSynced": "Synced",
-  "syncSyncedAt": "Synced • {timestamp}",
-  "@syncSyncedAt": {
-    "placeholders": {
-      "timestamp": {
-        "type": "String"
-      }
-    }
-  },
-  "syncSyncing": "Syncing",
-  "syncSaved": "Saved",
-  "syncSavedDetail": "Your changes are saved on this device and will sync automatically.",
-  "syncErrorLabel": "Sync Error",
-  "syncErrorDetail": "Your changes are saved on this device. We will retry automatically.",
   "commonClose": "Close",
   "commonCancel": "Cancel",
   "commonDone": "Done",
   "commonReset": "Reset",
   "commonClear": "Clear",
-  "commonBack": "Back",
   "commonContinue": "Continue",
   "commonLoading": "Loading...",
   "hijriDate": "{day} {month} {year} AH",
@@ -112,50 +71,12 @@
   "homeTitle": "Home",
   "homeProfileTooltip": "Profile",
   "homeHeadingSetup": "Start Your Qaza Journey",
-  "homeHeadingPending": "Keep going",
-  "homeHeadingCompleted": "You are all caught up",
   "homeSetupMessage": "You haven't added any Qaza prayers yet.",
   "homeCompleteQaza": "Complete Qaza",
-  "homeAddNewQaza": "Add New Qaza",
-  "homeAddManually": "Add Qaza Manually",
   "homeStatTotal": "Total",
-  "homeAddQaza": "Add Qaza",
-  "homeCompletedCount": "{count} completed",
-  "@homeCompletedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "homeProgressTitle": "Your progress",
   "homeProgressError": "Unable to load your Qaza progress. Pull to retry.",
-  "homeTodayProgress": "Today's progress",
-  "homeDailyProgress": "{completed} / {target} completed",
-  "@homeDailyProgress": {
-    "placeholders": {
-      "completed": {
-        "type": "int"
-      },
-      "target": {
-        "type": "int"
-      }
-    }
-  },
-  "homeDailyRemaining": "{count} remaining",
-  "@homeDailyRemaining": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "homeQazaPlan": "Qaza plan",
-  "homeCompleteOldestQaza": "Complete Oldest Qaza",
   "homeAuto": "Auto",
-  "homePrayerTimeUnavailable": "Automatic prayer selection is unavailable until Prayer Times are set up.",
-  "homeQazaTargetReachedTitle": "Alhamdulillah!",
-  "homeQazaTargetReachedMessage": "You have completed your Qaza plan for today.\nMay Allah accept your efforts.",
   "homeDailyTarget": "Daily target",
   "homePerDay": "{count} per day",
   "@homePerDay": {
@@ -174,20 +95,7 @@
     }
   },
   "homeNextQaza": "Next Qaza",
-  "homeCompleteNextQaza": "Complete next Qaza",
-  "homeViewAllQaza": "View all Qaza",
   "homeDailyProgressError": "Today's progress could not be loaded.",
-  "progressPendingCompleted": "{pending} pending • {completed} completed",
-  "@progressPendingCompleted": {
-    "placeholders": {
-      "pending": {
-        "type": "String"
-      },
-      "completed": {
-        "type": "String"
-      }
-    }
-  },
   "progressCompletedPending": "{completed} completed • {pending} pending",
   "@progressCompletedPending": {
     "placeholders": {
@@ -201,7 +109,6 @@
   },
   "qazaTitle": "Qaza",
   "qazaProgressLabel": "Progress",
-  "qazaAddTooltip": "Add Qaza",
   "qazaDateFilterAny": "Original date: any",
   "qazaDateFilterHelp": "Filter by original Qaza date",
   "qazaDateFilterRange": "{from} — {to}",
@@ -215,37 +122,11 @@
       }
     }
   },
-  "qazaLoading": "Loading your Qaza records...",
   "qazaEmptyTitle": "No Qaza records yet",
   "qazaEmptyMessage": "Add missed prayers or calculate an estimate to begin.",
   "qazaFilteredEmptyTitle": "No records match these filters",
   "qazaFilteredEmptyMessage": "Try a different status, prayer or date range.",
   "qazaResetFilters": "Reset filters",
-  "qazaLoadError": "Could not load your Qaza records: {error}",
-  "@qazaLoadError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "qazaLoadMoreError": "Could not load more records: {error}",
-  "@qazaLoadMoreError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "qazaCompleteError": "Could not complete the selected Qaza: {error}",
-  "@qazaCompleteError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "qazaTartibRequiredTitle": "Qaza order is required",
   "qazaTartibRequiredMessage": "You have {count} outstanding Fard prayers. According to this ruling, complete {prayer} Qaza before other pending prayers.",
   "@qazaTartibRequiredMessage": {
     "placeholders": {
@@ -282,41 +163,14 @@
       }
     }
   },
-  "qazaRecordActions": "Record actions",
-  "qazaEditRecord": "Edit",
-  "qazaDeleteRecord": "Delete",
   "qazaEditRecordTitle": "Edit Qaza",
   "qazaEditPrayer": "Prayer",
   "qazaEditDate": "Original date",
   "qazaEditDateHelp": "Select original Qaza date",
   "qazaSaveChanges": "Save changes",
-  "qazaDeleteRecordTitle": "Delete Qaza record?",
-  "qazaDeleteRecordMessage": "Move the {prayer} Qaza from {date} to Recently Deleted? You can restore it for 30 days.",
-  "qazaRecordUpdated": "Qaza record updated.",
-  "qazaDuplicateRecord": "{prayer} Qaza already exists for {date}.",
-  "qazaRecordUpdateFailed": "Qaza record could not be updated. Please try again.",
-  "qazaRecordDeleted": "Qaza moved to Recently Deleted.",
-  "qazaRecordDeleteFailed": "Qaza record could not be deleted. Please try again.",
   "qazaUndoAction": "Undo",
   "qazaUndoAvailable": "{count, plural, =1{Recent completion can be undone.} other{Recent completions can be undone.}}",
   "@qazaUndoAvailable": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "qazaUndoCount": "{count, plural, =1{1 Qaza restored.} other{{count} Qaza restored.}}",
-  "@qazaUndoCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "qazaCompletedCount": "{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}",
-  "@qazaCompletedCount": {
-    "description": "Confirmation after bulk completion",
     "placeholders": {
       "count": {
         "type": "int"
@@ -438,180 +292,11 @@
       }
     }
   },
-  "calendarSelectYear": "Select year",
-  "calendarSelectHint": "Tap an available date to select it.",
-  "calendarSelectedCount": "{count, plural, =1{1 date selected.} other{{count} dates selected.}}",
-  "@calendarSelectedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "authTitle": "Sign in",
-  "authWelcomeBack": "Welcome back",
-  "authSubtitle": "Sign in to continue to your Qaza Namaz tracker.",
-  "authContinueWithGoogle": "Continue with Google",
-  "authSigningIn": "Signing in...",
-  "authProviderNote": "Google is the currently connected authentication provider. Sign-in status is restored automatically from Firebase.",
-  "authHelpTooltip": "Authentication help",
-  "authHelpTitle": "Authentication",
-  "authHelpBody": "Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.",
-  "authDismiss": "Dismiss",
-  "authFailed": "Unable to sign in. Please try again.",
-  "welcomeTagline": "Spiritual Devotion & Prayer Accountability",
-  "welcomeHeadline": "Track your missed prayers with clarity and consistency.",
-  "welcomeBody": "Record, complete, and keep track of your Qaza Namaz — one prayer at a time.",
-  "welcomeGetStarted": "Get Started",
-  "welcomeSignIn": "Already have an account? Sign In",
   "splashTagline": "A calm place for prayer accountability",
-  "accountTitle": "Account",
-  "accountSignInMethod": "Sign-in method",
-  "accountGoogleAuth": "Google",
-  "accountSignedInWithGoogle": "Signed in with Google",
-  "accountStatus": "Account status",
-  "accountSignedIn": "Signed in",
-  "accountRecordsRetained": "Your saved Qaza records remain stored and will be restored after the next sign-in.",
-  "accountDeveloperContext": "Developer context",
-  "accountFirebaseUid": "Firebase UID",
-  "accountNotAvailable": "Not available",
-  "accountSignOut": "Sign out",
-  "accountSignOutPrompt": "Sign out?",
-  "accountSignOutExplanation": "Signing out disconnects your Google account. Your Qaza progress remains on this device.",
-  "dataTitle": "Export & Import",
-  "dataExportTitle": "Export data",
-  "dataExportBody": "Save a versioned JSON copy of your Qaza ledger. Nothing is uploaded by the export action.",
-  "dataExportAction": "Export",
-  "dataExportDialogTitle": "Save Qaza data export",
-  "dataExportSaved": "Export saved successfully.",
-  "dataExportCanceled": "Export canceled. Your data was not changed.",
-  "dataExportSignInRequired": "Sign in before exporting your Qaza data.",
-  "dataExportFailed": "Export failed: {error}",
-  "@dataExportFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "dataImportTitle": "Import data",
-  "dataImportBody": "Open a JSON export, validate it completely, preview the merge, then apply it to this account.",
-  "dataImportAction": "Import",
-  "dataImportReviewTitle": "Review data import",
-  "dataImportCanceled": "Import canceled. Your data was not changed.",
-  "dataImportSignInRequired": "Sign in before importing data.",
-  "dataImportEmptyFile": "The selected file is empty or unreadable.",
-  "dataImportRejected": "Import rejected: {error}\nNo partial import was applied.",
-  "@dataImportRejected": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "dataImportComplete": "Import complete: {added} added, {completed} completed, {unchanged} unchanged.",
-  "@dataImportComplete": {
-    "placeholders": {
-      "added": {
-        "type": "int"
-      },
-      "completed": {
-        "type": "int"
-      },
-      "unchanged": {
-        "type": "int"
-      }
-    }
-  },
-  "dataProcessing": "Processing data…",
-  "dataSafetyTitle": "Data safety",
-  "dataSafetyBody": "Export does not delete cloud data. Import does not erase existing records. Sign-out is not data deletion, and uninstalling the app does not delete cloud records.",
-  "dataRemapNote": "Imported records are remapped to the currently signed-in account. The existing local-first sync layer then confirms changes with Firestore in the background.",
-  "addQazaTitle": "Add Qaza",
-  "addQazaStep1": "Step 1 of 3 • Select Dates",
-  "addQazaStep2": "Step 2 of 3 • Select Missed Prayers",
-  "addQazaStep3": "Step 3 of 3 • Review & Add",
-  "addQazaModeSingle": "Single",
-  "addQazaModeRange": "Range",
-  "addQazaModeMultiple": "Multiple",
-  "addQazaModeSingleTitle": "Single date",
-  "addQazaModeRangeTitle": "Date range",
-  "addQazaModeMultipleTitle": "Multiple dates",
-  "addQazaChooseSingle": "Choose a date",
-  "addQazaChooseRange": "Choose a date range",
-  "addQazaChooseMultiple": "Choose multiple dates",
-  "addQazaAvailabilityNote": "A date is disabled only when no prayer remains eligible.",
-  "addQazaStepNameDates": "Select Dates",
-  "addQazaStepNamePrayers": "Missed Prayers",
-  "addQazaStepNameReview": "Review",
-  "addQazaStepSemantics": "Step {step}: {name}",
-  "@addQazaStepSemantics": {
-    "placeholders": {
-      "step": {
-        "type": "int"
-      },
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "addQazaPartialAvailability": "Available on {available} of {total} dates",
-  "@addQazaPartialAvailability": {
-    "placeholders": {
-      "available": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "addQazaAvailableEveryDate": "Available on every selected date",
-  "addQazaEligibleOnlyNote": "Only eligible date + prayer combinations are added. Anything already recorded is skipped.",
-  "addQazaAddCount": "Add {count} Qaza",
-  "@addQazaAddCount": {
-    "placeholders": {
-      "count": {
-        "type": "String"
-      }
-    }
-  },
   "addQazaNothingNew": "Nothing new to add — these combinations are already recorded.",
-  "addQazaChecking": "Checking your ledger...",
-  "addQazaNextPrayers": "Next: Review & Add",
-  "addQazaPrayersHeading": "Missed Prayers",
-  "addQazaSelectAll": "Select All",
-  "addQazaAllSelected": "All selected",
-  "addQazaReviewHeading": "Review & Add",
-  "addQazaReviewNote": "Confirm the summary, then add these Qaza records to your ledger.",
-  "addQazaCombinationNote": "Each date + prayer combination becomes an independent pending record. Existing combinations are skipped automatically.",
-  "addQazaSelectionLabel": "Selection",
-  "addQazaDatesLabel": "Dates",
-  "addQazaDateCountLabel": "Date count",
-  "addQazaDateRangeLabel": "Date range",
-  "addQazaPrayersLabel": "Prayers",
-  "addQazaPrayersPerDateLabel": "Prayers per date",
   "addQazaExistingLabel": "Existing combinations",
   "addQazaNewRecordsLabel": "New records",
-  "addQazaNewQazaLabel": "New Qaza records",
   "addQazaInProgress": "Adding Qaza...",
-  "addQazaCreatedTitle": "Qaza records created",
-  "addQazaSelectedCount": "{count, plural, =1{1 day selected • Which prayers did you miss?} other{{count} days selected • Which prayers did you miss?}}",
-  "@addQazaSelectedCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "addQazaDateCount": "{count, plural, =1{1 date} other{{count} dates}}",
-  "@addQazaDateCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "addQazaCreatedMessage": "{count, plural, =1{1 record was added to your ledger.} other{{count} records were added to your ledger.}}",
   "@addQazaCreatedMessage": {
     "placeholders": {
@@ -620,52 +305,11 @@
       }
     }
   },
-  "addQazaUnavailablePrayer": "{rakats} • Already recorded/prayed or its prayer time has not ended yet",
-  "@addQazaUnavailablePrayer": {
-    "placeholders": {
-      "rakats": {
-        "type": "String"
-      }
-    }
-  },
-  "commonNone": "None",
-  "completeTitle": "Complete Qaza",
-  "completeHeading": "Complete the latest pending record",
-  "completeIntro": "Complete one record at a time. After success, the next pending record is shown immediately.",
-  "completeLoading": "Loading latest pending record…",
   "completeLoadError": "We could not load your Qaza record.",
   "completeNoPendingTitle": "No pending Qaza for this prayer.",
   "completeNoPendingMessage": "Choose another prayer or add a Qaza record first.",
-  "completeOldestSubtitle": "Latest pending record",
-  "completeOriginalDate": "Original missed date",
-  "completeTimestampNote": "Completion timestamp is recorded separately.",
-  "completeAction": "Complete latest pending",
   "completeInProgress": "Completing...",
   "completeFailed": "Qaza could not be completed. Please try again.",
-  "completePrayerQaza": "{prayer} Qaza",
-  "@completePrayerQaza": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
-  "completeSuccess": "{prayer} Qaza completed successfully.",
-  "@completeSuccess": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
-  "completeSuccessNext": "{prayer} Qaza completed • the next one is ready.",
-  "@completeSuccessNext": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
   "knowledgeBaseTitle": "Knowledge Base",
   "knowledgeBaseSearchHint": "Search Masail & Mugalat",
   "knowledgeBaseClearSearch": "Clear search",
@@ -689,14 +333,6 @@
   "knowledgeArticleReferences": "References",
   "knowledgeArticleRelated": "Related articles",
   "knowledgeArticleNotFound": "Article not found.",
-  "settingsAccountSection": "Account",
-  "settingsAccountSubtitle": "Manage your sign-in and account details.",
-  "settingsGoogleSignIn": "Google sign-in",
-  "settingsKnowledgeBaseSubtitle": "Browse Masail & Mugalat",
-  "settingsDataSection": "Data & Storage",
-  "settingsDataSubtitle": "Sync, backup, export, and import your Qaza data.",
-  "settingsDataCloud": "Data & Cloud",
-  "settingsDataCloudSubtitle": "Sync, export and import status",
   "settingsResetCounterTitle": "Reset Qaza Counter",
   "settingsResetCounterSubtitle": "Delete every recorded Qaza and start the count again from zero.",
   "settingsResetCounterEmpty": "There are no Qaza records to reset.",
@@ -720,34 +356,7 @@
       }
     }
   },
-  "authContinueAsGuest": "Continue as Guest",
-  "authGuestNote": "You can sign in with Google later to keep your progress with your account.",
-  "backupPromptTitle": "Keep your progress safe",
-  "backupPromptBody": "Sign in with Google to keep your Qaza progress available with your account.",
-  "backupPromptConfirm": "Continue with Google",
-  "backupPromptDismiss": "Not Now",
-  "settingsBackupSignIn": "Back up / Sign in",
-  "settingsBackupSignInSubtitle": "You are using the app as a guest. Sign in to back up your Qaza.",
-  "backupSignInFailed": "Sign-in failed. Your progress is still on this device.",
-  "backupSignInCancelled": "Sign-in canceled. Your progress is still on this device.",
-  "backupSignInFailedReason": "Sign-in failed: {reason} Your progress is still on this device.",
-  "@backupSignInFailedReason": {
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "backupMigrationDone": "{count, plural, =0{Signed in. Your Qaza progress is now linked to your account.} =1{Signed in. Your Qaza progress is now linked to your account.} other{Signed in. Your Qaza progress is now linked to your account.}}",
-  "@backupMigrationDone": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "settingsAboutSection": "About",
-  "settingsAboutSubtitle": "App information and version details.",
   "settingsAboutRowSubtitle": "Qaza Namaz • version {version}",
   "@settingsAboutRowSubtitle": {
     "placeholders": {
@@ -757,61 +366,12 @@
     }
   },
   "settingsAppDescription": "Islamic Prayer Qaza Tracker",
-  "cloudSyncTitle": "Cloud Sync",
-  "cloudSyncNow": "Sync now",
-  "cloudPendingChanges": "Pending changes",
-  "cloudLastSynced": "Last synced",
-  "cloudExportImportSubtitle": "User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.",
-  "cloudInactive": "Offline storage is not active in this build.",
-  "cloudBootstrapping": "Setting up your Qaza records on this device…",
-  "cloudHydrating": "Restoring your saved Qaza records to this device…",
-  "cloudSynced": "All your Qaza records are saved in the cloud.",
-  "cloudSyncing": "Syncing your ledger…",
-  "cloudOffline": "Offline — records are saved on this device and sync automatically.",
-  "cloudPendingCount": "{count, plural, =1{1 change waiting to sync.} other{{count} changes waiting to sync.}}",
-  "@cloudPendingCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cloudSyncProblem": "Sync problem — your data is safe on this device.",
-  "cloudQazaCount": "Qaza count",
-  "cloudQazaCountValue": "{count, plural, =0{No Qaza records} =1{1 Qaza record} other{{count} Qaza records}}",
-  "@cloudQazaCountValue": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cloudBackupStatus": "Cloud backup",
-  "cloudBackupDeleted": "Cloud copy deleted; local records remain.",
-  "cloudLocalVsCloudTitle": "Local vs cloud",
-  "cloudLocalVsCloudBody": "Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.",
-  "cloudDeleteTitle": "Delete cloud data",
-  "cloudDeleteBody": "This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.",
-  "cloudDeleteAcknowledge": "I understand the cloud copy will be permanently deleted.",
-  "cloudDeleteAction": "Delete cloud data",
-  "cloudDeleteDone": "Cloud Qaza data was deleted. Your local records remain on this device.",
-  "cloudDeleteFailed": "Cloud data could not be deleted. Your local records are still safe.",
-  "cloudDeleteSignInRequired": "Sign in to manage cloud data.",
   "settingsTitle": "Settings",
-  "settingsPreferences": "Preferences",
-  "settingsPreferencesSubtitle": "Language and appearance settings.",
-  "settingsAppearance": "Appearance",
-  "settingsAppearanceSubtitle": "Choose how the app looks on this device.",
-  "settingsThemeSystem": "System",
-  "settingsThemeLight": "Light",
-  "settingsThemeDark": "Dark",
   "settingsLanguage": "Language",
   "settingsLanguageSubtitle": "Select the language used throughout the app.",
-  "settingsLanguageNote": "Prayer names and Hijri dates follow the selected language. Urdu is written right to left.",
   "languageEnglish": "English",
   "languageUrdu": "اردو",
   "homeTodayProgressHeader": "Today's Progress",
-  "homeNextQazaCurrentPrayer": "Next Qaza (Current Prayer)",
   "homeOldestPending": "Oldest Pending",
   "homeOverallQaza": "Overall Qaza",
   "homePendingByPrayer": "Pending by Prayer",
@@ -821,16 +381,6 @@
   "homeCompleted": "Completed",
   "homePending": "Pending",
   "homeDetailedStatistics": "View Detailed Statistics",
-  "homeDetailedStatisticsSubtitle": "Overall and prayer-wise completion",
-  "homeTodayDate": "Today",
-  "homeCurrentPrayerLabel": "Current prayer: {prayer}",
-  "@homeCurrentPrayerLabel": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
   "homeSahibOrderLabel": "Sahib al-Tartib: {prayer}",
   "@homeSahibOrderLabel": {
     "placeholders": {
@@ -857,7 +407,6 @@
   "profileDateOfBirth": "Date of Birth",
   "profileSelectDate": "Select date",
   "profileSelectDobHelp": "Select your date of birth",
-  "profileHijriHint": "Hijri date is shown after you select the Gregorian date.",
   "profilePubertyAge": "Puberty Age",
   "profileStartPrayingAge": "Start Praying Age",
   "profileSelectGenderFirst": "Select gender first",

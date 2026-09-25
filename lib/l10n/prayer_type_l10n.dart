@@ -28,21 +28,6 @@ extension QazaStatusL10n on QazaStatus {
       };
 }
 
-/// Rakaat metadata shown beside a prayer name.
-///
-/// `PrayerTypeX.rakats` stays as the non-localized form for diagnostics; this
-/// is what a user reads.
-extension PrayerRakatsL10n on PrayerType {
-  String localizedRakats(AppLocalizations l10n) => switch (this) {
-        PrayerType.fajr => l10n.prayerRakatFajr,
-        PrayerType.zuhr => l10n.prayerRakatZuhr,
-        PrayerType.asr => l10n.prayerRakatAsr,
-        PrayerType.maghrib => l10n.prayerRakatMaghrib,
-        PrayerType.isha => l10n.prayerRakatIsha,
-        PrayerType.witr => l10n.prayerRakatWitr,
-      };
-}
-
 extension KnowledgeCategoryL10n on KnowledgeCategory {
   String localizedLabel(AppLocalizations l10n) => switch (this) {
         KnowledgeCategory.masail => l10n.knowledgeCategoryMasail,

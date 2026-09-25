@@ -11,7 +11,6 @@ import '../core/diagnostics/diagnostics.dart';
 import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../l10n/app_localizations.dart';
-import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/database/app_database.dart';
 import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/qaza_local_store.dart';
@@ -105,10 +104,6 @@ final qazaOperationServiceProvider = Provider<QazaOperationService>(
 
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
-);
-
-final qazaDataTransferServiceProvider = Provider<QazaDataTransferService>(
-  (ref) => QazaDataTransferService(ref.watch(qazaRepositoryProvider)),
 );
 
 /// The ledger belongs to this device's local profile. The legacy identifier

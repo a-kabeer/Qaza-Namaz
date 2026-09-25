@@ -12,20 +12,6 @@ extension AppErrorPresentation on AppError {
         AppLocalizations.of(context),
         kind,
       );
-
-  /// The action to offer alongside the message, or null when the only useful
-  /// thing is to dismiss it.
-  ///
-  /// Retry is offered exactly when [AppErrorKind.isRetryable] says repeating
-  /// the action could work — never as decoration on a failure that will
-  /// repeat identically.
-  String? actionLabel(BuildContext context) => isRetryable
-      ? AppLocalizations.of(context).commonRetry
-      : switch (kind) {
-          AppErrorKind.permission =>
-            AppLocalizations.of(context).commonOpenSettings,
-          _ => null,
-        };
 }
 
 /// Resolves a kind to its localized message, without needing a context.
