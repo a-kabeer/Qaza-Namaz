@@ -255,7 +255,6 @@ Future<void> _undoFromSnack({
     }
     if (!context.mounted) return;
 
-    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
