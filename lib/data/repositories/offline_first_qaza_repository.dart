@@ -118,6 +118,24 @@ class OfflineFirstQazaRepository
   }
 
   @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    _validateActive(userId);
+    final ids = recordIds.toSet();
+    if (ids.isEmpty) return const <QazaRecord>[];
+
+    final records = await _localStore.getRecordsByIds(
+      userId: userId,
+      ids: ids.toList(growable: false),
+    );
+    return records
+        .where((record) => record.status == QazaStatus.pending)
+        .toList(growable: false);
+  }
+
+  @override
   Future<QazaHistoryPage> getHistoryPage({
     required String userId,
     int limit = 50,
@@ -563,7 +581,7 @@ class OfflineFirstQazaRepository
   void _validateActive(String userId) {
     if (userId.isEmpty || userId != _activeUserId) {
       _diagnostics.recordFailure(
-        DiagnosticArea.database,
+        DiagnosticArea.uncaught,
         'inactive_local_ledger_access',
         StateError('Qaza operation targeted a non-active local ledger.'),
       );
