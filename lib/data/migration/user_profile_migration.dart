@@ -83,7 +83,7 @@ class UserProfileMigration {
       pubertyAge: existing?.pubertyAge ?? migratedPuberty,
       startPrayingAge: existing?.startPrayingAge ?? startAge,
       witrIncluded: existing?.witrIncluded ?? oldWitr,
-      onboardingCompleted: false,
+      onboardingCompleted: existing?.onboardingCompleted ?? false,
     );
 
     await prefs.setString(UserProfile.storageKey, jsonEncode(profile.toJson()));
