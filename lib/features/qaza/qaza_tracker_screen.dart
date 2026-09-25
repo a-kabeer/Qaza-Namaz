@@ -686,7 +686,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-                ),
               Row(
                 children: [
                   TextButton(
