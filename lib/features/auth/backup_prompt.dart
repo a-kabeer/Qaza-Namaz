@@ -46,10 +46,8 @@ final backupPromptSeenProvider =
 
 /// True when a guest has recorded their first Qaza and has not answered yet.
 final shouldOfferBackupProvider = Provider<bool>((ref) {
-  if (!ref.watch(isGuestProvider)) return false;
-  if (ref.watch(backupPromptSeenProvider)) return false;
-  final summary = ref.watch(progressSummaryProvider).valueOrNull;
-  return (summary?.overall.total ?? 0) > 0;
+  return ref.watch(isGuestProvider) &&
+      !ref.watch(backupPromptSeenProvider);
 });
 
 /// Offers a guest a backup once they have something worth backing up.
@@ -57,6 +55,8 @@ final shouldOfferBackupProvider = Provider<bool>((ref) {
 /// Non-blocking in both senses: it is dismissible, and declining leaves every
 /// part of the app working exactly as before.
 Future<void> showBackupPrompt(BuildContext context, WidgetRef ref) async {
+  if (!ref.read(shouldOfferBackupProvider)) return;
+
   final l10n = AppLocalizations.of(context);
   // Marked before the dialog resolves: however it is answered, and even if
   // the app is killed while it is open, it is not offered again.
