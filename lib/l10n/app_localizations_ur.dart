@@ -1317,7 +1317,7 @@ class AppLocalizationsUr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔'
+      other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
       zero: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
     );
     return '$_temp0';
