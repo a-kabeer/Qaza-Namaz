@@ -546,7 +546,7 @@
   "splashTagline": "A calm place for prayer accountability",
   "accountTitle": "Account",
   "accountSignInMethod": "Sign-in method",
-  "accountGoogleAuth": "Google authentication",
+  "accountGoogleAuth": "Google",
   "accountSignedInWithGoogle": "Signed in with Google",
   "accountStatus": "Account status",
   "accountSignedIn": "Signed in",
@@ -811,7 +811,7 @@
     }
   },
   "authContinueAsGuest": "Continue as Guest",
-  "authGuestNote": "You can sign in later to back up your progress.",
+  "authGuestNote": "You can sign in with Google later to keep your progress with your account.",
   "backupPromptTitle": "Keep your progress safe",
   "backupPromptBody": "Sign in with Google to keep your Qaza progress available with your account.",
   "backupPromptConfirm": "Continue with Google",
