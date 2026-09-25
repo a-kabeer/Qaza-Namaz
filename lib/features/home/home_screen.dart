@@ -12,7 +12,6 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/notifications_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
-import '../prayer_times/prayer_times_providers.dart';
 import '../qaza/qaza_import_controller.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
@@ -66,7 +65,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (state != AppLifecycleState.resumed) return;
     // Coming back from the background is the other way the day turns without
     // this screen noticing: the process may have been suspended for hours.
-    unawaited(ref.read(prayerTimesControllerProvider.notifier).tick());
     _refreshIfDayTurned();
     _scheduleMidnight();
   }
@@ -81,11 +79,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _midnightTimer?.cancel();
     if (!mounted) return;
 
-    final location = ref.read(prayerTimesControllerProvider).location;
-    final now = ref.read(prayerTimesClockProvider).now();
-    final today = homeLocalDateForLocation(location: location, instant: now);
-    final nextMidnight =
-        homeLocalDayEndForDate(location: location, date: today);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final nextMidnight = DateTime(today.year, today.month, today.day + 1);
 
     // A second past the boundary, so the clock has unambiguously rolled over
     // by the time the date is read again.
@@ -111,7 +107,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _renderedDate = current;
     ref.read(homeControllerProvider).invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
   }
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {

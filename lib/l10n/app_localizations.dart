@@ -644,12 +644,6 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get homeAuto;
 
-  /// No description provided for @homePrayerTimeUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic prayer selection is unavailable until Prayer Times are set up.'**
-  String get homePrayerTimeUnavailable;
-
   /// No description provided for @homeQazaTargetReachedTitle.
   ///
   /// In en, this message translates to:

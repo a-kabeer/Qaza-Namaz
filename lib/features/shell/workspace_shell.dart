@@ -4,20 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
-import '../prayer_times/presentation/prayer_times_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// The five destinations are the primary navigation.
+/// The four destinations are the primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
   knowledge,
   settings,
-  prayerTimes,
 }
 
 /// The selected destination.
@@ -41,14 +38,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     QazaTrackerScreen(),
     KnowledgeBasePage(),
     SettingsScreen(),
-    PrayerTimesScreen(),
   ];
 
-  /// The five primary destinations in the bottom navigation.
+  /// The four primary destinations in the bottom navigation.
   static const _barDestinations = [
     WorkspaceDestination.home,
     WorkspaceDestination.qaza,
-    WorkspaceDestination.prayerTimes,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -111,12 +106,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             NavigationDestination(
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
-                label: l10n.navQaza),
-            NavigationDestination(
-                icon: const Icon(Icons.schedule_outlined),
-                selectedIcon: const Icon(Icons.schedule_rounded),
-                label: PrayerTimesStrings.title(context)),
-            NavigationDestination(
+                label: l10n.navQaza),            NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
                 label: l10n.navKnowledge),
