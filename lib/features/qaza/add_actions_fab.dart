@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 
-/// The workspace's add action: a plus that opens into Add Qaza and Calculate
-/// Qaza, and a cross that closes again.
-///
-/// The plus rotates an eighth of a turn to become the cross, which is the
-/// Material idiom for this control and gives the open and close states one
-/// continuous animation rather than two icons swapping.
+/// The workspace's Add Qaza action: a compact expandable control for the
+/// Qaza entry workflow. The plus rotates into a close icon when expanded.
 class AddQazaFab extends StatefulWidget {
   const AddQazaFab({
     super.key,
@@ -42,8 +38,7 @@ class _AddQazaFabState extends State<AddQazaFab> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // The actions take no space at all while closed, so the plus keeps
-        // its usual position.
+        // The action takes no space while closed, so the plus keeps its normal position.
         AnimatedSize(
           duration: AddQazaFab._duration,
           curve: Curves.easeOutCubic,
