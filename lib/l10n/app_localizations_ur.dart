@@ -793,7 +793,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountSignOutExplanation =>
-      'سائن آؤٹ کرنے پر آپ خوش آمدید اسکرین پر واپس آ جائیں گے۔ آپ کے محفوظ قضا ریکارڈ حذف نہیں ہوتے اور اگلی بار سائن اِن پر بحال ہو جائیں گے۔';
+      'سائن آؤٹ کرنے سے آپ کا گوگل اکاؤنٹ منقطع ہو جائے گا۔ آپ کی قضا پیش رفت اس ڈیوائس پر برقرار رہے گی۔';
 
   @override
   String get dataTitle => 'برآمد و درآمد';
@@ -1284,10 +1284,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get backupPromptBody =>
-      'آپ کی قضا پیش رفت اس ڈیوائس پر محفوظ ہے۔ بیک اپ لینے اور دوسرے ڈیوائس پر بحال کرنے کے لیے سائن ان کریں۔';
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے گوگل سے سائن اِن کریں۔';
 
   @override
-  String get backupPromptConfirm => 'میری پیش رفت کا بیک اپ لیں';
+  String get backupPromptConfirm => 'گوگل سے جاری رکھیں';
 
   @override
   String get backupPromptDismiss => 'ابھی نہیں';
