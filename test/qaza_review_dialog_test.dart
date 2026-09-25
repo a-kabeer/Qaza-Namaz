@@ -75,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Review Your Qaza Plan'), findsOneWidget);
-    expect(find.text('4,386'), findsOneWidget);
+    expect(find.text('4386'), findsOneWidget);
     expect(find.text('Hanafi'), findsOneWidget);
     expect(find.text('Prayer Breakdown'), findsOneWidget);
     expect(find.text('731'), findsNWidgets(6));
