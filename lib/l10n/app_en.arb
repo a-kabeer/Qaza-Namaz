@@ -6,7 +6,6 @@
   },
   "navHome": "Home",
   "navQaza": "Qaza",
-  "navCalculator": "Calculator",
   "navKnowledge": "Knowledge",
   "settingsRemindersSection": "Reminders",
   "settingsRemindersSubtitle": "Daily reminder to complete your Qaza.",
@@ -117,7 +116,6 @@
   "homeHeadingPending": "Keep going",
   "homeHeadingCompleted": "You are all caught up",
   "homeSetupMessage": "You haven't added any Qaza prayers yet.",
-  "homeCalculateQaza": "Calculate Qaza",
   "homeCompleteQaza": "Complete Qaza",
   "homeAddNewQaza": "Add New Qaza",
   "homeAddManually": "Add Qaza Manually",
@@ -326,12 +324,6 @@
       }
     }
   },
-  "calcAboutYouIntro": "Start with your date of birth and Baligh information. Dates are selected in the Gregorian calendar; the Hijri date is shown alongside.",
-  "calcDateOfBirth": "Date of birth",
-  "calcSelectDate": "Select date",
-  "calcSelectDobHelp": "Select your date of birth",
-  "calcCurrentAge": "Current age",
-  "calcAgeYears": "{years} years",
   "@calcAgeYears": {
     "placeholders": {
       "years": {
@@ -339,13 +331,6 @@
       }
     }
   },
-  "calcBalighInformation": "Baligh information",
-  "calcModeAge": "Age",
-  "calcModeExactDate": "Exact date",
-  "calcBalighAgeLabel": "Baligh age (years)",
-  "calcSelectExactDate": "Select exact date",
-  "calcSelectBalighHelp": "Select exact Baligh date",
-  "calcEstimatedBalighDate": "Estimated Baligh date: {date}",
   "@calcEstimatedBalighDate": {
     "placeholders": {
       "date": {
@@ -353,7 +338,6 @@
       }
     }
   },
-  "calcExactBalighDate": "Exact Baligh date: {date}",
   "@calcExactBalighDate": {
     "placeholders": {
       "date": {
@@ -361,12 +345,6 @@
       }
     }
   },
-  "calcPrayerHistoryIntro": "Tell us when regular prayer started so we can calculate the Qaza period.",
-  "calcRegularPrayerStart": "Regular prayer start",
-  "calcPrayerStartAgeUnavailable": "You are younger than the Baligh age you selected, so there is no prayer-start age to choose. Adjust your date of birth or Baligh information.",
-  "calcPrayerStartAgeLabel": "Regular prayer start age (years)",
-  "calcSelectPrayerStartHelp": "Select exact prayer start date",
-  "calcEstimatedPrayerStartDate": "Estimated prayer-start date: {date}",
   "@calcEstimatedPrayerStartDate": {
     "placeholders": {
       "date": {
@@ -374,7 +352,6 @@
       }
     }
   },
-  "calcExactPrayerStartDate": "Exact prayer-start date: {date}",
   "@calcExactPrayerStartDate": {
     "placeholders": {
       "date": {
@@ -382,13 +359,6 @@
       }
     }
   },
-  "calcIncludeWitr": "Include Witr separately",
-  "calcIncludeWitrSubtitle": "Witr is counted independently from the five daily prayers.",
-  "calcQazaPeriod": "Qaza period",
-  "calcBalighDate": "Baligh date",
-  "calcPrayerStartDate": "Prayer-start date",
-  "calcCalendarPeriod": "Calendar period",
-  "calcPeriodValue": "{years} years • {days} days",
   "@calcPeriodValue": {
     "placeholders": {
       "years": {
@@ -399,19 +369,6 @@
       }
     }
   },
-  "calcCompleteDatesPrompt": "Complete valid dates to calculate the Qaza period.",
-  "calcNoResultPrompt": "Calculate a valid prayer period to view your Qaza estimate.",
-  "calcElapsedDays": "Elapsed days",
-  "calcEstimatedPrayers": "Estimated prayers",
-  "calcPrayerBreakdown": "Prayer breakdown",
-  "calcWitrNotIncluded": "Witr is not included. Change this on Prayer History.",
-  "calcPreflightErrorShort": "Could not check existing records.",
-  "calcAddErrorShort": "Could not add the estimate.",
-  "calculatorTitle": "Calculator",
-  "calcStepAboutYou": "About You",
-  "calcStepPrayerHistory": "Prayer History",
-  "calcStepResult": "Result",
-  "calcStepOf": "Step {step} of 3",
   "@calcStepOf": {
     "placeholders": {
       "step": {
@@ -419,7 +376,6 @@
       }
     }
   },
-  "calcStepSemantics": "Step {step}: {name}",
   "@calcStepSemantics": {
     "description": "Screen-reader label for the step indicator",
     "placeholders": {
@@ -431,9 +387,6 @@
       }
     }
   },
-  "calcCalculate": "Calculate",
-  "calcAddToTracker": "Add to Tracker",
-  "calcAddQazaCount": "Add {count} Qaza",
   "@calcAddQazaCount": {
     "placeholders": {
       "count": {
@@ -441,13 +394,6 @@
       }
     }
   },
-  "calcPreflightTitle": "Add to Qaza Tracker",
-  "calcCalculated": "Calculated",
-  "calcAlreadyRecorded": "Already Recorded",
-  "calcAlreadyCompleted": "Already Completed",
-  "calcNewToAdd": "New to Add",
-  "calcExistingUntouched": "Existing records are never changed.",
-  "calcAddCountToTracker": "Add {count} to Qaza Tracker",
   "@calcAddCountToTracker": {
     "placeholders": {
       "count": {
@@ -455,8 +401,6 @@
       }
     }
   },
-  "calcAddingTitle": "Adding Qaza to your tracker",
-  "calcAddingProgress": "{processed} of {total} records",
   "@calcAddingProgress": {
     "placeholders": {
       "processed": {
@@ -467,7 +411,6 @@
       }
     }
   },
-  "calcAddedResult": "{count, plural, =0{Nothing new to add — your tracker already had these.} =1{1 record added to your tracker.} other{{count} records added to your tracker.}}",
   "@calcAddedResult": {
     "placeholders": {
       "count": {
@@ -475,11 +418,6 @@
       }
     }
   },
-  "calcAddFailedTitle": "Could not add to your tracker",
-  "calcAddedDoneHint": "Your tracker is up to date. Your date of birth and prayer settings are saved for next time.",
-  "calcCalculateAgain": "Calculate Again",
-  "calcEstimateAdded": "Estimate added",
-  "calcEstimateAddedMessage": "{count} Qaza records were added. Existing records were not overwritten.",
   "@calcEstimateAddedMessage": {
     "placeholders": {
       "count": {
@@ -487,7 +425,6 @@
       }
     }
   },
-  "calcPreflightError": "Could not check your existing records: {error}",
   "@calcPreflightError": {
     "placeholders": {
       "error": {
@@ -495,7 +432,6 @@
       }
     }
   },
-  "calcAddError": "Could not add the estimate: {error}",
   "@calcAddError": {
     "placeholders": {
       "error": {
