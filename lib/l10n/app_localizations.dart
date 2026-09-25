@@ -1844,18 +1844,6 @@ abstract class AppLocalizations {
   /// **'Daily reminder to continue completing Qaza prayers.'**
   String get notificationChannelDescription;
 
-  /// No description provided for @settingsAccountSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Account'**
-  String get settingsAccountSection;
-
-  /// No description provided for @settingsAccountSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage your sign-in and account details.'**
-  String get settingsAccountSubtitle;
-
   /// No description provided for @settingsKnowledgeBaseSubtitle.
   ///
   /// In en, this message translates to:
