@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../data/auth/firebase_auth_repository.dart';
+import '../../domain/repositories/auth_repository.dart';
+import 'auth_startup_state.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/services/guest_migration_service.dart';
 import '../qaza/qaza_tracker_controller.dart';
@@ -52,12 +54,16 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     bool running = false,
     AppUser? pendingAccount,
     GuestMigrationResult migration = GuestMigrationResult.none,
+    GuestDataSummary summary = GuestDataSummary.empty,
+    bool newAccount = false,
     String? error,
   }) {
     state = GuestUpgradeState(
       running: running,
       pendingAccount: pendingAccount,
       migration: migration,
+      summary: summary,
+      newAccount: newAccount,
       error: error,
       origin: _origin,
     );
@@ -147,65 +153,93 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     _userActionStarted = true;
     _origin = origin;
 
-    // Resolve persisted guest mode before starting Firebase auth. Otherwise a
-    // cold-start tap can authenticate directly into the account namespace and
-    // leave the guest ledger stranded on the device.
     final wasGuest =
         await ref.read(guestSessionProvider.notifier).ensureRestored();
-    _emit(running: true);
+    final migration = ref.read(guestMigrationServiceProvider);
+    final hasLocalQaza =
+        await migration.hasGuestData(guestUserId: guestUserId);
 
-    if (wasGuest) {
+    _emit(running: true);
+    if (wasGuest || hasLocalQaza) {
       await ref.read(guestUpgradePendingProvider.notifier).setPending(true);
     }
 
     try {
-      final account = await ref.read(authRepositoryProvider).signInWithGoogle();
+      final repository = ref.read(authRepositoryProvider);
+      final result = repository is DetailedAuthRepository
+          ? await repository.signInWithGoogleDetails()
+          : GoogleSignInResult(
+              user: await repository.signInWithGoogle(),
+              isNewUser: false,
+            );
+      final account = result.user;
 
-      if (!wasGuest) {
-        _emit();
-        return true;
-      }
+      if (result.isNewUser) {
+        await AuthStartupState.markNewGoogleUser(account.id);
 
-      final hasGuestData = await ref
-          .read(guestMigrationServiceProvider)
-          .hasGuestData(guestUserId: guestUserId);
+        // A brand-new Google account has no existing cloud Qaza ledger, so
+        // locally-created records can be associated with it without asking
+        // the user to reconcile two account datasets. This is still explicit
+        // account creation, not an automatic merge with an existing account.
+        if (hasLocalQaza) {
+          final migrated = await migration.migrate(
+            guestUserId: guestUserId,
+            accountUserId: account.id,
+          );
+          await migration.retireGuestData(guestUserId: guestUserId);
+          await AuthStartupState.clear();
+          await ref.read(guestSessionProvider.notifier).end();
+          await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+          _refreshDerivedState();
+          _emit(migration: migrated, newAccount: true);
+          return true;
+        }
 
-      if (!hasGuestData) {
-        // End guest mode before lowering the barrier so activeUserIdProvider
-        // changes directly from the reserved guest ledger to the account.
         await ref.read(guestSessionProvider.notifier).end();
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
         _refreshDerivedState();
-        _emit(migration: GuestMigrationResult.none);
+        _emit(newAccount: true);
         return true;
       }
 
+      if (!hasLocalQaza) {
+        if (wasGuest) {
+          await ref.read(guestSessionProvider.notifier).end();
+        }
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        await _clearPendingDecision();
+        _refreshDerivedState();
+        _emit();
+        return true;
+      }
+
+      final summary = await migration.summarize(
+        guestUserId: guestUserId,
+        accountUserId: account.id,
+      );
       await _persistPendingDecision(account.id);
-      _emit(pendingAccount: account);
+      _emit(pendingAccount: account, summary: summary);
       return true;
     } on AuthenticationCancelledException catch (error) {
-      if (wasGuest) {
+      if (wasGuest || hasLocalQaza) {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
 
-      // A genuine user cancellation is a normal end to the flow and should
-      // not create an alarming error banner. If the platform attached a
-      // description, preserve it as an actionable diagnostic instead.
       _emit(error: error.userInitiated ? null : error.diagnostic);
       return false;
     } catch (error) {
-      // A guest must never be left partially switched into an authenticated
-      // account after a failed sign-in/preflight operation.
-      if (wasGuest) {
-        try {
-          if (ref.read(authRepositoryProvider).currentUser != null) {
-            await ref.read(authRepositoryProvider).signOut();
-          }
-        } catch (_) {
-          // Keep the original authentication/preflight error for diagnostics.
+      try {
+        if (ref.read(authRepositoryProvider).currentUser != null &&
+            (wasGuest || hasLocalQaza)) {
+          await ref.read(authRepositoryProvider).signOut();
         }
+      } catch (_) {
+        // Preserve the original authentication/migration error.
+      }
+
+      if (wasGuest || hasLocalQaza) {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
@@ -220,7 +254,11 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     final account = state.pendingAccount;
     if (account == null || state.running) return false;
 
-    _emit(running: true, pendingAccount: account);
+    _emit(
+      running: true,
+      pendingAccount: account,
+      summary: state.summary,
+    );
     try {
       final result = await ref.read(guestMigrationServiceProvider).migrate(
             guestUserId: guestUserId,
@@ -351,6 +389,8 @@ class GuestUpgradeState {
     this.running = false,
     this.pendingAccount,
     this.migration = GuestMigrationResult.none,
+    this.summary = GuestDataSummary.empty,
+    this.newAccount = false,
     this.error,
     this.origin = GuestUpgradeOrigin.startup,
   });
@@ -359,6 +399,8 @@ class GuestUpgradeState {
   final bool running;
   final AppUser? pendingAccount;
   final GuestMigrationResult migration;
+  final GuestDataSummary summary;
+  final bool newAccount;
   final String? error;
   final GuestUpgradeOrigin origin;
 
