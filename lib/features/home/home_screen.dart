@@ -17,7 +17,6 @@ import 'widgets/home_all_completed_state.dart';
 import 'widgets/home_empty_state.dart';
 import 'widgets/home_overall_progress.dart';
 import 'widgets/home_pending_by_prayer.dart';
-import 'widgets/home_progress_history.dart';
 import 'widgets/home_skeleton.dart';
 import 'widgets/home_statistics_summary.dart';
 import 'widgets/home_today_progress.dart';
@@ -263,8 +262,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomePendingByPrayer(summary: summary),
                   const SizedBox(height: 16),
                 ],
-                const HomeProgressHistory(),
-                const SizedBox(height: 12),
               ],
             ),
           ),
