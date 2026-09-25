@@ -15,8 +15,6 @@ import '../../core/widgets/skeleton.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-import '../prayer_times/prayer_times_providers.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
 import 'add_actions_fab.dart';
@@ -650,17 +648,6 @@ class _BulkCompletionBar extends ConsumerStatefulWidget {
 }
 
 class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
-  Timer? _ticker;
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) ref.invalidate(qazaRestrictionEvaluationProvider);
-    });
-  }
-  @override
-  void dispose() { _ticker?.cancel(); super.dispose(); }
-
   Future<void> _complete(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final count = widget.state.selected.length;
@@ -697,8 +684,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final evaluation = ref.watch(qazaRestrictionEvaluationProvider).valueOrNull;
-    final restricted = evaluation?.isRestricted == true;
     final busy = widget.state.completing || widget.state.recordMutating;
     final count = widget.state.selected.length;
     return Material(
@@ -710,14 +695,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (restricted && evaluation?.type != null)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Text('${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}', style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                ),
               Row(
                 children: [
                   TextButton(
@@ -729,7 +706,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                   Expanded(
                     child: FilledButton(
                       key: const Key('qaza_tracker_complete_selected'),
-                      onPressed: busy || restricted ? null : () => _complete(context),
+                      onPressed: busy ? null : () => _complete(context),
                       child: Text(l10n.qazaCompleteCount(count)),
                     ),
                   ),
