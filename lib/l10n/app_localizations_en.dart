@@ -796,7 +796,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSignOutExplanation =>
-      'Signing out returns you to the welcome screen. Your saved Qaza records are NOT deleted and will be restored the next time you sign in.';
+      'Signing out disconnects your Google account. Your Qaza progress remains on this device.';
 
   @override
   String get dataTitle => 'Export & Import';
@@ -1285,10 +1285,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupPromptBody =>
-      'Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.';
+      'Sign in with Google to keep your Qaza progress available with your account.';
 
   @override
-  String get backupPromptConfirm => 'Back Up My Progress';
+  String get backupPromptConfirm => 'Continue with Google';
 
   @override
   String get backupPromptDismiss => 'Not Now';
