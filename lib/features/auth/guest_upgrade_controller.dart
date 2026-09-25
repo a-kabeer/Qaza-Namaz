@@ -102,10 +102,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       if (_userActionStarted) return;
 
-      final localQazaExists =
-          await ref.read(guestMigrationServiceProvider).hasGuestData(
-                guestUserId: guestUserId,
-              );
+      final localQazaExists = await hasLocalQazaData();
 
       if (marker == null ||
           currentUser == null ||
@@ -155,6 +152,14 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     }
   }
 
+  Future<bool> hasLocalQazaData() async {
+    final page = await ref.read(qazaLocalStoreProvider).getPage(
+          userId: guestUserId,
+          limit: 1,
+        );
+    return page.records.isNotEmpty;
+  }
+
   /// Starts Google authentication. Guest data is never migrated automatically.
   ///
   /// For a guest, the ledger barrier is set before Firebase authentication so
@@ -169,9 +174,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
     final wasGuest =
         await ref.read(guestSessionProvider.notifier).ensureRestored();
-    final migration = ref.read(guestMigrationServiceProvider);
-    final hasLocalQaza =
-        await migration.hasGuestData(guestUserId: guestUserId);
+    final hasLocalQaza = await hasLocalQazaData();
 
     _emit(running: true);
     if (wasGuest || hasLocalQaza) {
@@ -196,7 +199,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         // the user to reconcile two account datasets. This is still explicit
         // account creation, not an automatic merge with an existing account.
         if (hasLocalQaza) {
-          final migrated = await migration.migrate(
+          final migrated = await ref.read(guestMigrationServiceProvider).migrate(
             guestUserId: guestUserId,
             accountUserId: account.id,
           );
@@ -228,7 +231,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         return true;
       }
 
-      final summary = await migration.summarize(
+      final summary = await ref.read(guestMigrationServiceProvider).summarize(
         guestUserId: guestUserId,
         accountUserId: account.id,
       );
