@@ -1062,13 +1062,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'قضا نمازیں مکمل کرتے رہنے کی روزانہ یاد دہانی۔';
 
   @override
-  String get settingsAccountSection => 'اکاؤنٹ';
-
-  @override
-  String get settingsAccountSubtitle =>
-      'اپنے سائن اِن اور اکاؤنٹ کی تفصیلات سنبھالیں۔';
-
-  @override
   String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
 
   @override
