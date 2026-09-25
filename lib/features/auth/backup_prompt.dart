@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'authentication_screen.dart';
+import 'guest_session.dart';
 import 'guest_upgrade_controller.dart';
 
 /// Whether the backup prompt has been answered already.
