@@ -280,6 +280,8 @@ void main() {
   });
 
   // ---------------------------------------------------------------- 5
+  // Google account authentication never implicitly moves the active ledger;
+  // the reconciliation decision remains the only migration boundary.
   testWidgets('journey: guest conversion keeps the guest ledger',
       (tester) async {
     final container = await start(
