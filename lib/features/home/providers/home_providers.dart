@@ -136,14 +136,8 @@ final homeDailyProgressProvider =
     return HomeDailyProgress(completed: 0, target: target);
   }
 
-  final start = homeLocalDayStartForDate(
-    location: location,
-    date: today,
-  );
-  final end = homeLocalDayEndForDate(
-    location: location,
-    date: today,
-  );
+  final start = homeLocalDayStartForDate(today);
+  final end = homeLocalDayEndForDate(today);
   final completed = await ref.read(qazaServiceProvider).countCompletedBetween(
         userId: userId,
         from: start,
