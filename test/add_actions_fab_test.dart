@@ -93,7 +93,7 @@ void main() {
     expect(find.byKey(const Key('add_qaza_fab_expanded')), findsOneWidget);
     expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsOneWidget);
 
-    await tester.pump(AddQazaFab.animationDuration);
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('add_qaza_fab_expanded')), findsNothing);
     expect(find.byKey(const Key('add_qaza_fab_collapsed')), findsOneWidget);
     expect(find.byIcon(Icons.add_rounded), findsOneWidget);
