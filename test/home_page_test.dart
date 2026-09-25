@@ -1116,18 +1116,14 @@ void main() {
       );
     });
 
-    testWidgets('keeps existing empty ledger actions', (tester) async {
+    testWidgets('empty ledger keeps only the add action', (tester) async {
       await pumpHome(tester, InMemoryQazaRepository());
 
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
       expect(find.byKey(const Key('home_empty_add')), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_calculate')), findsNothing);
       expect(find.byKey(const Key('home_today_progress')), findsNothing);
       expect(find.byKey(const Key('home_your_progress')), findsNothing);
-
-      await tester.tap(find.byKey(const Key('home_empty_calculate')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(find.byType(CalculatorScreen), findsWidgets);
     });
 
     testWidgets('supports Urdu and dark theme', (tester) async {
