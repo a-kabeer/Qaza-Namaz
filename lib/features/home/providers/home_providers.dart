@@ -176,13 +176,9 @@ final homeProgressHistoryProvider = FutureProvider.autoDispose
       for (var i = 0; i < starts.length; i++)
         ref.read(qazaServiceProvider).countCompletedBetween(
               userId: userId,
-              from: homeLocalDayStartForDate(
-                location: location,
-                date: starts[i],
-              ),
+              from: homeLocalDayStartForDate(starts[i]),
               to: homeLocalDayStartForDate(
-                location: location,
-                date: range == HomeProgressRange.monthly
+                range == HomeProgressRange.monthly
                     ? DateTime(starts[i].year, starts[i].month + 1)
                     : DateTime(
                         starts[i].year,
