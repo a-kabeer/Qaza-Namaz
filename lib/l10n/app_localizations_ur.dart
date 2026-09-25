@@ -1713,6 +1713,36 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileSave => "تبدیلیاں محفوظ کریں";
 
   @override
+  String get qazaReviewTitle => "اپنا قضا پلان دیکھیں";
+
+  @override
+  String get qazaReviewSubtitle => "قضا ٹریکر میں شامل کرنے سے پہلے اپنی تفصیلات کا جائزہ لیں۔";
+
+  @override
+  String get qazaReviewTotal => "کل اندازاً قضا نمازیں";
+
+  @override
+  String get qazaReviewPeriod => "قضا کی مدت";
+
+  @override
+  String get qazaReviewBreakdown => "نماز وار تفصیل";
+
+  @override
+  String get qazaReviewNote => "یہ آپ کے پروفائل کی معلومات کی بنیاد پر قضا نمازوں کا اندازہ ہے۔";
+
+  @override
+  String get qazaReviewEdit => "اپنی تفصیلات میں ترمیم کریں";
+
+  @override
+  String get qazaReviewAdd => "قضا کو میرے ٹریکر میں شامل کریں";
+
+  @override
+  String get qazaReviewAdding => "قضا شامل ہو رہی ہے…";
+
+  @override
+  String get qazaReviewError => "قضا شامل نہیں ہو سکی۔ دوبارہ کوشش کریں۔";
+
+  @override
   String get profileErrorLanguage => "براہ کرم زبان منتخب کریں۔";
 
   @override

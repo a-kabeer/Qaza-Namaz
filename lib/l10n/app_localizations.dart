@@ -2810,6 +2810,16 @@ abstract class AppLocalizations {
   String get profileWitrExcluded;
   String get profileSubmit;
   String get profileSave;
+  String get qazaReviewTitle;
+  String get qazaReviewSubtitle;
+  String get qazaReviewTotal;
+  String get qazaReviewPeriod;
+  String get qazaReviewBreakdown;
+  String get qazaReviewNote;
+  String get qazaReviewEdit;
+  String get qazaReviewAdd;
+  String get qazaReviewAdding;
+  String get qazaReviewError;
   String get profileErrorLanguage;
   String get profileErrorGender;
   String get profileErrorMadhab;

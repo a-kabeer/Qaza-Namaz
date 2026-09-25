@@ -1714,6 +1714,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSave => "Save Changes";
 
   @override
+  String get qazaReviewTitle => "Review Your Qaza Plan";
+
+  @override
+  String get qazaReviewSubtitle => "Please review your Qaza details before adding them to your tracker.";
+
+  @override
+  String get qazaReviewTotal => "Total Estimated Qaza";
+
+  @override
+  String get qazaReviewPeriod => "Qaza Period";
+
+  @override
+  String get qazaReviewBreakdown => "Prayer Breakdown";
+
+  @override
+  String get qazaReviewNote => "These are estimated Qaza prayers based on the information in your profile.";
+
+  @override
+  String get qazaReviewEdit => "Edit My Details";
+
+  @override
+  String get qazaReviewAdd => "Add Qaza to My Tracker";
+
+  @override
+  String get qazaReviewAdding => "Adding Qaza…";
+
+  @override
+  String get qazaReviewError => "Qaza could not be added. Please try again.";
+
+  @override
   String get profileErrorLanguage => "Please select a language.";
 
   @override
