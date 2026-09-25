@@ -241,6 +241,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         await _clearPendingDecision();
       }
 
+      await AuthStartupState.clear();
       _emit(error: error.userInitiated ? null : error.diagnostic);
       return false;
     } catch (error) {
@@ -257,6 +258,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         await _clearPendingDecision();
       }
+      await AuthStartupState.clear();
 
       _emit(error: error.toString());
       return false;
