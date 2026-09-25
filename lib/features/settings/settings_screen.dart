@@ -1,5 +1,5 @@
-
 import 'dart:async';
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,8 @@ import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
+import '../notifications/notification_controller.dart';
+import '../data_management/qaza_data_management_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'qaza_reset_controller.dart';
@@ -77,17 +79,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {
-                  final selected = value.first;
-                  ref.read(localeProvider.notifier).set(Locale(selected));
-                  final profile =
-                      ref.read(userProfileProvider).valueOrNull;
-                  if (profile != null && profile.languageCode != selected) {
-                    unawaited(
-                      ref.read(userProfileRepositoryProvider).save(
-                            profile.copyWith(languageCode: selected),
-                          ),
-                    );
-                  }
+                  ref.read(localeProvider.notifier).set(Locale(value.first));
                 },
               ),
             ),
@@ -147,3 +139,35 @@ class _ResetQazaCounterRow extends ConsumerWidget {
                 done
                     ? l10n.settingsResetCounterDone
                     : l10n.settingsResetCounterFailed(error ?? ''),
+              ),
+            ),
+          );
+      },
+    );
+  }
+}
+
+class AboutScreen extends StatelessWidget {
+  const AboutScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AppScaffold(
+      title: l10n.settingsAboutSection,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ListTile(
+            title: Text(l10n.appTitle),
+            subtitle: Text(l10n.settingsAppDescription),
+          ),
+          ListTile(
+            title: Text(l10n.commonVersion),
+            subtitle: Text(appDisplayVersion),
+          ),
+        ],
+      ),
+    );
+  }
+}
