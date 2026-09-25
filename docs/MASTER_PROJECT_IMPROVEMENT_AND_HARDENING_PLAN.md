@@ -643,77 +643,6 @@ Improve:
 
 ---
 
-# 11. Phase 8 — Notification Rework & Device QA
-
-## Priority: P1
-
-Keep current notification architecture; improve UX and verify on physical devices.
-
-## UI
-
-```text
-Qaza reminders
-ON
-
-Reminder time
-8:30 PM
-
-Only remind when Qaza remain
-ON
-
-Repeat
-Daily
-
-Test notification
-
-```
-
-Future options:
-
-```text
-Custom days
-Quiet hours
-
-```
-
-## Notification content
-
-Example:
-
-```text
-Qaza reminder
-
-You have 8 pending Qaza.
-
-[ Open Qaza ]
-
-```
-
-## Device QA
-
-Test:
-
--  Android 13
--  Android 14
--  Android 15
--  Android 16
--  Pixel
--  Samsung
--  Fresh install
--  Permission denied
--  Permission later granted
--  Channel blocked
--  App notifications disabled
--  Device reboot
--  Battery saver
--  Doze
--  Timezone change
--  Notification tap
--  Cold-start notification
--  App update
-
----
-
 # 12. Phase 9 — Knowledge Base
 
 ## Priority: P1/P2
@@ -888,7 +817,6 @@ Technical detail becomes secondary.
 
 -  Authentication
 -  Google Sign-In
--  Notifications
 -  Sync
 -  Import
 -  Export
@@ -1086,18 +1014,6 @@ Offline
 
 ```
 
-## Notification
-
-```text
-Enable
-→ Permission
-→ Schedule
-→ Test
-→ Receive
-→ Open Qaza
-
-```
-
 ---
 
 # 20. Final Release Gate
@@ -1166,11 +1082,9 @@ Add Qaza progress
 
 ```
 
-## Sprint 4 — Notifications & Privacy
+## Sprint 4 — Privacy & App Lock
 
 ```text
-Notification UX
-Device QA
 App Lock
 Account transparency
 Privacy controls
@@ -1221,7 +1135,6 @@ Use this structure for every implementation task:
 | Undo completion                 | Not started | — | — | — | P1              |
 | Calculator explanation          | Not started | — | — | — | P1              |
 | Localization cleanup            | Not started | — | — | — | P1              |
-| Notification QA                 | Not started | — | — | — | Device required |
 | App Lock                        | Not started | — | — | — | P1              |
 | Import/export UX                | Not started | — | — | — | P1              |
 | Knowledge improvements          | Not started | — | — | — | P2              |

@@ -167,8 +167,8 @@ final isGuestProvider = Provider<bool>((ref) =>
 
 /// Whose ledger is on screen: an account id, the reserved guest id, or none.
 ///
-/// Everything downstream — the repository, the aggregates, notification
-/// preferences — is scoped by this, so guest data is isolated by the same
+/// Everything downstream — the repository and aggregates — is scoped by
+/// this, so guest data is isolated by the same
 /// mechanism that isolates one account from another.
 final activeUserIdProvider = Provider<String?>((ref) {
   // During an in-progress guest-to-account decision, Firebase may already

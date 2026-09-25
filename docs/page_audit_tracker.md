@@ -21,7 +21,6 @@
 | 9 | **Knowledge Article Detail** | `KnowledgeArticleDetailPage` | ⬜ Not Started | Individual article |
 | 10 | **Settings** | `SettingsScreen` | ⬜ Not Started | Main settings page |
 | 11 | **Account** | `AccountScreen` | ⬜ Not Started | Account management |
-| 12 | **Notifications** | `NotificationsScreen` | ⬜ Not Started | Reminder settings |
 | 13 | **App Lock Settings** | `AppLockSettingsScreen` | ⬜ Not Started | App lock configuration |
 | 14 | **Data & Cloud** | `DataCloudScreen` | ⬜ Not Started | Backup/sync/cloud data |
 | 15 | **Qaza Data Management** | `QazaDataManagementScreen` | ⬜ Not Started | Import/export/data management |
