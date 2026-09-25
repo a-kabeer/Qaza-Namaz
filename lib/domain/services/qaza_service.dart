@@ -18,6 +18,13 @@ export 'qaza_availability_service.dart'
 export 'sahib_al_tartib_service.dart'
     show QazaTartibViolationException, SahibAlTartibState;
 
+class QazaWitrNotIncludedException implements Exception {
+  const QazaWitrNotIncludedException();
+
+  @override
+  String toString() => 'Witr is not included in the current profile.';
+}
+
 typedef QazaPrayerTimeBlockedResolver = Future<Set<QazaPrayerKey>> Function({
   required String userId,
   required Iterable<DateTime> dates,
@@ -38,16 +45,19 @@ class QazaService {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
     QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver,
+    bool Function()? witrInclusionResolver,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository),
         prayerTimeBlockedResolver = prayerTimeBlockedResolver,
+        witrInclusionResolver = witrInclusionResolver,
         _diagnostics = diagnostics;
   final QazaRepository repository;
   final DiagnosticsService _diagnostics;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
   final QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver;
+  final bool Function()? witrInclusionResolver;
 
   Future<Set<QazaPrayerKey>> _getTimeBlockedKeys({
     required String userId,
@@ -464,6 +474,14 @@ class QazaService {
     if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
+
+    final witrResolver = witrInclusionResolver;
+    if (selectedPrayers.contains(PrayerType.witr) &&
+        witrResolver != null &&
+        !witrResolver()) {
+      throw const QazaWitrNotIncludedException();
+    }
+
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) {
       onProgress?.call(0, 0);
       return 0;

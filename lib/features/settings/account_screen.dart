@@ -139,18 +139,6 @@ class AccountScreen extends ConsumerWidget {
                       title: Text(l10n.cloudLastSynced),
                       subtitle: Text(formatAppDateTime(syncState?.lastSyncAt)),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.manage_accounts_outlined),
-                      title: Text(l10n.settingsDataCloud),
-                      subtitle: Text(l10n.settingsDataCloudSubtitle),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DataCloudScreen(),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               );

@@ -154,11 +154,12 @@ void main() {
     expect(find.text('Knowledge Base'), findsWidgets);
     await tester.tap(find.text('Settings').first);
     await _pumpNavigation(tester);
-    expect(find.text('Account'), findsWidgets);
+    expect(find.text('Profile'), findsWidgets);
     // Prayer rules moved to the Knowledge tab; Settings is configuration only.
     expect(find.text('Prayer & Fiqh Rules'), findsNothing);
     expect(find.text('Notifications'), findsOneWidget);
-    expect(find.text('Data & Storage'), findsOneWidget);
+    expect(find.text('Data & Storage'), findsNothing);
+    expect(find.text('Language'), findsOneWidget);
   });
 
   testWidgets('Back from a non-root tab returns to Home instead of exiting',

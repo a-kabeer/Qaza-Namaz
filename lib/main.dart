@@ -9,6 +9,7 @@ import 'app/app.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
+import 'data/migration/user_profile_migration.dart';
 import 'firebase_options.dart';
 
 /// How long any single startup step may take before the app gives up on it.
@@ -85,6 +86,12 @@ Future<void> main() async {
     } finally {
       await database.close();
     }
+  });
+
+  await _step('profile_migration', () async {
+    await const UserProfileMigration().migrateLegacyCalculatorData(
+      preferences: await SharedPreferences.getInstance(),
+    );
   });
 
   runApp(const ProviderScope(child: QazaNamazApp()));

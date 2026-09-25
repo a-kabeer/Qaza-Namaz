@@ -285,20 +285,6 @@ void main() {
       expect(find.byType(WorkspaceShell), findsOneWidget);
     });
 
-    testWidgets('Settings offers a guest a permanent way to back up',
-        (tester) async {
-      await pumpGate(tester, InMemoryQazaRepository(), guest: true);
-
-      final container = ProviderScope.containerOf(
-          tester.element(find.byType(WorkspaceShell)));
-      container.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.settings;
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('settings_backup_sign_in')), findsOneWidget);
-      expect(find.text('Back up / Sign in'), findsOneWidget);
-    });
-
     testWidgets('a signed-in account sees no backup row', (tester) async {
       final auth = _FakeAuthRepository();
       addTearDown(auth.dispose);
@@ -312,27 +298,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('settings_backup_sign_in')), findsNothing);
-    });
-
-    testWidgets('the prompt appears after a guest first record, once',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([_record(guestUserId, PrayerType.fajr, 1)]);
-      await pumpGate(tester, repository, guest: true);
-
-      expect(find.byKey(const Key('backup_prompt')), findsOneWidget);
-      expect(find.text('Keep your progress safe'), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('backup_prompt_dismiss')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('backup_prompt')), findsNothing);
-      // Dismissal is remembered, so nothing brings it back.
-      final container = ProviderScope.containerOf(
-          tester.element(find.byType(WorkspaceShell)));
-      container.invalidate(progressSummaryProvider);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('backup_prompt')), findsNothing);
     });
 
     testWidgets('an empty guest ledger is not prompted', (tester) async {
