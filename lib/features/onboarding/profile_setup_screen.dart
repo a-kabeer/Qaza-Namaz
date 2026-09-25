@@ -68,7 +68,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ),
     );
 
-    if (!mounted || added != true) return;
+    if (!mounted || added == null) return;
 
     await ref.read(userProfileRepositoryProvider).save(finalizedProfile);
     await AuthStartupState.clear();
