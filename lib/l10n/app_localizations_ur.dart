@@ -1304,48 +1304,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get languageUrdu => 'اردو';
 
   @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
   String get homeTodayProgressHeader => 'آج کی پیش رفت';
 
   @override
@@ -1376,20 +1334,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homePending => 'باقی';
 
   @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
   String get homeDetailedStatistics => 'تفصیلی اعداد و شمار';
 
   @override
   String get homeDetailedStatisticsSubtitle => 'مجموعی اور نماز وار تکمیل';
-
-  @override
 
   @override
   String get homeTodayDate => 'آج';
