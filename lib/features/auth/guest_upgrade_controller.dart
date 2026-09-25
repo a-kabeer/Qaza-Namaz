@@ -102,14 +102,21 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
 
       if (_userActionStarted) return;
 
-      final localQazaExists = await hasLocalQazaData();
-
-      if (marker == null ||
-          currentUser == null ||
-          (!guestPersisted && !localQazaExists)) {
+      // Normal startup has no pending upgrade decision. Do not open Drift just
+      // to discover that there is nothing to restore; this keeps ordinary
+      // guest/signed-out startup fast and prevents unnecessary DB instances.
+      if (marker == null || currentUser == null) {
         if (marker != null) {
           await prefs.remove(_pendingDecisionKey);
         }
+        await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
+        _emit();
+        return;
+      }
+
+      final localQazaExists = await hasLocalQazaData();
+      if (!guestPersisted && !localQazaExists) {
+        await prefs.remove(_pendingDecisionKey);
         await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
         _emit();
         return;
