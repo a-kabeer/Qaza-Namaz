@@ -28,7 +28,7 @@ class QazaTrackerScreen extends ConsumerWidget {
     final controller = ref.read(qazaTrackerControllerProvider.notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
-        ? state.selected.length.toString() + ' selected'
+        ? '${state.selected.length} selected'
         : l10n.qazaTitle;
 
     return PopScope(
@@ -59,7 +59,7 @@ class QazaTrackerScreen extends ConsumerWidget {
                   TabBar(
                     onTap: (_) => ScaffoldMessenger.maybeOf(context)
                         ?.hideCurrentSnackBar(),
-                    tabs: [
+                    tabs: const [
                       Tab(text: 'Pending'),
                       Tab(text: 'History'),
                     ],
@@ -97,7 +97,8 @@ class _ProgressHeader extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final summaryAsync = ref.watch(progressSummaryProvider);
     return summaryAsync.when(
-      loading: () => const SizedBox(height: 3, child: LinearProgressIndicator()),
+      loading: () =>
+          const SizedBox(height: 3, child: LinearProgressIndicator()),
       error: (_, __) => const SizedBox.shrink(),
       data: (summary) => Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -119,7 +120,7 @@ class _ProgressHeader extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  (summary.overall.percentage * 100).round().toString() + '%',
+                  '${(summary.overall.percentage * 100).round()}%',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -303,14 +304,13 @@ class _FilterSheet extends StatelessWidget {
   }
 }
 
-
-
 class _TrackerBody extends ConsumerWidget {
   const _TrackerBody({required this.state, required this.controller});
   final QazaTrackerState state;
   final QazaTrackerController controller;
 
-  Future<bool> _completeSingle(BuildContext context, WidgetRef ref, QazaRecord record) async {
+  Future<bool> _completeSingle(
+      BuildContext context, WidgetRef ref, QazaRecord record) async {
     final batch = await controller.completeRecordWithUndo(record.id);
     if (!context.mounted) return false;
     final l10n = AppLocalizations.of(context);
@@ -343,43 +343,75 @@ class _TrackerBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
-    final lockedRecordId = tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
+    final lockedRecordId =
+        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
     if (state.loading && state.records.isEmpty) return const _TrackerSkeleton();
     if (state.error != null) {
       final failure = AppError.from(state.error!);
-      return ErrorState(key: const Key('qaza_tracker_error'), message: failure.message(context), onRetry: failure.isRetryable ? controller.refresh : null);
+      return ErrorState(
+          key: const Key('qaza_tracker_error'),
+          message: failure.message(context),
+          onRetry: failure.isRetryable ? controller.refresh : null);
     }
     if (state.records.isEmpty) {
       return state.isFiltered
-          ? EmptyState(key: const Key('qaza_tracker_filtered_empty'), title: l10n.qazaFilteredEmptyTitle, message: l10n.qazaFilteredEmptyMessage, child: TextButton(onPressed: controller.clearFilters, child: Text(l10n.qazaResetFilters)))
-          : EmptyState(key: const Key('qaza_tracker_empty'), title: l10n.qazaEmptyTitle, message: l10n.qazaEmptyMessage);
+          ? EmptyState(
+              key: const Key('qaza_tracker_filtered_empty'),
+              title: l10n.qazaFilteredEmptyTitle,
+              message: l10n.qazaFilteredEmptyMessage,
+              child: TextButton(
+                  onPressed: controller.clearFilters,
+                  child: Text(l10n.qazaResetFilters)))
+          : EmptyState(
+              key: const Key('qaza_tracker_empty'),
+              title: l10n.qazaEmptyTitle,
+              message: l10n.qazaEmptyMessage);
     }
     return Column(
       children: [
         if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs),
-            child: Align(alignment: AlignmentDirectional.centerStart, child: Text(l10n.qazaTartibRequiredMessage(tartib!.pendingFarzCount, tartib.nextPrayer!.localizedLabel(l10n)), style: Theme.of(context).textTheme.bodySmall)),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs),
+            child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                    l10n.qazaTartibRequiredMessage(tartib!.pendingFarzCount,
+                        tartib.nextPrayer!.localizedLabel(l10n)),
+                    style: Theme.of(context).textTheme.bodySmall)),
           ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: controller.refresh,
             child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) { if (notification.metrics.extentAfter < 320) controller.loadMore(); return false; },
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320)
+                  controller.loadMore();
+                return false;
+              },
               child: ListView.builder(
                 key: const Key('qaza_tracker_list'),
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.fabClearance),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.fabClearance),
                 itemCount: state.records.length + (state.hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index >= state.records.length) return const Padding(padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm), child: Column(children: [_TrackerSkeletonRow(), _TrackerSkeletonRow(), _TrackerSkeletonRow()]));
+                  if (index >= state.records.length)
+                    return const Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+                        child: Column(children: [
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow()
+                        ]));
                   final record = state.records[index];
                   final canAct = record.status == QazaStatus.pending &&
                       (lockedRecordId == null ||
                           record.id == lockedRecordId ||
                           record.prayerType == PrayerType.witr);
                   return _RecordRow(
-                    key: Key('qaza_record_row_' + record.id),
+                    key: Key('qaza_record_row_${record.id}'),
                     record: record,
                     selected: state.selected.contains(record.id),
                     selectionMode: state.selectionMode,
@@ -415,6 +447,7 @@ class _TrackerBody extends ConsumerWidget {
     );
   }
 }
+
 /// One ledger row: original Qaza date, prayer, status and completion date are
 /// each distinguishable.
 class _TrackerSkeleton extends StatelessWidget {
@@ -442,14 +475,14 @@ class _TrackerSkeletonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            const SkeletonCircle(size: 40),
-            const SizedBox(width: 12),
-            const Expanded(
+            SkeletonCircle(size: 40),
+            SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -459,8 +492,8 @@ class _TrackerSkeletonRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            const SkeletonText(
+            SizedBox(width: 12),
+            SkeletonText(
                 width: 64,
                 height: 28,
                 borderRadius: BorderRadius.all(Radius.circular(999))),
@@ -504,32 +537,27 @@ class _RecordRow extends StatelessWidget {
     final tile = Semantics(
       selected: selected,
       button: record.status == QazaStatus.pending,
-      label: originalDate +
-          ', ' +
-          record.prayerType.localizedLabel(l10n) +
-          ', ' +
-          record.status.localizedLabel(l10n),
+      label:
+          '$originalDate, ${record.prayerType.localizedLabel(l10n)}, ${record.status.localizedLabel(l10n)}',
       hint: record.status == QazaStatus.pending
           ? (selectionMode
               ? 'Tap to select or unselect.'
               : 'Tap to complete. Swipe to complete. Long press to select.')
           : null,
       child: ListTile(
-        key: Key('qaza_record_' + record.id),
+        key: Key('qaza_record_${record.id}'),
         contentPadding: EdgeInsets.zero,
         leading: selectionMode
             ? Checkbox(
                 value: selected,
-                onChanged:
-                    onTap == null || busy ? null : (_) => onTap!(),
+                onChanged: onTap == null || busy ? null : (_) => onTap!(),
               )
             : IconButton(
-                key: Key('qaza_record_complete_' + record.id),
+                key: Key('qaza_record_complete_${record.id}'),
                 tooltip: completed
                     ? l10n.statusCompleted
                     : l10n.qazaCompleteCount(1),
-                onPressed:
-                    completed || !canAct || busy ? null : onTap,
+                onPressed: completed || !canAct || busy ? null : onTap,
                 icon: Icon(
                   completed
                       ? Icons.check_circle_rounded
@@ -572,8 +600,7 @@ class _RecordRow extends StatelessWidget {
       ),
     );
 
-    final canSwipe =
-        !selectionMode &&
+    final canSwipe = !selectionMode &&
         record.status == QazaStatus.pending &&
         canAct &&
         !busy &&
@@ -582,7 +609,7 @@ class _RecordRow extends StatelessWidget {
     if (!canSwipe) return tile;
 
     return Dismissible(
-      key: Key('qaza_record_swipe_' + record.id),
+      key: Key('qaza_record_swipe_${record.id}'),
       direction: DismissDirection.endToStart,
       dismissThresholds: const {
         DismissDirection.endToStart: 0.32,
@@ -652,7 +679,9 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
     if (batch == null) {
       final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
       if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.qazaTartibBlocked(tartib!.nextPrayer!.localizedLabel(l10n)))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(l10n
+                .qazaTartibBlocked(tartib!.nextPrayer!.localizedLabel(l10n)))));
       }
       return;
     }
@@ -675,7 +704,8 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -683,7 +713,8 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                 children: [
                   TextButton(
                     key: const Key('qaza_tracker_clear_selection'),
-                    onPressed: busy ? null : widget.controller.exitSelectionMode,
+                    onPressed:
+                        busy ? null : widget.controller.exitSelectionMode,
                     child: Text(l10n.commonClear),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -694,7 +725,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                       child: Text(l10n.qazaCompleteCount(count)),
                     ),
                   ),
-
                 ],
               ),
             ],

@@ -28,7 +28,8 @@ class UserProfileMigration {
     }
 
     final snapshots = <Map<String, dynamic>>[];
-    final legacyKeys = prefs.getKeys()
+    final legacyKeys = prefs
+        .getKeys()
         .where((key) => key.startsWith(_calculatorPrefix))
         .toList()
       ..sort();
@@ -73,14 +74,12 @@ class UserProfileMigration {
     }
 
     final migratedPuberty = switch (existing?.gender) {
-      Gender.male =>
-        oldPuberty != null && oldPuberty >= 12 && oldPuberty <= 15
-            ? oldPuberty
-            : null,
-      Gender.female =>
-        oldPuberty != null && oldPuberty >= 9 && oldPuberty <= 15
-            ? oldPuberty
-            : null,
+      Gender.male => oldPuberty != null && oldPuberty >= 12 && oldPuberty <= 15
+          ? oldPuberty
+          : null,
+      Gender.female => oldPuberty != null && oldPuberty >= 9 && oldPuberty <= 15
+          ? oldPuberty
+          : null,
       null =>
         // Without a known gender, preserve only values valid for both new
         // profile ranges rather than inventing a gender.
@@ -90,8 +89,8 @@ class UserProfileMigration {
     };
 
     final profile = UserProfile(
-      languageCode: existing?.languageCode ??
-          LocaleCodeValidator.normalize(locale),
+      languageCode:
+          existing?.languageCode ?? LocaleCodeValidator.normalize(locale),
       gender: existing?.gender,
       madhab: existing?.madhab ?? (oldWitr == null ? null : Madhab.other),
       dateOfBirth: existing?.dateOfBirth ?? dob,

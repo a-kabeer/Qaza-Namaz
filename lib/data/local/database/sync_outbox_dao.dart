@@ -94,14 +94,14 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
       var updated = 0;
       for (final id in ids.toSet()) {
         final row = await (select(syncOutbox)
-              ..where((item) =>
-                  item.userId.equals(userId) & item.id.equals(id)))
+              ..where(
+                  (item) => item.userId.equals(userId) & item.id.equals(id)))
             .getSingleOrNull();
         if (row == null) continue;
 
         updated += await (update(syncOutbox)
-              ..where((item) =>
-                  item.userId.equals(userId) & item.id.equals(id)))
+              ..where(
+                  (item) => item.userId.equals(userId) & item.id.equals(id)))
             .write(
           SyncOutboxCompanion(
             attempts: Value(row.attempts + 1),
@@ -122,8 +122,7 @@ class SyncOutboxDao extends DatabaseAccessor<AppDatabase>
       var removed = 0;
       for (final id in ids.toSet()) {
         removed += await (delete(syncOutbox)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(id)))
+              ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
             .go();
       }
       return removed;

@@ -82,12 +82,11 @@ class _QazaDataManagementScreenState
         );
       }
 
-      final analysis = await ref
-          .read(qazaDataTransferServiceProvider)
-          .analyzeImport(
-            jsonText: String.fromCharCodes(bytes),
-            userId: userId,
-          );
+      final analysis =
+          await ref.read(qazaDataTransferServiceProvider).analyzeImport(
+                jsonText: String.fromCharCodes(bytes),
+                userId: userId,
+              );
       if (!mounted) return;
 
       final confirmed = await _confirmImport(analysis);
@@ -98,13 +97,7 @@ class _QazaDataManagementScreenState
       ref.invalidate(progressSummaryProvider);
       if (mounted) {
         _showMessage(
-          'Import complete: ' +
-              applied.addedCount.toString() +
-              ' added, ' +
-              applied.completedCount.toString() +
-              ' completed, ' +
-              applied.unchangedCount.toString() +
-              ' unchanged.',
+          'Import complete: ${applied.addedCount} added, ${applied.completedCount} completed, ${applied.unchangedCount} unchanged.',
         );
       }
     } catch (error, stack) {
@@ -128,15 +121,7 @@ class _QazaDataManagementScreenState
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context).dataImportReviewTitle),
         content: Text(
-          analysis.totalCount.toString() +
-              ' valid records found.\n\nNew: ' +
-              analysis.newCount.toString() +
-              '\nWill be marked completed: ' +
-              analysis.completionCount.toString() +
-              '\nAlready present/unchanged: ' +
-              analysis.unchangedCount.toString() +
-              '\n\nExisting records are never blindly overwritten.' +
-              '\n\nImport changes only the local Qaza ledger on this device.',
+          '${analysis.totalCount} valid records found.\n\nNew: ${analysis.newCount}\nWill be marked completed: ${analysis.completionCount}\nAlready present/unchanged: ${analysis.unchangedCount}\n\nExisting records are never blindly overwritten.\n\nImport changes only the local Qaza ledger on this device.',
         ),
         actions: [
           TextButton(
@@ -171,10 +156,8 @@ class _QazaDataManagementScreenState
                 children: [
                   ListTile(
                     leading: const Icon(Icons.file_upload_outlined),
-                    title:
-                        Text(AppLocalizations.of(context).dataExportTitle),
-                    subtitle:
-                        Text(AppLocalizations.of(context).dataExportBody),
+                    title: Text(AppLocalizations.of(context).dataExportTitle),
+                    subtitle: Text(AppLocalizations.of(context).dataExportBody),
                     trailing: FilledButton.tonal(
                       onPressed: _busy ? null : _export,
                       child: Text(
@@ -185,10 +168,8 @@ class _QazaDataManagementScreenState
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   ListTile(
                     leading: const Icon(Icons.file_download_outlined),
-                    title:
-                        Text(AppLocalizations.of(context).dataImportTitle),
-                    subtitle:
-                        Text(AppLocalizations.of(context).dataImportBody),
+                    title: Text(AppLocalizations.of(context).dataImportTitle),
+                    subtitle: Text(AppLocalizations.of(context).dataImportBody),
                     trailing: FilledButton.tonal(
                       onPressed: _busy ? null : _import,
                       child: Text(

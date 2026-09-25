@@ -214,7 +214,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       final ops = <PendingSyncOp>[
         for (final record in changed)
           PendingSyncOp(
-            id: 'soft_delete_' + record.id + '_' + operationId,
+            id: 'soft_delete_${record.id}_$operationId',
             type: SyncOpType.update,
             userId: userId,
             queuedAt: deletedAt,
@@ -240,12 +240,14 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     required String recordId,
   }) =>
-      _database.transaction(
-        () => _database.qazaRecordsDao.deleteById(
-          userId: userId,
-          id: recordId,
-        ),
-      ).then((count) => count > 0);
+      _database
+          .transaction(
+            () => _database.qazaRecordsDao.deleteById(
+              userId: userId,
+              id: recordId,
+            ),
+          )
+          .then((count) => count > 0);
 
   @override
   Future<bool> updateRecordAndOutbox({
@@ -518,10 +520,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       final operations = <PendingSyncOp>[
         for (final record in changed)
           PendingSyncOp(
-            id: 'undo_' +
-                record.id +
-                '_' +
-                record.updatedAt.microsecondsSinceEpoch.toString(),
+            id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
             type: SyncOpType.update,
             userId: userId,
             queuedAt: record.updatedAt,

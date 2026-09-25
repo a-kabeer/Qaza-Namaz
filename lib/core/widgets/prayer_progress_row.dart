@@ -43,87 +43,86 @@ class PrayerProgressRow extends StatelessWidget {
         padding: EdgeInsets.zero,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: scheme.secondaryContainer,
-                    child: Icon(
-                      prayer.icon,
-                      color: scheme.onSecondaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          prayer.localizedLabel(l10n),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          l10n.homeCompletedCount(progress.completed),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${progress.pending}',
-                    key: Key(
-                      '${keyPrefix}_prayer_pending_${prayer.name}',
-                    ),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left_rounded
-                        : Icons.chevron_right_rounded,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        key: Key(
-                          '${keyPrefix}_prayer_bar_${prayer.name}',
-                        ),
-                        value: progress.percentage,
-                        minHeight: 6,
-                        backgroundColor: charts.track,
-                        color: prayerColor,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: scheme.secondaryContainer,
+                      child: Icon(
+                        prayer.icon,
+                        color: scheme.onSecondaryContainer,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '$percent%',
-                    key: Key(
-                      '${keyPrefix}_prayer_percent_${prayer.name}',
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            prayer.localizedLabel(l10n),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            l10n.homeCompletedCount(progress.completed),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                    style: theme.textTheme.labelMedium,
-                  ),
-                ],
-              ),
-            ],
-          )
-        ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${progress.pending}',
+                      key: Key(
+                        '${keyPrefix}_prayer_pending_${prayer.name}',
+                      ),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: scheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left_rounded
+                          : Icons.chevron_right_rounded,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          key: Key(
+                            '${keyPrefix}_prayer_bar_${prayer.name}',
+                          ),
+                          value: progress.percentage,
+                          minHeight: 6,
+                          backgroundColor: charts.track,
+                          color: prayerColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '$percent%',
+                      key: Key(
+                        '${keyPrefix}_prayer_percent_${prayer.name}',
+                      ),
+                      style: theme.textTheme.labelMedium,
+                    ),
+                  ],
+                ),
+              ],
+            )),
       ),
     );
   }

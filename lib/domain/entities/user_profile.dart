@@ -1,4 +1,3 @@
-
 class UserProfile {
   const UserProfile({
     this.languageCode = 'en',
@@ -56,16 +55,14 @@ class UserProfile {
         languageCode: languageCode ?? this.languageCode,
         gender: clearGender ? null : gender ?? this.gender,
         madhab: clearMadhab ? null : madhab ?? this.madhab,
-        dateOfBirth:
-            clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
+        dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
         pubertyAge: clearPubertyAge ? null : pubertyAge ?? this.pubertyAge,
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
         witrIncluded:
             clearWitrIncluded ? null : witrIncluded ?? this.witrIncluded,
-        onboardingCompleted:
-            onboardingCompleted ?? this.onboardingCompleted,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
         schemaVersion: schemaVersion ?? this.schemaVersion,
       );
 

@@ -8,12 +8,11 @@ import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../l10n/prayer_type_l10n.dart';
-import '../../../core/widgets/progress_widgets.dart';
 
 import '../../qaza/qaza_navigation.dart';
 
 class HomePendingByPrayer extends ConsumerWidget {
-  const HomePendingByPrayer({required this.summary});
+  const HomePendingByPrayer({super.key, required this.summary});
 
   final QazaProgressSummary summary;
 
@@ -107,11 +106,11 @@ class _PrayerPendingBar extends StatelessWidget {
     final pendingLabel = DateFormatters.formatCount(progress.pending);
 
     return Semantics(
-      key: Key('home_pending_prayer_semantics_' + prayer.name),
+      key: Key('home_pending_prayer_semantics_${prayer.name}'),
       button: true,
-      label: prayerLabel + ', ' + pendingLabel + ' ' + l10n.homePending,
+      label: '$prayerLabel, $pendingLabel ${l10n.homePending}',
       child: InkWell(
-        key: Key('home_pending_prayer_' + prayer.name),
+        key: Key('home_pending_prayer_${prayer.name}'),
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Padding(
@@ -139,7 +138,7 @@ class _PrayerPendingBar extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
-                    key: Key('home_pending_bar_' + prayer.name),
+                    key: Key('home_pending_bar_${prayer.name}'),
                     value: fraction,
                     minHeight: 10,
                     backgroundColor: charts.track,

@@ -11,7 +11,7 @@ class SharedPreferencesQazaOperationRepository
   static const int _maxPerUser = 100;
 
   String _key(String userId, String operationId) =>
-      '$_prefix${userId}_${operationId}';
+      '$_prefix${userId}_$operationId';
 
   @override
   Future<void> save(QazaOperation operation) async {
@@ -37,7 +37,8 @@ class SharedPreferencesQazaOperationRepository
   }
 
   @override
-  Future<List<QazaOperation>> listRecent(String userId, {int limit = 50}) async {
+  Future<List<QazaOperation>> listRecent(String userId,
+      {int limit = 50}) async {
     final prefs = await SharedPreferences.getInstance();
     final prefix = '$_prefix${userId}_';
     final result = <QazaOperation>[];
@@ -46,8 +47,8 @@ class SharedPreferencesQazaOperationRepository
       final raw = prefs.getString(key);
       if (raw == null) continue;
       try {
-        final op = QazaOperation.fromJson(
-            jsonDecode(raw) as Map<String, dynamic>);
+        final op =
+            QazaOperation.fromJson(jsonDecode(raw) as Map<String, dynamic>);
         if (op.userId == userId) result.add(op);
       } catch (_) {
         // Ignore one damaged history item; other actions remain available.

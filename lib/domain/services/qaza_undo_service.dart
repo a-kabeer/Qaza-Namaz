@@ -23,10 +23,8 @@ class QazaUndoException implements Exception {
   final Object? cause;
 
   @override
-  String toString() => 'QazaUndoException(reason: ' +
-      reason.toString() +
-      (cause == null ? '' : ', cause: ' + cause.toString()) +
-      ')';
+  String toString() =>
+      'QazaUndoException(reason: $reason${cause == null ? '' : ', cause: $cause'})';
 }
 
 /// One completion captured by the active undo window.
@@ -70,7 +68,7 @@ class QazaUndoEntry {
       prayerType: PrayerType.values.firstWhere(
         (value) => value.name == prayerName,
         orElse: () => throw FormatException(
-          'Unknown prayer type in Qaza undo entry: ' + prayerName,
+          'Unknown prayer type in Qaza undo entry: $prayerName',
         ),
       ),
       originalDate: DateTime.parse(originalDate),
