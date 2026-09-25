@@ -122,16 +122,6 @@ final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
       witrInclusionResolver: () => ref.read(effectiveWitrProvider),
       diagnostics: ref.watch(diagnosticsProvider),
-      prayerTimeBlockedResolver: ({
-        required userId,
-        required dates,
-        required prayerTypes,
-      }) =>
-          ref.read(qazaPrayerTimeBlockedResolverProvider)(
-        userId: userId,
-        dates: dates,
-        prayerTypes: prayerTypes,
-      ),
     ));
 
 /** The current user's Sahib al-Tartib state. */
