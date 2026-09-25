@@ -286,14 +286,14 @@ class FirebaseAuthRepository implements AuthRepository {
     );
   }
 
-  static bool _isCredentialManagerReauthFailure(String description) {
-    final normalized = description.toLowerCase();
+  static bool _isCredentialManagerReauthFailure(String? description) {
+    final normalized = description?.toLowerCase() ?? '';
     return normalized.contains('[16]') &&
         normalized.contains('account reauth failed');
   }
 
   @visibleForTesting
-  static bool isCredentialManagerReauthFailure(String description) =>
+  static bool isCredentialManagerReauthFailure(String? description) =>
       _isCredentialManagerReauthFailure(description);
 
   static String _googleFailureMessage(GoogleSignInException error) {

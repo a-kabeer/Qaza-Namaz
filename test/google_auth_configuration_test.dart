@@ -147,5 +147,10 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      FirebaseAuthRepository.isCredentialManagerReauthFailure(null),
+      isFalse,
+      reason: 'A missing Google exception description is not a Credential Manager reauth failure.',
+    );
   });
 }
