@@ -155,6 +155,7 @@ void main() {
   Future<(ProviderContainer, FakeAuthRepository, FakeGuestMigrationService)>
       makeContainer({
     required bool guestData,
+    bool accountData = true,
     bool? failMigration,
     bool? failRetire,
     Object? signInFailure,
