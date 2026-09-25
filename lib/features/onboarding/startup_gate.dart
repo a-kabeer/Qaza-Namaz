@@ -21,7 +21,7 @@ class StartupGate extends ConsumerWidget {
 
     return authAsync.when(
       loading: () => const SplashScreen(),
-      error: (_, __) => _buildSignedOut(ref),
+      error: (_, __) => _buildSignedOut(context, ref),
       data: (user) {
         if (user == null) return _buildSignedOut(context, ref);
 
