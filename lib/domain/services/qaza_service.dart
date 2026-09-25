@@ -26,12 +26,6 @@ class QazaWitrNotIncludedException implements Exception {
   String toString() => 'Witr is not included in the current profile.';
 }
 
-typedef QazaPrayerTimeBlockedResolver = Future<Set<QazaPrayerKey>> Function({
-  required String userId,
-  required Iterable<DateTime> dates,
-  required Iterable<PrayerType> prayerTypes,
-});
-
 class QazaDuplicateRecordException implements Exception {
   const QazaDuplicateRecordException();
 
@@ -89,30 +83,17 @@ class QazaService {
     this.repository, {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
-    QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver,
     bool Function()? witrInclusionResolver,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository),
-        prayerTimeBlockedResolver = prayerTimeBlockedResolver,
         witrInclusionResolver = witrInclusionResolver,
         _diagnostics = diagnostics;
   final QazaRepository repository;
   final DiagnosticsService _diagnostics;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
-  final QazaPrayerTimeBlockedResolver? prayerTimeBlockedResolver;
   final bool Function()? witrInclusionResolver;
-
-  Future<Set<QazaPrayerKey>> _getTimeBlockedKeys({
-    required String userId,
-    required Iterable<DateTime> dates,
-    required Iterable<PrayerType> prayerTypes,
-  }) async {
-    final resolver = prayerTimeBlockedResolver;
-    if (resolver == null) return const <QazaPrayerKey>{};
-    return resolver(userId: userId, dates: dates, prayerTypes: prayerTypes);
-  }
 
   Future<List<QazaRecord>> getRecords(
           {required String userId,
@@ -302,18 +283,12 @@ class QazaService {
     final selectedPrayers = prayerTypes.toSet();
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
-    final timeBlockedKeys = await _getTimeBlockedKeys(
-      userId: userId,
-      dates: normalizedDates,
-      prayerTypes: selectedPrayers,
-    );
     return availability.analyze(
         userId: userId,
         dates: normalizedDates,
         prayerTypes: selectedPrayers,
         existingRecords: existing,
-        prayedKeys: prayedKeys,
-        timeBlockedKeys: timeBlockedKeys);
+        prayedKeys: prayedKeys);
   }
 
   /// Returns the prayers still eligible on each requested date. Reads remain bounded to the requested dates.
@@ -550,7 +525,6 @@ class QazaService {
       prayerTypes: selectedPrayers,
       existingRecords: existing,
       prayedKeys: prayedKeys,
-      timeBlockedKeys: timeBlockedKeys,
     );
     final candidates = analysis.newCandidates.toList(growable: false);
     final total = candidates.length;
