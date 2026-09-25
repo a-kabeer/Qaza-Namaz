@@ -13,7 +13,8 @@ import '../../support/test_app.dart';
 
 void main() {
   setUpAll(() => SharedPreferences.setMockInitialValues({}));
-  testWidgets('Settings exposes one canonical entry per destination',
+
+  testWidgets('Settings exposes the simplified user-facing destinations',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1;
@@ -34,47 +35,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('settings_account')), findsOneWidget);
+    expect(find.byKey(const Key('settings_profile')), findsOneWidget);
     expect(find.byKey(const Key('settings_notifications')), findsOneWidget);
-    expect(find.byKey(const Key('settings_privacy_security')), findsOneWidget);
-    expect(find.byKey(const Key('settings_data_cloud')), findsOneWidget);
     expect(find.byKey(const Key('settings_about')), findsOneWidget);
+    expect(find.byKey(const Key('settings_language')), findsOneWidget);
+    expect(find.byKey(const Key('settings_reset_qaza_counter')), findsOneWidget);
 
-    expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Data & Storage'), findsOneWidget);
+    expect(find.byKey(const Key('settings_account')), findsNothing);
+    expect(find.byKey(const Key('settings_privacy_security')), findsNothing);
+    expect(find.byKey(const Key('settings_data_cloud')), findsNothing);
+    expect(find.text('Preferences'), findsNothing);
+    expect(find.text('Data & Storage'), findsNothing);
     expect(find.text('Export data'), findsNothing);
     expect(find.text('Import data'), findsNothing);
-    expect(find.byType(SettingsNavRow), findsNWidgets(5));
-  });
-
-  testWidgets('Data & Cloud owns the combined export/import destination',
-      (tester) async {
-    tester.view.physicalSize = const Size(1200, 2400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          qazaRepositoryProvider.overrideWithValue(InMemoryQazaRepository()),
-          authStateProvider.overrideWith(
-            (ref) => Stream.value(
-              const AppUser(id: 'test-user', email: 'test@example.com'),
-            ),
-          ),
-        ],
-        child: const TestApp(home: SettingsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('settings_data_cloud')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Cloud backup'), findsOneWidget);
-    expect(find.text('Export & Import'), findsOneWidget);
-    expect(find.text('Qaza count'), findsOneWidget);
-    expect(find.byKey(const Key('data_cloud_delete')), findsOneWidget);
-    expect(find.text('Local vs cloud'), findsOneWidget);
+    expect(find.byType(SettingsNavRow), findsNWidgets(3));
   });
 }
