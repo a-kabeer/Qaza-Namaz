@@ -16,7 +16,6 @@ import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
 import 'history/qaza_history_screen.dart';
-import '../auth/backup_prompt.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
@@ -323,9 +322,6 @@ class _TrackerBody extends ConsumerWidget {
         records: batch.completedRecords,
         onUndone: controller.refresh,
       );
-      if (ref.read(shouldOfferBackupProvider)) {
-        await showBackupPrompt(context, ref);
-      }
       return true;
     }
     final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
@@ -667,9 +663,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
       records: batch.completedRecords,
       onUndone: widget.controller.refresh,
     );
-    if (ref.read(shouldOfferBackupProvider)) {
-      await showBackupPrompt(context, ref);
-    }
   }
 
   @override

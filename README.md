@@ -3,10 +3,12 @@
 This repository contains the Qaza Namaz Android app and its domain workflow.
 
 ## Current architecture
-Riverpod composition root, QazaService over repositories, offline-first local cache with durable sync outbox, centralized Gregorian/Hijri calendar, and shared UI components.
+Riverpod composition root, QazaService over repositories, local Drift/SQLite persistence, centralized Gregorian/Hijri calendar, and shared UI components.
+
+The app is local-only. It does not use Google Sign-In, Firebase Authentication, Firestore, cloud synchronization, guest account upgrade, or account-linked backup.
 
 ## Status
-Task 3H and the Architecture Refactor / Cleanup / Performance Optimization pass are complete on `main`. Task 3G is intentionally frozen and preserved.
+The authentication/cloud stack has been removed. Existing local Qaza data continues to use the stable internal local-ledger identifier so installed users retain their existing records.
 
 ## Validation
-GitHub Actions validates Flutter dependency resolution, analysis, tests, and Android release APK builds. Physical-device verification remains environment-dependent.
+GitHub Actions validates Flutter dependency resolution, analysis, tests, and Android debug/release builds. Physical-device verification remains environment-dependent.

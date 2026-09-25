@@ -4,10 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
-import '../auth/authentication_screen.dart';
-import '../auth/guest_upgrade_controller.dart';
 import 'profile_setup_screen.dart';
-import 'startup_gate.dart';
 
 class LanguageSelectionScreen extends ConsumerWidget {
   const LanguageSelectionScreen({super.key});
@@ -32,42 +29,12 @@ class LanguageSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _signIn(BuildContext context, WidgetRef ref) async {
-    final controller = ref.read(guestUpgradeControllerProvider.notifier);
-    final ok = await controller.signInAndMigrate(
-      origin: GuestUpgradeOrigin.startup,
-    );
-    if (!context.mounted) return;
-
-    final state = ref.read(guestUpgradeControllerProvider);
-    if (!ok) return;
-
-    if (state.pendingAccount != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => const AuthenticationScreen(closeWhenDecided: true),
-        ),
-      );
-      return;
-    }
-
-    // Existing accounts go straight to Home. Newly-created accounts carry a
-    // UID-scoped pending marker so StartupGate sends them through the normal
-    // profile/Qaza setup instead of treating them as an established account.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const StartupGate()),
-      (_) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final current = ref.watch(localeProvider);
-    final authState = ref.watch(guestUpgradeControllerProvider);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final urdu = current.languageCode == 'ur';
 
     return Scaffold(
       body: SafeArea(
@@ -109,55 +76,9 @@ class LanguageSelectionScreen extends ConsumerWidget {
                       ),
                       selected:
                           locale.languageCode == current.languageCode,
-                      onSelected: authState.running
-                          ? null
-                          : (_) => _select(context, ref, locale),
+                      onSelected: (_) => _select(context, ref, locale),
                     ),
                   ),
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 18),
-                Text(
-                  urdu
-                      ? 'پہلے سے اکاؤنٹ موجود ہے؟'
-                      : 'Already have an account?',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    key: const Key('onboarding_sign_in_google'),
-                    onPressed: authState.running
-                        ? null
-                        : () => _signIn(context, ref),
-                    icon: authState.running
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.g_mobiledata_rounded),
-                    label: Text(
-                      authState.running
-                          ? (urdu ? 'سائن اِن ہو رہا ہے…' : 'Signing in…')
-                          : (urdu
-                              ? 'گوگل کے ساتھ سائن اِن کریں'
-                              : 'Sign in with Google'),
-                    ),
-                  ),
-                ),
-                if (authState.error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    authState.error!,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.error,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

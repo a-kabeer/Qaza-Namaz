@@ -48,7 +48,7 @@ class UserProfileMigration {
     if (snapshots.isEmpty) return;
 
     // A legacy install normally has one active snapshot. Stable ordering keeps
-    // migration deterministic if more than one account-scoped snapshot exists.
+    // migration deterministic if more than one legacy calculator snapshot exists.
     final snapshot = snapshots.first;
     final locale = prefs.getString('qaza_locale');
     final dob = _parseDate(snapshot['dob']);
