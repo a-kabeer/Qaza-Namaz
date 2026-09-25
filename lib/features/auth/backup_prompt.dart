@@ -46,7 +46,7 @@ final backupPromptSeenProvider =
 
 /// True when a guest has recorded their first Qaza and has not answered yet.
 final shouldOfferBackupProvider = Provider<bool>((ref) {
-  return ref.watch(isGuestProvider) &&
+  return ref.watch(activeUserIdProvider) == guestUserId &&
       !ref.watch(backupPromptSeenProvider);
 });
 
@@ -138,7 +138,7 @@ void _reportBackupSignIn(BuildContext context, WidgetRef ref) {
         key: const Key('backup_sign_in_failed'),
         // The real diagnostic, not a generic stand-in: a missing SHA-1 and a
         // dropped network connection need different answers from the user.
-        content: Text(l10n.backupSignInFailedReason(state.error!)),
+        content: Text(l10n.backupSignInFailed),
         action: SnackBarAction(
           label: l10n.commonRetry,
           onPressed: () => startBackupSignIn(context, ref),
