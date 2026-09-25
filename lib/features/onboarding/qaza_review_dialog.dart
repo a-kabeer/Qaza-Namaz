@@ -7,9 +7,9 @@ import '../../domain/entities/user_profile.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 
-typedef QazaReviewConfirm = Future<void> Function(
-  void Function(int processed, int total) onProgress,
-);
+enum QazaReviewAction { edit, add }
+
+typedef QazaReviewConfirm = Future<bool> Function();
 
 class QazaReviewDialog extends StatefulWidget {
   const QazaReviewDialog({
@@ -28,33 +28,29 @@ class QazaReviewDialog extends StatefulWidget {
 }
 
 class _QazaReviewDialogState extends State<QazaReviewDialog> {
-  bool _adding = false;
-  int _processed = 0;
-  int _total = 0;
+  bool _starting = false;
   String? _error;
 
   Future<void> _confirm() async {
     setState(() {
-      _adding = true;
-      _processed = 0;
-      _total = widget.plan.totalWithWitr;
+      _starting = true;
       _error = null;
     });
-
     try {
-      await widget.onConfirm((processed, total) {
-        if (!mounted) return;
-        setState(() {
-          _processed = processed;
-          _total = total;
-        });
-      });
+      final started = await widget.onConfirm();
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      if (!started) {
+        setState(() {
+          _starting = false;
+          _error = AppLocalizations.of(context).qazaReviewError;
+        });
+        return;
+      }
+      Navigator.of(context).pop(QazaReviewAction.add);
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _adding = false;
+        _starting = false;
         _error = AppLocalizations.of(context).qazaReviewError;
       });
     }
@@ -99,21 +95,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
                   l10n.qazaReviewNote,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                if (_adding) ...[
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: _total <= 0
-                        ? null
-                        : (_processed / _total).clamp(0, 1).toDouble(),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _total > 0
-                        ? '${l10n.qazaReviewAdding} $_processed / $_total'
-                        : l10n.qazaReviewAdding,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -127,20 +109,30 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
             ),
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         actions: [
-          TextButton(
-            key: const Key('qaza_review_edit'),
-            onPressed: _adding
-                ? null
-                : () => Navigator.of(context).pop(false),
-            child: Text(l10n.qazaReviewEdit),
-          ),
-          FilledButton(
-            key: const Key('qaza_review_add'),
-            onPressed: _adding ? null : _confirm,
-            child: Text(
-              _adding ? l10n.qazaReviewAdding : l10n.qazaReviewAdd,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  key: const Key('qaza_review_edit'),
+                  onPressed: _starting
+                      ? null
+                      : () => Navigator.of(context).pop(QazaReviewAction.edit),
+                  child: Text(l10n.qazaReviewEdit),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  key: const Key('qaza_review_add'),
+                  onPressed: _starting ? null : _confirm,
+                  child: Text(
+                    _starting ? l10n.qazaReviewAdding : l10n.qazaReviewAdd,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

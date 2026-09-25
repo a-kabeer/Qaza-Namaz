@@ -320,11 +320,6 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
     );
   }
 
-  /// Compatibility wrapper for existing callers. The UI should use
-  /// [startQazaImport] so it never waits for the import to finish.
-  Future<int> addQaza() async {
-    final started = startQazaImport();
-    return started ? state.newCount : 0;
-  }
+
 
 }
