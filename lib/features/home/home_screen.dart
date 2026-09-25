@@ -9,10 +9,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
-import '../../features/calculator/calculator_screen.dart';
 import '../../features/settings/notifications_screen.dart';
 import '../../features/qaza/add_qaza_screen.dart';
-import '../../features/settings/account_screen.dart';
+import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../prayer_times/prayer_times_providers.dart';
 import 'home_controller.dart';
@@ -156,13 +155,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
         IconButton(
-          key: const Key('home_account'),
-          tooltip: l10n.accountTitle,
+          key: const Key('home_profile'),
+          tooltip: l10n.homeProfileTooltip,
           icon: const Icon(Icons.account_circle_outlined),
           onPressed: () => _open(
             context,
             ref,
-            const AccountScreen(),
+            const ProfileScreen(),
           ),
         ),
       ],
@@ -186,7 +185,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     if (summary.overall.total == 0) {
       return HomeEmptyState(
-        onCalculate: () => _open(context, ref, const CalculatorScreen()),
         onAdd: () => _open(context, ref, const AddQazaScreen()),
       );
     }
@@ -214,8 +212,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomeAllCompletedState(
                     completed: summary.overall.completed,
                     total: summary.overall.total,
-                    onCalculate: () =>
-                        _open(context, ref, const CalculatorScreen()),
                     onAdd: () => _open(context, ref, const AddQazaScreen()),
                   ),
                   const SizedBox(height: 12),
