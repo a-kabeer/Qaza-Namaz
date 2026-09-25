@@ -18,7 +18,7 @@ import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 import 'support/in_memory_qaza_repository.dart';
 import 'support/test_app.dart';
 
-class FakeAuthRepository implements AuthRepository {
+class FakeAuthRepository implements AuthRepository, DetailedAuthRepository {
   FakeAuthRepository({
     this.account = const AppUser(
       id: 'account-1',
@@ -26,10 +26,12 @@ class FakeAuthRepository implements AuthRepository {
     ),
     AppUser? currentUser,
     this.waitForInitialAuth,
+    this.isNewUser = false,
   }) : _current = currentUser;
 
   final AppUser account;
   final Future<void>? waitForInitialAuth;
+  final bool isNewUser;
   final controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
   Object? signInFailure;
@@ -51,6 +53,13 @@ class FakeAuthRepository implements AuthRepository {
     controller.add(account);
     return account;
   }
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogleDetails() async =>
+      GoogleSignInResult(
+        user: await signInWithGoogle(),
+        isNewUser: isNewUser,
+      );
 
   @override
   Future<void> signOut() async {
@@ -354,6 +363,45 @@ void main() {
   );
 
   test(
+    'new Google account starts the normal onboarding flow',
+    () async {
+      final auth = FakeAuthRepository(
+        isNewUser: true,
+        account: const AppUser(
+          id: 'new-account',
+          email: 'new@example.com',
+        ),
+      );
+      final migration = FakeGuestMigrationService(guestData: false);
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(auth),
+          guestMigrationServiceProvider.overrideWithValue(migration),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(auth.dispose);
+
+      container.listen(guestSessionProvider, (_, __) {});
+      container.listen(guestUpgradePendingProvider, (_, __) {});
+      container.listen(guestUpgradeControllerProvider, (_, __) {});
+
+      await container.read(guestSessionProvider.notifier).start();
+      final controller =
+          container.read(guestUpgradeControllerProvider.notifier);
+
+      expect(await controller.signInAndMigrate(), isTrue);
+      expect(
+        await AuthStartupState.isPendingFor('new-account'),
+        isTrue,
+      );
+      expect(container.read(guestSessionProvider), isFalse);
+      expect(container.read(guestUpgradePendingProvider), isFalse);
+      expect(container.read(guestUpgradeControllerProvider).newAccount, isTrue);
+    },
+  );
+
+  test(
     'guest sign-in with empty ledger ends guest mode without migration',
     () async {
       final (container, auth, migration) =
@@ -506,19 +554,19 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Guest progress found'), findsOneWidget);
-      expect(find.text('Merge Data'), findsNWidgets(2));
-      expect(find.text('Use Account Data'), findsNWidgets(2));
+      expect(find.text('Previous Qaza records found'), findsOneWidget);
+      expect(find.text('Keep Previous + Add New'), findsNWidgets(2));
+      expect(find.text('Keep Previous Records'), findsNWidgets(2));
 
       // The third decision card is below the initial viewport of the lazy
       // ListView on CI. Scroll it into view before asserting its contents.
       await tester.scrollUntilVisible(
-        find.text('Keep Guest Data / Cancel Sign-In'),
+        find.text('Cancel'),
         300,
       );
       await tester.pump();
       expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
-      expect(find.text('Keep Guest Data'), findsOneWidget);
+      expect(find.text('Cancel'), findsWidgets);
     },
   );
 
