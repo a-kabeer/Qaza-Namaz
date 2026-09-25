@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../auth/auth_startup_state.dart';
 import '../../domain/services/profile_rules.dart';
 import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../settings/app_lock_gate.dart';
@@ -16,6 +17,46 @@ class StartupGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authAsync = ref.watch(authStateProvider);
+
+    return authAsync.when(
+      loading: () => const SplashScreen(),
+      error: (_, __) => _buildSignedOut(ref),
+      data: (user) {
+        if (user == null) return _buildSignedOut(ref);
+
+        final pendingOnboarding =
+            ref.watch(pendingNewGoogleUserProvider(user.id));
+
+        return pendingOnboarding.when(
+          loading: () => const SplashScreen(),
+          error: (_, __) => const AppLockGate(
+            child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+          ),
+          data: (isPending) {
+            if (!isPending) {
+              // An authenticated established account is authoritative at
+              // startup. Do not let an old/incomplete local guest profile
+              // strand the user on onboarding.
+              return const AppLockGate(
+                child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+              );
+            }
+
+            final profile = ref.watch(userProfileProvider).valueOrNull;
+            final languageCode = profile?.languageCode ??
+                ref.read(localeProvider).languageCode;
+            return ProfileSetupScreen(
+              languageCode: languageCode,
+              initialProfile: profile,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSignedOut(WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
     return profileAsync.when(
       loading: () => const SplashScreen(),
