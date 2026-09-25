@@ -536,3 +536,253 @@ class QazaService {
     final record = await oldestPending(userId: userId, prayerType: prayerType);
     if (record == null) return false;
     await completeRecord(
+        userId: userId,
+        recordId: record.id,
+        completedAt: completedAt ?? DateTime.now());
+    return true;
+  }
+
+  Future<List<QazaRecord>> resolvePendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final remaining = recordIds.toSet();
+    if (remaining.isEmpty) return const <QazaRecord>[];
+    final result = <QazaRecord>[];
+    DateTime? afterDate;
+    String? afterId;
+    while (remaining.isNotEmpty) {
+      final page = await repository.getPage(
+        userId: userId,
+        limit: 500,
+        status: QazaStatus.pending,
+        afterOriginalDate: afterDate,
+        afterId: afterId,
+      );
+      if (page.records.isEmpty) break;
+      for (final record in page.records) {
+        if (remaining.remove(record.id)) result.add(record);
+      }
+      if (!page.hasMore) break;
+      afterDate = page.nextOriginalDate;
+      afterId = page.nextId;
+    }
+    return result;
+  }
+
+  Future<int> completeSelected(
+      {required String userId,
+      required List<String> recordIds,
+      DateTime? completedAt}) async {
+    final remaining = recordIds.toSet();
+    if (remaining.isEmpty) return 0;
+    final valid = <String>[];
+    DateTime? afterDate;
+    String? afterId;
+    while (remaining.isNotEmpty) {
+      final page = await repository.getPage(
+          userId: userId,
+          limit: 500,
+          status: QazaStatus.pending,
+          afterOriginalDate: afterDate,
+          afterId: afterId);
+      for (final record in page.records) {
+        if (remaining.remove(record.id)) valid.add(record.id);
+      }
+      if (!page.hasMore) break;
+      afterDate = page.nextOriginalDate;
+      afterId = page.nextId;
+    }
+    if (valid.isEmpty) return 0;
+    await completeRecords(
+        userId: userId,
+        recordIds: valid,
+        completedAt: completedAt ?? DateTime.now());
+    return valid.length;
+  }
+
+
+  Future<QazaPage> getOperationPage({
+    required String userId,
+    required String operationId,
+    required bool matchLastAction,
+    required DateTime operationAt,
+    int limit = 50,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+    QazaStatus? status,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).getOperationPage(
+      userId: userId,
+      operationId: operationId,
+      matchLastAction: matchLastAction,
+      operationAt: operationAt,
+      limit: limit,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+      status: status,
+    );
+  }
+
+  Future<QazaHistoryPage> getRecentlyDeletedPage({
+    required String userId,
+    int limit = 50,
+    DateTime? beforeDeletedAt,
+    String? beforeId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).getRecentlyDeletedPage(
+      userId: userId,
+      limit: limit,
+      beforeDeletedAt: beforeDeletedAt,
+      beforeId: beforeId,
+    );
+  }
+
+  Future<int> deleteRecordsWithRecovery({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime deletedAt,
+    required String operationId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).softDeleteRecords(
+      userId: userId,
+      recordIds: recordIds,
+      deletedAt: deletedAt,
+      operationId: operationId,
+    );
+  }
+
+  Future<int> restoreDeletedRecords({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime restoredAt,
+    required String operationId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).restoreDeletedRecords(
+      userId: userId,
+      recordIds: recordIds,
+      restoredAt: restoredAt,
+      operationId: operationId,
+    );
+  }
+
+  Future<int> undoAddedOperation({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).undoAddedOperation(
+      userId: userId,
+      operationId: operationId,
+      expectedCreatedAt: expectedCreatedAt,
+    );
+  }
+
+  Future<int> removeAddition({
+    required String userId,
+    required String operationId,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).removeAddition(
+      userId: userId,
+      operationId: operationId,
+      expectedCreatedAt: expectedCreatedAt,
+      deletedAt: deletedAt,
+    );
+  }
+
+  Future<QazaOperationSummary> getOperationSummary({
+    required String userId,
+    required String operationId,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).getOperationSummary(
+      userId: userId,
+      operationId: operationId,
+    );
+  }
+
+  Future<int> purgeDeletedBefore({
+    required String userId,
+    required DateTime cutoff,
+  }) {
+    if (repository is! QazaRecoveryRepository) {
+      throw StateError('Qaza recovery is not supported by this repository.');
+    }
+    return (repository as QazaRecoveryRepository).purgeDeletedBefore(
+      userId: userId,
+      cutoff: cutoff,
+    );
+  }
+
+  Future<QazaProgress> overallProgress(String userId) async =>
+      (await getProgressSummary(userId: userId)).overall;
+  Future<PrayerProgress> prayerProgress(
+          String userId, PrayerType prayerType) async =>
+      (await getProgressSummary(userId: userId)).byPrayer[prayerType] ??
+      PrayerProgress(
+          prayerType: prayerType,
+          progress: const QazaProgress(pending: 0, completed: 0));
+
+  static List<QazaRecord> completedNewestFirst(Iterable<QazaRecord> records) {
+    final completed = records
+        .where((record) => record.status == QazaStatus.completed)
+        .toList();
+    completed.sort((a, b) => (b.completedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0))
+        .compareTo(a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    return completed;
+  }
+
+  Future<List<QazaRecord>> history(String userId) async {
+    final result = <QazaRecord>[];
+    DateTime? date;
+    String? id;
+    while (true) {
+      final page = await getHistoryPage(
+          userId: userId,
+          limit: 500,
+          status: QazaStatus.completed,
+          beforeOriginalDate: date,
+          beforeId: id);
+      result.addAll(page.records);
+      if (!page.hasMore) return result;
+      date = page.nextOriginalDate;
+      id = page.nextId;
+    }
+  }
+
+  static QazaProgress progressOf(Iterable<QazaRecord> records) {
+    var completed = 0;
+    var total = 0;
+    for (final record in records) {
+      if (record.status == QazaStatus.deleted) continue;
+      total++;
+      if (record.status == QazaStatus.completed) completed++;
+    }
+    return QazaProgress(
+        pending: total - completed < 0 ? 0 : total - completed,
+        completed: completed);
+  }
+}
