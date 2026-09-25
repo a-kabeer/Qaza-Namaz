@@ -9,8 +9,6 @@
   "navKnowledge": "Knowledge",
   "settingsRemindersSection": "Reminders",
   "settingsRemindersSubtitle": "Daily reminder to complete your Qaza.",
-  "settingsBackupSection": "Data & Storage",
-  "settingsBackupSubtitle": "Cloud sync, export and import.",
   "navSettings": "Settings",
   "prayerFajr": "Fajr",
   "prayerZuhr": "Zuhr",
@@ -74,12 +72,6 @@
   "prayerRakatMaghrib": "Maghrib • 3 Rakat Fard",
   "prayerRakatIsha": "Isha • 4 Rakat Fard",
   "prayerRakatWitr": "Witr • 3 Rakat Wajib • Independent",
-  "syncSettingUp": "Setting up",
-  "syncSettingUpDetail": "Preparing your Qaza records on this device.",
-  "syncRestoring": "Restoring",
-  "syncRestoringDetail": "Bringing your saved Qaza records to this device.",
-  "syncSynced": "Synced",
-  "syncSyncedAt": "Synced • {timestamp}",
   "@syncSyncedAt": {
     "placeholders": {
       "timestamp": {
@@ -87,11 +79,6 @@
       }
     }
   },
-  "syncSyncing": "Syncing",
-  "syncSaved": "Saved",
-  "syncSavedDetail": "Your changes are saved on this device and will sync automatically.",
-  "syncErrorLabel": "Sync Error",
-  "syncErrorDetail": "Your changes are saved on this device. We will retry automatically.",
   "commonClose": "Close",
   "commonCancel": "Cancel",
   "commonDone": "Done",
@@ -449,17 +436,6 @@
       }
     }
   },
-  "authTitle": "Sign in",
-  "authWelcomeBack": "Welcome back",
-  "authSubtitle": "Sign in to continue to your Qaza Namaz tracker.",
-  "authContinueWithGoogle": "Continue with Google",
-  "authSigningIn": "Signing in...",
-  "authProviderNote": "Google is the currently connected authentication provider. Sign-in status is restored automatically from Firebase.",
-  "authHelpTooltip": "Authentication help",
-  "authHelpTitle": "Authentication",
-  "authHelpBody": "Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.",
-  "authDismiss": "Dismiss",
-  "authFailed": "Unable to sign in. Please try again.",
   "notificationsOff": "Off",
   "notificationsTitle": "Notifications",
   "notificationsLoading": "Loading notification settings…",
@@ -545,18 +521,8 @@
   "welcomeSignIn": "Already have an account? Sign In",
   "splashTagline": "A calm place for prayer accountability",
   "accountTitle": "Account",
-  "accountSignInMethod": "Sign-in method",
-  "accountGoogleAuth": "Google",
   "accountSignedInWithGoogle": "Signed in with Google",
-  "accountStatus": "Account status",
   "accountSignedIn": "Signed in",
-  "accountRecordsRetained": "Your saved Qaza records remain stored and will be restored after the next sign-in.",
-  "accountDeveloperContext": "Developer context",
-  "accountFirebaseUid": "Firebase UID",
-  "accountNotAvailable": "Not available",
-  "accountSignOut": "Sign out",
-  "accountSignOutPrompt": "Sign out?",
-  "accountSignOutExplanation": "Signing out disconnects your Google account. Your Qaza progress remains on this device.",
   "dataTitle": "Export & Import",
   "dataExportTitle": "Export data",
   "dataExportBody": "Save a versioned JSON copy of your Qaza ledger. Nothing is uploaded by the export action.",
@@ -564,7 +530,6 @@
   "dataExportDialogTitle": "Save Qaza data export",
   "dataExportSaved": "Export saved successfully.",
   "dataExportCanceled": "Export canceled. Your data was not changed.",
-  "dataExportSignInRequired": "Sign in before exporting your Qaza data.",
   "dataExportFailed": "Export failed: {error}",
   "@dataExportFailed": {
     "placeholders": {
@@ -578,7 +543,6 @@
   "dataImportAction": "Import",
   "dataImportReviewTitle": "Review data import",
   "dataImportCanceled": "Import canceled. Your data was not changed.",
-  "dataImportSignInRequired": "Sign in before importing data.",
   "dataImportEmptyFile": "The selected file is empty or unreadable.",
   "dataImportRejected": "Import rejected: {error}\nNo partial import was applied.",
   "@dataImportRejected": {
@@ -605,7 +569,6 @@
   "dataProcessing": "Processing data…",
   "dataSafetyTitle": "Data safety",
   "dataSafetyBody": "Export does not delete cloud data. Import does not erase existing records. Sign-out is not data deletion, and uninstalling the app does not delete cloud records.",
-  "dataRemapNote": "Imported records are remapped to the currently signed-in account. The existing local-first sync layer then confirms changes with Firestore in the background.",
   "addQazaTitle": "Add Qaza",
   "addQazaStep1": "Step 1 of 3 • Select Dates",
   "addQazaStep2": "Step 2 of 3 • Select Missed Prayers",
@@ -777,9 +740,6 @@
   "notificationTestBody": "Test notification received successfully.",
   "notificationChannelName": "Qaza daily reminder",
   "notificationChannelDescription": "Daily reminder to continue completing Qaza prayers.",
-  "settingsAccountSection": "Account",
-  "settingsAccountSubtitle": "Manage your sign-in and account details.",
-  "settingsGoogleSignIn": "Google sign-in",
   "settingsKnowledgeBaseSubtitle": "Browse Masail & Mugalat",
   "settingsNotificationsSubtitle": "Manage reminders and notification scheduling.",
   "settingsNotificationsRowSubtitle": "Daily reminder and schedule",
@@ -810,14 +770,10 @@
       }
     }
   },
-  "authContinueAsGuest": "Continue as Guest",
-  "authGuestNote": "You can sign in with Google later to keep your progress with your account.",
   "backupPromptTitle": "Keep your progress safe",
   "backupPromptBody": "Sign in with Google to keep your Qaza progress available with your account.",
   "backupPromptConfirm": "Continue with Google",
   "backupPromptDismiss": "Not Now",
-  "settingsBackupSignIn": "Back up / Sign in",
-  "settingsBackupSignInSubtitle": "You are using the app as a guest. Sign in to back up your Qaza.",
   "backupSignInFailed": "Sign-in failed. Your progress is still on this device.",
   "backupSignInCancelled": "Sign-in canceled. Your progress is still on this device.",
   "backupSignInFailedReason": "Sign-in failed: {reason} Your progress is still on this device.",
@@ -847,18 +803,6 @@
     }
   },
   "settingsAppDescription": "Islamic Prayer Qaza Tracker",
-  "cloudSyncTitle": "Cloud Sync",
-  "cloudSyncNow": "Sync now",
-  "cloudPendingChanges": "Pending changes",
-  "cloudLastSynced": "Last synced",
-  "cloudExportImportSubtitle": "User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.",
-  "cloudInactive": "Offline storage is not active in this build.",
-  "cloudBootstrapping": "Setting up your Qaza records on this device…",
-  "cloudHydrating": "Restoring your saved Qaza records to this device…",
-  "cloudSynced": "All your Qaza records are saved in the cloud.",
-  "cloudSyncing": "Syncing your ledger…",
-  "cloudOffline": "Offline — records are saved on this device and sync automatically.",
-  "cloudPendingCount": "{count, plural, =1{1 change waiting to sync.} other{{count} changes waiting to sync.}}",
   "@cloudPendingCount": {
     "placeholders": {
       "count": {
@@ -866,9 +810,6 @@
       }
     }
   },
-  "cloudSyncProblem": "Sync problem — your data is safe on this device.",
-  "cloudQazaCount": "Qaza count",
-  "cloudQazaCountValue": "{count, plural, =0{No Qaza records} =1{1 Qaza record} other{{count} Qaza records}}",
   "@cloudQazaCountValue": {
     "placeholders": {
       "count": {
@@ -876,17 +817,6 @@
       }
     }
   },
-  "cloudBackupStatus": "Cloud backup",
-  "cloudBackupDeleted": "Cloud copy deleted; local records remain.",
-  "cloudLocalVsCloudTitle": "Local vs cloud",
-  "cloudLocalVsCloudBody": "Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.",
-  "cloudDeleteTitle": "Delete cloud data",
-  "cloudDeleteBody": "This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.",
-  "cloudDeleteAcknowledge": "I understand the cloud copy will be permanently deleted.",
-  "cloudDeleteAction": "Delete cloud data",
-  "cloudDeleteDone": "Cloud Qaza data was deleted. Your local records remain on this device.",
-  "cloudDeleteFailed": "Cloud data could not be deleted. Your local records are still safe.",
-  "cloudDeleteSignInRequired": "Sign in to manage cloud data.",
   "settingsTitle": "Settings",
   "settingsPreferences": "Preferences",
   "settingsPreferencesSubtitle": "Language and appearance settings.",
