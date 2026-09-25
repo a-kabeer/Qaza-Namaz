@@ -181,7 +181,7 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
     try {
       final repository = ref.read(authRepositoryProvider);
       final result = repository is DetailedAuthRepository
-          ? await repository.signInWithGoogleDetails()
+          ? await (repository as DetailedAuthRepository).signInWithGoogleDetails()
           : GoogleSignInResult(
               user: await repository.signInWithGoogle(),
               isNewUser: false,
