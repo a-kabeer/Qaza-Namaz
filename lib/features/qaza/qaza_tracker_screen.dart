@@ -19,7 +19,6 @@ import '../prayer_times/prayer_times_providers.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
-import 'add_actions_fab.dart';
 import 'history/qaza_history_screen.dart';
 import '../auth/backup_prompt.dart';
 
@@ -89,12 +88,6 @@ class QazaTrackerScreen extends ConsumerWidget {
             ),
           ),
         ),
-        floatingActionButton: state.selectionMode
-            ? null
-            : AddQazaFab(
-                key: const Key('qaza_tracker_add_fab'),
-                onAddQaza: () => Navigator.of(context).pushNamed('/qaza/add'),
-              ),
       ),
     );
   }

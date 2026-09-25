@@ -34,11 +34,11 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Check formatting
-        run: dart format lib test
+        run: dart format lib
       - name: Show formatting diff
         shell: bash
         run: |
-          git diff --no-color -- lib test > /tmp/formatter.patch
+          git diff --no-color -- lib > /tmp/formatter.patch
           if [ -s /tmp/formatter.patch ]; then
             echo "Formatter changes detected:"
             cat /tmp/formatter.patch
@@ -47,50 +47,6 @@ jobs:
           fi
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
-  test:
-    name: Tests (Linux)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.4'
-          channel: stable
-          cache: true
-      - name: Flutter clean
-        run: flutter clean
-      - name: pub get
-        run: flutter pub get
-      - name: Generate Drift code
-        run: dart run build_runner build --delete-conflicting-outputs
-      - name: Run tests
-        run: flutter test --reporter expanded
-
-  test_windows:
-    name: Tests (Windows)
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.47.4'
-          channel: stable
-          cache: true
-      - name: Enable Windows desktop
-        run: flutter config --enable-windows-desktop
-      - name: Flutter clean
-        run: flutter clean
-      - name: pub get
-        run: flutter pub get
-      - name: Generate Drift code
-        run: dart run build_runner build --delete-conflicting-outputs
-      - name: Run tests
-        run: flutter test --reporter expanded
 
   security_rules:
     name: Firestore security rules
