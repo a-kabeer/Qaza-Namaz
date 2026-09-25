@@ -23,20 +23,7 @@ class HomeEmptyState extends StatelessWidget {
               icon: Icons.auto_awesome_outlined,
               title: l10n.homeHeadingSetup,
               message: l10n.homeSetupMessage,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
 
-                  AppButton(
-                    key: const Key('home_empty_add'),
-                    expand: true,
-                    secondary: true,
-                    icon: Icons.add_rounded,
-                    label: l10n.homeAddManually,
-                    onPressed: onAdd,
-                  ),
-                ],
-              ),
             ),
           ),
         ),
