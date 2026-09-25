@@ -18,7 +18,6 @@ import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_times/domain/qaza_restriction_service.dart';
 import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
-import 'package:qaza_namaz/features/calculator/calculator_screen.dart';
 
 import 'support/in_memory_qaza_repository.dart';
 import 'support/test_app.dart';
@@ -218,7 +217,6 @@ void main() {
       expect(find.text('Fajr'), findsWidgets);
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
-      expect(find.byKey(const Key('home_qaza_plan_button')), findsOneWidget);
       expect(find.byKey(const Key('home_estimated_completion')), findsOneWidget);
     });
 
@@ -650,10 +648,6 @@ void main() {
         findsNothing,
       );
       expect(find.byKey(const Key('home_all_completed_add')), findsOneWidget);
-      expect(
-        find.byKey(const Key('home_all_completed_calculate')),
-        findsOneWidget,
-      );
     });
 
     testWidgets('opens the existing Qaza workspace from View all',
@@ -1126,7 +1120,6 @@ void main() {
       await pumpHome(tester, InMemoryQazaRepository());
 
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
-      expect(find.byKey(const Key('home_empty_calculate')), findsOneWidget);
       expect(find.byKey(const Key('home_empty_add')), findsOneWidget);
       expect(find.byKey(const Key('home_today_progress')), findsNothing);
       expect(find.byKey(const Key('home_your_progress')), findsNothing);
