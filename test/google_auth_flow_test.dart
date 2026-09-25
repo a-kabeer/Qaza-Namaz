@@ -14,7 +14,7 @@ void main() {
           const GoogleIdentityTokens(idToken: 'existing-token'),
       signInToFirebase: (tokens) async {
         receivedToken = tokens.idToken;
-        return expected;
+        return const GoogleSignInResult(user: expected, isNewUser: false);
       },
     );
 
@@ -28,7 +28,8 @@ void main() {
     final flow = GoogleAuthFlow(
       beginGoogleSignIn: () async =>
           const GoogleIdentityTokens(idToken: 'new-token'),
-      signInToFirebase: (_) async => created,
+      signInToFirebase: (_) async =>
+          const GoogleSignInResult(user: created, isNewUser: true),
     );
 
     expect(await flow.signIn(), created);
@@ -38,8 +39,10 @@ void main() {
       () async {
     final flow = GoogleAuthFlow(
       beginGoogleSignIn: () async => null,
-      signInToFirebase: (_) async =>
-          const AppUser(id: 'unused', email: 'unused@example.com'),
+      signInToFirebase: (_) async => const GoogleSignInResult(
+          user: AppUser(id: 'unused', email: 'unused@example.com'),
+          isNewUser: false,
+        ),
     );
 
     expect(
