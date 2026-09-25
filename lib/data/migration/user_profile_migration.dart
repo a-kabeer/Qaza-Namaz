@@ -72,12 +72,22 @@ class UserProfileMigration {
       startAge = null;
     }
 
-    // 12–15 is the safe overlap between the new male and female ranges. Do
-    // not manufacture a gender merely to preserve an old 9–11 value.
-    final migratedPuberty =
+    final migratedPuberty = switch (existing?.gender) {
+      Gender.male =>
         oldPuberty != null && oldPuberty >= 12 && oldPuberty <= 15
             ? oldPuberty
-            : null;
+            : null,
+      Gender.female =>
+        oldPuberty != null && oldPuberty >= 9 && oldPuberty <= 15
+            ? oldPuberty
+            : null,
+      null =>
+        // Without a known gender, preserve only values valid for both new
+        // profile ranges rather than inventing a gender.
+        oldPuberty != null && oldPuberty >= 12 && oldPuberty <= 15
+            ? oldPuberty
+            : null,
+    };
 
     final profile = UserProfile(
       languageCode: existing?.languageCode ??
