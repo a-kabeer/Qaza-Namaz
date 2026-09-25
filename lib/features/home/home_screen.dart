@@ -10,7 +10,6 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/notifications_screen.dart';
-import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
@@ -232,7 +231,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   ) {
     if (summary.overall.total == 0) {
       return HomeEmptyState(
-        onAdd: () => _open(context, ref, const AddQazaScreen()),
       );
     }
 
@@ -259,7 +257,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomeAllCompletedState(
                     completed: summary.overall.completed,
                     total: summary.overall.total,
-                    onAdd: () => _open(context, ref, const AddQazaScreen()),
                   ),
                   const SizedBox(height: 12),
                 ] else ...[

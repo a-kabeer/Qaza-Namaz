@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,7 +15,6 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
-import 'add_actions_fab.dart';
 import 'history/qaza_history_screen.dart';
 import '../auth/backup_prompt.dart';
 
@@ -86,12 +84,6 @@ class QazaTrackerScreen extends ConsumerWidget {
             ),
           ),
         ),
-        floatingActionButton: state.selectionMode
-            ? null
-            : AddQazaFab(
-                key: const Key('qaza_tracker_add_fab'),
-                onAddQaza: () => Navigator.of(context).pushNamed('/qaza/add'),
-              ),
       ),
     );
   }
@@ -694,6 +686,14 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (restricted && evaluation?.type != null)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text('${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}', style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                ),
               Row(
                 children: [
                   TextButton(
