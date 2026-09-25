@@ -2222,27 +2222,6 @@ abstract class AppLocalizations {
   /// **'اردو'**
   String get languageUrdu;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   /// No description provided for @homeTodayProgressHeader.
   ///
   /// In en, this message translates to:
@@ -2303,10 +2282,6 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get homePending;
 
-
-
-
-
   /// No description provided for @homeDetailedStatistics.
   ///
   /// In en, this message translates to:
@@ -2318,7 +2293,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
-
 
   /// No description provided for @homeTodayDate.
   ///
