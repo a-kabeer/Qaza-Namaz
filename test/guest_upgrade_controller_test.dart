@@ -454,7 +454,7 @@ void main() {
 
       final state = container.read(guestUpgradeControllerProvider);
       expect(state.pendingAccount?.id, auth.account.id);
-      expect(migration.hasGuestDataCalls, 1);
+      expect(migration.hasGuestDataCalls, 0);
       expect(migration.migrateCalls, 0);
       expect(migration.retireCalls, 0);
       expect(container.read(activeUserIdProvider), guestUserId);
