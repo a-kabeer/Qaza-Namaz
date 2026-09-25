@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -22,10 +20,6 @@ import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
 import '../../../domain/services/sahib_al_tartib_service.dart';
-import '../../prayer_times/domain/qaza_restriction_service.dart';
-import '../../prayer_times/presentation/prayer_location_picker_screen.dart';
-import '../../prayer_times/presentation/prayer_times_localizations.dart';
-import '../../prayer_times/prayer_times_providers.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../qaza/completion/qaza_completion_state.dart';
 import '../../qaza/qaza_undo_banner.dart';
@@ -95,83 +89,22 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     ref.invalidate(homeDailyProgressProvider);
   }
 
-  Future<void> _openPrayerTimeSetup() async {
-    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => const PrayerLocationPickerScreen(),
-      ),
-    );
-    if (!mounted) return;
-    ref.invalidate(qazaRestrictionEvaluationProvider);
-    ref.invalidate(homeCurrentPrayerProvider);
-    ref.invalidate(homeFallbackPendingProvider);
-  }
-
-  Future<QazaRestrictionEvaluation?> _restrictionForCompletion() async {
-    final current = ref.read(qazaRestrictionEvaluationProvider);
-
-    if (current.hasValue) {
-      return current.valueOrNull;
-    }
-
-    // The button is already rendered while this provider is loading or after
-    // a transient lookup failure. Reuse the same provider instead of running
-    // a second independent prayer-time lookup on tap.
-    if (current.hasError) {
-      ref.invalidate(qazaRestrictionEvaluationProvider);
-    }
-
-    try {
-      return await ref.read(qazaRestrictionEvaluationProvider.future);
-    } catch (error, stack) {
-      ref.read(diagnosticsProvider).recordFailure(
-            DiagnosticArea.qazaCompletion,
-            'restriction_check_failed',
-            error,
-            stack: stack,
-          );
-      // Restriction lookup is advisory when the UI could not resolve one; the
-      // completion action remains available in this state.
-      return null;
-    }
-  }
-
   Future<void> _complete(QazaRecord record, PrayerType prayer) async {
     if (ref.read(qazaCompletionControllerProvider).isWorking) return;
 
     final userId = ref.read(requiredUserIdProvider);
-    final completedAt = ref.read(prayerTimesClockProvider).now();
+    final completedAt = DateTime.now();
     final diagnostics = ref.read(diagnosticsProvider);
 
     QazaCompletionResult result;
     try {
-      final restriction = await _restrictionForCompletion();
       result = await ref
           .read(qazaCompletionControllerProvider.notifier)
           .completeRecord(
             userId: userId,
             recordId: record.id,
             completedAt: completedAt,
-            restriction: restriction,
           );
-    } on QazaCompletionRestrictedException catch (error) {
-      ref.invalidate(qazaRestrictionEvaluationProvider);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              PrayerTimesStrings.qazaRestricted(
-                context,
-                error.restriction.type!,
-              ),
-            ),
-          ),
-        );
-      return;
     } on QazaTartibViolationException catch (error) {
       ref.invalidate(sahibAlTartibProvider);
       if (!mounted) return;
@@ -401,8 +334,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
                     working: working,
                     onComplete: _complete,
                     onPlan: _showPlanDialog,
-                    onSetupPrayerTimes: _openPrayerTimeSetup,
-                  );
+                   );
 
                   if (constraints.maxWidth < 500) {
                     return Column(
@@ -596,7 +528,6 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
     required this.working,
     required this.onComplete,
     required this.onPlan,
-    required this.onSetupPrayerTimes,
   });
 
   final QazaProgressSummary summary;
@@ -604,7 +535,6 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   final bool working;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
   final VoidCallback onPlan;
-  final Future<void> Function() onSetupPrayerTimes;
 
   @override
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
@@ -681,109 +611,6 @@ class _TartibUnavailable extends StatelessWidget {
 }
 
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
-  Timer? _restrictionTicker;
-
-  bool _isManualPrayerAllowed(
-    PrayerType prayer,
-    AsyncValue<SahibAlTartibState> tartibAsync,
-  ) {
-    if (prayer == PrayerType.witr) return true;
-    final tartib = tartibAsync.valueOrNull;
-    if (!tartibAsync.hasValue || tartib == null) return false;
-    if (!tartib.requiresOrder) return true;
-    return tartib.nextPrayer == prayer;
-  }
-
-  PopupMenuItem<String> _buildPrayerMenuItem(
-    BuildContext context,
-    PrayerType item,
-    AsyncValue<SahibAlTartibState> tartibAsync,
-    AppLocalizations l10n,
-  ) {
-    final tartib = tartibAsync.valueOrNull;
-    final isWitr = item == PrayerType.witr;
-    final loadingOrFailed = !tartibAsync.hasValue;
-    final allowed = isWitr ||
-        (!loadingOrFailed &&
-            (!tartib!.requiresOrder || tartib.nextPrayer == item));
-    final explanation = loadingOrFailed
-        ? l10n.completeLoadError
-        : tartib!.requiresOrder && tartib.nextPrayer != null
-            ? l10n.qazaTartibBlocked(
-                tartib.nextPrayer!.localizedLabel(l10n),
-              )
-            : '';
-
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          !allowed
-              ? Icons.lock_outline_rounded
-              : widget.selected.prayer == item
-                  ? Icons.check_rounded
-                  : _prayerIcon(item),
-          size: 18,
-        ),
-        const SizedBox(width: 8),
-        Text(item.localizedLabel(l10n)),
-      ],
-    );
-
-    return PopupMenuItem<String>(
-      key: Key('home_qaza_prayer_option_' + item.name),
-      value: item.name,
-      enabled: allowed,
-      child: !allowed && explanation.isNotEmpty
-          ? Tooltip(message: explanation, child: child)
-          : child,
-    );
-  }
-
-  QazaRestrictionEvaluation? _lastRestriction;
-  bool _restrictionInvalidated = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (Platform.environment['FLUTTER_TEST'] == 'true') return;
-    _restrictionTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-
-      final current = _lastRestriction ??
-          ref.read(qazaRestrictionEvaluationProvider).valueOrNull;
-      if (current?.isRestricted != true) return;
-
-      final end = current?.end;
-      if (end != null &&
-          !ref.read(prayerTimesClockProvider).now().isBefore(end)) {
-        if (!_restrictionInvalidated) {
-          _restrictionInvalidated = true;
-          ref.invalidate(qazaRestrictionEvaluationProvider);
-        }
-        return;
-      }
-
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _restrictionTicker?.cancel();
-    super.dispose();
-  }
-
-  Duration _liveRestrictionRemaining(
-    QazaRestrictionEvaluation restriction,
-  ) {
-    final end = restriction.end;
-    final remaining = end == null
-        ? restriction.remaining
-        : end.difference(ref.read(prayerTimesClockProvider).now());
-    return remaining.isNegative ? Duration.zero : remaining;
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
@@ -798,24 +625,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
 
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
-    final restrictionAsync = ref.watch(qazaRestrictionEvaluationProvider);
-
-    ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
-      qazaRestrictionEvaluationProvider,
-      (previous, next) {
-        if (!next.hasError || next.error == previous?.error) return;
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.uncaught,
-              'home_restriction_evaluation_failed',
-              next.error!,
-              stack: next.stackTrace,
-            );
-      },
-    );
-    final restriction = _lastRestriction ?? restrictionAsync.valueOrNull;
-    final restrictedRestriction =
-        restriction?.isRestricted == true ? restriction : null;
-    final restrictedType = restriction?.type;
     final pendingPrayers = PrayerType.values
         .where(
           (item) => (widget.summary.byPrayer[item]?.progress.pending ?? 0) > 0,
@@ -897,30 +706,19 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
               ),
         ),
         if (widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            widget.selected.currentPrayer != null) ...[
+            widget.selected.source ==
+                HomePrayerSelectionSource.sahibAlTartib &&
+            widget.selected.prayer != null)
           Text(
-            l10n.homeCurrentPrayerLabel(
-              widget.selected.currentPrayer!.localizedLabel(l10n),
+            l10n.homeSahibOrderLabel(
+              widget.selected.prayer!.localizedLabel(l10n),
             ),
-            key: const Key('home_current_prayer'),
+            key: const Key('home_sahib_selection'),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
                 ),
           ),
-          if (widget.selected.source ==
-                  HomePrayerSelectionSource.sahibAlTartib &&
-              widget.selected.prayer != null)
-            Text(
-              l10n.homeSahibOrderLabel(
-                widget.selected.prayer!.localizedLabel(l10n),
-              ),
-              key: const Key('home_sahib_selection'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-        ],
       ],
     );
 
@@ -966,8 +764,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     record: record,
                     onComplete: widget.onComplete,
                     onPlan: widget.onPlan,
-                    onSetupPrayerTimes: widget.onSetupPrayerTimes,
-                  );
+                          );
                 },
               );
             },
@@ -988,129 +785,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     return Text(
                       l10n.completeNoPendingTitle,
                       key: const Key('home_oldest_qaza_empty'),
-                    );
-                  }
-
-                  if (restrictedRestriction != null && restrictedType != null) {
-                    final nextAllowedTime =
-                        restrictedRestriction.nextAllowedTime;
-                    final timeLabel = nextAllowedTime == null
-                        ? null
-                        : MaterialLocalizations.of(context).formatTimeOfDay(
-                            TimeOfDay.fromDateTime(nextAllowedTime),
-                          );
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(
-                          key: const Key('home_qaza_restricted_state'),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.lock_clock_outlined,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSecondaryContainer,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      PrayerTimesStrings
-                                          .qazaTemporarilyUnavailable(context),
-                                      key: const Key(
-                                        'home_qaza_restricted_title',
-                                      ),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      PrayerTimesStrings.qazaRestricted(
-                                        context,
-                                        restrictedType,
-                                      ),
-                                      key: const Key(
-                                        'home_qaza_restricted_reason',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      PrayerTimesStrings.restrictionRemaining(
-                                        context,
-                                        _liveRestrictionRemaining(
-                                            restrictedRestriction),
-                                      ),
-                                      key: const Key(
-                                        'home_qaza_restricted_remaining',
-                                      ),
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                    if (timeLabel != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        PrayerTimesStrings.availableAt(
-                                          context,
-                                          timeLabel,
-                                        ),
-                                        key: const Key(
-                                          'home_qaza_restricted_available_at',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                key: const Key('home_qaza_view_all'),
-                                onPressed: () => openQazaAll(ref),
-                                icon: const Icon(
-                                  Icons.list_alt_rounded,
-                                ),
-                                label: Text(l10n.homeViewAllQaza),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton.icon(
-                              key: const Key('home_qaza_plan_button'),
-                              onPressed: widget.onPlan,
-                              icon: const Icon(
-                                Icons.calendar_month_outlined,
-                              ),
-                              label: Text(l10n.homeQazaPlan),
-                            ),
-                          ],
-                        ),
-                      ],
                     );
                   }
 
@@ -1288,13 +962,11 @@ class _HomeFallbackNextQaza extends StatelessWidget {
     required this.record,
     required this.onComplete,
     required this.onPlan,
-    required this.onSetupPrayerTimes,
   });
 
   final QazaRecord record;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
   final VoidCallback onPlan;
-  final Future<void> Function() onSetupPrayerTimes;
 
   @override
   Widget build(BuildContext context) {
@@ -1305,42 +977,6 @@ class _HomeFallbackNextQaza extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          key: const Key('home_qaza_prayer_time_setup'),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.schedule_outlined, color: scheme.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      PrayerTimesStrings.setupRequired(context),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      key: const Key('home_setup_prayer_times'),
-                      onPressed: onSetupPrayerTimes,
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                      label: Text(PrayerTimesStrings.setupAction(context)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
