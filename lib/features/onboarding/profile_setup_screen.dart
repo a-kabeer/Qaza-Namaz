@@ -58,6 +58,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       throw StateError('A valid Qaza plan could not be calculated.');
     }
 
+    if (!mounted) return;
+
     final action = await showDialog<QazaReviewAction>(
       context: context,
       barrierDismissible: false,
