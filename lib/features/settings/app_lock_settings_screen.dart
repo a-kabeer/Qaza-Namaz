@@ -74,33 +74,37 @@ class AppLockSettingsScreen extends ConsumerWidget {
                   subtitle: Text(_timeoutLabel(l10n, state.timeout)),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                _timeoutTile(
-                  state: state,
-                  controller: controller,
-                  value: AppLockTimeout.immediate,
-                  title: l10n.settingsAppLockImmediate,
-                  enabled: timeoutEnabled,
-                ),
-                _timeoutTile(
-                  state: state,
-                  controller: controller,
-                  value: AppLockTimeout.oneMinute,
-                  title: l10n.settingsAppLockOneMinute,
-                  enabled: timeoutEnabled,
-                ),
-                _timeoutTile(
-                  state: state,
-                  controller: controller,
-                  value: AppLockTimeout.fiveMinutes,
-                  title: l10n.settingsAppLockFiveMinutes,
-                  enabled: timeoutEnabled,
-                ),
-                _timeoutTile(
-                  state: state,
-                  controller: controller,
-                  value: AppLockTimeout.never,
-                  title: l10n.settingsAppLockNever,
-                  enabled: timeoutEnabled,
+                RadioGroup<AppLockTimeout>(
+                  groupValue: state.timeout,
+                  onChanged: (selected) {
+                    if (selected != null && timeoutEnabled) {
+                      controller.setTimeout(selected);
+                    }
+                  },
+                  child: Column(
+                    children: [
+                      _timeoutTile(
+                        value: AppLockTimeout.immediate,
+                        title: l10n.settingsAppLockImmediate,
+                        enabled: timeoutEnabled,
+                      ),
+                      _timeoutTile(
+                        value: AppLockTimeout.oneMinute,
+                        title: l10n.settingsAppLockOneMinute,
+                        enabled: timeoutEnabled,
+                      ),
+                      _timeoutTile(
+                        value: AppLockTimeout.fiveMinutes,
+                        title: l10n.settingsAppLockFiveMinutes,
+                        enabled: timeoutEnabled,
+                      ),
+                      _timeoutTile(
+                        value: AppLockTimeout.never,
+                        title: l10n.settingsAppLockNever,
+                        enabled: timeoutEnabled,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -116,22 +120,13 @@ class AppLockSettingsScreen extends ConsumerWidget {
   }
 
   Widget _timeoutTile({
-    required AppLockState state,
-    required AppLockController controller,
     required AppLockTimeout value,
     required String title,
     required bool enabled,
   }) {
     return RadioListTile<AppLockTimeout>(
       value: value,
-      groupValue: state.timeout,
-      onChanged: enabled
-          ? (selected) {
-              if (selected != null) {
-                controller.setTimeout(selected);
-              }
-            }
-          : null,
+      enabled: enabled,
       title: Text(title),
     );
   }

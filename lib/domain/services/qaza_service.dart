@@ -30,8 +30,7 @@ class QazaDuplicateRecordException implements Exception {
   const QazaDuplicateRecordException();
 
   @override
-  String toString() =>
-      'A Qaza record already exists for this prayer and date.';
+  String toString() => 'A Qaza record already exists for this prayer and date.';
 }
 
 enum QazaImportPhase { preparing, importing }
@@ -83,11 +82,10 @@ class QazaService {
     this.repository, {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
-    bool Function()? witrInclusionResolver,
+    this.witrInclusionResolver,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository),
-        witrInclusionResolver = witrInclusionResolver,
         _diagnostics = diagnostics;
   final QazaRepository repository;
   final DiagnosticsService _diagnostics;
@@ -354,7 +352,8 @@ class QazaService {
     final current = (await repository.getRecordsByIds(
       userId: userId,
       recordIds: [record.id],
-    )).firstOrNull;
+    ))
+        .firstOrNull;
     if (current != null &&
         current.status == QazaStatus.completed &&
         recordToUpdate.status == QazaStatus.completed &&
@@ -669,7 +668,6 @@ class QazaService {
         completedAt: completedAt ?? DateTime.now());
     return valid.length;
   }
-
 
   Future<QazaPage> getOperationPage({
     required String userId,

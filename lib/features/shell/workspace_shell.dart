@@ -106,7 +106,8 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             NavigationDestination(
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
-                label: l10n.navQaza),            NavigationDestination(
+                label: l10n.navQaza),
+            NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
                 label: l10n.navKnowledge),

@@ -192,14 +192,16 @@ class PersistentDiagnostics implements DiagnosticsService {
   Future<void> _writeChain = Future<void>.value();
 
   void _persist() {
-    final snapshot = _events.map((event) => <String, Object?>{
-      'area': event.area.code,
-      'code': event.code,
-      'errorType': event.errorType,
-      'message': event.message,
-      'fatal': event.fatal,
-      'stackTrace': event.stackTrace,
-    }).toList(growable: false);
+    final snapshot = _events
+        .map((event) => <String, Object?>{
+              'area': event.area.code,
+              'code': event.code,
+              'errorType': event.errorType,
+              'message': event.message,
+              'fatal': event.fatal,
+              'stackTrace': event.stackTrace,
+            })
+        .toList(growable: false);
 
     _writeChain = _writeChain.then((_) async {
       try {

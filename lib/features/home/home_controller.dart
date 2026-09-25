@@ -69,11 +69,11 @@ class HomeController {
       await ref.read(provider.future);
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.uncaught,
-        code,
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.uncaught,
+            code,
+            error,
+            stack: stack,
+          );
       rethrow;
     }
   }
@@ -86,11 +86,11 @@ class HomeController {
       await ref.read(provider.future);
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
-        DiagnosticArea.uncaught,
-        code,
-        error,
-        stack: stack,
-      );
+            DiagnosticArea.uncaught,
+            code,
+            error,
+            stack: stack,
+          );
     }
   }
 

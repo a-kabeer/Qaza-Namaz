@@ -1,4 +1,3 @@
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,28 +8,23 @@ import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../../core/widgets/progress_widgets.dart';
-import '../../../domain/entities/qaza_progress.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
-import '../../../domain/services/sahib_al_tartib_service.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
-import '../../qaza/completion/qaza_completion_state.dart';
 import '../../qaza/qaza_undo_banner.dart';
-import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
 import 'home_skeleton.dart';
 import '../home_state.dart';
 
 class HomeTodayProgress extends ConsumerStatefulWidget {
-  const HomeTodayProgress({required this.summary});
+  const HomeTodayProgress({super.key, required this.summary});
 
   final QazaProgressSummary summary;
 
@@ -158,7 +152,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         ..showSnackBar(
           SnackBar(
             content: Text(
-              l10n.completeNoPendingTitle + ' ' + l10n.completeNoPendingMessage,
+              '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
             ),
           ),
         );
@@ -186,23 +180,28 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     HapticFeedback.mediumImpact();
 
     try {
-      final completedRecords = await ref.read(qazaServiceProvider).getRecordsByIds(
-            userId: userId,
-            recordIds: [record.id],
-          );
-      final completedRecord = completedRecords.where(
-        (candidate) =>
-            candidate.id == record.id &&
-            candidate.status == QazaStatus.completed &&
-            candidate.completionId != null &&
-            candidate.completionId!.isNotEmpty,
-      ).firstOrNull;
+      final completedRecords =
+          await ref.read(qazaServiceProvider).getRecordsByIds(
+        userId: userId,
+        recordIds: [record.id],
+      );
+      final completedRecord = completedRecords
+          .where(
+            (candidate) =>
+                candidate.id == record.id &&
+                candidate.status == QazaStatus.completed &&
+                candidate.completionId != null &&
+                candidate.completionId!.isNotEmpty,
+          )
+          .firstOrNull;
 
       if (completedRecord == null) {
         throw StateError(
           'Completed Qaza record is missing its completion marker.',
         );
       }
+
+      if (!mounted) return;
 
       await showQazaUndoSnackBar(
         context: context,
@@ -334,7 +333,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
                     working: working,
                     onComplete: _complete,
                     onPlan: _showPlanDialog,
-                   );
+                  );
 
                   if (constraints.maxWidth < 500) {
                     return Column(
@@ -428,7 +427,7 @@ class _EstimatedCompletion extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  l10n.homeDailyTarget + ': ' + l10n.homePerDay(dailyTarget),
+                  '${l10n.homeDailyTarget}: ${l10n.homePerDay(dailyTarget)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -459,11 +458,7 @@ class _TodayDonut extends StatelessWidget {
     final percent = (progress * 100).round();
 
     return Semantics(
-      label: percent.toString() +
-          '%, ' +
-          completed.toString() +
-          ' of ' +
-          target.toString(),
+      label: '$percent%, $completed of $target',
       child: SizedBox(
         key: const Key('home_today_donut'),
         width: 150,
@@ -497,14 +492,14 @@ class _TodayDonut extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  percent.toString() + '%',
+                  '$percent%',
                   key: const Key('home_today_percent'),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                 ),
                 Text(
-                  completed.toString() + ' of ' + target.toString(),
+                  '$completed of $target',
                   key: const Key('home_today_count'),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -722,10 +717,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     );
 
     final tartib = tartibAsync.valueOrNull;
-    final automaticTartib =
-        widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            tartib?.requiresOrder == true &&
-            tartib?.nextPrayer != null;
 
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,8 +728,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
               ),
         ),
         if (widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            widget.selected.source ==
-                HomePrayerSelectionSource.sahibAlTartib &&
+            widget.selected.source == HomePrayerSelectionSource.sahibAlTartib &&
             widget.selected.prayer != null)
           Text(
             l10n.homeSahibOrderLabel(
@@ -794,7 +784,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     record: record,
                     onComplete: widget.onComplete,
                     onPlan: widget.onPlan,
-                          );
+                  );
                 },
               );
             },

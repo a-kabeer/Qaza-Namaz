@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 
 class HomeOverallProgress extends StatelessWidget {
   const HomeOverallProgress({
+    super.key,
     required this.progress,
     required this.onDetails,
   });
@@ -154,7 +155,7 @@ class _OverviewDonut extends StatelessWidget {
             duration: Duration.zero,
           ),
           Text(
-            (progress * 100).round().toString() + '%',
+            '${(progress * 100).round()}%',
             key: const Key('home_overall_percent'),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,

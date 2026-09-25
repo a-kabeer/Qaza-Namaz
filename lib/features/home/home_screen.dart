@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
@@ -219,8 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     QazaProgressSummary summary,
   ) {
     if (summary.overall.total == 0) {
-      return HomeEmptyState(
-      );
+      return const HomeEmptyState();
     }
 
     final allCompleted = summary.overall.pending == 0;
@@ -322,8 +320,8 @@ class _QazaImportProgressCard extends StatelessWidget {
               const SizedBox(height: 16),
               if (importing && value != null) ...[
                 Text('${(value * 100).round()}%',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700)),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 LinearProgressIndicator(value: value),
                 const SizedBox(height: 10),
@@ -336,8 +334,8 @@ class _QazaImportProgressCard extends StatelessWidget {
                     '${state.added} ${l10n.addQazaNewRecordsLabel} • '
                     '${state.skipped} ${l10n.addQazaExistingLabel}',
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ] else ...[
@@ -349,8 +347,8 @@ class _QazaImportProgressCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(l10n.commonLoading,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant)),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: scheme.onSurfaceVariant)),
               ],
             ],
           ),

@@ -311,7 +311,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
         originalDate: originalDate ?? this.originalDate,
         status: status ?? this.status,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
-        completionId: completionId.present ? completionId.value : this.completionId,
+        completionId:
+            completionId.present ? completionId.value : this.completionId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -319,7 +320,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     return QazaRecordRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
-      operationId: data.operationId.present ? data.operationId.value : this.operationId,
+      operationId:
+          data.operationId.present ? data.operationId.value : this.operationId,
       prayerType:
           data.prayerType.present ? data.prayerType.value : this.prayerType,
       originalDate: data.originalDate.present
@@ -836,7 +838,8 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
         targetRecordId:
             targetRecordId.present ? targetRecordId.value : this.targetRecordId,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
-        completionId: completionId.present ? completionId.value : this.completionId,
+        completionId:
+            completionId.present ? completionId.value : this.completionId,
         attempts: attempts ?? this.attempts,
         lastError: lastError.present ? lastError.value : this.lastError,
       );
@@ -1183,8 +1186,8 @@ class $$QazaRecordsTableAnnotationComposer
   GeneratedColumn<String> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
 
-  GeneratedColumn<String> get operationId =>
-      $composableBuilder(column: $table.operationId, builder: (column) => column);
+  GeneratedColumn<String> get operationId => $composableBuilder(
+      column: $table.operationId, builder: (column) => column);
 
   GeneratedColumn<String> get prayerType => $composableBuilder(
       column: $table.prayerType, builder: (column) => column);

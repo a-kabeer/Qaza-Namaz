@@ -15,7 +15,7 @@ import '../../../l10n/app_localizations.dart';
 import 'home_skeleton.dart';
 
 class HomeStatisticsSummaryScreen extends ConsumerWidget {
-  const HomeStatisticsSummaryScreen();
+  const HomeStatisticsSummaryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -87,20 +87,8 @@ class _DetailedOverallStatistics extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Semantics(
         container: true,
-        label: progress.completed.toString() +
-            ' ' +
-            l10n.homeCompleted +
-            ', ' +
-            progress.pending.toString() +
-            ' ' +
-            l10n.homePending +
-            ', ' +
-            progress.total.toString() +
-            ' ' +
-            l10n.homeStatTotal +
-            ', ' +
-            percent.toString() +
-            '%',
+        label:
+            '${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -117,7 +105,7 @@ class _DetailedOverallStatistics extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  percent.toString() + '%',
+                  '$percent%',
                   key: const Key('detailed_overall_percent'),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
@@ -223,22 +211,8 @@ class _DetailedPrayerRow extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: prayer.localizedLabel(l10n) +
-          ', ' +
-          progress.completed.toString() +
-          ' ' +
-          l10n.homeCompleted +
-          ', ' +
-          progress.pending.toString() +
-          ' ' +
-          l10n.homePending +
-          ', ' +
-          progress.total.toString() +
-          ' ' +
-          l10n.homeStatTotal +
-          ', ' +
-          percent.toString() +
-          '%',
+      label:
+          '${prayer.localizedLabel(l10n)}, ${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -262,8 +236,8 @@ class _DetailedPrayerRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                percent.toString() + '%',
-                key: Key('detailed_prayer_percent_' + prayer.name),
+                '$percent%',
+                key: Key('detailed_prayer_percent_${prayer.name}'),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -274,7 +248,7 @@ class _DetailedPrayerRow extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
-              key: Key('detailed_prayer_progress_' + prayer.name),
+              key: Key('detailed_prayer_progress_${prayer.name}'),
               value: progress.percentage.clamp(0.0, 1.0).toDouble(),
               minHeight: 8,
               backgroundColor: charts.track,
@@ -286,21 +260,21 @@ class _DetailedPrayerRow extends StatelessWidget {
             children: [
               Expanded(
                 child: _DetailedMetric(
-                  key: Key('detailed_prayer_completed_' + prayer.name),
+                  key: Key('detailed_prayer_completed_${prayer.name}'),
                   label: l10n.homeCompleted,
                   value: DateFormatters.formatCount(progress.completed),
                 ),
               ),
               Expanded(
                 child: _DetailedMetric(
-                  key: Key('detailed_prayer_pending_' + prayer.name),
+                  key: Key('detailed_prayer_pending_${prayer.name}'),
                   label: l10n.homePending,
                   value: DateFormatters.formatCount(progress.pending),
                 ),
               ),
               Expanded(
                 child: _DetailedMetric(
-                  key: Key('detailed_prayer_total_' + prayer.name),
+                  key: Key('detailed_prayer_total_${prayer.name}'),
                   label: l10n.homeStatTotal,
                   value: DateFormatters.formatCount(progress.total),
                 ),
@@ -366,7 +340,6 @@ IconData homePrayerIcon(PrayerType prayer) {
       return Icons.nightlight_round;
   }
 }
-
 
 class HomeStatLine extends StatelessWidget {
   const HomeStatLine({

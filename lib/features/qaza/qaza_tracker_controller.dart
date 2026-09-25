@@ -460,7 +460,8 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         if (!page.hasMore) break;
         cursor = page.records.last;
       }
-      state = state.copyWith(selectionMode: true, selected: ids, selectingAll: false);
+      state = state.copyWith(
+          selectionMode: true, selected: ids, selectingAll: false);
     } catch (error) {
       state = state.copyWith(
         selectingAll: false,
@@ -495,14 +496,14 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
       final operation = await ref.read(qazaOperationServiceProvider).begin(
-            userId: userId,
-            type: QazaOperationType.singleRecordDelete,
-            inputSnapshot: {
-              'version': 1,
-              'recordId': recordId,
-              'reason': 'controlled_correction',
-            },
-          );
+        userId: userId,
+        type: QazaOperationType.singleRecordDelete,
+        inputSnapshot: {
+          'version': 1,
+          'recordId': recordId,
+          'reason': 'controlled_correction',
+        },
+      );
       try {
         final deletedAt = operation.createdAt;
         final recovery = ref.read(qazaServiceProvider);
@@ -572,12 +573,13 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         );
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
-      final count = await ref.read(qazaServiceProvider).deleteRecordsWithRecovery(
-            userId: userId,
-            recordIds: ids,
-            deletedAt: operation.createdAt,
-            operationId: operation.operationId,
-          );
+      final count =
+          await ref.read(qazaServiceProvider).deleteRecordsWithRecovery(
+                userId: userId,
+                recordIds: ids,
+                deletedAt: operation.createdAt,
+                operationId: operation.operationId,
+              );
       await ref.read(qazaOperationServiceProvider).finish(
             operation,
             status: count == ids.length
@@ -681,21 +683,21 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
             .toList(growable: false);
       } catch (error, stack) {
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.qazaCompletion,
-          'completion_marker_lookup_failed',
-          error,
-          stack: stack,
-        );
+              DiagnosticArea.qazaCompletion,
+              'completion_marker_lookup_failed',
+              error,
+              stack: stack,
+            );
         undoableRecords = const <QazaRecord>[];
       }
 
       if (undoableRecords.isEmpty) {
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.qazaCompletion,
-          'completion_marker_lookup_empty',
-          StateError('No completion marker was returned after completion.'),
-          stack: StackTrace.current,
-        );
+              DiagnosticArea.qazaCompletion,
+              'completion_marker_lookup_empty',
+              StateError('No completion marker was returned after completion.'),
+              stack: StackTrace.current,
+            );
         return null;
       }
       return QazaCompletionBatch(

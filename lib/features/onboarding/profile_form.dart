@@ -66,8 +66,8 @@ class _ProfileFormState extends State<ProfileForm> {
 
   Future<void> _pickDob() async {
     final now = DateTime.now();
-    final initial = _profile.dateOfBirth ??
-        DateTime(now.year - 18, now.month, now.day);
+    final initial =
+        _profile.dateOfBirth ?? DateTime(now.year - 18, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial.isAfter(now) ? now : initial,
@@ -235,8 +235,7 @@ class _ProfileFormState extends State<ProfileForm> {
                 },
           decoration: InputDecoration(
             labelText: l10n.profilePubertyAge,
-            helperText:
-                gender == null ? l10n.profileSelectGenderFirst : null,
+            helperText: gender == null ? l10n.profileSelectGenderFirst : null,
           ),
         ),
         const SizedBox(height: 20),
@@ -350,9 +349,5 @@ class _ProfileFormState extends State<ProfileForm> {
       };
 
   String _formatDate(DateTime date) =>
-      date.day.toString().padLeft(2, '0') +
-      '/' +
-      date.month.toString().padLeft(2, '0') +
-      '/' +
-      date.year.toString();
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }

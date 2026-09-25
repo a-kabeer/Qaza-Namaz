@@ -59,8 +59,22 @@ class DatabaseEncryptionKeyStore {
 /// verified. An interrupted swap is recovered on the next startup.
 class PlaintextDatabaseMigrator {
   static const List<int> _sqliteHeader = <int>[
-    0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66,
-    0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00,
+    0x53,
+    0x51,
+    0x4c,
+    0x69,
+    0x74,
+    0x65,
+    0x20,
+    0x66,
+    0x6f,
+    0x72,
+    0x6d,
+    0x61,
+    0x74,
+    0x20,
+    0x33,
+    0x00,
   ];
 
   static Future<void> migrateIfNeeded({
@@ -162,6 +176,5 @@ class PlaintextDatabaseMigrator {
     }
   }
 
-  static String _escapeSqlString(String value) =>
-      value.replaceAll("'", "''");
+  static String _escapeSqlString(String value) => value.replaceAll("'", "''");
 }

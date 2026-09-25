@@ -74,8 +74,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                             ? l10n.languageUrdu
                             : l10n.languageEnglish,
                       ),
-                      selected:
-                          locale.languageCode == current.languageCode,
+                      selected: locale.languageCode == current.languageCode,
                       onSelected: (_) => _select(context, ref, locale),
                     ),
                   ),

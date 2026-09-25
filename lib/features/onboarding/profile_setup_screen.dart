@@ -34,8 +34,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _draft = widget.initialProfile ??
-        UserProfile(languageCode: widget.languageCode);
+    _draft =
+        widget.initialProfile ?? UserProfile(languageCode: widget.languageCode);
   }
 
   void _saveDraft(UserProfile profile) {
@@ -57,6 +57,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (plan == null) {
       throw StateError('A valid Qaza plan could not be calculated.');
     }
+
+    if (!mounted) return;
 
     final action = await showDialog<QazaReviewAction>(
       context: context,
@@ -95,12 +97,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       'prayers': prayers.map((prayer) => prayer.name).toList(growable: false),
     };
     return ref.read(qazaImportProvider.notifier).start(
-      userId: userId,
-      dates: dates,
-      prayers: prayers,
-      operationType: QazaOperationType.calculatorImport,
-      inputSnapshot: inputSnapshot,
-    );
+          userId: userId,
+          dates: dates,
+          prayers: prayers,
+          operationType: QazaOperationType.calculatorImport,
+          inputSnapshot: inputSnapshot,
+        );
   }
 
   Iterable<DateTime> _planDates(QazaPlan plan) sync* {

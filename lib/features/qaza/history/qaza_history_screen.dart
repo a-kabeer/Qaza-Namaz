@@ -7,7 +7,6 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../domain/entities/qaza_operation.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
-import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import 'qaza_operation_detail_screen.dart';
@@ -111,8 +110,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
         final loaded =
             await ref.read(qazaOperationServiceProvider).recent(userId);
         for (final operation in loaded) {
-          _summaryFutures[operation.operationId] =
-              service.getOperationSummary(
+          _summaryFutures[operation.operationId] = service.getOperationSummary(
             userId: userId,
             operationId: operation.operationId,
           );
@@ -206,9 +204,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
         SnackBar(
           content: Text(
             count == 1
-                ? (_urdu
-                    ? 'قضا بحال کر دی گئی۔'
-                    : 'Qaza record restored.')
+                ? (_urdu ? 'قضا بحال کر دی گئی۔' : 'Qaza record restored.')
                 : (_urdu
                     ? 'یہ ریکارڈ بحال نہیں ہو سکا، ممکن ہے یہ پہلے ہی تبدیل یا متصادم ہو۔'
                     : 'Record could not be restored because it changed or conflicts with an existing record.'),
@@ -287,8 +283,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                 final operation = operations[index];
                                 return _OperationHistoryCard(
                                   key: Key(
-                                    'qaza_operation_card_' +
-                                        operation.operationId,
+                                    'qaza_operation_card_${operation.operationId}',
                                   ),
                                   operation: operation,
                                   label: _label(operation.type),
@@ -348,31 +343,20 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                         record.prayerType.localizedLabel(l10n),
                                       ),
                                       subtitle: Text(
-                                        DateFormatters
-                                                .formatGregorianDatePadded(
-                                                    record.originalDate) +
-                                            ' • ' +
-                                            DateFormatters.hijriLabel(
-                                              record.originalDate,
-                                            ) +
-                                            '\n' +
-                                            (_urdu ? 'حذف' : 'Deleted') +
-                                            ': ' +
-                                            DateFormatters.formatClockTime(
-                                              record.updatedAt,
-                                            ) +
-                                            ' • ' +
-                                            DateFormatters
-                                                .formatGregorianDatePadded(
-                                              record.updatedAt,
-                                            ),
+                                        '${DateFormatters.formatGregorianDatePadded(record.originalDate)} • ${DateFormatters.hijriLabel(
+                                          record.originalDate,
+                                        )}\n${_urdu ? 'حذف' : 'Deleted'}: ${DateFormatters.formatClockTime(
+                                          record.updatedAt,
+                                        )} • ${DateFormatters.formatGregorianDatePadded(
+                                          record.updatedAt,
+                                        )}',
                                       ),
                                       trailing: FilledButton.tonal(
                                         onPressed: () async {
                                           try {
                                             await _restore(record);
                                           } catch (_) {
-                                            if (!mounted) return;
+                                            if (!context.mounted) return;
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
@@ -448,9 +432,7 @@ class _OperationHistoryCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              DateFormatters.formatGregorianDatePadded(operation.createdAt) +
-                  ' • ' +
-                  DateFormatters.formatClockTime(operation.createdAt),
+              '${DateFormatters.formatGregorianDatePadded(operation.createdAt)} • ${DateFormatters.formatClockTime(operation.createdAt)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -507,7 +489,7 @@ class _CountText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      label + ': ' + DateFormatters.formatCount(count),
+      '$label: ${DateFormatters.formatCount(count)}',
       style: Theme.of(context).textTheme.bodySmall,
     );
   }
