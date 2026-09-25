@@ -100,7 +100,6 @@ class HomeController {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
     if (pendingBefore <= 1) {
       ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
     }
@@ -110,14 +109,12 @@ class HomeController {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
   }
 
   void afterUndo(PrayerType prayer) {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
     ref.invalidate(oldestPendingProvider(prayer));
   }
 }
