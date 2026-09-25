@@ -1304,76 +1304,46 @@ class AppLocalizationsUr extends AppLocalizations {
   String get languageUrdu => 'اردو';
 
   @override
-  String get settingsPrivacySecurity => 'رازداری اور سیکیورٹی';
 
   @override
-  String get settingsPrivacySecuritySubtitle =>
-      'اس ڈیوائس پر اپنی قضا نمازوں تک رسائی محفوظ کریں۔';
 
   @override
-  String get settingsAppLock => 'ایپ لاک';
 
   @override
-  String get settingsAppLockSubtitle =>
-      'قضا ریکارڈ دکھانے سے پہلے ڈیوائس کی تصدیق لازمی کریں۔';
 
   @override
-  String get settingsAppLockWhen => 'ایپ چھوڑنے پر لاک کریں';
 
   @override
-  String get settingsAppLockImmediate => 'فوراً';
 
   @override
-  String get settingsAppLockOneMinute => '1 منٹ بعد';
 
   @override
-  String get settingsAppLockFiveMinutes => '5 منٹ بعد';
 
   @override
-  String get settingsAppLockNever => 'کبھی نہیں';
 
   @override
-  String get settingsAppLockDeviceNote =>
-      'ایپ لاک ڈیوائس کی سیکیورٹی استعمال کرتا ہے، جیسے فنگر پرنٹ، چہرہ، PIN، پیٹرن یا پاس ورڈ۔ ڈیوائس پر معاون اسکرین لاک ہونا ضروری ہے۔';
 
   @override
-  String get appLockEnableReason =>
-      'قضا نماز کے لیے ایپ لاک فعال کرنے کی تصدیق کریں۔';
 
   @override
-  String get appLockDisableReason => 'ایپ لاک بند کرنے کے لیے تصدیق کریں۔';
 
   @override
-  String get appLockAuthenticationReason =>
-      'قضا ریکارڈ کھولنے کے لیے تصدیق کریں۔';
 
   @override
-  String get appLockLockedTitle => 'قضا نماز لاک ہے';
 
   @override
-  String get appLockLockedBody =>
-      'جاری رکھنے کے لیے اپنی ڈیوائس سیکیورٹی سے تصدیق کریں۔ اَن لاک ہونے تک آپ کا قضا ڈیٹا چھپا رہے گا۔';
 
   @override
-  String get appLockUnlock => 'اَن لاک کریں';
 
   @override
-  String get appLockUnlocking => 'اَن لاک ہو رہا ہے...';
 
   @override
-  String get appLockUnavailable =>
-      'ڈیوائس کی تصدیق دستیاب نہیں۔ اسکرین لاک یا معاون بایومیٹرک سیٹ کریں اور دوبارہ کوشش کریں۔';
 
   @override
-  String get appLockCanceled =>
-      'اَن لاک منسوخ کر دیا گیا۔ آپ کا قضا ڈیٹا اب بھی محفوظ ہے۔';
 
   @override
-  String get appLockTemporarilyLocked =>
-      'ڈیوائس کی تصدیق عارضی طور پر لاک ہے۔ کچھ دیر بعد دوبارہ کوشش کریں۔';
 
   @override
-  String get appLockFailed => 'ڈیوائس کی تصدیق ناکام رہی۔ دوبارہ کوشش کریں۔';
 
   @override
   String get homeTodayProgressHeader => 'آج کی پیش رفت';
@@ -1406,16 +1376,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homePending => 'باقی';
 
   @override
-  String get homeYourProgress => 'آپ کی پیش رفت';
 
   @override
-  String get homeRange7Days => '7 دن';
 
   @override
-  String get homeRange30Days => '30 دن';
 
   @override
-  String get homeRangeMonthly => 'ماہانہ';
 
   @override
   String get homeDetailedStatistics => 'تفصیلی اعداد و شمار';
@@ -1424,7 +1390,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeDetailedStatisticsSubtitle => 'مجموعی اور نماز وار تکمیل';
 
   @override
-  String get homeChartNoData => 'اس مدت میں کوئی قضا مکمل نہیں ہوئی۔';
 
   @override
   String get homeTodayDate => 'آج';
