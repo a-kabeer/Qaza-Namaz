@@ -82,32 +82,6 @@ final homeQazaPlanProvider =
   HomeQazaPlanNotifier.new,
 );
 
-final homeProgressRangeProvider =
-    StateProvider<HomeProgressRange>((ref) => HomeProgressRange.sevenDays);
-
-class HomeProgressWeekNotifier extends Notifier<DateTime> {
-  @override
-  DateTime build() =>
-      homeProgressWeekStartForDate(ref.watch(homeLocalDateProvider));
-
-  void nextWeek() {
-    state = state.add(const Duration(days: 7));
-  }
-
-  void previousWeek() {
-    state = state.subtract(const Duration(days: 7));
-  }
-
-  void resetToCurrentWeek() {
-    state = homeProgressWeekStartForDate(ref.read(homeLocalDateProvider));
-  }
-}
-
-final homeProgressWeekProvider =
-    NotifierProvider<HomeProgressWeekNotifier, DateTime>(
-  HomeProgressWeekNotifier.new,
-);
-
 final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
 
 DateTime homeLocalDateForInstant(DateTime instant) {
