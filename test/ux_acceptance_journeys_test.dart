@@ -130,7 +130,8 @@ void main() {
     await start(tester, home: const StartupGate());
 
     expect(find.byType(LanguageSelectionScreen), findsOneWidget);
-    expect(find.text('Continue with Google'), findsNothing);
+    expect(find.byKey(const Key('onboarding_sign_in_google')), findsOneWidget);
+    expect(find.text('Sign in with Google'), findsOneWidget);
     expect(find.text('Continue as Guest'), findsNothing);
 
     await tapKey(tester, 'onboarding_language_en');
@@ -138,6 +139,54 @@ void main() {
   });
 
   // ---------------------------------------------------------------- 2
+  testWidgets('journey: existing Google account skips setup from language',
+      (tester) async {
+    await start(tester, home: const StartupGate());
+
+    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(WorkspaceShell), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+  });
+
+  // ---------------------------------------------------------------- 3
+  testWidgets('journey: new Google account enters profile setup',
+      (tester) async {
+    auth = _JourneyAuth(isNewUser: true);
+    repository = InMemoryQazaRepository();
+    final container = ProviderContainer(overrides: [
+      authRepositoryProvider.overrideWithValue(auth),
+      qazaRepositoryProvider.overrideWithValue(repository),
+      calendarTodayProvider.overrideWithValue(today),
+    ]);
+    addTearDown(container.dispose);
+    addTearDown(auth.dispose);
+
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const TestApp(home: StartupGate()),
+    ));
+    await tester.pump(AuthGate.splashDuration);
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(find.byType(WorkspaceShell), findsNothing);
+  });
+
+  // ---------------------------------------------------------------- 4
   testWidgets('journey: manual Qaza, from empty ledger to a record',
       (tester) async {
     final container =
@@ -295,7 +344,10 @@ void main() {
 }
 
 /// Signed out until a journey signs in.
-class _JourneyAuth implements AuthRepository {
+class _JourneyAuth implements AuthRepository, DetailedAuthRepository {
+  _JourneyAuth({this.isNewUser = false});
+
+  final bool isNewUser;
   final _controller = StreamController<AppUser?>.broadcast();
   AppUser? _current;
 
@@ -318,6 +370,13 @@ class _JourneyAuth implements AuthRepository {
     emit(const AppUser(id: 'account-1', email: 'user@example.com'));
     return _current!;
   }
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogleDetails() async =>
+      GoogleSignInResult(
+        user: await signInWithGoogle(),
+        isNewUser: isNewUser,
+      );
 
   @override
   Future<void> signOut() async => emit(null);
