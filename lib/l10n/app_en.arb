@@ -45,7 +45,7 @@
     }
   },
   "qazaConfirmBulkAction": "Complete them",
-  "errorNetwork": "No connection. Your Qaza are saved on this device and will sync when you are back online.",
+  "errorNetwork": "No connection. Your Qaza are saved on this device.",
   "errorTimeout": "That took too long. Try again in a moment.",
   "errorPermission": "Permission is needed for this. Open Settings to grant it.",
   "errorAuthentication": "You need to be signed in for this.",
@@ -518,11 +518,7 @@
   "welcomeHeadline": "Track your missed prayers with clarity and consistency.",
   "welcomeBody": "Record, complete, and keep track of your Qaza Namaz — one prayer at a time.",
   "welcomeGetStarted": "Get Started",
-  "welcomeSignIn": "Already have an account? Sign In",
   "splashTagline": "A calm place for prayer accountability",
-  "accountTitle": "Account",
-  "accountSignedInWithGoogle": "Signed in with Google",
-  "accountSignedIn": "Signed in",
   "dataTitle": "Export & Import",
   "dataExportTitle": "Export data",
   "dataExportBody": "Save a versioned JSON copy of your Qaza ledger. Nothing is uploaded by the export action.",
@@ -568,7 +564,7 @@
   },
   "dataProcessing": "Processing data…",
   "dataSafetyTitle": "Data safety",
-  "dataSafetyBody": "Export does not delete cloud data. Import does not erase existing records. Sign-out is not data deletion, and uninstalling the app does not delete cloud records.",
+  "dataSafetyBody": "Export and import manage only the Qaza data stored on this device. Export creates a local backup file; import adds or updates local records.",
   "addQazaTitle": "Add Qaza",
   "addQazaStep1": "Step 1 of 3 • Select Dates",
   "addQazaStep2": "Step 2 of 3 • Select Missed Prayers",
@@ -744,14 +740,12 @@
   "settingsNotificationsSubtitle": "Manage reminders and notification scheduling.",
   "settingsNotificationsRowSubtitle": "Daily reminder and schedule",
   "settingsDataSection": "Data & Storage",
-  "settingsDataSubtitle": "Sync, backup, export, and import your Qaza data.",
-  "settingsDataCloud": "Data & Cloud",
-  "settingsDataCloudSubtitle": "Sync, export and import status",
+  "settingsDataSubtitle": "Export and import your Qaza data.",
   "settingsResetCounterTitle": "Reset Qaza Counter",
   "settingsResetCounterSubtitle": "Delete every recorded Qaza and start the count again from zero.",
   "settingsResetCounterEmpty": "There are no Qaza records to reset.",
   "settingsResetCounterDialogTitle": "Reset Qaza Counter?",
-  "settingsResetCounterDialogMessage": "This permanently deletes every Qaza record on this account — pending and completed — from this device and from your cloud backup.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.",
+  "settingsResetCounterDialogMessage": "This permanently deletes every Qaza record on this device — pending and completed.\\n\\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.",
   "settingsResetCounterAcknowledge": "{count, plural, =1{I understand that 1 Qaza record will be permanently deleted} other{I understand that {count} Qaza records will be permanently deleted}}",
   "@settingsResetCounterAcknowledge": {
     "placeholders": {
@@ -770,13 +764,6 @@
       }
     }
   },
-  "backupPromptTitle": "Keep your progress safe",
-  "backupPromptBody": "Sign in with Google to keep your Qaza progress available with your account.",
-  "backupPromptConfirm": "Continue with Google",
-  "backupPromptDismiss": "Not Now",
-  "backupSignInFailed": "Sign-in failed. Your progress is still on this device.",
-  "backupSignInCancelled": "Sign-in canceled. Your progress is still on this device.",
-  "backupSignInFailedReason": "Sign-in failed: {reason} Your progress is still on this device.",
   "@backupSignInFailedReason": {
     "placeholders": {
       "reason": {
@@ -784,7 +771,6 @@
       }
     }
   },
-  "backupMigrationDone": "{count, plural, =0{Signed in. Your Qaza progress is now linked to your account.} =1{Signed in. Your Qaza progress is now linked to your account.} other{Signed in. Your Qaza progress is now linked to your account.}}",
   "@backupMigrationDone": {
     "placeholders": {
       "count": {
