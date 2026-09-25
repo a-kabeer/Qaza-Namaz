@@ -17,7 +17,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({
       // Prevent the unrelated prayer-time setup prompt from overlaying startup.
-      'qaza_prayer_times_setup_prompt_seen': true,
+      'prayer_times_setup_prompt_seen_v1': true,
     });
   });
 
