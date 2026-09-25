@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/data/auth/google_auth_flow.dart';
 import 'package:qaza_namaz/domain/entities/app_user.dart';
+import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 
 void main() {
   test('existing Google account signs in through Firebase handshake', () async {
