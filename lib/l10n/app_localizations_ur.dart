@@ -761,7 +761,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountSignInMethod => 'سائن اِن کا طریقہ';
 
   @override
-  String get accountGoogleAuth => 'گوگل توثیق';
+  String get accountGoogleAuth => 'گوگل';
 
   @override
   String get accountSignedInWithGoogle => 'گوگل سے سائن اِن ہیں';
@@ -1277,7 +1277,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get authGuestNote =>
-      'اپنی پیش رفت کا بیک اپ لینے کے لیے بعد میں سائن ان کر سکتے ہیں۔';
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے بعد میں گوگل سے سائن اِن کر سکتے ہیں۔';
 
   @override
   String get backupPromptTitle => 'اپنی پیش رفت محفوظ رکھیں';
