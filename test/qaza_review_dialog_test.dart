@@ -68,7 +68,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(host(
       plan,
-      onConfirm: (_) async {},
+      onConfirm: () async => true,
     ));
 
     await tester.tap(find.byKey(const Key('open_review')));
