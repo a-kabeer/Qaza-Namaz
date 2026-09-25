@@ -88,7 +88,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     void Function(int processed, int total) onProgress,
   ) async {
     final userId =
-        ref.read(currentUserProvider)?.id ?? UserProfile.localLedgerUserId;
+        ref.read(authRepositoryProvider).currentUser?.id ??
+        UserProfile.localLedgerUserId;
 
     await ref.read(qazaServiceProvider).recordQazaForDates(
           userId: userId,
