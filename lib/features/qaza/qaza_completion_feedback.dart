@@ -15,9 +15,9 @@ String qazaCompletionSuccessMessage(
     final prayer = entry.prayerType.localizedLabel(l10n);
     final date = DateFormatters.formatGregorianDatePadded(entry.originalDate);
     if (Localizations.localeOf(context).languageCode == 'ur') {
-      return '${prayer} کی قضا، ${date} مکمل ہو گئی۔';
+      return '$prayer کی قضا، $date مکمل ہو گئی۔';
     }
-    return '${prayer} Qaza for ${date} completed.';
+    return '$prayer Qaza for $date completed.';
   }
   if (Localizations.localeOf(context).languageCode == 'ur') {
     return '${batch.entries.length} قضا نمازیں مکمل ہو گئیں۔';
@@ -36,14 +36,14 @@ String qazaUndoSuccessMessage(
     final prayer = entry.prayerType.localizedLabel(l10n);
     final date = DateFormatters.formatGregorianDatePadded(entry.originalDate);
     if (Localizations.localeOf(context).languageCode == 'ur') {
-      return '${prayer} کی قضا، ${date} دوبارہ باقی میں شامل ہو گئی۔';
+      return '$prayer کی قضا، $date دوبارہ باقی میں شامل ہو گئی۔';
     }
-    return '${prayer} Qaza for ${date} restored.';
+    return '$prayer Qaza for $date restored.';
   }
   if (Localizations.localeOf(context).languageCode == 'ur') {
-    return '${count} قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔';
+    return '$count قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔';
   }
-  return '${count} Qaza restored.';
+  return '$count Qaza restored.';
 }
 
 String qazaUndoFailureMessage(

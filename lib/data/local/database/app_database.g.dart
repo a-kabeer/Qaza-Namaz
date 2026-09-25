@@ -311,7 +311,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
         originalDate: originalDate ?? this.originalDate,
         status: status ?? this.status,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
-        completionId: completionId.present ? completionId.value : this.completionId,
+        completionId:
+            completionId.present ? completionId.value : this.completionId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -319,7 +320,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     return QazaRecordRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
-      operationId: data.operationId.present ? data.operationId.value : this.operationId,
+      operationId:
+          data.operationId.present ? data.operationId.value : this.operationId,
       prayerType:
           data.prayerType.present ? data.prayerType.value : this.prayerType,
       originalDate: data.originalDate.present
@@ -400,7 +402,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   QazaRecordsCompanion.insert({
     required String id,
     required String userId,
-    Value<String?> operationId = const Value.absent(),
+    this.operationId = const Value.absent(),
     required String prayerType,
     required DateTime originalDate,
     required String status,
@@ -411,7 +413,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         userId = Value(userId),
-        operationId = operationId,
         prayerType = Value(prayerType),
         originalDate = Value(originalDate),
         status = Value(status),
@@ -521,6 +522,7 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
           ..write('originalDate: $originalDate, ')
           ..write('status: $status, ')
           ..write('completedAt: $completedAt, ')
+          ..write('completionId: $completionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -836,7 +838,8 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
         targetRecordId:
             targetRecordId.present ? targetRecordId.value : this.targetRecordId,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
-        completionId: completionId.present ? completionId.value : this.completionId,
+        completionId:
+            completionId.present ? completionId.value : this.completionId,
         attempts: attempts ?? this.attempts,
         lastError: lastError.present ? lastError.value : this.lastError,
       );
@@ -1075,6 +1078,7 @@ typedef $$QazaRecordsTableCreateCompanionBuilder = QazaRecordsCompanion
   required DateTime originalDate,
   required String status,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -1088,6 +1092,7 @@ typedef $$QazaRecordsTableUpdateCompanionBuilder = QazaRecordsCompanion
   Value<DateTime> originalDate,
   Value<String> status,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -1122,6 +1127,9 @@ class $$QazaRecordsTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -1161,6 +1169,10 @@ class $$QazaRecordsTableOrderingComposer
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get completionId => $composableBuilder(
+      column: $table.completionId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -1183,8 +1195,8 @@ class $$QazaRecordsTableAnnotationComposer
   GeneratedColumn<String> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
 
-  GeneratedColumn<String> get operationId =>
-      $composableBuilder(column: $table.operationId, builder: (column) => column);
+  GeneratedColumn<String> get operationId => $composableBuilder(
+      column: $table.operationId, builder: (column) => column);
 
   GeneratedColumn<String> get prayerType => $composableBuilder(
       column: $table.prayerType, builder: (column) => column);
@@ -1197,6 +1209,9 @@ class $$QazaRecordsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1238,6 +1253,7 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             Value<DateTime> originalDate = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -1250,6 +1266,7 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             originalDate: originalDate,
             status: status,
             completedAt: completedAt,
+            completionId: completionId,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -1262,6 +1279,7 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             required DateTime originalDate,
             required String status,
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<int> rowid = const Value.absent(),
@@ -1274,6 +1292,7 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             originalDate: originalDate,
             status: status,
             completedAt: completedAt,
+            completionId: completionId,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -1312,6 +1331,7 @@ typedef $$SyncOutboxTableCreateCompanionBuilder = SyncOutboxCompanion Function({
   Value<String?> recordJson,
   Value<String?> targetRecordId,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
   Value<int> attempts,
   Value<String?> lastError,
   Value<int> rowid,
@@ -1324,6 +1344,7 @@ typedef $$SyncOutboxTableUpdateCompanionBuilder = SyncOutboxCompanion Function({
   Value<String?> recordJson,
   Value<String?> targetRecordId,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
   Value<int> attempts,
   Value<String?> lastError,
   Value<int> rowid,
@@ -1359,6 +1380,9 @@ class $$SyncOutboxTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get attempts => $composableBuilder(
       column: $table.attempts, builder: (column) => ColumnFilters(column));
@@ -1398,6 +1422,10 @@ class $$SyncOutboxTableOrderingComposer
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get completionId => $composableBuilder(
+      column: $table.completionId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get attempts => $composableBuilder(
       column: $table.attempts, builder: (column) => ColumnOrderings(column));
 
@@ -1434,6 +1462,9 @@ class $$SyncOutboxTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => column);
 
   GeneratedColumn<int> get attempts =>
       $composableBuilder(column: $table.attempts, builder: (column) => column);
@@ -1475,6 +1506,7 @@ class $$SyncOutboxTableTableManager extends RootTableManager<
             Value<String?> recordJson = const Value.absent(),
             Value<String?> targetRecordId = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
             Value<int> attempts = const Value.absent(),
             Value<String?> lastError = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -1487,6 +1519,7 @@ class $$SyncOutboxTableTableManager extends RootTableManager<
             recordJson: recordJson,
             targetRecordId: targetRecordId,
             completedAt: completedAt,
+            completionId: completionId,
             attempts: attempts,
             lastError: lastError,
             rowid: rowid,
@@ -1499,6 +1532,7 @@ class $$SyncOutboxTableTableManager extends RootTableManager<
             Value<String?> recordJson = const Value.absent(),
             Value<String?> targetRecordId = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
             Value<int> attempts = const Value.absent(),
             Value<String?> lastError = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -1511,6 +1545,7 @@ class $$SyncOutboxTableTableManager extends RootTableManager<
             recordJson: recordJson,
             targetRecordId: targetRecordId,
             completedAt: completedAt,
+            completionId: completionId,
             attempts: attempts,
             lastError: lastError,
             rowid: rowid,

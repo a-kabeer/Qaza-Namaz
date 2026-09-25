@@ -26,9 +26,7 @@ class QazaOperationService {
       status: QazaOperationStatus.running,
       createdAt: timestamp,
       updatedAt: timestamp,
-      inputSnapshot: inputSnapshot == null
-          ? null
-          : _freezeMap(inputSnapshot),
+      inputSnapshot: inputSnapshot == null ? null : _freezeMap(inputSnapshot),
     );
     await repository.save(op);
     return op;
@@ -73,12 +71,12 @@ class QazaOperationService {
             ? existing!.recordCount
             : affectedRecordCount;
     final finished = operation.copyWith(
-        status: status,
-        updatedAt: _now(),
-        recordCount: recordCount,
-        affectedRecordCount: affectedRecordCount,
-        note: note,
-      );
+      status: status,
+      updatedAt: _now(),
+      recordCount: recordCount,
+      affectedRecordCount: affectedRecordCount,
+      note: note,
+    );
     await repository.save(finished);
     return finished;
   }

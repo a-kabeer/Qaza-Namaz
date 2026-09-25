@@ -23,12 +23,14 @@ class QazaRecord {
   final DateTime originalDate;
   final QazaStatus status;
   final DateTime? completedAt;
+
   /// Stable marker identifying the specific completion event.
   final String? completionId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  bool get hasOperationProvenance => operationId != null && operationId!.isNotEmpty;
+  bool get hasOperationProvenance =>
+      operationId != null && operationId!.isNotEmpty;
 
   bool get isDeleted => status == QazaStatus.deleted;
 
@@ -54,7 +56,8 @@ class QazaRecord {
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
-      completionId: clearCompletionId ? null : completionId ?? this.completionId,
+      completionId:
+          clearCompletionId ? null : completionId ?? this.completionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

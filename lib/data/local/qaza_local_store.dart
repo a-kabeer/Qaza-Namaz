@@ -29,6 +29,7 @@ class PendingSyncOp {
   final QazaRecord? record;
   final String? targetRecordId;
   final DateTime? completedAt;
+
   /// Completion marker carried by completion ops and expected by Undo ops.
   final String? completionId;
   final int attempts;
@@ -41,7 +42,7 @@ class PendingSyncOp {
       record: record,
       targetRecordId: targetRecordId,
       completedAt: completedAt,
-      completionId: completionId ?? this.completionId,
+      completionId: completionId ?? completionId,
       attempts: attempts ?? this.attempts,
       lastError: lastError ?? this.lastError);
   Map<String, dynamic> toJson() => {
@@ -108,6 +109,7 @@ abstract class QazaLocalStore {
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
+
   /// Bounded keyset page for soft-deleted records, ordered by deletion time.
   Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
@@ -142,8 +144,6 @@ abstract class QazaLocalStore {
       hasMore: hasMore,
     );
   }
-
-
 
   /// Retires all local records and pending sync operations owned by [userId].
   ///
@@ -274,7 +274,8 @@ abstract class QazaLocalStore {
     final snapshot = await load();
     var records = List<QazaRecord>.of(
       snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
-    )..removeWhere((record) {
+    )
+      ..removeWhere((record) {
         final actionMatch = matchLastAction
             ? record.updatedAt.isAtSameMomentAs(operationAt)
             : record.operationId == operationId;
@@ -308,7 +309,8 @@ abstract class QazaLocalStore {
     final snapshot = await load();
     final wanted = ids.toSet();
     return [
-      for (final record in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+      for (final record
+          in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
         if (wanted.contains(record.id)) record,
     ];
   }
@@ -385,7 +387,7 @@ abstract class QazaLocalStore {
     final ops = <PendingSyncOp>[
       for (final record in changed)
         PendingSyncOp(
-          id: 'soft_delete_' + record.id + '_' + operationId,
+          id: 'soft_delete_${record.id}_$operationId',
           type: SyncOpType.update,
           userId: userId,
           queuedAt: deletedAt,
@@ -405,8 +407,7 @@ abstract class QazaLocalStore {
     required String operationId,
   }) async {
     final snapshot = await load();
-    final records =
-        snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
+    final records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
     var pending = 0;
     var completed = 0;
     var deleted = 0;
@@ -641,10 +642,7 @@ abstract class QazaLocalStore {
     final operations = <PendingSyncOp>[
       for (final record in changed)
         PendingSyncOp(
-          id: 'undo_' +
-              record.id +
-              '_' +
-              record.updatedAt.microsecondsSinceEpoch.toString(),
+          id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
           type: SyncOpType.update,
           userId: userId,
           queuedAt: record.updatedAt,

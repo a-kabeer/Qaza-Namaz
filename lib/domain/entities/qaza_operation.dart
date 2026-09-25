@@ -51,6 +51,7 @@ class QazaOperation {
   final QazaOperationStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+
   /// Immutable parameters captured when an addition operation starts.
   ///
   /// This is deliberately metadata, not a live form state. Future edit
@@ -80,33 +81,33 @@ class QazaOperation {
     String? note,
     Map<String, dynamic>? inputSnapshot,
     bool clearInputSnapshot = false,
-  }) => QazaOperation(
-    operationId: operationId,
-    userId: userId,
-    type: type,
-    status: status ?? this.status,
-    createdAt: createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    recordCount: recordCount ?? this.recordCount,
-    affectedRecordCount: affectedRecordCount ?? this.affectedRecordCount,
-    note: note ?? this.note,
-    inputSnapshot: clearInputSnapshot
-        ? null
-        : inputSnapshot ?? this.inputSnapshot,
-  );
+  }) =>
+      QazaOperation(
+        operationId: operationId,
+        userId: userId,
+        type: type,
+        status: status ?? this.status,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        recordCount: recordCount ?? this.recordCount,
+        affectedRecordCount: affectedRecordCount ?? this.affectedRecordCount,
+        note: note ?? this.note,
+        inputSnapshot:
+            clearInputSnapshot ? null : inputSnapshot ?? this.inputSnapshot,
+      );
 
   Map<String, dynamic> toJson() => {
-    'operationId': operationId,
-    'userId': userId,
-    'type': type.name,
-    'status': status.name,
-    'createdAt': createdAt.toIso8601String(),
-    'updatedAt': updatedAt.toIso8601String(),
-    'recordCount': recordCount,
-    'affectedRecordCount': affectedRecordCount,
-    'note': note,
-    'inputSnapshot': inputSnapshot,
-  };
+        'operationId': operationId,
+        'userId': userId,
+        'type': type.name,
+        'status': status.name,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+        'recordCount': recordCount,
+        'affectedRecordCount': affectedRecordCount,
+        'note': note,
+        'inputSnapshot': inputSnapshot,
+      };
 
   factory QazaOperation.fromJson(Map<String, dynamic> json) {
     return QazaOperation(

@@ -11,13 +11,12 @@ import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/state_widgets.dart';
-import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../home_state.dart';
 import '../providers/home_providers.dart';
 
 class HomeProgressHistory extends ConsumerStatefulWidget {
-  const HomeProgressHistory();
+  const HomeProgressHistory({super.key});
 
   @override
   ConsumerState<HomeProgressHistory> createState() =>
@@ -103,8 +102,7 @@ class _HomeProgressChartSectionState
             error: (_, __) => ErrorState(
               key: const Key('home_progress_history_error'),
               message: l10n.homeProgressError,
-              onRetry: () =>
-                  ref.invalidate(homeProgressHistoryProvider(range)),
+              onRetry: () => ref.invalidate(homeProgressHistoryProvider(range)),
             ),
             data: (points) {
               if (points.isEmpty) {
@@ -256,8 +254,7 @@ class _HomeProgressChartSectionState
         for (var i = 0; i < points.length; i++)
           BarChartGroupData(
             x: i,
-            showingTooltipIndicators:
-                selectedIndex == i ? const [0] : const [],
+            showingTooltipIndicators: selectedIndex == i ? const [0] : const [],
             barRods: [
               BarChartRodData(
                 toY: points[i].count.toDouble(),
@@ -349,13 +346,7 @@ class _HomeProgressChartSectionState
             final weekday =
                 DateFormatters.weekdayShortNames[point.start.weekday - 1];
             return BarTooltipItem(
-              DateFormatters.formatCount(point.count) +
-                  ' ' +
-                  l10n.qazaTitle +
-                  ' — ' +
-                  point.start.day.toString() +
-                  ' ' +
-                  weekday,
+              '${DateFormatters.formatCount(point.count)} ${l10n.qazaTitle} — ${point.start.day} $weekday',
               TextStyle(
                 color: colorScheme.onPrimaryContainer,
                 fontWeight: FontWeight.w700,
@@ -416,32 +407,12 @@ class _HomeProgressChartSectionState
     final endMonth = DateFormatters.gregorianMonthFullName(end.month);
 
     if (start.year == end.year && start.month == end.month) {
-      return startMonth +
-          ' ' +
-          start.day.toString() +
-          ' – ' +
-          end.day.toString();
+      return '$startMonth ${start.day} – ${end.day}';
     }
     if (start.year == end.year) {
-      return startMonth +
-          ' ' +
-          start.day.toString() +
-          ' – ' +
-          endMonth +
-          ' ' +
-          end.day.toString();
+      return '$startMonth ${start.day} – $endMonth ${end.day}';
     }
-    return startMonth +
-        ' ' +
-        start.day.toString() +
-        ', ' +
-        start.year.toString() +
-        ' – ' +
-        endMonth +
-        ' ' +
-        end.day.toString() +
-        ', ' +
-        end.year.toString();
+    return '$startMonth ${start.day}, ${start.year} – $endMonth ${end.day}, ${end.year}';
   }
 
   Widget _bottomTitle(
@@ -465,9 +436,7 @@ class _HomeProgressChartSectionState
         label = DateFormatters.weekdayShortNames[point.start.weekday - 1];
       case HomeProgressRange.thirtyDays:
         label =
-            point.start.day.toString() +
-            ' ' +
-            DateFormatters.gregorianMonthName(point.start.month);
+            '${point.start.day} ${DateFormatters.gregorianMonthName(point.start.month)}';
       case HomeProgressRange.monthly:
         label = DateFormatters.gregorianMonthName(point.start.month);
     }
@@ -494,9 +463,7 @@ class _HomeProgressChartSectionState
       case HomeProgressRange.sevenDays:
         return true;
       case HomeProgressRange.thirtyDays:
-        return index == 0 ||
-            index == length - 1 ||
-            index % 5 == 0;
+        return index == 0 || index == length - 1 || index % 5 == 0;
       case HomeProgressRange.monthly:
         return true;
     }
@@ -504,7 +471,7 @@ class _HomeProgressChartSectionState
 }
 
 class HomeChartSkeleton extends StatelessWidget {
-  const HomeChartSkeleton();
+  const HomeChartSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {

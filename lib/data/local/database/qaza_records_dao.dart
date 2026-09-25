@@ -106,8 +106,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (status == QazaStatus.deleted.name) {
           predicates.add(row.status.equals(QazaStatus.deleted.name));
         } else {
-          predicates.add(row.status.isNotIn(
-              [QazaStatus.deleted.name]));
+          predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
           if (status != null) predicates.add(row.status.equals(status));
         }
         if (from != null) {
@@ -160,8 +159,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (status == QazaStatus.deleted.name) {
           predicates.add(row.status.equals(QazaStatus.deleted.name));
         } else {
-          predicates.add(row.status.isNotIn(
-              [QazaStatus.deleted.name]));
+          predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
           if (status != null) predicates.add(row.status.equals(status));
         }
         if (from != null) {
@@ -242,8 +240,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (status == QazaStatus.deleted.name) {
           predicates.add(row.status.equals(QazaStatus.deleted.name));
         } else {
-          predicates.add(row.status.isNotIn(
-              [QazaStatus.deleted.name]));
+          predicates.add(row.status.isNotIn([QazaStatus.deleted.name]));
           if (status != null) predicates.add(row.status.equals(status));
         }
         if (from != null) {
@@ -352,7 +349,6 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return rows.isEmpty ? null : rows.first;
   }
 
-
   Future<List<QazaRecord>> getByIds({
     required String userId,
     required List<String> ids,
@@ -363,8 +359,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     for (var offset = 0; offset < unique.length; offset += 400) {
       final chunk = unique.skip(offset).take(400).toList(growable: false);
       final rows = await (select(qazaRecords)
-            ..where((row) =>
-                row.userId.equals(userId) & row.id.isIn(chunk)))
+            ..where((row) => row.userId.equals(userId) & row.id.isIn(chunk)))
           .get();
       result.addAll(rows.map(_toDomain));
     }
@@ -387,9 +382,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         changed += await (update(qazaRecords)
               ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
             .write(QazaRecordsCompanion(
-              status: Value(QazaStatus.deleted.name),
-              updatedAt: Value(deletedAt),
-            ));
+          status: Value(QazaStatus.deleted.name),
+          updatedAt: Value(deletedAt),
+        ));
       }
       return changed;
     });
@@ -461,9 +456,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         changed += await (update(qazaRecords)
               ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
             .write(QazaRecordsCompanion(
-              status: Value(restoredStatus),
-              updatedAt: Value(restoredAt),
-            ));
+          status: Value(restoredStatus),
+          updatedAt: Value(restoredAt),
+        ));
       }
       return changed;
     });
@@ -606,10 +601,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           row.status.equals(QazaStatus.deleted.name),
         ];
         if (beforeDeletedAt != null) {
-          predicates.add(
-              row.updatedAt.isSmallerThanValue(beforeDeletedAt) |
-                  (row.updatedAt.equals(beforeDeletedAt) &
-                      row.id.isSmallerThanValue(beforeId!)));
+          predicates.add(row.updatedAt.isSmallerThanValue(beforeDeletedAt) |
+              (row.updatedAt.equals(beforeDeletedAt) &
+                  row.id.isSmallerThanValue(beforeId!)));
         }
         return predicates.reduce((a, b) => a & b);
       })
@@ -674,8 +668,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       final changed = <String>[];
       for (final id in ids) {
         final current = await (select(qazaRecords)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(id)))
+              ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
             .getSingleOrNull();
         if (current == null) continue;
         // Pending rows can be completed normally. An already-completed
@@ -735,8 +728,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                   row.userId.equals(userId) & row.id.equals(entry.key)))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.pending.name),
-          completedAt: Value(null),
-          completionId: Value(null),
+          completedAt: const Value(null),
+          completionId: const Value(null),
           updatedAt: Value(undoneAt),
         ));
         if (updated > 0) {

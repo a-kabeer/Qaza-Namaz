@@ -8,7 +8,6 @@ import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../domain/entities/qaza_operation.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
-import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../qaza_record_editor.dart';
@@ -230,10 +229,8 @@ class _QazaOperationDetailScreenState
       context,
       title: _urdu ? 'اضافہ واپس کریں؟' : 'Undo this addition?',
       message: (_urdu
-              ? count.toString() +
-                  ' زیر التوا ریکارڈ اس اضافے سے محفوظ طریقے سے واپس کیے جائیں گے۔ مکمل یا تبدیل شدہ ریکارڈ محفوظ رہیں گے۔'
-              : count.toString() +
-                  ' untouched pending records from this addition will be safely reversed. Completed or changed records will be preserved.'),
+          ? '$count زیر التوا ریکارڈ اس اضافے سے محفوظ طریقے سے واپس کیے جائیں گے۔ مکمل یا تبدیل شدہ ریکارڈ محفوظ رہیں گے۔'
+          : '$count untouched pending records from this addition will be safely reversed. Completed or changed records will be preserved.'),
       confirmLabel: _urdu ? 'واپس کریں' : 'Undo addition',
     );
     if (!confirmed || !mounted) return;
@@ -266,10 +263,8 @@ class _QazaOperationDetailScreenState
         SnackBar(
           content: Text(
             (_urdu
-                ? affected.toString() +
-                    ' ریکارڈ واپس کیے گئے۔ تبدیل یا مکمل ریکارڈ محفوظ رہے۔'
-                : affected.toString() +
-                    ' records were reversed. Changed or completed records were preserved.'),
+                ? '$affected ریکارڈ واپس کیے گئے۔ تبدیل یا مکمل ریکارڈ محفوظ رہے۔'
+                : '$affected records were reversed. Changed or completed records were preserved.'),
           ),
         ),
       );
@@ -290,10 +285,8 @@ class _QazaOperationDetailScreenState
       context,
       title: _urdu ? 'یہ اضافہ ہٹائیں؟' : 'Remove this addition?',
       message: (_urdu
-              ? count.toString() +
-                  ' زیر التوا ریکارڈ اس اضافے سے نرم حذف کیے جائیں گے اور Recently Deleted سے بحال کیے جا سکیں گے۔'
-              : count.toString() +
-                  ' untouched pending records from this addition will be soft-deleted and can be restored from Recently Deleted.'),
+          ? '$count زیر التوا ریکارڈ اس اضافے سے نرم حذف کیے جائیں گے اور Recently Deleted سے بحال کیے جا سکیں گے۔'
+          : '$count untouched pending records from this addition will be soft-deleted and can be restored from Recently Deleted.'),
       confirmLabel: _urdu ? 'یہ اضافہ ہٹائیں' : 'Remove this addition',
     );
     if (!confirmed || !mounted) return;
@@ -326,9 +319,8 @@ class _QazaOperationDetailScreenState
         SnackBar(
           content: Text(
             (_urdu
-                ? affected.toString() + ' ریکارڈ ہٹا دیے گئے۔'
-                : affected.toString() +
-                    ' records were removed and can be recovered.'),
+                ? '$affected ریکارڈ ہٹا دیے گئے۔'
+                : '$affected records were removed and can be recovered.'),
           ),
         ),
       );
@@ -404,10 +396,9 @@ class _QazaOperationDetailScreenState
 
   Widget _body() {
     final l10n = AppLocalizations.of(context);
-    final originalCount =
-        widget.operation.recordCount > 0
-            ? widget.operation.recordCount
-            : summary.currentCount;
+    final originalCount = widget.operation.recordCount > 0
+        ? widget.operation.recordCount
+        : summary.currentCount;
 
     return Column(
       children: [
@@ -431,11 +422,9 @@ class _QazaOperationDetailScreenState
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
-              DateFormatters.formatGregorianDatePadded(
-                    widget.operation.createdAt,
-                  ) +
-                  ' • ' +
-                  DateFormatters.formatClockTime(widget.operation.createdAt),
+              '${DateFormatters.formatGregorianDatePadded(
+                widget.operation.createdAt,
+              )} • ${DateFormatters.formatClockTime(widget.operation.createdAt)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -473,10 +462,8 @@ class _QazaOperationDetailScreenState
               alignment: AlignmentDirectional.centerStart,
               child: Text(
                 (_urdu
-                    ? summary.changedPending.toString() +
-                        ' زیر التوا ریکارڈ تبدیل ہو چکے ہیں؛ Undo/Remove انہیں محفوظ رکھے گا۔'
-                    : summary.changedPending.toString() +
-                        ' pending records have changed since the addition; Undo/Remove will preserve them.'),
+                    ? '${summary.changedPending} زیر التوا ریکارڈ تبدیل ہو چکے ہیں؛ Undo/Remove انہیں محفوظ رکھے گا۔'
+                    : '${summary.changedPending} pending records have changed since the addition; Undo/Remove will preserve them.'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -520,7 +507,7 @@ class _QazaOperationDetailScreenState
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
                     child: FilterChip(
-                      key: Key('qaza_operation_filter_' + value.name),
+                      key: Key('qaza_operation_filter_${value.name}'),
                       selected: filter == value,
                       label: Text(_filterLabel(value)),
                       onSelected: (_) => _refreshForFilter(value),
@@ -581,7 +568,7 @@ class _QazaOperationDetailScreenState
                               };
                               return Card(
                                 key: Key(
-                                  'qaza_operation_record_' + record.id,
+                                  'qaza_operation_record_${record.id}',
                                 ),
                                 child: ListTile(
                                   leading: Icon(icon),
@@ -591,21 +578,15 @@ class _QazaOperationDetailScreenState
                                     ),
                                   ),
                                   subtitle: Text(
-                                    record.prayerType.localizedLabel(l10n) +
-                                        '\n' +
-                                        DateFormatters.hijriLabel(
-                                          record.originalDate,
-                                        ) +
-                                        ' • ' +
-                                        record.status.localizedLabel(l10n),
+                                    '${record.prayerType.localizedLabel(l10n)}\n${DateFormatters.hijriLabel(
+                                      record.originalDate,
+                                    )} • ${record.status.localizedLabel(l10n)}',
                                   ),
-                                  trailing: record.status ==
-                                          QazaStatus.deleted
+                                  trailing: record.status == QazaStatus.deleted
                                       ? null
                                       : IconButton(
                                           key: Key(
-                                            'qaza_operation_edit_' +
-                                                record.id,
+                                            'qaza_operation_edit_${record.id}',
                                           ),
                                           tooltip: _urdu
                                               ? 'ریکارڈ درست کریں'

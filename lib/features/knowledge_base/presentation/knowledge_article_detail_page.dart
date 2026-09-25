@@ -197,9 +197,13 @@ class _KnowledgeArticleSkeleton extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    SkeletonBox(width: 94, height: 32,
+                    SkeletonBox(
+                        width: 94,
+                        height: 32,
                         borderRadius: BorderRadius.all(Radius.circular(999))),
-                    SkeletonBox(width: 120, height: 32,
+                    SkeletonBox(
+                        width: 120,
+                        height: 32,
                         borderRadius: BorderRadius.all(Radius.circular(999))),
                   ],
                 ),

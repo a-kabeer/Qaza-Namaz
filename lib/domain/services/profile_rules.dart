@@ -1,4 +1,3 @@
-
 import 'dart:math' as math;
 
 import '../entities/user_profile.dart';
@@ -31,19 +30,15 @@ class ProfileRules {
   static const int femaleMaxPubertyAge = 15;
 
   static bool isPubertyAgeAllowed(Gender gender, int age) {
-    final min =
-        gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
-    final max =
-        gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    final min = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    final max = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
     return age >= min && age <= max;
   }
 
   static List<int> pubertyAgeOptions(Gender? gender) {
     if (gender == null) return const <int>[];
-    final min =
-        gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
-    final max =
-        gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    final min = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    final max = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
     return List<int>.generate(max - min + 1, (index) => min + index);
   }
 
@@ -96,14 +91,17 @@ class ProfileRules {
     required DateTime today,
   }) {
     if (profile.languageCode.trim().isEmpty) {
-      return const ProfileValidation(error: ProfileValidationError.languageMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.languageMissing);
     }
     final gender = profile.gender;
     if (gender == null) {
-      return const ProfileValidation(error: ProfileValidationError.genderMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.genderMissing);
     }
     if (profile.madhab == null) {
-      return const ProfileValidation(error: ProfileValidationError.madhabMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.madhabMissing);
     }
     final dob = profile.dateOfBirth;
     if (dob == null) {
@@ -115,10 +113,12 @@ class ProfileRules {
 
     final puberty = profile.pubertyAge;
     if (puberty == null) {
-      return const ProfileValidation(error: ProfileValidationError.pubertyMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.pubertyMissing);
     }
     if (!isPubertyAgeAllowed(gender, puberty)) {
-      return const ProfileValidation(error: ProfileValidationError.pubertyInvalid);
+      return const ProfileValidation(
+          error: ProfileValidationError.pubertyInvalid);
     }
 
     final startAge = profile.startPrayingAge;

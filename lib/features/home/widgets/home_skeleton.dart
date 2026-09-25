@@ -5,7 +5,7 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/skeleton.dart';
 
 class HomeSkeleton extends StatelessWidget {
-  const HomeSkeleton();
+  const HomeSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -57,13 +57,13 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
             const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
-                final progress = const Column(
+                const progress = Column(
                   children: [
                     SkeletonCircle(size: 150),
                   ],
                 );
 
-                final next = const Column(
+                const next = Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
@@ -121,23 +121,23 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
                 );
 
                 if (constraints.maxWidth < 500) {
-                  return Column(
+                  return const Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       progress,
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18),
                       next,
                     ],
                   );
                 }
 
-                return Row(
+                return const Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(width: 190, child: progress),
-                    const SizedBox(width: 18),
-                    const SkeletonBox(width: 1, height: 128),
-                    const SizedBox(width: 18),
+                    SizedBox(width: 18),
+                    SkeletonBox(width: 1, height: 128),
+                    SizedBox(width: 18),
                     Expanded(child: next),
                   ],
                 );
@@ -182,7 +182,7 @@ class _HomeOverallSkeletonCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final stats = const Column(
+            const stats = Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
@@ -199,23 +199,23 @@ class _HomeOverallSkeletonCard extends StatelessWidget {
               ],
             );
 
-            final donut = const SkeletonCircle(size: 150);
+            const donut = SkeletonCircle(size: 150);
 
             if (constraints.maxWidth < 520) {
-              return Row(
+              return const Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   donut,
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(child: stats),
                 ],
               );
             }
 
-            return Row(
+            return const Row(
               children: [
                 donut,
-                const SizedBox(width: 24),
+                SizedBox(width: 24),
                 Expanded(child: stats),
               ],
             );
@@ -387,7 +387,7 @@ class _HomeProgressSkeletonCard extends StatelessWidget {
 }
 
 class HomeSkeletonCard extends StatelessWidget {
-  const HomeSkeletonCard({required this.height});
+  const HomeSkeletonCard({super.key, required this.height});
 
   final double height;
 
@@ -423,7 +423,7 @@ class HomeSkeletonCard extends StatelessWidget {
 }
 
 class HomeTodayProgressSkeleton extends StatelessWidget {
-  const HomeTodayProgressSkeleton();
+  const HomeTodayProgressSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -442,7 +442,7 @@ class HomeTodayProgressSkeleton extends StatelessWidget {
 }
 
 class HomeNextQazaSkeleton extends StatelessWidget {
-  const HomeNextQazaSkeleton();
+  const HomeNextQazaSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {

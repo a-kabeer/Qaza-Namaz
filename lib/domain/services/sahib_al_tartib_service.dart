@@ -161,7 +161,6 @@ class SahibAlTartibService {
         if (record.prayerType == PrayerType.witr) record.id,
     };
   }
-
 }
 
 /// Thrown when a completion request would violate the active Sahib al-Tartib

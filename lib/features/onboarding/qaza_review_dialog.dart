@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 
@@ -95,7 +94,6 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
                   l10n.qazaReviewNote,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -229,8 +227,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
     );
   }
 
-  String _madhabLabel(AppLocalizations l10n, Madhab madhab) =>
-      switch (madhab) {
+  String _madhabLabel(AppLocalizations l10n, Madhab madhab) => switch (madhab) {
         Madhab.hanafi => l10n.profileHanafi,
         Madhab.shafi => l10n.profileShafi,
         Madhab.maliki => l10n.profileMaliki,

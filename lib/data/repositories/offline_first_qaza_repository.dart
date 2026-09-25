@@ -193,7 +193,8 @@ class OfflineFirstQazaRepository
 
     for (final record in records) {
       if (record.userId != userId || record.id.isEmpty) {
-        throw StateError('Cannot add a Qaza record for the active local ledger.');
+        throw StateError(
+            'Cannot add a Qaza record for the active local ledger.');
       }
 
       final duplicate = await _localStore.hasRecordCombination(
@@ -216,7 +217,8 @@ class OfflineFirstQazaRepository
     final userId = _requireActive();
     for (final record in records) {
       if (record.userId != userId || record.id.isEmpty) {
-        throw StateError('Cannot add a Qaza record for the active local ledger.');
+        throw StateError(
+            'Cannot add a Qaza record for the active local ledger.');
       }
     }
 
