@@ -12,6 +12,7 @@ class HomeAllCompletedState extends StatelessWidget {
 
   final int completed;
   final int total;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -55,7 +56,6 @@ class HomeAllCompletedState extends StatelessWidget {
                 _StatRow(
                   label: l10n.homeStatTotal,
                   value: total.toString(),
-                ),
                 ),
               ],
             ),
