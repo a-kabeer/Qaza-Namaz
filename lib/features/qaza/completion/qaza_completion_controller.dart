@@ -3,13 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/diagnostics/diagnostics.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
-import 'qaza_completion_policy.dart';
 import 'qaza_completion_service.dart';
 import 'qaza_completion_state.dart';
 
 class QazaCompletionController extends Notifier<QazaCompletionState> {
-  final QazaCompletionPolicy _policy = const QazaCompletionPolicy();
-
   @override
   QazaCompletionState build() => const QazaCompletionState();
 
