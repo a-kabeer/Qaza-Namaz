@@ -62,7 +62,6 @@ void main() {
         id: 'google-user',
         email: 'abdul@example.com',
         displayName: 'Abdul',
-        photoUrl: 'https://example.com/avatar.png',
       ),
     );
 
