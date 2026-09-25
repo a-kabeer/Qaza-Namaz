@@ -35,7 +35,7 @@ void main() {
           child: FilledButton(
             key: const Key('open_review'),
             onPressed: () {
-              showDialog<bool>(
+              showDialog<QazaReviewAction>(
                 context: context,
                 barrierDismissible: false,
                 builder: (_) => QazaReviewDialog(
@@ -68,7 +68,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(host(
       plan,
-      onConfirm: (_) async {},
+      onConfirm: () async => true,
     ));
 
     await tester.tap(find.byKey(const Key('open_review')));
@@ -93,9 +93,9 @@ void main() {
     var called = false;
     await tester.pumpWidget(host(
       plan,
-      onConfirm: (onProgress) async {
+      onConfirm: () async {
         called = true;
-        onProgress(4386, 4386);
+        return true;
       },
     ));
 

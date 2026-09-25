@@ -14,6 +14,7 @@ import '../../features/qaza/add_qaza_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../prayer_times/prayer_times_providers.dart';
+import '../qaza/qaza_import_controller.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
 import 'widgets/home_all_completed_state.dart';
@@ -126,6 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final importState = ref.watch(qazaImportProvider);
     final summaryAsync = ref.watch(progressSummaryProvider);
 
     ref.listen<AsyncValue<QazaProgressSummary>>(
@@ -138,6 +140,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               next.error!,
               stack: next.stackTrace,
             );
+      },
+    );
+
+    ref.listen<QazaImportTaskState>(
+      qazaImportProvider,
+      (previous, next) {
+        if (previous?.isActive != true) return;
+        if (next.phase == QazaImportTaskPhase.completed) {
+          final message = next.added == 0
+              ? l10n.addQazaNothingNew
+              : l10n.addQazaCreatedMessage(next.added);
+          ScaffoldMessenger.maybeOf(context)
+            ?..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(message)));
+        }
       },
     );
 
@@ -165,17 +182,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ),
       ],
-      body: summaryAsync.when(
-        loading: () => const HomeSkeleton(),
-        error: (_, __) => HomeError(
-          onRetry: () => ref.read(homeControllerProvider).refresh(),
-        ),
-        data: (summary) => RefreshIndicator(
-          onRefresh: () => ref.read(homeControllerProvider).refresh(),
-          child: _buildContent(context, ref, summary),
-        ),
+      body: _buildBody(context, ref, summaryAsync, importState),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<QazaProgressSummary> summaryAsync,
+    QazaImportTaskState importState,
+  ) {
+    Widget base = summaryAsync.when(
+      loading: () => const HomeSkeleton(),
+      error: (_, __) => HomeError(
+        onRetry: () => ref.read(homeControllerProvider).refresh(),
+      ),
+      data: (summary) => RefreshIndicator(
+        onRefresh: () => ref.read(homeControllerProvider).refresh(),
+        child: _buildContent(context, ref, summary),
       ),
     );
+
+    if (importState.isActive) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          const HomeSkeleton(),
+          Center(child: _QazaImportProgressCard(state: importState)),
+        ],
+      );
+    }
+
+    if (importState.phase == QazaImportTaskPhase.failed) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          base,
+          Center(
+            child: _QazaImportFailureCard(
+              onRetry: () => ref.read(qazaImportProvider.notifier).retry(),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return base;
   }
 
   Widget _buildContent(
@@ -254,6 +306,113 @@ class HomeError extends StatelessWidget {
       key: const Key('home_error'),
       message: AppLocalizations.of(context).homeProgressError,
       onRetry: onRetry,
+    );
+  }
+}
+
+class _QazaImportProgressCard extends StatelessWidget {
+  const _QazaImportProgressCard({required this.state});
+
+  final QazaImportTaskState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final importing = state.phase == QazaImportTaskPhase.importing;
+    final value = state.progress;
+
+    return Card(
+      elevation: 4,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 340),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome_outlined,
+                  color: scheme.primary, size: 28),
+              const SizedBox(height: 10),
+              Text(l10n.addQazaInProgress,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium),
+              const SizedBox(height: 16),
+              if (importing && value != null) ...[
+                Text('${(value * 100).round()}%',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(value: value),
+                const SizedBox(height: 10),
+                Text('${state.processed} / ${state.total}',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge),
+                if (state.added != 0 || state.skipped != 0) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    '${state.added} ${l10n.addQazaNewRecordsLabel} • '
+                    '${state.skipped} ${l10n.addQazaExistingLabel}',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant),
+                  ),
+                ],
+              ] else ...[
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+                const SizedBox(height: 12),
+                Text(l10n.commonLoading,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QazaImportFailureCard extends StatelessWidget {
+  const _QazaImportFailureCard({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Card(
+      elevation: 4,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 340),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, color: scheme.error, size: 30),
+              const SizedBox(height: 10),
+              Text(l10n.stateErrorTitle,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium),
+              const SizedBox(height: 6),
+              Text(l10n.homeProgressError,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 14),
+              FilledButton(onPressed: onRetry, child: Text(l10n.commonRetry)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

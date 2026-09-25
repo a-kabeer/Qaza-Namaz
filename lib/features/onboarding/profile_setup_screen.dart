@@ -8,11 +8,13 @@ import '../../domain/entities/user_profile.dart';
 import '../auth/auth_startup_state.dart';
 import '../auth/guest_upgrade_controller.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../domain/entities/qaza_operation.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'profile_form.dart';
 import 'qaza_review_dialog.dart';
 import 'startup_gate.dart';
+import '../qaza/qaza_import_controller.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({
@@ -59,17 +61,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       throw StateError('A valid Qaza plan could not be calculated.');
     }
 
-    final added = await showDialog<int>(
+    final action = await showDialog<QazaReviewAction>(
       context: context,
       barrierDismissible: false,
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        onConfirm: (onProgress) => _addQazaPlan(plan, onProgress),
+        onConfirm: () => _startQazaPlanImport(plan),
       ),
     );
 
-    if (!mounted || added == null) return;
+    if (!mounted || action != QazaReviewAction.add) return;
 
     await ref.read(userProfileRepositoryProvider).save(finalizedProfile);
     await AuthStartupState.clear();
@@ -88,21 +90,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<void> _addQazaPlan(
-    QazaPlan plan,
-    void Function(int processed, int total) onProgress,
-  ) async {
+  Future<bool> _startQazaPlanImport(QazaPlan plan) async {
     final userId =
         ref.read(authRepositoryProvider).currentUser?.id ??
         UserProfile.localLedgerUserId;
-
-    await ref.read(qazaServiceProvider).recordQazaForDates(
-          userId: userId,
-          dates: _planDates(plan),
-          prayerTypes: _planPrayerTypes(plan),
-          batchSize: 500,
-          onProgress: onProgress,
-        );
+    final dates = _planDates(plan).toList(growable: false);
+    final prayers = _planPrayerTypes(plan).toSet();
+    final inputSnapshot = <String, dynamic>{
+      'version': 1,
+      'startDate': plan.startDate.toIso8601String(),
+      'endDate': plan.endDate.toIso8601String(),
+      'totalDays': plan.totalDays,
+      'includeWitr': plan.includeWitr,
+      'prayers': prayers.map((prayer) => prayer.name).toList(growable: false),
+    };
+    return ref.read(qazaImportProvider.notifier).start(
+      userId: userId,
+      dates: dates,
+      prayers: prayers,
+      operationType: QazaOperationType.calculatorImport,
+      inputSnapshot: inputSnapshot,
+    );
   }
 
   Iterable<DateTime> _planDates(QazaPlan plan) sync* {

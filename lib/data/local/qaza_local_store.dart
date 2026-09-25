@@ -569,6 +569,17 @@ abstract class QazaLocalStore {
     await saveOutbox(userId, [...await loadOutbox(userId), ...ops]);
   }
 
+  /// Bulk-write capability hook. Database-backed stores override this to
+  /// return only records actually accepted by the database.
+  Future<List<String>> appendRecordsAndOutboxReturningInsertedIds({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    await appendRecordsAndOutbox(userId, records, ops);
+    return records.map((record) => record.id).toList(growable: false);
+  }
+
   Future<List<PendingSyncOp>> loadOutbox(String userId) async {
     final snapshot = await load();
     return List<PendingSyncOp>.of(
