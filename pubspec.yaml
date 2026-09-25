@@ -1,5 +1,5 @@
 name: qaza_namaz
-description: Qaza Namaz ledger with offline-first Drift/SQLite storage and optional Firebase cloud synchronization.
+description: Qaza Namaz ledger with offline-first local Drift/SQLite storage.
 publish_to: "none"
 version: 0.2.0+2
 
@@ -14,12 +14,7 @@ dependencies:
     sdk: flutter
   intl: any
   http: ^1.6.0
-  cloud_firestore: ^5.0.0
-  firebase_auth: ^5.7.0
-  firebase_core: ^3.0.0
-  firebase_app_check: ^0.3.2+10
   local_auth: ^3.0.2
-  google_sign_in: ^7.2.0
   hijri: ^3.0.1
   drift: ^2.35.0
   drift_flutter: ^0.3.1
@@ -27,7 +22,6 @@ dependencies:
   flutter_secure_storage: ^10.3.4
   path_provider: ^2.1.5
   shared_preferences: ^2.2.3
-  connectivity_plus: ^6.0.5
   flutter_riverpod: ^2.5.1
   geolocator: ^14.0.3
   file_picker: 13.1.0
