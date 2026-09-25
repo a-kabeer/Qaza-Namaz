@@ -1301,48 +1301,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageUrdu => 'اردو';
 
   @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
   String get homeTodayProgressHeader => 'Today\'s Progress';
 
   @override
@@ -1373,21 +1331,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePending => 'Pending';
 
   @override
-
-  @override
-
-  @override
-
-  @override
-
-  @override
   String get homeDetailedStatistics => 'View Detailed Statistics';
 
   @override
   String get homeDetailedStatisticsSubtitle =>
       'Overall and prayer-wise completion';
-
-  @override
 
   @override
   String get homeTodayDate => 'Today';
