@@ -717,9 +717,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           ],
         ),
         const SizedBox(height: 10),
-        // Until Sahib al-Tartib has resolved, no Fard prayer may be offered —
-        // not the current prayer, and not the oldest pending overall. Witr is
-        // unaffected and stays reachable from the prayer menu.
+        // Until Sahib al-Tartib has resolved, no Fard prayer may be offered.
+        // Witr is unaffected and stays reachable from the prayer menu.
         if (widget.selected.source ==
             HomePrayerSelectionSource.tartibUnavailable)
           _TartibUnavailable(
