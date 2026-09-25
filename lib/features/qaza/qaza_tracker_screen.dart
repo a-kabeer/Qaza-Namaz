@@ -19,6 +19,7 @@ import '../prayer_times/prayer_times_providers.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_banner.dart';
+import 'add_actions_fab.dart';
 import 'history/qaza_history_screen.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
@@ -89,13 +90,9 @@ class QazaTrackerScreen extends ConsumerWidget {
         ),
         floatingActionButton: state.selectionMode
             ? null
-            : FloatingActionButton(
+            : AddQazaFab(
                 key: const Key('qaza_tracker_add_fab'),
-                tooltip: l10n.qazaAddTooltip,
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/qaza/add');
-                },
-                child: const Icon(Icons.add_rounded),
+                onAddQaza: () => Navigator.of(context).pushNamed('/qaza/add'),
               ),
       ),
     );
