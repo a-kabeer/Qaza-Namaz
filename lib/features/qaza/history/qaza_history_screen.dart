@@ -356,7 +356,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                           try {
                                             await _restore(record);
                                           } catch (_) {
-                                            if (!mounted) return;
+                                            if (!context.mounted) return;
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
