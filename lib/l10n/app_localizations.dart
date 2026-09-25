@@ -134,18 +134,6 @@ abstract class AppLocalizations {
   /// **'Daily reminder to complete your Qaza.'**
   String get settingsRemindersSubtitle;
 
-  /// No description provided for @settingsBackupSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Data & Storage'**
-  String get settingsBackupSection;
-
-  /// No description provided for @settingsBackupSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud sync, export and import.'**
-  String get settingsBackupSubtitle;
-
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:
@@ -239,7 +227,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorNetwork.
   ///
   /// In en, this message translates to:
-  /// **'No connection. Your Qaza are saved on this device and will sync when you are back online.'**
+  /// **'No connection. Your Qaza are saved on this device.'**
   String get errorNetwork;
 
   /// No description provided for @errorTimeout.
@@ -397,72 +385,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Witr • 3 Rakat Wajib • Independent'**
   String get prayerRakatWitr;
-
-  /// No description provided for @syncSettingUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting up'**
-  String get syncSettingUp;
-
-  /// No description provided for @syncSettingUpDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing your Qaza records on this device.'**
-  String get syncSettingUpDetail;
-
-  /// No description provided for @syncRestoring.
-  ///
-  /// In en, this message translates to:
-  /// **'Restoring'**
-  String get syncRestoring;
-
-  /// No description provided for @syncRestoringDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Bringing your saved Qaza records to this device.'**
-  String get syncRestoringDetail;
-
-  /// No description provided for @syncSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'Synced'**
-  String get syncSynced;
-
-  /// No description provided for @syncSyncedAt.
-  ///
-  /// In en, this message translates to:
-  /// **'Synced • {timestamp}'**
-  String syncSyncedAt(String timestamp);
-
-  /// No description provided for @syncSyncing.
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing'**
-  String get syncSyncing;
-
-  /// No description provided for @syncSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved'**
-  String get syncSaved;
-
-  /// No description provided for @syncSavedDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Your changes are saved on this device and will sync automatically.'**
-  String get syncSavedDetail;
-
-  /// No description provided for @syncErrorLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync Error'**
-  String get syncErrorLabel;
-
-  /// No description provided for @syncErrorDetail.
-  ///
-  /// In en, this message translates to:
-  /// **'Your changes are saved on this device. We will retry automatically.'**
-  String get syncErrorDetail;
 
   /// No description provided for @commonClose.
   ///
@@ -968,72 +890,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 date selected.} other{{count} dates selected.}}'**
   String calendarSelectedCount(int count);
 
-  /// No description provided for @authTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in'**
-  String get authTitle;
-
-  /// No description provided for @authWelcomeBack.
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome back'**
-  String get authWelcomeBack;
-
-  /// No description provided for @authSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to continue to your Qaza Namaz tracker.'**
-  String get authSubtitle;
-
-  /// No description provided for @authContinueWithGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with Google'**
-  String get authContinueWithGoogle;
-
-  /// No description provided for @authSigningIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Signing in...'**
-  String get authSigningIn;
-
-  /// No description provided for @authProviderNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Google is the currently connected authentication provider. Sign-in status is restored automatically from Firebase.'**
-  String get authProviderNote;
-
-  /// No description provided for @authHelpTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Authentication help'**
-  String get authHelpTooltip;
-
-  /// No description provided for @authHelpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Authentication'**
-  String get authHelpTitle;
-
-  /// No description provided for @authHelpBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.'**
-  String get authHelpBody;
-
-  /// No description provided for @authDismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'Dismiss'**
-  String get authDismiss;
-
-  /// No description provided for @authFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to sign in. Please try again.'**
-  String get authFailed;
-
   /// No description provided for @notificationsOff.
   ///
   /// In en, this message translates to:
@@ -1316,95 +1172,11 @@ abstract class AppLocalizations {
   /// **'Get Started'**
   String get welcomeGetStarted;
 
-  /// No description provided for @welcomeSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Already have an account? Sign In'**
-  String get welcomeSignIn;
-
   /// No description provided for @splashTagline.
   ///
   /// In en, this message translates to:
   /// **'A calm place for prayer accountability'**
   String get splashTagline;
-
-  /// No description provided for @accountTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Account'**
-  String get accountTitle;
-
-  /// No description provided for @accountSignInMethod.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign-in method'**
-  String get accountSignInMethod;
-
-  /// No description provided for @accountGoogleAuth.
-  ///
-  /// In en, this message translates to:
-  /// **'Google'**
-  String get accountGoogleAuth;
-
-  /// No description provided for @accountSignedInWithGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in with Google'**
-  String get accountSignedInWithGoogle;
-
-  /// No description provided for @accountStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Account status'**
-  String get accountStatus;
-
-  /// No description provided for @accountSignedIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in'**
-  String get accountSignedIn;
-
-  /// No description provided for @accountRecordsRetained.
-  ///
-  /// In en, this message translates to:
-  /// **'Your saved Qaza records remain stored and will be restored after the next sign-in.'**
-  String get accountRecordsRetained;
-
-  /// No description provided for @accountDeveloperContext.
-  ///
-  /// In en, this message translates to:
-  /// **'Developer context'**
-  String get accountDeveloperContext;
-
-  /// No description provided for @accountFirebaseUid.
-  ///
-  /// In en, this message translates to:
-  /// **'Firebase UID'**
-  String get accountFirebaseUid;
-
-  /// No description provided for @accountNotAvailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Not available'**
-  String get accountNotAvailable;
-
-  /// No description provided for @accountSignOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign out'**
-  String get accountSignOut;
-
-  /// No description provided for @accountSignOutPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign out?'**
-  String get accountSignOutPrompt;
-
-  /// No description provided for @accountSignOutExplanation.
-  ///
-  /// In en, this message translates to:
-  /// **'Signing out disconnects your Google account. Your Qaza progress remains on this device.'**
-  String get accountSignOutExplanation;
 
   /// No description provided for @dataTitle.
   ///
@@ -1448,12 +1220,6 @@ abstract class AppLocalizations {
   /// **'Export canceled. Your data was not changed.'**
   String get dataExportCanceled;
 
-  /// No description provided for @dataExportSignInRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in before exporting your Qaza data.'**
-  String get dataExportSignInRequired;
-
   /// No description provided for @dataExportFailed.
   ///
   /// In en, this message translates to:
@@ -1469,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataImportBody.
   ///
   /// In en, this message translates to:
-  /// **'Open a JSON export, validate it completely, preview the merge, then apply it to this account.'**
+  /// **'Open a JSON export, validate it completely, preview the merge, then apply it to this local ledger.'**
   String get dataImportBody;
 
   /// No description provided for @dataImportAction.
@@ -1489,12 +1255,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import canceled. Your data was not changed.'**
   String get dataImportCanceled;
-
-  /// No description provided for @dataImportSignInRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in before importing data.'**
-  String get dataImportSignInRequired;
 
   /// No description provided for @dataImportEmptyFile.
   ///
@@ -1529,14 +1289,8 @@ abstract class AppLocalizations {
   /// No description provided for @dataSafetyBody.
   ///
   /// In en, this message translates to:
-  /// **'Export does not delete cloud data. Import does not erase existing records. Sign-out is not data deletion, and uninstalling the app does not delete cloud records.'**
+  /// **'Export and import manage only the Qaza data stored on this device. Export creates a local backup file; import adds or updates local records.'**
   String get dataSafetyBody;
-
-  /// No description provided for @dataRemapNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Imported records are remapped to the currently signed-in account. The existing local-first sync layer then confirms changes with Firestore in the background.'**
-  String get dataRemapNote;
 
   /// No description provided for @addQazaTitle.
   ///
@@ -2102,12 +1856,6 @@ abstract class AppLocalizations {
   /// **'Manage your sign-in and account details.'**
   String get settingsAccountSubtitle;
 
-  /// No description provided for @settingsGoogleSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Google sign-in'**
-  String get settingsGoogleSignIn;
-
   /// No description provided for @settingsKnowledgeBaseSubtitle.
   ///
   /// In en, this message translates to:
@@ -2135,20 +1883,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sync, backup, export, and import your Qaza data.'**
+  /// **'Export and import your Qaza data.'**
   String get settingsDataSubtitle;
-
-  /// No description provided for @settingsDataCloud.
-  ///
-  /// In en, this message translates to:
-  /// **'Data & Cloud'**
-  String get settingsDataCloud;
-
-  /// No description provided for @settingsDataCloudSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync, export and import status'**
-  String get settingsDataCloudSubtitle;
 
   /// No description provided for @settingsResetCounterTitle.
   ///
@@ -2177,7 +1913,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsResetCounterDialogMessage.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes every Qaza record on this account — pending and completed — from this device and from your cloud backup.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.'**
+  /// **'This permanently deletes every Qaza record on this device — pending and completed.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.'**
   String get settingsResetCounterDialogMessage;
 
   /// No description provided for @settingsResetCounterAcknowledge.
@@ -2204,78 +1940,6 @@ abstract class AppLocalizations {
   /// **'Could not reset the Qaza counter: {error}'**
   String settingsResetCounterFailed(String error);
 
-  /// No description provided for @authContinueAsGuest.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue as Guest'**
-  String get authContinueAsGuest;
-
-  /// No description provided for @authGuestNote.
-  ///
-  /// In en, this message translates to:
-  /// **'You can sign in with Google later to keep your progress with your account.'**
-  String get authGuestNote;
-
-  /// No description provided for @backupPromptTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep your progress safe'**
-  String get backupPromptTitle;
-
-  /// No description provided for @backupPromptBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in with Google to keep your Qaza progress available with your account.'**
-  String get backupPromptBody;
-
-  /// No description provided for @backupPromptConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with Google'**
-  String get backupPromptConfirm;
-
-  /// No description provided for @backupPromptDismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'Not Now'**
-  String get backupPromptDismiss;
-
-  /// No description provided for @settingsBackupSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Back up / Sign in'**
-  String get settingsBackupSignIn;
-
-  /// No description provided for @settingsBackupSignInSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'You are using the app as a guest. Sign in to back up your Qaza.'**
-  String get settingsBackupSignInSubtitle;
-
-  /// No description provided for @backupSignInFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign-in failed. Your progress is still on this device.'**
-  String get backupSignInFailed;
-
-  /// No description provided for @backupSignInCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign-in canceled. Your progress is still on this device.'**
-  String get backupSignInCancelled;
-
-  /// No description provided for @backupSignInFailedReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign-in failed: {reason} Your progress is still on this device.'**
-  String backupSignInFailedReason(String reason);
-
-  /// No description provided for @backupMigrationDone.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Signed in. Your Qaza progress is now linked to your account.} =1{Signed in. Your Qaza progress is now linked to your account.} other{Signed in. Your Qaza progress is now linked to your account.}}'**
-  String backupMigrationDone(int count);
-
   /// No description provided for @settingsAboutSection.
   ///
   /// In en, this message translates to:
@@ -2299,162 +1963,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Islamic Prayer Qaza Tracker'**
   String get settingsAppDescription;
-
-  /// No description provided for @cloudSyncTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud Sync'**
-  String get cloudSyncTitle;
-
-  /// No description provided for @cloudSyncNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync now'**
-  String get cloudSyncNow;
-
-  /// No description provided for @cloudPendingChanges.
-  ///
-  /// In en, this message translates to:
-  /// **'Pending changes'**
-  String get cloudPendingChanges;
-
-  /// No description provided for @cloudLastSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'Last synced'**
-  String get cloudLastSynced;
-
-  /// No description provided for @cloudExportImportSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.'**
-  String get cloudExportImportSubtitle;
-
-  /// No description provided for @cloudInactive.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline storage is not active in this build.'**
-  String get cloudInactive;
-
-  /// No description provided for @cloudBootstrapping.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting up your Qaza records on this device…'**
-  String get cloudBootstrapping;
-
-  /// No description provided for @cloudHydrating.
-  ///
-  /// In en, this message translates to:
-  /// **'Restoring your saved Qaza records to this device…'**
-  String get cloudHydrating;
-
-  /// No description provided for @cloudSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'All your Qaza records are saved in the cloud.'**
-  String get cloudSynced;
-
-  /// No description provided for @cloudSyncing.
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing your ledger…'**
-  String get cloudSyncing;
-
-  /// No description provided for @cloudOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline — records are saved on this device and sync automatically.'**
-  String get cloudOffline;
-
-  /// No description provided for @cloudPendingCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 change waiting to sync.} other{{count} changes waiting to sync.}}'**
-  String cloudPendingCount(int count);
-
-  /// No description provided for @cloudSyncProblem.
-  ///
-  /// In en, this message translates to:
-  /// **'Sync problem — your data is safe on this device.'**
-  String get cloudSyncProblem;
-
-  /// No description provided for @cloudQazaCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza count'**
-  String get cloudQazaCount;
-
-  /// No description provided for @cloudQazaCountValue.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{No Qaza records} =1{1 Qaza record} other{{count} Qaza records}}'**
-  String cloudQazaCountValue(int count);
-
-  /// No description provided for @cloudBackupStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud backup'**
-  String get cloudBackupStatus;
-
-  /// No description provided for @cloudBackupDeleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud copy deleted; local records remain.'**
-  String get cloudBackupDeleted;
-
-  /// No description provided for @cloudLocalVsCloudTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Local vs cloud'**
-  String get cloudLocalVsCloudTitle;
-
-  /// No description provided for @cloudLocalVsCloudBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.'**
-  String get cloudLocalVsCloudBody;
-
-  /// No description provided for @cloudDeleteTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete cloud data'**
-  String get cloudDeleteTitle;
-
-  /// No description provided for @cloudDeleteBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.'**
-  String get cloudDeleteBody;
-
-  /// No description provided for @cloudDeleteAcknowledge.
-  ///
-  /// In en, this message translates to:
-  /// **'I understand the cloud copy will be permanently deleted.'**
-  String get cloudDeleteAcknowledge;
-
-  /// No description provided for @cloudDeleteAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete cloud data'**
-  String get cloudDeleteAction;
-
-  /// No description provided for @cloudDeleteDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud Qaza data was deleted. Your local records remain on this device.'**
-  String get cloudDeleteDone;
-
-  /// No description provided for @cloudDeleteFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Cloud data could not be deleted. Your local records are still safe.'**
-  String get cloudDeleteFailed;
-
-  /// No description provided for @cloudDeleteSignInRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to manage cloud data.'**
-  String get cloudDeleteSignInRequired;
 
   /// No description provided for @settingsTitle.
   ///
