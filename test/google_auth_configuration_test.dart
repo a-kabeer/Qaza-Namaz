@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
+
 void main() {
   test('Android Firebase configuration matches the application ID and app',
       () async {
@@ -84,14 +86,22 @@ void main() {
     );
     expect(
       repository,
-      contains('initialize(serverClientId: googleServerClientId)'),
-      reason: 'Google Sign-In must be initialized with the Web/server client ID.',
+      contains('initialize()'),
+      reason:
+          'Android Google Sign-In should read the Web client from google-services.json.',
     );
     expect(
       repository,
       contains('await _googleSignIn.authenticate()'),
       reason: 'Android interactive authentication must use authenticate() in 7.x.',
     );
+    expect(
+      repository,
+      contains('_authenticateWithCredentialManagerRecovery()'),
+      reason:
+          'Credential Manager [16] failures must get one stale-state recovery retry.',
+    );
+
     expect(
       repository,
       isNot(contains('_googleSignIn.signIn()')),
@@ -120,9 +130,27 @@ void main() {
     expect(authConfig, contains('com.example.qaza_namaz_task1_flutter'));
     expect(
       authConfig,
-      contains(
-        '895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com',
+      isNot(contains('googleServerClientId')),
+      reason:
+          'The Web OAuth client ID must not be duplicated as a second Dart source of truth.',
+    );
+
+    expect(
+      FirebaseAuthRepository.isCredentialManagerReauthFailure(
+        '[16] Account reauth failed.',
       ),
+      isTrue,
+    );
+    expect(
+      FirebaseAuthRepository.isCredentialManagerReauthFailure(
+        'User canceled the account chooser.',
+      ),
+      isFalse,
+    );
+    expect(
+      FirebaseAuthRepository.isCredentialManagerReauthFailure(null),
+      isFalse,
+      reason: 'A missing Google exception description is not a Credential Manager reauth failure.',
     );
   });
 }

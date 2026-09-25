@@ -106,7 +106,22 @@ void main() {
       );
     });
 
-    test('cancellation with platform description stays diagnosable', () {
+    test('Credential Manager account reauth failure is not treated as user cancel', () {
+      final mapped = FirebaseAuthRepository.mapSignInFailure(
+        const GoogleSignInException(
+          code: GoogleSignInExceptionCode.canceled,
+          description: '[16] Account reauth failed.',
+        ),
+      );
+
+      expect(mapped, isA<AuthenticationCancelledException>());
+      final cancellation = mapped! as AuthenticationCancelledException;
+      expect(cancellation.userInitiated, isFalse);
+      expect(cancellation.message, contains('not a normal cancellation'));
+      expect(cancellation.message, contains('signing certificate SHA-1'));
+    });
+
+    test('other cancellation descriptions remain diagnosable', () {
       final mapped = FirebaseAuthRepository.mapSignInFailure(
         const GoogleSignInException(
           code: GoogleSignInExceptionCode.canceled,

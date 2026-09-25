@@ -98,7 +98,7 @@ class FirebaseAuthRepository implements AuthRepository {
     if (pending != null) return pending;
 
     final attempt = _googleSignIn
-        .initialize(serverClientId: googleServerClientId)
+        .initialize()
         .catchError((Object error, StackTrace stack) {
       _googleSignInInitialization = null;
       Error.throwWithStackTrace(error, stack);
@@ -124,7 +124,7 @@ class FirebaseAuthRepository implements AuthRepository {
 
           requireAuthenticateSupport(_googleSignIn.supportsAuthenticate());
 
-          final googleUser = await _googleSignIn.authenticate();
+          final googleUser = await _authenticateWithCredentialManagerRecovery();
           final authentication = googleUser.authentication;
           return GoogleIdentityTokens(idToken: authentication.idToken);
         },
@@ -151,6 +151,30 @@ class FirebaseAuthRepository implements AuthRepository {
       // unchanged; re-wrapping it would bury the stage it names.
       if (mapped == null) rethrow;
       throw mapped;
+    }
+  }
+
+  /// Android Credential Manager can return [16] Account reauth failed
+  /// when stale credential state cannot be re-authenticated. The Android
+  /// google_sign_in implementation maps signOut() to clearCredentialState(),
+  /// so clear that state and retry exactly once before surfacing the failure.
+  Future<GoogleSignInAccount> _authenticateWithCredentialManagerRecovery() async {
+    try {
+      return await _googleSignIn.authenticate();
+    } on GoogleSignInException catch (error) {
+      final description = error.description;
+      if (!_isCredentialManagerReauthFailure(description)) rethrow;
+
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {
+        // Clearing Credential Manager state is a recovery aid, not a reason to
+        // replace the original authentication failure.
+      }
+
+      // Retry exactly once. If it still fails, let the second failure travel
+      // to the normal mapping/diagnostics path so we do not hide new details.
+      return _googleSignIn.authenticate();
     }
   }
 
@@ -212,6 +236,14 @@ class FirebaseAuthRepository implements AuthRepository {
         if (description == null || description.isEmpty) {
           return const AuthenticationCancelledException();
         }
+        if (_isCredentialManagerReauthFailure(description)) {
+          return AuthenticationCancelledException.withDescription(
+            'Google Sign-In could not re-authenticate the selected account. '
+            'This is not a normal cancellation. Check that the Android app '
+            'package name and signing certificate SHA-1 are registered for '
+            'this exact build in Firebase/Google Cloud, then retry.',
+          );
+        }
         return AuthenticationCancelledException.withDescription(description);
       }
 
@@ -253,6 +285,16 @@ class FirebaseAuthRepository implements AuthRepository {
       stackTrace: stack,
     );
   }
+
+  static bool _isCredentialManagerReauthFailure(String? description) {
+    final normalized = description?.toLowerCase() ?? '';
+    return normalized.contains('[16]') &&
+        normalized.contains('account reauth failed');
+  }
+
+  @visibleForTesting
+  static bool isCredentialManagerReauthFailure(String? description) =>
+      _isCredentialManagerReauthFailure(description);
 
   static String _googleFailureMessage(GoogleSignInException error) {
     final description = error.description?.trim();
