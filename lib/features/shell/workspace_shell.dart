@@ -81,15 +81,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    // A guest who has just recorded their first Qaza is offered a backup,
-    // once. Shown from here so it reaches them wherever they added it.
-    ref.listen<bool>(shouldOfferBackupProvider, (_, offer) {
-      if (!offer || !mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) showBackupPrompt(context, ref);
-      });
-    });
-
     ref.listen<WorkspaceDestination>(
       workspaceDestinationProvider,
       (previous, next) {
