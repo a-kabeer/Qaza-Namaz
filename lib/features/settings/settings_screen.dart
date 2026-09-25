@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -75,7 +77,18 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {
-                  ref.read(localeProvider.notifier).set(Locale(value.first));
+                  final selected = value.first;
+                  ref.read(localeProvider.notifier).set(Locale(selected));
+                  final profile =
+                      ref.read(userProfileProvider).valueOrNull;
+                  if (profile != null && profile.languageCode != selected) {
+                    unawaited(
+                      ref.read(userProfileRepositoryProvider).save(
+                            profile.copyWith(languageCode: selected),
+                          ),
+                    );
+                    ref.invalidate(userProfileProvider);
+                  }
                 },
               ),
             ),
