@@ -302,11 +302,6 @@ class QazaService {
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return const {};
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
-    final timeBlockedKeys = await _getTimeBlockedKeys(
-      userId: userId,
-      dates: normalizedDates,
-      prayerTypes: selectedPrayers,
-    );
     final recorded = availability.recordedKeys(existing);
     final result = <DateTime, Set<PrayerType>>{};
     for (final date in normalizedDates) {
@@ -314,9 +309,7 @@ class QazaService {
       for (final prayer in selectedPrayers) {
         final key =
             QazaPrayerKey(userId: userId, date: date, prayerType: prayer);
-        if (!prayedKeys.contains(key) &&
-            !recorded.contains(key) &&
-            !timeBlockedKeys.contains(key)) {
+        if (!prayedKeys.contains(key) && !recorded.contains(key)) {
           available.add(prayer);
         }
       }
@@ -510,11 +503,6 @@ class QazaService {
     }
 
     final existing = await _getExistingForAvailability(
-      userId: userId,
-      dates: normalizedDates,
-      prayerTypes: selectedPrayers,
-    );
-    final timeBlockedKeys = await _getTimeBlockedKeys(
       userId: userId,
       dates: normalizedDates,
       prayerTypes: selectedPrayers,
