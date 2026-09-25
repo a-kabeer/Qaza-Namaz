@@ -975,9 +975,6 @@ void main() {
             const AppUser(id: 'u1', email: 'u1@example.com'),
           ),
         ),
-        homeCurrentPrayerProvider.overrideWith(
-          _TestHomeCurrentPrayerNotifier.new,
-        ),
       ]);
       addTearDown(container.dispose);
 
