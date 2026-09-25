@@ -155,6 +155,7 @@ void main() {
   // ---------------------------------------------------------------- 3
   testWidgets('journey: new Google account enters profile setup',
       (tester) async {
+    SharedPreferences.setMockInitialValues({});
     auth = _JourneyAuth(isNewUser: true);
     repository = InMemoryQazaRepository();
     final container = ProviderContainer(overrides: [
