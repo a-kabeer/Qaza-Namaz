@@ -19,9 +19,6 @@ class HomeController {
     for (final prayer in PrayerType.values) {
       ref.invalidate(oldestPendingProvider(prayer));
     }
-    for (final range in HomeProgressRange.values) {
-      ref.invalidate(homeProgressHistoryProvider(range));
-    }
   }
 
   Future<void> refresh() async {
@@ -34,7 +31,6 @@ class HomeController {
       'home_summary_refresh_failed',
     );
 
-    final activeRange = ref.read(homeProgressRangeProvider);
     await _refreshOptional(
       homeDailyProgressProvider,
       'home_daily_progress_refresh_failed',
@@ -42,10 +38,6 @@ class HomeController {
     await _refreshOptional(
       sahibAlTartibProvider,
       'home_sahib_al_tartib_refresh_failed',
-    );
-    await _refreshOptional(
-      homeProgressHistoryProvider(activeRange),
-      'home_progress_history_refresh_failed',
     );
     final selected = ref.read(homeSelectedPrayerProvider);
     if (selected.prayer != null) {

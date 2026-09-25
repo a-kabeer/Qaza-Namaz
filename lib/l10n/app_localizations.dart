@@ -2222,131 +2222,26 @@ abstract class AppLocalizations {
   /// **'اردو'**
   String get languageUrdu;
 
-  /// No description provided for @settingsPrivacySecurity.
-  ///
-  /// In en, this message translates to:
-  /// **'Privacy & Security'**
-  String get settingsPrivacySecurity;
 
-  /// No description provided for @settingsPrivacySecuritySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Protect access to your Qaza records on this device.'**
-  String get settingsPrivacySecuritySubtitle;
 
-  /// No description provided for @settingsAppLock.
-  ///
-  /// In en, this message translates to:
-  /// **'App Lock'**
-  String get settingsAppLock;
 
-  /// No description provided for @settingsAppLockSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Require device authentication before showing your Qaza records.'**
-  String get settingsAppLockSubtitle;
 
-  /// No description provided for @settingsAppLockWhen.
-  ///
-  /// In en, this message translates to:
-  /// **'Lock when you leave the app'**
-  String get settingsAppLockWhen;
 
-  /// No description provided for @settingsAppLockImmediate.
-  ///
-  /// In en, this message translates to:
-  /// **'Immediately'**
-  String get settingsAppLockImmediate;
 
-  /// No description provided for @settingsAppLockOneMinute.
-  ///
-  /// In en, this message translates to:
-  /// **'After 1 minute'**
-  String get settingsAppLockOneMinute;
 
-  /// No description provided for @settingsAppLockFiveMinutes.
-  ///
-  /// In en, this message translates to:
-  /// **'After 5 minutes'**
-  String get settingsAppLockFiveMinutes;
 
-  /// No description provided for @settingsAppLockNever.
-  ///
-  /// In en, this message translates to:
-  /// **'Never'**
-  String get settingsAppLockNever;
 
-  /// No description provided for @settingsAppLockDeviceNote.
-  ///
-  /// In en, this message translates to:
-  /// **'App Lock uses your device security, such as fingerprint, face unlock, PIN, pattern, or password. Your device must have a supported screen lock configured.'**
-  String get settingsAppLockDeviceNote;
 
-  /// No description provided for @appLockEnableReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Authenticate to turn on App Lock for Qaza Namaz.'**
-  String get appLockEnableReason;
 
-  /// No description provided for @appLockDisableReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Authenticate to turn off App Lock.'**
-  String get appLockDisableReason;
 
-  /// No description provided for @appLockAuthenticationReason.
-  ///
-  /// In en, this message translates to:
-  /// **'Authenticate to open your Qaza records.'**
-  String get appLockAuthenticationReason;
 
-  /// No description provided for @appLockLockedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza Namaz is locked'**
-  String get appLockLockedTitle;
 
-  /// No description provided for @appLockLockedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Authenticate with your device security to continue. Your Qaza data is hidden until you unlock the app.'**
-  String get appLockLockedBody;
 
-  /// No description provided for @appLockUnlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock'**
-  String get appLockUnlock;
 
-  /// No description provided for @appLockUnlocking.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlocking...'**
-  String get appLockUnlocking;
 
-  /// No description provided for @appLockUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Device authentication is not available. Set up a screen lock or supported biometric and try again.'**
-  String get appLockUnavailable;
 
-  /// No description provided for @appLockCanceled.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock canceled. Your Qaza data is still protected.'**
-  String get appLockCanceled;
 
-  /// No description provided for @appLockTemporarilyLocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Device authentication is temporarily locked. Wait a moment and try again.'**
-  String get appLockTemporarilyLocked;
 
-  /// No description provided for @appLockFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Device authentication failed. Please try again.'**
-  String get appLockFailed;
 
   /// No description provided for @homeTodayProgressHeader.
   ///
@@ -2408,29 +2303,9 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get homePending;
 
-  /// No description provided for @homeYourProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'Your Progress'**
-  String get homeYourProgress;
 
-  /// No description provided for @homeRange7Days.
-  ///
-  /// In en, this message translates to:
-  /// **'7 Days'**
-  String get homeRange7Days;
 
-  /// No description provided for @homeRange30Days.
-  ///
-  /// In en, this message translates to:
-  /// **'30 Days'**
-  String get homeRange30Days;
 
-  /// No description provided for @homeRangeMonthly.
-  ///
-  /// In en, this message translates to:
-  /// **'Monthly'**
-  String get homeRangeMonthly;
 
   /// No description provided for @homeDetailedStatistics.
   ///
@@ -2444,11 +2319,6 @@ abstract class AppLocalizations {
   /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
 
-  /// No description provided for @homeChartNoData.
-  ///
-  /// In en, this message translates to:
-  /// **'No completed Qaza in this period.'**
-  String get homeChartNoData;
 
   /// No description provided for @homeTodayDate.
   ///

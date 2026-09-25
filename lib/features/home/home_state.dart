@@ -26,27 +26,6 @@ class HomeDailyProgress {
   }
 }
 
-enum HomeProgressRange {
-  sevenDays,
-  thirtyDays,
-  monthly,
-}
-
-DateTime homeProgressWeekStartForDate(DateTime date) {
-  final day = DateTime(date.year, date.month, date.day);
-  return day.subtract(Duration(days: day.weekday % 7));
-}
-
-class HomeProgressPoint {
-  const HomeProgressPoint({
-    required this.start,
-    required this.count,
-  });
-
-  final DateTime start;
-  final int count;
-}
-
 enum HomePrayerSelectionMode {
   automatic,
   manual,

@@ -82,32 +82,6 @@ final homeQazaPlanProvider =
   HomeQazaPlanNotifier.new,
 );
 
-final homeProgressRangeProvider =
-    StateProvider<HomeProgressRange>((ref) => HomeProgressRange.sevenDays);
-
-class HomeProgressWeekNotifier extends Notifier<DateTime> {
-  @override
-  DateTime build() =>
-      homeProgressWeekStartForDate(ref.watch(homeLocalDateProvider));
-
-  void nextWeek() {
-    state = state.add(const Duration(days: 7));
-  }
-
-  void previousWeek() {
-    state = state.subtract(const Duration(days: 7));
-  }
-
-  void resetToCurrentWeek() {
-    state = homeProgressWeekStartForDate(ref.read(homeLocalDateProvider));
-  }
-}
-
-final homeProgressWeekProvider =
-    NotifierProvider<HomeProgressWeekNotifier, DateTime>(
-  HomeProgressWeekNotifier.new,
-);
-
 final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
 
 DateTime homeLocalDateForInstant(DateTime instant) {
@@ -144,56 +118,6 @@ final homeDailyProgressProvider =
       );
   return HomeDailyProgress(completed: completed, target: target);
 });
-
-final homeProgressHistoryProvider = FutureProvider.autoDispose
-    .family<List<HomeProgressPoint>, HomeProgressRange>(
-  (ref, range) async {
-    final userId = ref.watch(activeUserIdProvider);
-    final today = ref.watch(homeLocalDateProvider);
-    final weekStart = ref.watch(homeProgressWeekProvider);
-    if (userId == null) return const <HomeProgressPoint>[];
-
-    List<DateTime> starts;
-    switch (range) {
-      case HomeProgressRange.sevenDays:
-        starts = [
-          for (var i = 0; i < 7; i++) weekStart.add(Duration(days: i)),
-        ];
-      case HomeProgressRange.thirtyDays:
-        starts = [
-          for (var i = 29; i >= 0; i--) today.subtract(Duration(days: i)),
-        ];
-      case HomeProgressRange.monthly:
-        final firstThisMonth = DateTime(today.year, today.month);
-        starts = [
-          for (var i = 11; i >= 0; i--)
-            DateTime(firstThisMonth.year, firstThisMonth.month - i),
-        ];
-    }
-
-    final counts = await Future.wait([
-      for (var i = 0; i < starts.length; i++)
-        ref.read(qazaServiceProvider).countCompletedBetween(
-              userId: userId,
-              from: homeLocalDayStartForDate(starts[i]),
-              to: homeLocalDayStartForDate(
-                range == HomeProgressRange.monthly
-                    ? DateTime(starts[i].year, starts[i].month + 1)
-                    : DateTime(
-                        starts[i].year,
-                        starts[i].month,
-                        starts[i].day + 1,
-                      ),
-              ),
-            ),
-    ]);
-
-    return [
-      for (var i = 0; i < starts.length; i++)
-        HomeProgressPoint(start: starts[i], count: counts[i]),
-    ];
-  },
-);
 
 class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   @override
