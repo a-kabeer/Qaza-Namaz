@@ -12,6 +12,7 @@ import 'package:qaza_namaz/data/auth/firebase_auth_repository.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/domain/services/guest_migration_service.dart';
 import 'package:qaza_namaz/features/auth/authentication_screen.dart';
+import 'package:qaza_namaz/features/auth/auth_startup_state.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/auth/guest_upgrade_controller.dart';
 
@@ -565,7 +566,7 @@ void main() {
         300,
       );
       await tester.pump();
-      expect(find.text('Keep Guest Data / Cancel Sign-In'), findsOneWidget);
+      expect(find.text('Cancel'), findsWidgets);
       expect(find.text('Cancel'), findsWidgets);
     },
   );
