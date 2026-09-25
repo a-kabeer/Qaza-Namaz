@@ -1318,9 +1318,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Signed in. $count records were added to your account.',
-      one: 'Signed in. 1 record was added to your account.',
-      zero: 'Signed in. Your progress is backed up.',
+      other: 'Signed in. Your Qaza progress is now linked to your account.',
+      one: 'Signed in. Your Qaza progress is now linked to your account.',
+      zero: 'Signed in. Your Qaza progress is now linked to your account.',
     );
     return '$_temp0';
   }
