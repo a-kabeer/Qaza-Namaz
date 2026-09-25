@@ -3163,6 +3163,45 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sahib al-Tartib: {prayer}'**
   String homeSahibOrderLabel(String prayer);
+
+  String get profileLanguageTitle;
+  String get profileLanguageIntro;
+  String get profileSetupTitle;
+  String get profileTitle;
+  String get profileIntro;
+  String get profileSettingsSubtitle;
+  String get profileGender;
+  String get profileMale;
+  String get profileFemale;
+  String get profileMadhab;
+  String get profileHanafi;
+  String get profileShafi;
+  String get profileMaliki;
+  String get profileHanbali;
+  String get profileOther;
+  String get profileDateOfBirth;
+  String get profileSelectDate;
+  String get profileSelectDobHelp;
+  String get profileHijriHint;
+  String get profilePubertyAge;
+  String get profileStartPrayingAge;
+  String get profileSelectGenderFirst;
+  String get profileSelectPubertyFirst;
+  String get profileSelectDobFirst;
+  String get profileWitr;
+  String get profileWitrOptional;
+  String get profileWitrIncluded;
+  String get profileWitrExcluded;
+  String get profileSubmit;
+  String get profileSave;
+  String get profileErrorLanguage;
+  String get profileErrorGender;
+  String get profileErrorMadhab;
+  String get profileErrorDob;
+  String get profileErrorPuberty;
+  String get profileErrorStartPraying;
+  String get profileErrorWitr;
+
 }
 
 class _AppLocalizationsDelegate
