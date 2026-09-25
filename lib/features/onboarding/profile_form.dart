@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:hijri/hijri_calendar.dart';
 
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
@@ -304,3 +303,55 @@ class _ProfileFormState extends State<ProfileForm> {
             key: const Key('profile_validation_error'),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          key: const Key('profile_submit'),
+          onPressed: _saving ? null : _submit,
+          child: _saving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(widget.submitLabel ?? l10n.commonContinue),
+        ),
+        if (widget.onCancel != null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _saving ? null : widget.onCancel,
+            child: Text(l10n.commonCancel),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String? _errorText(
+    AppLocalizations l10n,
+    ProfileValidationError? error,
+  ) =>
+      switch (error) {
+        ProfileValidationError.languageMissing => l10n.profileErrorLanguage,
+        ProfileValidationError.genderMissing => l10n.profileErrorGender,
+        ProfileValidationError.madhabMissing => l10n.profileErrorMadhab,
+        ProfileValidationError.dobMissing ||
+        ProfileValidationError.dobFuture =>
+          l10n.profileErrorDob,
+        ProfileValidationError.pubertyMissing ||
+        ProfileValidationError.pubertyInvalid =>
+          l10n.profileErrorPuberty,
+        ProfileValidationError.startPrayingAgeMissing ||
+        ProfileValidationError.startPrayingAgeInvalid =>
+          l10n.profileErrorStartPraying,
+        ProfileValidationError.witrInvalid => l10n.profileErrorWitr,
+        null => null,
+      };
+
+  String _formatDate(DateTime date) =>
+      date.day.toString().padLeft(2, '0') +
+      '/' +
+      date.month.toString().padLeft(2, '0') +
+      '/' +
+      date.year.toString();
+}
