@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/services/guest_migration_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'guest_session.dart';
 import 'guest_upgrade_controller.dart';
