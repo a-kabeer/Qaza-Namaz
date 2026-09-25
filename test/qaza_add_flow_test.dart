@@ -86,9 +86,6 @@ void main() {
         tester, find.byKey(const Key('qaza_add_button'), skipOffstage: false));
     await tester.tap(find.byKey(const Key('qaza_add_button')));
     await tester.pumpAndSettle();
-    await scrollTo(tester, find.text('Done', skipOffstage: false));
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
   }
 
   testWidgets(

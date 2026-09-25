@@ -5,6 +5,7 @@ import '../../core/constants/prayer_types.dart';
 import '../calendar/calendar_controller.dart';
 import 'add_qaza_validation.dart';
 import '../../domain/entities/qaza_operation.dart';
+import 'qaza_import_controller.dart';
 
 /// The three steps of the Add Qaza workflow.
 enum AddQazaStep { selectDates, selectMissedPrayers, reviewAndAdd }
@@ -282,21 +283,55 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
     );
   }
 
-  /// Creates one pending record per eligible date x prayer combination.
+  /// Starts the application-level import task and returns immediately.
+  /// Home owns the user-facing progress while the task continues.
+  bool startQazaImport() {
+    if (!state.canAdd) return false;
+    final dates = _selectedDates();
+    final prayers = state.prayers;
+    final selectionMode =
+        ref.read(calendarControllerProvider).selectionMode;
+    final operationType = switch (selectionMode) {
+      DateSelectionMode.single => QazaOperationType.singleDateAdd,
+      DateSelectionMode.range => QazaOperationType.rangeAdd,
+      DateSelectionMode.multiple => QazaOperationType.multipleDateAdd,
+    };
+    final userId = ref.read(requiredUserIdProvider);
+    final inputSnapshot = <String, dynamic>{
+      'version': 1,
+      'selectionMode': selectionMode.name,
+      'dates': dates
+          .map(
+            (date) => DateTime(date.year, date.month, date.day)
+                .toIso8601String(),
+          )
+          .toList(growable: false),
+      'prayers': [
+        for (final prayer in PrayerType.values)
+          if (prayers.contains(prayer)) prayer.name,
+      ],
+    };
+    return ref.read(qazaImportProvider.notifier).start(
+      userId: userId,
+      dates: dates,
+      prayers: prayers,
+      operationType: operationType,
+      inputSnapshot: inputSnapshot,
+    );
+  }
+
+
+
+  /// Compatibility API for existing synchronous callers and tests.
   ///
-  /// Creation revalidates availability with the same bounded analysis as the
-  /// preview, and the repository insert is duplicate-protected and idempotent
-  /// (deterministic record id + unique user/prayer/date key), so stale previews
-  /// or double taps cannot create duplicates.
+  /// The production UI uses [startQazaImport] so the screen can return to Home
+  /// immediately, while older callers can still await the committed write.
   Future<int> addQaza() async {
     if (!state.canAdd) return 0;
     final dates = _selectedDates();
     final prayers = state.prayers;
     state = state.copyWith(saving: true);
     try {
-      // The preview may be a minute old and another device may have written
-      // in the meantime, so the selection is judged once more against the
-      // ledger as it is now — and the rules say whether to go on.
       final analysis = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
@@ -316,7 +351,8 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
         return 0;
       }
 
-      final selectionMode = ref.read(calendarControllerProvider).selectionMode;
+      final selectionMode =
+          ref.read(calendarControllerProvider).selectionMode;
       final operationType = switch (selectionMode) {
         DateSelectionMode.single => QazaOperationType.singleDateAdd,
         DateSelectionMode.range => QazaOperationType.rangeAdd,
@@ -326,28 +362,31 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
         'version': 1,
         'selectionMode': selectionMode.name,
         'dates': dates
-            .map((date) => DateTime(date.year, date.month, date.day).toIso8601String())
+            .map((date) => DateTime(date.year, date.month, date.day)
+                .toIso8601String())
             .toList(growable: false),
         'prayers': [
           for (final prayer in PrayerType.values)
             if (prayers.contains(prayer)) prayer.name,
         ],
       };
-      final operation = await ref.read(qazaOperationServiceProvider).begin(
-            userId: ref.read(requiredUserIdProvider),
-            type: operationType,
-            inputSnapshot: inputSnapshot,
-          );
+      final operation =
+          await ref.read(qazaOperationServiceProvider).begin(
+                userId: ref.read(requiredUserIdProvider),
+                type: operationType,
+                inputSnapshot: inputSnapshot,
+              );
       var processed = 0;
       try {
-        final created = await ref.read(qazaServiceProvider).recordQazaForDates(
-              userId: ref.read(requiredUserIdProvider),
-              dates: dates,
-              prayerTypes: prayers,
-              operationId: operation.operationId,
-              operationCreatedAt: operation.createdAt,
-              onProgress: (value, _) => processed = value,
-            );
+        final created =
+            await ref.read(qazaServiceProvider).recordQazaForDates(
+                  userId: ref.read(requiredUserIdProvider),
+                  dates: dates,
+                  prayerTypes: prayers,
+                  operationId: operation.operationId,
+                  operationCreatedAt: operation.createdAt,
+                  onProgress: (value, _) => processed = value,
+                );
         await ref.read(qazaOperationServiceProvider).finish(
               operation,
               status: QazaOperationStatus.completed,
@@ -373,4 +412,5 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
       if (state.saving) state = state.copyWith(saving: false);
     }
   }
+
 }

@@ -414,6 +414,43 @@ class DriftQazaLocalStore extends QazaLocalStore {
   }
 
   @override
+  Future<List<String>> appendRecordsAndOutboxReturningInsertedIds({
+    required String userId,
+    required List<QazaRecord> records,
+    required List<PendingSyncOp> ops,
+  }) async {
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot persist a Qaza record for a different user.');
+      }
+    }
+    for (final op in ops) {
+      if (op.userId != userId) {
+        throw StateError('Cannot queue a sync operation for a different user.');
+      }
+    }
+
+    return _database.transaction(() async {
+      final insertedIds = records.isEmpty
+          ? const <String>[]
+          : await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
+              records.map(_toCompanion).toList(growable: false),
+            );
+      final inserted = insertedIds.toSet();
+      final insertedOps = [
+        for (final op in ops)
+          if (op.record == null || inserted.contains(op.record!.id)) op,
+      ];
+      if (insertedOps.isNotEmpty) {
+        await _database.syncOutboxDao.putAll(
+          insertedOps.map(_toOpCompanion).toList(growable: false),
+        );
+      }
+      return insertedIds;
+    });
+  }
+
+  @override
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
     required List<String> ids,

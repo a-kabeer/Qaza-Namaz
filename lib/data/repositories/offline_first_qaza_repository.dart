@@ -7,6 +7,7 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/repositories/qaza_bulk_write_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
 import '../local/qaza_local_store.dart';
@@ -110,7 +111,8 @@ class _LegacyQazaSyncRemoteDataSource implements QazaSyncRemoteDataSource {
   }
 }
 
-class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, QazaRecoveryRepository {
+class OfflineFirstQazaRepository
+    implements QazaRepository, QazaBulkWriteRepository, QazaUndoRepository, QazaRecoveryRepository {
   static QazaSyncRemoteDataSource _resolveSyncRemote(
     QazaRepository remote,
     QazaSyncRemoteDataSource? syncRemote,
@@ -502,6 +504,97 @@ class OfflineFirstQazaRepository implements QazaRepository, QazaUndoRepository, 
       throw StateError('Cannot add a Qaza record for a non-active user.');
     }
     await addRecords([record]);
+  }
+
+  @override
+  Future<int> addRecordsBulk(List<QazaRecord> records) async {
+    if (records.isEmpty) return 0;
+    final userId = _activeUserId;
+    if (userId == null) {
+      throw StateError('Cannot add Qaza records while signed out.');
+    }
+    for (final record in records) {
+      if (record.userId != userId) {
+        throw StateError('Cannot add a Qaza record for a non-active user.');
+      }
+    }
+
+    final generation = _sessionGeneration;
+    // Bootstrap may still be restoring an account. Waiting for that in the
+    // background is safe, but do not call _ensureLoaded(): that method
+    // materializes the entire ledger into a Dart Map.
+    await ensureHydrated();
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      throw StateError(
+          'Authentication session changed while preparing Qaza data.');
+    }
+
+    final candidateRecords = <QazaRecord>[];
+    if (_loaded) {
+      final seenKeys = <String>{
+        for (final record in _records.values)
+          '${record.prayerType.name}|${record.originalDate.year}-'
+          '${record.originalDate.month}-${record.originalDate.day}',
+      };
+      for (final record in records) {
+        final key =
+            '${record.prayerType.name}|${record.originalDate.year}-'
+            '${record.originalDate.month}-${record.originalDate.day}';
+        if (_records.containsKey(record.id) || !seenKeys.add(key)) continue;
+        candidateRecords.add(record);
+      }
+    } else {
+      candidateRecords.addAll(records);
+    }
+
+    if (candidateRecords.isEmpty) return 0;
+
+    final queuedAt = _now();
+    final operations = <PendingSyncOp>[
+      for (final record in candidateRecords)
+        PendingSyncOp(
+          id: 'add_\${record.id}',
+          type: SyncOpType.add,
+          userId: userId,
+          queuedAt: queuedAt,
+          record: record,
+        ),
+    ];
+    final insertedIds =
+        await _localStore.appendRecordsAndOutboxReturningInsertedIds(
+      userId: userId,
+      records: candidateRecords,
+      ops: operations,
+    );
+    if (generation != _sessionGeneration || userId != _activeUserId) {
+      return insertedIds.length;
+    }
+    if (insertedIds.isEmpty) return 0;
+
+    final insertedSet = insertedIds.toSet();
+    if (_loaded) {
+      for (final record in candidateRecords) {
+        if (insertedSet.contains(record.id)) _records[record.id] = record;
+      }
+    }
+    if (_outboxLoaded) {
+      _outbox.addAll(
+        operations.where(
+          (operation) =>
+              operation.record != null &&
+              insertedSet.contains(operation.record!.id),
+        ),
+      );
+    }
+    _emitPending();
+
+    if (_isOnline && _connectivityKnown) {
+      unawaited(
+        _syncEngine?.synchronize(userId, requestRerun: true) ??
+            Future<void>.value(),
+      );
+    }
+    return insertedIds.length;
   }
 
   @override

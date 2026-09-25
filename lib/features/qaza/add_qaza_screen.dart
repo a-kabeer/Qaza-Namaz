@@ -441,33 +441,13 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   String _formatDate(DateTime date) => DateFormatters.formatGregorianFull(date);
 
   Future<void> _add() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final created = await ref.read(addQazaFlowProvider.notifier).addQaza();
-    if (!mounted) return;
-    if (created <= 0) {
-      // The revalidation found nothing left to write; say so rather than
-      // leaving the tap looking ignored.
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(AppLocalizations.of(context).addQazaNothingNew),
-        ));
-      return;
-    }
-    final l10n = AppLocalizations.of(context);
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(l10n.addQazaCreatedTitle),
-        content: Text(l10n.addQazaCreatedMessage(created)),
-        actions: [
-          FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.commonDone)),
-        ],
-      ),
-    );
-    if (mounted) Navigator.pop(context, created);
+    final started =
+        ref.read(addQazaFlowProvider.notifier).startQazaImport();
+    if (!started || !mounted) return;
+
+    // The application-level controller owns the import from this point.
+    // Leave this screen immediately so Home can show live progress.
+    Navigator.pop(context, true);
   }
 }
 

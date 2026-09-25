@@ -304,23 +304,30 @@ void main() {
       );
     });
 
-    testWidgets('the success message counts what was actually written',
+    testWidgets('the import revalidates and writes only records still eligible',
         (tester) async {
       await pumpFlow(tester);
       await reachReview(tester);
 
-      // One of the two is recorded elsewhere between the preview and the tap.
+      // One of the two becomes unavailable between the preview and the tap.
       await record(repository, PrayerType.asr, DateTime(2026, 9, 13));
 
       await tapKey(tester, 'qaza_add_button');
-      expect(find.text('Qaza records created'), findsOneWidget);
-      expect(find.textContaining('1 record was added'), findsOneWidget);
+      await tester.pumpAndSettle();
 
-      await tapText(tester, 'Done');
+      expect(find.byType(AddQazaScreen), findsNothing);
       expect(await repository.getRecords(userId: 'test-user'), hasLength(2));
+      expect(
+        (await repository.getRecords(userId: 'test-user'))
+            .where((record) =>
+                record.prayerType == PrayerType.maghrib)
+            .length,
+        1,
+      );
     });
 
-    testWidgets('a save that finds nothing new says so', (tester) async {
+    testWidgets('the import safely completes when revalidation finds nothing',
+        (tester) async {
       await pumpFlow(tester);
       await reachReview(tester);
 
@@ -328,9 +335,9 @@ void main() {
       await record(repository, PrayerType.maghrib, DateTime(2026, 9, 13));
 
       await tapKey(tester, 'qaza_add_button');
+      await tester.pumpAndSettle();
 
-      expect(find.text('Qaza records created'), findsNothing);
-      expect(find.textContaining('Nothing new to add'), findsOneWidget);
+      expect(find.byType(AddQazaScreen), findsNothing);
       expect(await repository.getRecords(userId: 'test-user'), hasLength(2));
     });
   });

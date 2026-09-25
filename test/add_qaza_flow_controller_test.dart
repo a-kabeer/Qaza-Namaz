@@ -9,6 +9,7 @@ import 'package:qaza_namaz/features/prayer_times/domain/prayer_times_models.dart
 import 'package:qaza_namaz/features/prayer_times/domain/prayer_times_repository.dart';
 import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_flow_controller.dart';
+import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'support/in_memory_qaza_repository.dart';
 
 void main() {
@@ -36,6 +37,14 @@ void main() {
   });
 
   AddQazaFlowState flow() => container.read(addQazaFlowProvider);
+
+  Future<void> waitForImport() async {
+    for (var attempt = 0; attempt < 1000; attempt++) {
+      if (!container.read(qazaImportProvider).isActive) return;
+      await Future<void>.delayed(Duration.zero);
+    }
+    fail('Qaza import did not finish in the test window.');
+  }
 
   Future<void> addFajrOn(DateTime date) {
     final ymd =
@@ -70,9 +79,11 @@ void main() {
     controller.clearPrayers();
     await controller.togglePrayer(PrayerType.fajr, selected: true);
     expect(flow().newCount, 1);
-    expect(await controller.addQaza(), 0);
+    expect(controller.startQazaImport(), isFalse);
     await controller.openReviewStep();
-    expect(await controller.addQaza(), 1);
+    expect(controller.startQazaImport(), isTrue);
+    await waitForImport();
+    expect(await repository.getRecords(userId: 'test-user'), hasLength(1));
   });
 
   test('openPrayersStep is a no-op without dates', () async {
@@ -200,10 +211,12 @@ void main() {
     await controller.openPrayersStep();
     await controller.selectAll();
 
-    expect(await controller.addQaza(), 0);
+    expect(controller.startQazaImport(), isFalse);
     expect(await repository.getRecords(userId: 'test-user'), isEmpty);
     await controller.openReviewStep();
-    expect(await controller.addQaza(), 6);
+    expect(controller.startQazaImport(), isTrue);
+    await waitForImport();
+    expect(container.read(qazaImportProvider).added, 6);
     var records = await repository.getRecords(userId: 'test-user');
     expect(records, hasLength(6));
     expect(
@@ -217,7 +230,8 @@ void main() {
 
     await controller.refreshCounts();
     expect(flow().newCount, 0);
-    expect(await controller.addQaza(), 0);
+    expect(controller.startQazaImport(), isFalse);
+    await waitForImport();
     records = await repository.getRecords(userId: 'test-user');
     expect(records, hasLength(6));
   });
