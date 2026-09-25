@@ -5,8 +5,6 @@ import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
-import '../prayer_times/presentation/prayer_times_screen.dart';
 import '../qaza/add_actions_fab.dart';
 import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
@@ -20,7 +18,6 @@ enum WorkspaceDestination {
   qaza,
   knowledge,
   settings,
-  prayerTimes,
 }
 
 /// The selected destination.
@@ -44,14 +41,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     QazaTrackerScreen(),
     KnowledgeBasePage(),
     SettingsScreen(),
-    PrayerTimesScreen(),
   ];
 
-  /// The five primary destinations in the bottom navigation.
+  /// The four primary destinations in the bottom navigation.
   static const _barDestinations = [
     WorkspaceDestination.home,
     WorkspaceDestination.qaza,
-    WorkspaceDestination.prayerTimes,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -134,9 +129,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 selectedIcon: const Icon(Icons.checklist_rounded),
                 label: l10n.navQaza),
             NavigationDestination(
-                icon: const Icon(Icons.schedule_outlined),
-                selectedIcon: const Icon(Icons.schedule_rounded),
-                label: PrayerTimesStrings.title(context)),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
