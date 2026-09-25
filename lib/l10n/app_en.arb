@@ -535,7 +535,7 @@
     }
   },
   "dataImportTitle": "Import data",
-  "dataImportBody": "Open a JSON export, validate it completely, preview the merge, then apply it to this account.",
+  "dataImportBody": "Open a JSON export, validate it completely, preview the merge, then apply it to this local ledger.",
   "dataImportAction": "Import",
   "dataImportReviewTitle": "Review data import",
   "dataImportCanceled": "Import canceled. Your data was not changed.",
