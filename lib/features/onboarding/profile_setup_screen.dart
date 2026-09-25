@@ -63,11 +63,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        onConfirm: _addQazaPlan,
+        onConfirm: (onProgress) => _addQazaPlan(plan, onProgress),
       ),
     );
 
-    if (!mounted || added == null) return;
+    if (!mounted || added != true) return;
 
     await ref.read(userProfileRepositoryProvider).save(finalizedProfile);
     ref.invalidate(userProfileProvider);
@@ -81,15 +81,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<int> _addQazaPlan(
+  Future<void> _addQazaPlan(
+    QazaPlan plan,
     void Function(int processed, int total) onProgress,
-  ) {
-    final plan = ref.read(qazaPlanServiceProvider).planFor(_draft);
-    if (plan == null) {
-      throw StateError('A valid Qaza plan could not be calculated.');
-    }
-
-    return ref.read(qazaServiceProvider).recordQazaForDates(
+  ) async {
+    await ref.read(qazaServiceProvider).recordQazaForDates(
           userId: UserProfile.localLedgerUserId,
           dates: _planDates(plan),
           prayerTypes: _planPrayerTypes(plan),
