@@ -203,7 +203,9 @@ class GuestUpgradeController extends AutoDisposeNotifier<GuestUpgradeState> {
             guestUserId: guestUserId,
             accountUserId: account.id,
           );
-          await migration.retireGuestData(guestUserId: guestUserId);
+          await ref
+              .read(guestMigrationServiceProvider)
+              .retireGuestData(guestUserId: guestUserId);
           await AuthStartupState.clear();
           await ref.read(guestSessionProvider.notifier).end();
           await ref.read(guestUpgradePendingProvider.notifier).setPending(false);
