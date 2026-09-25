@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,6 +24,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   late UserProfile _draft;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   void initState() {
@@ -30,14 +33,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         UserProfile(languageCode: widget.languageCode);
   }
 
-  Future<void> _saveDraft(UserProfile profile) async {
+  void _saveDraft(UserProfile profile) {
     _draft = profile;
-    await ref.read(userProfileRepositoryProvider).save(
-          profile.copyWith(onboardingCompleted: false),
-        );
+    final repository = ref.read(userProfileRepositoryProvider);
+    _saveQueue = _saveQueue.then(
+      (_) => repository.save(profile.copyWith(onboardingCompleted: false)),
+    );
   }
 
   Future<void> _submit(UserProfile profile) async {
+    await _saveQueue;
     await ref.read(userProfileRepositoryProvider).save(profile);
     ref.invalidate(userProfileProvider);
     if (mounted) Navigator.of(context).pop();
