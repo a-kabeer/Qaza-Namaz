@@ -397,15 +397,22 @@ class _TrackerBody extends ConsumerWidget {
                     AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.fabClearance),
                 itemCount: state.records.length + (state.hasMore ? 1 : 0),
                 itemBuilder: (context, index) {
-                  if (index >= state.records.length)
+                  if (index >= state.records.length) {
                     return const Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                        child: Column(children: [
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Column(
+                        children: [
                           _TrackerSkeletonRow(),
                           _TrackerSkeletonRow(),
-                          _TrackerSkeletonRow()
-                        ]));
+                          _TrackerSkeletonRow(),
+                        ],
+                      ),
+                    );
+                  }
+                  final record = state.records[index];
                   final record = state.records[index];
                   final canAct = record.status == QazaStatus.pending &&
                       (lockedRecordId == null ||
