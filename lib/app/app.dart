@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../features/onboarding/startup_gate.dart';
-import '../features/settings/app_lock_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'providers.dart';
 
@@ -15,25 +14,7 @@ class QazaNamazApp extends ConsumerStatefulWidget {
   ConsumerState<QazaNamazApp> createState() => _QazaNamazAppState();
 }
 
-class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
-    with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    ref.read(appLockControllerProvider.notifier).onLifecycleState(state);
-  }
-
+class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
