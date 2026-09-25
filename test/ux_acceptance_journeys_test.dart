@@ -147,6 +147,7 @@ void main() {
     await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.byType(WorkspaceShell), findsOneWidget);
     expect(find.byType(ProfileSetupScreen), findsNothing);
@@ -182,6 +183,7 @@ void main() {
     await tester.tap(find.byKey(const Key('onboarding_sign_in_google')));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(find.byType(WorkspaceShell), findsNothing);
