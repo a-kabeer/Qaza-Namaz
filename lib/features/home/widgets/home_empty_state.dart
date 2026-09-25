@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/app_scaffold.dart';
-import '../../../core/widgets/sync_status.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/state_widgets.dart';
 import '../../../l10n/app_localizations.dart';
 
 class HomeEmptyState extends StatelessWidget {
-  const HomeEmptyState({required this.onCalculate, required this.onAdd});
+  const HomeEmptyState({required this.onAdd});
 
-  final VoidCallback onCalculate;
   final VoidCallback onAdd;
 
   @override
@@ -21,7 +19,6 @@ class HomeEmptyState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
       children: [
-        const SyncStatus(),
         const SizedBox(height: 6),
         Center(
           child: ConstrainedBox(
@@ -33,14 +30,7 @@ class HomeEmptyState extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AppButton(
-                    key: const Key('home_empty_calculate'),
-                    expand: true,
-                    icon: Icons.calculate_outlined,
-                    label: l10n.homeCalculateQaza,
-                    onPressed: onCalculate,
-                  ),
-                  const SizedBox(height: 12),
+
                   AppButton(
                     key: const Key('home_empty_add'),
                     expand: true,
