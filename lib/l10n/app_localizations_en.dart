@@ -1067,13 +1067,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Daily reminder to continue completing Qaza prayers.';
 
   @override
-  String get settingsAccountSection => 'Account';
-
-  @override
-  String get settingsAccountSubtitle =>
-      'Manage your sign-in and account details.';
-
-  @override
   String get settingsKnowledgeBaseSubtitle => 'Browse Masail & Mugalat';
 
   @override
