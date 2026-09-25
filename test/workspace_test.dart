@@ -39,7 +39,7 @@ void main() {
     await _pumpNavigation(tester);
   }
 
-  testWidgets('Workspace exposes five primary navigation destinations',
+  testWidgets('Workspace exposes four primary navigation destinations',
       (tester) async {
     // A record of some kind, or Home shows its empty state instead of the
     // dashboard this test is about.
@@ -57,9 +57,8 @@ void main() {
     expect(find.text('Home').first, findsOneWidget);
     expect(find.text('Qaza'), findsWidgets);
     expect(find.text('Knowledge'), findsOneWidget);
-    expect(find.text('Prayer Times'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
-    // Calculator remains contextual; Prayer Times is a primary destination.
+    // Calculator remains contextual.
     expect(find.text('Calculator'), findsNothing);
     // Home leads with the compact progress overview; Qaza actions live on the Qaza workspace.
     expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
