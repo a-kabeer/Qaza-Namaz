@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../domain/services/profile_rules.dart';
-import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../settings/app_lock_gate.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
@@ -43,9 +42,7 @@ class StartupGate extends ConsumerWidget {
           );
         }
 
-        return const AppLockGate(
-          child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
-        );
+        return const AppLockGate(child: WorkspaceShell());
       },
     );
   }

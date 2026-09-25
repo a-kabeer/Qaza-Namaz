@@ -28,6 +28,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Daily reminder to complete your Qaza.';
 
   @override
+  String get settingsBackupSection => 'Data & Storage';
+
+  @override
+  String get settingsBackupSubtitle => 'Cloud sync, export and import.';
+
+  @override
   String get navSettings => 'Settings';
 
   @override
@@ -80,7 +86,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorNetwork =>
-      'No connection. Your Qaza are saved on this device.';
+      'No connection. Your Qaza are saved on this device and will sync when you are back online.';
 
   @override
   String get errorTimeout => 'That took too long. Try again in a moment.';
@@ -165,6 +171,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prayerRakatWitr => 'Witr • 3 Rakat Wajib • Independent';
+
+  @override
+  String get syncSettingUp => 'Setting up';
+
+  @override
+  String get syncSettingUpDetail =>
+      'Preparing your Qaza records on this device.';
+
+  @override
+  String get syncRestoring => 'Restoring';
+
+  @override
+  String get syncRestoringDetail =>
+      'Bringing your saved Qaza records to this device.';
+
+  @override
+  String get syncSynced => 'Synced';
+
+  @override
+  String syncSyncedAt(String timestamp) {
+    return 'Synced • $timestamp';
+  }
+
+  @override
+  String get syncSyncing => 'Syncing';
+
+  @override
+  String get syncSaved => 'Saved';
+
+  @override
+  String get syncSavedDetail =>
+      'Your changes are saved on this device and will sync automatically.';
+
+  @override
+  String get syncErrorLabel => 'Sync Error';
+
+  @override
+  String get syncErrorDetail =>
+      'Your changes are saved on this device. We will retry automatically.';
 
   @override
   String get commonClose => 'Close';
@@ -264,10 +309,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeAuto => 'Auto';
-
-  @override
-  String get homePrayerTimeUnavailable =>
-      'Automatic prayer selection is unavailable until Prayer Times are set up.';
 
   @override
   String get homeQazaTargetReachedTitle => 'Alhamdulillah!';
@@ -501,6 +542,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get authTitle => 'Sign in';
+
+  @override
+  String get authWelcomeBack => 'Welcome back';
+
+  @override
+  String get authSubtitle => 'Sign in to continue to your Qaza Namaz tracker.';
+
+  @override
+  String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authSigningIn => 'Signing in...';
+
+  @override
+  String get authProviderNote =>
+      'Google is the currently connected authentication provider. Sign-in status is restored automatically from Firebase.';
+
+  @override
+  String get authHelpTooltip => 'Authentication help';
+
+  @override
+  String get authHelpTitle => 'Authentication';
+
+  @override
+  String get authHelpBody =>
+      'Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.';
+
+  @override
+  String get authDismiss => 'Dismiss';
+
+  @override
+  String get authFailed => 'Unable to sign in. Please try again.';
+
+  @override
   String get notificationsOff => 'Off';
 
   @override
@@ -672,7 +748,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeGetStarted => 'Get Started';
 
   @override
+  String get welcomeSignIn => 'Already have an account? Sign In';
+
+  @override
   String get splashTagline => 'A calm place for prayer accountability';
+
+  @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get accountSignInMethod => 'Sign-in method';
+
+  @override
+  String get accountGoogleAuth => 'Google';
+
+  @override
+  String get accountSignedInWithGoogle => 'Signed in with Google';
+
+  @override
+  String get accountStatus => 'Account status';
+
+  @override
+  String get accountSignedIn => 'Signed in';
+
+  @override
+  String get accountRecordsRetained =>
+      'Your saved Qaza records remain stored and will be restored after the next sign-in.';
+
+  @override
+  String get accountDeveloperContext => 'Developer context';
+
+  @override
+  String get accountFirebaseUid => 'Firebase UID';
+
+  @override
+  String get accountNotAvailable => 'Not available';
+
+  @override
+  String get accountSignOut => 'Sign out';
+
+  @override
+  String get accountSignOutPrompt => 'Sign out?';
+
+  @override
+  String get accountSignOutExplanation =>
+      'Signing out disconnects your Google account. Your Qaza progress remains on this device.';
 
   @override
   String get dataTitle => 'Export & Import';
@@ -698,6 +818,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Export canceled. Your data was not changed.';
 
   @override
+  String get dataExportSignInRequired =>
+      'Sign in before exporting your Qaza data.';
+
+  @override
   String dataExportFailed(String error) {
     return 'Export failed: $error';
   }
@@ -707,7 +831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataImportBody =>
-      'Open a JSON export, validate it completely, preview the merge, then apply it to this local ledger.';
+      'Open a JSON export, validate it completely, preview the merge, then apply it to this account.';
 
   @override
   String get dataImportAction => 'Import';
@@ -718,6 +842,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dataImportCanceled =>
       'Import canceled. Your data was not changed.';
+
+  @override
+  String get dataImportSignInRequired => 'Sign in before importing data.';
 
   @override
   String get dataImportEmptyFile => 'The selected file is empty or unreadable.';
@@ -740,7 +867,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataSafetyBody =>
-      'Export and import manage only the Qaza data stored on this device. Export creates a local backup file; import adds or updates local records.';
+      'Export does not delete cloud data. Import does not erase existing records. Sign-out is not data deletion, and uninstalling the app does not delete cloud records.';
+
+  @override
+  String get dataRemapNote =>
+      'Imported records are remapped to the currently signed-in account. The existing local-first sync layer then confirms changes with Firestore in the background.';
 
   @override
   String get addQazaTitle => 'Add Qaza';
@@ -1067,6 +1198,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Daily reminder to continue completing Qaza prayers.';
 
   @override
+  String get settingsAccountSection => 'Account';
+
+  @override
+  String get settingsAccountSubtitle =>
+      'Manage your sign-in and account details.';
+
+  @override
+  String get settingsGoogleSignIn => 'Google sign-in';
+
+  @override
   String get settingsKnowledgeBaseSubtitle => 'Browse Masail & Mugalat';
 
   @override
@@ -1081,7 +1222,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDataSubtitle =>
-      'Export and import your Qaza data.';
+      'Sync, backup, export, and import your Qaza data.';
+
+  @override
+  String get settingsDataCloud => 'Data & Cloud';
+
+  @override
+  String get settingsDataCloudSubtitle => 'Sync, export and import status';
 
   @override
   String get settingsResetCounterTitle => 'Reset Qaza Counter';
@@ -1098,7 +1245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsResetCounterDialogMessage =>
-      'This permanently deletes every Qaza record on this device — pending and completed.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.';
+      'This permanently deletes every Qaza record on this account — pending and completed — from this device and from your cloud backup.\n\nYour counter returns to zero and the completion progress you have built up is lost. This cannot be undone. Export your data first if you may want it back.';
 
   @override
   String settingsResetCounterAcknowledge(int count) {
@@ -1124,6 +1271,58 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get authContinueAsGuest => 'Continue as Guest';
+
+  @override
+  String get authGuestNote =>
+      'You can sign in with Google later to keep your progress with your account.';
+
+  @override
+  String get backupPromptTitle => 'Keep your progress safe';
+
+  @override
+  String get backupPromptBody =>
+      'Sign in with Google to keep your Qaza progress available with your account.';
+
+  @override
+  String get backupPromptConfirm => 'Continue with Google';
+
+  @override
+  String get backupPromptDismiss => 'Not Now';
+
+  @override
+  String get settingsBackupSignIn => 'Back up / Sign in';
+
+  @override
+  String get settingsBackupSignInSubtitle =>
+      'You are using the app as a guest. Sign in to back up your Qaza.';
+
+  @override
+  String get backupSignInFailed =>
+      'Sign-in failed. Your progress is still on this device.';
+
+  @override
+  String get backupSignInCancelled =>
+      'Sign-in canceled. Your progress is still on this device.';
+
+  @override
+  String backupSignInFailedReason(String reason) {
+    return 'Sign-in failed: $reason Your progress is still on this device.';
+  }
+
+  @override
+  String backupMigrationDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Signed in. Your Qaza progress is now linked to your account.',
+      one: 'Signed in. Your Qaza progress is now linked to your account.',
+      zero: 'Signed in. Your Qaza progress is now linked to your account.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAboutSection => 'About';
 
   @override
@@ -1136,6 +1335,111 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppDescription => 'Islamic Prayer Qaza Tracker';
+
+  @override
+  String get cloudSyncTitle => 'Cloud Sync';
+
+  @override
+  String get cloudSyncNow => 'Sync now';
+
+  @override
+  String get cloudPendingChanges => 'Pending changes';
+
+  @override
+  String get cloudLastSynced => 'Last synced';
+
+  @override
+  String get cloudExportImportSubtitle =>
+      'User-controlled JSON backup and safe restore. No cloud data is deleted by these actions.';
+
+  @override
+  String get cloudInactive => 'Offline storage is not active in this build.';
+
+  @override
+  String get cloudBootstrapping =>
+      'Setting up your Qaza records on this device…';
+
+  @override
+  String get cloudHydrating =>
+      'Restoring your saved Qaza records to this device…';
+
+  @override
+  String get cloudSynced => 'All your Qaza records are saved in the cloud.';
+
+  @override
+  String get cloudSyncing => 'Syncing your ledger…';
+
+  @override
+  String get cloudOffline =>
+      'Offline — records are saved on this device and sync automatically.';
+
+  @override
+  String cloudPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes waiting to sync.',
+      one: '1 change waiting to sync.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cloudSyncProblem =>
+      'Sync problem — your data is safe on this device.';
+
+  @override
+  String get cloudQazaCount => 'Qaza count';
+
+  @override
+  String cloudQazaCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Qaza records',
+      one: '1 Qaza record',
+      zero: 'No Qaza records',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cloudBackupStatus => 'Cloud backup';
+
+  @override
+  String get cloudBackupDeleted => 'Cloud copy deleted; local records remain.';
+
+  @override
+  String get cloudLocalVsCloudTitle => 'Local vs cloud';
+
+  @override
+  String get cloudLocalVsCloudBody =>
+      'Your Qaza records are stored locally for offline use. When you are signed in, changes can be synchronized to your private cloud account. Export is a local backup; deleting cloud data does not delete your local records.';
+
+  @override
+  String get cloudDeleteTitle => 'Delete cloud data';
+
+  @override
+  String get cloudDeleteBody =>
+      'This permanently deletes your Qaza records from your cloud account. Your local records on this device will remain. This cannot be undone. Export your data first if you may need a backup.';
+
+  @override
+  String get cloudDeleteAcknowledge =>
+      'I understand the cloud copy will be permanently deleted.';
+
+  @override
+  String get cloudDeleteAction => 'Delete cloud data';
+
+  @override
+  String get cloudDeleteDone =>
+      'Cloud Qaza data was deleted. Your local records remain on this device.';
+
+  @override
+  String get cloudDeleteFailed =>
+      'Cloud data could not be deleted. Your local records are still safe.';
+
+  @override
+  String get cloudDeleteSignInRequired => 'Sign in to manage cloud data.';
 
   @override
   String get settingsTitle => 'Settings';

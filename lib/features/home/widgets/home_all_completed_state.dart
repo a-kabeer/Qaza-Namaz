@@ -8,12 +8,10 @@ class HomeAllCompletedState extends StatelessWidget {
     super.key,
     required this.completed,
     required this.total,
-    required this.onAdd,
   });
 
   final int completed;
   final int total;
-  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +56,6 @@ class HomeAllCompletedState extends StatelessWidget {
                 _StatRow(
                   label: l10n.homeStatTotal,
                   value: total.toString(),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [OutlinedButton.icon(
-                      key: const Key('home_all_completed_add'),
-                      onPressed: onAdd,
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(l10n.homeAddManually),
-                    ),
-                  ],
                 ),
               ],
             ),

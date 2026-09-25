@@ -27,6 +27,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsRemindersSubtitle => 'قضا مکمل کرنے کی روزانہ یاد دہانی۔';
 
   @override
+  String get settingsBackupSection => 'ڈیٹا اور اسٹوریج';
+
+  @override
+  String get settingsBackupSubtitle => 'کلاؤڈ سنک، برآمد اور درآمد۔';
+
+  @override
   String get navSettings => 'ترتیبات';
 
   @override
@@ -165,6 +171,45 @@ class AppLocalizationsUr extends AppLocalizations {
   String get prayerRakatWitr => 'وتر • 3 رکعت واجب • مستقل';
 
   @override
+  String get syncSettingUp => 'ترتیب دی جا رہی ہے';
+
+  @override
+  String get syncSettingUpDetail =>
+      'اس ڈیوائس پر آپ کے قضا ریکارڈ تیار کیے جا رہے ہیں۔';
+
+  @override
+  String get syncRestoring => 'بحال کیا جا رہا ہے';
+
+  @override
+  String get syncRestoringDetail =>
+      'آپ کے محفوظ قضا ریکارڈ اس ڈیوائس پر لائے جا رہے ہیں۔';
+
+  @override
+  String get syncSynced => 'سنک شدہ';
+
+  @override
+  String syncSyncedAt(String timestamp) {
+    return 'سنک شدہ • $timestamp';
+  }
+
+  @override
+  String get syncSyncing => 'سنک ہو رہا ہے';
+
+  @override
+  String get syncSaved => 'محفوظ';
+
+  @override
+  String get syncSavedDetail =>
+      'آپ کی تبدیلیاں اس ڈیوائس پر محفوظ ہیں اور خود بخود سنک ہو جائیں گی۔';
+
+  @override
+  String get syncErrorLabel => 'سنک میں مسئلہ';
+
+  @override
+  String get syncErrorDetail =>
+      'آپ کی تبدیلیاں اس ڈیوائس پر محفوظ ہیں۔ ہم خود بخود دوبارہ کوشش کریں گے۔';
+
+  @override
   String get commonClose => 'بند کریں';
 
   @override
@@ -262,10 +307,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeAuto => 'خودکار';
-
-  @override
-  String get homePrayerTimeUnavailable =>
-      'خودکار نماز کا انتخاب دستیاب نہیں جب تک نماز کے اوقات سیٹ نہ کیے جائیں۔';
 
   @override
   String get homeQazaTargetReachedTitle => 'الحمدللہ!';
@@ -500,6 +541,42 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get authTitle => 'سائن اِن';
+
+  @override
+  String get authWelcomeBack => 'خوش آمدید';
+
+  @override
+  String get authSubtitle =>
+      'اپنے قضا نماز ٹریکر تک رسائی کے لیے سائن اِن کریں۔';
+
+  @override
+  String get authContinueWithGoogle => 'گوگل سے جاری رکھیں';
+
+  @override
+  String get authSigningIn => 'سائن اِن ہو رہا ہے...';
+
+  @override
+  String get authProviderNote =>
+      'اس وقت گوگل ہی منسلک توثیقی فراہم کنندہ ہے۔ سائن اِن کی حالت فائربیس سے خود بخود بحال ہو جاتی ہے۔';
+
+  @override
+  String get authHelpTooltip => 'توثیق میں مدد';
+
+  @override
+  String get authHelpTitle => 'توثیق';
+
+  @override
+  String get authHelpBody =>
+      'اس ریلیز میں گوگل سائن اِن ہی منسلک توثیقی طریقہ ہے۔ آپ کا قضا ڈیٹا اسی فائربیس اکاؤنٹ سے منسلک رہتا ہے جس سے آپ سائن اِن کرتے ہیں۔';
+
+  @override
+  String get authDismiss => 'بند کریں';
+
+  @override
+  String get authFailed => 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
   String get notificationsOff => 'بند';
 
   @override
@@ -668,7 +745,51 @@ class AppLocalizationsUr extends AppLocalizations {
   String get welcomeGetStarted => 'شروع کریں';
 
   @override
+  String get welcomeSignIn => 'پہلے سے اکاؤنٹ ہے؟ سائن اِن کریں';
+
+  @override
   String get splashTagline => 'نماز کی پابندی کے لیے ایک پُرسکون جگہ';
+
+  @override
+  String get accountTitle => 'اکاؤنٹ';
+
+  @override
+  String get accountSignInMethod => 'سائن اِن کا طریقہ';
+
+  @override
+  String get accountGoogleAuth => 'گوگل';
+
+  @override
+  String get accountSignedInWithGoogle => 'گوگل سے سائن اِن ہیں';
+
+  @override
+  String get accountStatus => 'اکاؤنٹ کی حالت';
+
+  @override
+  String get accountSignedIn => 'سائن اِن ہیں';
+
+  @override
+  String get accountRecordsRetained =>
+      'آپ کے محفوظ قضا ریکارڈ موجود رہیں گے اور اگلی بار سائن اِن پر بحال ہو جائیں گے۔';
+
+  @override
+  String get accountDeveloperContext => 'ڈویلپر تفصیلات';
+
+  @override
+  String get accountFirebaseUid => 'فائربیس UID';
+
+  @override
+  String get accountNotAvailable => 'دستیاب نہیں';
+
+  @override
+  String get accountSignOut => 'سائن آؤٹ';
+
+  @override
+  String get accountSignOutPrompt => 'سائن آؤٹ کریں؟';
+
+  @override
+  String get accountSignOutExplanation =>
+      'سائن آؤٹ کرنے سے آپ کا گوگل اکاؤنٹ منقطع ہو جائے گا۔ آپ کی قضا پیش رفت اس ڈیوائس پر برقرار رہے گی۔';
 
   @override
   String get dataTitle => 'برآمد و درآمد';
@@ -694,6 +815,10 @@ class AppLocalizationsUr extends AppLocalizations {
       'برآمد منسوخ ہوئی۔ آپ کا ڈیٹا تبدیل نہیں ہوا۔';
 
   @override
+  String get dataExportSignInRequired =>
+      'اپنا قضا ڈیٹا برآمد کرنے سے پہلے سائن اِن کریں۔';
+
+  @override
   String dataExportFailed(String error) {
     return 'برآمد ناکام: $error';
   }
@@ -703,7 +828,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get dataImportBody =>
-      'ایک JSON برآمد کھولیں، اس کی مکمل جانچ کریں، انضمام کا جائزہ لیں، پھر اسے اس مقامی قضا کھاتے پر لاگو کریں۔';
+      'کوئی JSON برآمد کھولیں، اس کی مکمل جانچ کریں، انضمام کا جائزہ لیں، پھر اسے اس اکاؤنٹ پر لاگو کریں۔';
 
   @override
   String get dataImportAction => 'درآمد';
@@ -714,6 +839,10 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get dataImportCanceled =>
       'درآمد منسوخ ہوئی۔ آپ کا ڈیٹا تبدیل نہیں ہوا۔';
+
+  @override
+  String get dataImportSignInRequired =>
+      'ڈیٹا درآمد کرنے سے پہلے سائن اِن کریں۔';
 
   @override
   String get dataImportEmptyFile => 'منتخب فائل خالی یا ناقابلِ مطالعہ ہے۔';
@@ -736,7 +865,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get dataSafetyBody =>
-      'برآمد اور درآمد صرف اس ڈیوائس پر محفوظ قضا ڈیٹا کو منظم کرتے ہیں۔ برآمد مقامی بیک اپ فائل بناتی ہے؛ درآمد مقامی ریکارڈز شامل یا اپ ڈیٹ کرتی ہے۔';
+      'برآمد کرنے سے کلاؤڈ ڈیٹا حذف نہیں ہوتا۔ درآمد سے موجودہ ریکارڈ ختم نہیں ہوتے۔ سائن آؤٹ ڈیٹا حذف کرنا نہیں، اور ایپ اَن انسٹال کرنے سے کلاؤڈ ریکارڈ حذف نہیں ہوتے۔';
+
+  @override
+  String get dataRemapNote =>
+      'درآمد شدہ ریکارڈ موجودہ سائن اِن اکاؤنٹ سے منسلک کر دیے جاتے ہیں۔ اس کے بعد موجودہ لوکل-فرسٹ سنک پرت پس منظر میں فائرسٹور سے تصدیق کرتی ہے۔';
 
   @override
   String get addQazaTitle => 'قضا شامل کریں';
@@ -1062,6 +1195,16 @@ class AppLocalizationsUr extends AppLocalizations {
       'قضا نمازیں مکمل کرتے رہنے کی روزانہ یاد دہانی۔';
 
   @override
+  String get settingsAccountSection => 'اکاؤنٹ';
+
+  @override
+  String get settingsAccountSubtitle =>
+      'اپنے سائن اِن اور اکاؤنٹ کی تفصیلات سنبھالیں۔';
+
+  @override
+  String get settingsGoogleSignIn => 'گوگل سائن اِن';
+
+  @override
   String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
 
   @override
@@ -1076,7 +1219,13 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsDataSubtitle =>
-      'اپنا قضا ڈیٹا برآمد یا درآمد کریں۔';
+      'اپنے قضا ڈیٹا کو سنک، بیک اپ، برآمد اور درآمد کریں۔';
+
+  @override
+  String get settingsDataCloud => 'ڈیٹا و کلاؤڈ';
+
+  @override
+  String get settingsDataCloudSubtitle => 'سنک، برآمد اور درآمد کی حالت';
 
   @override
   String get settingsResetCounterTitle => 'قضا کاؤنٹر ری سیٹ کریں';
@@ -1094,7 +1243,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsResetCounterDialogMessage =>
-      'اس ڈیوائس پر موجود تمام قضا ریکارڈز — باقی اور مکمل دونوں — ہمیشہ کے لیے حذف ہو جائیں گے۔\n\nآپ کا کاؤنٹر صفر پر آ جائے گا اور اب تک کی گئی پیش رفت ضائع ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔ اگر دوبارہ ضرورت پڑ سکتی ہے تو پہلے اپنا ڈیٹا برآمد کر لیں۔';
+      'اس اکاؤنٹ کے تمام قضا ریکارڈز — باقی اور مکمل دونوں — اس ڈیوائس اور آپ کے کلاؤڈ بیک اپ سے ہمیشہ کے لیے حذف ہو جائیں گے۔\n\nآپ کا کاؤنٹر صفر پر آ جائے گا اور اب تک کی گئی پیش رفت ضائع ہو جائے گی۔ یہ عمل واپس نہیں ہو سکتا۔ اگر دوبارہ ضرورت پڑ سکتی ہے تو پہلے اپنا ڈیٹا برآمد کر لیں۔';
 
   @override
   String settingsResetCounterAcknowledge(int count) {
@@ -1120,6 +1269,58 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get authContinueAsGuest => 'مہمان کے طور پر جاری رکھیں';
+
+  @override
+  String get authGuestNote =>
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے بعد میں گوگل سے سائن اِن کر سکتے ہیں۔';
+
+  @override
+  String get backupPromptTitle => 'اپنی پیش رفت محفوظ رکھیں';
+
+  @override
+  String get backupPromptBody =>
+      'اپنی قضا پیش رفت کو اپنے اکاؤنٹ کے ساتھ محفوظ رکھنے کے لیے گوگل سے سائن اِن کریں۔';
+
+  @override
+  String get backupPromptConfirm => 'گوگل سے جاری رکھیں';
+
+  @override
+  String get backupPromptDismiss => 'ابھی نہیں';
+
+  @override
+  String get settingsBackupSignIn => 'بیک اپ / سائن ان';
+
+  @override
+  String get settingsBackupSignInSubtitle =>
+      'آپ مہمان کے طور پر ایپ استعمال کر رہے ہیں۔ قضا کا بیک اپ لینے کے لیے سائن ان کریں۔';
+
+  @override
+  String get backupSignInFailed =>
+      'سائن ان ناکام رہا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get backupSignInCancelled =>
+      'سائن ان منسوخ ہو گیا۔ آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String backupSignInFailedReason(String reason) {
+    return 'سائن ان ناکام رہا: $reason آپ کی پیش رفت اب بھی اس ڈیوائس پر محفوظ ہے۔';
+  }
+
+  @override
+  String backupMigrationDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
+      one: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
+      zero: 'سائن اِن ہو گیا۔ آپ کی قضا پیش رفت اب آپ کے اکاؤنٹ سے منسلک ہے۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get settingsAboutSection => 'تعارف';
 
   @override
@@ -1132,6 +1333,113 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsAppDescription => 'اسلامی نماز قضا ٹریکر';
+
+  @override
+  String get cloudSyncTitle => 'کلاؤڈ سنک';
+
+  @override
+  String get cloudSyncNow => 'ابھی سنک کریں';
+
+  @override
+  String get cloudPendingChanges => 'زیرِ التوا تبدیلیاں';
+
+  @override
+  String get cloudLastSynced => 'آخری سنک';
+
+  @override
+  String get cloudExportImportSubtitle =>
+      'صارف کے اختیار میں JSON بیک اپ اور محفوظ بحالی۔ ان اقدامات سے کلاؤڈ ڈیٹا حذف نہیں ہوتا۔';
+
+  @override
+  String get cloudInactive => 'اس بلڈ میں آف لائن اسٹوریج فعال نہیں ہے۔';
+
+  @override
+  String get cloudBootstrapping =>
+      'اس ڈیوائس پر آپ کے قضا ریکارڈ ترتیب دیے جا رہے ہیں…';
+
+  @override
+  String get cloudHydrating =>
+      'آپ کے محفوظ قضا ریکارڈ اس ڈیوائس پر بحال کیے جا رہے ہیں…';
+
+  @override
+  String get cloudSynced => 'آپ کے تمام قضا ریکارڈ کلاؤڈ میں محفوظ ہیں۔';
+
+  @override
+  String get cloudSyncing => 'آپ کا کھاتہ سنک ہو رہا ہے…';
+
+  @override
+  String get cloudOffline =>
+      'آف لائن — ریکارڈ اس ڈیوائس پر محفوظ ہیں اور خود بخود سنک ہو جائیں گے۔';
+
+  @override
+  String cloudPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تبدیلیاں سنک کی منتظر ہیں۔',
+      one: '1 تبدیلی سنک کی منتظر ہے۔',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cloudSyncProblem =>
+      'سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get cloudQazaCount => 'قضا ریکارڈز کی تعداد';
+
+  @override
+  String cloudQazaCountValue(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قضا ریکارڈز',
+      one: '1 قضا ریکارڈ',
+      zero: 'کوئی قضا ریکارڈ نہیں',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get cloudBackupStatus => 'کلاؤڈ بیک اپ';
+
+  @override
+  String get cloudBackupDeleted =>
+      'کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔';
+
+  @override
+  String get cloudLocalVsCloudTitle => 'لوکل اور کلاؤڈ ڈیٹا';
+
+  @override
+  String get cloudLocalVsCloudBody =>
+      'آپ کے قضا ریکارڈ آف لائن استعمال کے لیے اس ڈیوائس پر محفوظ رہتے ہیں۔ سائن اِن ہونے پر تبدیلیاں آپ کے نجی کلاؤڈ اکاؤنٹ سے سنک ہو سکتی ہیں۔ برآمد ایک لوکل بیک اپ ہے؛ کلاؤڈ ڈیٹا حذف کرنے سے لوکل ریکارڈز حذف نہیں ہوتے۔';
+
+  @override
+  String get cloudDeleteTitle => 'کلاؤڈ ڈیٹا حذف کریں';
+
+  @override
+  String get cloudDeleteBody =>
+      'یہ آپ کے کلاؤڈ اکاؤنٹ سے قضا ریکارڈز مستقل طور پر حذف کر دے گا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار رہیں گے۔ یہ عمل واپس نہیں ہو سکتا۔ اگر بیک اپ درکار ہو سکتا ہے تو پہلے ڈیٹا برآمد کر لیں۔';
+
+  @override
+  String get cloudDeleteAcknowledge =>
+      'میں سمجھتا/سمجھتی ہوں کہ کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔';
+
+  @override
+  String get cloudDeleteAction => 'کلاؤڈ ڈیٹا حذف کریں';
+
+  @override
+  String get cloudDeleteDone =>
+      'کلاؤڈ قضا ڈیٹا حذف ہو گیا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار ہیں۔';
+
+  @override
+  String get cloudDeleteFailed =>
+      'کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔';
+
+  @override
+  String get cloudDeleteSignInRequired =>
+      'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
 
   @override
   String get settingsTitle => 'ترتیبات';

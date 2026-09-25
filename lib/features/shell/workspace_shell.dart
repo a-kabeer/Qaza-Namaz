@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
-import '../prayer_times/presentation/prayer_times_localizations.dart';
-import '../prayer_times/presentation/prayer_times_screen.dart';
-import '../qaza/add_actions_fab.dart';
-import '../qaza/add_qaza_screen.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// The five destinations are the primary navigation.
+/// The four destinations are the primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
   knowledge,
   settings,
-  prayerTimes,
 }
 
 /// The selected destination.
@@ -44,14 +38,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     QazaTrackerScreen(),
     KnowledgeBasePage(),
     SettingsScreen(),
-    PrayerTimesScreen(),
   ];
 
-  /// The five primary destinations in the bottom navigation.
+  /// The four primary destinations in the bottom navigation.
   static const _barDestinations = [
     WorkspaceDestination.home,
     WorkspaceDestination.qaza,
-    WorkspaceDestination.prayerTimes,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -66,15 +58,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   void _handleBack() {
     ref.read(workspaceDestinationProvider.notifier).state =
         WorkspaceDestination.home;
-  }
-
-  Future<void> _push(Widget page) async {
-    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
-    await Navigator.push<void>(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
-    if (mounted) ref.invalidate(progressSummaryProvider);
   }
 
   @override
@@ -98,9 +81,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     final barIndex = _barDestinations.indexOf(destination);
     final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
 
-    final overall = ref.watch(progressSummaryProvider).valueOrNull?.overall;
-    final hasQazaRecords = (overall?.total ?? 0) > 0;
-
     return PopScope<void>(
       canPop: destination == WorkspaceDestination.home,
       onPopInvokedWithResult: (didPop, _) {
@@ -114,13 +94,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
               if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
           ],
         ),
-        floatingActionButton:
-            destination == WorkspaceDestination.qaza ||
-                    (destination == WorkspaceDestination.home && hasQazaRecords)
-                ? AddQazaFab(
-                    onAddQaza: () => _push(const AddQazaScreen()),
-                  )
-                : null,
+        floatingActionButton: null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: selectedBarIndex,
           onDestinationSelected: _selectDestination,
@@ -132,12 +106,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             NavigationDestination(
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
-                label: l10n.navQaza),
-            NavigationDestination(
-                icon: const Icon(Icons.schedule_outlined),
-                selectedIcon: const Icon(Icons.schedule_rounded),
-                label: PrayerTimesStrings.title(context)),
-            NavigationDestination(
+                label: l10n.navQaza),            NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
                 label: l10n.navKnowledge),

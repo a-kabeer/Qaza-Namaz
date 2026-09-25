@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
-import '../prayer_times/prayer_times_providers.dart';
 import 'providers/home_providers.dart';
 import 'home_state.dart';
 
@@ -27,9 +26,7 @@ class HomeController {
 
   Future<void> refresh() async {
     invalidateDashboard();
-    ref.invalidate(homeCurrentPrayerProvider);
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
     ref.invalidate(homeFallbackPendingProvider);
 
     await _refreshRequired(
@@ -50,11 +47,6 @@ class HomeController {
       homeProgressHistoryProvider(activeRange),
       'home_progress_history_refresh_failed',
     );
-    await _refreshOptional(
-      qazaRestrictionEvaluationProvider,
-      'home_restriction_refresh_failed',
-    );
-
     final selected = ref.read(homeSelectedPrayerProvider);
     if (selected.prayer != null) {
       await _refreshOptional(
@@ -108,7 +100,6 @@ class HomeController {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
     if (pendingBefore <= 1) {
       ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
     }
@@ -118,14 +109,12 @@ class HomeController {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
   }
 
   void afterUndo(PrayerType prayer) {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(qazaRestrictionEvaluationProvider);
     ref.invalidate(oldestPendingProvider(prayer));
   }
 }

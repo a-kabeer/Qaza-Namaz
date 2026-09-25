@@ -55,7 +55,6 @@ enum HomePrayerSelectionMode {
 enum HomePrayerSelectionSource {
   manual,
   sahibAlTartib,
-  currentPrayer,
 
   /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
   ///
@@ -92,23 +91,15 @@ class HomePrayerSelectionState {
   }
 }
 
-class HomeCurrentPrayerState {
-  const HomeCurrentPrayerState({this.prayer});
-
-  final PrayerType? prayer;
-}
-
 class HomeSelectedPrayerState {
   const HomeSelectedPrayerState({
     required this.mode,
     this.prayer,
-    this.currentPrayer,
     this.source = HomePrayerSelectionSource.unavailable,
   });
 
   final HomePrayerSelectionMode mode;
   final PrayerType? prayer;
-  final PrayerType? currentPrayer;
   final HomePrayerSelectionSource source;
 }
 
