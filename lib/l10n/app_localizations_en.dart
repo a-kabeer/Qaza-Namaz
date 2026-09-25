@@ -1301,78 +1301,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageUrdu => 'اردو';
 
   @override
-  String get settingsPrivacySecurity => 'Privacy & Security';
-
-  @override
-  String get settingsPrivacySecuritySubtitle =>
-      'Protect access to your Qaza records on this device.';
-
-  @override
-  String get settingsAppLock => 'App Lock';
-
-  @override
-  String get settingsAppLockSubtitle =>
-      'Require device authentication before showing your Qaza records.';
-
-  @override
-  String get settingsAppLockWhen => 'Lock when you leave the app';
-
-  @override
-  String get settingsAppLockImmediate => 'Immediately';
-
-  @override
-  String get settingsAppLockOneMinute => 'After 1 minute';
-
-  @override
-  String get settingsAppLockFiveMinutes => 'After 5 minutes';
-
-  @override
-  String get settingsAppLockNever => 'Never';
-
-  @override
-  String get settingsAppLockDeviceNote =>
-      'App Lock uses your device security, such as fingerprint, face unlock, PIN, pattern, or password. Your device must have a supported screen lock configured.';
-
-  @override
-  String get appLockEnableReason =>
-      'Authenticate to turn on App Lock for Qaza Namaz.';
-
-  @override
-  String get appLockDisableReason => 'Authenticate to turn off App Lock.';
-
-  @override
-  String get appLockAuthenticationReason =>
-      'Authenticate to open your Qaza records.';
-
-  @override
-  String get appLockLockedTitle => 'Qaza Namaz is locked';
-
-  @override
-  String get appLockLockedBody =>
-      'Authenticate with your device security to continue. Your Qaza data is hidden until you unlock the app.';
-
-  @override
-  String get appLockUnlock => 'Unlock';
-
-  @override
-  String get appLockUnlocking => 'Unlocking...';
-
-  @override
-  String get appLockUnavailable =>
-      'Device authentication is not available. Set up a screen lock or supported biometric and try again.';
-
-  @override
-  String get appLockCanceled =>
-      'Unlock canceled. Your Qaza data is still protected.';
-
-  @override
-  String get appLockTemporarilyLocked =>
-      'Device authentication is temporarily locked. Wait a moment and try again.';
-
-  @override
-  String get appLockFailed => 'Device authentication failed. Please try again.';
-
-  @override
   String get homeTodayProgressHeader => 'Today\'s Progress';
 
   @override
@@ -1403,26 +1331,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePending => 'Pending';
 
   @override
-  String get homeYourProgress => 'Your Progress';
-
-  @override
-  String get homeRange7Days => '7 Days';
-
-  @override
-  String get homeRange30Days => '30 Days';
-
-  @override
-  String get homeRangeMonthly => 'Monthly';
-
-  @override
   String get homeDetailedStatistics => 'View Detailed Statistics';
 
   @override
   String get homeDetailedStatisticsSubtitle =>
       'Overall and prayer-wise completion';
-
-  @override
-  String get homeChartNoData => 'No completed Qaza in this period.';
 
   @override
   String get homeTodayDate => 'Today';
