@@ -103,7 +103,7 @@ class _GoogleAccountSection extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    l10n.accountSignInMethod,
+                    l10n.accountGoogleAuth,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
