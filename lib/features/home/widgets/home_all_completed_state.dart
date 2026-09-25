@@ -8,13 +8,11 @@ class HomeAllCompletedState extends StatelessWidget {
     super.key,
     required this.completed,
     required this.total,
-    required this.onCalculate,
     required this.onAdd,
   });
 
   final int completed;
   final int total;
-  final VoidCallback onCalculate;
   final VoidCallback onAdd;
 
   @override
@@ -65,14 +63,7 @@ class HomeAllCompletedState extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [
-                    FilledButton.icon(
-                      key: const Key('home_all_completed_calculate'),
-                      onPressed: onCalculate,
-                      icon: const Icon(Icons.calculate_outlined),
-                      label: Text(l10n.homeCalculateQaza),
-                    ),
-                    OutlinedButton.icon(
+                  children: [OutlinedButton.icon(
                       key: const Key('home_all_completed_add'),
                       onPressed: onAdd,
                       icon: const Icon(Icons.add_rounded),
