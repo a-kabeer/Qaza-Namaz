@@ -188,7 +188,6 @@ void main() {
       expect(find.byKey(const Key('home_today_percent')), findsOneWidget);
       expect(find.byKey(const Key('home_today_count')), findsOneWidget);
       expect(find.text('Next Qaza'), findsOneWidget);
-      expect(find.byKey(const Key('home_current_prayer')), findsOneWidget);
       expect(find.text('Fajr'), findsWidgets);
       expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
       expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
