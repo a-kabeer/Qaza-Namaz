@@ -13,7 +13,7 @@ import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
 
-class StartupGate extends ConsumerWidget {
+/// Starts directly into the workspace after authentication/profile checks.\nclass StartupGate extends ConsumerWidget {
   const StartupGate({super.key});
 
   @override
