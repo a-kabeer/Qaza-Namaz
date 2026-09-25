@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import 'android_signing_identity.dart';
 import 'google_auth_flow.dart';
 import 'google_auth_config.dart';
 
@@ -73,13 +74,17 @@ class FirebaseAuthRepository implements AuthRepository, DetailedAuthRepository {
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
+    AndroidSigningIdentityService signingIdentity =
+        const AndroidSigningIdentityService(),
   })  : _auth = auth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn.instance,
-        _diagnostics = diagnostics;
+        _diagnostics = diagnostics,
+        _signingIdentity = signingIdentity;
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
   final DiagnosticsService _diagnostics;
+  final AndroidSigningIdentityService _signingIdentity;
 
   /// google_sign_in 7.x requires exactly one initialization before any other
   /// GoogleSignIn method is called. Kept lazy so constructing the repository
@@ -127,8 +132,9 @@ class FirebaseAuthRepository implements AuthRepository, DetailedAuthRepository {
           await _ensureGoogleSignInInitialized();
 
           requireAuthenticateSupport(_googleSignIn.supportsAuthenticate());
+          await requireRegisteredBuild();
 
-          final googleUser = await _authenticateWithCredentialManagerRecovery();
+          final googleUser = await authenticateOnce();
           final authentication = googleUser.authentication;
           return GoogleIdentityTokens(idToken: authentication.idToken);
         },
@@ -160,27 +166,97 @@ class FirebaseAuthRepository implements AuthRepository, DetailedAuthRepository {
     }
   }
 
-  /// Android Credential Manager can return [16] Account reauth failed
-  /// when stale credential state cannot be re-authenticated. The Android
-  /// google_sign_in implementation maps signOut() to clearCredentialState(),
-  /// so clear that state and retry exactly once before surfacing the failure.
-  Future<GoogleSignInAccount> _authenticateWithCredentialManagerRecovery() async {
+  /// Runs the interactive Google flow exactly once per user action.
+  ///
+  /// On Android `authenticate()` uses the button flow, so every call puts an
+  /// account chooser in front of the user. An earlier version of this code
+  /// answered "[16] Account reauth failed" by clearing credential state and
+  /// calling `authenticate()` again, which showed the chooser a second time
+  /// for a single tap — and, when the cause was an unregistered signing
+  /// certificate, failed identically the second time. One tap opens one
+  /// chooser.
+  ///
+  /// The stale credential state is still worth clearing, because that is what
+  /// makes the user's *next* deliberate attempt start clean. `signOut()` maps
+  /// to `clearCredentialState()` on Android and shows no UI, so it is safe to
+  /// do here; what is not safe is re-entering the interactive flow.
+  @visibleForTesting
+  Future<GoogleSignInAccount> authenticateOnce() async {
     try {
       return await _googleSignIn.authenticate();
     } on GoogleSignInException catch (error) {
-      final description = error.description;
-      if (!_isCredentialManagerReauthFailure(description)) rethrow;
-
-      try {
-        await _googleSignIn.signOut();
-      } catch (_) {
-        // Clearing Credential Manager state is a recovery aid, not a reason to
-        // replace the original authentication failure.
+      if (_isCredentialManagerReauthFailure(error.description)) {
+        await _clearCredentialState();
       }
+      rethrow;
+    }
+  }
 
-      // Retry exactly once. If it still fails, let the second failure travel
-      // to the normal mapping/diagnostics path so we do not hide new details.
-      return _googleSignIn.authenticate();
+  Future<void> _clearCredentialState() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (error, stack) {
+      // A recovery aid, never a reason to replace the original failure.
+      _diagnostics.recordFailure(
+        DiagnosticArea.auth,
+        'credential_state_clear_failed',
+        error,
+        stack: stack,
+      );
+    }
+  }
+
+  /// Refuses to open an account chooser that cannot possibly succeed.
+  ///
+  /// Google Play services matches the caller by package name and signing
+  /// certificate before it will mint an ID token. When this build is signed
+  /// with a certificate no registered OAuth client knows, the chooser opens,
+  /// the user picks an account, and the platform answers "[16] Account reauth
+  /// failed" with nothing else to go on. Checking first turns that into a
+  /// statement of exactly which fingerprint is missing.
+  ///
+  /// Enforcement is one-directional: only a definite mismatch stops the flow.
+  /// A platform that cannot report its own identity is left alone.
+  @visibleForTesting
+  Future<void> requireRegisteredBuild() async {
+    final AndroidSigningIdentity? identity;
+    try {
+      identity = await _signingIdentity.read();
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.auth,
+        'signing_identity_unavailable',
+        error,
+        stack: stack,
+      );
+      return;
+    }
+    if (identity == null) return;
+
+    switch (checkAndroidSigningRegistration(identity)) {
+      case AndroidSigningRegistration.registered:
+      case AndroidSigningRegistration.unknown:
+        return;
+      case AndroidSigningRegistration.unexpectedPackage:
+        throw AuthenticationException(
+          source: 'android-signing',
+          code: 'unexpected-package',
+          message: 'This build reports package "${identity.packageName}", but '
+              'the Firebase Android OAuth client is registered for '
+              '"$googleAndroidApplicationId". Google Sign-In cannot match a '
+              'caller whose package name differs.',
+        );
+      case AndroidSigningRegistration.unregisteredCertificate:
+        throw AuthenticationException(
+          source: 'android-signing',
+          code: 'unregistered-certificate',
+          message: 'This build is signed with SHA-1 '
+              '${identity.sha1Fingerprints.join(", ")}, which is not '
+              'registered as an Android OAuth client for '
+              '"$googleAndroidApplicationId". Add it (and the matching '
+              'SHA-256) to the Firebase console, download the updated '
+              'google-services.json, and rebuild.',
+        );
     }
   }
 
@@ -243,11 +319,23 @@ class FirebaseAuthRepository implements AuthRepository, DetailedAuthRepository {
           return const AuthenticationCancelledException();
         }
         if (_isCredentialManagerReauthFailure(description)) {
-          return AuthenticationCancelledException.withDescription(
-            'Google Sign-In could not re-authenticate the selected account. '
-            'This is not a normal cancellation. Check that the Android app '
-            'package name and signing certificate SHA-1 are registered for '
-            'this exact build in Firebase/Google Cloud, then retry.',
+          // Play services reports this with CommonStatusCodes.CANCELED (16),
+          // which is why it used to arrive dressed as a user cancellation. It
+          // is not one: the user picked an account and the platform refused to
+          // re-authenticate it. Giving it its own code keeps it out of every
+          // `on AuthenticationCancelledException` handler in the app, which
+          // would otherwise treat a configuration failure as "never mind".
+          return AuthenticationException(
+            source: 'google-sign-in',
+            code: 'account-reauth-failed',
+            message: 'Google Sign-In could not re-authenticate the selected '
+                'account. This is not a cancellation. It usually means this '
+                'build\'s package name and signing certificate SHA-1 are not '
+                'registered as an Android OAuth client for this Firebase '
+                'project; it can also mean the device account itself needs '
+                'attention in Android Settings.',
+            cause: error,
+            stackTrace: stack,
           );
         }
         return AuthenticationCancelledException.withDescription(description);

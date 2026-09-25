@@ -106,7 +106,7 @@ void main() {
       );
     });
 
-    test('Credential Manager account reauth failure is not treated as user cancel', () {
+    test('Credential Manager account reauth failure is its own stage', () {
       final mapped = FirebaseAuthRepository.mapSignInFailure(
         const GoogleSignInException(
           code: GoogleSignInExceptionCode.canceled,
@@ -114,11 +114,18 @@ void main() {
         ),
       );
 
-      expect(mapped, isA<AuthenticationCancelledException>());
-      final cancellation = mapped! as AuthenticationCancelledException;
-      expect(cancellation.userInitiated, isFalse);
-      expect(cancellation.message, contains('not a normal cancellation'));
-      expect(cancellation.message, contains('signing certificate SHA-1'));
+      // Play services reports this with CommonStatusCodes.CANCELED (16), so
+      // it arrives looking like a user cancellation. Treating it as one sends
+      // it to every `on AuthenticationCancelledException` handler in the app,
+      // which is how a configuration failure came to read as "never mind".
+      expect(mapped, isA<AuthenticationException>());
+      expect(mapped, isNot(isA<AuthenticationCancelledException>()));
+      expect(mapped!.source, 'google-sign-in');
+      expect(mapped.code, 'account-reauth-failed');
+      expect(mapped.message, contains('not a cancellation'));
+      expect(mapped.message, contains('SHA-1'));
+      expect(mapped.cause, isA<GoogleSignInException>(),
+          reason: 'the raw platform failure stays available for diagnostics');
     });
 
     test('other cancellation descriptions remain diagnosable', () {

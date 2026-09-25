@@ -1343,7 +1343,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountGoogleAuth.
   ///
   /// In en, this message translates to:
-  /// **'Google authentication'**
+  /// **'Google'**
   String get accountGoogleAuth;
 
   /// No description provided for @accountSignedInWithGoogle.
@@ -1403,7 +1403,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountSignOutExplanation.
   ///
   /// In en, this message translates to:
-  /// **'Signing out returns you to the welcome screen. Your saved Qaza records are NOT deleted and will be restored the next time you sign in.'**
+  /// **'Signing out disconnects your Google account. Your Qaza progress remains on this device.'**
   String get accountSignOutExplanation;
 
   /// No description provided for @dataTitle.
@@ -2213,7 +2213,7 @@ abstract class AppLocalizations {
   /// No description provided for @authGuestNote.
   ///
   /// In en, this message translates to:
-  /// **'You can sign in later to back up your progress.'**
+  /// **'You can sign in with Google later to keep your progress with your account.'**
   String get authGuestNote;
 
   /// No description provided for @backupPromptTitle.
@@ -2225,13 +2225,13 @@ abstract class AppLocalizations {
   /// No description provided for @backupPromptBody.
   ///
   /// In en, this message translates to:
-  /// **'Your Qaza progress is saved on this device. Sign in to back it up and restore it on another device.'**
+  /// **'Sign in with Google to keep your Qaza progress available with your account.'**
   String get backupPromptBody;
 
   /// No description provided for @backupPromptConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Back Up My Progress'**
+  /// **'Continue with Google'**
   String get backupPromptConfirm;
 
   /// No description provided for @backupPromptDismiss.
@@ -2273,7 +2273,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupMigrationDone.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{Signed in. Your progress is backed up.} =1{Signed in. 1 record was added to your account.} other{Signed in. {count} records were added to your account.}}'**
+  /// **'{count, plural, =0{Signed in. Your Qaza progress is now linked to your account.} =1{Signed in. Your Qaza progress is now linked to your account.} other{Signed in. Your Qaza progress is now linked to your account.}}'**
   String backupMigrationDone(int count);
 
   /// No description provided for @settingsAboutSection.
@@ -2780,54 +2780,287 @@ abstract class AppLocalizations {
   /// **'Sahib al-Tartib: {prayer}'**
   String homeSahibOrderLabel(String prayer);
 
+  /// No description provided for @profileLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your language'**
   String get profileLanguageTitle;
-  String get profileLanguageIntro;
-  String get profileSetupTitle;
-  String get profileTitle;
-  String get profileIntro;
-  String get profileSettingsSubtitle;
-  String get profileGender;
-  String get profileMale;
-  String get profileFemale;
-  String get profileMadhab;
-  String get profileHanafi;
-  String get profileShafi;
-  String get profileMaliki;
-  String get profileHanbali;
-  String get profileOther;
-  String get profileDateOfBirth;
-  String get profileSelectDate;
-  String get profileSelectDobHelp;
-  String get profileHijriHint;
-  String get profilePubertyAge;
-  String get profileStartPrayingAge;
-  String get profileSelectGenderFirst;
-  String get profileSelectPubertyFirst;
-  String get profileSelectDobFirst;
-  String get profileWitr;
-  String get profileWitrOptional;
-  String get profileWitrIncluded;
-  String get profileWitrExcluded;
-  String get profileSubmit;
-  String get profileSave;
-  String get qazaReviewTitle;
-  String get qazaReviewSubtitle;
-  String get qazaReviewTotal;
-  String get qazaReviewPeriod;
-  String get qazaReviewBreakdown;
-  String get qazaReviewNote;
-  String get qazaReviewEdit;
-  String get qazaReviewAdd;
-  String get qazaReviewAdding;
-  String get qazaReviewError;
-  String get profileErrorLanguage;
-  String get profileErrorGender;
-  String get profileErrorMadhab;
-  String get profileErrorDob;
-  String get profileErrorPuberty;
-  String get profileErrorStartPraying;
-  String get profileErrorWitr;
 
+  /// No description provided for @profileLanguageIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the language you want to use throughout the app.'**
+  String get profileLanguageIntro;
+
+  /// No description provided for @profileSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your profile'**
+  String get profileSetupTitle;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @profileIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'These details personalize your Qaza plan and are used by the app\'s prayer rules.'**
+  String get profileIntro;
+
+  /// No description provided for @profileSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your prayer profile and Qaza plan settings.'**
+  String get profileSettingsSubtitle;
+
+  /// No description provided for @profileGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get profileGender;
+
+  /// No description provided for @profileMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get profileMale;
+
+  /// No description provided for @profileFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get profileFemale;
+
+  /// No description provided for @profileMadhab.
+  ///
+  /// In en, this message translates to:
+  /// **'Madhab / School of Thought'**
+  String get profileMadhab;
+
+  /// No description provided for @profileHanafi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanafi'**
+  String get profileHanafi;
+
+  /// No description provided for @profileShafi.
+  ///
+  /// In en, this message translates to:
+  /// **'Shafi'**
+  String get profileShafi;
+
+  /// No description provided for @profileMaliki.
+  ///
+  /// In en, this message translates to:
+  /// **'Maliki'**
+  String get profileMaliki;
+
+  /// No description provided for @profileHanbali.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanbali'**
+  String get profileHanbali;
+
+  /// No description provided for @profileOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get profileOther;
+
+  /// No description provided for @profileDateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth'**
+  String get profileDateOfBirth;
+
+  /// No description provided for @profileSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get profileSelectDate;
+
+  /// No description provided for @profileSelectDobHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your date of birth'**
+  String get profileSelectDobHelp;
+
+  /// No description provided for @profileHijriHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hijri date is shown after you select the Gregorian date.'**
+  String get profileHijriHint;
+
+  /// No description provided for @profilePubertyAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Puberty Age'**
+  String get profilePubertyAge;
+
+  /// No description provided for @profileStartPrayingAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Praying Age'**
+  String get profileStartPrayingAge;
+
+  /// No description provided for @profileSelectGenderFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select gender first'**
+  String get profileSelectGenderFirst;
+
+  /// No description provided for @profileSelectPubertyFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select puberty age first'**
+  String get profileSelectPubertyFirst;
+
+  /// No description provided for @profileSelectDobFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date of birth first'**
+  String get profileSelectDobFirst;
+
+  /// No description provided for @profileWitr.
+  ///
+  /// In en, this message translates to:
+  /// **'Witr'**
+  String get profileWitr;
+
+  /// No description provided for @profileWitrOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'For Other, you can choose whether Witr is included.'**
+  String get profileWitrOptional;
+
+  /// No description provided for @profileWitrIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Included'**
+  String get profileWitrIncluded;
+
+  /// No description provided for @profileWitrExcluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included'**
+  String get profileWitrExcluded;
+
+  /// No description provided for @profileSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get profileSubmit;
+
+  /// No description provided for @profileSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get profileSave;
+
+  /// No description provided for @qazaReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Your Qaza Plan'**
+  String get qazaReviewTitle;
+
+  /// No description provided for @qazaReviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please review your Qaza details before adding them to your tracker.'**
+  String get qazaReviewSubtitle;
+
+  /// No description provided for @qazaReviewTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Estimated Qaza'**
+  String get qazaReviewTotal;
+
+  /// No description provided for @qazaReviewPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Period'**
+  String get qazaReviewPeriod;
+
+  /// No description provided for @qazaReviewBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Breakdown'**
+  String get qazaReviewBreakdown;
+
+  /// No description provided for @qazaReviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'These are estimated Qaza prayers based on the information in your profile.'**
+  String get qazaReviewNote;
+
+  /// No description provided for @qazaReviewEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit My Details'**
+  String get qazaReviewEdit;
+
+  /// No description provided for @qazaReviewAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Qaza to My Tracker'**
+  String get qazaReviewAdd;
+
+  /// No description provided for @qazaReviewAdding.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding Qaza…'**
+  String get qazaReviewAdding;
+
+  /// No description provided for @qazaReviewError.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza could not be added. Please try again.'**
+  String get qazaReviewError;
+
+  /// No description provided for @profileErrorLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a language.'**
+  String get profileErrorLanguage;
+
+  /// No description provided for @profileErrorGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your gender.'**
+  String get profileErrorGender;
+
+  /// No description provided for @profileErrorMadhab.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your school of thought.'**
+  String get profileErrorMadhab;
+
+  /// No description provided for @profileErrorDob.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid date of birth.'**
+  String get profileErrorDob;
+
+  /// No description provided for @profileErrorPuberty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a valid puberty age for the selected gender.'**
+  String get profileErrorPuberty;
+
+  /// No description provided for @profileErrorStartPraying.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a valid praying start age.'**
+  String get profileErrorStartPraying;
+
+  /// No description provided for @profileErrorWitr.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a valid Witr setting.'**
+  String get profileErrorWitr;
 }
 
 class _AppLocalizationsDelegate

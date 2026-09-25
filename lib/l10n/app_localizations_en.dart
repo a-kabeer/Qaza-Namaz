@@ -1278,7 +1278,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueAsGuest => 'Continue as Guest';
 
   @override
-  String get authGuestNote => 'You can sign in with Google later to keep your progress with your account.';
+  String get authGuestNote =>
+      'You can sign in with Google later to keep your progress with your account.';
 
   @override
   String get backupPromptTitle => 'Keep your progress safe';
@@ -1624,144 +1625,152 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get profileLanguageTitle => "Choose your language";
+  String get profileLanguageTitle => 'Choose your language';
 
   @override
-  String get profileLanguageIntro => "Select the language you want to use throughout the app.";
+  String get profileLanguageIntro =>
+      'Select the language you want to use throughout the app.';
 
   @override
-  String get profileSetupTitle => "Set up your profile";
+  String get profileSetupTitle => 'Set up your profile';
 
   @override
-  String get profileTitle => "Profile";
+  String get profileTitle => 'Profile';
 
   @override
-  String get profileIntro => "These details personalize your Qaza plan and are used by the app's prayer rules.";
+  String get profileIntro =>
+      'These details personalize your Qaza plan and are used by the app\'s prayer rules.';
 
   @override
-  String get profileSettingsSubtitle => "Your prayer profile and Qaza plan settings.";
+  String get profileSettingsSubtitle =>
+      'Your prayer profile and Qaza plan settings.';
 
   @override
-  String get profileGender => "Gender";
+  String get profileGender => 'Gender';
 
   @override
-  String get profileMale => "Male";
+  String get profileMale => 'Male';
 
   @override
-  String get profileFemale => "Female";
+  String get profileFemale => 'Female';
 
   @override
-  String get profileMadhab => "Madhab / School of Thought";
+  String get profileMadhab => 'Madhab / School of Thought';
 
   @override
-  String get profileHanafi => "Hanafi";
+  String get profileHanafi => 'Hanafi';
 
   @override
-  String get profileShafi => "Shafi";
+  String get profileShafi => 'Shafi';
 
   @override
-  String get profileMaliki => "Maliki";
+  String get profileMaliki => 'Maliki';
 
   @override
-  String get profileHanbali => "Hanbali";
+  String get profileHanbali => 'Hanbali';
 
   @override
-  String get profileOther => "Other";
+  String get profileOther => 'Other';
 
   @override
-  String get profileDateOfBirth => "Date of Birth";
+  String get profileDateOfBirth => 'Date of Birth';
 
   @override
-  String get profileSelectDate => "Select date";
+  String get profileSelectDate => 'Select date';
 
   @override
-  String get profileSelectDobHelp => "Select your date of birth";
+  String get profileSelectDobHelp => 'Select your date of birth';
 
   @override
-  String get profileHijriHint => "Hijri date is shown after you select the Gregorian date.";
+  String get profileHijriHint =>
+      'Hijri date is shown after you select the Gregorian date.';
 
   @override
-  String get profilePubertyAge => "Puberty Age";
+  String get profilePubertyAge => 'Puberty Age';
 
   @override
-  String get profileStartPrayingAge => "Start Praying Age";
+  String get profileStartPrayingAge => 'Start Praying Age';
 
   @override
-  String get profileSelectGenderFirst => "Select gender first";
+  String get profileSelectGenderFirst => 'Select gender first';
 
   @override
-  String get profileSelectPubertyFirst => "Select puberty age first";
+  String get profileSelectPubertyFirst => 'Select puberty age first';
 
   @override
-  String get profileSelectDobFirst => "Select date of birth first";
+  String get profileSelectDobFirst => 'Select date of birth first';
 
   @override
-  String get profileWitr => "Witr";
+  String get profileWitr => 'Witr';
 
   @override
-  String get profileWitrOptional => "For Other, you can choose whether Witr is included.";
+  String get profileWitrOptional =>
+      'For Other, you can choose whether Witr is included.';
 
   @override
-  String get profileWitrIncluded => "Included";
+  String get profileWitrIncluded => 'Included';
 
   @override
-  String get profileWitrExcluded => "Not included";
+  String get profileWitrExcluded => 'Not included';
 
   @override
-  String get profileSubmit => "Continue";
+  String get profileSubmit => 'Continue';
 
   @override
-  String get profileSave => "Save Changes";
+  String get profileSave => 'Save Changes';
 
   @override
-  String get qazaReviewTitle => "Review Your Qaza Plan";
+  String get qazaReviewTitle => 'Review Your Qaza Plan';
 
   @override
-  String get qazaReviewSubtitle => "Please review your Qaza details before adding them to your tracker.";
+  String get qazaReviewSubtitle =>
+      'Please review your Qaza details before adding them to your tracker.';
 
   @override
-  String get qazaReviewTotal => "Total Estimated Qaza";
+  String get qazaReviewTotal => 'Total Estimated Qaza';
 
   @override
-  String get qazaReviewPeriod => "Qaza Period";
+  String get qazaReviewPeriod => 'Qaza Period';
 
   @override
-  String get qazaReviewBreakdown => "Prayer Breakdown";
+  String get qazaReviewBreakdown => 'Prayer Breakdown';
 
   @override
-  String get qazaReviewNote => "These are estimated Qaza prayers based on the information in your profile.";
+  String get qazaReviewNote =>
+      'These are estimated Qaza prayers based on the information in your profile.';
 
   @override
-  String get qazaReviewEdit => "Edit My Details";
+  String get qazaReviewEdit => 'Edit My Details';
 
   @override
-  String get qazaReviewAdd => "Add Qaza to My Tracker";
+  String get qazaReviewAdd => 'Add Qaza to My Tracker';
 
   @override
-  String get qazaReviewAdding => "Adding Qaza…";
+  String get qazaReviewAdding => 'Adding Qaza…';
 
   @override
-  String get qazaReviewError => "Qaza could not be added. Please try again.";
+  String get qazaReviewError => 'Qaza could not be added. Please try again.';
 
   @override
-  String get profileErrorLanguage => "Please select a language.";
+  String get profileErrorLanguage => 'Please select a language.';
 
   @override
-  String get profileErrorGender => "Please select your gender.";
+  String get profileErrorGender => 'Please select your gender.';
 
   @override
-  String get profileErrorMadhab => "Please select your school of thought.";
+  String get profileErrorMadhab => 'Please select your school of thought.';
 
   @override
-  String get profileErrorDob => "Please enter a valid date of birth.";
+  String get profileErrorDob => 'Please enter a valid date of birth.';
 
   @override
-  String get profileErrorPuberty => "Please select a valid puberty age for the selected gender.";
+  String get profileErrorPuberty =>
+      'Please select a valid puberty age for the selected gender.';
 
   @override
-  String get profileErrorStartPraying => "Please select a valid praying start age.";
+  String get profileErrorStartPraying =>
+      'Please select a valid praying start age.';
 
   @override
-  String get profileErrorWitr => "Please select a valid Witr setting.";
-
+  String get profileErrorWitr => 'Please select a valid Witr setting.';
 }
