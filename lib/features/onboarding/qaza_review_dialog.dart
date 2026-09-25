@@ -83,7 +83,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
         content: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 500,
-            maxHeight: maxHeight.clamp(420, 620),
+            maxHeight: maxHeight.clamp(420.0, 620.0).toDouble(),
           ),
           child: SingleChildScrollView(
             child: Column(
