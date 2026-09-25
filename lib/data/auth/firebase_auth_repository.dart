@@ -293,7 +293,7 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @visibleForTesting
-  static bool isCredentialManagerReauthFailure(String description) =>
+  static bool isCredentialManagerReauthFailure(String? description) =>
       _isCredentialManagerReauthFailure(description);
 
   static String _googleFailureMessage(GoogleSignInException error) {
