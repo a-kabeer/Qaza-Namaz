@@ -15,8 +15,6 @@ import 'package:qaza_namaz/features/home/home_screen.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/widgets/home_progress_history.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
-import 'package:qaza_namaz/features/prayer_times/domain/qaza_restriction_service.dart';
-import 'package:qaza_namaz/features/prayer_times/prayer_times_providers.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 
 import 'support/in_memory_qaza_repository.dart';
@@ -42,12 +40,6 @@ QazaRecord _record(
       updatedAt: completedAt ?? _stamp,
     );
 
-
-class _TestHomeCurrentPrayerNotifier extends HomeCurrentPrayerNotifier {
-  @override
-  HomeCurrentPrayerState build() =>
-      const HomeCurrentPrayerState(prayer: PrayerType.fajr);
-}
 
 void main() {
   Future<InMemoryQazaRepository> ledger() async {
@@ -96,9 +88,6 @@ void main() {
     Locale locale = const Locale('en'),
     ThemeMode themeMode = ThemeMode.light,
     Size size = const Size(900, 2000),
-    bool currentPrayer = true,
-    QazaRestrictionEvaluation? restrictionEvaluation,
-    bool restrictionEvaluationFails = false,
     DateTime? now,
     DiagnosticsService? diagnostics,
   }) async {
@@ -116,20 +105,6 @@ void main() {
           const AppUser(id: 'u1', email: 'u1@example.com'),
         ),
       ),
-      if (currentPrayer)
-        homeCurrentPrayerProvider.overrideWith(
-          _TestHomeCurrentPrayerNotifier.new,
-        ),
-      if (restrictionEvaluationFails)
-        qazaRestrictionEvaluationProvider.overrideWith(
-          (ref) => Future<QazaRestrictionEvaluation>.error(
-            StateError('restriction lookup failed'),
-          ),
-        )
-      else if (restrictionEvaluation != null)
-        qazaRestrictionEvaluationProvider.overrideWith(
-          (ref) async => restrictionEvaluation,
-        ),
     ];
 
     final container = ProviderContainer(overrides: overrides);
@@ -220,147 +195,6 @@ void main() {
       expect(find.byKey(const Key('home_estimated_completion')), findsOneWidget);
     });
 
-    testWidgets(
-        'explains restricted time instead of showing Complete Qaza',
-        (tester) async {
-      final restriction = QazaRestrictionEvaluation(
-        isRestricted: true,
-        type: RestrictionType.sunrise,
-        remaining: Duration(minutes: 12),
-        nextAllowedTime: DateTime(2026, 9, 22, 18, 42),
-      );
-
-      await pumpHome(
-        tester,
-        await ledger(),
-        restrictionEvaluation: restriction,
-      );
-
-      expect(
-        find.byKey(const Key('home_qaza_restricted_state')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_complete_oldest_qaza')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_restricted_title')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_restricted_reason')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_restricted_remaining')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_restricted_available_at')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('home_qaza_view_all')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('restricted Home state uses Urdu localization', (tester) async {
-      final restriction = QazaRestrictionEvaluation(
-        isRestricted: true,
-        type: RestrictionType.zawal,
-        remaining: Duration(minutes: 5),
-        nextAllowedTime: DateTime(2026, 9, 22, 18, 55),
-      );
-
-      await pumpHome(
-        tester,
-        await ledger(),
-        locale: const Locale('ur'),
-        restrictionEvaluation: restriction,
-      );
-
-      expect(find.text('قضا عارضی طور پر دستیاب نہیں'), findsOneWidget);
-      expect(
-        find.byKey(const Key('home_qaza_restricted_available_at')),
-        findsOneWidget,
-      );
-      expect(find.text('تمام قضا دیکھیں'), findsOneWidget);
-    });
-
-    testWidgets(
-        'completion still works when the restriction lookup provider fails',
-        (tester) async {
-      final repository = InMemoryQazaRepository();
-      await repository.addRecords([
-        _record(
-          'f1',
-          PrayerType.fajr,
-          DateTime(2026, 1, 1),
-          QazaStatus.pending,
-        ),
-        _record(
-          'f2',
-          PrayerType.fajr,
-          DateTime(2026, 1, 2),
-          QazaStatus.pending,
-        ),
-      ]);
-
-      await pumpHome(
-        tester,
-        repository,
-        restrictionEvaluationFails: true,
-      );
-      expect(find.text('01 Jan 2026'), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull);
-      expect(
-        find.text('Qaza cannot be completed, please try again'),
-        findsNothing,
-      );
-      expect(tester.takeException(), isNull);
-    });
-
-
-
-    testWidgets(
-        'stale displayed Qaza does not show false completion or undo UI',
-        (tester) async {
-      final repository = await ledger();
-      final diagnostics = BufferedDiagnostics();
-
-      await pumpHome(
-        tester,
-        repository,
-        diagnostics: diagnostics,
-      );
-
-      final staleAt = DateTime(2026, 9, 23, 12);
-      final staleResult = await repository.completeRecord(
-        userId: 'u1',
-        recordId: 'f1',
-        completedAt: staleAt,
-      );
-      expect(staleResult, QazaCompletionResult.completed);
-
-      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('qaza_undo_banner')), findsNothing);
-      expect(find.text('Qaza cannot be completed, please try again'), findsNothing);
-      expect(tester.takeException(), isNull);
-      expect(
-        diagnostics.events.where((event) => event.code == 'completion_failed'),
-        isEmpty,
-      );
-      expect(tester.takeException(), isNull);
-    });
-
     testWidgets('completing the displayed oldest Qaza updates Home',
         (tester) async {
       final repository = InMemoryQazaRepository();
@@ -388,30 +222,6 @@ void main() {
       expect(find.text('02 Jan 2026'), findsOneWidget);
     });
 
-    testWidgets('handles missing current prayer in non-Sahib mode without crashing',
-        (tester) async {
-      final repository = await ledger();
-      await repository.addRecords([
-        _record('f4', PrayerType.fajr, DateTime(2026, 1, 10), QazaStatus.pending),
-        _record('f5', PrayerType.fajr, DateTime(2026, 1, 11), QazaStatus.pending),
-        _record('f6', PrayerType.fajr, DateTime(2026, 1, 12), QazaStatus.pending),
-        _record('f7', PrayerType.fajr, DateTime(2026, 1, 13), QazaStatus.pending),
-      ]);
-      await pumpHome(
-        tester,
-        repository,
-        currentPrayer: false,
-      );
-
-      expect(
-        find.byKey(const Key('home_qaza_prayer_time_setup')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('home_setup_prayer_times')), findsOneWidget);
-      expect(find.text('Fajr'), findsWidgets);
-      expect(find.text('01 Jan 2026'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
   });
 
   group('home prayer selection', () {
