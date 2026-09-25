@@ -1,25 +1,20 @@
 {
   "@@locale": "ur",
-
   "appTitle": "قضا نماز",
-
   "navHome": "ہوم",
   "navQaza": "قضا",
-  "navCalculator": "کیلکولیٹر",
   "navKnowledge": "معلومات",
   "settingsRemindersSection": "یاد دہانیاں",
   "settingsRemindersSubtitle": "قضا مکمل کرنے کی روزانہ یاد دہانی۔",
   "settingsBackupSection": "ڈیٹا اور اسٹوریج",
   "settingsBackupSubtitle": "کلاؤڈ سنک، برآمد اور درآمد۔",
   "navSettings": "ترتیبات",
-
   "prayerFajr": "فجر",
   "prayerZuhr": "ظہر",
   "prayerAsr": "عصر",
   "prayerMaghrib": "مغرب",
   "prayerIsha": "عشاء",
   "prayerWitr": "وتر",
-
   "statusPending": "باقی",
   "statusDeleted": "حالیہ حذف شدہ",
   "statusCompleted": "مکمل",
@@ -45,19 +40,16 @@
   "qazaSortOldestFirst": "پہلے پرانی",
   "qazaSortNewestFirst": "پہلے نئی",
   "filterAll": "سب",
-
   "commonRetry": "دوبارہ کوشش کریں",
   "commonTotal": "کل",
   "commonVersion": "ورژن",
   "stateErrorTitle": "کچھ غلط ہو گیا",
-
   "prayerRakatFajr": "فجر • 2 رکعت فرض",
   "prayerRakatZuhr": "ظہر • 4 رکعت فرض",
   "prayerRakatAsr": "عصر • 4 رکعت فرض",
   "prayerRakatMaghrib": "مغرب • 3 رکعت فرض",
   "prayerRakatIsha": "عشاء • 4 رکعت فرض",
   "prayerRakatWitr": "وتر • 3 رکعت واجب • مستقل",
-
   "syncSettingUp": "ترتیب دی جا رہی ہے",
   "syncSettingUpDetail": "اس ڈیوائس پر آپ کے قضا ریکارڈ تیار کیے جا رہے ہیں۔",
   "syncRestoring": "بحال کیا جا رہا ہے",
@@ -77,9 +69,7 @@
   "commonBack": "واپس",
   "commonContinue": "جاری رکھیں",
   "commonLoading": "لوڈ ہو رہا ہے...",
-
   "hijriDate": "{day} {month} {year} ھ",
-
   "homeTitle": "ہوم",
   "homeNotificationsTooltip": "اطلاعات",
   "homeProfileTooltip": "پروفائل",
@@ -87,7 +77,6 @@
   "homeHeadingPending": "جاری رکھیں",
   "homeHeadingCompleted": "آپ کی تمام قضا مکمل ہے",
   "homeSetupMessage": "آپ نے اب تک کوئی قضا نماز شامل نہیں کی۔",
-  "homeCalculateQaza": "قضا کا حساب لگائیں",
   "homeCompleteQaza": "قضا ادا کریں",
   "homeAddNewQaza": "نئی قضا شامل کریں",
   "homeAddManually": "دستی طور پر قضا شامل کریں",
@@ -100,13 +89,21 @@
   "homeDailyProgress": "{completed} / {target} مکمل",
   "@homeDailyProgress": {
     "placeholders": {
-      "completed": {"type": "int"},
-      "target": {"type": "int"}
+      "completed": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
     }
   },
   "homeDailyRemaining": "{count} باقی",
   "@homeDailyRemaining": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "homeQazaPlan": "قضا کا منصوبہ",
   "homeCompleteOldestQaza": "سب سے پرانی قضا مکمل کریں",
@@ -117,20 +114,26 @@
   "homeDailyTarget": "روزانہ ہدف",
   "homePerDay": "روزانہ {count}",
   "@homePerDay": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "homeEstimatedCompletion": "متوقع تکمیل: {date}",
   "@homeEstimatedCompletion": {
-    "placeholders": {"date": {"type": "String"}}
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "homeNextQaza": "اگلی قضا",
   "homeCompleteNextQaza": "اگلی قضا مکمل کریں",
   "homeViewAllQaza": "تمام قضا دیکھیں",
   "homeDailyProgressError": "آج کی پیش رفت لوڈ نہیں ہو سکی۔",
-
   "progressPendingCompleted": "{pending} باقی • {completed} مکمل",
   "progressCompletedPending": "{completed} مکمل • {pending} باقی",
-
   "qazaTitle": "قضا",
   "qazaProgressLabel": "پیش رفت",
   "qazaAddTooltip": "قضا شامل کریں",
@@ -150,14 +153,23 @@
   "qazaTartibRequiredMessage": "آپ کے ذمہ {count} فرض نمازیں قضا باقی ہیں۔ اس حکم کے مطابق دوسری باقی قضا نمازوں سے پہلے {prayer} کی قضا ادا کریں۔",
   "@qazaTartibRequiredMessage": {
     "placeholders": {
-      "count": {"type": "int"},
-      "prayer": {"type": "String"}
+      "count": {
+        "type": "int"
+      },
+      "prayer": {
+        "type": "String"
+      }
     }
   },
   "qazaTartibBlocked": "قضا میں ترتیب لازم ہے۔ پہلے {prayer} کی قضا ادا کریں۔",
-  "@qazaTartibBlocked": { "placeholders": { "prayer": {"type": "String"} } },
+  "@qazaTartibBlocked": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
   "qazaCompletedOn": "{date} کو مکمل",
-
   "qazaCompleteCount": "{count, plural, =1{1 قضا مکمل کریں} other{{count} قضا مکمل کریں}}",
   "qazaRecordActions": "ریکارڈ کے اعمال",
   "qazaEditRecord": "ترمیم",
@@ -174,86 +186,27 @@
   "qazaRecordUpdateFailed": "قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
   "qazaRecordDeleted": "قضا حالیہ حذف شدہ میں منتقل کر دی گئی ہے۔",
   "qazaRecordDeleteFailed": "قضا ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-
   "qazaUndoAction": "واپس کریں",
   "qazaUndoAvailable": "{count, plural, =1{حالیہ تکمیل واپس کی جا سکتی ہے۔} other{حالیہ تکمیلات واپس کی جا سکتی ہیں۔}}",
   "@qazaUndoAvailable": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaUndoCount": "{count, plural, =1{1 قضا دوبارہ باقی ہو گئی۔} other{{count} قضا دوبارہ باقی ہو گئیں۔}}",
   "@qazaUndoCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaCompletedCount": "{count, plural, =0{کچھ مکمل نہیں ہوا۔} =1{1 قضا مکمل ہو گئی۔} other{{count} قضا مکمل ہو گئیں۔}}",
-
-  "calcAboutYouIntro": "اپنی تاریخِ پیدائش اور بلوغت کی معلومات سے آغاز کریں۔ تاریخیں گریگورین کیلنڈر میں منتخب ہوتی ہیں؛ ہجری تاریخ ساتھ دکھائی جاتی ہے۔",
-  "calcDateOfBirth": "تاریخِ پیدائش",
-  "calcSelectDate": "تاریخ منتخب کریں",
-  "calcSelectDobHelp": "اپنی تاریخِ پیدائش منتخب کریں",
-  "calcCurrentAge": "موجودہ عمر",
-  "calcAgeYears": "{years} سال",
-  "calcBalighInformation": "بلوغت کی معلومات",
-  "calcModeAge": "عمر",
-  "calcModeExactDate": "اصل تاریخ",
-  "calcBalighAgeLabel": "بلوغت کی عمر (سال)",
-  "calcSelectExactDate": "اصل تاریخ منتخب کریں",
-  "calcSelectBalighHelp": "بلوغت کی اصل تاریخ منتخب کریں",
-  "calcEstimatedBalighDate": "اندازاً بلوغت کی تاریخ: {date}",
-  "calcExactBalighDate": "بلوغت کی اصل تاریخ: {date}",
-  "calcPrayerHistoryIntro": "بتائیں کہ باقاعدہ نماز کب شروع ہوئی تاکہ ہم قضا کا دورانیہ نکال سکیں۔",
-  "calcRegularPrayerStart": "باقاعدہ نماز کا آغاز",
-  "calcPrayerStartAgeUnavailable": "آپ کی عمر منتخب کردہ بالغ عمر سے کم ہے، اس لیے نماز شروع کرنے کی کوئی عمر دستیاب نہیں۔ اپنی تاریخ پیدائش یا بالغ معلومات درست کریں۔",
-  "calcPrayerStartAgeLabel": "باقاعدہ نماز شروع کرنے کی عمر (سال)",
-  "calcSelectPrayerStartHelp": "نماز شروع کرنے کی اصل تاریخ منتخب کریں",
-  "calcEstimatedPrayerStartDate": "اندازاً نماز کے آغاز کی تاریخ: {date}",
-  "calcExactPrayerStartDate": "نماز کے آغاز کی اصل تاریخ: {date}",
-  "calcIncludeWitr": "وتر الگ شمار کریں",
-  "calcIncludeWitrSubtitle": "وتر کو پانچ فرض نمازوں سے الگ شمار کیا جاتا ہے۔",
-  "calcQazaPeriod": "قضا کا دورانیہ",
-  "calcBalighDate": "بلوغت کی تاریخ",
-  "calcPrayerStartDate": "نماز کے آغاز کی تاریخ",
-  "calcCalendarPeriod": "کیلنڈر دورانیہ",
-  "calcPeriodValue": "{years} سال • {days} دن",
-  "calcCompleteDatesPrompt": "قضا کا دورانیہ نکالنے کے لیے درست تاریخیں مکمل کریں۔",
-  "calcNoResultPrompt": "اپنا قضا تخمینہ دیکھنے کے لیے درست نماز دورانیہ نکالیں۔",
-  "calcElapsedDays": "گزرے ہوئے دن",
-  "calcEstimatedPrayers": "تخمینی نمازیں",
-  "calcPrayerBreakdown": "نمازوں کی تفصیل",
-  "calcWitrNotIncluded": "وتر شامل نہیں ہے۔ اسے نماز کی تاریخ والے مرحلے میں تبدیل کریں۔",
-  "calcPreflightErrorShort": "موجودہ ریکارڈ کی جانچ نہیں ہو سکی۔",
-  "calcAddErrorShort": "اندازہ شامل نہیں ہو سکا۔",
-
-  "calculatorTitle": "کیلکولیٹر",
-  "calcStepAboutYou": "آپ کے بارے میں",
-  "calcStepPrayerHistory": "نماز کی تاریخ",
-  "calcStepResult": "نتیجہ",
-  "calcStepOf": "مرحلہ {step} از 3",
-  "calcStepSemantics": "مرحلہ {step}: {name}",
-  "calcCalculate": "حساب لگائیں",
-  "calcAddToTracker": "ٹریکر میں شامل کریں",
-  "calcAddQazaCount": "{count} قضا شامل کریں",
-  "calcPreflightTitle": "قضا ٹریکر میں شامل کریں",
-  "calcCalculated": "حساب شدہ",
-  "calcAlreadyRecorded": "پہلے سے درج",
-  "calcAlreadyCompleted": "پہلے سے مکمل",
-  "calcNewToAdd": "نئی شامل کرنے کے لیے",
-  "calcExistingUntouched": "موجودہ ریکارڈ کبھی تبدیل نہیں ہوتے۔",
-  "calcAddCountToTracker": "{count} قضا ٹریکر میں شامل کریں",
-  "calcAddingTitle": "قضا آپ کے ٹریکر میں شامل کی جا رہی ہے",
-  "calcAddingProgress": "{total} میں سے {processed} ریکارڈز",
-  "calcAddedResult": "{count, plural, =0{شامل کرنے کو کچھ نیا نہیں تھا۔} other{{count} ریکارڈز آپ کے ٹریکر میں شامل ہو گئے۔}}",
-  "calcAddFailedTitle": "ٹریکر میں شامل نہیں ہو سکا",
-  "calcAddedDoneHint": "آپ کا ٹریکر اپ ڈیٹ ہو گیا۔ آپ کی تاریخ پیدائش اور نماز کی ترتیبات اگلی بار کے لیے محفوظ ہیں۔",
-  "calcCalculateAgain": "دوبارہ حساب کریں",
-  "calcEstimateAdded": "اندازہ شامل ہو گیا",
-  "calcEstimateAddedMessage": "{count} قضا ریکارڈ شامل کر دیے گئے۔ موجودہ ریکارڈ تبدیل نہیں ہوئے۔",
-  "calcPreflightError": "آپ کے موجودہ ریکارڈ کی جانچ نہیں ہو سکی: {error}",
-  "calcAddError": "اندازہ شامل نہیں ہو سکا: {error}",
-
   "calendarSelectYear": "سال منتخب کریں",
   "calendarSelectHint": "منتخب کرنے کے لیے دستیاب تاریخ پر ٹیپ کریں۔",
   "calendarSelectedCount": "{count, plural, =1{1 تاریخ منتخب۔} other{{count} تاریخیں منتخب۔}}",
-
   "authTitle": "سائن اِن",
   "authWelcomeBack": "خوش آمدید",
   "authSubtitle": "اپنے قضا نماز ٹریکر تک رسائی کے لیے سائن اِن کریں۔",
@@ -265,7 +218,6 @@
   "authHelpBody": "اس ریلیز میں گوگل سائن اِن ہی منسلک توثیقی طریقہ ہے۔ آپ کا قضا ڈیٹا اسی فائربیس اکاؤنٹ سے منسلک رہتا ہے جس سے آپ سائن اِن کرتے ہیں۔",
   "authDismiss": "بند کریں",
   "authFailed": "سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-
   "notificationsOff": "بند",
   "notificationsTitle": "اطلاعات",
   "notificationsLoading": "اطلاعات کی ترتیبات لوڈ ہو رہی ہیں…",
@@ -309,14 +261,12 @@
   "notificationsSendTestSubtitle": "ترسیل جانچنے کے لیے ابھی ایک اطلاع بھیجیں۔",
   "notificationsTestSent": "آزمائشی اطلاع بھیج دی گئی۔",
   "notificationsTestFailed": "آزمائشی اطلاع ناکام: {error}",
-
   "welcomeTagline": "روحانی عبادت اور نماز کی پابندی",
   "welcomeHeadline": "اپنی چھوٹی ہوئی نمازوں کا وضاحت اور تسلسل کے ساتھ حساب رکھیں۔",
   "welcomeBody": "اپنی قضا نمازیں درج کریں، ادا کریں اور ان کا حساب رکھیں — ایک ایک نماز کر کے۔",
   "welcomeGetStarted": "شروع کریں",
   "welcomeSignIn": "پہلے سے اکاؤنٹ ہے؟ سائن اِن کریں",
   "splashTagline": "نماز کی پابندی کے لیے ایک پُرسکون جگہ",
-
   "accountTitle": "اکاؤنٹ",
   "accountSignInMethod": "سائن اِن کا طریقہ",
   "accountGoogleAuth": "گوگل توثیق",
@@ -330,7 +280,6 @@
   "accountSignOut": "سائن آؤٹ",
   "accountSignOutPrompt": "سائن آؤٹ کریں؟",
   "accountSignOutExplanation": "سائن آؤٹ کرنے پر آپ خوش آمدید اسکرین پر واپس آ جائیں گے۔ آپ کے محفوظ قضا ریکارڈ حذف نہیں ہوتے اور اگلی بار سائن اِن پر بحال ہو جائیں گے۔",
-
   "dataTitle": "برآمد و درآمد",
   "dataExportTitle": "ڈیٹا برآمد کریں",
   "dataExportBody": "اپنے قضا کھاتے کی ایک JSON نقل محفوظ کریں۔ برآمد کرنے سے کچھ اپ لوڈ نہیں ہوتا۔",
@@ -353,7 +302,6 @@
   "dataSafetyTitle": "ڈیٹا کی حفاظت",
   "dataSafetyBody": "برآمد کرنے سے کلاؤڈ ڈیٹا حذف نہیں ہوتا۔ درآمد سے موجودہ ریکارڈ ختم نہیں ہوتے۔ سائن آؤٹ ڈیٹا حذف کرنا نہیں، اور ایپ اَن انسٹال کرنے سے کلاؤڈ ریکارڈ حذف نہیں ہوتے۔",
   "dataRemapNote": "درآمد شدہ ریکارڈ موجودہ سائن اِن اکاؤنٹ سے منسلک کر دیے جاتے ہیں۔ اس کے بعد موجودہ لوکل-فرسٹ سنک پرت پس منظر میں فائرسٹور سے تصدیق کرتی ہے۔",
-
   "addQazaTitle": "قضا شامل کریں",
   "addQazaStep1": "مرحلہ 1 از 3 • تاریخیں منتخب کریں",
   "addQazaStep2": "مرحلہ 2 از 3 • چھوٹی ہوئی نمازیں منتخب کریں",
@@ -401,7 +349,6 @@
   "addQazaCreatedMessage": "{count, plural, =1{1 ریکارڈ آپ کے کھاتے میں شامل ہو گیا۔} other{{count} ریکارڈ آپ کے کھاتے میں شامل ہو گئے۔}}",
   "addQazaUnavailablePrayer": "{rakats} • ہر منتخب تاریخ پر پہلے سے درج، ادا شدہ، یا نماز کا وقت ابھی ختم نہیں ہوا",
   "commonNone": "کوئی نہیں",
-
   "completeTitle": "قضا ادا کریں",
   "completeHeading": "سب سے پرانا باقی ریکارڈ مکمل کریں",
   "completeIntro": "ایک وقت میں ایک ریکارڈ مکمل کریں۔ کامیابی کے بعد اگلا پرانا ریکارڈ فوراً دکھایا جاتا ہے۔",
@@ -418,8 +365,6 @@
   "completePrayerQaza": "{prayer} کی قضا",
   "completeSuccess": "{prayer} کی قضا کامیابی سے مکمل ہوئی۔",
   "completeSuccessNext": "{prayer} کی قضا مکمل ہوئی • اگلا پرانا ریکارڈ تیار ہے۔",
-
-
   "knowledgeBaseTitle": "معلومات",
   "knowledgeBaseSearchHint": "مسائل و مغالطے تلاش کریں",
   "knowledgeBaseClearSearch": "تلاش صاف کریں",
@@ -443,14 +388,12 @@
   "knowledgeArticleReferences": "حوالہ جات",
   "knowledgeArticleRelated": "متعلقہ مضامین",
   "knowledgeArticleNotFound": "مضمون نہیں ملا۔",
-
   "notificationReminderTitle": "قضا نماز یاد دہانی",
   "notificationReminderBody": "پابندی کے ساتھ اپنی قضا نمازیں ادا کرتے رہیں۔",
   "notificationTestTitle": "قضا نماز",
   "notificationTestBody": "آزمائشی اطلاع کامیابی سے موصول ہوئی۔",
   "notificationChannelName": "قضا روزانہ یاد دہانی",
   "notificationChannelDescription": "قضا نمازیں مکمل کرتے رہنے کی روزانہ یاد دہانی۔",
-
   "settingsAccountSection": "اکاؤنٹ",
   "settingsAccountSubtitle": "اپنے سائن اِن اور اکاؤنٹ کی تفصیلات سنبھالیں۔",
   "settingsGoogleSignIn": "گوگل سائن اِن",
@@ -486,8 +429,6 @@
   "settingsAboutSubtitle": "ایپ کی معلومات اور ورژن کی تفصیل۔",
   "settingsAboutRowSubtitle": "قضا نماز • ورژن {version}",
   "settingsAppDescription": "اسلامی نماز قضا ٹریکر",
-
-
   "cloudSyncTitle": "کلاؤڈ سنک",
   "cloudSyncNow": "ابھی سنک کریں",
   "cloudPendingChanges": "زیرِ التوا تبدیلیاں",
@@ -503,7 +444,13 @@
   "cloudSyncProblem": "سنک میں مسئلہ — آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
   "cloudQazaCount": "قضا ریکارڈز کی تعداد",
   "cloudQazaCountValue": "{count, plural, =0{کوئی قضا ریکارڈ نہیں} =1{1 قضا ریکارڈ} other{{count} قضا ریکارڈز}}",
-  "@cloudQazaCountValue": { "placeholders": { "count": { "type": "int" } } },
+  "@cloudQazaCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cloudBackupStatus": "کلاؤڈ بیک اپ",
   "cloudBackupDeleted": "کلاؤڈ نقل حذف ہو گئی؛ لوکل ریکارڈز برقرار ہیں۔",
   "cloudLocalVsCloudTitle": "لوکل اور کلاؤڈ ڈیٹا",
@@ -515,7 +462,6 @@
   "cloudDeleteDone": "کلاؤڈ قضا ڈیٹا حذف ہو گیا۔ اس ڈیوائس کے لوکل ریکارڈز برقرار ہیں۔",
   "cloudDeleteFailed": "کلاؤڈ ڈیٹا حذف نہیں ہو سکا۔ آپ کے لوکل ریکارڈز محفوظ ہیں۔",
   "cloudDeleteSignInRequired": "کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔",
-
   "settingsTitle": "ترتیبات",
   "settingsPreferences": "ترجیحات",
   "settingsPreferencesSubtitle": "زبان اور ظاہری شکل کی ترتیبات۔",
@@ -569,7 +515,56 @@
   "homeChartNoData": "اس مدت میں کوئی قضا مکمل نہیں ہوئی۔",
   "homeTodayDate": "آج",
   "homeCurrentPrayerLabel": "موجودہ نماز: {prayer}",
-  "@homeCurrentPrayerLabel": { "placeholders": { "prayer": {"type": "String"} } },
+  "@homeCurrentPrayerLabel": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
   "homeSahibOrderLabel": "صاحبِ ترتیب: {prayer}",
-  "@homeSahibOrderLabel": { "placeholders": { "prayer": {"type": "String"} } }
+  "@homeSahibOrderLabel": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "profileLanguageTitle": "اپنی زبان منتخب کریں",
+  "profileLanguageIntro": "ایپ میں استعمال ہونے والی زبان منتخب کریں۔",
+  "profileSetupTitle": "اپنا پروفائل مکمل کریں",
+  "profileTitle": "پروفائل",
+  "profileIntro": "یہ معلومات آپ کے قضا پلان اور نماز سے متعلق قواعد کے لیے استعمال ہوں گی۔",
+  "profileSettingsSubtitle": "آپ کی نماز پروفائل اور قضا پلان کی ترتیبات۔",
+  "profileGender": "صنف",
+  "profileMale": "مرد",
+  "profileFemale": "خاتون",
+  "profileMadhab": "مذہب / فقہی مکتب",
+  "profileHanafi": "حنفی",
+  "profileShafi": "شافعی",
+  "profileMaliki": "مالکی",
+  "profileHanbali": "حنبلی",
+  "profileOther": "دیگر",
+  "profileDateOfBirth": "تاریخ پیدائش",
+  "profileSelectDate": "تاریخ منتخب کریں",
+  "profileSelectDobHelp": "اپنی تاریخ پیدائش منتخب کریں",
+  "profileHijriHint": "گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔",
+  "profilePubertyAge": "بلوغت کی عمر",
+  "profileStartPrayingAge": "نماز شروع کرنے کی عمر",
+  "profileSelectGenderFirst": "پہلے صنف منتخب کریں",
+  "profileSelectPubertyFirst": "پہلے بلوغت کی عمر منتخب کریں",
+  "profileSelectDobFirst": "پہلے تاریخ پیدائش منتخب کریں",
+  "profileWitr": "وتر",
+  "profileWitrOptional": "دیگر کے لیے آپ منتخب کر سکتے ہیں کہ وتر شامل ہوں یا نہیں۔",
+  "profileWitrIncluded": "شامل",
+  "profileWitrExcluded": "شامل نہیں",
+  "profileSubmit": "جاری رکھیں",
+  "profileSave": "تبدیلیاں محفوظ کریں",
+  "profileErrorLanguage": "براہ کرم زبان منتخب کریں۔",
+  "profileErrorGender": "براہ کرم اپنی صنف منتخب کریں۔",
+  "profileErrorMadhab": "براہ کرم اپنا فقہی مکتب منتخب کریں۔",
+  "profileErrorDob": "براہ کرم درست تاریخ پیدائش درج کریں۔",
+  "profileErrorPuberty": "منتخب صنف کے لیے درست بلوغت کی عمر منتخب کریں۔",
+  "profileErrorStartPraying": "براہ کرم نماز شروع کرنے کی درست عمر منتخب کریں۔",
+  "profileErrorWitr": "براہ کرم وتر کی درست ترتیب منتخب کریں۔"
 }

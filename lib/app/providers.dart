@@ -24,6 +24,7 @@ import '../data/repositories/offline_first_qaza_repository.dart';
 import '../data/sync/qaza_sync_remote_data_source.dart';
 import '../data/sync/sync_state.dart';
 import '../domain/entities/app_user.dart';
+import '../domain/entities/user_profile.dart';
 import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
@@ -38,6 +39,29 @@ import '../domain/services/qaza_operation_service.dart';
 import '../domain/repositories/qaza_operation_repository.dart';
 import '../data/repositories/shared_preferences_qaza_operation_repository.dart';
 import '../domain/services/cloud_data_deletion_service.dart';
+import '../domain/services/profile_rules.dart';
+import '../domain/services/qaza_plan_service.dart';
+import '../domain/repositories/user_profile_repository.dart';
+import '../data/local/user_profile_repository.dart';
+
+final userProfileRepositoryProvider = Provider<UserProfileRepository>(
+  (ref) => const SharedPreferencesUserProfileRepository(),
+);
+
+final userProfileProvider = FutureProvider<UserProfile?>(
+  (ref) => ref.watch(userProfileRepositoryProvider).load(),
+);
+
+final effectiveWitrProvider = Provider<bool>((ref) {
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  // The startup gate never enters the workspace before a complete profile is
+  // loaded. The fallback keeps legacy/test containers deterministic.
+  return profile == null ? true : ProfileRules.effectiveWitr(profile);
+});
+
+final qazaPlanServiceProvider = Provider<QazaPlanService>(
+  (ref) => const QazaPlanService(),
+);
 
 final firestoreProvider =
     Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
@@ -187,6 +211,7 @@ final diagnosticsProvider = Provider<DiagnosticsService>(
 
 final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       ref.watch(qazaRepositoryProvider),
+      witrInclusionResolver: () => ref.read(effectiveWitrProvider),
       diagnostics: ref.watch(diagnosticsProvider),
       prayerTimeBlockedResolver: ({
         required userId,
@@ -247,19 +272,25 @@ final isGuestProvider = Provider<bool>((ref) =>
 /// preferences — is scoped by this, so guest data is isolated by the same
 /// mechanism that isolates one account from another.
 final activeUserIdProvider = Provider<String?>((ref) {
-  // During an in-progress guest upgrade Firebase may already expose the
-  // account UID. Keep all normal app reads on the guest ledger until the
-  // explicit merge/account/cancel decision has completed.
+  // During an in-progress guest-to-account decision, Firebase may already
+  // expose the account UID. Keep reads on the guest ledger until the user
+  // explicitly chooses merge, account-only, or cancel.
   if (ref.watch(guestUpgradePendingProvider)) return guestUserId;
 
   final signedIn = ref.watch(currentUserProvider)?.id;
   if (signedIn != null) return signedIn;
+
+  // A completed local profile owns the local ledger. It is deliberately not
+  // presented as "Guest Mode" anywhere in the product.
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  if (profile != null) return UserProfile.localLedgerUserId;
+
   return ref.watch(isGuestProvider) ? guestUserId : null;
 });
 final requiredUserIdProvider = Provider<String>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) {
-    throw StateError('This action requires a signed-in account.');
+    throw StateError('A completed local profile is required.');
   }
   return userId;
 });

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
-import '../auth/backup_prompt.dart';
-import '../calculator/calculator_screen.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
 import '../prayer_times/presentation/prayer_times_localizations.dart';
@@ -16,11 +14,10 @@ import '../settings/settings_screen.dart';
 
 /// Every workspace destination.
 ///
-/// Calculator remains contextual; the other five destinations are primary navigation.
+/// The five destinations are the primary navigation.
 enum WorkspaceDestination {
   home,
   qaza,
-  calculator,
   knowledge,
   settings,
   prayerTimes,
@@ -45,7 +42,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   static const _pages = <Widget>[
     HomeScreen(),
     QazaTrackerScreen(),
-    CalculatorScreen(),
     KnowledgeBasePage(),
     SettingsScreen(),
     PrayerTimesScreen(),
@@ -85,15 +81,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    // A guest who has just recorded their first Qaza is offered a backup,
-    // once. Shown from here so it reaches them wherever they added it.
-    ref.listen<bool>(shouldOfferBackupProvider, (_, offer) {
-      if (!offer || !mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) showBackupPrompt(context, ref);
-      });
-    });
-
     ref.listen<WorkspaceDestination>(
       workspaceDestinationProvider,
       (previous, next) {
@@ -108,7 +95,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     // scroll position and in-progress state.
     _mounted.add(index);
 
-    // Calculator remains contextual; Prayer Times is a primary destination.
     final barIndex = _barDestinations.indexOf(destination);
     final selectedBarIndex = barIndex < 0 ? 0 : barIndex;
 
@@ -128,15 +114,11 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
               if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
           ],
         ),
-        // Home exposes Add/Calculate only when Qaza records exist.
-        // Completion remains in the embedded Home section. Qaza keeps the
-        // same Add/Calculate action menu.
         floatingActionButton:
             destination == WorkspaceDestination.qaza ||
                     (destination == WorkspaceDestination.home && hasQazaRecords)
-                ? AddActionsFab(
+                ? AddQazaFab(
                     onAddQaza: () => _push(const AddQazaScreen()),
-                    onCalculateQaza: () => _push(const CalculatorScreen()),
                   )
                 : null,
         bottomNavigationBar: NavigationBar(

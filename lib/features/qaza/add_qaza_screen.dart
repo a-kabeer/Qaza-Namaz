@@ -226,9 +226,12 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   Widget _prayersStep() {
     final l10n = AppLocalizations.of(context);
     final prayers = flow.prayers;
+    final witrAllowed = ref.watch(effectiveWitrProvider);
     final selectable = <PrayerType>[
       for (final prayer in PrayerType.values)
-        if (flow.prayerAvailability[prayer] ?? true) prayer,
+        if ((prayer != PrayerType.witr || witrAllowed) &&
+            (flow.prayerAvailability[prayer] ?? true))
+          prayer,
     ];
     final allSelected =
         selectable.isNotEmpty && selectable.every(prayers.contains);
@@ -281,8 +284,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         ),
         const SizedBox(height: 12),
         for (final prayer in PrayerType.values)
-          Card(
-            child: CheckboxListTile(
+          if (prayer != PrayerType.witr || witrAllowed)
+            Card(
+              child: CheckboxListTile(
               key: Key('qaza_prayer_${prayer.name}'),
               value: prayers.contains(prayer),
               onChanged: flow.checking ||

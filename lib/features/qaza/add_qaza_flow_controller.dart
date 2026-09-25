@@ -240,8 +240,14 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
     }
   }
 
+  bool _witrAllowed() => ref.read(effectiveWitrProvider);
+
   Future<void> togglePrayer(PrayerType prayer, {required bool selected}) async {
-    if (selected && !state.isPrayerAvailable(prayer)) return;
+    if (selected &&
+        (prayer == PrayerType.witr && !_witrAllowed() ||
+            !state.isPrayerAvailable(prayer))) {
+      return;
+    }
     final prayers = {...state.prayers};
     if (selected) {
       prayers.add(prayer);
@@ -252,12 +258,14 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
     await refreshCounts();
   }
 
-  /// Select All only selects prayers that remain available on at least one
-  /// selected date, so fully unavailable combinations are excluded.
+  /// Select All only selects prayers that remain available and are permitted
+  /// by the authoritative profile Witr rule.
   Future<void> selectAll() async {
     final prayers = <PrayerType>{
       for (final prayer in PrayerType.values)
-        if (state.isPrayerAvailable(prayer)) prayer,
+        if ((prayer != PrayerType.witr || _witrAllowed()) &&
+            state.isPrayerAvailable(prayer))
+          prayer,
     };
     if (prayers.isEmpty) return;
     state = state.copyWith(prayers: prayers);

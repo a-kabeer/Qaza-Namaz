@@ -18,9 +18,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navQaza => 'Qaza';
 
   @override
-  String get navCalculator => 'Calculator';
-
-  @override
   String get navKnowledge => 'Knowledge';
 
   @override
@@ -263,9 +260,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeSetupMessage => 'You haven\'t added any Qaza prayers yet.';
-
-  @override
-  String get homeCalculateQaza => 'Calculate Qaza';
 
   @override
   String get homeCompleteQaza => 'Complete Qaza';
@@ -532,237 +526,6 @@ class AppLocalizationsEn extends AppLocalizations {
       zero: 'Nothing was completed.',
     );
     return '$_temp0';
-  }
-
-  @override
-  String get calcAboutYouIntro =>
-      'Start with your date of birth and Baligh information. Dates are selected in the Gregorian calendar; the Hijri date is shown alongside.';
-
-  @override
-  String get calcDateOfBirth => 'Date of birth';
-
-  @override
-  String get calcSelectDate => 'Select date';
-
-  @override
-  String get calcSelectDobHelp => 'Select your date of birth';
-
-  @override
-  String get calcCurrentAge => 'Current age';
-
-  @override
-  String calcAgeYears(int years) {
-    return '$years years';
-  }
-
-  @override
-  String get calcBalighInformation => 'Baligh information';
-
-  @override
-  String get calcModeAge => 'Age';
-
-  @override
-  String get calcModeExactDate => 'Exact date';
-
-  @override
-  String get calcBalighAgeLabel => 'Baligh age (years)';
-
-  @override
-  String get calcSelectExactDate => 'Select exact date';
-
-  @override
-  String get calcSelectBalighHelp => 'Select exact Baligh date';
-
-  @override
-  String calcEstimatedBalighDate(String date) {
-    return 'Estimated Baligh date: $date';
-  }
-
-  @override
-  String calcExactBalighDate(String date) {
-    return 'Exact Baligh date: $date';
-  }
-
-  @override
-  String get calcPrayerHistoryIntro =>
-      'Tell us when regular prayer started so we can calculate the Qaza period.';
-
-  @override
-  String get calcRegularPrayerStart => 'Regular prayer start';
-
-  @override
-  String get calcPrayerStartAgeUnavailable =>
-      'You are younger than the Baligh age you selected, so there is no prayer-start age to choose. Adjust your date of birth or Baligh information.';
-
-  @override
-  String get calcPrayerStartAgeLabel => 'Regular prayer start age (years)';
-
-  @override
-  String get calcSelectPrayerStartHelp => 'Select exact prayer start date';
-
-  @override
-  String calcEstimatedPrayerStartDate(String date) {
-    return 'Estimated prayer-start date: $date';
-  }
-
-  @override
-  String calcExactPrayerStartDate(String date) {
-    return 'Exact prayer-start date: $date';
-  }
-
-  @override
-  String get calcIncludeWitr => 'Include Witr separately';
-
-  @override
-  String get calcIncludeWitrSubtitle =>
-      'Witr is counted independently from the five daily prayers.';
-
-  @override
-  String get calcQazaPeriod => 'Qaza period';
-
-  @override
-  String get calcBalighDate => 'Baligh date';
-
-  @override
-  String get calcPrayerStartDate => 'Prayer-start date';
-
-  @override
-  String get calcCalendarPeriod => 'Calendar period';
-
-  @override
-  String calcPeriodValue(int years, int days) {
-    return '$years years • $days days';
-  }
-
-  @override
-  String get calcCompleteDatesPrompt =>
-      'Complete valid dates to calculate the Qaza period.';
-
-  @override
-  String get calcNoResultPrompt =>
-      'Calculate a valid prayer period to view your Qaza estimate.';
-
-  @override
-  String get calcElapsedDays => 'Elapsed days';
-
-  @override
-  String get calcEstimatedPrayers => 'Estimated prayers';
-
-  @override
-  String get calcPrayerBreakdown => 'Prayer breakdown';
-
-  @override
-  String get calcWitrNotIncluded =>
-      'Witr is not included. Change this on Prayer History.';
-
-  @override
-  String get calcPreflightErrorShort => 'Could not check existing records.';
-
-  @override
-  String get calcAddErrorShort => 'Could not add the estimate.';
-
-  @override
-  String get calculatorTitle => 'Calculator';
-
-  @override
-  String get calcStepAboutYou => 'About You';
-
-  @override
-  String get calcStepPrayerHistory => 'Prayer History';
-
-  @override
-  String get calcStepResult => 'Result';
-
-  @override
-  String calcStepOf(int step) {
-    return 'Step $step of 3';
-  }
-
-  @override
-  String calcStepSemantics(int step, String name) {
-    return 'Step $step: $name';
-  }
-
-  @override
-  String get calcCalculate => 'Calculate';
-
-  @override
-  String get calcAddToTracker => 'Add to Tracker';
-
-  @override
-  String calcAddQazaCount(String count) {
-    return 'Add $count Qaza';
-  }
-
-  @override
-  String get calcPreflightTitle => 'Add to Qaza Tracker';
-
-  @override
-  String get calcCalculated => 'Calculated';
-
-  @override
-  String get calcAlreadyRecorded => 'Already Recorded';
-
-  @override
-  String get calcAlreadyCompleted => 'Already Completed';
-
-  @override
-  String get calcNewToAdd => 'New to Add';
-
-  @override
-  String get calcExistingUntouched => 'Existing records are never changed.';
-
-  @override
-  String calcAddCountToTracker(String count) {
-    return 'Add $count to Qaza Tracker';
-  }
-
-  @override
-  String get calcAddingTitle => 'Adding Qaza to your tracker';
-
-  @override
-  String calcAddingProgress(String processed, String total) {
-    return '$processed of $total records';
-  }
-
-  @override
-  String calcAddedResult(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count records added to your tracker.',
-      one: '1 record added to your tracker.',
-      zero: 'Nothing new to add — your tracker already had these.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get calcAddFailedTitle => 'Could not add to your tracker';
-
-  @override
-  String get calcAddedDoneHint =>
-      'Your tracker is up to date. Your date of birth and prayer settings are saved for next time.';
-
-  @override
-  String get calcCalculateAgain => 'Calculate Again';
-
-  @override
-  String get calcEstimateAdded => 'Estimate added';
-
-  @override
-  String calcEstimateAddedMessage(String count) {
-    return '$count Qaza records were added. Existing records were not overwritten.';
-  }
-
-  @override
-  String calcPreflightError(String error) {
-    return 'Could not check your existing records: $error';
-  }
-
-  @override
-  String calcAddError(String error) {
-    return 'Could not add the estimate: $error';
   }
 
   @override
@@ -1859,4 +1622,116 @@ class AppLocalizationsEn extends AppLocalizations {
   String homeSahibOrderLabel(String prayer) {
     return 'Sahib al-Tartib: $prayer';
   }
+
+  @override
+  String get profileLanguageTitle => "Choose your language";
+
+  @override
+  String get profileLanguageIntro => "Select the language you want to use throughout the app.";
+
+  @override
+  String get profileSetupTitle => "Set up your profile";
+
+  @override
+  String get profileTitle => "Profile";
+
+  @override
+  String get profileIntro => "These details personalize your Qaza plan and are used by the app's prayer rules.";
+
+  @override
+  String get profileSettingsSubtitle => "Your prayer profile and Qaza plan settings.";
+
+  @override
+  String get profileGender => "Gender";
+
+  @override
+  String get profileMale => "Male";
+
+  @override
+  String get profileFemale => "Female";
+
+  @override
+  String get profileMadhab => "Madhab / School of Thought";
+
+  @override
+  String get profileHanafi => "Hanafi";
+
+  @override
+  String get profileShafi => "Shafi";
+
+  @override
+  String get profileMaliki => "Maliki";
+
+  @override
+  String get profileHanbali => "Hanbali";
+
+  @override
+  String get profileOther => "Other";
+
+  @override
+  String get profileDateOfBirth => "Date of Birth";
+
+  @override
+  String get profileSelectDate => "Select date";
+
+  @override
+  String get profileSelectDobHelp => "Select your date of birth";
+
+  @override
+  String get profileHijriHint => "Hijri date is shown after you select the Gregorian date.";
+
+  @override
+  String get profilePubertyAge => "Puberty Age";
+
+  @override
+  String get profileStartPrayingAge => "Start Praying Age";
+
+  @override
+  String get profileSelectGenderFirst => "Select gender first";
+
+  @override
+  String get profileSelectPubertyFirst => "Select puberty age first";
+
+  @override
+  String get profileSelectDobFirst => "Select date of birth first";
+
+  @override
+  String get profileWitr => "Witr";
+
+  @override
+  String get profileWitrOptional => "For Other, you can choose whether Witr is included.";
+
+  @override
+  String get profileWitrIncluded => "Included";
+
+  @override
+  String get profileWitrExcluded => "Not included";
+
+  @override
+  String get profileSubmit => "Continue";
+
+  @override
+  String get profileSave => "Save Changes";
+
+  @override
+  String get profileErrorLanguage => "Please select a language.";
+
+  @override
+  String get profileErrorGender => "Please select your gender.";
+
+  @override
+  String get profileErrorMadhab => "Please select your school of thought.";
+
+  @override
+  String get profileErrorDob => "Please enter a valid date of birth.";
+
+  @override
+  String get profileErrorPuberty => "Please select a valid puberty age for the selected gender.";
+
+  @override
+  String get profileErrorStartPraying => "Please select a valid praying start age.";
+
+  @override
+  String get profileErrorWitr => "Please select a valid Witr setting.";
+
 }

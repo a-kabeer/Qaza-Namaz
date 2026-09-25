@@ -118,7 +118,7 @@ void main() {
         'navSettings': ur.navSettings,
         'qazaEmptyTitle': ur.qazaEmptyTitle,
         'settingsLanguage': ur.settingsLanguage,
-        'calcStepResult': ur.calcStepResult,
+        'profileGender': ur.profileGender,
         'commonRetry': ur.commonRetry,
       };
       final english = <String, String>{
@@ -127,7 +127,7 @@ void main() {
         'navSettings': en.navSettings,
         'qazaEmptyTitle': en.qazaEmptyTitle,
         'settingsLanguage': en.settingsLanguage,
-        'calcStepResult': en.calcStepResult,
+        'profileGender': en.profileGender,
         'commonRetry': en.commonRetry,
       };
       pairs.forEach((key, value) {

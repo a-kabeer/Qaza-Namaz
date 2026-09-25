@@ -18,9 +18,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get navQaza => 'قضا';
 
   @override
-  String get navCalculator => 'کیلکولیٹر';
-
-  @override
   String get navKnowledge => 'معلومات';
 
   @override
@@ -261,9 +258,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeSetupMessage => 'آپ نے اب تک کوئی قضا نماز شامل نہیں کی۔';
-
-  @override
-  String get homeCalculateQaza => 'قضا کا حساب لگائیں';
 
   @override
   String get homeCompleteQaza => 'قضا ادا کریں';
@@ -530,237 +524,6 @@ class AppLocalizationsUr extends AppLocalizations {
       zero: 'کچھ مکمل نہیں ہوا۔',
     );
     return '$_temp0';
-  }
-
-  @override
-  String get calcAboutYouIntro =>
-      'اپنی تاریخِ پیدائش اور بلوغت کی معلومات سے آغاز کریں۔ تاریخیں گریگورین کیلنڈر میں منتخب ہوتی ہیں؛ ہجری تاریخ ساتھ دکھائی جاتی ہے۔';
-
-  @override
-  String get calcDateOfBirth => 'تاریخِ پیدائش';
-
-  @override
-  String get calcSelectDate => 'تاریخ منتخب کریں';
-
-  @override
-  String get calcSelectDobHelp => 'اپنی تاریخِ پیدائش منتخب کریں';
-
-  @override
-  String get calcCurrentAge => 'موجودہ عمر';
-
-  @override
-  String calcAgeYears(int years) {
-    return '$years سال';
-  }
-
-  @override
-  String get calcBalighInformation => 'بلوغت کی معلومات';
-
-  @override
-  String get calcModeAge => 'عمر';
-
-  @override
-  String get calcModeExactDate => 'اصل تاریخ';
-
-  @override
-  String get calcBalighAgeLabel => 'بلوغت کی عمر (سال)';
-
-  @override
-  String get calcSelectExactDate => 'اصل تاریخ منتخب کریں';
-
-  @override
-  String get calcSelectBalighHelp => 'بلوغت کی اصل تاریخ منتخب کریں';
-
-  @override
-  String calcEstimatedBalighDate(String date) {
-    return 'اندازاً بلوغت کی تاریخ: $date';
-  }
-
-  @override
-  String calcExactBalighDate(String date) {
-    return 'بلوغت کی اصل تاریخ: $date';
-  }
-
-  @override
-  String get calcPrayerHistoryIntro =>
-      'بتائیں کہ باقاعدہ نماز کب شروع ہوئی تاکہ ہم قضا کا دورانیہ نکال سکیں۔';
-
-  @override
-  String get calcRegularPrayerStart => 'باقاعدہ نماز کا آغاز';
-
-  @override
-  String get calcPrayerStartAgeUnavailable =>
-      'آپ کی عمر منتخب کردہ بالغ عمر سے کم ہے، اس لیے نماز شروع کرنے کی کوئی عمر دستیاب نہیں۔ اپنی تاریخ پیدائش یا بالغ معلومات درست کریں۔';
-
-  @override
-  String get calcPrayerStartAgeLabel => 'باقاعدہ نماز شروع کرنے کی عمر (سال)';
-
-  @override
-  String get calcSelectPrayerStartHelp =>
-      'نماز شروع کرنے کی اصل تاریخ منتخب کریں';
-
-  @override
-  String calcEstimatedPrayerStartDate(String date) {
-    return 'اندازاً نماز کے آغاز کی تاریخ: $date';
-  }
-
-  @override
-  String calcExactPrayerStartDate(String date) {
-    return 'نماز کے آغاز کی اصل تاریخ: $date';
-  }
-
-  @override
-  String get calcIncludeWitr => 'وتر الگ شمار کریں';
-
-  @override
-  String get calcIncludeWitrSubtitle =>
-      'وتر کو پانچ فرض نمازوں سے الگ شمار کیا جاتا ہے۔';
-
-  @override
-  String get calcQazaPeriod => 'قضا کا دورانیہ';
-
-  @override
-  String get calcBalighDate => 'بلوغت کی تاریخ';
-
-  @override
-  String get calcPrayerStartDate => 'نماز کے آغاز کی تاریخ';
-
-  @override
-  String get calcCalendarPeriod => 'کیلنڈر دورانیہ';
-
-  @override
-  String calcPeriodValue(int years, int days) {
-    return '$years سال • $days دن';
-  }
-
-  @override
-  String get calcCompleteDatesPrompt =>
-      'قضا کا دورانیہ نکالنے کے لیے درست تاریخیں مکمل کریں۔';
-
-  @override
-  String get calcNoResultPrompt =>
-      'اپنا قضا تخمینہ دیکھنے کے لیے درست نماز دورانیہ نکالیں۔';
-
-  @override
-  String get calcElapsedDays => 'گزرے ہوئے دن';
-
-  @override
-  String get calcEstimatedPrayers => 'تخمینی نمازیں';
-
-  @override
-  String get calcPrayerBreakdown => 'نمازوں کی تفصیل';
-
-  @override
-  String get calcWitrNotIncluded =>
-      'وتر شامل نہیں ہے۔ اسے نماز کی تاریخ والے مرحلے میں تبدیل کریں۔';
-
-  @override
-  String get calcPreflightErrorShort => 'موجودہ ریکارڈ کی جانچ نہیں ہو سکی۔';
-
-  @override
-  String get calcAddErrorShort => 'اندازہ شامل نہیں ہو سکا۔';
-
-  @override
-  String get calculatorTitle => 'کیلکولیٹر';
-
-  @override
-  String get calcStepAboutYou => 'آپ کے بارے میں';
-
-  @override
-  String get calcStepPrayerHistory => 'نماز کی تاریخ';
-
-  @override
-  String get calcStepResult => 'نتیجہ';
-
-  @override
-  String calcStepOf(int step) {
-    return 'مرحلہ $step از 3';
-  }
-
-  @override
-  String calcStepSemantics(int step, String name) {
-    return 'مرحلہ $step: $name';
-  }
-
-  @override
-  String get calcCalculate => 'حساب لگائیں';
-
-  @override
-  String get calcAddToTracker => 'ٹریکر میں شامل کریں';
-
-  @override
-  String calcAddQazaCount(String count) {
-    return '$count قضا شامل کریں';
-  }
-
-  @override
-  String get calcPreflightTitle => 'قضا ٹریکر میں شامل کریں';
-
-  @override
-  String get calcCalculated => 'حساب شدہ';
-
-  @override
-  String get calcAlreadyRecorded => 'پہلے سے درج';
-
-  @override
-  String get calcAlreadyCompleted => 'پہلے سے مکمل';
-
-  @override
-  String get calcNewToAdd => 'نئی شامل کرنے کے لیے';
-
-  @override
-  String get calcExistingUntouched => 'موجودہ ریکارڈ کبھی تبدیل نہیں ہوتے۔';
-
-  @override
-  String calcAddCountToTracker(String count) {
-    return '$count قضا ٹریکر میں شامل کریں';
-  }
-
-  @override
-  String get calcAddingTitle => 'قضا آپ کے ٹریکر میں شامل کی جا رہی ہے';
-
-  @override
-  String calcAddingProgress(String processed, String total) {
-    return '$total میں سے $processed ریکارڈز';
-  }
-
-  @override
-  String calcAddedResult(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ریکارڈز آپ کے ٹریکر میں شامل ہو گئے۔',
-      zero: 'شامل کرنے کو کچھ نیا نہیں تھا۔',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get calcAddFailedTitle => 'ٹریکر میں شامل نہیں ہو سکا';
-
-  @override
-  String get calcAddedDoneHint =>
-      'آپ کا ٹریکر اپ ڈیٹ ہو گیا۔ آپ کی تاریخ پیدائش اور نماز کی ترتیبات اگلی بار کے لیے محفوظ ہیں۔';
-
-  @override
-  String get calcCalculateAgain => 'دوبارہ حساب کریں';
-
-  @override
-  String get calcEstimateAdded => 'اندازہ شامل ہو گیا';
-
-  @override
-  String calcEstimateAddedMessage(String count) {
-    return '$count قضا ریکارڈ شامل کر دیے گئے۔ موجودہ ریکارڈ تبدیل نہیں ہوئے۔';
-  }
-
-  @override
-  String calcPreflightError(String error) {
-    return 'آپ کے موجودہ ریکارڈ کی جانچ نہیں ہو سکی: $error';
-  }
-
-  @override
-  String calcAddError(String error) {
-    return 'اندازہ شامل نہیں ہو سکا: $error';
   }
 
   @override
@@ -1858,4 +1621,116 @@ class AppLocalizationsUr extends AppLocalizations {
   String homeSahibOrderLabel(String prayer) {
     return 'صاحبِ ترتیب: $prayer';
   }
+
+  @override
+  String get profileLanguageTitle => "اپنی زبان منتخب کریں";
+
+  @override
+  String get profileLanguageIntro => "ایپ میں استعمال ہونے والی زبان منتخب کریں۔";
+
+  @override
+  String get profileSetupTitle => "اپنا پروفائل مکمل کریں";
+
+  @override
+  String get profileTitle => "پروفائل";
+
+  @override
+  String get profileIntro => "یہ معلومات آپ کے قضا پلان اور نماز سے متعلق قواعد کے لیے استعمال ہوں گی۔";
+
+  @override
+  String get profileSettingsSubtitle => "آپ کی نماز پروفائل اور قضا پلان کی ترتیبات۔";
+
+  @override
+  String get profileGender => "صنف";
+
+  @override
+  String get profileMale => "مرد";
+
+  @override
+  String get profileFemale => "خاتون";
+
+  @override
+  String get profileMadhab => "مذہب / فقہی مکتب";
+
+  @override
+  String get profileHanafi => "حنفی";
+
+  @override
+  String get profileShafi => "شافعی";
+
+  @override
+  String get profileMaliki => "مالکی";
+
+  @override
+  String get profileHanbali => "حنبلی";
+
+  @override
+  String get profileOther => "دیگر";
+
+  @override
+  String get profileDateOfBirth => "تاریخ پیدائش";
+
+  @override
+  String get profileSelectDate => "تاریخ منتخب کریں";
+
+  @override
+  String get profileSelectDobHelp => "اپنی تاریخ پیدائش منتخب کریں";
+
+  @override
+  String get profileHijriHint => "گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔";
+
+  @override
+  String get profilePubertyAge => "بلوغت کی عمر";
+
+  @override
+  String get profileStartPrayingAge => "نماز شروع کرنے کی عمر";
+
+  @override
+  String get profileSelectGenderFirst => "پہلے صنف منتخب کریں";
+
+  @override
+  String get profileSelectPubertyFirst => "پہلے بلوغت کی عمر منتخب کریں";
+
+  @override
+  String get profileSelectDobFirst => "پہلے تاریخ پیدائش منتخب کریں";
+
+  @override
+  String get profileWitr => "وتر";
+
+  @override
+  String get profileWitrOptional => "دیگر کے لیے آپ منتخب کر سکتے ہیں کہ وتر شامل ہوں یا نہیں۔";
+
+  @override
+  String get profileWitrIncluded => "شامل";
+
+  @override
+  String get profileWitrExcluded => "شامل نہیں";
+
+  @override
+  String get profileSubmit => "جاری رکھیں";
+
+  @override
+  String get profileSave => "تبدیلیاں محفوظ کریں";
+
+  @override
+  String get profileErrorLanguage => "براہ کرم زبان منتخب کریں۔";
+
+  @override
+  String get profileErrorGender => "براہ کرم اپنی صنف منتخب کریں۔";
+
+  @override
+  String get profileErrorMadhab => "براہ کرم اپنا فقہی مکتب منتخب کریں۔";
+
+  @override
+  String get profileErrorDob => "براہ کرم درست تاریخ پیدائش درج کریں۔";
+
+  @override
+  String get profileErrorPuberty => "منتخب صنف کے لیے درست بلوغت کی عمر منتخب کریں۔";
+
+  @override
+  String get profileErrorStartPraying => "براہ کرم نماز شروع کرنے کی درست عمر منتخب کریں۔";
+
+  @override
+  String get profileErrorWitr => "براہ کرم وتر کی درست ترتیب منتخب کریں۔";
+
 }

@@ -1,24 +1,19 @@
+import 'dart:async';
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
-import '../../core/widgets/confirmation_dialog.dart';
-import '../../core/widgets/date_display.dart';
 import '../../core/widgets/settings_components.dart';
-import '../../core/widgets/sync_status.dart';
-import '../../data/sync/sync_state.dart' as sync_models;
-import '../../domain/entities/app_user.dart';
 import '../../l10n/app_localizations.dart';
+import '../notifications/notification_controller.dart';
 import '../data_management/qaza_data_management_screen.dart';
-import '../auth/backup_prompt.dart';
-import 'account_screen.dart';
-import 'app_lock_settings_screen.dart';
 import 'notifications_screen.dart';
+import 'profile_screen.dart';
 import 'qaza_reset_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -26,14 +21,14 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final account = ref.watch(currentUserProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
 
     void open(Widget screen) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(builder: (_) => screen),
+      );
     }
 
     return AppScaffold(
@@ -42,165 +37,61 @@ class SettingsScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          if (ref.watch(isGuestProvider)) ...[
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: SettingsNavRow(
-                key: const Key('settings_backup_sign_in'),
-                icon: Icons.cloud_upload_outlined,
-                title: l10n.settingsBackupSignIn,
-                subtitle: l10n.settingsBackupSignInSubtitle,
-                onTap: () => startBackupSignIn(context, ref),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
           AppCard(
             padding: EdgeInsets.zero,
             child: SettingsNavRow(
-              key: const Key('settings_account'),
-              icon: Icons.account_circle_outlined,
-              title: l10n.settingsAccountSection,
-              subtitle: _accountSubtitle(l10n, account),
-              onTap: () => open(const AccountScreen()),
+              key: const Key('settings_profile'),
+              icon: Icons.person_outline_rounded,
+              title: l10n.profileTitle,
+              subtitle: l10n.profileSettingsSubtitle,
+              onTap: () => open(const ProfileScreen()),
             ),
           ),
-          const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.settingsPreferences,
-            subtitle: l10n.settingsPreferencesSubtitle,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.settingsLanguage,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<String>(
-                        key: const Key('settings_language'),
-                        segments: [
-                          ButtonSegment(
-                            value: 'en',
-                            icon: const Icon(Icons.language_outlined),
-                            label: Text(l10n.languageEnglish),
-                          ),
-                          ButtonSegment(
-                            value: 'ur',
-                            label: Text(l10n.languageUrdu),
-                          ),
-                        ],
-                        selected: {locale.languageCode},
-                        onSelectionChanged: (value) {
-                          final selected = value.first;
-                          if (selected != locale.languageCode) {
-                            ref
-                                .read(localeProvider.notifier)
-                                .set(Locale(selected));
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.settingsLanguageNote,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.settingsAppearance,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<AppThemeMode>(
-                        key: const Key('settings_theme_mode'),
-                        segments: [
-                          ButtonSegment(
-                            value: AppThemeMode.system,
-                            icon: const Icon(Icons.brightness_6_outlined),
-                            label: Text(l10n.settingsThemeSystem),
-                          ),
-                          ButtonSegment(
-                            value: AppThemeMode.light,
-                            icon: const Icon(Icons.light_mode_outlined),
-                            label: Text(l10n.settingsThemeLight),
-                          ),
-                          ButtonSegment(
-                            value: AppThemeMode.dark,
-                            icon: const Icon(Icons.dark_mode_outlined),
-                            label: Text(l10n.settingsThemeDark),
-                          ),
-                        ],
-                        selected: {themeMode},
-                        onSelectionChanged: (value) {
-                          final selected = value.first;
-                          if (selected != themeMode) {
-                            ref
-                                .read(themeModeProvider.notifier)
-                                .set(selected);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SettingsSection(
-            title: l10n.settingsPrivacySecurity,
-            subtitle: l10n.settingsPrivacySecuritySubtitle,
-            child: SettingsNavRow(
-              key: const Key('settings_privacy_security'),
-              icon: Icons.lock_outline_rounded,
-              title: l10n.settingsAppLock,
-              subtitle: l10n.settingsAppLockSubtitle,
-              onTap: () => open(const AppLockSettingsScreen()),
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           AppCard(
             padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_notifications'),
-              icon: Icons.notifications_none,
+              icon: Icons.notifications_none_rounded,
               title: l10n.notificationsTitle,
               subtitle: l10n.settingsNotificationsRowSubtitle,
               onTap: () => open(const NotificationsScreen()),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SettingsSection(
-            title: l10n.settingsBackupSection,
-            subtitle: l10n.settingsBackupSubtitle,
-            child: SettingsNavRow(
-              key: const Key('settings_data_cloud'),
-              icon: Icons.cloud_outlined,
-              title: l10n.settingsDataCloud,
-              subtitle: l10n.settingsDataCloudSubtitle,
-              onTap: () => open(const DataCloudScreen()),
+            title: l10n.settingsLanguage,
+            subtitle: l10n.settingsLanguageSubtitle,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SegmentedButton<String>(
+                key: const Key('settings_language'),
+                segments: [
+                  ButtonSegment<String>(
+                    value: 'en',
+                    icon: const Icon(Icons.language_outlined),
+                    label: Text(l10n.languageEnglish),
+                  ),
+                  ButtonSegment<String>(
+                    value: 'ur',
+                    label: Text(l10n.languageUrdu),
+                  ),
+                ],
+                selected: {locale.languageCode},
+                onSelectionChanged: (value) {
+                  ref.read(localeProvider.notifier).set(Locale(value.first));
+                },
+              ),
             ),
           ),
           const SizedBox(height: 12),
           const _ResetQazaCounterRow(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           AppCard(
             padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_about'),
-              icon: Icons.info_outline,
+              icon: Icons.info_outline_rounded,
               title: l10n.settingsAboutSection,
               subtitle: l10n.settingsAboutRowSubtitle(appDisplayVersion),
               onTap: () => open(const AboutScreen()),
@@ -210,19 +101,8 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
-  String _accountSubtitle(AppLocalizations l10n, AppUser? account) {
-    if (account == null || account.email.isEmpty) {
-      return l10n.settingsGoogleSignIn;
-    }
-    final name = account.displayName;
-    return name == null || name.isEmpty ? account.email : name;
-  }
 }
 
-/// Destructive entry point for resetting the Qaza counter.
-///
-/// The row owns no reset logic: it reads the ledger size to size the warning,
-/// and hands the work to [QazaResetController].
 class _ResetQazaCounterRow extends ConsumerWidget {
   const _ResetQazaCounterRow();
 
@@ -241,7 +121,6 @@ class _ResetQazaCounterRow extends ConsumerWidget {
       description: empty
           ? l10n.settingsResetCounterEmpty
           : l10n.settingsResetCounterSubtitle,
-      // Nothing to reset, still loading, or already running: all inert.
       enabled: summary != null && total > 0 && !running,
       confirmationTitle: l10n.settingsResetCounterDialogTitle,
       confirmationMessage: l10n.settingsResetCounterDialogMessage,
@@ -254,214 +133,17 @@ class _ResetQazaCounterRow extends ConsumerWidget {
         final error = ref.read(qazaResetControllerProvider).error;
         messenger
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-              content: Text(done
-                  ? l10n.settingsResetCounterDone
-                  : l10n.settingsResetCounterFailed(error ?? ''))));
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                done
+                    ? l10n.settingsResetCounterDone
+                    : l10n.settingsResetCounterFailed(error ?? ''),
+              ),
+            ),
+          );
       },
     );
-  }
-}
-
-class DataCloudScreen extends ConsumerWidget {
-  const DataCloudScreen({super.key});
-
-  Future<void> _deleteCloudData(
-    BuildContext context,
-    WidgetRef ref,
-    String userId,
-  ) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await confirmDestructiveWithAcknowledgement(
-      context,
-      title: l10n.cloudDeleteTitle,
-      message: l10n.cloudDeleteBody,
-      acknowledgeLabel: l10n.cloudDeleteAcknowledge,
-      confirmLabel: l10n.cloudDeleteAction,
-    );
-    if (!confirmed) return;
-
-    try {
-      await ref.read(cloudDataDeletionServiceProvider).deleteCloudData(
-            userId: userId,
-          );
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'qaza_cloud_deleted_at_$userId',
-        DateTime.now().toUtc().toIso8601String(),
-      );
-      ref.invalidate(cloudDataDeletedAtProvider(userId));
-      ref.invalidate(progressSummaryProvider);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l10n.cloudDeleteDone)));
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l10n.cloudDeleteFailed)));
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final offline = ref.watch(offlineRepositoryProvider);
-    final state =
-        ref.watch(syncStateProvider).valueOrNull ?? offline?.currentState;
-    final user = ref.watch(currentUserProvider);
-    final summary = ref.watch(progressSummaryProvider).valueOrNull;
-    final userId = user?.id;
-    final deletedAt = userId == null
-        ? null
-        : ref.watch(cloudDataDeletedAtProvider(userId)).valueOrNull;
-    final cloudDeleted = userId != null &&
-        deletedAt != null &&
-        !(state?.lastSyncAt?.isAfter(deletedAt) ?? false);
-
-    final backupSubtitle = user == null
-        ? l10n.cloudDeleteSignInRequired
-        : cloudDeleted
-            ? l10n.cloudBackupDeleted
-            : _syncSubtitle(l10n, state);
-
-    return AppScaffold(
-      title: l10n.settingsDataCloud,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SyncStatus(),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.cloud_done_outlined),
-                  title: Text(l10n.cloudBackupStatus),
-                  subtitle: Text(backupSubtitle),
-                  trailing: offline == null || user == null
-                      ? null
-                      : IconButton(
-                          key: const Key('data_cloud_sync_now'),
-                          tooltip: l10n.cloudSyncNow,
-                          onPressed: offline.syncNow,
-                          icon: const Icon(Icons.sync_rounded),
-                        ),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.pending_actions_outlined),
-                  title: Text(l10n.cloudPendingChanges),
-                  subtitle:
-                      Text(l10n.cloudPendingCount(state?.pendingCount ?? 0)),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.schedule_outlined),
-                  title: Text(l10n.cloudLastSynced),
-                  subtitle: Text(formatAppDateTime(state?.lastSyncAt)),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: const Icon(Icons.checklist_outlined),
-                  title: Text(l10n.cloudQazaCount),
-                  subtitle: Text(
-                    summary == null
-                        ? l10n.dataProcessing
-                        : l10n.cloudQazaCountValue(summary.overall.total),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.cloudLocalVsCloudTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(l10n.cloudLocalVsCloudBody),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (user != null)
-            AppCard(
-              color: Theme.of(context).colorScheme.errorContainer.withValues(
-                    alpha: .35,
-                  ),
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                key: const Key('data_cloud_delete'),
-                leading: Icon(
-                  Icons.cloud_off_outlined,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                title: Text(
-                  l10n.cloudDeleteTitle,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(l10n.cloudDeleteBody),
-                onTap: () => _deleteCloudData(context, ref, user.id),
-              ),
-            )
-          else
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: const Icon(Icons.cloud_off_outlined),
-                title: Text(l10n.cloudDeleteTitle),
-                subtitle: Text(l10n.cloudDeleteSignInRequired),
-              ),
-            ),
-          const SizedBox(height: 12),
-          AppCard(
-            padding: EdgeInsets.zero,
-            child: ListTile(
-              leading: const Icon(Icons.import_export_rounded),
-              title: Text(l10n.dataTitle),
-              subtitle: Text(l10n.cloudExportImportSubtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const QazaDataManagementScreen(),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _syncSubtitle(AppLocalizations l10n, sync_models.SyncState? state) {
-    if (state == null) return l10n.cloudInactive;
-    return switch (state.status) {
-      sync_models.SyncStatus.idle => l10n.cloudInactive,
-      sync_models.SyncStatus.bootstrapping => l10n.cloudBootstrapping,
-      sync_models.SyncStatus.hydrating => l10n.cloudHydrating,
-      sync_models.SyncStatus.synced => l10n.cloudSynced,
-      sync_models.SyncStatus.syncing => l10n.cloudSyncing,
-      sync_models.SyncStatus.retrying => l10n.cloudSyncing,
-      sync_models.SyncStatus.partiallySynced =>
-        l10n.cloudPendingCount(state.pendingCount),
-      sync_models.SyncStatus.offline => l10n.cloudOffline,
-      sync_models.SyncStatus.pendingSync =>
-        l10n.cloudPendingCount(state.pendingCount),
-      sync_models.SyncStatus.syncError =>
-        state.detail ?? l10n.cloudSyncProblem,
-    };
   }
 }
 
@@ -477,11 +159,13 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           ListTile(
-              title: Text(l10n.appTitle),
-              subtitle: Text(l10n.settingsAppDescription)),
+            title: Text(l10n.appTitle),
+            subtitle: Text(l10n.settingsAppDescription),
+          ),
           ListTile(
-              title: Text(l10n.commonVersion),
-              subtitle: Text(appDisplayVersion)),
+            title: Text(l10n.commonVersion),
+            subtitle: Text(appDisplayVersion),
+          ),
         ],
       ),
     );

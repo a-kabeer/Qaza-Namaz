@@ -116,12 +116,6 @@ abstract class AppLocalizations {
   /// **'Qaza'**
   String get navQaza;
 
-  /// No description provided for @navCalculator.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculator'**
-  String get navCalculator;
-
   /// No description provided for @navKnowledge.
   ///
   /// In en, this message translates to:
@@ -566,12 +560,6 @@ abstract class AppLocalizations {
   /// **'You haven\'t added any Qaza prayers yet.'**
   String get homeSetupMessage;
 
-  /// No description provided for @homeCalculateQaza.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculate Qaza'**
-  String get homeCalculateQaza;
-
   /// No description provided for @homeCompleteQaza.
   ///
   /// In en, this message translates to:
@@ -961,378 +949,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =0{Nothing was completed.} =1{Completed 1 Qaza.} other{Completed {count} Qaza.}}'**
   String qazaCompletedCount(int count);
-
-  /// No description provided for @calcAboutYouIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'Start with your date of birth and Baligh information. Dates are selected in the Gregorian calendar; the Hijri date is shown alongside.'**
-  String get calcAboutYouIntro;
-
-  /// No description provided for @calcDateOfBirth.
-  ///
-  /// In en, this message translates to:
-  /// **'Date of birth'**
-  String get calcDateOfBirth;
-
-  /// No description provided for @calcSelectDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Select date'**
-  String get calcSelectDate;
-
-  /// No description provided for @calcSelectDobHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Select your date of birth'**
-  String get calcSelectDobHelp;
-
-  /// No description provided for @calcCurrentAge.
-  ///
-  /// In en, this message translates to:
-  /// **'Current age'**
-  String get calcCurrentAge;
-
-  /// No description provided for @calcAgeYears.
-  ///
-  /// In en, this message translates to:
-  /// **'{years} years'**
-  String calcAgeYears(int years);
-
-  /// No description provided for @calcBalighInformation.
-  ///
-  /// In en, this message translates to:
-  /// **'Baligh information'**
-  String get calcBalighInformation;
-
-  /// No description provided for @calcModeAge.
-  ///
-  /// In en, this message translates to:
-  /// **'Age'**
-  String get calcModeAge;
-
-  /// No description provided for @calcModeExactDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Exact date'**
-  String get calcModeExactDate;
-
-  /// No description provided for @calcBalighAgeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Baligh age (years)'**
-  String get calcBalighAgeLabel;
-
-  /// No description provided for @calcSelectExactDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Select exact date'**
-  String get calcSelectExactDate;
-
-  /// No description provided for @calcSelectBalighHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Select exact Baligh date'**
-  String get calcSelectBalighHelp;
-
-  /// No description provided for @calcEstimatedBalighDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimated Baligh date: {date}'**
-  String calcEstimatedBalighDate(String date);
-
-  /// No description provided for @calcExactBalighDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Exact Baligh date: {date}'**
-  String calcExactBalighDate(String date);
-
-  /// No description provided for @calcPrayerHistoryIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'Tell us when regular prayer started so we can calculate the Qaza period.'**
-  String get calcPrayerHistoryIntro;
-
-  /// No description provided for @calcRegularPrayerStart.
-  ///
-  /// In en, this message translates to:
-  /// **'Regular prayer start'**
-  String get calcRegularPrayerStart;
-
-  /// No description provided for @calcPrayerStartAgeUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'You are younger than the Baligh age you selected, so there is no prayer-start age to choose. Adjust your date of birth or Baligh information.'**
-  String get calcPrayerStartAgeUnavailable;
-
-  /// No description provided for @calcPrayerStartAgeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Regular prayer start age (years)'**
-  String get calcPrayerStartAgeLabel;
-
-  /// No description provided for @calcSelectPrayerStartHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Select exact prayer start date'**
-  String get calcSelectPrayerStartHelp;
-
-  /// No description provided for @calcEstimatedPrayerStartDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimated prayer-start date: {date}'**
-  String calcEstimatedPrayerStartDate(String date);
-
-  /// No description provided for @calcExactPrayerStartDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Exact prayer-start date: {date}'**
-  String calcExactPrayerStartDate(String date);
-
-  /// No description provided for @calcIncludeWitr.
-  ///
-  /// In en, this message translates to:
-  /// **'Include Witr separately'**
-  String get calcIncludeWitr;
-
-  /// No description provided for @calcIncludeWitrSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Witr is counted independently from the five daily prayers.'**
-  String get calcIncludeWitrSubtitle;
-
-  /// No description provided for @calcQazaPeriod.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza period'**
-  String get calcQazaPeriod;
-
-  /// No description provided for @calcBalighDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Baligh date'**
-  String get calcBalighDate;
-
-  /// No description provided for @calcPrayerStartDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer-start date'**
-  String get calcPrayerStartDate;
-
-  /// No description provided for @calcCalendarPeriod.
-  ///
-  /// In en, this message translates to:
-  /// **'Calendar period'**
-  String get calcCalendarPeriod;
-
-  /// No description provided for @calcPeriodValue.
-  ///
-  /// In en, this message translates to:
-  /// **'{years} years • {days} days'**
-  String calcPeriodValue(int years, int days);
-
-  /// No description provided for @calcCompleteDatesPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete valid dates to calculate the Qaza period.'**
-  String get calcCompleteDatesPrompt;
-
-  /// No description provided for @calcNoResultPrompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculate a valid prayer period to view your Qaza estimate.'**
-  String get calcNoResultPrompt;
-
-  /// No description provided for @calcElapsedDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Elapsed days'**
-  String get calcElapsedDays;
-
-  /// No description provided for @calcEstimatedPrayers.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimated prayers'**
-  String get calcEstimatedPrayers;
-
-  /// No description provided for @calcPrayerBreakdown.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer breakdown'**
-  String get calcPrayerBreakdown;
-
-  /// No description provided for @calcWitrNotIncluded.
-  ///
-  /// In en, this message translates to:
-  /// **'Witr is not included. Change this on Prayer History.'**
-  String get calcWitrNotIncluded;
-
-  /// No description provided for @calcPreflightErrorShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not check existing records.'**
-  String get calcPreflightErrorShort;
-
-  /// No description provided for @calcAddErrorShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not add the estimate.'**
-  String get calcAddErrorShort;
-
-  /// No description provided for @calculatorTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculator'**
-  String get calculatorTitle;
-
-  /// No description provided for @calcStepAboutYou.
-  ///
-  /// In en, this message translates to:
-  /// **'About You'**
-  String get calcStepAboutYou;
-
-  /// No description provided for @calcStepPrayerHistory.
-  ///
-  /// In en, this message translates to:
-  /// **'Prayer History'**
-  String get calcStepPrayerHistory;
-
-  /// No description provided for @calcStepResult.
-  ///
-  /// In en, this message translates to:
-  /// **'Result'**
-  String get calcStepResult;
-
-  /// No description provided for @calcStepOf.
-  ///
-  /// In en, this message translates to:
-  /// **'Step {step} of 3'**
-  String calcStepOf(int step);
-
-  /// Screen-reader label for the step indicator
-  ///
-  /// In en, this message translates to:
-  /// **'Step {step}: {name}'**
-  String calcStepSemantics(int step, String name);
-
-  /// No description provided for @calcCalculate.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculate'**
-  String get calcCalculate;
-
-  /// No description provided for @calcAddToTracker.
-  ///
-  /// In en, this message translates to:
-  /// **'Add to Tracker'**
-  String get calcAddToTracker;
-
-  /// No description provided for @calcAddQazaCount.
-  ///
-  /// In en, this message translates to:
-  /// **'Add {count} Qaza'**
-  String calcAddQazaCount(String count);
-
-  /// No description provided for @calcPreflightTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Add to Qaza Tracker'**
-  String get calcPreflightTitle;
-
-  /// No description provided for @calcCalculated.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculated'**
-  String get calcCalculated;
-
-  /// No description provided for @calcAlreadyRecorded.
-  ///
-  /// In en, this message translates to:
-  /// **'Already Recorded'**
-  String get calcAlreadyRecorded;
-
-  /// No description provided for @calcAlreadyCompleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Already Completed'**
-  String get calcAlreadyCompleted;
-
-  /// No description provided for @calcNewToAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'New to Add'**
-  String get calcNewToAdd;
-
-  /// No description provided for @calcExistingUntouched.
-  ///
-  /// In en, this message translates to:
-  /// **'Existing records are never changed.'**
-  String get calcExistingUntouched;
-
-  /// No description provided for @calcAddCountToTracker.
-  ///
-  /// In en, this message translates to:
-  /// **'Add {count} to Qaza Tracker'**
-  String calcAddCountToTracker(String count);
-
-  /// No description provided for @calcAddingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Adding Qaza to your tracker'**
-  String get calcAddingTitle;
-
-  /// No description provided for @calcAddingProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{processed} of {total} records'**
-  String calcAddingProgress(String processed, String total);
-
-  /// No description provided for @calcAddedResult.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Nothing new to add — your tracker already had these.} =1{1 record added to your tracker.} other{{count} records added to your tracker.}}'**
-  String calcAddedResult(int count);
-
-  /// No description provided for @calcAddFailedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not add to your tracker'**
-  String get calcAddFailedTitle;
-
-  /// No description provided for @calcAddedDoneHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your tracker is up to date. Your date of birth and prayer settings are saved for next time.'**
-  String get calcAddedDoneHint;
-
-  /// No description provided for @calcCalculateAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Calculate Again'**
-  String get calcCalculateAgain;
-
-  /// No description provided for @calcEstimateAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'Estimate added'**
-  String get calcEstimateAdded;
-
-  /// No description provided for @calcEstimateAddedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} Qaza records were added. Existing records were not overwritten.'**
-  String calcEstimateAddedMessage(String count);
-
-  /// No description provided for @calcPreflightError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not check your existing records: {error}'**
-  String calcPreflightError(String error);
-
-  /// No description provided for @calcAddError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not add the estimate: {error}'**
-  String calcAddError(String error);
 
   /// No description provided for @calendarSelectYear.
   ///
@@ -3163,6 +2779,45 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sahib al-Tartib: {prayer}'**
   String homeSahibOrderLabel(String prayer);
+
+  String get profileLanguageTitle;
+  String get profileLanguageIntro;
+  String get profileSetupTitle;
+  String get profileTitle;
+  String get profileIntro;
+  String get profileSettingsSubtitle;
+  String get profileGender;
+  String get profileMale;
+  String get profileFemale;
+  String get profileMadhab;
+  String get profileHanafi;
+  String get profileShafi;
+  String get profileMaliki;
+  String get profileHanbali;
+  String get profileOther;
+  String get profileDateOfBirth;
+  String get profileSelectDate;
+  String get profileSelectDobHelp;
+  String get profileHijriHint;
+  String get profilePubertyAge;
+  String get profileStartPrayingAge;
+  String get profileSelectGenderFirst;
+  String get profileSelectPubertyFirst;
+  String get profileSelectDobFirst;
+  String get profileWitr;
+  String get profileWitrOptional;
+  String get profileWitrIncluded;
+  String get profileWitrExcluded;
+  String get profileSubmit;
+  String get profileSave;
+  String get profileErrorLanguage;
+  String get profileErrorGender;
+  String get profileErrorMadhab;
+  String get profileErrorDob;
+  String get profileErrorPuberty;
+  String get profileErrorStartPraying;
+  String get profileErrorWitr;
+
 }
 
 class _AppLocalizationsDelegate

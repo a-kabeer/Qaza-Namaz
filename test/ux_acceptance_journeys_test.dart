@@ -11,6 +11,9 @@ import 'package:qaza_namaz/domain/entities/app_user.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/auth_repository.dart';
 import 'package:qaza_namaz/features/auth/auth_gate.dart';
+import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
+import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
+import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/auth/guest_session.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
@@ -123,16 +126,15 @@ void main() {
   }
 
   // ---------------------------------------------------------------- 1
-  testWidgets('journey: first-time user reaches a usable app', (tester) async {
-    await start(tester);
+  testWidgets('journey: first-time user reaches profile setup', (tester) async {
+    await start(tester, home: const StartupGate());
 
-    // A brand-new install lands on the welcome surface, not a dead splash.
-    expect(find.byKey(const Key('welcome_continue_as_guest')), findsOneWidget);
+    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    expect(find.text('Continue with Google'), findsNothing);
+    expect(find.text('Continue as Guest'), findsNothing);
 
-    await tapKey(tester, 'welcome_continue_as_guest');
-
-    // And continuing as a guest opens the full workspace immediately.
-    expect(find.byType(WorkspaceShell), findsOneWidget);
+    await tapKey(tester, 'onboarding_language_en');
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
 
   // ---------------------------------------------------------------- 2
@@ -266,35 +268,6 @@ void main() {
   });
 
   // ---------------------------------------------------------------- 7
-  testWidgets('journey: calculator estimate reaches the tracker',
-      (tester) async {
-    final container = await start(tester, guest: true);
-    final service = container.read(qazaServiceProvider);
-
-    // Ten days of five daily prayers, the calculator's own expansion.
-    final dates = [
-      for (var day = 1; day <= 10; day++) DateTime(2026, 1, day),
-    ];
-    final added = await service.recordQazaForDates(
-      userId: guestUserId,
-      dates: dates,
-      prayerTypes: PrayerType.values.where((p) => p != PrayerType.witr),
-    );
-
-    expect(added, 50);
-
-    // And running the same estimate again adds nothing: the duplicate rule
-    // holds across the whole journey, not just inside one screen.
-    final again = await service.recordQazaForDates(
-      userId: guestUserId,
-      dates: dates,
-      prayerTypes: PrayerType.values.where((p) => p != PrayerType.witr),
-    );
-    expect(again, 0);
-    expect(await repository.getRecords(userId: guestUserId), hasLength(50));
-  });
-
-  // ---------------------------------------------------------------- 8
   testWidgets('journey: a reminder is only owed while Qaza remain',
       (tester) async {
     final container = await start(
