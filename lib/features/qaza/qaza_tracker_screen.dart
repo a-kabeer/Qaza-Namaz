@@ -686,13 +686,6 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (restricted && evaluation?.type != null)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Text('${PrayerTimesStrings.qazaRestricted(context, evaluation!.type!)}\n${PrayerTimesStrings.restrictionRemaining(context, evaluation.remaining)}', style: Theme.of(context).textTheme.bodySmall),
-                  ),
                 ),
               Row(
                 children: [
