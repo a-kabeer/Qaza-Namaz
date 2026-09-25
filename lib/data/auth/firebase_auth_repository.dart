@@ -68,7 +68,7 @@ class AuthenticationCancelledException extends AuthenticationException {
       : 'Authentication failed ($diagnostic)';
 }
 
-class FirebaseAuthRepository implements AuthRepository {
+class FirebaseAuthRepository implements AuthRepository, DetailedAuthRepository {
   FirebaseAuthRepository({
     FirebaseAuth? auth,
     GoogleSignIn? googleSignIn,
@@ -114,11 +114,15 @@ class FirebaseAuthRepository implements AuthRepository {
   Stream<AppUser?> authStateChanges() => _auth.authStateChanges().map(_mapUser);
 
   @override
-  Future<AppUser> signInWithGoogle() async {
+  Future<AppUser> signInWithGoogle() async =>
+      (await signInWithGoogleDetails()).user;
+
+  @override
+  Future<GoogleSignInResult> signInWithGoogleDetails() async {
     try {
       _validateFirebaseConfiguration();
 
-      final account = await GoogleAuthFlow(
+      return await GoogleAuthFlow(
         beginGoogleSignIn: () async {
           await _ensureGoogleSignInInitialized();
 
@@ -133,11 +137,13 @@ class FirebaseAuthRepository implements AuthRepository {
 
           final credential = GoogleAuthProvider.credential(idToken: idToken);
           final result = await _auth.signInWithCredential(credential);
-          return requireFirebaseUser(_mapUser(result.user));
+          final user = requireFirebaseUser(_mapUser(result.user));
+          return GoogleSignInResult(
+            user: user,
+            isNewUser: result.additionalUserInfo?.isNewUser ?? false,
+          );
         },
-      ).signIn();
-
-      return account;
+      ).signInWithDetails();
     } catch (error, stack) {
       final mapped = mapSignInFailure(error, stack: stack);
 

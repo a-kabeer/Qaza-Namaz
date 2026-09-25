@@ -5,6 +5,27 @@ import '../services/qaza_availability_service.dart';
 import '../../data/local/qaza_local_store.dart';
 
 /// What a migration did, for reporting and regression assertions.
+class GuestDataSummary {
+  const GuestDataSummary({
+    required this.localCount,
+    required this.localCompleted,
+    required this.accountCount,
+    required this.accountCompleted,
+  });
+
+  static const empty = GuestDataSummary(
+    localCount: 0,
+    localCompleted: 0,
+    accountCount: 0,
+    accountCompleted: 0,
+  );
+
+  final int localCount;
+  final int localCompleted;
+  final int accountCount;
+  final int accountCompleted;
+}
+
 class GuestMigrationResult {
   const GuestMigrationResult({
     required this.examined,
@@ -45,23 +66,45 @@ class GuestMigrationService {
     return page.records.isNotEmpty;
   }
 
-  /// Returns whether the target account already owns any Qaza data locally
-  /// or remotely. A brand-new account can therefore adopt the local ledger
-  /// without presenting a confusing merge screen.
-  Future<bool> hasAccountData({required String accountUserId}) async {
-    if (accountUserId.isEmpty) return false;
+  Future<GuestDataSummary> summarize({
+    required String guestUserId,
+    required String accountUserId,
+  }) async {
+    if (guestUserId.isEmpty || accountUserId.isEmpty) {
+      throw StateError('Guest and account user IDs are required.');
+    }
+    if (guestUserId == accountUserId) return GuestDataSummary.empty;
 
-    final local = await _localStore.getPage(
-      userId: accountUserId,
-      limit: 1,
-    );
-    if (local.records.isNotEmpty) return true;
+    final guestRecords = await _allLocalRecords(guestUserId);
+    final localAccountRecords = await _allLocalRecords(accountUserId);
+    final remoteAccountRecords =
+        await _remoteRepository.getRecords(userId: accountUserId);
 
-    final remote = await _remoteRepository.getPage(
-      userId: accountUserId,
-      limit: 1,
+    final accountByKey = <String, QazaRecord>{};
+    for (final record in localAccountRecords) {
+      _preferCompleted(
+        accountByKey,
+        _key(record),
+        _normalizeForUser(record, accountUserId),
+      );
+    }
+    for (final record in remoteAccountRecords) {
+      _preferCompleted(
+        accountByKey,
+        _key(record),
+        _normalizeForUser(record, accountUserId),
+      );
+    }
+
+    return GuestDataSummary(
+      localCount: guestRecords.length,
+      localCompleted:
+          guestRecords.where((record) => record.status == QazaStatus.completed).length,
+      accountCount: accountByKey.length,
+      accountCompleted: accountByKey.values
+          .where((record) => record.status == QazaStatus.completed)
+          .length,
     );
-    return remote.records.isNotEmpty;
   }
 
   Future<GuestMigrationResult> migrate({

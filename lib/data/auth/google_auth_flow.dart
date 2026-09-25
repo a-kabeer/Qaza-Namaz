@@ -1,4 +1,5 @@
 import '../../domain/entities/app_user.dart';
+import '../../domain/repositories/auth_repository.dart';
 
 class GoogleIdentityTokens {
   const GoogleIdentityTokens({required this.idToken});
@@ -14,7 +15,7 @@ class GoogleAuthFlowCancelledException implements Exception {
 }
 
 typedef BeginGoogleSignIn = Future<GoogleIdentityTokens?> Function();
-typedef FirebaseGoogleSignIn = Future<AppUser> Function(
+typedef FirebaseGoogleSignIn = Future<GoogleSignInResult> Function(
     GoogleIdentityTokens tokens);
 
 /// Platform-independent Google -> Firebase authentication handshake.
@@ -31,7 +32,9 @@ class GoogleAuthFlow {
   final BeginGoogleSignIn beginGoogleSignIn;
   final FirebaseGoogleSignIn signInToFirebase;
 
-  Future<AppUser> signIn() async {
+  Future<AppUser> signIn() async => (await signInWithDetails()).user;
+
+  Future<GoogleSignInResult> signInWithDetails() async {
     final tokens = await beginGoogleSignIn();
     if (tokens == null) {
       throw const GoogleAuthFlowCancelledException();

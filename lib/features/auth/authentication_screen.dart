@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/services/guest_migration_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'guest_session.dart';
 import 'guest_upgrade_controller.dart';
@@ -185,12 +186,11 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   Future<void> _confirmAndMerge(BuildContext context) async {
     final confirmed = await _confirm(
       context,
-      title: 'Merge guest progress?',
-      body: 'Your guest and Google account Qaza records will be combined. '
-          'A matching prayer/date is kept only once, and a completed record '
-          'always wins over a pending record. Your guest records are retired '
-          'only after the account migration succeeds.',
-      confirmLabel: 'Merge Data',
+      title: 'Keep previous records and add new ones?',
+      body: 'Your current Qaza records will be added to the records already '
+          'saved to your account. The same prayer on the same date is kept '
+          'only once, and completed records take precedence.',
+      confirmLabel: 'Keep Previous + Add New',
     );
     if (!confirmed || !mounted) return;
 
@@ -200,11 +200,10 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   Future<void> _confirmUseAccount(BuildContext context) async {
     final confirmed = await _confirm(
       context,
-      title: 'Use account data?',
-      body: 'Your existing Google account Qaza ledger will be kept unchanged. '
-          'Your guest records will be permanently retired from this device '
-          'after you confirm. This choice does not merge guest records.',
-      confirmLabel: 'Use Account Data',
+      title: 'Keep previous records?',
+      body: 'Your records already saved to your account will be kept. The '
+          'records currently on this device will be removed after you confirm.',
+      confirmLabel: 'Keep Previous Records',
     );
     if (!confirmed || !mounted) return;
 
@@ -288,50 +287,52 @@ class _GuestAccountChoice extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
               Text(
-                'Guest progress found',
+                'Previous Qaza records found',
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'You signed in as ${account.email}. Your guest Qaza records '
-                'are still on this device. Nothing has been merged or deleted.',
+                'You signed in as ${account.email}. We found Qaza records '
+                'on this device that are separate from the records saved to '
+                'your account. Nothing has been changed yet.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: scheme.onSurfaceVariant,
                   height: 1.45,
                 ),
               ),
               const SizedBox(height: 20),
+              _AccountDataSummary(summary: state.summary),
+              const SizedBox(height: 20),
               _DecisionCard(
                 actionKey: const Key('guest_decision_merge'),
-                title: 'Merge Data',
-                description: 'Combine guest and account records. Duplicate '
-                    'prayer/date combinations become one record; completed '
-                    'always wins over pending. Guest data is retired only '
-                    'after a successful migration.',
-                buttonLabel: 'Merge Data',
-                icon: Icons.merge_type_rounded,
+                title: 'Keep Previous + Add New',
+                description: 'Keep the records already saved to your account '
+                    'and add the records from this device. The same prayer '
+                    'and date is kept only once.',
+                buttonLabel: 'Keep Previous + Add New',
+                icon: Icons.add_to_photos_rounded,
                 onPressed: state.running ? null : onMerge,
                 filled: true,
               ),
               const SizedBox(height: 12),
               _DecisionCard(
                 actionKey: const Key('guest_decision_use_account'),
-                title: 'Use Account Data',
+                title: 'Keep Previous Records',
                 description:
-                    'Keep the Google account ledger as-is. Guest records are '
-                    'discarded/retired only after you explicitly confirm.',
-                buttonLabel: 'Use Account Data',
+                    'Use the records already saved to your account. The '
+                    'records currently on this device will be removed.',
+                buttonLabel: 'Keep Previous Records',
                 icon: Icons.cloud_done_rounded,
                 onPressed: state.running ? null : onUseAccount,
               ),
               const SizedBox(height: 12),
               _DecisionCard(
                 actionKey: const Key('guest_decision_keep_guest'),
-                title: 'Keep Guest Data / Cancel Sign-In',
+                title: 'Cancel',
                 description:
-                    'Sign out of the Google account and continue in guest mode. '
-                    'Your guest records remain unchanged.',
-                buttonLabel: 'Keep Guest Data',
+                    'Cancel sign-in and continue with the records currently '
+                    'on this device. Nothing will be merged or deleted.',
+                buttonLabel: 'Cancel',
                 icon: Icons.undo_rounded,
                 onPressed: state.running ? null : onCancel,
               ),
@@ -350,6 +351,68 @@ class _GuestAccountChoice extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AccountDataSummary extends StatelessWidget {
+  const _AccountDataSummary({required this.summary});
+
+  final GuestDataSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Qaza records', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            _SummaryRow(
+              label: 'Previous account',
+              total: summary.accountCount,
+              completed: summary.accountCompleted,
+            ),
+            const SizedBox(height: 8),
+            _SummaryRow(
+              label: 'This device',
+              total: summary.localCount,
+              completed: summary.localCompleted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.total,
+    required this.completed,
+  });
+
+  final String label;
+  final int total;
+  final int completed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(
+          '$total total • $completed completed',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }
