@@ -613,16 +613,6 @@ class _TartibUnavailable extends StatelessWidget {
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<QazaRestrictionEvaluation>>(
-      qazaRestrictionEvaluationProvider,
-      (previous, next) {
-        if (next.hasValue) {
-          _lastRestriction = next.value;
-          _restrictionInvalidated = false;
-        }
-      },
-    );
-
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
     final pendingPrayers = PrayerType.values
@@ -694,13 +684,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          automaticTartib
-              ? l10n.homeNextQaza
-              : widget.selected.mode == HomePrayerSelectionMode.automatic
-                  ? (prayer == null
-                      ? l10n.homeNextQaza
-                      : l10n.homeNextQazaCurrentPrayer)
-                  : l10n.homeNextQaza,
+          l10n.homeNextQaza,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
