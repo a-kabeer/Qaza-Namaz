@@ -1858,4 +1858,116 @@ class AppLocalizationsUr extends AppLocalizations {
   String homeSahibOrderLabel(String prayer) {
     return 'صاحبِ ترتیب: $prayer';
   }
+
+  @override
+  String get profileLanguageTitle => "اپنی زبان منتخب کریں";
+
+  @override
+  String get profileLanguageIntro => "ایپ میں استعمال ہونے والی زبان منتخب کریں۔";
+
+  @override
+  String get profileSetupTitle => "اپنا پروفائل مکمل کریں";
+
+  @override
+  String get profileTitle => "پروفائل";
+
+  @override
+  String get profileIntro => "یہ معلومات آپ کے قضا پلان اور نماز سے متعلق قواعد کے لیے استعمال ہوں گی۔";
+
+  @override
+  String get profileSettingsSubtitle => "آپ کی نماز پروفائل اور قضا پلان کی ترتیبات۔";
+
+  @override
+  String get profileGender => "صنف";
+
+  @override
+  String get profileMale => "مرد";
+
+  @override
+  String get profileFemale => "خاتون";
+
+  @override
+  String get profileMadhab => "مذہب / فقہی مکتب";
+
+  @override
+  String get profileHanafi => "حنفی";
+
+  @override
+  String get profileShafi => "شافعی";
+
+  @override
+  String get profileMaliki => "مالکی";
+
+  @override
+  String get profileHanbali => "حنبلی";
+
+  @override
+  String get profileOther => "دیگر";
+
+  @override
+  String get profileDateOfBirth => "تاریخ پیدائش";
+
+  @override
+  String get profileSelectDate => "تاریخ منتخب کریں";
+
+  @override
+  String get profileSelectDobHelp => "اپنی تاریخ پیدائش منتخب کریں";
+
+  @override
+  String get profileHijriHint => "گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔";
+
+  @override
+  String get profilePubertyAge => "بلوغت کی عمر";
+
+  @override
+  String get profileStartPrayingAge => "نماز شروع کرنے کی عمر";
+
+  @override
+  String get profileSelectGenderFirst => "پہلے صنف منتخب کریں";
+
+  @override
+  String get profileSelectPubertyFirst => "پہلے بلوغت کی عمر منتخب کریں";
+
+  @override
+  String get profileSelectDobFirst => "پہلے تاریخ پیدائش منتخب کریں";
+
+  @override
+  String get profileWitr => "وتر";
+
+  @override
+  String get profileWitrOptional => "دیگر کے لیے آپ منتخب کر سکتے ہیں کہ وتر شامل ہوں یا نہیں۔";
+
+  @override
+  String get profileWitrIncluded => "شامل";
+
+  @override
+  String get profileWitrExcluded => "شامل نہیں";
+
+  @override
+  String get profileSubmit => "جاری رکھیں";
+
+  @override
+  String get profileSave => "تبدیلیاں محفوظ کریں";
+
+  @override
+  String get profileErrorLanguage => "براہ کرم زبان منتخب کریں۔";
+
+  @override
+  String get profileErrorGender => "براہ کرم اپنی صنف منتخب کریں۔";
+
+  @override
+  String get profileErrorMadhab => "براہ کرم اپنا فقہی مکتب منتخب کریں۔";
+
+  @override
+  String get profileErrorDob => "براہ کرم درست تاریخ پیدائش درج کریں۔";
+
+  @override
+  String get profileErrorPuberty => "منتخب صنف کے لیے درست بلوغت کی عمر منتخب کریں۔";
+
+  @override
+  String get profileErrorStartPraying => "براہ کرم نماز شروع کرنے کی درست عمر منتخب کریں۔";
+
+  @override
+  String get profileErrorWitr => "براہ کرم وتر کی درست ترتیب منتخب کریں۔";
+
 }
