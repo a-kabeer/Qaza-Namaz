@@ -12,8 +12,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum DiagnosticArea {
   startup,
   auth,
-  notificationsInit,
-  notificationsSchedule,
   sync,
   importData,
   databaseMigration,

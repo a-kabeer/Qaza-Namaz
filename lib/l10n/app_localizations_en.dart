@@ -244,9 +244,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTitle => 'Home';
 
   @override
-  String get homeNotificationsTooltip => 'Notifications';
-
-  @override
   String get homeProfileTooltip => 'Profile';
 
   @override
@@ -575,163 +572,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authFailed => 'Unable to sign in. Please try again.';
-
-  @override
-  String get notificationsOff => 'Off';
-
-  @override
-  String get notificationsTitle => 'Notifications';
-
-  @override
-  String get notificationsLoading => 'Loading notification settings…';
-
-  @override
-  String notificationsLoadError(String error) {
-    return 'Notification settings could not be loaded: $error';
-  }
-
-  @override
-  String get notificationsOpenSettings => 'Open notification settings';
-
-  @override
-  String get notificationsTryAgain => 'Try again';
-
-  @override
-  String get notificationsDailyTitle => 'Daily Qaza reminder';
-
-  @override
-  String get notificationsDailySubtitle =>
-      'Get one gentle reminder to continue pending Qaza prayers.';
-
-  @override
-  String get notificationsDailyToggle => 'Daily reminder';
-
-  @override
-  String get notificationsReminderTime => 'Reminder time';
-
-  @override
-  String get notificationsChooseTime => 'Choose daily reminder time';
-
-  @override
-  String get notificationsEnableToChangeTime =>
-      'Enable the reminder to change the time';
-
-  @override
-  String notificationsEveryDayAt(String time) {
-    return 'Every day at $time';
-  }
-
-  @override
-  String get notificationsStatusHeading => 'Reminder status';
-
-  @override
-  String get notificationsOffStatus => 'Reminder is off.';
-
-  @override
-  String get notificationsPermissionRequired =>
-      'Notification permission is required.';
-
-  @override
-  String get notificationsPendingUnknown =>
-      'Pending Qaza could not be checked. Pull to retry.';
-
-  @override
-  String get notificationsNoPending =>
-      'No pending Qaza. No reminder is scheduled.';
-
-  @override
-  String notificationsScheduledAt(String time) {
-    return 'Scheduled daily at $time.';
-  }
-
-  @override
-  String notificationsOnAt(String time) {
-    return 'On • $time';
-  }
-
-  @override
-  String get notificationsOnPendingWait =>
-      'On • starts when pending Qaza exists';
-
-  @override
-  String get notificationsPermissionNeeded => 'Permission needed';
-
-  @override
-  String get notificationsAllowPrompt =>
-      'Allow notifications so the app can remind you.';
-
-  @override
-  String get notificationsAllow => 'Allow';
-
-  @override
-  String get notificationsAllowed => 'Notifications allowed';
-
-  @override
-  String get notificationsDeviceCanDeliver =>
-      'This device can deliver your reminder.';
-
-  @override
-  String get notificationsBlocked => 'Notifications blocked';
-
-  @override
-  String get notificationsBlockedDetail =>
-      'Notifications are blocked. Allow them in system settings, then try again.';
-
-  @override
-  String get notificationsAppDisabled => 'App notifications are turned off';
-
-  @override
-  String get notificationsAppDisabledDetail =>
-      'Notifications are turned off for Qaza Namaz in Android settings.';
-
-  @override
-  String get notificationsChannelDisabled =>
-      'Reminder notifications are turned off';
-
-  @override
-  String get notificationsChannelDisabledDetail =>
-      'The Qaza reminder category is turned off. Enable it in notification settings.';
-
-  @override
-  String get notificationsEnableReminderNotifications =>
-      'Enable reminder notifications';
-
-  @override
-  String get notificationsEnableInSettings =>
-      'Enable notifications in system settings to use reminders.';
-
-  @override
-  String get notificationsUnavailable => 'Notifications unavailable';
-
-  @override
-  String get notificationsUnavailableDetail =>
-      'Notifications are not available on this device.';
-
-  @override
-  String get notificationsRestricted => 'Notifications restricted';
-
-  @override
-  String get notificationsRestrictedDetail =>
-      'Notification delivery is restricted on this device.';
-
-  @override
-  String get notificationsEnableFailed =>
-      'Notifications could not be enabled on this device.';
-
-  @override
-  String get notificationsSendTest => 'Send test notification';
-
-  @override
-  String get notificationsSendTestSubtitle =>
-      'Send one notification now to check delivery.';
-
-  @override
-  String get notificationsTestSent => 'Test notification sent.';
-
-  @override
-  String notificationsTestFailed(String error) {
-    return 'Test notification failed: $error';
-  }
 
   @override
   String get welcomeTagline => 'Spiritual Devotion & Prayer Accountability';
@@ -1178,26 +1018,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeArticleNotFound => 'Article not found.';
 
   @override
-  String get notificationReminderTitle => 'Qaza Namaz reminder';
-
-  @override
-  String get notificationReminderBody =>
-      'Continue your Qaza prayers with consistency.';
-
-  @override
-  String get notificationTestTitle => 'Qaza Namaz';
-
-  @override
-  String get notificationTestBody => 'Test notification received successfully.';
-
-  @override
-  String get notificationChannelName => 'Qaza daily reminder';
-
-  @override
-  String get notificationChannelDescription =>
-      'Daily reminder to continue completing Qaza prayers.';
-
-  @override
   String get settingsAccountSection => 'Account';
 
   @override
@@ -1209,13 +1029,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsKnowledgeBaseSubtitle => 'Browse Masail & Mugalat';
-
-  @override
-  String get settingsNotificationsSubtitle =>
-      'Manage reminders and notification scheduling.';
-
-  @override
-  String get settingsNotificationsRowSubtitle => 'Daily reminder and schedule';
 
   @override
   String get settingsDataSection => 'Data & Storage';

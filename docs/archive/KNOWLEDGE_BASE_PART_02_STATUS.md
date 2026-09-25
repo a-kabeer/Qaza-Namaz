@@ -23,7 +23,7 @@
 - No parser or validator implementation.
 - No repository or Riverpod state layer.
 - No UI/navigation changes.
-- No Qaza/calculator/calendar/authentication/sync/notification behavior.
+- No Qaza/calculator/calendar/authentication/sync behavior.
 - No CI; full CI remains deferred to Part 13.
 
 ## Next

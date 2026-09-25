@@ -242,9 +242,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeTitle => 'ہوم';
 
   @override
-  String get homeNotificationsTooltip => 'اطلاعات';
-
-  @override
   String get homeProfileTooltip => 'پروفائل';
 
   @override
@@ -575,160 +572,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get authFailed => 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
-
-  @override
-  String get notificationsOff => 'بند';
-
-  @override
-  String get notificationsTitle => 'اطلاعات';
-
-  @override
-  String get notificationsLoading => 'اطلاعات کی ترتیبات لوڈ ہو رہی ہیں…';
-
-  @override
-  String notificationsLoadError(String error) {
-    return 'اطلاعات کی ترتیبات لوڈ نہیں ہو سکیں: $error';
-  }
-
-  @override
-  String get notificationsOpenSettings => 'اطلاعات کی ترتیبات کھولیں';
-
-  @override
-  String get notificationsTryAgain => 'دوبارہ کوشش کریں';
-
-  @override
-  String get notificationsDailyTitle => 'روزانہ قضا یاد دہانی';
-
-  @override
-  String get notificationsDailySubtitle =>
-      'باقی قضا نمازیں جاری رکھنے کے لیے دن میں ایک نرم یاد دہانی حاصل کریں۔';
-
-  @override
-  String get notificationsDailyToggle => 'روزانہ یاد دہانی';
-
-  @override
-  String get notificationsReminderTime => 'یاد دہانی کا وقت';
-
-  @override
-  String get notificationsChooseTime => 'روزانہ یاد دہانی کا وقت منتخب کریں';
-
-  @override
-  String get notificationsEnableToChangeTime =>
-      'وقت تبدیل کرنے کے لیے یاد دہانی فعال کریں';
-
-  @override
-  String notificationsEveryDayAt(String time) {
-    return 'روزانہ $time بجے';
-  }
-
-  @override
-  String get notificationsStatusHeading => 'یاد دہانی کی حالت';
-
-  @override
-  String get notificationsOffStatus => 'یاد دہانی بند ہے۔';
-
-  @override
-  String get notificationsPermissionRequired => 'اطلاعات کی اجازت درکار ہے۔';
-
-  @override
-  String get notificationsPendingUnknown =>
-      'باقی قضا کی جانچ نہیں ہو سکی۔ دوبارہ کوشش کریں۔';
-
-  @override
-  String get notificationsNoPending =>
-      'کوئی قضا باقی نہیں۔ کوئی یاد دہانی مقرر نہیں۔';
-
-  @override
-  String notificationsScheduledAt(String time) {
-    return 'روزانہ $time بجے مقرر ہے۔';
-  }
-
-  @override
-  String notificationsOnAt(String time) {
-    return 'فعال • $time';
-  }
-
-  @override
-  String get notificationsOnPendingWait => 'فعال • قضا باقی ہونے پر شروع ہوگی';
-
-  @override
-  String get notificationsPermissionNeeded => 'اجازت درکار';
-
-  @override
-  String get notificationsAllowPrompt =>
-      'اطلاعات کی اجازت دیں تاکہ ایپ آپ کو یاد دلا سکے۔';
-
-  @override
-  String get notificationsAllow => 'اجازت دیں';
-
-  @override
-  String get notificationsAllowed => 'اطلاعات کی اجازت ہے';
-
-  @override
-  String get notificationsDeviceCanDeliver =>
-      'یہ ڈیوائس آپ کی یاد دہانی پہنچا سکتی ہے۔';
-
-  @override
-  String get notificationsBlocked => 'اطلاعات بند ہیں';
-
-  @override
-  String get notificationsBlockedDetail =>
-      'اطلاعات بند ہیں۔ سسٹم کی ترتیبات میں اجازت دیں، پھر دوبارہ کوشش کریں۔';
-
-  @override
-  String get notificationsAppDisabled => 'ایپ کی اطلاعات بند ہیں';
-
-  @override
-  String get notificationsAppDisabledDetail =>
-      'اینڈرائیڈ کی ترتیبات میں قضا نماز کے لیے اطلاعات بند ہیں۔';
-
-  @override
-  String get notificationsChannelDisabled => 'یاد دہانی کی اطلاعات بند ہیں';
-
-  @override
-  String get notificationsChannelDisabledDetail =>
-      'قضا یاد دہانی کی کیٹیگری بند ہے۔ اطلاع کی ترتیبات میں اسے فعال کریں۔';
-
-  @override
-  String get notificationsEnableReminderNotifications =>
-      'یاد دہانی کی اطلاعات فعال کریں';
-
-  @override
-  String get notificationsEnableInSettings =>
-      'یاد دہانی استعمال کرنے کے لیے سسٹم کی ترتیبات میں اطلاعات فعال کریں۔';
-
-  @override
-  String get notificationsUnavailable => 'اطلاعات دستیاب نہیں';
-
-  @override
-  String get notificationsUnavailableDetail =>
-      'اس ڈیوائس پر اطلاعات دستیاب نہیں ہیں۔';
-
-  @override
-  String get notificationsRestricted => 'اطلاعات محدود ہیں';
-
-  @override
-  String get notificationsRestrictedDetail =>
-      'اس ڈیوائس پر اطلاعات کی ترسیل محدود ہے۔';
-
-  @override
-  String get notificationsEnableFailed =>
-      'اس ڈیوائس پر اطلاعات فعال نہیں ہو سکیں۔';
-
-  @override
-  String get notificationsSendTest => 'آزمائشی اطلاع بھیجیں';
-
-  @override
-  String get notificationsSendTestSubtitle =>
-      'ترسیل جانچنے کے لیے ابھی ایک اطلاع بھیجیں۔';
-
-  @override
-  String get notificationsTestSent => 'آزمائشی اطلاع بھیج دی گئی۔';
-
-  @override
-  String notificationsTestFailed(String error) {
-    return 'آزمائشی اطلاع ناکام: $error';
-  }
 
   @override
   String get welcomeTagline => 'روحانی عبادت اور نماز کی پابندی';
@@ -1175,26 +1018,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeArticleNotFound => 'مضمون نہیں ملا۔';
 
   @override
-  String get notificationReminderTitle => 'قضا نماز یاد دہانی';
-
-  @override
-  String get notificationReminderBody =>
-      'پابندی کے ساتھ اپنی قضا نمازیں ادا کرتے رہیں۔';
-
-  @override
-  String get notificationTestTitle => 'قضا نماز';
-
-  @override
-  String get notificationTestBody => 'آزمائشی اطلاع کامیابی سے موصول ہوئی۔';
-
-  @override
-  String get notificationChannelName => 'قضا روزانہ یاد دہانی';
-
-  @override
-  String get notificationChannelDescription =>
-      'قضا نمازیں مکمل کرتے رہنے کی روزانہ یاد دہانی۔';
-
-  @override
   String get settingsAccountSection => 'اکاؤنٹ';
 
   @override
@@ -1206,13 +1029,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
-
-  @override
-  String get settingsNotificationsSubtitle =>
-      'یاد دہانیاں اور اطلاعات کا شیڈول سنبھالیں۔';
-
-  @override
-  String get settingsNotificationsRowSubtitle => 'روزانہ یاد دہانی اور شیڈول';
 
   @override
   String get settingsDataSection => 'ڈیٹا و اسٹوریج';

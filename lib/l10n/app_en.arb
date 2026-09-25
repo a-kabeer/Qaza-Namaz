@@ -110,7 +110,6 @@
     }
   },
   "homeTitle": "Home",
-  "homeNotificationsTooltip": "Notifications",
   "homeProfileTooltip": "Profile",
   "homeHeadingSetup": "Start Your Qaza Journey",
   "homeHeadingPending": "Keep going",
@@ -460,84 +459,6 @@
   "authHelpBody": "Google Sign-In is the connected authentication method in this release. Your Qaza data is scoped to the Firebase account you use to sign in.",
   "authDismiss": "Dismiss",
   "authFailed": "Unable to sign in. Please try again.",
-  "notificationsOff": "Off",
-  "notificationsTitle": "Notifications",
-  "notificationsLoading": "Loading notification settings…",
-  "notificationsLoadError": "Notification settings could not be loaded: {error}",
-  "@notificationsLoadError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "notificationsOpenSettings": "Open notification settings",
-  "notificationsTryAgain": "Try again",
-  "notificationsDailyTitle": "Daily Qaza reminder",
-  "notificationsDailySubtitle": "Get one gentle reminder to continue pending Qaza prayers.",
-  "notificationsDailyToggle": "Daily reminder",
-  "notificationsReminderTime": "Reminder time",
-  "notificationsChooseTime": "Choose daily reminder time",
-  "notificationsEnableToChangeTime": "Enable the reminder to change the time",
-  "notificationsEveryDayAt": "Every day at {time}",
-  "@notificationsEveryDayAt": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "notificationsStatusHeading": "Reminder status",
-  "notificationsOffStatus": "Reminder is off.",
-  "notificationsPermissionRequired": "Notification permission is required.",
-  "notificationsPendingUnknown": "Pending Qaza could not be checked. Pull to retry.",
-  "notificationsNoPending": "No pending Qaza. No reminder is scheduled.",
-  "notificationsScheduledAt": "Scheduled daily at {time}.",
-  "@notificationsScheduledAt": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "notificationsOnAt": "On • {time}",
-  "@notificationsOnAt": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "notificationsOnPendingWait": "On • starts when pending Qaza exists",
-  "notificationsPermissionNeeded": "Permission needed",
-  "notificationsAllowPrompt": "Allow notifications so the app can remind you.",
-  "notificationsAllow": "Allow",
-  "notificationsAllowed": "Notifications allowed",
-  "notificationsDeviceCanDeliver": "This device can deliver your reminder.",
-  "notificationsBlocked": "Notifications blocked",
-  "notificationsBlockedDetail": "Notifications are blocked. Allow them in system settings, then try again.",
-  "notificationsAppDisabled": "App notifications are turned off",
-  "notificationsAppDisabledDetail": "Notifications are turned off for Qaza Namaz in Android settings.",
-  "notificationsChannelDisabled": "Reminder notifications are turned off",
-  "notificationsChannelDisabledDetail": "The Qaza reminder category is turned off. Enable it in notification settings.",
-  "notificationsEnableReminderNotifications": "Enable reminder notifications",
-  "notificationsEnableInSettings": "Enable notifications in system settings to use reminders.",
-  "notificationsUnavailable": "Notifications unavailable",
-  "notificationsUnavailableDetail": "Notifications are not available on this device.",
-  "notificationsRestricted": "Notifications restricted",
-  "notificationsRestrictedDetail": "Notification delivery is restricted on this device.",
-  "notificationsEnableFailed": "Notifications could not be enabled on this device.",
-  "notificationsSendTest": "Send test notification",
-  "notificationsSendTestSubtitle": "Send one notification now to check delivery.",
-  "notificationsTestSent": "Test notification sent.",
-  "notificationsTestFailed": "Test notification failed: {error}",
-  "@notificationsTestFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   "welcomeTagline": "Spiritual Devotion & Prayer Accountability",
   "welcomeHeadline": "Track your missed prayers with clarity and consistency.",
   "welcomeBody": "Record, complete, and keep track of your Qaza Namaz — one prayer at a time.",
@@ -768,21 +689,10 @@
   "knowledgeArticleReferences": "References",
   "knowledgeArticleRelated": "Related articles",
   "knowledgeArticleNotFound": "Article not found.",
-  "notificationReminderTitle": "Qaza Namaz reminder",
-  "@notificationReminderTitle": {
-    "description": "Title of the daily reminder notification"
-  },
-  "notificationReminderBody": "Continue your Qaza prayers with consistency.",
-  "notificationTestTitle": "Qaza Namaz",
-  "notificationTestBody": "Test notification received successfully.",
-  "notificationChannelName": "Qaza daily reminder",
-  "notificationChannelDescription": "Daily reminder to continue completing Qaza prayers.",
   "settingsAccountSection": "Account",
   "settingsAccountSubtitle": "Manage your sign-in and account details.",
   "settingsGoogleSignIn": "Google sign-in",
   "settingsKnowledgeBaseSubtitle": "Browse Masail & Mugalat",
-  "settingsNotificationsSubtitle": "Manage reminders and notification scheduling.",
-  "settingsNotificationsRowSubtitle": "Daily reminder and schedule",
   "settingsDataSection": "Data & Storage",
   "settingsDataSubtitle": "Sync, backup, export, and import your Qaza data.",
   "settingsDataCloud": "Data & Cloud",

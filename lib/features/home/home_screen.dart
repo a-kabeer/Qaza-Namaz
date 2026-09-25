@@ -9,7 +9,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
-import '../../features/settings/notifications_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
@@ -155,16 +154,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return AppScaffold(
       title: l10n.homeTitle,
       actions: [
-        IconButton(
-          key: const Key('home_notifications'),
-          tooltip: l10n.notificationsTitle,
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () => _open(
-            context,
-            ref,
-            const NotificationsScreen(),
-          ),
-        ),
         IconButton(
           key: const Key('home_profile'),
           tooltip: l10n.homeProfileTooltip,
