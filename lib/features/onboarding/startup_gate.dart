@@ -7,13 +7,14 @@ import '../auth/auth_startup_state.dart';
 import '../auth/authentication_screen.dart';
 import '../auth/guest_upgrade_controller.dart';
 import '../../domain/services/profile_rules.dart';
+import '../prayer_times/presentation/prayer_times_setup_prompt.dart';
 import '../settings/app_lock_gate.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
 
-/// Starts directly into the workspace after authentication/profile checks.\nclass StartupGate extends ConsumerWidget {
+class StartupGate extends ConsumerWidget {
   const StartupGate({super.key});
 
   @override
@@ -52,13 +53,17 @@ import 'splash_screen.dart';
 
         return pendingOnboarding.when(
           loading: () => const SplashScreen(),
-          error: (_, __) => const AppLockGate(child: WorkspaceShell()),
+          error: (_, __) => const AppLockGate(
+            child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+          ),
           data: (isPending) {
             if (!isPending) {
               // An authenticated established account is authoritative at
               // startup. Do not let an old/incomplete local guest profile
               // strand the user on onboarding.
-              return const AppLockGate(child: WorkspaceShell());
+              return const AppLockGate(
+                child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+              );
             }
 
             final profile = ref.watch(userProfileProvider).valueOrNull;
@@ -103,7 +108,9 @@ import 'splash_screen.dart';
           );
         }
 
-        return const AppLockGate(child: WorkspaceShell());
+        return const AppLockGate(
+          child: PrayerTimesSetupPromptGate(child: WorkspaceShell()),
+        );
       },
     );
   }

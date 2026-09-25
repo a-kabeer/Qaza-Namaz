@@ -610,7 +610,7 @@ class _TartibUnavailable extends StatelessWidget {
   }
 }
 
-class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
+/// Prayer choice is governed only by Qaza/Sahib al-Tartib rules.\nclass _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   PopupMenuItem<String> _buildPrayerMenuItem(
     BuildContext context,
     PrayerType prayer,
