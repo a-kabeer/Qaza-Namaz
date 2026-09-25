@@ -764,7 +764,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSignInMethod => 'Sign-in method';
 
   @override
-  String get accountGoogleAuth => 'Google authentication';
+  String get accountGoogleAuth => 'Google';
 
   @override
   String get accountSignedInWithGoogle => 'Signed in with Google';
@@ -1278,7 +1278,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueAsGuest => 'Continue as Guest';
 
   @override
-  String get authGuestNote => 'You can sign in later to back up your progress.';
+  String get authGuestNote => 'You can sign in with Google later to keep your progress with your account.';
 
   @override
   String get backupPromptTitle => 'Keep your progress safe';
