@@ -6,6 +6,7 @@ import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../entities/qaza_completion_result.dart';
 import '../repositories/qaza_repository.dart';
+import '../repositories/qaza_bulk_write_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
 import '../repositories/qaza_recovery_repository.dart';
 import 'qaza_availability_service.dart';
@@ -37,6 +38,50 @@ class QazaDuplicateRecordException implements Exception {
   @override
   String toString() =>
       'A Qaza record already exists for this prayer and date.';
+}
+
+enum QazaImportPhase { preparing, importing }
+
+class QazaImportProgress {
+  const QazaImportProgress({
+    required this.phase,
+    required this.processed,
+    required this.total,
+    required this.added,
+    required this.skipped,
+  });
+
+  const QazaImportProgress.preparing()
+      : phase = QazaImportPhase.preparing,
+        processed = 0,
+        total = 0,
+        added = 0,
+        skipped = 0;
+
+  const QazaImportProgress.importing({
+    required this.processed,
+    required this.total,
+    required this.added,
+    required this.skipped,
+  }) : phase = QazaImportPhase.importing;
+
+  final QazaImportPhase phase;
+  final int processed;
+  final int total;
+  final int added;
+  final int skipped;
+}
+
+class QazaImportResult {
+  const QazaImportResult({
+    required this.total,
+    required this.added,
+    required this.skipped,
+  });
+
+  final int total;
+  final int added;
+  final int skipped;
 }
 
 class QazaService {
@@ -455,26 +500,23 @@ class QazaService {
       recordQazaForDates(
           userId: userId, dates: [originalDate], prayerTypes: [prayerType]);
 
-  /// Records every missing Qaza across [dates], returning how many were added.
-  ///
-  /// The duplicate analysis is unchanged and still runs once, over the whole
-  /// request, before anything is written. Only the write is chunked: a twenty
-  /// year estimate is tens of thousands of rows, and one write of that size
-  /// leaves the caller with nothing to show for several seconds. [onProgress]
-  /// is called after each batch with the running count and the total.
-  Future<int> recordQazaForDates({
-      required String userId,
-      required Iterable<DateTime> dates,
-      required Iterable<PrayerType> prayerTypes,
-      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
-      int batchSize = 500,
-      void Function(int processed, int total)? onProgress,
-      String? operationId,
-      DateTime? operationCreatedAt}) async {
+  /// Imports all currently eligible combinations with two observable phases:
+  /// preparation and database writing.
+  Future<QazaImportResult> importQazaForDates({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    int batchSize = 500,
+    void Function(QazaImportProgress progress)? onProgress,
+    String? operationId,
+    DateTime? operationCreatedAt,
+  }) async {
     if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
+    onProgress?.call(const QazaImportProgress.preparing());
+
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
-
     final witrResolver = witrInclusionResolver;
     if (selectedPrayers.contains(PrayerType.witr) &&
         witrResolver != null &&
@@ -483,50 +525,115 @@ class QazaService {
     }
 
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) {
-      onProgress?.call(0, 0);
-      return 0;
+      onProgress?.call(const QazaImportProgress.importing(
+        processed: 0,
+        total: 0,
+        added: 0,
+        skipped: 0,
+      ));
+      return const QazaImportResult(total: 0, added: 0, skipped: 0);
     }
+
     final existing = await _getExistingForAvailability(
-        userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+    );
     final timeBlockedKeys = await _getTimeBlockedKeys(
       userId: userId,
       dates: normalizedDates,
       prayerTypes: selectedPrayers,
     );
     final analysis = availability.analyze(
-        userId: userId,
-        dates: normalizedDates,
-        prayerTypes: selectedPrayers,
-        existingRecords: existing,
-        prayedKeys: prayedKeys,
-        timeBlockedKeys: timeBlockedKeys);
+      userId: userId,
+      dates: normalizedDates,
+      prayerTypes: selectedPrayers,
+      existingRecords: existing,
+      prayedKeys: prayedKeys,
+      timeBlockedKeys: timeBlockedKeys,
+    );
     final candidates = analysis.newCandidates.toList(growable: false);
     final total = candidates.length;
-    // Reported even when there is nothing to do, so a caller showing progress
-    // starts from a real total rather than a guess.
-    onProgress?.call(0, total);
-    if (total == 0) return 0;
+    onProgress?.call(QazaImportProgress.importing(
+      processed: 0,
+      total: total,
+      added: 0,
+      skipped: 0,
+    ));
+    if (total == 0) {
+      return const QazaImportResult(total: 0, added: 0, skipped: 0);
+    }
 
     final now = operationCreatedAt ?? DateTime.now();
     var processed = 0;
+    var added = 0;
     for (var start = 0; start < total; start += batchSize) {
       final end = start + batchSize < total ? start + batchSize : total;
-      await repository.addRecords([
+      final batch = [
         for (final candidate in candidates.sublist(start, end))
           QazaRecord(
-              id: candidate.value,
-              userId: userId,
-              operationId: operationId,
-              prayerType: candidate.prayerType,
-              originalDate: candidate.date,
-              status: QazaStatus.pending,
-              createdAt: now,
-              updatedAt: now)
-      ]);
+            id: candidate.value,
+            userId: userId,
+            operationId: operationId,
+            prayerType: candidate.prayerType,
+            originalDate: candidate.date,
+            status: QazaStatus.pending,
+            createdAt: now,
+            updatedAt: now,
+          ),
+      ];
+
+      final written = repository is QazaBulkWriteRepository
+          ? await (repository as QazaBulkWriteRepository).addRecordsBulk(batch)
+          : await _addLegacyBatch(batch);
       processed = end;
-      onProgress?.call(processed, total);
+      added += written;
+      onProgress?.call(QazaImportProgress.importing(
+        processed: processed,
+        total: total,
+        added: added,
+        skipped: processed - added,
+      ));
     }
-    return total;
+
+    return QazaImportResult(
+      total: total,
+      added: added,
+      skipped: total - added,
+    );
+  }
+
+  Future<int> _addLegacyBatch(List<QazaRecord> batch) async {
+    if (batch.isEmpty) return 0;
+    await repository.addRecords(batch);
+    return batch.length;
+  }
+
+  /// Backward-compatible entry point. New large-import UI uses
+  /// [importQazaForDates] so it can distinguish preparation from writing.
+  Future<int> recordQazaForDates({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+    Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    int batchSize = 500,
+    void Function(int processed, int total)? onProgress,
+    String? operationId,
+    DateTime? operationCreatedAt,
+  }) async {
+    final result = await importQazaForDates(
+      userId: userId,
+      dates: dates,
+      prayerTypes: prayerTypes,
+      prayedKeys: prayedKeys,
+      batchSize: batchSize,
+      onProgress: onProgress == null
+          ? null
+          : (progress) => onProgress(progress.processed, progress.total),
+      operationId: operationId,
+      operationCreatedAt: operationCreatedAt,
+    );
+    return result.added;
   }
 
   Future<bool> completeOldestPending(

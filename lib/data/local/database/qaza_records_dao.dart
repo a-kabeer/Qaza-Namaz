@@ -788,6 +788,22 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// Inserts records atomically and reports ids actually accepted by SQLite.
+  /// Both primary-key and user/prayer/date uniqueness conflicts are ignored.
+  Future<List<String>> insertRecordsReturningInsertedIds(
+      List<QazaRecordsCompanion> records) async {
+    if (records.isEmpty) return const <String>[];
+    return transaction(() async {
+      final insertedIds = <String>[];
+      for (final record in records) {
+        final result = await into(qazaRecords)
+            .insert(record, mode: InsertMode.insertOrIgnore);
+        if (result > 0) insertedIds.add(record.id.value);
+      }
+      return insertedIds;
+    });
+  }
+
   /// Inserts records atomically. Each row is still constrained by its own
   /// userId in SQLite; callers that need a single-user transaction should use
   /// replaceUserRecords, which validates the namespace before replacing it.
