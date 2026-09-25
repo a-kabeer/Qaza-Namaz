@@ -22,7 +22,6 @@ class LanguageSelectionScreen extends ConsumerWidget {
             onboardingCompleted: false,
           ),
         );
-    ref.invalidate(userProfileProvider);
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
