@@ -322,4 +322,95 @@ class AddQazaFlowController extends AutoDisposeNotifier<AddQazaFlowState> {
 
 
 
+  /// Compatibility API for existing synchronous callers and tests.
+  ///
+  /// The production UI uses [startQazaImport] so the screen can return to Home
+  /// immediately, while older callers can still await the committed write.
+  Future<int> addQaza() async {
+    if (!state.canAdd) return 0;
+    final dates = _selectedDates();
+    final prayers = state.prayers;
+    state = state.copyWith(saving: true);
+    try {
+      final analysis = await ref.read(qazaServiceProvider).analyzeAvailability(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: prayers,
+          );
+      if (!AddQazaValidation.canSave(
+        datesValid: AddQazaValidation.hasValidDates(dates, today: _today),
+        prayers: prayers,
+        newCount: analysis.newCount,
+        checking: false,
+        saving: false,
+      )) {
+        state = state.copyWith(
+          existingCount: analysis.unavailableCount,
+          newCount: analysis.newCount,
+        );
+        return 0;
+      }
+
+      final selectionMode =
+          ref.read(calendarControllerProvider).selectionMode;
+      final operationType = switch (selectionMode) {
+        DateSelectionMode.single => QazaOperationType.singleDateAdd,
+        DateSelectionMode.range => QazaOperationType.rangeAdd,
+        DateSelectionMode.multiple => QazaOperationType.multipleDateAdd,
+      };
+      final inputSnapshot = <String, dynamic>{
+        'version': 1,
+        'selectionMode': selectionMode.name,
+        'dates': dates
+            .map((date) => DateTime(date.year, date.month, date.day)
+                .toIso8601String())
+            .toList(growable: false),
+        'prayers': [
+          for (final prayer in PrayerType.values)
+            if (prayers.contains(prayer)) prayer.name,
+        ],
+      };
+      final operation =
+          await ref.read(qazaOperationServiceProvider).begin(
+                userId: ref.read(requiredUserIdProvider),
+                type: operationType,
+                inputSnapshot: inputSnapshot,
+              );
+      var processed = 0;
+      try {
+        final created =
+            await ref.read(qazaServiceProvider).recordQazaForDates(
+                  userId: ref.read(requiredUserIdProvider),
+                  dates: dates,
+                  prayerTypes: prayers,
+                  operationId: operation.operationId,
+                  operationCreatedAt: operation.createdAt,
+                  onProgress: (value, _) => processed = value,
+                );
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: QazaOperationStatus.completed,
+              affectedRecordCount: created,
+            );
+        state = state.copyWith(
+          existingCount: analysis.unavailableCount + created,
+          newCount: 0,
+        );
+        return created;
+      } catch (error) {
+        await ref.read(qazaOperationServiceProvider).finish(
+              operation,
+              status: processed > 0
+                  ? QazaOperationStatus.partial
+                  : QazaOperationStatus.failed,
+              affectedRecordCount: processed,
+              note: error.toString(),
+            );
+        rethrow;
+      }
+    } finally {
+      if (state.saving) state = state.copyWith(saving: false);
+    }
+  }
+
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_operation.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/services/qaza_service.dart';
 
 enum QazaImportTaskPhase { idle, preparing, importing, completed, failed }
