@@ -201,6 +201,8 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         );
       }
 
+      if (!context.mounted) return;
+
       await showQazaUndoSnackBar(
         context: context,
         ref: ref,
