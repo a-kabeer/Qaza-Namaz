@@ -45,6 +45,25 @@ class GuestMigrationService {
     return page.records.isNotEmpty;
   }
 
+  /// Returns whether the target account already owns any Qaza data locally
+  /// or remotely. A brand-new account can therefore adopt the local ledger
+  /// without presenting a confusing merge screen.
+  Future<bool> hasAccountData({required String accountUserId}) async {
+    if (accountUserId.isEmpty) return false;
+
+    final local = await _localStore.getPage(
+      userId: accountUserId,
+      limit: 1,
+    );
+    if (local.records.isNotEmpty) return true;
+
+    final remote = await _remoteRepository.getPage(
+      userId: accountUserId,
+      limit: 1,
+    );
+    return remote.records.isNotEmpty;
+  }
+
   Future<GuestMigrationResult> migrate({
     required String guestUserId,
     required String accountUserId,
