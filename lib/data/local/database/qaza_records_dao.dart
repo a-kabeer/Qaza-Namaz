@@ -790,18 +790,18 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
   /// Inserts records atomically and reports ids actually accepted by SQLite.
   /// Both primary-key and user/prayer/date uniqueness conflicts are ignored.
+  /// Inserts rows using the caller's transaction. The Drift local-store
+  /// bulk path wraps this together with its outbox write in one transaction.
   Future<List<String>> insertRecordsReturningInsertedIds(
       List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return const <String>[];
-    return transaction(() async {
-      final insertedIds = <String>[];
-      for (final record in records) {
-        final result = await into(qazaRecords)
-            .insert(record, mode: InsertMode.insertOrIgnore);
-        if (result > 0) insertedIds.add(record.id.value);
-      }
-      return insertedIds;
-    });
+    final insertedIds = <String>[];
+    for (final record in records) {
+      final result = await into(qazaRecords)
+          .insert(record, mode: InsertMode.insertOrIgnore);
+      if (result > 0) insertedIds.add(record.id.value);
+    }
+    return insertedIds;
   }
 
   /// Inserts records atomically. Each row is still constrained by its own
