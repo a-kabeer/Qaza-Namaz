@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -80,8 +82,10 @@ class SettingsScreen extends ConsumerWidget {
                   final profile =
                       ref.read(userProfileProvider).valueOrNull;
                   if (profile != null && profile.languageCode != selected) {
-                    ref.read(userProfileRepositoryProvider).save(
-                      profile.copyWith(languageCode: selected),
+                    unawaited(
+                      ref.read(userProfileRepositoryProvider).save(
+                            profile.copyWith(languageCode: selected),
+                          ),
                     );
                   }
                 },
