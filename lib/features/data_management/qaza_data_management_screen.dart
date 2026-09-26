@@ -10,6 +10,7 @@ import '../../core/diagnostics/diagnostics.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../l10n/app_localizations.dart';
 import '../../data/data_transfer/qaza_data_transfer_service.dart';
@@ -53,6 +54,7 @@ class _QazaDataManagementScreenState
       if (mounted) {
         _showMessage(
           AppLocalizations.of(context).dataExportFailed(error.toString()),
+          error: true,
         );
       }
     } finally {
@@ -70,7 +72,9 @@ class _QazaDataManagementScreenState
       );
       if (picked == null) {
         if (mounted) {
-          _showMessage(AppLocalizations.of(context).dataImportCanceled);
+          _showMessage(
+            AppLocalizations.of(context).dataImportCanceled,
+          );
         }
         return;
       }
@@ -97,7 +101,12 @@ class _QazaDataManagementScreenState
       ref.invalidate(progressSummaryProvider);
       if (mounted) {
         _showMessage(
-          'Import complete: ${applied.addedCount} added, ${applied.completedCount} completed, ${applied.unchangedCount} unchanged.',
+          AppLocalizations.of(context).dataImportComplete(
+            applied.addedCount,
+            applied.completedCount,
+            applied.unchangedCount,
+          ),
+          success: true,
         );
       }
     } catch (error, stack) {
@@ -108,7 +117,10 @@ class _QazaDataManagementScreenState
             stack: stack,
           );
       if (mounted) {
-        _showMessage(AppError.from(error).message(context));
+        _showMessage(
+          AppError.from(error).message(context),
+          error: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -138,10 +150,19 @@ class _QazaDataManagementScreenState
     return result == true;
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+  void _showMessage(
+    String message, {
+    bool success = false,
+    bool error = false,
+  }) {
+    final snackbar = ref.read(appSnackbarServiceProvider);
+    if (error) {
+      snackbar.error(message);
+    } else if (success) {
+      snackbar.success(message);
+    } else {
+      snackbar.info(message);
+    }
   }
 
   @override
