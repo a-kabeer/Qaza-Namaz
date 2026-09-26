@@ -168,19 +168,31 @@ final homeSelectedPrayerProvider =
     );
   }
 
+  if (!tartibAsync.hasValue || tartib == null) {
+    // Witr remains independently actionable while Fard ordering is being
+    // resolved. A previously selected Fard must not look actionable while the
+    // tartib decision is still loading or unavailable.
+    if (selection.mode == HomePrayerSelectionMode.manual &&
+        selection.manualPrayer == PrayerType.witr) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: PrayerType.witr,
+        source: HomePrayerSelectionSource.manual,
+      );
+    }
+
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: null,
+      source: HomePrayerSelectionSource.tartibUnavailable,
+    );
+  }
+
   if (selection.mode == HomePrayerSelectionMode.manual) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: selection.manualPrayer,
       source: HomePrayerSelectionSource.manual,
-    );
-  }
-
-  if (!tartibAsync.hasValue || tartib == null) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: null,
-      source: HomePrayerSelectionSource.tartibUnavailable,
     );
   }
 
