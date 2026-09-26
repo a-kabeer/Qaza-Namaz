@@ -1,6 +1,7 @@
 import 'package:hijri/hijri_calendar.dart';
 
 import '../../l10n/app_localizations.dart';
+
 /// Canonical boundary for all Gregorian -> Hijri presentation.
 ///
 /// Gregorian [DateTime] values remain the application's source of truth.
@@ -63,6 +64,37 @@ class HijriDateService {
       12 => l10n.hijriMonthDhulHijjah,
       _ => throw ArgumentError.value(month, 'month', 'Hijri month must be 1-12.'),
     };
+  }
+
+  /// Formats a Gregorian month as a localized Hijri month/year label.
+  ///
+  /// Gregorian months can span two Hijri months. In that case the complete
+  /// month/year range is shown rather than presenting the first Gregorian
+  /// day's Hijri date as the month header.
+  static String monthYearLabel(
+    DateTime date,
+    AppLocalizations l10n,
+  ) {
+    final first = fromGregorian(DateTime(date.year, date.month, 1));
+    final last = fromGregorian(DateTime(date.year, date.month + 1, 0));
+
+    final firstLabel = l10n.hijriMonthYear(
+      monthNameFor(first.month, l10n),
+      first.year,
+    );
+    final lastLabel = l10n.hijriMonthYear(
+      monthNameFor(last.month, l10n),
+      last.year,
+    );
+
+    if (first.month == last.month && first.year == last.year) {
+      return firstLabel;
+    }
+
+    return l10n.qazaDateFilterRange(
+      firstLabel,
+      lastLabel,
+    );
   }
 
   /// Formats a Gregorian date as the app's standard secondary Hijri label.
