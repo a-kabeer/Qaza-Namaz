@@ -10,7 +10,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_controller.dart';
-import '../qaza/qaza_completion_feedback.dart';
+import 'qaza_completion_feedback.dart';
 
 /// Registers the latest completion as the single active Qaza Undo action and
 /// presents that action through the application-wide Snackbar service.
