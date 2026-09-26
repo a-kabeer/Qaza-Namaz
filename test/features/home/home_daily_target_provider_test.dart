@@ -5,7 +5,7 @@ import 'package:qaza_namaz/domain/entities/user_profile.dart';
 
 void main() {
   test('Home daily target is derived from UserProfile', () async {
-    final profile = const UserProfile(dailyQazaTarget: 17);
+    const profile = UserProfile(dailyQazaTarget: 17);
     final container = ProviderContainer(
       overrides: [
         userProfileProvider.overrideWith((ref) async => profile),
