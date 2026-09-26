@@ -17,6 +17,7 @@ import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_feedback.dart';
 import 'history/qaza_history_screen.dart';
+import 'qaza_navigation.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
@@ -50,6 +51,8 @@ class QazaTrackerScreen extends ConsumerWidget {
               icon: const Icon(Icons.close_rounded),
             ),
         ],
+        floatingActionButton:
+            state.selectionMode ? null : const AddQazaFab(),
         body: SafeArea(
           child: DefaultTabController(
             length: 2,
