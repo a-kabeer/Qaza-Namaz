@@ -123,7 +123,7 @@ void main() {
     for (final entity in lib.listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       final content = entity.readAsStringSync();
-      final normalized = entity.path.replaceAll('\\\\', '/');
+      final normalized = entity.path.replaceAll('\\', '/');
 
       final matches = forbiddenMarkers.where(content.contains).toList();
       if (matches.isEmpty) continue;
