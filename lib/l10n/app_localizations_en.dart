@@ -882,6 +882,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaNewRecordsLabel => 'New records';
 
   @override
+  String get addQazaNewLabel => 'New';
+
+  @override
+  String get addQazaAlreadyAddedLabel => 'Already Added';
+
+  @override
+  String get addQazaUnavailableLabel => 'Unavailable';
+
+  @override
+  String get addQazaCancelledTitle => 'Qaza addition cancelled';
+
+  @override
+  String get addQazaCancelledMessage =>
+      'The addition was cancelled. Any records already saved were kept';
+
+  @override
   String get addQazaNewQazaLabel => 'New Qaza records';
 
   @override
