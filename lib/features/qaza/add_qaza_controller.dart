@@ -113,6 +113,7 @@ final addQazaControllerProvider =
 
 class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   DateTime? _visibleMonth;
+  bool _disposed = false;
   int _calendarRequest = 0;
   int _analysisRequest = 0;
 
@@ -132,7 +133,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
     final initialCalendarState = ref.read(calendarControllerProvider);
     Future.microtask(() {
-      if (!ref.mounted) return;
+      if (!_disposed) return;
       ref.read(calendarControllerProvider.notifier).clear();
 
       final profile = ref.read(userProfileProvider).valueOrNull;
@@ -157,7 +158,6 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       );
     });
 
-    _onCalendarSelectionChanged(initialCalendarState);
     return const AddQazaState();
   }
 
@@ -218,7 +218,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
                 prayerTypes: prayers,
               );
 
-      if (!ref.mounted || request != _calendarRequest) return;
+      if (!_disposed || request != _calendarRequest) return;
 
       state = state.copyWith(
         calendarAvailability: _applyDateRules(
@@ -229,7 +229,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         calendarLoading: false,
       );
     } catch (error) {
-      if (!ref.mounted || request != _calendarRequest) return;
+      if (!_disposed || request != _calendarRequest) return;
       state = state.copyWith(
         calendarLoading: false,
         error: error,
@@ -311,7 +311,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         items: List.unmodifiable(items),
       );
 
-      if (!ref.mounted || request != _analysisRequest) return analysis;
+      if (!_disposed || request != _analysisRequest) return analysis;
 
       state = state.copyWith(
         analysis: analysis,
@@ -319,7 +319,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       );
       return analysis;
     } catch (error) {
-      if (ref.mounted && request == _analysisRequest) {
+      if (!_disposed && request == _analysisRequest) {
         state = state.copyWith(
           analysisLoading: false,
           error: error,
@@ -331,13 +331,11 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
   void _onProfileChanged() {
     final profile = ref.read(userProfileProvider).valueOrNull;
-    if (profile == null || !ref.mounted) return;
+    if (profile == null || !_disposed) return;
 
     final selected = Set<PrayerType>.of(state.selectedPrayers);
     if (!ProfileRules.effectiveWitr(profile)) {
       selected.remove(PrayerType.witr);
-    } else if (selected.length == 5) {
-      selected.add(PrayerType.witr);
     }
 
     state = state.copyWith(
