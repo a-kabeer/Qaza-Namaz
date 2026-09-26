@@ -198,11 +198,17 @@ class SahibAlTartibService {
   Future<bool> canCompleteRecordIds({
     required String userId,
     required Iterable<String> recordIds,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     final ids = recordIds.toSet();
     if (ids.isEmpty) return true;
 
-    final state = await evaluate(userId: userId);
+    final state = await evaluate(
+      userId: userId,
+      currentDate: currentDate,
+      currentPrayer: currentPrayer,
+    );
     if (!state.requiresOrder || state.nextPending == null) return true;
 
     final witrIds = await _findPendingWitrIds(
