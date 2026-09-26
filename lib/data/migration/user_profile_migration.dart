@@ -58,12 +58,19 @@ class UserProfileMigration {
     if (snapshots.isEmpty) {
       if (existing == null && legacyDailyTarget == null) return;
 
-      final profile = existing ??
-          UserProfile(
-            dailyQazaTarget: UserProfile.normalizeDailyQazaTarget(
-              legacyDailyTarget ?? UserProfile.defaultDailyQazaTarget,
-            ),
-          );
+      final profile = existing == null
+          ? UserProfile(
+              dailyQazaTarget: UserProfile.normalizeDailyQazaTarget(
+                legacyDailyTarget ?? UserProfile.defaultDailyQazaTarget,
+              ),
+            )
+          : hasPersistedDailyTarget
+              ? existing
+              : existing.copyWith(
+                  dailyQazaTarget: UserProfile.normalizeDailyQazaTarget(
+                    legacyDailyTarget ?? UserProfile.defaultDailyQazaTarget,
+                  ),
+                );
 
       final saved = await prefs.setString(
         UserProfile.storageKey,
