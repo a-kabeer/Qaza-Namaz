@@ -28,6 +28,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+def configuredStoreFile = keystoreProperties.getProperty("storeFile")
+def releaseStoreFile = configuredStoreFile ? file(configuredStoreFile) : null
+def hasReleaseSigning = keystorePropertiesFile.exists() &&
+    keystoreProperties.getProperty("keyAlias") &&
+    keystoreProperties.getProperty("keyPassword") &&
+    keystoreProperties.getProperty("storePassword") &&
+    releaseStoreFile?.exists()
+
 android {
     namespace = "com.example.qaza_namaz_task1_flutter"
     compileSdk = 36
@@ -52,12 +60,10 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
+            if (hasReleaseSigning) {
                 keyAlias keystoreProperties["keyAlias"]
                 keyPassword keystoreProperties["keyPassword"]
-                storeFile keystoreProperties["storeFile"] == null
-                    ? null
-                    : file(keystoreProperties["storeFile"])
+                storeFile releaseStoreFile
                 storePassword keystoreProperties["storePassword"]
             }
         }
@@ -65,7 +71,17 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            } else if (System.getenv("CI")?.toBoolean()) {
+                throw new GradleException(
+                    "Release signing is not configured in CI. Provide android/key.properties and the release keystore."
+                )
+            } else {
+                // Local release-mode testing only. Never use this artifact for
+                // Play Store publication or production distribution.
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 }
