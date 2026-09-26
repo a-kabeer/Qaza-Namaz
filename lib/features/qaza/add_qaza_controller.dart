@@ -127,13 +127,13 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       userProfileProvider,
       (_, __) => _onProfileChanged(),
     );
-    ref.onDispose(
-      () => ref.read(calendarControllerProvider.notifier).clear(),
-    );
+    ref.onDispose(() {
+      _disposed = true;
+      ref.read(calendarControllerProvider.notifier).clear();
+    });
 
-    final initialCalendarState = ref.read(calendarControllerProvider);
     Future.microtask(() {
-      if (!_disposed) return;
+      if (_disposed) return;
       ref.read(calendarControllerProvider.notifier).clear();
 
       final profile = ref.read(userProfileProvider).valueOrNull;
@@ -218,7 +218,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
                 prayerTypes: prayers,
               );
 
-      if (!_disposed || request != _calendarRequest) return;
+      if (_disposed || request != _calendarRequest) return;
 
       state = state.copyWith(
         calendarAvailability: _applyDateRules(
@@ -229,7 +229,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         calendarLoading: false,
       );
     } catch (error) {
-      if (!_disposed || request != _calendarRequest) return;
+      if (_disposed || request != _calendarRequest) return;
       state = state.copyWith(
         calendarLoading: false,
         error: error,
@@ -311,7 +311,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         items: List.unmodifiable(items),
       );
 
-      if (!_disposed || request != _analysisRequest) return analysis;
+      if (_disposed || request != _analysisRequest) return analysis;
 
       state = state.copyWith(
         analysis: analysis,
@@ -331,7 +331,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
   void _onProfileChanged() {
     final profile = ref.read(userProfileProvider).valueOrNull;
-    if (profile == null || !_disposed) return;
+    if (profile == null || _disposed) return;
 
     final selected = Set<PrayerType>.of(state.selectedPrayers);
     if (!ProfileRules.effectiveWitr(profile)) {
