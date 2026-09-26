@@ -898,7 +898,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addQazaCancelledMessage =>
-      'The addition was cancelled. Any records already saved were kept';
+      'The addition was cancelled. Any records already saved were kept.';
 
   @override
   String get addQazaNewQazaLabel => 'New Qaza records';

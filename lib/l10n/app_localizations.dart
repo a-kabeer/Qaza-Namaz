@@ -1556,6 +1556,10 @@ abstract class AppLocalizations {
   /// **'Date range'**
   String get addQazaDateRangeLabel;
 
+  /// No description provided for @addQazaCombinationCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Combinations'**
   String get addQazaCombinationCountLabel;
 
   /// No description provided for @addQazaPrayersLabel.
@@ -1582,14 +1586,34 @@ abstract class AppLocalizations {
   /// **'New records'**
   String get addQazaNewRecordsLabel;
 
+  /// No description provided for @addQazaNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
   String get addQazaNewLabel;
 
+  /// No description provided for @addQazaAlreadyAddedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Added'**
   String get addQazaAlreadyAddedLabel;
 
+  /// No description provided for @addQazaUnavailableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
   String get addQazaUnavailableLabel;
 
+  /// No description provided for @addQazaCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza addition cancelled'**
   String get addQazaCancelledTitle;
 
+  /// No description provided for @addQazaCancelledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The addition was cancelled. Any records already saved were kept.'**
   String get addQazaCancelledMessage;
 
   /// No description provided for @addQazaNewQazaLabel.
