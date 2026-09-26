@@ -870,6 +870,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaDateRangeLabel => 'Date range';
 
   @override
+  String get addQazaCombinationCountLabel => 'Combinations';
+
+  @override
   String get addQazaPrayersLabel => 'Prayers';
 
   @override
