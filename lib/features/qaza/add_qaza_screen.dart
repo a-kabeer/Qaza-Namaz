@@ -715,6 +715,11 @@ class _AddQazaProgressDialogState
         });
       },
     );
+    if (!ref.read(qazaImportProvider).isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+    }
   }
 
   @override
