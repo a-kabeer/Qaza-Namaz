@@ -73,7 +73,10 @@ android {
         release {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.release
-            } else if (System.getenv("CI")?.toBoolean()) {
+            } else if (System.getenv("CI")?.toBoolean() &&
+                gradle.startParameter.taskNames.any {
+                    it.toLowerCase(Locale.ROOT).contains("release")
+                }) {
                 throw new GradleException(
                     "Release signing is not configured in CI. Provide android/key.properties and the release keystore."
                 )
