@@ -871,6 +871,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaDateRangeLabel => 'تاریخوں کا دورانیہ';
 
   @override
+  String get addQazaCombinationCountLabel => 'مجموعے';
+
+  @override
   String get addQazaPrayersLabel => 'نمازیں';
 
   @override
@@ -881,6 +884,22 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get addQazaNewRecordsLabel => 'نئے ریکارڈ';
+
+  @override
+  String get addQazaNewLabel => 'نیا';
+
+  @override
+  String get addQazaAlreadyAddedLabel => 'پہلے سے شامل';
+
+  @override
+  String get addQazaUnavailableLabel => 'دستیاب نہیں';
+
+  @override
+  String get addQazaCancelledTitle => 'قضا شامل کرنا منسوخ ہوا';
+
+  @override
+  String get addQazaCancelledMessage =>
+      'اضافہ منسوخ کر دیا گیا۔ جو ریکارڈ پہلے ہی محفوظ ہو چکے ہیں وہ برقرار ہیں';
 
   @override
   String get addQazaNewQazaLabel => 'نئے قضا ریکارڈ';

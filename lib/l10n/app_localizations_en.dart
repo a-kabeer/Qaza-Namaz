@@ -870,6 +870,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaDateRangeLabel => 'Date range';
 
   @override
+  String get addQazaCombinationCountLabel => 'Combinations';
+
+  @override
   String get addQazaPrayersLabel => 'Prayers';
 
   @override
@@ -880,6 +883,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addQazaNewRecordsLabel => 'New records';
+
+  @override
+  String get addQazaNewLabel => 'New';
+
+  @override
+  String get addQazaAlreadyAddedLabel => 'Already Added';
+
+  @override
+  String get addQazaUnavailableLabel => 'Unavailable';
+
+  @override
+  String get addQazaCancelledTitle => 'Qaza addition cancelled';
+
+  @override
+  String get addQazaCancelledMessage =>
+      'The addition was cancelled. Any records already saved were kept';
 
   @override
   String get addQazaNewQazaLabel => 'New Qaza records';

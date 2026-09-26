@@ -70,11 +70,15 @@ class QazaImportResult {
     required this.total,
     required this.added,
     required this.skipped,
-  });
+    int? processed,
+    this.cancelled = false,
+  }) : processed = processed ?? total;
 
   final int total;
   final int added;
   final int skipped;
+  final int processed;
+  final bool cancelled;
 }
 
 class QazaService {
@@ -273,22 +277,24 @@ class QazaService {
     final sortedDates = normalizedDates.toList()..sort();
     final result = <QazaRecord>[];
     for (final prayer in selectedPrayers) {
-      DateTime? beforeDate;
-      String? beforeId;
-      while (true) {
-        final page = await repository.getHistoryPage(
-            userId: userId,
-            limit: 500,
-            prayerType: prayer,
-            status: null,
-            from: sortedDates.first,
-            to: sortedDates.last,
-            beforeOriginalDate: beforeDate,
-            beforeId: beforeId);
-        result.addAll(page.records);
-        if (!page.hasMore) break;
-        beforeDate = page.nextOriginalDate;
-        beforeId = page.nextId;
+      for (final status in <QazaStatus?>[null, QazaStatus.deleted]) {
+        DateTime? beforeDate;
+        String? beforeId;
+        while (true) {
+          final page = await repository.getHistoryPage(
+              userId: userId,
+              limit: 500,
+              prayerType: prayer,
+              status: status,
+              from: sortedDates.first,
+              to: sortedDates.last,
+              beforeOriginalDate: beforeDate,
+              beforeId: beforeId);
+          result.addAll(page.records);
+          if (!page.hasMore) break;
+          beforeDate = page.nextOriginalDate;
+          beforeId = page.nextId;
+        }
       }
     }
     return result;
@@ -512,6 +518,10 @@ class QazaService {
     void Function(QazaImportProgress progress)? onProgress,
     String? operationId,
     DateTime? operationCreatedAt,
+    DateTime? earliestDate,
+    DateTime? today,
+    bool? witrAllowed,
+    bool Function()? isCancellationRequested,
   }) async {
     if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
     onProgress?.call(const QazaImportProgress.preparing());
@@ -519,11 +529,31 @@ class QazaService {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     final witrResolver = witrInclusionResolver;
-    if (selectedPrayers.contains(PrayerType.witr) &&
-        witrResolver != null &&
-        !witrResolver()) {
+    final resolvedWitrAllowed =
+        witrAllowed ?? (witrResolver == null ? true : witrResolver());
+    if (selectedPrayers.contains(PrayerType.witr) && !resolvedWitrAllowed) {
       throw const QazaWitrNotIncludedException();
     }
+
+    final normalizedEarliestDate =
+        earliestDate == null ? null : QazaDate.normalize(earliestDate);
+    final normalizedToday =
+        today == null ? null : QazaDate.normalize(today);
+
+    bool dateAllowed(DateTime date) {
+      final normalized = QazaDate.normalize(date);
+      if (normalizedToday != null && normalized.isAfter(normalizedToday)) {
+        return false;
+      }
+      if (normalizedEarliestDate != null &&
+          normalized.isBefore(normalizedEarliestDate)) {
+        return false;
+      }
+      return true;
+    }
+
+    bool prayerAllowed(PrayerType prayer) =>
+        prayer != PrayerType.witr || resolvedWitrAllowed;
 
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) {
       onProgress?.call(const QazaImportProgress.importing(
@@ -547,7 +577,10 @@ class QazaService {
       existingRecords: existing,
       prayedKeys: prayedKeys,
     );
-    final candidates = analysis.newCandidates.toList(growable: false);
+    final candidates = analysis.newCandidates
+        .where((candidate) =>
+            dateAllowed(candidate.date) && prayerAllowed(candidate.prayerType))
+        .toList(growable: false);
     final total = candidates.length;
     onProgress?.call(QazaImportProgress.importing(
       processed: 0,
@@ -563,6 +596,15 @@ class QazaService {
     var processed = 0;
     var added = 0;
     for (var start = 0; start < total; start += batchSize) {
+      if (isCancellationRequested?.call() ?? false) {
+        return QazaImportResult(
+          total: total,
+          added: added,
+          skipped: processed - added,
+          processed: processed,
+          cancelled: true,
+        );
+      }
       final end = start + batchSize < total ? start + batchSize : total;
       final batch = [
         for (final candidate in candidates.sublist(start, end))
@@ -595,6 +637,7 @@ class QazaService {
       total: total,
       added: added,
       skipped: total - added,
+      processed: total,
     );
   }
 

@@ -113,11 +113,14 @@ class QazaAvailabilityService {
     return QazaEligibility.available;
   }
 
-  /// Every combination that exists, whatever its status.
+  /// Every occupied combination in the ledger.
+  ///
+  /// Soft-deleted rows remain present because the database uniqueness key still
+  /// occupies the same user + date + prayer identity until the row is purged.
+  /// Treating them as occupied prevents the UI from claiming a combination is
+  /// new when SQLite would ignore the later insert.
   Set<QazaPrayerKey> recordedKeys(Iterable<QazaRecord> records) => {
-        for (final record in records)
-          if (record.status != QazaStatus.deleted)
-            QazaPrayerKey.fromRecord(record),
+        for (final record in records) QazaPrayerKey.fromRecord(record),
       };
 
   /// Combinations that are already fulfilled.
