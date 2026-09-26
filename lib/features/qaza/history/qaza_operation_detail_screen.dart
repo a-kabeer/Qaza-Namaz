@@ -321,9 +321,9 @@ class _QazaOperationDetailScreenState
           );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ref.read(appSnackbarServiceProvider).error(
+            AppError.from(e).message(context),
+          );
     } finally {
       if (mounted) setState(() => mutating = false);
     }
@@ -350,9 +350,9 @@ class _QazaOperationDetailScreenState
           );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ref.read(appSnackbarServiceProvider).error(
+            AppError.from(e).message(context),
+          );
     } finally {
       if (mounted) setState(() => mutating = false);
     }
