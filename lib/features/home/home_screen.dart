@@ -11,6 +11,7 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
+import '../qaza/qaza_navigation.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
 import 'widgets/home_all_completed_state.dart';
@@ -153,6 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     return AppScaffold(
       title: l10n.homeTitle,
+      floatingActionButton: importState.isActive ? null : const AddQazaFab(),
       actions: [
         IconButton(
           key: const Key('home_profile'),
@@ -219,7 +221,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     QazaProgressSummary summary,
   ) {
     if (summary.overall.total == 0) {
-      return const HomeEmptyState();
+      return HomeEmptyState(
+        onAddQaza: () => openAddQaza(context),
+      );
     }
 
     final allCompleted = summary.overall.pending == 0;
