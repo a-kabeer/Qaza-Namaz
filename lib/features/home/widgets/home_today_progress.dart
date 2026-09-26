@@ -958,11 +958,8 @@ class _HomeFallbackNextQaza extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('home_complete_oldest_qaza'),
+        FilledButton.icon(
+          key: const Key('home_complete_oldest_qaza'),
                 onPressed: () => onComplete(record, record.prayerType),
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: Text(l10n.homeCompleteQaza),
