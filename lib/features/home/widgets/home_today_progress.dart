@@ -964,6 +964,8 @@ class _HomeFallbackNextQaza extends StatelessWidget {
           icon: const Icon(Icons.play_arrow_rounded),
           label: Text(l10n.homeCompleteQaza),
         ),
+      ],
+    );
   }
 }
 
