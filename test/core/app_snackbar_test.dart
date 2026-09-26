@@ -137,7 +137,7 @@ void main() {
         await pumpHost(tester);
 
         messengerKey.currentState!.showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: const Text('Unsafe direct Snackbar'),
             duration: const Duration(seconds: 1),
             persist: true,
@@ -221,7 +221,7 @@ void main() {
         jsonEncode(batch.toJson()),
       );
 
-      final store = const QazaUndoStore();
+      const store = QazaUndoStore();
       final loaded = await store.load(
         userId: 'local',
         now: DateTime(2026, 9, 26, 11, 0),

@@ -10,7 +10,6 @@ import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
@@ -705,8 +704,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
         ),
       ),
     );
-
-    final tartib = tartibAsync.valueOrNull;
 
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
