@@ -602,6 +602,7 @@
   "addQazaDatesLabel": "Dates",
   "addQazaDateCountLabel": "Date count",
   "addQazaDateRangeLabel": "Date range",
+  "addQazaCombinationCountLabel": "Combinations",
   "addQazaPrayersLabel": "Prayers",
   "addQazaPrayersPerDateLabel": "Prayers per date",
   "addQazaExistingLabel": "Existing combinations",
