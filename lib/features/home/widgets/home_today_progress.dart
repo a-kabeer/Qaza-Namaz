@@ -9,7 +9,6 @@ import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
@@ -179,10 +178,11 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       },
     );
 
-    return AppCard(
+    return Card(
       key: const Key('home_today_progress'),
-      padding: const EdgeInsets.all(16),
-      child: daily.when(
+      child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: daily.when(
         loading: () => const HomeTodayProgressSkeleton(),
         error: (_, __) => Row(
           children: [
@@ -312,6 +312,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
           );
         },
       ),
+          )
     );
   }
 }
