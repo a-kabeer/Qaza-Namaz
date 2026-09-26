@@ -27,7 +27,10 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) => AppScaffoldMessenger(child: child!),
+      builder: (context, child) => AppScaffoldMessenger(
+        key: appScaffoldMessengerKey,
+        child: child!,
+      ),
       home: const StartupGate(),
     );
   }
