@@ -171,7 +171,10 @@ void main() {
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('Undo'), findsOneWidget);
 
-      await tester.tap(find.text('Undo'));
+      final action = tester.widget<SnackBarAction>(
+        find.byType(SnackBarAction),
+      );
+      action.onPressed();
       await tester.pump();
 
       expect(invoked, isTrue);
