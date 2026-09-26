@@ -116,6 +116,27 @@ void main() {
     expect(method, isNot(contains('selected: <String>{recordId}')));
   });
 
+  test('swipe feedback callback uses the stable tracker context', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(source, contains('itemBuilder: (itemContext, index) {'));
+    expect(
+      source,
+      contains(
+        ': () => _completeSingle(context, ref, record),',
+      ),
+    );
+    expect(
+      source,
+      isNot(
+        contains(
+          ': () => _completeSingle(itemContext, ref, record),',
+        ),
+      ),
+    );
+  });
+
   test('single swipe shows global Undo feedback only after completion returns', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
