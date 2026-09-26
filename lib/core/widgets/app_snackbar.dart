@@ -38,8 +38,7 @@ abstract final class AppSnackBarPolicy {
       content: snackBar.content,
       backgroundColor: snackTheme.backgroundColor ?? scheme.inverseSurface,
       elevation: snackTheme.elevation ?? 6,
-      margin: snackTheme.margin,
-      padding: snackTheme.padding,
+      insetPadding: snackTheme.insetPadding,
       width: snackTheme.width,
       shape: snackTheme.shape ??
           RoundedRectangleBorder(
