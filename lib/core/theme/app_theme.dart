@@ -273,6 +273,7 @@ class AppTheme {
     return baseTheme.copyWith(
       useMaterial3: true,
       scaffoldBackgroundColor: scheme.surface,
+      cardTheme: baseTheme.cardTheme.copyWith(margin: EdgeInsets.zero),
       textTheme: textTheme,
       appBarTheme: baseTheme.appBarTheme.copyWith(
         centerTitle: false,
