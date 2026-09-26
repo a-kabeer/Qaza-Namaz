@@ -1556,6 +1556,8 @@ abstract class AppLocalizations {
   /// **'Date range'**
   String get addQazaDateRangeLabel;
 
+  String get addQazaCombinationCountLabel;
+
   /// No description provided for @addQazaPrayersLabel.
   ///
   /// In en, this message translates to:
