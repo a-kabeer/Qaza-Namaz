@@ -517,6 +517,9 @@ class _RecordRow extends StatelessWidget {
     this.onSwipeComplete,
   });
 
+  static const double _rowHeight = 68;
+  static const double _selectionControlWidth = 48;
+
   final QazaRecord record;
   final bool selected;
   final bool selectionMode;
@@ -533,6 +536,8 @@ class _RecordRow extends StatelessWidget {
     final originalDate =
         DateFormatters.formatGregorianDatePadded(record.originalDate);
     final hijriDate = l10n.formatHijriDate(record.originalDate);
+    final selectable =
+        record.status == QazaStatus.pending && onTap != null && !busy;
 
     final tile = Semantics(
       selected: selected,
@@ -544,18 +549,12 @@ class _RecordRow extends StatelessWidget {
               ? 'Tap to select or unselect.'
               : 'Swipe left or right to complete. Long press to select.')
           : null,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 68),
+      child: SizedBox(
+        height: _rowHeight,
         child: ListTile(
           key: Key('qaza_record_${record.id}'),
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           minVerticalPadding: 8,
-          leading: selectionMode
-              ? Checkbox(
-                  value: selected,
-                  onChanged: onTap == null || busy ? null : (_) => onTap!(),
-                )
-              : null,
           title: Text(
             record.prayerType.localizedLabel(l10n),
             maxLines: 1,
@@ -569,6 +568,17 @@ class _RecordRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall,
+          ),
+          trailing: SizedBox(
+            width: _selectionControlWidth,
+            height: _selectionControlWidth,
+            child: selectionMode && record.status == QazaStatus.pending
+                ? Checkbox(
+                    value: selected,
+                    onChanged:
+                        selectable ? (_) => onTap!() : null,
+                  )
+                : const SizedBox.shrink(),
           ),
           onTap: onTap,
           onLongPress: onLongPress,
