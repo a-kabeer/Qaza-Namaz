@@ -72,7 +72,6 @@ class AppTheme {
   static ThemeData light({Locale? locale}) {
     return _base(
       FlexThemeData.light(
-        useMaterial3: true,
         primary: _lightPrimary,
         onPrimary: Colors.white,
         primaryContainer: _lightPrimaryContainer,
@@ -102,7 +101,6 @@ class AppTheme {
   static ThemeData dark({Locale? locale}) {
     return _base(
       FlexThemeData.dark(
-        useMaterial3: true,
         primary: _darkPrimary,
         onPrimary: _darkOnPrimary,
         primaryContainer: _darkPrimaryContainer,
