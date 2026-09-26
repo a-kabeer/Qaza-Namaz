@@ -10,21 +10,46 @@ void main() {
     expect(source, contains('direction: DismissDirection.horizontal'));
     expect(source, contains('DismissDirection.startToEnd: 0.32'));
     expect(source, contains('DismissDirection.endToStart: 0.32'));
-    expect(source, contains('secondaryBackground: const _CompletionSwipeBackground'));
-    expect(source, contains('Swipe left or right to complete. Long press to select.'));
+    expect(
+      source,
+      contains(
+        'secondaryBackground: const _CompletionSwipeBackground',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'Swipe left or right to complete. Long press to select.',
+      ),
+    );
     expect(source, contains('showQazaUndoFeedback('));
     expect(source, contains('onTap: onTap'));
     expect(
       source,
-      isNot(contains('Tap to complete. Swipe to complete. Long press to select.')),
+      isNot(
+        contains(
+          'Tap to complete. Swipe to complete. Long press to select.',
+        ),
+      ),
     );
   });
+
   test('workspace Back cancels Qaza selection before returning Home', () {
     final source =
         File('lib/features/shell/workspace_shell.dart').readAsStringSync();
 
-    expect(source, contains("import '../qaza/qaza_tracker_controller.dart';"));
-    expect(source, contains('if (destination == WorkspaceDestination.qaza)'));
+    expect(
+      source,
+      contains(
+        "import '../qaza/qaza_tracker_controller.dart';",
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'if (destination == WorkspaceDestination.qaza)',
+      ),
+    );
     expect(source, contains('if (qazaState.selectionMode)'));
     expect(
       source,
@@ -34,50 +59,52 @@ void main() {
     );
     expect(
       source,
-      contains(
-        'WorkspaceDestination.home;',
-      ),
+      contains('WorkspaceDestination.home;'),
     );
   });
 
-}
+  test(
+    'selection mode keeps the Qaza row footprint stable and uses trailing checkbox',
+    () {
+      final source =
+          File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-  test('selection mode keeps the Qaza row footprint stable and uses trailing checkbox', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-
-    expect(source, contains('static const double _rowHeight = 68;'));
-    expect(
-      source,
-      contains(
-        'child: SizedBox(\n        height: _rowHeight,\n        child: ListTile(',
-      ),
-    );
-    expect(source, contains('trailing: SizedBox('));
-    expect(source, contains('width: _selectionControlWidth,'));
-    expect(source, contains('height: _selectionControlWidth,'));
-    expect(
-      source,
-      contains(
-        'selectionMode && record.status == QazaStatus.pending',
-      ),
-    );
-    expect(source, isNot(contains('leading: selectionMode')));
-    expect(
-      source,
-      contains(
-        'selectable ? (_) => onTap!() : null',
-      ),
-    );
-  });
+      expect(source, contains('static const double _rowHeight = 68;'));
+      expect(
+        source,
+        contains(
+          'child: SizedBox(\n        height: _rowHeight,\n        child: ListTile(',
+        ),
+      );
+      expect(source, contains('trailing: SizedBox('));
+      expect(source, contains('width: _selectionControlWidth,'));
+      expect(source, contains('height: _selectionControlWidth,'));
+      expect(
+        source,
+        contains(
+          'selectionMode && record.status == QazaStatus.pending',
+        ),
+      );
+      expect(source, isNot(contains('leading: selectionMode')));
+      expect(
+        source,
+        contains(
+          'selectable ? (_) => onTap!() : null',
+        ),
+      );
+    },
+  );
 
   test('single swipe completion never enters user-visible selection mode', () {
     final source =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
-    final start =
-        source.indexOf('Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId)');
-    final end =
-        source.indexOf('Future<int> deleteSelectedWithRecovery()', start);
+    final start = source.indexOf(
+      'Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId)',
+    );
+    final end = source.indexOf(
+      'Future<int> deleteSelectedWithRecovery()',
+      start,
+    );
 
     expect(start, greaterThanOrEqualTo(0));
     expect(end, greaterThan(start));
@@ -104,3 +131,4 @@ void main() {
     expect(persistIndex, greaterThanOrEqualTo(0));
     expect(refreshIndex, greaterThan(persistIndex));
   });
+}
