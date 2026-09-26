@@ -7,6 +7,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
@@ -14,7 +15,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
-import 'qaza_undo_banner.dart';
+import 'qaza_undo_feedback.dart';
 import 'history/qaza_history_screen.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
@@ -57,8 +58,6 @@ class QazaTrackerScreen extends ConsumerWidget {
                 if (!state.selectionMode) ...[
                   const SizedBox(height: AppSpacing.sm),
                   TabBar(
-                    onTap: (_) => ScaffoldMessenger.maybeOf(context)
-                        ?.hideCurrentSnackBar(),
                     tabs: const [
                       Tab(text: 'Pending'),
                       Tab(text: 'History'),
@@ -315,7 +314,7 @@ class _TrackerBody extends ConsumerWidget {
     if (!context.mounted) return false;
     final l10n = AppLocalizations.of(context);
     if (batch != null) {
-      await showQazaUndoSnackBar(
+      await showQazaUndoFeedback(
         context: context,
         ref: ref,
         userId: ref.read(requiredUserIdProvider),
@@ -326,15 +325,11 @@ class _TrackerBody extends ConsumerWidget {
     }
     final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
     if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
+      ref.read(appSnackbarServiceProvider).warning(
             l10n.qazaTartibBlocked(
               tartib!.nextPrayer!.localizedLabel(l10n),
             ),
-          ),
-        ),
-      );
+          );
     }
     return false;
   }
@@ -686,9 +681,11 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
     if (batch == null) {
       final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
       if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n
-                .qazaTartibBlocked(tartib!.nextPrayer!.localizedLabel(l10n)))));
+        ref.read(appSnackbarServiceProvider).warning(
+              l10n.qazaTartibBlocked(
+                tartib!.nextPrayer!.localizedLabel(l10n),
+              ),
+            );
       }
       return;
     }
