@@ -705,11 +705,11 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
       if (undoableRecords.isEmpty) {
         ref.read(diagnosticsProvider).recordFailure(
-          DiagnosticArea.qazaCompletion,
-          'completion_marker_lookup_empty',
-          StateError('No completion marker was returned after completion.'),
-          stack: StackTrace.current,
-        );
+              DiagnosticArea.qazaCompletion,
+              'completion_marker_lookup_empty',
+              StateError('No completion marker was returned after completion.'),
+              stack: StackTrace.current,
+            );
         return null;
       }
       return QazaCompletionBatch(
