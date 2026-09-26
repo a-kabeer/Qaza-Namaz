@@ -265,6 +265,7 @@ class _ProfileFormState extends State<ProfileForm> {
           ),
         ),
         if (widget.showDailyQazaTarget) ...[
+          const SizedBox(height: 20),
           Text(
             l10n.homeDailyTarget,
             style: Theme.of(context).textTheme.titleMedium,
@@ -272,13 +273,12 @@ class _ProfileFormState extends State<ProfileForm> {
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             key: const Key('profile_daily_qaza_target'),
-            initialValue: [
-              1, 2, 3, 5, 10, 15, 20, 30, 50
-            ].contains(profile.dailyQazaTarget)
+            initialValue:
+                UserProfile.dailyQazaTargetOptions.contains(profile.dailyQazaTarget)
                 ? profile.dailyQazaTarget
                 : null,
             items: [
-              for (final value in const [1, 2, 3, 5, 10, 15, 20, 30, 50])
+              for (final value in UserProfile.dailyQazaTargetOptions)
                 DropdownMenuItem<int>(
                   value: value,
                   child: Text(l10n.homePerDay(value)),
