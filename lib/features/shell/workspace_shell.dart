@@ -64,14 +64,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    ref.listen<WorkspaceDestination>(
-      workspaceDestinationProvider,
-      (previous, next) {
-        if (previous == null || previous == next || !mounted) return;
-        ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
-      },
-    );
-
     final destination = ref.watch(workspaceDestinationProvider);
     final index = destination.index;
     // A destination stays mounted once visited, so returning to it keeps its
