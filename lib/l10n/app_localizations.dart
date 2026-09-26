@@ -518,17 +518,76 @@ abstract class AppLocalizations {
   /// **'{day} {month} {year} AH'**
   String hijriDate(Object day, Object month, Object year);
 
+  /// No description provided for @hijriMonthMuharram.
+  ///
+  /// In en, this message translates to:
+  /// **'Muharram'**
   String get hijriMonthMuharram;
+
+  /// No description provided for @hijriMonthSafar.
+  ///
+  /// In en, this message translates to:
+  /// **'Safar'**
   String get hijriMonthSafar;
+
+  /// No description provided for @hijriMonthRabiAlAwwal.
+  ///
+  /// In en, this message translates to:
+  /// **'Rabi al-Awwal'**
   String get hijriMonthRabiAlAwwal;
+
+  /// No description provided for @hijriMonthRabiAlThani.
+  ///
+  /// In en, this message translates to:
+  /// **'Rabi al-Thani'**
   String get hijriMonthRabiAlThani;
+
+  /// No description provided for @hijriMonthJumadaAlAwwal.
+  ///
+  /// In en, this message translates to:
+  /// **'Jumada al-Awwal'**
   String get hijriMonthJumadaAlAwwal;
+
+  /// No description provided for @hijriMonthJumadaAlThani.
+  ///
+  /// In en, this message translates to:
+  /// **'Jumada al-Thani'**
   String get hijriMonthJumadaAlThani;
+
+  /// No description provided for @hijriMonthRajab.
+  ///
+  /// In en, this message translates to:
+  /// **'Rajab'**
   String get hijriMonthRajab;
+
+  /// No description provided for @hijriMonthShaban.
+  ///
+  /// In en, this message translates to:
+  /// **'Sha\'ban'**
   String get hijriMonthShaban;
+
+  /// No description provided for @hijriMonthRamadan.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramadan'**
   String get hijriMonthRamadan;
+
+  /// No description provided for @hijriMonthShawwal.
+  ///
+  /// In en, this message translates to:
+  /// **'Shawwal'**
   String get hijriMonthShawwal;
+
+  /// No description provided for @hijriMonthDhulQadah.
+  ///
+  /// In en, this message translates to:
+  /// **'Dhu al-Qadah'**
   String get hijriMonthDhulQadah;
+
+  /// No description provided for @hijriMonthDhulHijjah.
+  ///
+  /// In en, this message translates to:
+  /// **'Dhu al-Hijjah'**
   String get hijriMonthDhulHijjah;
 
   /// No description provided for @homeTitle.
@@ -2235,27 +2294,6 @@ abstract class AppLocalizations {
   /// **'اردو'**
   String get languageUrdu;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   /// No description provided for @homeTodayProgressHeader.
   ///
   /// In en, this message translates to:
@@ -2316,10 +2354,6 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get homePending;
 
-
-
-
-
   /// No description provided for @homeDetailedStatistics.
   ///
   /// In en, this message translates to:
@@ -2331,7 +2365,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
-
 
   /// No description provided for @homeTodayDate.
   ///

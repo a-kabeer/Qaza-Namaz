@@ -262,7 +262,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hijriMonthRajab => 'Rajab';
 
   @override
-  String get hijriMonthShaban => "Sha'ban";
+  String get hijriMonthShaban => 'Sha\'ban';
 
   @override
   String get hijriMonthRamadan => 'Ramadan';
