@@ -689,7 +689,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
       }
       return;
     }
-    await showQazaUndoSnackBar(
+    await showQazaUndoFeedback(
       context: context,
       ref: ref,
       userId: ref.read(requiredUserIdProvider),
