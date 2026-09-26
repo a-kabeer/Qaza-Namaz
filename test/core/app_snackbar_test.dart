@@ -221,7 +221,7 @@ void main() {
         jsonEncode(batch.toJson()),
       );
 
-      final store = const QazaUndoStore();
+      const store = QazaUndoStore();
       final loaded = await store.load(
         userId: 'local',
         now: DateTime(2026, 9, 26, 11, 0),
