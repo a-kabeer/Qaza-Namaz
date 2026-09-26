@@ -18,4 +18,25 @@ void main() {
       isNot(contains('Tap to complete. Swipe to complete. Long press to select.')),
     );
   });
+  test('workspace Back cancels Qaza selection before returning Home', () {
+    final source =
+        File('lib/features/shell/workspace_shell.dart').readAsStringSync();
+
+    expect(source, contains("import '../qaza/qaza_tracker_controller.dart';"));
+    expect(source, contains('if (destination == WorkspaceDestination.qaza)'));
+    expect(source, contains('if (qazaState.selectionMode)'));
+    expect(
+      source,
+      contains(
+        'ref.read(qazaTrackerControllerProvider.notifier).exitSelectionMode();',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'WorkspaceDestination.home;',
+      ),
+    );
+  });
+
 }
