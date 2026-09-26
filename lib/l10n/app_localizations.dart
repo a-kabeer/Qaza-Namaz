@@ -1580,6 +1580,16 @@ abstract class AppLocalizations {
   /// **'New records'**
   String get addQazaNewRecordsLabel;
 
+  String get addQazaNewLabel;
+
+  String get addQazaAlreadyAddedLabel;
+
+  String get addQazaUnavailableLabel;
+
+  String get addQazaCancelledTitle;
+
+  String get addQazaCancelledMessage;
+
   /// No description provided for @addQazaNewQazaLabel.
   ///
   /// In en, this message translates to:
