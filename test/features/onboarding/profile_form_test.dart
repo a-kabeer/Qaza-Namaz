@@ -11,10 +11,12 @@ void main() {
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ProfileForm(
-          initialProfile: UserProfile(languageCode: 'en'),
+        home: Scaffold(
+          body: ProfileForm(
+            initialProfile: UserProfile(languageCode: 'en'),
           showDailyQazaTarget: false,
-          onSubmit: (_) async {},
+            onSubmit: (_) async {},
+          ),
         ),
       ),
     );
@@ -28,10 +30,12 @@ void main() {
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ProfileForm(
-          initialProfile: UserProfile(languageCode: 'en'),
+        home: Scaffold(
+          body: ProfileForm(
+            initialProfile: UserProfile(languageCode: 'en'),
           showDailyQazaTarget: true,
-          onSubmit: (_) async {},
+            onSubmit: (_) async {},
+          ),
         ),
       ),
     );
