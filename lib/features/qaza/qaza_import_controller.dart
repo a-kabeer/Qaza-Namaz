@@ -218,7 +218,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
             ? QazaImportTaskPhase.cancelled
             : QazaImportTaskPhase.completed,
         cancelRequested: false,
-        processed: result.total,
+        processed: result.processed,
         total: result.total,
         added: result.added,
         skipped: result.skipped,
