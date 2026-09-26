@@ -120,7 +120,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-    expect(source, contains('itemBuilder: (itemContext, index) {'));
+    expect(source, contains('itemBuilder: (_, index) {'));
     expect(
       source,
       contains(
@@ -131,7 +131,7 @@ void main() {
       source,
       isNot(
         contains(
-          ': () => _completeSingle(itemContext, ref, record),',
+          ': () => _completeSingle(_, ref, record),',
         ),
       ),
     );
