@@ -391,7 +391,7 @@ class _TrackerBody extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.fabClearance),
                 itemCount: state.records.length + (state.hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
+                itemBuilder: (itemContext, index) {
                   if (index >= state.records.length) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(
