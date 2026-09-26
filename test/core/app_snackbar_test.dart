@@ -230,7 +230,8 @@ void main() {
   });
 
   test('feature layer contains no direct Snackbar management', () {
-    final root = Directory('lib/features');
+    final root = Directory('lib');
+    const infrastructurePath = 'lib/core/widgets/app_snackbar.dart';
     final forbidden = RegExp(
       r'ScaffoldMessenger(?:\.of|\.maybeOf)|'
       r'showSnackBar|'
@@ -242,7 +243,11 @@ void main() {
 
     final violations = <String>[];
     for (final entity in root.listSync(recursive: true)) {
-      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (entity is! File ||
+          !entity.path.endsWith('.dart') ||
+          entity.path == infrastructurePath) {
+        continue;
+      }
       final source = entity.readAsStringSync();
       if (forbidden.hasMatch(source)) {
         violations.add(entity.path);
