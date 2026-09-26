@@ -182,7 +182,7 @@ void main() {
     test('expiry is independent of visual Snackbar lifetime', () {
       final expiry = DateTime(2026, 9, 26, 11, 0, 5);
       final batch = QazaUndoBatch(
-        entries: const [
+        entries: [
           QazaUndoEntry(
             recordId: 'record-1',
             completionId: 'completion-1',
