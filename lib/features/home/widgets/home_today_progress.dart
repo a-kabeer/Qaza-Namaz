@@ -181,8 +181,8 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     return Card(
       key: const Key('home_today_progress'),
       child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: daily.when(
+        padding: const EdgeInsets.all(16),
+        child: daily.when(
         loading: () => const HomeTodayProgressSkeleton(),
         error: (_, __) => Row(
           children: [
@@ -312,7 +312,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
           );
         },
       ),
-          )
+      ),
     );
   }
 }
@@ -349,7 +349,7 @@ class _EstimatedCompletion extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
+        child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -502,7 +502,7 @@ class _TartibUnavailable extends StatelessWidget {
             Icon(Icons.lock_clock_rounded, color: theme.colorScheme.error),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
+        child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
