@@ -28,8 +28,8 @@ class HomePendingByPrayer extends ConsumerWidget {
     return Card(
       key: const Key('home_pending_by_prayer'),
       child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Column(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -78,7 +78,7 @@ class HomePendingByPrayer extends ConsumerWidget {
               ),
         ],
       ),
-          )
+      ),
     );
   }
 }
