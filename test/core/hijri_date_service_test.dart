@@ -117,22 +117,19 @@ void main() {
       'hYear',
       'getLongMonthName(',
     ];
-    final allowedBoundary = Platform.pathSeparator == r'\'
-        ? r'lib\core\calendar\hijri_date_service.dart'
-        : 'lib/core/calendar/hijri_date_service.dart';
+    const allowedBoundary = 'lib/core/calendar/hijri_date_service.dart';
 
     for (final entity in lib.listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
       final content = entity.readAsStringSync();
-      final normalized =
-          entity.path.replaceAll(r'\', '/');
+      final normalized = entity.path.replaceAll('\\\\', '/');
 
       final matches = forbiddenMarkers.where(content.contains).toList();
       if (matches.isEmpty) continue;
 
       expect(
         normalized,
-        allowedBoundary.replaceAll(r'\', '/'),
+        allowedBoundary,
         reason:
             'Hijri package/conversion markers are allowed only in the shared calendar layer: $matches',
       );
