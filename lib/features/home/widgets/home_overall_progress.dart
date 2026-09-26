@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -22,10 +21,11 @@ class HomeOverallProgress extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return AppCard(
+    return Card(
       key: const Key('home_overall_qaza'),
-      padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
+      child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: LayoutBuilder(
         builder: (context, constraints) {
           final stats = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,6 +112,7 @@ class HomeOverallProgress extends StatelessWidget {
           );
         },
       ),
+          )
     );
   }
 }
