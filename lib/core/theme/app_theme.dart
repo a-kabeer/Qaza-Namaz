@@ -161,6 +161,7 @@ class AppTheme {
   static const _darkError = Color(0xFFFF6B61);
   static const _darkOnError = Color(0xFF5A0000);
   static const _darkErrorContainer = Color(0xFF7F1D1D);
+  static const _darkOnErrorContainer = Color(0xFFFFDAD6);
 
   /// The Qaza Namaz type scale: Noto Serif for display/headline and the
   /// large title used by prayer names, Manrope for everything else.
