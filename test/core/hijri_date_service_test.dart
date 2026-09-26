@@ -132,7 +132,7 @@ void main() {
     );
   });
 
-  test('Urdu formatting stays localized and uses a named month', {
+  test('Urdu formatting stays localized and uses a named month', () {
     final date = DateTime(2026, 9, 26);
     final parts = HijriDateService.fromGregorian(date);
 
