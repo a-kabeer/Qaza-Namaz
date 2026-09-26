@@ -183,136 +183,136 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: daily.when(
-        loading: () => const HomeTodayProgressSkeleton(),
-        error: (_, __) => Row(
-          children: [
-            const Icon(Icons.refresh_rounded),
-            const SizedBox(width: 12),
-            Expanded(child: Text(l10n.homeDailyProgressError)),
-            TextButton(
-              key: const Key('home_daily_progress_retry'),
-              onPressed: () => ref.invalidate(homeDailyProgressProvider),
-              child: Text(l10n.commonRetry),
-            ),
-          ],
-        ),
-        data: (progress) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          loading: () => const HomeTodayProgressSkeleton(),
+          error: (_, __) => Row(
             children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final title = Text(
-                    l10n.homeTodayProgressHeader,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  );
-                  // Gregorian leads and carries the weekday, month and year,
-                  // localized by Material so Urdu reads as Urdu rather than
-                  // English month names in an Urdu sentence. The Hijri
-                  // reading of the same day sits underneath as secondary.
-                  final date = Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        MaterialLocalizations.of(context).formatFullDate(today),
-                        key: const Key('home_today_date'),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      Text(
-                        l10n.formatHijriDate(today),
-                        key: const Key('home_today_date_hijri'),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  );
-                  if (constraints.maxWidth < 360) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        title,
-                        const SizedBox(height: 4),
-                        Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: date,
-                        ),
-                      ],
-                    );
-                  }
-                  return Row(
-                    children: [
-                      Expanded(child: title),
-                      const SizedBox(width: 12),
-                      date,
-                    ],
-                  );
-                },
+              const Icon(Icons.refresh_rounded),
+              const SizedBox(width: 12),
+              Expanded(child: Text(l10n.homeDailyProgressError)),
+              TextButton(
+                key: const Key('home_daily_progress_retry'),
+                onPressed: () => ref.invalidate(homeDailyProgressProvider),
+                child: Text(l10n.commonRetry),
               ),
-              const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final donut = _TodayDonut(
-                    progress: progress.percentage,
-                    completed: progress.completed,
-                    target: progress.target,
-                  );
-                  final next = _NextQazaPanel(
-                    summary: widget.summary,
-                    selected: selected,
-                    working: working,
-                    onComplete: _complete,
-                  );
-
-                  if (constraints.maxWidth < 500) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Center(child: donut),
-                        const SizedBox(height: 18),
-                        next,
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(width: 190, child: Center(child: donut)),
-                      const SizedBox(width: 18),
-                      Container(
-                        width: 1,
-                        height: 128,
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      const SizedBox(width: 18),
-                      Expanded(child: next),
-                    ],
-                  );
-                },
-              ),
-              if (widget.summary.overall.pending > 0) ...[
-                const SizedBox(height: 16),
-                _EstimatedCompletion(
-                  date: homeEstimatedCompletionDate(
-                    now: today,
-                    pending: widget.summary.overall.pending,
-                    dailyTarget: progress.target,
-                    completedToday: progress.completed,
-                  ),
-                  dailyTarget: progress.target,
-                ),
-              ],
             ],
-          );
-        },
-      ),
-      ),
+          ),
+          data: (progress) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final title = Text(
+                      l10n.homeTodayProgressHeader,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    );
+                    // Gregorian leads and carries the weekday, month and year,
+                    // localized by Material so Urdu reads as Urdu rather than
+                    // English month names in an Urdu sentence. The Hijri
+                    // reading of the same day sits underneath as secondary.
+                    final date = Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          MaterialLocalizations.of(context).formatFullDate(today),
+                          key: const Key('home_today_date'),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        Text(
+                          l10n.formatHijriDate(today),
+                          key: const Key('home_today_date_hijri'),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    );
+                    if (constraints.maxWidth < 360) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          title,
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: date,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: title),
+                        const SizedBox(width: 12),
+                        date,
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final donut = _TodayDonut(
+                      progress: progress.percentage,
+                      completed: progress.completed,
+                      target: progress.target,
+                    );
+                    final next = _NextQazaPanel(
+                      summary: widget.summary,
+                      selected: selected,
+                      working: working,
+                      onComplete: _complete,
+                    );
+  
+                    if (constraints.maxWidth < 500) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(child: donut),
+                          const SizedBox(height: 18),
+                          next,
+                        ],
+                      );
+                    }
+  
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 190, child: Center(child: donut)),
+                        const SizedBox(width: 18),
+                        Container(
+                          width: 1,
+                          height: 128,
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(child: next),
+                      ],
+                    );
+                  },
+                ),
+                if (widget.summary.overall.pending > 0) ...[
+                  const SizedBox(height: 16),
+                  _EstimatedCompletion(
+                    date: homeEstimatedCompletionDate(
+                      now: today,
+                      pending: widget.summary.overall.pending,
+                      dailyTarget: progress.target,
+                      completedToday: progress.completed,
+                    ),
+                    dailyTarget: progress.target,
+                  ),
+                ],
+              ],
+            );
+          },
+        )
+      )
     );
   }
 }
@@ -349,7 +349,7 @@ class _EstimatedCompletion extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-        child: Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -502,7 +502,7 @@ class _TartibUnavailable extends StatelessWidget {
             Icon(Icons.lock_clock_rounded, color: theme.colorScheme.error),
           const SizedBox(width: 12),
           Expanded(
-        child: Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
