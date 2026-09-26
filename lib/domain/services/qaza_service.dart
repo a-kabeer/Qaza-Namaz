@@ -70,11 +70,13 @@ class QazaImportResult {
     required this.total,
     required this.added,
     required this.skipped,
+    this.cancelled = false,
   });
 
   final int total;
   final int added;
   final int skipped;
+  final bool cancelled;
 }
 
 class QazaService {
@@ -512,6 +514,10 @@ class QazaService {
     void Function(QazaImportProgress progress)? onProgress,
     String? operationId,
     DateTime? operationCreatedAt,
+    DateTime? earliestDate,
+    DateTime? today,
+    bool? witrAllowed,
+    bool Function()? isCancellationRequested,
   }) async {
     if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
     onProgress?.call(const QazaImportProgress.preparing());
@@ -519,11 +525,28 @@ class QazaService {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     final witrResolver = witrInclusionResolver;
-    if (selectedPrayers.contains(PrayerType.witr) &&
-        witrResolver != null &&
-        !witrResolver()) {
+    final resolvedWitrAllowed =
+        witrAllowed ?? (witrResolver == null ? true : witrResolver());
+    if (selectedPrayers.contains(PrayerType.witr) && !resolvedWitrAllowed) {
       throw const QazaWitrNotIncludedException();
     }
+
+    final normalizedEarliestDate =
+        earliestDate == null ? null : QazaDate.normalize(earliestDate);
+    final normalizedToday = QazaDate.normalize(today ?? DateTime.now());
+
+    bool dateAllowed(DateTime date) {
+      final normalized = QazaDate.normalize(date);
+      if (normalized.isAfter(normalizedToday)) return false;
+      if (normalizedEarliestDate != null &&
+          normalized.isBefore(normalizedEarliestDate)) {
+        return false;
+      }
+      return true;
+    }
+
+    bool prayerAllowed(PrayerType prayer) =>
+        prayer != PrayerType.witr || resolvedWitrAllowed;
 
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) {
       onProgress?.call(const QazaImportProgress.importing(
@@ -547,7 +570,10 @@ class QazaService {
       existingRecords: existing,
       prayedKeys: prayedKeys,
     );
-    final candidates = analysis.newCandidates.toList(growable: false);
+    final candidates = analysis.newCandidates
+        .where((candidate) =>
+            dateAllowed(candidate.date) && prayerAllowed(candidate.prayerType))
+        .toList(growable: false);
     final total = candidates.length;
     onProgress?.call(QazaImportProgress.importing(
       processed: 0,
@@ -563,6 +589,14 @@ class QazaService {
     var processed = 0;
     var added = 0;
     for (var start = 0; start < total; start += batchSize) {
+      if (isCancellationRequested?.call() ?? false) {
+        return QazaImportResult(
+          total: total,
+          added: added,
+          skipped: processed - added,
+          cancelled: true,
+        );
+      }
       final end = start + batchSize < total ? start + batchSize : total;
       final batch = [
         for (final candidate in candidates.sublist(start, end))
