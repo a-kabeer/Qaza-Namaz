@@ -1,6 +1,6 @@
 import 'package:hijri/hijri_calendar.dart';
 
-import '../l10n/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 /// Canonical boundary for all Gregorian -> Hijri presentation.
 ///
 /// Gregorian [DateTime] values remain the application's source of truth.
