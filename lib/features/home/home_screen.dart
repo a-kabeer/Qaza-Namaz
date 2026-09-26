@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_scaffold.dart';
-import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/profile_screen.dart';
