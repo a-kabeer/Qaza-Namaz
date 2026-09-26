@@ -8,7 +8,6 @@ import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
-import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../core/widgets/skeleton.dart';
@@ -58,7 +57,7 @@ class QazaTrackerScreen extends ConsumerWidget {
               children: [
                 if (!state.selectionMode) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  TabBar(
+                  const TabBar(
                     tabs: const [
                       Tab(text: 'Pending'),
                       Tab(text: 'History'),
