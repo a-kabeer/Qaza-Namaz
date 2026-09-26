@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../l10n/app_localizations.dart';
@@ -157,7 +159,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     _goToMonth(DateTime(year, clampedMonth, 1));
   }
 
-  String _hijriLabel(DateTime date) => DateFormatters.hijriLabel(date);
+  String _hijriLabel(DateTime date, AppLocalizations l10n) =>
+      l10n.formatHijriDate(date);
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +213,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                         ),
                         // Gregorian leads; the Hijri month stays secondary.
                         Text(
-                          _hijriLabel(month),
+                          _hijriLabel(month, l10n),
                           key: const Key('calendar_hijri_month_label'),
                           style: theme.textTheme.bodySmall,
                         ),
@@ -245,7 +248,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           onTap: _selectDate,
           available: _isDateAvailable,
           qaza: _hasExistingQaza,
-          hijri: _hijriLabel,
+          hijri: (date) => _hijriLabel(date, l10n),
         ),
         if (selected.isNotEmpty)
           Card(
@@ -257,7 +260,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                     dense: true,
                     // Day, month and year: a date acted on is never partial.
                     title: Text(DateFormatters.formatGregorianFull(date)),
-                    subtitle: Text(_hijriLabel(date)),
+                    subtitle: Text(_hijriLabel(date, l10n)),
                   ),
                 ),
                 TextButton(

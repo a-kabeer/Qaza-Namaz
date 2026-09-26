@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
@@ -578,7 +579,7 @@ class _RecordRow extends StatelessWidget {
               style: theme.textTheme.titleSmall,
             ),
             Text(
-              DateFormatters.hijriLabel(record.originalDate),
+              l10n.formatHijriDate(record.originalDate),
               style: theme.textTheme.bodySmall,
             ),
             Text(

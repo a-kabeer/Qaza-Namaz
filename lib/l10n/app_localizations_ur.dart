@@ -239,6 +239,42 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get hijriMonthMuharram => 'محرم';
+
+  @override
+  String get hijriMonthSafar => 'صفر';
+
+  @override
+  String get hijriMonthRabiAlAwwal => 'ربیع الاول';
+
+  @override
+  String get hijriMonthRabiAlThani => 'ربیع الثانی';
+
+  @override
+  String get hijriMonthJumadaAlAwwal => 'جمادی الاول';
+
+  @override
+  String get hijriMonthJumadaAlThani => 'جمادی الثانی';
+
+  @override
+  String get hijriMonthRajab => 'رجب';
+
+  @override
+  String get hijriMonthShaban => 'شعبان';
+
+  @override
+  String get hijriMonthRamadan => 'رمضان';
+
+  @override
+  String get hijriMonthShawwal => 'شوال';
+
+  @override
+  String get hijriMonthDhulQadah => 'ذوالقعدہ';
+
+  @override
+  String get hijriMonthDhulHijjah => 'ذوالحجہ';
+
+  @override
   String get homeTitle => 'ہوم';
 
   @override

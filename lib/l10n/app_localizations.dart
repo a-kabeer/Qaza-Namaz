@@ -518,6 +518,19 @@ abstract class AppLocalizations {
   /// **'{day} {month} {year} AH'**
   String hijriDate(Object day, Object month, Object year);
 
+  String get hijriMonthMuharram;
+  String get hijriMonthSafar;
+  String get hijriMonthRabiAlAwwal;
+  String get hijriMonthRabiAlThani;
+  String get hijriMonthJumadaAlAwwal;
+  String get hijriMonthJumadaAlThani;
+  String get hijriMonthRajab;
+  String get hijriMonthShaban;
+  String get hijriMonthRamadan;
+  String get hijriMonthShawwal;
+  String get hijriMonthDhulQadah;
+  String get hijriMonthDhulHijjah;
+
   /// No description provided for @homeTitle.
   ///
   /// In en, this message translates to:

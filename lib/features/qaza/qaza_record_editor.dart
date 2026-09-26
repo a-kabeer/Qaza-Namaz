@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/utils/qaza_date.dart';
@@ -7,7 +8,6 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
-
 Future<QazaRecord?> showQazaRecordEditor(
   BuildContext context, {
   required QazaRecord record,
@@ -107,7 +107,7 @@ class _QazaRecordEditorState extends State<_QazaRecordEditor> {
                   style: theme.textTheme.titleMedium,
                 ),
                 Text(
-                  DateFormatters.hijriLabel(_originalDate),
+                  l10n.formatHijriDate(_originalDate),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
