@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_scaffold.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../domain/entities/qaza_operation.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
@@ -200,17 +201,17 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
       );
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            count == 1
-                ? (_urdu ? 'قضا بحال کر دی گئی۔' : 'Qaza record restored.')
-                : (_urdu
-                    ? 'یہ ریکارڈ بحال نہیں ہو سکا، ممکن ہے یہ پہلے ہی تبدیل یا متصادم ہو۔'
-                    : 'Record could not be restored because it changed or conflicts with an existing record.'),
-          ),
-        ),
-      );
+      if (count == 1) {
+        ref.read(appSnackbarServiceProvider).success(
+              _urdu ? 'قضا بحال کر دی گئی۔' : 'Qaza record restored.',
+            );
+      } else {
+        ref.read(appSnackbarServiceProvider).warning(
+              _urdu
+                  ? 'یہ ریکارڈ بحال نہیں ہو سکا، ممکن ہے یہ پہلے ہی تبدیل یا متصادم ہو۔'
+                  : 'Record could not be restored because it changed or conflicts with an existing record.',
+            );
+      }
     } catch (e) {
       await operationService.finish(
         operation,
@@ -357,16 +358,11 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                             await _restore(record);
                                           } catch (_) {
                                             if (!context.mounted) return;
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
+                                            ref.read(appSnackbarServiceProvider).error(
                                                   _urdu
                                                       ? 'ریکارڈ بحال نہیں ہو سکا۔'
                                                       : 'Record could not be restored.',
-                                                ),
-                                              ),
-                                            );
+                                                );
                                           }
                                         },
                                         child: Text(
