@@ -51,7 +51,7 @@ Future<void> main() async {
   });
 
   await _step('profile_migration', () async {
-    await const UserProfileMigration().migrateLegacyCalculatorData(
+    await const UserProfileMigration().migrateLegacyProfileData(
       preferences: await SharedPreferences.getInstance(),
     );
   });
