@@ -11,7 +11,7 @@ void main() {
   });
 
   test('new profile defaults Daily Qaza Target to 5', () {
-    final profile = const UserProfile();
+    const profile = UserProfile();
     expect(profile.dailyQazaTarget, UserProfile.defaultDailyQazaTarget);
     expect(profile.dailyQazaTarget, 5);
   });
@@ -25,7 +25,7 @@ void main() {
 
   test('changed Daily Qaza Target persists through UserProfile repository', () async {
     final repository = SharedPreferencesUserProfileRepository();
-    final profile = const UserProfile().copyWith(dailyQazaTarget: 12);
+    final profile = UserProfile().copyWith(dailyQazaTarget: 12);
 
     await repository.save(profile);
     final loaded = await repository.load();
