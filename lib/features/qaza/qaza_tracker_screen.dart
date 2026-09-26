@@ -161,7 +161,7 @@ class _PendingTrackerContent extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => _FilterSheet(state: state, controller: controller),
+      builder: (context) => const _FilterSheet(),
     );
   }
 
@@ -221,13 +221,12 @@ class _PendingTrackerContent extends StatelessWidget {
   }
 }
 
-class _FilterSheet extends StatelessWidget {
-  const _FilterSheet({required this.state, required this.controller});
+class _FilterSheet extends ConsumerWidget {
+  const _FilterSheet();
 
-  final QazaTrackerState state;
-  final QazaTrackerController controller;
-
-  Future<void> _pickRange(BuildContext context) async {
+  Future<void> _pickRange(BuildContext context, WidgetRef ref) async {
+    final state = ref.read(qazaTrackerControllerProvider);
+    final controller = ref.read(qazaTrackerControllerProvider.notifier);
     final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
@@ -245,7 +244,9 @@ class _FilterSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(qazaTrackerControllerProvider);
+    final controller = ref.read(qazaTrackerControllerProvider.notifier);
     final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: ListView(
@@ -278,7 +279,7 @@ class _FilterSheet extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () => _pickRange(context),
+            onPressed: () => _pickRange(context, ref),
             icon: const Icon(Icons.event_rounded),
             label: Text(
               state.hasDateFilter
