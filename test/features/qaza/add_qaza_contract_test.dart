@@ -41,7 +41,7 @@ void main() {
     expect(source, contains('_ReviewDateGroup('));
     expect(source, contains('crossAxisCount: 3'));
     expect(source, contains('HijriDateService.format(date, l10n)'));
-    expect(source, contains('ColorScheme'));
+    expect(source, contains('.colorScheme'));
   });
 
   test('Add Qaza uses centralized calendar availability and final preflight', () {
