@@ -518,6 +518,12 @@ abstract class AppLocalizations {
   /// **'{day} {month} {year} AH'**
   String hijriDate(Object day, Object month, Object year);
 
+  /// Hijri month/year header; Gregorian remains primary
+  ///
+  /// In en, this message translates to:
+  /// **'{month} {year} AH'**
+  String hijriMonthYear(Object month, Object year);
+
   /// No description provided for @hijriMonthMuharram.
   ///
   /// In en, this message translates to:
