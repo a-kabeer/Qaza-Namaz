@@ -24,12 +24,11 @@ class AddQazaScreen extends ConsumerStatefulWidget {
   ConsumerState<AddQazaScreen> createState() => _AddQazaScreenState();
 }
 
+bool _sameDate(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
 class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int _lastExistingCount = 0;
-
-  @override
-  bool _sameDate(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +385,11 @@ class _SummaryCard extends StatelessWidget {
               l10n.addQazaReviewHeading,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: AppSpacing.sm),
+            if (state.analysisLoading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: LinearProgressIndicator(),
+              ),
             _CountRow(
               label: l10n.addQazaDateCountLabel,
               value: state.selectedDates.length,
