@@ -537,11 +537,14 @@ class QazaService {
 
     final normalizedEarliestDate =
         earliestDate == null ? null : QazaDate.normalize(earliestDate);
-    final normalizedToday = QazaDate.normalize(today ?? DateTime.now());
+    final normalizedToday =
+        today == null ? null : QazaDate.normalize(today);
 
     bool dateAllowed(DateTime date) {
       final normalized = QazaDate.normalize(date);
-      if (normalized.isAfter(normalizedToday)) return false;
+      if (normalizedToday != null && normalized.isAfter(normalizedToday)) {
+        return false;
+      }
       if (normalizedEarliestDate != null &&
           normalized.isBefore(normalizedEarliestDate)) {
         return false;
