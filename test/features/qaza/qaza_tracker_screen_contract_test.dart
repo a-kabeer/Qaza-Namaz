@@ -176,4 +176,89 @@ void main() {
     expect(persistIndex, greaterThanOrEqualTo(0));
     expect(refreshIndex, greaterThan(persistIndex));
   });
+
+  test('filter sheet reads live Riverpod filter state while it remains open', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(source, contains('class _FilterSheet extends ConsumerWidget {'));
+    expect(source, contains('const _FilterSheet();'));
+    expect(
+      source,
+      contains(
+        'builder: (context) => const _FilterSheet(),',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'final state = ref.watch(qazaTrackerControllerProvider);',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'final controller = ref.read(qazaTrackerControllerProvider.notifier);',
+      ),
+    );
+    expect(
+      source,
+      isNot(
+        contains(
+          '_FilterSheet(state: state, controller: controller)',
+        ),
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'selected: state.prayerFilter == prayer,',
+      ),
+    );
+    expect(
+      source,
+      contains(
+        'selected: state.prayerFilter == null,',
+      ),
+    );
+  });
+
+  test('refresh preserves the active prayer filter in tracker state', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final start = source.indexOf('Future<void> refresh() async {');
+    final end = source.indexOf(
+      '  /// Reads one bounded page in the active sort order.',
+      start,
+    );
+
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final refreshMethod = source.substring(start, end);
+    expect(refreshMethod, contains('selected: const <String>{},'));
+    expect(refreshMethod, isNot(contains('clearPrayerFilter: true')));
+  });
+
+  test('prayer filter state updates synchronously before refresh', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final start = source.indexOf('void setPrayerFilter(PrayerType? prayer) {');
+    final end = source.indexOf(
+      '  void setDateRange(DateTime? from, DateTime? to) {',
+      start,
+    );
+
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final method = source.substring(start, end);
+    final stateUpdateIndex = method.indexOf('state =');
+    final refreshIndex = method.indexOf('refresh();');
+
+    expect(stateUpdateIndex, greaterThanOrEqualTo(0));
+    expect(refreshIndex, greaterThan(stateUpdateIndex));
+    expect(method, contains('copyWith(prayerFilter: prayer)'));
+    expect(method, contains('clearPrayerFilter: true'));
+  });
 }
