@@ -152,6 +152,21 @@ final homeFallbackPendingProvider =
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
+  final tartibAsync = ref.watch(sahibAlTartibProvider);
+  final tartib = tartibAsync.valueOrNull;
+
+  // Sahib al-Tartib is an actionable domain constraint, not merely a menu
+  // filter. When it becomes active, it must override a stale manual choice so
+  // Home never displays a prayer that the completion layer will reject.
+  if (tartibAsync.hasValue &&
+      tartib?.requiresOrder == true &&
+      tartib?.nextPrayer != null) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: tartib!.nextPrayer,
+      source: HomePrayerSelectionSource.sahibAlTartib,
+    );
+  }
 
   if (selection.mode == HomePrayerSelectionMode.manual) {
     return HomeSelectedPrayerState(
@@ -161,22 +176,11 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  final tartibAsync = ref.watch(sahibAlTartibProvider);
-  final tartib = tartibAsync.valueOrNull;
-
   if (!tartibAsync.hasValue || tartib == null) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
       source: HomePrayerSelectionSource.tartibUnavailable,
-    );
-  }
-
-  if (tartib.requiresOrder && tartib.nextPrayer != null) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: tartib.nextPrayer,
-      source: HomePrayerSelectionSource.sahibAlTartib,
     );
   }
 
