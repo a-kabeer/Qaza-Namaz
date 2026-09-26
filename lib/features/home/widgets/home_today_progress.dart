@@ -705,8 +705,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       ),
     );
 
-    final tartib = tartibAsync.valueOrNull;
-
     final header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
