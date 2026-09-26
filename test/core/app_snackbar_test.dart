@@ -137,7 +137,7 @@ void main() {
         await pumpHost(tester);
 
         messengerKey.currentState!.showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: const Text('Unsafe direct Snackbar'),
             duration: const Duration(seconds: 1),
             persist: true,
