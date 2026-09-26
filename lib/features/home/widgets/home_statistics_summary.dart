@@ -5,7 +5,6 @@ import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/prayer_type_l10n.dart';
@@ -82,10 +81,11 @@ class _DetailedOverallStatistics extends StatelessWidget {
     final charts = AppChartColors.of(context);
     final percent = (progress.percentage * 100).round();
 
-    return AppCard(
+    return Card(
       key: const Key('detailed_overall_statistics'),
-      padding: const EdgeInsets.all(16),
-      child: Semantics(
+      child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Semantics(
         container: true,
         label:
             '${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
@@ -147,6 +147,7 @@ class _DetailedOverallStatistics extends StatelessWidget {
           ],
         ),
       ),
+          )
     );
   }
 }
@@ -161,10 +162,11 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return AppCard(
+    return Card(
       key: const Key('detailed_prayer_breakdown'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      child: Column(
+      child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
@@ -188,6 +190,7 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
           ],
         ],
       ),
+          )
     );
   }
 }
