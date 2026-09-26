@@ -291,7 +291,6 @@ class _ProfileFormState extends State<ProfileForm> {
             },
             decoration: InputDecoration(
               labelText: l10n.homeDailyTarget,
-              helperText: l10n.homeQazaPlan,
             ),
           ),
           const SizedBox(height: 20),
