@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
+import '../qaza/qaza_tracker_controller.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -56,6 +57,18 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   }
 
   void _handleBack() {
+    final destination = ref.read(workspaceDestinationProvider);
+
+    // Selection mode is an in-screen interaction state, not a route.
+    // Cancel it before the workspace shell handles its normal back behavior.
+    if (destination == WorkspaceDestination.qaza) {
+      final qazaState = ref.read(qazaTrackerControllerProvider);
+      if (qazaState.selectionMode) {
+        ref.read(qazaTrackerControllerProvider.notifier).exitSelectionMode();
+        return;
+      }
+    }
+
     ref.read(workspaceDestinationProvider.notifier).state =
         WorkspaceDestination.home;
   }
