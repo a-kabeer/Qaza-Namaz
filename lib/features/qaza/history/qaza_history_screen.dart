@@ -11,6 +11,8 @@ import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
+import 'qaza_operation_detail_screen.dart';
+
 enum _HistorySection { recent, deleted }
 
 class QazaHistoryScreen extends ConsumerStatefulWidget {
