@@ -10,22 +10,32 @@ class UserProfileMigration {
 
   static const _calculatorPrefix = 'qaza_calculator_v1_';
 
-  Future<void> migrateLegacyCalculatorData({
+  static const _legacyDailyTargetKey =
+      'qaza_home_daily_target_${UserProfile.localLedgerUserId}';
+
+  Future<void> migrateLegacyProfileData({
     SharedPreferences? preferences,
   }) async {
     final prefs = preferences ?? await SharedPreferences.getInstance();
 
     final existingRaw = prefs.getString(UserProfile.storageKey);
+    Map<String, dynamic>? existingJson;
     UserProfile? existing;
     if (existingRaw != null && existingRaw.isNotEmpty) {
       try {
-        existing = UserProfile.fromJson(
-          jsonDecode(existingRaw) as Map<String, dynamic>,
-        );
+        final decoded = jsonDecode(existingRaw);
+        if (decoded is Map<String, dynamic>) {
+          existingJson = decoded;
+          existing = UserProfile.fromJson(decoded);
+        }
       } catch (_) {
         existing = null;
       }
     }
+
+    final legacyDailyTarget = prefs.getInt(_legacyDailyTargetKey);
+    final hasPersistedDailyTarget =
+        existingJson?.containsKey('dailyQazaTarget') == true;
 
     final snapshots = <Map<String, dynamic>>[];
     final legacyKeys = prefs
@@ -34,7 +44,6 @@ class UserProfileMigration {
         .toList()
       ..sort();
     for (final key in legacyKeys) {
-      if (!key.startsWith(_calculatorPrefix)) continue;
       final raw = prefs.getString(key);
       if (raw == null || raw.isEmpty) continue;
       try {
@@ -46,7 +55,27 @@ class UserProfileMigration {
       }
     }
 
-    if (snapshots.isEmpty) return;
+    if (snapshots.isEmpty) {
+      if (existing == null && legacyDailyTarget == null) return;
+
+      final profile = existing ??
+          UserProfile(
+            dailyQazaTarget: UserProfile.normalizeDailyQazaTarget(
+              legacyDailyTarget ?? UserProfile.defaultDailyQazaTarget,
+            ),
+          );
+
+      final saved = await prefs.setString(
+        UserProfile.storageKey,
+        jsonEncode(profile.toJson()),
+      );
+      if (!saved) return;
+
+      if (legacyDailyTarget != null) {
+        await prefs.remove(_legacyDailyTargetKey);
+      }
+      return;
+    }
 
     // A legacy install normally has one active snapshot. Stable ordering keeps
     // migration deterministic if more than one legacy calculator snapshot exists.
@@ -91,6 +120,11 @@ class UserProfileMigration {
     final profile = UserProfile(
       languageCode:
           existing?.languageCode ?? LocaleCodeValidator.normalize(locale),
+      dailyQazaTarget: hasPersistedDailyTarget
+          ? existing!.dailyQazaTarget
+          : UserProfile.normalizeDailyQazaTarget(
+              legacyDailyTarget ?? UserProfile.defaultDailyQazaTarget,
+            ),
       gender: existing?.gender,
       madhab: existing?.madhab ?? (oldWitr == null ? null : Madhab.other),
       dateOfBirth: existing?.dateOfBirth ?? dob,
@@ -100,9 +134,23 @@ class UserProfileMigration {
       onboardingCompleted: existing?.onboardingCompleted ?? false,
     );
 
-    await prefs.setString(UserProfile.storageKey, jsonEncode(profile.toJson()));
+    final saved = await prefs.setString(
+      UserProfile.storageKey,
+      jsonEncode(profile.toJson()),
+    );
+    if (!saved) return;
+
+    if (legacyDailyTarget != null) {
+      await prefs.remove(_legacyDailyTargetKey);
+    }
     await _removeLegacySnapshots(prefs);
   }
+
+  /// Backward-compatible entry point retained for callers outside startup.
+  Future<void> migrateLegacyCalculatorData({
+    SharedPreferences? preferences,
+  }) =>
+      migrateLegacyProfileData(preferences: preferences);
 
   DateTime? _parseDate(Object? value) =>
       value is String ? DateTime.tryParse(value) : null;
