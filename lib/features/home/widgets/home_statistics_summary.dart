@@ -84,8 +84,8 @@ class _DetailedOverallStatistics extends StatelessWidget {
     return Card(
       key: const Key('detailed_overall_statistics'),
       child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Semantics(
+        padding: const EdgeInsets.all(16),
+        child: Semantics(
         container: true,
         label:
             '${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
@@ -147,7 +147,7 @@ class _DetailedOverallStatistics extends StatelessWidget {
           ],
         ),
       ),
-          )
+      ),
     );
   }
 }
@@ -165,8 +165,8 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
     return Card(
       key: const Key('detailed_prayer_breakdown'),
       child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Column(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
@@ -190,7 +190,7 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
           ],
         ],
       ),
-          )
+      ),
     );
   }
 }
@@ -250,7 +250,7 @@ class _DetailedPrayerRow extends StatelessWidget {
           const SizedBox(height: 9),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
+        child: LinearProgressIndicator(
               key: Key('detailed_prayer_progress_${prayer.name}'),
               value: progress.percentage.clamp(0.0, 1.0).toDouble(),
               minHeight: 8,
