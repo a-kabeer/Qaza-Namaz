@@ -34,7 +34,10 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Check formatting
-        run: dart format lib
+        run: dart format lib test
+
+      - name: Test
+        run: flutter test
       - name: Show formatting diff
         shell: bash
         run: |
