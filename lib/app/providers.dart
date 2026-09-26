@@ -31,7 +31,7 @@ import '../domain/repositories/user_profile_repository.dart';
 import '../data/local/user_profile_repository.dart';
 
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
-  (ref) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
+  (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
 );
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>(
