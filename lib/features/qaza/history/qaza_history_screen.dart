@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -10,8 +11,6 @@ import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
-import 'qaza_operation_detail_screen.dart';
-
 enum _HistorySection { recent, deleted }
 
 class QazaHistoryScreen extends ConsumerStatefulWidget {
@@ -344,9 +343,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
                                         record.prayerType.localizedLabel(l10n),
                                       ),
                                       subtitle: Text(
-                                        '${DateFormatters.formatGregorianDatePadded(record.originalDate)} • ${DateFormatters.hijriLabel(
-                                          record.originalDate,
-                                        )}\n${_urdu ? 'حذف' : 'Deleted'}: ${DateFormatters.formatClockTime(
+                                        '${DateFormatters.formatGregorianDatePadded(record.originalDate)} • ${l10n.formatHijriDate(record.originalDate)}\n${_urdu ? 'حذف' : 'Deleted'}: ${DateFormatters.formatClockTime(
                                           record.updatedAt,
                                         )} • ${DateFormatters.formatGregorianDatePadded(
                                           record.updatedAt,

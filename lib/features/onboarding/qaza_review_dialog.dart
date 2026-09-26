@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hijri/hijri_calendar.dart';
 
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
-
 enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
@@ -240,8 +239,6 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
       '${date.month.toString().padLeft(2, '0')}/'
       '${date.year}';
 
-  String _formatHijri(AppLocalizations l10n, DateTime date) {
-    final hijri = HijriCalendar.fromDate(date);
-    return l10n.hijriDate(hijri.hDay, hijri.hMonth, hijri.hYear);
-  }
+  String _formatHijri(AppLocalizations l10n, DateTime date) =>
+      l10n.formatHijriDate(date);
 }

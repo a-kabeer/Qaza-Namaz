@@ -1,5 +1,3 @@
-import 'package:hijri/hijri_calendar.dart';
-
 class DateFormatters {
   DateFormatters._();
 
@@ -58,13 +56,6 @@ class DateFormatters {
 
   static String formatGregorianDatePadded(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')} ${gregorianMonthName(date.month)} ${date.year}';
-
-  /// The single Hijri display path. Gregorian remains the source of truth;
-  /// this is derived information only, never a selection or storage format.
-  static String hijriLabel(DateTime date) {
-    final hijri = HijriCalendar.fromDate(date);
-    return '${hijri.hDay} ${hijri.getLongMonthName()} ${hijri.hYear} AH';
-  }
 
   /// Groups a count with thousands separators, e.g. `4380` becomes `4,380`.
   static String formatCount(int value) {

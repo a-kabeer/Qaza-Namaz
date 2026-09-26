@@ -1,11 +1,9 @@
-import 'package:hijri/hijri_calendar.dart';
-
 import 'package:flutter/material.dart';
 
+import '../../core/calendar/hijri_date_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
-
 class ProfileForm extends StatefulWidget {
   const ProfileForm({
     super.key,
@@ -201,14 +199,9 @@ class _ProfileFormState extends State<ProfileForm> {
         ),
         if (profile.dateOfBirth != null) ...[
           const SizedBox(height: 4),
-          Builder(
-            builder: (context) {
-              final hijri = HijriCalendar.fromDate(profile.dateOfBirth!);
-              return Text(
-                l10n.hijriDate(hijri.hDay, hijri.hMonth, hijri.hYear),
-                style: Theme.of(context).textTheme.bodySmall,
-              );
-            },
+          Text(
+            l10n.formatHijriDate(profile.dateOfBirth!),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
         const SizedBox(height: 20),

@@ -109,6 +109,19 @@
       "year": {}
     }
   },
+
+  "hijriMonthMuharram": "Muharram",
+  "hijriMonthSafar": "Safar",
+  "hijriMonthRabiAlAwwal": "Rabi al-Awwal",
+  "hijriMonthRabiAlThani": "Rabi al-Thani",
+  "hijriMonthJumadaAlAwwal": "Jumada al-Awwal",
+  "hijriMonthJumadaAlThani": "Jumada al-Thani",
+  "hijriMonthRajab": "Rajab",
+  "hijriMonthShaban": "Sha'ban",
+  "hijriMonthRamadan": "Ramadan",
+  "hijriMonthShawwal": "Shawwal",
+  "hijriMonthDhulQadah": "Dhu al-Qadah",
+  "hijriMonthDhulHijjah": "Dhu al-Hijjah",
   "homeTitle": "Home",
   "homeProfileTooltip": "Profile",
   "homeHeadingSetup": "Start Your Qaza Journey",

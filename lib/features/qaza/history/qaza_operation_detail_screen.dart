@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/errors/app_error_messages.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/app_scaffold.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../domain/entities/qaza_operation.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
-import '../qaza_record_editor.dart';
-
 enum QazaOperationDetailFilter {
   all,
   pending,
@@ -569,9 +568,7 @@ class _QazaOperationDetailScreenState
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '${record.prayerType.localizedLabel(l10n)}\n${DateFormatters.hijriLabel(
-                                      record.originalDate,
-                                    )} • ${record.status.localizedLabel(l10n)}',
+                                    '${record.prayerType.localizedLabel(l10n)}\n${l10n.formatHijriDate(record.originalDate)} • ${record.status.localizedLabel(l10n)}',
                                   ),
                                   trailing: record.status == QazaStatus.deleted
                                       ? null
