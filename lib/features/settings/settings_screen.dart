@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
@@ -110,21 +111,15 @@ class _ResetQazaCounterRow extends ConsumerWidget {
       acknowledgeLabel: l10n.settingsResetCounterAcknowledge(total),
       confirmLabel: l10n.settingsResetCounterConfirm,
       onConfirm: () async {
-        final messenger = ScaffoldMessenger.of(context);
         final done =
             await ref.read(qazaResetControllerProvider.notifier).reset();
         final error = ref.read(qazaResetControllerProvider).error;
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                done
-                    ? l10n.settingsResetCounterDone
-                    : l10n.settingsResetCounterFailed(error ?? ''),
-              ),
-            ),
-          );
+        final snackbar = ref.read(appSnackbarServiceProvider);
+        if (done) {
+          snackbar.success(l10n.settingsResetCounterDone);
+        } else {
+          snackbar.error(l10n.settingsResetCounterFailed(error ?? ''));
+        }
       },
     );
   }

@@ -9,6 +9,7 @@ import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
@@ -17,7 +18,7 @@ import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
-import '../../qaza/qaza_undo_banner.dart';
+import '../../qaza/qaza_undo_feedback.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
 import 'home_skeleton.dart';
@@ -103,17 +104,11 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       ref.invalidate(sahibAlTartibProvider);
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              l10n.qazaTartibBlocked(
-                error.requiredPrayer.localizedLabel(l10n),
-              ),
+      ref.read(appSnackbarServiceProvider).warning(
+            l10n.qazaTartibBlocked(
+              error.requiredPrayer.localizedLabel(l10n),
             ),
-          ),
-        );
+          );
       return;
     } catch (error, stack) {
       diagnostics.recordFailure(
@@ -123,13 +118,9 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         stack: stack,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).completeFailed),
-          ),
-        );
+      ref.read(appSnackbarServiceProvider).error(
+            AppLocalizations.of(context).completeFailed,
+          );
       return;
     }
 
@@ -147,15 +138,9 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
-            ),
-          ),
-        );
+      ref.read(appSnackbarServiceProvider).info(
+            '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
+          );
       return;
     }
 
@@ -203,7 +188,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
       if (!mounted) return;
 
-      await showQazaUndoSnackBar(
+      await showQazaUndoFeedback(
         context: context,
         ref: ref,
         userId: userId,

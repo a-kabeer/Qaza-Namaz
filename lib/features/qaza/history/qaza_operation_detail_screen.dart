@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/errors/app_error.dart';
+import '../../../core/errors/app_error_messages.dart';
 import '../../../core/utils/date_formatters.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../domain/entities/qaza_operation.dart';
@@ -259,20 +262,16 @@ class _QazaOperationDetailScreenState
       operationStatus = status;
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            (_urdu
+      ref.read(appSnackbarServiceProvider).success(
+            _urdu
                 ? '$affected ریکارڈ واپس کیے گئے۔ تبدیل یا مکمل ریکارڈ محفوظ رہے۔'
-                : '$affected records were reversed. Changed or completed records were preserved.'),
-          ),
-        ),
-      );
+                : '$affected records were reversed. Changed or completed records were preserved.',
+          );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ref.read(appSnackbarServiceProvider).error(
+            AppError.from(e).message(context),
+          );
     } finally {
       if (mounted) setState(() => mutating = false);
     }
@@ -315,20 +314,16 @@ class _QazaOperationDetailScreenState
       operationStatus = status;
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            (_urdu
+      ref.read(appSnackbarServiceProvider).success(
+            _urdu
                 ? '$affected ریکارڈ ہٹا دیے گئے۔'
-                : '$affected records were removed and can be recovered.'),
-          ),
-        ),
-      );
+                : '$affected records were removed and can be recovered.',
+          );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ref.read(appSnackbarServiceProvider).error(
+            AppError.from(e).message(context),
+          );
     } finally {
       if (mounted) setState(() => mutating = false);
     }
@@ -350,18 +345,14 @@ class _QazaOperationDetailScreenState
           );
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
+      ref.read(appSnackbarServiceProvider).success(
             _urdu ? 'ریکارڈ درست کر دیا گیا۔' : 'Record corrected.',
-          ),
-        ),
-      );
+          );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ref.read(appSnackbarServiceProvider).error(
+            AppError.from(e).message(context),
+          );
     } finally {
       if (mounted) setState(() => mutating = false);
     }

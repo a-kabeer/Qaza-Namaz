@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/diagnostics/diagnostics.dart';
 import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
+import '../core/widgets/app_snackbar.dart';
 import '../l10n/app_localizations.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/database/app_database.dart';
@@ -28,6 +29,10 @@ import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
 import '../domain/repositories/user_profile_repository.dart';
 import '../data/local/user_profile_repository.dart';
+
+final appSnackbarServiceProvider = Provider<AppSnackbarService>(
+  (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
+);
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>(
   (ref) => const SharedPreferencesUserProfileRepository(),

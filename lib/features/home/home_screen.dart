@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/profile_screen.dart';
@@ -107,7 +108,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {
-    ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
     await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(builder: (_) => page),
@@ -142,9 +142,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           final message = next.added == 0
               ? l10n.addQazaNothingNew
               : l10n.addQazaCreatedMessage(next.added);
-          ScaffoldMessenger.maybeOf(context)
-            ?..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(message)));
+          final snackbar = ref.read(appSnackbarServiceProvider);
+          if (next.added == 0) {
+            snackbar.info(message);
+          } else {
+            snackbar.success(message);
+          }
         }
       },
     );
