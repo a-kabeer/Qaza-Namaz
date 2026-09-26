@@ -28,6 +28,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int _lastExistingCount = 0;
 
   @override
+  bool _sameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final profile = ref.watch(userProfileProvider).valueOrNull;
@@ -388,6 +392,14 @@ class _SummaryCard extends StatelessWidget {
               value: state.selectedDates.length,
             ),
             _CountRow(
+              label: l10n.addQazaPrayersLabel,
+              value: state.selectedPrayers.length,
+            ),
+            _CountRow(
+              label: l10n.addQazaCombinationCountLabel,
+              value: analysis.total,
+            ),
+            _CountRow(
               label: l10n.addQazaNewRecordsLabel,
               value: analysis.newCount,
             ),
@@ -551,6 +563,11 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
                 itemCount: _analysis.items.length,
                 itemBuilder: (context, index) {
                   final item = _analysis.items[index];
+                  final showDateHeader = index == 0 ||
+                      !_sameDate(
+                        _analysis.items[index - 1].key.date,
+                        item.key.date,
+                      );
                   final status = switch (item.status) {
                     AddQazaCandidateStatus.newRecord => l10n.addQazaNewLabel,
                     AddQazaCandidateStatus.alreadyAdded =>
@@ -567,15 +584,30 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
                     PrayerType.witr => l10n.prayerWitr,
                   };
 
-                  return ListTile(
-                    dense: true,
-                    title: Text(
-                      DateFormatters.formatGregorianFull(
-                        item.key.date,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (showDateHeader)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: index == 0 ? 0 : AppSpacing.sm,
+                            bottom: AppSpacing.xs,
+                          ),
+                          child: Text(
+                            DateFormatters.formatGregorianFull(
+                              item.key.date,
+                            ),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(prayer),
+                        subtitle: Text(status),
+                        trailing: const Icon(Icons.chevron_right_rounded),
                       ),
-                    ),
-                    subtitle: Text(prayer),
-                    trailing: Text(status),
+                    ],
                   );
                 },
               ),
