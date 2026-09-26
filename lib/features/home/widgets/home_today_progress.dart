@@ -138,15 +138,9 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
-            ),
-          ),
-        );
+      ref.read(appSnackbarServiceProvider).info(
+            '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
+          );
       return;
     }
 
