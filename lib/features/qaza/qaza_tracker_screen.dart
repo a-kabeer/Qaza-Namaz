@@ -57,7 +57,7 @@ class QazaTrackerScreen extends ConsumerWidget {
               children: [
                 if (!state.selectionMode) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  TabBar(
+                  const TabBar(
                     tabs: const [
                       Tab(text: 'Pending'),
                       Tab(text: 'History'),
