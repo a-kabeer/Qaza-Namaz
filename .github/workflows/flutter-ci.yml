@@ -41,7 +41,7 @@ jobs:
       - name: Show formatting diff
         shell: bash
         run: |
-          git diff --no-color -- lib > /tmp/formatter.patch
+          git diff --no-color -- lib test > /tmp/formatter.patch
           if [ -s /tmp/formatter.patch ]; then
             echo "Formatter changes detected:"
             cat /tmp/formatter.patch
