@@ -275,22 +275,24 @@ class QazaService {
     final sortedDates = normalizedDates.toList()..sort();
     final result = <QazaRecord>[];
     for (final prayer in selectedPrayers) {
-      DateTime? beforeDate;
-      String? beforeId;
-      while (true) {
-        final page = await repository.getHistoryPage(
-            userId: userId,
-            limit: 500,
-            prayerType: prayer,
-            status: null,
-            from: sortedDates.first,
-            to: sortedDates.last,
-            beforeOriginalDate: beforeDate,
-            beforeId: beforeId);
-        result.addAll(page.records);
-        if (!page.hasMore) break;
-        beforeDate = page.nextOriginalDate;
-        beforeId = page.nextId;
+      for (final status in <QazaStatus?>[null, QazaStatus.deleted]) {
+        DateTime? beforeDate;
+        String? beforeId;
+        while (true) {
+          final page = await repository.getHistoryPage(
+              userId: userId,
+              limit: 500,
+              prayerType: prayer,
+              status: status,
+              from: sortedDates.first,
+              to: sortedDates.last,
+              beforeOriginalDate: beforeDate,
+              beforeId: beforeId);
+          result.addAll(page.records);
+          if (!page.hasMore) break;
+          beforeDate = page.nextOriginalDate;
+          beforeId = page.nextId;
+        }
       }
     }
     return result;
