@@ -1,6 +1,7 @@
 class UserProfile {
   const UserProfile({
     this.languageCode = 'en',
+    this.dailyQazaTarget = defaultDailyQazaTarget,
     this.gender,
     this.madhab,
     this.dateOfBirth,
@@ -11,11 +12,18 @@ class UserProfile {
     this.schemaVersion = 1,
   });
 
-  static const int currentSchemaVersion = 1;
+  static const int currentSchemaVersion = 2;
   static const String storageKey = 'qaza_user_profile_v1';
   static const String localLedgerUserId = 'guest';
+  static const int defaultDailyQazaTarget = 5;
+  static const int minDailyQazaTarget = 1;
+  static const int maxDailyQazaTarget = 50;
+
+  static int normalizeDailyQazaTarget(int value) =>
+      value.clamp(minDailyQazaTarget, maxDailyQazaTarget).toInt();
 
   final String languageCode;
+  final int dailyQazaTarget;
   final Gender? gender;
   final Madhab? madhab;
   final DateTime? dateOfBirth;
@@ -36,6 +44,7 @@ class UserProfile {
 
   UserProfile copyWith({
     String? languageCode,
+    int? dailyQazaTarget,
     Gender? gender,
     bool clearGender = false,
     Madhab? madhab,
@@ -53,6 +62,9 @@ class UserProfile {
   }) =>
       UserProfile(
         languageCode: languageCode ?? this.languageCode,
+        dailyQazaTarget: dailyQazaTarget == null
+            ? this.dailyQazaTarget
+            : normalizeDailyQazaTarget(dailyQazaTarget),
         gender: clearGender ? null : gender ?? this.gender,
         madhab: clearMadhab ? null : madhab ?? this.madhab,
         dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
@@ -69,6 +81,7 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
         'schemaVersion': currentSchemaVersion,
         'languageCode': languageCode,
+        'dailyQazaTarget': dailyQazaTarget,
         'gender': gender?.name,
         'madhab': madhab?.name,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
@@ -90,6 +103,9 @@ class UserProfile {
       languageCode: (json['languageCode'] as String?)?.trim().isNotEmpty == true
           ? json['languageCode'] as String
           : 'en',
+      dailyQazaTarget: normalizeDailyQazaTarget(
+        (json['dailyQazaTarget'] as num?)?.toInt() ?? defaultDailyQazaTarget,
+      ),
       gender: parseGender(json['gender'] as String?),
       madhab: parseMadhab(json['madhab'] as String?),
       dateOfBirth: parseDate(json['dateOfBirth']),
