@@ -9,7 +9,7 @@ class UserProfile {
     this.startPrayingAge,
     this.witrIncluded,
     this.onboardingCompleted = false,
-    this.schemaVersion = 1,
+    this.schemaVersion = currentSchemaVersion,
   });
 
   static const int currentSchemaVersion = 2;
@@ -18,6 +18,9 @@ class UserProfile {
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
   static const int maxDailyQazaTarget = 50;
+  static const List<int> dailyQazaTargetOptions = [
+    1, 2, 3, 5, 10, 15, 20, 30, 50,
+  ];
 
   static int normalizeDailyQazaTarget(int value) =>
       value.clamp(minDailyQazaTarget, maxDailyQazaTarget).toInt();
