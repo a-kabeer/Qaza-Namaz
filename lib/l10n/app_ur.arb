@@ -306,6 +306,7 @@
   "addQazaDatesLabel": "تاریخیں",
   "addQazaDateCountLabel": "تاریخوں کی تعداد",
   "addQazaDateRangeLabel": "تاریخوں کا دورانیہ",
+  "addQazaCombinationCountLabel": "مجموعے",
   "addQazaPrayersLabel": "نمازیں",
   "addQazaPrayersPerDateLabel": "فی تاریخ نمازیں",
   "addQazaExistingLabel": "پہلے سے موجود جوڑ",
