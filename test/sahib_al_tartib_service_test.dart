@@ -42,6 +42,33 @@ class _FakeRepository implements QazaRepository {
   }
 
   @override
+  Future<List<QazaRecord>> getRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final ids = recordIds.toSet();
+    return records
+        .where((record) => record.userId == userId && ids.contains(record.id))
+        .toList();
+  }
+
+  @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async {
+    final ids = recordIds.toSet();
+    return records
+        .where(
+          (record) =>
+              record.userId == userId &&
+              ids.contains(record.id) &&
+              record.status == QazaStatus.pending,
+        )
+        .toList();
+  }
+
+  @override
   Future<List<QazaRecord>> getRecords({
     required String userId,
     PrayerType? prayerType,
