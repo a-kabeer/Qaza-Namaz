@@ -24,8 +24,8 @@ class HomeOverallProgress extends StatelessWidget {
     return Card(
       key: const Key('home_overall_qaza'),
       child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LayoutBuilder(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
         builder: (context, constraints) {
           final stats = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,7 +112,7 @@ class HomeOverallProgress extends StatelessWidget {
           );
         },
       ),
-          )
+      ),
     );
   }
 }
@@ -196,14 +196,14 @@ class HomeStatLine extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
+        child: Text(
               label,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(
+        child: Text(
               value,
               textAlign: TextAlign.end,
               overflow: TextOverflow.ellipsis,
