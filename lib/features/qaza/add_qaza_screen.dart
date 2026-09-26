@@ -210,9 +210,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               if (existing > 0) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  existing.toString() +
-                      ' ' +
-                      AppLocalizations.of(context).addQazaAlreadyAddedLabel,
+                  '${existing} ${AppLocalizations.of(context).addQazaAlreadyAddedLabel}',
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -743,14 +741,14 @@ class _AddQazaProgressDialogState
             const LinearProgressIndicator()
           else ...[
             Text(
-              ((progress * 100).round()).toString() + '%',
+              '${(progress * 100).round()}%',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.sm),
             LinearProgressIndicator(value: progress),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              state.processed.toString() + ' / ' + state.total.toString(),
+              '${state.processed} / ${state.total}',
             ),
           ],
         ],

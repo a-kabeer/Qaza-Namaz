@@ -138,7 +138,7 @@ void main() {
 
         messengerKey.currentState!.showSnackBar(
           const SnackBar(
-            content: const Text('Unsafe direct Snackbar'),
+            content: Text('Unsafe direct Snackbar'),
             duration: const Duration(seconds: 1),
             persist: true,
             backgroundColor: Colors.red,
