@@ -4,6 +4,7 @@ import '../../core/calendar/hijri_date_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
+
 class ProfileForm extends StatefulWidget {
   const ProfileForm({
     super.key,
@@ -13,6 +14,7 @@ class ProfileForm extends StatefulWidget {
     this.onChanged,
     this.submitLabel,
     this.showIntro = true,
+    this.showDailyQazaTarget = false,
   });
 
   final UserProfile initialProfile;
@@ -21,6 +23,7 @@ class ProfileForm extends StatefulWidget {
   final ValueChanged<UserProfile>? onChanged;
   final String? submitLabel;
   final bool showIntro;
+  final bool showDailyQazaTarget;
 
   @override
   State<ProfileForm> createState() => _ProfileFormState();
@@ -262,7 +265,38 @@ class _ProfileFormState extends State<ProfileForm> {
                     : null,
           ),
         ),
-        const SizedBox(height: 20),
+        if (widget.showDailyQazaTarget) ...[
+          const SizedBox(height: 20),
+          Text(
+            l10n.homeDailyTarget,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            key: const Key('profile_daily_qaza_target'),
+            initialValue: UserProfile.dailyQazaTargetOptions.contains(
+              profile.dailyQazaTarget,
+            )
+                ? profile.dailyQazaTarget
+                : null,
+            items: [
+              for (final value in UserProfile.dailyQazaTargetOptions)
+                DropdownMenuItem<int>(
+                  value: value,
+                  child: Text(l10n.homePerDay(value)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                _update(_profile.copyWith(dailyQazaTarget: value));
+              }
+            },
+            decoration: InputDecoration(
+              labelText: l10n.homeDailyTarget,
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
         if (canEditWitr)
           SwitchListTile.adaptive(
             key: const Key('profile_witr'),

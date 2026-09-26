@@ -145,6 +145,11 @@ class ProfileRules {
 
   static UserProfile normalize(UserProfile profile) {
     var next = profile;
+    final normalizedDailyTarget =
+        UserProfile.normalizeDailyQazaTarget(next.dailyQazaTarget);
+    if (normalizedDailyTarget != next.dailyQazaTarget) {
+      next = next.copyWith(dailyQazaTarget: normalizedDailyTarget);
+    }
     final gender = next.gender;
     final puberty = next.pubertyAge;
     if (gender != null &&

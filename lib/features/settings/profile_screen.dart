@@ -36,6 +36,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           return ProfileForm(
             initialProfile: profile,
             showIntro: false,
+            showDailyQazaTarget: true,
             submitLabel: l10n.profileSave,
             onChanged: (next) => _profile = next,
             onSubmit: _save,

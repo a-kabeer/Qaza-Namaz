@@ -34,56 +34,6 @@ class HomeTodayProgress extends ConsumerStatefulWidget {
 }
 
 class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
-  Future<void> _showPlanDialog() async {
-    final l10n = AppLocalizations.of(context);
-    var selected = ref.read(homeQazaPlanProvider).dailyTarget;
-    const options = [1, 2, 3, 5, 10, 15, 20, 30, 50];
-
-    final target = await showDialog<int>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          key: const Key('home_qaza_plan_dialog'),
-          title: Text(l10n.homeQazaPlan),
-          content: DropdownButton<int>(
-            key: const Key('home_qaza_plan_target'),
-            isExpanded: true,
-            value: options.contains(selected)
-                ? selected
-                : HomeQazaPlanState.defaultDailyTarget,
-            items: [
-              for (final value in options)
-                DropdownMenuItem<int>(
-                  value: value,
-                  child: Text(l10n.homePerDay(value)),
-                ),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => selected = value);
-            },
-          ),
-          actions: [
-            TextButton(
-              key: const Key('home_qaza_plan_cancel'),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.commonCancel),
-            ),
-            FilledButton(
-              key: const Key('home_qaza_plan_done'),
-              onPressed: () => Navigator.of(dialogContext).pop(selected),
-              child: Text(l10n.commonDone),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (target == null || !mounted) return;
-    await ref.read(homeQazaPlanProvider.notifier).setDailyTarget(target);
-    ref.invalidate(homeDailyProgressProvider);
-  }
-
   Future<void> _complete(QazaRecord record, PrayerType prayer) async {
     if (ref.read(qazaCompletionControllerProvider).isWorking) return;
 
@@ -317,7 +267,6 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
                     selected: selected,
                     working: working,
                     onComplete: _complete,
-                    onPlan: _showPlanDialog,
                   );
 
                   if (constraints.maxWidth < 500) {
@@ -507,14 +456,12 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
     required this.selected,
     required this.working,
     required this.onComplete,
-    required this.onPlan,
   });
 
   final QazaProgressSummary summary;
   final HomeSelectedPrayerState selected;
   final bool working;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
-  final VoidCallback onPlan;
 
   @override
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
@@ -769,7 +716,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                   return _HomeFallbackNextQaza(
                     record: record,
                     onComplete: widget.onComplete,
-                    onPlan: widget.onPlan,
                   );
                 },
               );
@@ -864,13 +810,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                               : l10n.homeCompleteQaza,
                         ),
                       );
-                      final plan = OutlinedButton.icon(
-                        key: const Key('home_qaza_plan_button'),
-                        onPressed: widget.onPlan,
-                        icon: const Icon(Icons.calendar_month_outlined),
-                        label: Text(l10n.homeQazaPlan),
-                      );
-
                       if (constraints.maxWidth < 340) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -936,8 +875,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                             ),
                             const SizedBox(height: 12),
                             complete,
-                            const SizedBox(height: 8),
-                            plan,
                           ],
                         );
                       }
@@ -947,13 +884,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                         children: [
                           details,
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(child: complete),
-                              const SizedBox(width: 8),
-                              plan,
-                            ],
-                          ),
+                          complete,
                         ],
                       );
                     },
@@ -971,12 +902,10 @@ class _HomeFallbackNextQaza extends StatelessWidget {
   const _HomeFallbackNextQaza({
     required this.record,
     required this.onComplete,
-    required this.onPlan,
   });
 
   final QazaRecord record;
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
-  final VoidCallback onPlan;
 
   @override
   Widget build(BuildContext context) {
@@ -1029,24 +958,11 @@ class _HomeFallbackNextQaza extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('home_complete_oldest_qaza'),
-                onPressed: () => onComplete(record, record.prayerType),
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: Text(l10n.homeCompleteQaza),
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(
-              key: const Key('home_qaza_plan_button'),
-              onPressed: onPlan,
-              icon: const Icon(Icons.calendar_month_outlined),
-              label: Text(l10n.homeQazaPlan),
-            ),
-          ],
+        FilledButton.icon(
+          key: const Key('home_complete_oldest_qaza'),
+          onPressed: () => onComplete(record, record.prayerType),
+          icon: const Icon(Icons.play_arrow_rounded),
+          label: Text(l10n.homeCompleteQaza),
         ),
       ],
     );

@@ -1,16 +1,5 @@
 import '../../core/constants/prayer_types.dart';
 
-class HomeQazaPlanState {
-  const HomeQazaPlanState({required this.dailyTarget});
-
-  static const int defaultDailyTarget = 5;
-
-  final int dailyTarget;
-
-  HomeQazaPlanState copyWith({int? dailyTarget}) =>
-      HomeQazaPlanState(dailyTarget: dailyTarget ?? this.dailyTarget);
-}
-
 class HomeDailyProgress {
   const HomeDailyProgress({
     required this.completed,

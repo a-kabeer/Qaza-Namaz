@@ -7,81 +7,6 @@ import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../home_state.dart';
 
-class HomeQazaPlanNotifier extends Notifier<HomeQazaPlanState> {
-  static const _keyPrefix = 'qaza_home_daily_target_';
-  int _restoreGeneration = 0;
-
-  @override
-  HomeQazaPlanState build() {
-    final userId = ref.watch(activeUserIdProvider);
-    final generation = ++_restoreGeneration;
-    if (userId != null) {
-      Future.microtask(() => _restore(userId, generation));
-    }
-    return const HomeQazaPlanState(
-      dailyTarget: HomeQazaPlanState.defaultDailyTarget,
-    );
-  }
-
-  Future<void> _restore(String userId, int generation) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (generation != _restoreGeneration ||
-          ref.read(activeUserIdProvider) != userId) {
-        return;
-      }
-      final stored = prefs.getInt('$_keyPrefix$userId');
-      if (stored == null) return;
-      state = HomeQazaPlanState(dailyTarget: _normalizeTarget(stored));
-    } catch (_) {
-      // Safe default remains active if preferences cannot be read.
-    }
-  }
-
-  Future<void> setDailyTarget(int value) async {
-    final target = _normalizeTarget(value);
-    _restoreGeneration++;
-    final userId = ref.read(activeUserIdProvider);
-    state = state.copyWith(dailyTarget: target);
-    if (userId == null) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('$_keyPrefix$userId', target);
-    } catch (_) {
-      // The in-memory selection remains valid when persistence is unavailable.
-    }
-  }
-
-  /// Atomically claims the congratulation event for a user/day/target.
-  ///
-  /// Returning false means this exact target completion has already been
-  /// celebrated, preventing duplicate dialogs from rebuilds or re-entry.
-  Future<bool> claimDailyTargetCelebration({
-    required String userId,
-    required DateTime date,
-    required int target,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final dateKey = '${date.year.toString().padLeft(4, '0')}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-    final key = 'qaza_home_daily_target_celebrated_$userId';
-    final marker = '$dateKey:$target';
-
-    if (prefs.getString(key) == marker) return false;
-    await prefs.setString(key, marker);
-    return true;
-  }
-
-  int _normalizeTarget(int value) => value.clamp(1, 50).toInt();
-}
-
-final homeQazaPlanProvider =
-    NotifierProvider<HomeQazaPlanNotifier, HomeQazaPlanState>(
-  HomeQazaPlanNotifier.new,
-);
-
 final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
 
 DateTime homeLocalDateForInstant(DateTime instant) {
@@ -102,7 +27,7 @@ final homeLocalDateProvider = Provider<DateTime>((ref) {
 final homeDailyProgressProvider =
     FutureProvider.autoDispose<HomeDailyProgress>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
-  final target = ref.watch(homeQazaPlanProvider).dailyTarget;
+  final target = ref.watch(dailyQazaTargetProvider);
   final today = ref.watch(homeLocalDateProvider);
 
   if (userId == null) {

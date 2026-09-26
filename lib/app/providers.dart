@@ -42,6 +42,15 @@ final userProfileProvider = FutureProvider<UserProfile?>(
   (ref) => ref.watch(userProfileRepositoryProvider).load(),
 );
 
+/// Single source of truth for the user's daily Qaza target.
+///
+/// The preference belongs to [UserProfile]. Home and any future consumers
+/// read this derived provider rather than maintaining feature-specific state.
+final dailyQazaTargetProvider = Provider<int>((ref) {
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  return profile?.dailyQazaTarget ?? UserProfile.defaultDailyQazaTarget;
+});
+
 final effectiveWitrProvider = Provider<bool>((ref) {
   final profile = ref.watch(userProfileProvider).valueOrNull;
   return profile == null ? true : ProfileRules.effectiveWitr(profile);
