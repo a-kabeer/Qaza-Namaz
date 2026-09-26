@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/app_card.dart';
 import '../../../l10n/app_localizations.dart';
 
 class HomeAllCompletedState extends StatelessWidget {
@@ -18,9 +17,11 @@ class HomeAllCompletedState extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
 
-    return AppCard(
+    return Card(
       key: const Key('home_all_completed_state'),
-      child: Row(
+      child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
@@ -62,6 +63,7 @@ class HomeAllCompletedState extends StatelessWidget {
           ),
         ],
       ),
+          )
     );
   }
 }
