@@ -162,6 +162,7 @@ class AppSnackbarService {
 
     messenger.showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         content: _AppSnackbarContent(
           severity: severity,
           message: normalizedMessage,
