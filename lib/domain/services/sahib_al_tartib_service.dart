@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
@@ -46,7 +47,8 @@ class SahibAlTartibService {
   /// with five bounded oldest-pending lookups, one per Fard prayer.
   Future<SahibAlTartibState> evaluate({
     required String userId,
-    DateTime? today,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     final summary = await repository.getProgressSummary(userId: userId);
     final pendingFarzCount = _pendingFarzCount(summary);
@@ -60,9 +62,36 @@ class SahibAlTartibService {
     }
 
     final next = await _oldestPendingFarz(userId: userId);
+    if (next == null) {
+      return SahibAlTartibState(
+        pendingFarzCount: pendingFarzCount,
+        requiresOrder: false,
+        nextPending: null,
+      );
+    }
+
+    // Hanafi tartib between a missed prayer and the current prayer expires
+    // after five intervening prayer slots. This is the daily-cycle boundary:
+    // a missed Fajr may block Dhuhr/Asr/Maghrib/Isha of that day, but by the
+    // next Fajr the sequence exception has been reached.
+    if (currentDate != null &&
+        currentPrayer != null &&
+        !orderRequiredBeforeCurrentPrayer(
+          missedDate: next.originalDate,
+          missedPrayer: next.prayerType,
+          currentDate: currentDate,
+          currentPrayer: currentPrayer,
+        )) {
+      return SahibAlTartibState(
+        pendingFarzCount: pendingFarzCount,
+        requiresOrder: false,
+        nextPending: null,
+      );
+    }
+
     return SahibAlTartibState(
       pendingFarzCount: pendingFarzCount,
-      requiresOrder: next != null,
+      requiresOrder: true,
       nextPending: next,
     );
   }
@@ -119,6 +148,48 @@ class SahibAlTartibService {
         PrayerType.witr => 5,
       };
 
+  /// Number of prayer slots between a missed Fard and the referenced
+  /// current Fard in the repeating five-prayer cycle.
+  ///
+  /// Same prayer on the same date = 0. A missed Fajr followed by the next
+  /// day's Fajr = 5, which is the Hanafi sequence boundary.
+  static int prayerCycleDistance({
+    required DateTime missedDate,
+    required PrayerType missedPrayer,
+    required DateTime currentDate,
+    required PrayerType currentPrayer,
+  }) {
+    if (missedPrayer == PrayerType.witr || currentPrayer == PrayerType.witr) {
+      throw ArgumentError(
+        'Sahib al-Tartib cycle only applies to Fard prayers.',
+      );
+    }
+
+    final missed = QazaDate.normalize(missedDate);
+    final current = QazaDate.normalize(currentDate);
+    final dayDelta = current.difference(missed).inDays;
+    final distance = dayDelta * 5 +
+        _prayerOrder(currentPrayer) - _prayerOrder(missedPrayer);
+    return distance < 0 ? 0 : distance;
+  }
+
+  /// Whether the missed Fard must be completed before the current Fard.
+  ///
+  /// The order obligation expires once five prayer slots have elapsed between
+  /// the missed prayer and the current prayer.
+  static bool orderRequiredBeforeCurrentPrayer({
+    required DateTime missedDate,
+    required PrayerType missedPrayer,
+    required DateTime currentDate,
+    required PrayerType currentPrayer,
+  }) =>
+      prayerCycleDistance(
+        missedDate: missedDate,
+        missedPrayer: missedPrayer,
+        currentDate: currentDate,
+        currentPrayer: currentPrayer,
+      ) < 5;
+
   /// Returns whether [recordIds] can be completed under the current order.
   ///
   /// When order is inactive, pending Fard and Witr are freely completable.
@@ -127,11 +198,17 @@ class SahibAlTartibService {
   Future<bool> canCompleteRecordIds({
     required String userId,
     required Iterable<String> recordIds,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     final ids = recordIds.toSet();
     if (ids.isEmpty) return true;
 
-    final state = await evaluate(userId: userId);
+    final state = await evaluate(
+      userId: userId,
+      currentDate: currentDate,
+      currentPrayer: currentPrayer,
+    );
     if (!state.requiresOrder || state.nextPending == null) return true;
 
     final witrIds = await _findPendingWitrIds(

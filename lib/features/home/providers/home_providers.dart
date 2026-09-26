@@ -152,19 +152,35 @@ final homeFallbackPendingProvider =
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
-
-  if (selection.mode == HomePrayerSelectionMode.manual) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: selection.manualPrayer,
-      source: HomePrayerSelectionSource.manual,
-    );
-  }
-
   final tartibAsync = ref.watch(sahibAlTartibProvider);
   final tartib = tartibAsync.valueOrNull;
 
+  // Sahib al-Tartib is an actionable domain constraint, not merely a menu
+  // filter. When it becomes active, it must override a stale manual choice so
+  // Home never displays a prayer that the completion layer will reject.
+  if (tartibAsync.hasValue &&
+      tartib?.requiresOrder == true &&
+      tartib?.nextPrayer != null) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: tartib!.nextPrayer,
+      source: HomePrayerSelectionSource.sahibAlTartib,
+    );
+  }
+
   if (!tartibAsync.hasValue || tartib == null) {
+    // Witr remains independently actionable while Fard ordering is being
+    // resolved. A previously selected Fard must not look actionable while the
+    // tartib decision is still loading or unavailable.
+    if (selection.mode == HomePrayerSelectionMode.manual &&
+        selection.manualPrayer == PrayerType.witr) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: PrayerType.witr,
+        source: HomePrayerSelectionSource.manual,
+      );
+    }
+
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
@@ -172,11 +188,11 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  if (tartib.requiresOrder && tartib.nextPrayer != null) {
+  if (selection.mode == HomePrayerSelectionMode.manual) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
-      prayer: tartib.nextPrayer,
-      source: HomePrayerSelectionSource.sahibAlTartib,
+      prayer: selection.manualPrayer,
+      source: HomePrayerSelectionSource.manual,
     );
   }
 
