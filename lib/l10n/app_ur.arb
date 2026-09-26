@@ -70,6 +70,14 @@
   "commonContinue": "جاری رکھیں",
   "commonLoading": "لوڈ ہو رہا ہے...",
   "hijriDate": "{day} {month} {year} ھ",
+  "hijriMonthYear": "{month} {year} ھ",
+  "@hijriMonthYear": {
+    "description": "ہجری مہینہ اور سال؛ گریگورین تاریخ بنیادی رہے گی",
+    "placeholders": {
+      "month": {},
+      "year": {}
+    }
+  },
 
   "hijriMonthMuharram": "محرم",
   "hijriMonthSafar": "صفر",
