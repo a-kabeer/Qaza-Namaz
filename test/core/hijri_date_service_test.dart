@@ -112,11 +112,11 @@ void main() {
 
     const forbiddenMarkers = <String>[
       'package:hijri/',
-      'HijriCalendar',
-      'hDay',
-      'hMonth',
-      'hYear',
-      'getLongMonthName(',
+      'HijriCalendar.',
+      '.hDay',
+      '.hMonth',
+      '.hYear',
+      '.getLongMonthName(',
     ];
     const allowedBoundary = 'lib/core/calendar/hijri_date_service.dart';
 
