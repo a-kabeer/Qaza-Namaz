@@ -116,6 +116,30 @@ void main() {
     expect(method, isNot(contains('selected: <String>{recordId}')));
   });
 
+  test('single swipe shows global Undo feedback only after completion returns', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final completionIndex =
+        source.indexOf('await controller.completeRecordWithUndo(record.id)');
+    final feedbackIndex =
+        source.indexOf('await showQazaUndoFeedback(', completionIndex);
+
+    expect(completionIndex, greaterThanOrEqualTo(0));
+    expect(feedbackIndex, greaterThan(completionIndex));
+  });
+
+  test('Qaza Undo feedback uses the global Undo Snackbar service', () {
+    final source =
+        File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        'ref.read(appSnackbarServiceProvider).undo(',
+      ),
+    );
+  });
+
   test('shared completion pipeline persists before refreshing the tracker', () {
     final source =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
