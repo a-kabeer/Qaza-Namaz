@@ -575,8 +575,7 @@ class _RecordRow extends StatelessWidget {
             child: selectionMode && record.status == QazaStatus.pending
                 ? Checkbox(
                     value: selected,
-                    onChanged:
-                        selectable ? (_) => onTap!() : null,
+                    onChanged: selectable ? (_) => onTap!() : null,
                   )
                 : const SizedBox.shrink(),
           ),
