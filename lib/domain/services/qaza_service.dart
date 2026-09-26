@@ -70,22 +70,15 @@ class QazaImportResult {
     required this.total,
     required this.added,
     required this.skipped,
-    this.processed,
+    int? processed,
     this.cancelled = false,
-  });
+  }) : processed = processed ?? total;
 
   final int total;
   final int added;
   final int skipped;
   final int processed;
   final bool cancelled;
-
-  const QazaImportResult._legacy({
-    required this.total,
-    required this.added,
-    required this.skipped,
-  }) : processed = total,
-       cancelled = false;
 }
 
 class QazaService {
