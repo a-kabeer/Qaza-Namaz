@@ -545,20 +545,15 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     if (index < 0 || state.records[index].status != QazaStatus.pending) {
       return null;
     }
-    final wasSelecting = state.selectionMode;
-    final previousSelection = Set<String>.of(state.selected);
-    state = state.copyWith(
-      selectionMode: true,
-      selected: <String>{recordId},
+
+    // Single-row swipe completion must not enter selection mode. The same
+    // completion pipeline is reused so business rules, Tartib validation,
+    // operation logging, persistence, refresh, and Undo metadata remain
+    // identical to bulk completion.
+    return _completeRecordIdsWithUndo(
+      <String>[recordId],
+      exitSelectionModeOnSuccess: false,
     );
-    final batch = await completeSelectedWithUndo();
-    if (batch == null && !wasSelecting) {
-      state = state.copyWith(
-        selectionMode: false,
-        selected: previousSelection,
-      );
-    }
-    return batch;
   }
 
   Future<int> deleteSelectedWithRecovery() async {
@@ -608,22 +603,37 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
   /// Completes the selected records and returns the batch metadata needed
   /// for a safe, completion-marker-bound Undo action.
   Future<QazaCompletionBatch?> completeSelectedWithUndo() async {
+    final selectedIds = state.selected.toList(growable: false);
+    return _completeRecordIdsWithUndo(
+      selectedIds,
+      exitSelectionModeOnSuccess: true,
+    );
+  }
+
+  /// Shared durable completion pipeline for both single-row swipe and bulk
+  /// selection. The caller controls whether successful completion exits the
+  /// user-visible selection mode.
+  Future<QazaCompletionBatch?> _completeRecordIdsWithUndo(
+    List<String> selectedIds, {
+    required bool exitSelectionModeOnSuccess,
+  }) async {
     final userId = ref.read(activeUserIdProvider);
-    if (userId == null || state.selected.isEmpty || state.completing) {
+    if (userId == null || selectedIds.isEmpty || state.completing) {
       return null;
     }
 
-    final selectedIds = state.selected.toList(growable: false);
     final service = ref.read(qazaServiceProvider);
     final selectedRecords = await service.resolvePendingRecordsByIds(
       userId: userId,
       recordIds: selectedIds,
     );
     if (selectedRecords.length != selectedIds.length) {
-      state = state.copyWith(
-        selected: {for (final r in selectedRecords) r.id},
-        error: 'Some selected Qaza records are no longer pending.',
-      );
+      if (exitSelectionModeOnSuccess) {
+        state = state.copyWith(
+          selected: {for (final r in selectedRecords) r.id},
+          error: 'Some selected Qaza records are no longer pending.',
+        );
+      }
       return null;
     }
 
@@ -657,8 +667,10 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
           );
       state = state.copyWith(
         completing: false,
-        selectionMode: false,
-        selected: const <String>{},
+        selectionMode:
+            exitSelectionModeOnSuccess ? false : state.selectionMode,
+        selected:
+            exitSelectionModeOnSuccess ? const <String>{} : state.selected,
       );
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
@@ -693,11 +705,11 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
       if (undoableRecords.isEmpty) {
         ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.qazaCompletion,
-              'completion_marker_lookup_empty',
-              StateError('No completion marker was returned after completion.'),
-              stack: StackTrace.current,
-            );
+          DiagnosticArea.qazaCompletion,
+          'completion_marker_lookup_empty',
+          StateError('No completion marker was returned after completion.'),
+          stack: StackTrace.current,
+        );
         return null;
       }
       return QazaCompletionBatch(
