@@ -203,7 +203,7 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final expiry = DateTime(2026, 9, 26, 10, 59, 59);
       final batch = QazaUndoBatch(
-        entries: const [
+        entries: [
           QazaUndoEntry(
             recordId: 'record-1',
             completionId: 'completion-1',
