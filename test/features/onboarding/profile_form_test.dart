@@ -5,7 +5,9 @@ import 'package:qaza_namaz/features/onboarding/profile_form.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('onboarding ProfileForm does not show Daily Qaza Target', (tester) async {
+  testWidgets(
+    'onboarding ProfileForm does not show Daily Qaza Target',
+    (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -14,7 +16,7 @@ void main() {
         home: Scaffold(
           body: ProfileForm(
             initialProfile: UserProfile(languageCode: 'en'),
-          showDailyQazaTarget: false,
+            showDailyQazaTarget: false,
             onSubmit: (_) async {},
           ),
         ),
@@ -22,9 +24,12 @@ void main() {
     );
 
     expect(find.byKey(const Key('profile_daily_qaza_target')), findsNothing);
-  });
+  },
+  );
 
-  testWidgets('ProfileForm can expose Daily Qaza Target when requested', (tester) async {
+  testWidgets(
+    'ProfileForm can expose Daily Qaza Target when requested',
+    (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('en'),
@@ -33,7 +38,7 @@ void main() {
         home: Scaffold(
           body: ProfileForm(
             initialProfile: UserProfile(languageCode: 'en'),
-          showDailyQazaTarget: true,
+            showDailyQazaTarget: true,
             onSubmit: (_) async {},
           ),
         ),
@@ -41,5 +46,6 @@ void main() {
     );
 
     expect(find.byKey(const Key('profile_daily_qaza_target')), findsOneWidget);
-  });
+  },
+  );
 }
