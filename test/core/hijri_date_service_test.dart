@@ -49,7 +49,8 @@ void main() {
     expect(morningParts.day, eveningParts.day);
     expect(morningParts.month, eveningParts.month);
     expect(morningParts.year, eveningParts.year);
-    expect(morningParts.month, inInclusiveRange(1, 12));
+    expect(morningParts.month, greaterThanOrEqualTo(1));
+    expect(morningParts.month, lessThanOrEqualTo(12));
   });
 
   test('resolves every Hijri month through localization', () {
