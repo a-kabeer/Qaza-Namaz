@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
-import '../../core/widgets/app_card.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
@@ -31,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          AppCard(
+          Card(
             padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_profile'),
@@ -70,7 +69,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           const _ResetQazaCounterRow(),
           const SizedBox(height: 12),
-          AppCard(
+          Card(
             padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_about'),
