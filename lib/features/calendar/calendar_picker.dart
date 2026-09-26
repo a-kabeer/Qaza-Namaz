@@ -162,6 +162,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   String _hijriLabel(DateTime date, AppLocalizations l10n) =>
       l10n.formatHijriDate(date);
 
+  String _hijriMonthLabel(DateTime month, AppLocalizations l10n) =>
+      HijriDateService.monthYearLabel(month, l10n);
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarControllerProvider);
@@ -213,9 +216,10 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                         ),
                         // Gregorian leads; the Hijri month stays secondary.
                         Text(
-                          _hijriLabel(month, l10n),
+                          _hijriMonthLabel(month, l10n),
                           key: const Key('calendar_hijri_month_label'),
                           style: theme.textTheme.bodySmall,
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -345,8 +349,7 @@ class _Grid extends StatelessWidget {
                   child: Row(
                     children: [
                       for (var column = 0; column < 7; column++)
-                        SizedBox(
-                          width: 44,
+                        Expanded(
                           child: _cell(
                             context,
                             row * 7 + column,
