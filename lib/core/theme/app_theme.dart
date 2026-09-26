@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../constants/prayer_types.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
+import 'app_colors.dart';
+
 /// Central application theme.
 ///
 /// The only source of Material styling for the application. Colour, type,
@@ -424,33 +426,33 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
       brightness == Brightness.dark ? dark : light;
 
   static const light = AppChartColors(
-    fajr: const Color(0xFF39B982),
-    zuhr: const Color(0xFFFF9248),
-    asr: const Color(0xFFFFC94D),
-    maghrib: const Color(0xFF46C6B8),
-    isha: const Color(0xFF4C9FF5),
-    witr: const Color(0xFF9B5DE5),
-    completed: const Color(0xFF22C55E),
-    pending: const Color(0xFFEF4444),
-    total: const Color(0xFFCBD5E1),
-    primary: const Color(0xFF2E7D5B),
-    grid: const Color(0xFFE2E8F0),
-    track: const Color(0xFFE8EDF0),
+    fajr: AppColors.chartFajr,
+    zuhr: AppColors.chartZuhr,
+    asr: AppColors.chartAsr,
+    maghrib: AppColors.chartMaghrib,
+    isha: AppColors.chartIsha,
+    witr: AppColors.chartWitr,
+    completed: AppColors.chartCompleted,
+    pending: AppColors.chartPending,
+    total: AppColors.chartTotal,
+    primary: AppColors.lightChartPrimary,
+    grid: AppColors.lightChartGrid,
+    track: AppColors.lightChartTrack,
   );
 
   static const dark = AppChartColors(
-    fajr: const Color(0xFF39B982),
-    zuhr: const Color(0xFFFF9248),
-    asr: const Color(0xFFFFC94D),
-    maghrib: const Color(0xFF46C6B8),
-    isha: const Color(0xFF4C9FF5),
-    witr: const Color(0xFF9B5DE5),
-    completed: const Color(0xFF22C55E),
-    pending: const Color(0xFFEF4444),
-    total: const Color(0xFFCBD5E1),
-    primary: const Color(0xFF63D8A0),
-    grid: const Color(0xFF29423A),
-    track: const Color(0xFF20362E),
+    fajr: AppColors.chartFajr,
+    zuhr: AppColors.chartZuhr,
+    asr: AppColors.chartAsr,
+    maghrib: AppColors.chartMaghrib,
+    isha: AppColors.chartIsha,
+    witr: AppColors.chartWitr,
+    completed: AppColors.chartCompleted,
+    pending: AppColors.chartPending,
+    total: AppColors.chartTotal,
+    primary: AppColors.darkChartPrimary,
+    grid: AppColors.darkChartGrid,
+    track: AppColors.darkChartTrack,
   );
 
   Color forPrayer(PrayerType prayer) => switch (prayer) {
