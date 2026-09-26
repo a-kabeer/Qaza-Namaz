@@ -45,6 +45,11 @@ void main() {
       ),
     );
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile_daily_qaza_target')),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
     expect(find.byKey(const Key('profile_daily_qaza_target')), findsOneWidget);
   },
   );
