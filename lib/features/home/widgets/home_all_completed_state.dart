@@ -20,19 +20,19 @@ class HomeAllCompletedState extends StatelessWidget {
     return Card(
       key: const Key('home_all_completed_state'),
       child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+        padding: const EdgeInsets.all(16),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
             radius: 26,
             backgroundColor: scheme.primaryContainer,
             foregroundColor: scheme.onPrimaryContainer,
-            child: const Icon(Icons.check_rounded, size: 30),
+        child: const Icon(Icons.check_rounded, size: 30),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
+        child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
@@ -63,7 +63,7 @@ class HomeAllCompletedState extends StatelessWidget {
           ),
         ],
       ),
-          )
+      ),
     );
   }
 }
