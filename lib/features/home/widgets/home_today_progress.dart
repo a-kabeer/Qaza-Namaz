@@ -674,7 +674,9 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.selected.mode == HomePrayerSelectionMode.automatic
+                (widget.selected.mode == HomePrayerSelectionMode.automatic ||
+                        widget.selected.source ==
+                            HomePrayerSelectionSource.sahibAlTartib)
                     ? Icons.check_rounded
                     : Icons.auto_awesome_outlined,
                 size: 18,
@@ -695,7 +697,9 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       child: Chip(
         avatar: const Icon(Icons.tune_rounded, size: 18),
         label: Text(
-          widget.selected.mode == HomePrayerSelectionMode.automatic
+          (widget.selected.mode == HomePrayerSelectionMode.automatic ||
+                  widget.selected.source ==
+                      HomePrayerSelectionSource.sahibAlTartib)
               ? l10n.homeAuto
               : prayer!.localizedLabel(l10n),
         ),
@@ -713,8 +717,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                 fontWeight: FontWeight.w700,
               ),
         ),
-        if (widget.selected.mode == HomePrayerSelectionMode.automatic &&
-            widget.selected.source == HomePrayerSelectionSource.sahibAlTartib &&
+        if (widget.selected.source == HomePrayerSelectionSource.sahibAlTartib &&
             widget.selected.prayer != null)
           Text(
             l10n.homeSahibOrderLabel(
@@ -778,7 +781,11 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
         else
           Consumer(
             builder: (context, ref, _) {
-              final state = ref.watch(oldestPendingProvider(prayer));
+              final AsyncValue<QazaRecord?> state =
+                  widget.selected.source ==
+                          HomePrayerSelectionSource.sahibAlTartib
+                      ? ref.watch(homeFallbackPendingProvider)
+                      : ref.watch(oldestPendingProvider(prayer));
               return state.when(
                 loading: () => const HomeNextQazaSkeleton(),
                 error: (_, __) => ErrorState(
