@@ -210,7 +210,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               if (existing > 0) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '${existing} ${AppLocalizations.of(context).addQazaAlreadyAddedLabel}',
+                  '$existing ${AppLocalizations.of(context).addQazaAlreadyAddedLabel}',
                   textAlign: TextAlign.center,
                 ),
               ],
