@@ -2,9 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../constants/prayer_types.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:flutter/material.dart';
 
+import '../constants/prayer_types.dart';
 import 'app_colors.dart';
 
 /// Central application theme.
@@ -346,6 +347,7 @@ class AppTheme {
       ],
     );
   }
+}
 
 /// Both type scales, carried on the theme.
 ///
