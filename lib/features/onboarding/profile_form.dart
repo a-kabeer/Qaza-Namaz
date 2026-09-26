@@ -4,6 +4,7 @@ import '../../core/calendar/hijri_date_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
+
 class ProfileForm extends StatefulWidget {
   const ProfileForm({
     super.key,
@@ -273,8 +274,9 @@ class _ProfileFormState extends State<ProfileForm> {
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             key: const Key('profile_daily_qaza_target'),
-            initialValue:
-                UserProfile.dailyQazaTargetOptions.contains(profile.dailyQazaTarget)
+            initialValue: UserProfile.dailyQazaTargetOptions.contains(
+              profile.dailyQazaTarget,
+            )
                 ? profile.dailyQazaTarget
                 : null,
             items: [
