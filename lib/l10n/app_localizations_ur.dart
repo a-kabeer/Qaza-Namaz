@@ -871,6 +871,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaDateRangeLabel => 'تاریخوں کا دورانیہ';
 
   @override
+  String get addQazaCombinationCountLabel => 'مجموعے';
+
+  @override
   String get addQazaPrayersLabel => 'نمازیں';
 
   @override
