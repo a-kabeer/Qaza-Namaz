@@ -45,7 +45,7 @@ void main() {
   });
 
   test('customized profile target is preserved over legacy Home target', () async {
-    final profile = const UserProfile(
+    const profile = UserProfile(
       dailyQazaTarget: 20,
       onboardingCompleted: true,
     );
@@ -69,7 +69,7 @@ void main() {
   });
 
   test('legacy Home target defaults to 5 when no target exists', () async {
-    final profile = const UserProfile(onboardingCompleted: true);
+    const profile = UserProfile(onboardingCompleted: true);
     final json = profile.toJson()..remove('dailyQazaTarget');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(UserProfile.storageKey, jsonEncode(json));
