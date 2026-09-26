@@ -109,6 +109,14 @@
       "year": {}
     }
   },
+  "hijriMonthYear": "{month} {year} AH",
+  "@hijriMonthYear": {
+    "description": "Hijri month/year header; Gregorian remains primary",
+    "placeholders": {
+      "month": {},
+      "year": {}
+    }
+  },
 
   "hijriMonthMuharram": "Muharram",
   "hijriMonthSafar": "Safar",

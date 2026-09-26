@@ -239,6 +239,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String hijriMonthYear(Object month, Object year) {
+    return '$month $year ھ';
+  }
+
+  @override
   String get hijriMonthMuharram => 'محرم';
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/utils/qaza_date.dart';
@@ -23,9 +24,6 @@ class AddQazaScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<AddQazaScreen> createState() => _AddQazaScreenState();
 }
-
-bool _sameDate(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
 
 class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int _lastExistingCount = 0;
@@ -560,55 +558,20 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
                 ),
               ),
             Expanded(
-              child: ListView.builder(
-                itemCount: _analysis.items.length,
-                itemBuilder: (context, index) {
-                  final item = _analysis.items[index];
-                  final showDateHeader = index == 0 ||
-                      !_sameDate(
-                        _analysis.items[index - 1].key.date,
-                        item.key.date,
+              child: Builder(
+                builder: (context) {
+                  final groups = _groupItemsByDate(_analysis.items);
+                  return ListView.separated(
+                    itemCount: groups.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) {
+                      final group = groups[index];
+                      return _ReviewDateGroup(
+                        date: group.date,
+                        items: group.items,
                       );
-                  final status = switch (item.status) {
-                    AddQazaCandidateStatus.newRecord => l10n.addQazaNewLabel,
-                    AddQazaCandidateStatus.alreadyAdded =>
-                      l10n.addQazaAlreadyAddedLabel,
-                    AddQazaCandidateStatus.unavailable =>
-                      l10n.addQazaUnavailableLabel,
-                  };
-                  final prayer = switch (item.key.prayerType) {
-                    PrayerType.fajr => l10n.prayerFajr,
-                    PrayerType.zuhr => l10n.prayerZuhr,
-                    PrayerType.asr => l10n.prayerAsr,
-                    PrayerType.maghrib => l10n.prayerMaghrib,
-                    PrayerType.isha => l10n.prayerIsha,
-                    PrayerType.witr => l10n.prayerWitr,
-                  };
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (showDateHeader)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: index == 0 ? 0 : AppSpacing.sm,
-                            bottom: AppSpacing.xs,
-                          ),
-                          child: Text(
-                            DateFormatters.formatGregorianFull(
-                              item.key.date,
-                            ),
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                      ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(prayer),
-                        subtitle: Text(status),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
+                    },
                   );
                 },
               ),
@@ -655,6 +618,167 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
                         _analysis.newCount.toString(),
                       ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewDateGroupData {
+  const _ReviewDateGroupData({
+    required this.date,
+    required this.items,
+  });
+
+  final DateTime date;
+  final List<AddQazaCandidate> items;
+}
+
+List<_ReviewDateGroupData> _groupItemsByDate(
+  List<AddQazaCandidate> items,
+) {
+  final groups = <DateTime, List<AddQazaCandidate>>{};
+  for (final item in items) {
+    final date = QazaDate.normalize(item.key.date);
+    (groups[date] ??= <AddQazaCandidate>[]).add(item);
+  }
+
+  return [
+    for (final entry in groups.entries)
+      _ReviewDateGroupData(
+        date: entry.key,
+        items: List<AddQazaCandidate>.unmodifiable(entry.value),
+      ),
+  ];
+}
+
+class _ReviewDateGroup extends StatelessWidget {
+  const _ReviewDateGroup({
+    required this.date,
+    required this.items,
+  });
+
+  final DateTime date;
+  final List<AddQazaCandidate> items;
+
+  String _prayerLabel(AppLocalizations l10n, PrayerType prayer) =>
+      switch (prayer) {
+        PrayerType.fajr => l10n.prayerFajr,
+        PrayerType.zuhr => l10n.prayerZuhr,
+        PrayerType.asr => l10n.prayerAsr,
+        PrayerType.maghrib => l10n.prayerMaghrib,
+        PrayerType.isha => l10n.prayerIsha,
+        PrayerType.witr => l10n.prayerWitr,
+      };
+
+  String _statusLabel(
+    AppLocalizations l10n,
+    AddQazaCandidateStatus status,
+  ) =>
+      switch (status) {
+        AddQazaCandidateStatus.newRecord => l10n.addQazaNewLabel,
+        AddQazaCandidateStatus.alreadyAdded =>
+          l10n.addQazaAlreadyAddedLabel,
+        AddQazaCandidateStatus.unavailable =>
+          l10n.addQazaUnavailableLabel,
+      };
+
+  IconData _statusIcon(AddQazaCandidateStatus status) =>
+      switch (status) {
+        AddQazaCandidateStatus.newRecord =>
+          Icons.add_circle_outline_rounded,
+        AddQazaCandidateStatus.alreadyAdded =>
+          Icons.check_circle_outline_rounded,
+        AddQazaCandidateStatus.unavailable => Icons.block_outlined,
+      };
+
+  Color _statusColor(
+    BuildContext context,
+    AddQazaCandidateStatus status,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return switch (status) {
+      AddQazaCandidateStatus.newRecord => scheme.primary,
+      AddQazaCandidateStatus.alreadyAdded => scheme.secondary,
+      AddQazaCandidateStatus.unavailable => scheme.outline,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                DateFormatters.formatGregorianFull(date),
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              Text(
+                HijriDateService.format(date, l10n),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: AppSpacing.xs,
+            crossAxisSpacing: AppSpacing.xs,
+            childAspectRatio: 1.65,
+          ),
+          itemBuilder: (context, index) {
+            final item = items[index];
+            final color = _statusColor(context, item.status);
+            final prayer = _prayerLabel(l10n, item.key.prayerType);
+            final status = _statusLabel(l10n, item.status);
+
+            return Semantics(
+              label: '$prayer — $status',
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: color.withValues(alpha: 0.08),
+                  border: Border.all(
+                    color: color.withValues(alpha: 0.28),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _statusIcon(item.status),
+                      size: 16,
+                      color: color,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        prayer,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ],
     );

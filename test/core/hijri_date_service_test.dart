@@ -88,6 +88,50 @@ void main() {
     );
   });
 
+  test('formats a Gregorian month as a Hijri month/year header', () {
+    final date = DateTime(2026, 9);
+    final first = HijriDateService.fromGregorian(DateTime(2026, 9, 1));
+    final last = HijriDateService.fromGregorian(DateTime(2026, 9, 30));
+
+    final firstLabel = en.hijriMonthYear(
+      HijriDateService.monthNameFor(first.month, en),
+      first.year,
+    );
+    final lastLabel = en.hijriMonthYear(
+      HijriDateService.monthNameFor(last.month, en),
+      last.year,
+    );
+    final expected = first.month == last.month && first.year == last.year
+        ? firstLabel
+        : en.qazaDateFilterRange(firstLabel, lastLabel);
+
+    final actual = HijriDateService.monthYearLabel(date, en);
+
+    expect(actual, expected);
+    expect(
+      actual,
+      isNot(contains(en.hijriDate(
+        first.day,
+        HijriDateService.monthNameFor(first.month, en),
+        first.year,
+      ))),
+    );
+  });
+
+  test('Urdu month/year header stays localized', () {
+    final date = DateTime(2026, 9);
+    final first = HijriDateService.fromGregorian(DateTime(2026, 9, 1));
+    final expected = ur.hijriMonthYear(
+      HijriDateService.monthNameFor(first.month, ur),
+      first.year,
+    );
+
+    expect(
+      HijriDateService.monthYearLabel(date, ur),
+      contains(expected),
+    );
+  });
+
   test('Urdu formatting stays localized and uses a named month', () {
     final date = DateTime(2026, 9, 26);
     final parts = HijriDateService.fromGregorian(date);
