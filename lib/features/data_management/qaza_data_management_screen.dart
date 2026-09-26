@@ -45,10 +45,10 @@ class _QazaDataManagementScreenState
         bytes: bytes,
       );
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       _showMessage(
-        savedUri == null
-            ? AppLocalizations.of(context).dataExportCanceled
-            : AppLocalizations.of(context).dataExportSaved,
+        savedUri == null ? l10n.dataExportCanceled : l10n.dataExportSaved,
+        success: savedUri != null,
       );
     } catch (error) {
       if (mounted) {
