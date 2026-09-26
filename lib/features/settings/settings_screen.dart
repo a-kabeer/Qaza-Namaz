@@ -31,7 +31,6 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
           Card(
-            padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_profile'),
               icon: Icons.person_outline_rounded,
@@ -70,7 +69,6 @@ class SettingsScreen extends ConsumerWidget {
           const _ResetQazaCounterRow(),
           const SizedBox(height: 12),
           Card(
-            padding: EdgeInsets.zero,
             child: SettingsNavRow(
               key: const Key('settings_about'),
               icon: Icons.info_outline_rounded,
