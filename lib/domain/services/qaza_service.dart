@@ -170,15 +170,23 @@ class QazaService {
   Future<void> _ensureCompletionAllowed({
     required String userId,
     required String recordId,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     final SahibAlTartibState state;
     final bool allowed;
     try {
-      state = await tartib.evaluate(userId: userId);
+      state = await tartib.evaluate(
+        userId: userId,
+        currentDate: currentDate,
+        currentPrayer: currentPrayer,
+      );
       if (!state.requiresOrder || state.nextPending == null) return;
       allowed = await tartib.canCompleteRecordIds(
         userId: userId,
         recordIds: [recordId],
+        currentDate: currentDate,
+        currentPrayer: currentPrayer,
       );
     } catch (error, stack) {
       // The ordering rule could not be read. That is not a violation and not
@@ -411,10 +419,14 @@ class QazaService {
     required String userId,
     required String recordId,
     required DateTime completedAt,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     await _ensureCompletionAllowed(
       userId: userId,
       recordId: recordId,
+      currentDate: currentDate,
+      currentPrayer: currentPrayer,
     );
     return repository.completeRecord(
       userId: userId,
@@ -427,13 +439,21 @@ class QazaService {
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
   }) async {
     if (recordIds.isEmpty) return;
-    final state = await tartib.evaluate(userId: userId);
+    final state = await tartib.evaluate(
+      userId: userId,
+      currentDate: currentDate,
+      currentPrayer: currentPrayer,
+    );
     if (state.requiresOrder &&
         !(await tartib.canCompleteRecordIds(
           userId: userId,
           recordIds: recordIds,
+          currentDate: currentDate,
+          currentPrayer: currentPrayer,
         ))) {
       throw QazaTartibViolationException(
         requiredPrayer: state.nextPrayer!,
