@@ -716,7 +716,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                   return _HomeFallbackNextQaza(
                     record: record,
                     onComplete: widget.onComplete,
-                    onPlan: widget.onPlan,
                   );
                 },
               );
@@ -969,8 +968,6 @@ class _HomeFallbackNextQaza extends StatelessWidget {
                 label: Text(l10n.homeCompleteQaza),
               ),
             ),
-            const SizedBox(width: 8),
-
           ],
         ),
       ],
