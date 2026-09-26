@@ -224,8 +224,12 @@ class QazaUndoManager {
     required String userId,
     required Iterable<QazaRecord> records,
   }) async {
-    final entries = <QazaUndoEntry>[];
-    final seen = <String>{};
+    final now = _now();
+    final existing = await _store.load(userId: userId, now: now);
+    final entries = <QazaUndoEntry>[
+      ...?existing?.entries,
+    ];
+    final seen = entries.map((entry) => entry.recordId).toSet();
 
     for (final record in records) {
       final completionId = record.completionId;
@@ -246,11 +250,13 @@ class QazaUndoManager {
       );
     }
 
-    if (entries.isEmpty) return null;
+    if (entries.isEmpty) return existing;
 
+    // Consecutive completions extend the same temporary Undo session.
+    // The active batch therefore matches the aggregated completion feedback.
     final batch = QazaUndoBatch(
       entries: List.unmodifiable(entries),
-      expiresAt: _now().add(QazaUndoStore.window),
+      expiresAt: now.add(QazaUndoStore.window),
     );
     await _store.save(userId: userId, batch: batch);
     return batch;

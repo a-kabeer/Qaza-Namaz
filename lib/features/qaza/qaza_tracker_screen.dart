@@ -423,9 +423,7 @@ class _TrackerBody extends ConsumerWidget {
                         ? (record.status == QazaStatus.pending
                             ? () => controller.toggleSelection(record.id)
                             : null)
-                        : (record.status == QazaStatus.pending && canAct
-                            ? () => _completeSingle(context, ref, record)
-                            : null),
+                        : null,
                     onLongPress: record.status == QazaStatus.pending &&
                             (lockedRecordId == null ||
                                 record.id == lockedRecordId ||
@@ -532,73 +530,49 @@ class _RecordRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final completed = record.status == QazaStatus.completed;
     final originalDate =
         DateFormatters.formatGregorianDatePadded(record.originalDate);
+    final hijriDate = l10n.formatHijriDate(record.originalDate);
 
     final tile = Semantics(
       selected: selected,
-      button: record.status == QazaStatus.pending,
+      button: false,
       label:
-          '$originalDate, ${record.prayerType.localizedLabel(l10n)}, ${record.status.localizedLabel(l10n)}',
+          '${record.prayerType.localizedLabel(l10n)}, $originalDate, $hijriDate',
       hint: record.status == QazaStatus.pending
           ? (selectionMode
               ? 'Tap to select or unselect.'
-              : 'Tap to complete. Swipe to complete. Long press to select.')
+              : 'Swipe left or right to complete. Long press to select.')
           : null,
-      child: ListTile(
-        key: Key('qaza_record_${record.id}'),
-        contentPadding: EdgeInsets.zero,
-        leading: selectionMode
-            ? Checkbox(
-                value: selected,
-                onChanged: onTap == null || busy ? null : (_) => onTap!(),
-              )
-            : IconButton(
-                key: Key('qaza_record_complete_${record.id}'),
-                tooltip: completed
-                    ? l10n.statusCompleted
-                    : l10n.qazaCompleteCount(1),
-                onPressed: completed || !canAct || busy ? null : onTap,
-                icon: Icon(
-                  completed
-                      ? Icons.check_circle_rounded
-                      : Icons.radio_button_unchecked_rounded,
-                  color: completed
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline,
-                ),
-              ),
-        title: Text(originalDate),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              record.prayerType.localizedLabel(l10n),
-              style: theme.textTheme.titleSmall,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 68),
+        child: ListTile(
+          key: Key('qaza_record_${record.id}'),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+          minVerticalPadding: 8,
+          leading: selectionMode
+              ? Checkbox(
+                  value: selected,
+                  onChanged: onTap == null || busy ? null : (_) => onTap!(),
+                )
+              : null,
+          title: Text(
+            record.prayerType.localizedLabel(l10n),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            Text(
-              l10n.formatHijriDate(record.originalDate),
-              style: theme.textTheme.bodySmall,
-            ),
-            Text(
-              record.status.localizedLabel(l10n),
-              style: theme.textTheme.bodySmall,
-            ),
-            if (completed && record.completedAt != null)
-              Text(
-                l10n.qazaCompletedOn(
-                  DateFormatters.formatGregorianDatePadded(
-                    record.completedAt!,
-                  ),
-                ),
-                style: theme.textTheme.bodySmall,
-              ),
-          ],
+          ),
+          subtitle: Text(
+            '$originalDate · $hijriDate',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall,
+          ),
+          onTap: onTap,
+          onLongPress: onLongPress,
         ),
-        isThreeLine: true,
-        onTap: onTap,
-        onLongPress: onLongPress,
       ),
     );
 
@@ -612,12 +586,18 @@ class _RecordRow extends StatelessWidget {
 
     return Dismissible(
       key: Key('qaza_record_swipe_${record.id}'),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal,
       dismissThresholds: const {
+        DismissDirection.startToEnd: 0.32,
         DismissDirection.endToStart: 0.32,
       },
       resizeDuration: const Duration(milliseconds: 120),
-      background: const _CompletionSwipeBackground(),
+      background: const _CompletionSwipeBackground(
+        alignment: AlignmentDirectional.centerStart,
+      ),
+      secondaryBackground: const _CompletionSwipeBackground(
+        alignment: AlignmentDirectional.centerEnd,
+      ),
       confirmDismiss: (_) => onSwipeComplete!(),
       child: tile,
     );
@@ -625,28 +605,30 @@ class _RecordRow extends StatelessWidget {
 }
 
 class _CompletionSwipeBackground extends StatelessWidget {
-  const _CompletionSwipeBackground();
+  const _CompletionSwipeBackground({required this.alignment});
+
+  final AlignmentDirectional alignment;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     return Container(
-      alignment: AlignmentDirectional.centerStart,
+      alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_rounded, color: scheme.onPrimary),
+          Icon(Icons.check_circle_rounded, color: scheme.onPrimaryContainer),
           const SizedBox(width: 8),
           Text(
             l10n.qazaCompleteCount(1),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: scheme.onPrimary,
+                  color: scheme.onPrimaryContainer,
                 ),
           ),
         ],
@@ -654,7 +636,6 @@ class _CompletionSwipeBackground extends StatelessWidget {
     );
   }
 }
-
 class _BulkCompletionBar extends ConsumerStatefulWidget {
   const _BulkCompletionBar({required this.state, required this.controller});
   final QazaTrackerState state;
