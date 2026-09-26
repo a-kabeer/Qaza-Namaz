@@ -1,7 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +15,11 @@ import 'app_colors.dart';
 class AppTheme {
   static const _subThemesData = FlexSubThemesData(
     defaultRadius: 12,
+    cardRadius: 16,
+    cardElevation: 0,
+    cardBackgroundSchemeColor: SchemeColor.surfaceContainerLow,
+    cardBorderSchemeColor: SchemeColor.outlineVariant,
+    cardBorderWidth: 1,
   );
 
   static const String _serif = 'Noto Serif';
