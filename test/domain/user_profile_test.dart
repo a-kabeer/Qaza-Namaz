@@ -24,7 +24,7 @@ void main() {
   });
 
   test('changed Daily Qaza Target persists through UserProfile repository', () async {
-    final repository = const SharedPreferencesUserProfileRepository();
+    const repository = SharedPreferencesUserProfileRepository();
     final profile = const UserProfile().copyWith(dailyQazaTarget: 12);
 
     await repository.save(profile);
