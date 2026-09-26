@@ -37,7 +37,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ProfileForm(
-            initialProfile: UserProfile(languageCode: 'en'),
+            initialProfile: const UserProfile(languageCode: 'en'),
             showDailyQazaTarget: true,
             onSubmit: (_) async {},
           ),
