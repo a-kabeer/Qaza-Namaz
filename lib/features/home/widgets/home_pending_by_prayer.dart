@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/date_formatters.dart';
@@ -26,10 +25,11 @@ class HomePendingByPrayer extends ConsumerWidget {
         )
         .toList(growable: false);
 
-    return AppCard(
+    return Card(
       key: const Key('home_pending_by_prayer'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      child: Column(
+      child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -78,6 +78,7 @@ class HomePendingByPrayer extends ConsumerWidget {
               ),
         ],
       ),
+          )
     );
   }
 }
