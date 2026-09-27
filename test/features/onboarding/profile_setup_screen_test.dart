@@ -9,6 +9,7 @@ import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
+import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -185,6 +186,8 @@ void main() {
       expect(calculatedPlan!.startDate, calculatedPlan.endDate);
       expect(calculatedPlan.totalWithWitr, 0);
 
+      repository.stored = initialProfile;
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -200,14 +203,20 @@ void main() {
             locale: const Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: ProfileSetupScreen(
-              languageCode: 'en',
-              initialProfile: initialProfile,
-            ),
+            home: const StartupGate(),
           ),
         ),
       );
 
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('onboarding_previous_qaza_setup')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('onboarding_previous_qaza_setup')),
+      );
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
