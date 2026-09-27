@@ -87,13 +87,14 @@ class HomeController {
 
   void afterCompletion({
     required int pendingBefore,
+    required PrayerType completedPrayer,
   }) {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    if (pendingBefore <= 1) {
-      ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
-    }
+    ref
+        .read(homePrayerSelectionProvider.notifier)
+        .afterSuccessfulCompletion(completedPrayer);
   }
 
   void afterStaleCompletion() {
