@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
-import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
 
 void main() {
@@ -80,12 +79,12 @@ void main() {
 
   group('Prayer Time slot mapping', () {
     test('maps every completable Prayer Time slot', () {
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.fajr), PrayerType.fajr);
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.dhuhr), PrayerType.zuhr);
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.asr), PrayerType.asr);
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.maghrib), PrayerType.maghrib);
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.isha), PrayerType.isha);
-      expect(prayerTypeFromPrayerSlot(PrayerSlot.sunrise), isNull);
+      expect(PrayerSlot.fajr.qazaPrayerType, PrayerType.fajr);
+      expect(PrayerSlot.dhuhr.qazaPrayerType, PrayerType.zuhr);
+      expect(PrayerSlot.asr.qazaPrayerType, PrayerType.asr);
+      expect(PrayerSlot.maghrib.qazaPrayerType, PrayerType.maghrib);
+      expect(PrayerSlot.isha.qazaPrayerType, PrayerType.isha);
+      expect(PrayerSlot.sunrise.qazaPrayerType, isNull);
       expect(prayerTypeFromPrayerSlot(null), isNull);
     });
   });
