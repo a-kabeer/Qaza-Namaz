@@ -722,6 +722,18 @@ abstract class AppLocalizations {
   /// **'Auto Sequence'**
   String get homeAutoSequence;
 
+  /// No description provided for @homeQazaTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Target'**
+  String get homeQazaTarget;
+
+  /// No description provided for @homePrayerSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Selection'**
+  String get homePrayerSelection;
+
   /// No description provided for @homePrayerTimeUnavailable.
   ///
   /// In en, this message translates to:
