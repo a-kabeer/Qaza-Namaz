@@ -6,6 +6,7 @@ import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../core/widgets/app_scaffold.dart';
+import '../../core/widgets/prayer_selection_grid.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_operation.dart';
 import '../../domain/services/profile_rules.dart';
@@ -325,7 +326,6 @@ class _PrayerSelection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    const prayers = PrayerType.values;
 
     return Card(
       child: Padding(
@@ -338,67 +338,11 @@ class _PrayerSelection extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: prayers.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisExtent: 42,
-                mainAxisSpacing: AppSpacing.sm,
-                crossAxisSpacing: AppSpacing.sm,
-              ),
-              itemBuilder: (context, index) {
-                final prayer = prayers[index];
-                final enabled =
-                    prayer != PrayerType.witr || witrAllowed;
-                final isSelected = selected.contains(prayer);
-                final label = _prayerLabel(l10n, prayer);
-
-                return Semantics(
-                  button: true,
-                  enabled: enabled,
-                  selected: isSelected,
-                  label: label,
-                  child: FilterChip(
-                    selected: isSelected,
-                    showCheckmark: false,
-                    onSelected:
-                        enabled ? (_) => onToggle(prayer) : null,
-                    label: SizedBox(
-                      width: double.infinity,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(width: 18),
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    size: 16,
-                                  )
-                                : null,
-                          ),
-                        ],
-                      ),
-                    ),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                    ),
-                  ),
-                );
-              },
+            PrayerSelectionGrid(
+              selected: selected,
+              allowMultiple: true,
+              witrAllowed: witrAllowed,
+              onPrayerSelected: onToggle,
             ),
           ],
         ),
