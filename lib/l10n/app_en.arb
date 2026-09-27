@@ -175,7 +175,7 @@
   "homeCompleteOldestQaza": "Complete Oldest Qaza",
   "homeAuto": "Auto",
   "homeAutoSequence": "Auto Sequence",
-  "homePrayerTimeUnavailable": "Automatic prayer selection is unavailable until Prayer Times are set up.",
+  "homePrayerTimeUnavailable": "Prayer Time selection is unavailable until Prayer Times are set up.",
   "homeQazaTargetReachedTitle": "Alhamdulillah!",
   "homeQazaTargetReachedMessage": "You have completed your Qaza plan for today.\nMay Allah accept your efforts.",
   "homeDailyTarget": "Daily target",
