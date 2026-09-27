@@ -136,7 +136,10 @@ void main() {
         scrollable: find.byType(Scrollable),
       );
       await tester.tap(find.byKey(const Key('profile_submit')));
-      await tester.pumpAndSettle();
+      // ProfileForm keeps its saving indicator active while the review dialog
+      // is open, so pumpAndSettle() would wait forever on that animation.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byKey(const Key('qaza_review_add')), findsOneWidget);
 
