@@ -39,14 +39,15 @@ class _LanguageSelectionScreenState
     final locale = _selectedLocale;
 
     try {
-      // Persist the confirmed locale only after Continue is pressed.
-      ref.read(localeProvider.notifier).set(locale);
       await ref.read(userProfileRepositoryProvider).save(
             UserProfile(
               languageCode: locale.languageCode,
               onboardingCompleted: false,
             ),
           );
+
+      // Persist the confirmed locale only after the profile save succeeds.
+      ref.read(localeProvider.notifier).set(locale);
 
       if (!mounted) return;
       Navigator.of(context).push(
