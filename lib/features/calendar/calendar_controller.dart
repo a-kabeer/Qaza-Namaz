@@ -23,18 +23,24 @@ class CalendarSelectionState {
   const CalendarSelectionState({
     this.selectionMode = DateSelectionMode.single,
     this.selectedDates = const <DateTime>[],
+    this.excludedDates = const <DateTime>{},
   });
 
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
+  final Set<DateTime> excludedDates;
 
-  int get selectedCount => selectedDates.length;
+  int get selectedCount =>
+      isRangeComplete ? datesForStorage.length : selectedDates.length;
   bool get hasSelection => selectedDates.isNotEmpty;
   bool get isRangeComplete =>
       selectionMode == DateSelectionMode.range && selectedDates.length == 2;
 
   DateTime? get startDate => selectedDates.isEmpty ? null : selectedDates.first;
   DateTime? get endDate => selectedDates.length > 1 ? selectedDates.last : null;
+
+  bool isRangeExcluded(DateTime date) =>
+      excludedDates.contains(_dateOnly(date));
 
   List<DateTime> get datesForStorage {
     if (!isRangeComplete) return selectedDates;
@@ -45,19 +51,25 @@ class CalendarSelectionState {
     for (var date = start;
         !date.isAfter(end);
         date = DateTime(date.year, date.month, date.day + 1)) {
-      dates.add(date);
+      if (!excludedDates.contains(date)) dates.add(date);
     }
-    return dates;
+    return List.unmodifiable(dates);
   }
 
   CalendarSelectionState copyWith({
     DateSelectionMode? selectionMode,
     List<DateTime>? selectedDates,
+    Set<DateTime>? excludedDates,
   }) {
+    final nextMode = selectionMode ?? this.selectionMode;
     final dates = _canonicalize(selectedDates ?? this.selectedDates);
+    final exclusions = nextMode == DateSelectionMode.range
+        ? _canonicalizeSet(excludedDates ?? this.excludedDates)
+        : const <DateTime>{};
     return CalendarSelectionState(
-      selectionMode: selectionMode ?? this.selectionMode,
+      selectionMode: nextMode,
       selectedDates: List.unmodifiable(dates),
+      excludedDates: Set.unmodifiable(exclusions),
     );
   }
 
@@ -66,6 +78,9 @@ class CalendarSelectionState {
     final result = unique.toList()..sort();
     return result;
   }
+
+  static Set<DateTime> _canonicalizeSet(Iterable<DateTime> dates) =>
+      <DateTime>{for (final date in dates) _dateOnly(date)};
 }
 
 final calendarControllerProvider =
@@ -78,27 +93,41 @@ class CalendarController extends Notifier<CalendarSelectionState> {
 
   void setSelectionMode(DateSelectionMode mode) {
     if (mode == state.selectionMode) return;
-    // Add Qaza merges the mode selector and the calendar onto one step, so
-    // users may switch modes after selecting dates. Keep the dates that remain
-    // valid under the new mode instead of discarding the selection.
-    state = state.copyWith(
-      selectionMode: mode,
-      selectedDates: _preserveAcrossModeChange(mode, state.selectedDates),
-    );
-  }
 
-  static List<DateTime> _preserveAcrossModeChange(
-    DateSelectionMode mode,
-    List<DateTime> dates,
-  ) {
-    if (dates.isEmpty) return const <DateTime>[];
-    // dates are canonically sorted; `.last` is the most recent calendar date.
-    return switch (mode) {
-      DateSelectionMode.single => [dates.last],
-      DateSelectionMode.range =>
-        dates.length == 1 ? dates : [dates.first, dates.last],
-      DateSelectionMode.multiple => dates,
-    };
+    final currentDates = state.datesForStorage;
+    switch (mode) {
+      case DateSelectionMode.single:
+        state = CalendarSelectionState(
+          selectionMode: mode,
+          selectedDates: currentDates.isEmpty ? const [] : [currentDates.last],
+        );
+      case DateSelectionMode.multiple:
+        state = CalendarSelectionState(
+          selectionMode: mode,
+          selectedDates: currentDates,
+        );
+      case DateSelectionMode.range:
+        if (currentDates.isEmpty) {
+          state = CalendarSelectionState(selectionMode: mode);
+          return;
+        }
+
+        final start = currentDates.first;
+        final end = currentDates.last;
+        final selected = currentDates.toSet();
+        final exclusions = <DateTime>{};
+        for (var date = start;
+            !date.isAfter(end);
+            date = DateTime(date.year, date.month, date.day + 1)) {
+          if (!selected.contains(date)) exclusions.add(date);
+        }
+
+        state = CalendarSelectionState(
+          selectionMode: mode,
+          selectedDates: [start, end],
+          excludedDates: exclusions,
+        );
+    }
   }
 
   void select(DateTime value,
@@ -110,18 +139,25 @@ class CalendarController extends Notifier<CalendarSelectionState> {
 
     switch (state.selectionMode) {
       case DateSelectionMode.single:
-        state = state.copyWith(selectedDates: [date]);
+        state = state.copyWith(
+          selectedDates: [date],
+          excludedDates: const {},
+        );
       case DateSelectionMode.multiple:
         final selected = {...state.selectedDates};
         if (!selected.add(date)) selected.remove(date);
-        state = state.copyWith(selectedDates: selected.toList());
+        state = state.copyWith(
+          selectedDates: selected.toList(),
+          excludedDates: const {},
+        );
       case DateSelectionMode.range:
         final start = state.startDate;
         if (start == null || state.isRangeComplete || date.isBefore(start)) {
-          state = state.copyWith(selectedDates: [date]);
+          state = state.copyWith(
+            selectedDates: [date],
+            excludedDates: const {},
+          );
         } else if (date == start) {
-          // Re-tapping the pending anchor must not collapse into a same-day
-          // range; the anchor stays pending until a different end is chosen.
           return;
         } else {
           final end = date;
@@ -130,10 +166,31 @@ class CalendarController extends Notifier<CalendarSelectionState> {
               cursor = DateTime(cursor.year, cursor.month, cursor.day + 1)) {
             if (!isSelectable(cursor)) return;
           }
-          state = state.copyWith(selectedDates: [start, end]);
+          state = state.copyWith(
+            selectedDates: [start, end],
+            excludedDates: const {},
+          );
         }
     }
   }
 
-  void clear() => state = state.copyWith(selectedDates: const []);
-}
+  void toggleRangeExclusion(DateTime value) {
+    if (state.selectionMode != DateSelectionMode.range ||
+        !state.isRangeComplete) {
+      return;
+    }
+
+    final date = _dateOnly(value);
+    final start = state.startDate!;
+    final end = state.endDate!;
+    if (date.isBefore(start) || date.isAfter(end)) return;
+
+    final exclusions = Set<DateTime>.of(state.excludedDates);
+    if (!exclusions.add(date)) exclusions.remove(date);
+    state = state.copyWith(excludedDates: exclusions);
+  }
+
+  void clear() => state = state.copyWith(
+        selectedDates: const [],
+        excludedDates: const {},
+      );}
