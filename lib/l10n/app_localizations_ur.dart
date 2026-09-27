@@ -347,8 +347,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeAuto => 'خودکار';
 
   @override
+  String get homeAutoSequence => 'خودکار ترتیب';
+
+  @override
   String get homePrayerTimeUnavailable =>
-      'خودکار نماز کا انتخاب دستیاب نہیں جب تک نماز کے اوقات سیٹ نہ کیے جائیں۔';
+      'نماز کے اوقات سیٹ ہونے تک وقتِ نماز کے مطابق انتخاب دستیاب نہیں۔';
 
   @override
   String get homeQazaTargetReachedTitle => 'الحمدللہ!';

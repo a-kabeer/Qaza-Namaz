@@ -15,12 +15,18 @@ class HomeDailyProgress {
   }
 }
 
+/// How Home determines the next Complete Qaza target.
+///
+/// Manual prayer selection is an override inside the selected mode; it is not
+/// presented as a third user-facing mode.
 enum HomePrayerSelectionMode {
-  automatic,
-  manual,
+  prayerTime,
+  autoSequence,
 }
 
 enum HomePrayerSelectionSource {
+  prayerTime,
+  autoSequence,
   manual,
   sahibAlTartib,
 
@@ -36,25 +42,52 @@ enum HomePrayerSelectionSource {
 
 class HomePrayerSelectionState {
   const HomePrayerSelectionState({
-    this.mode = HomePrayerSelectionMode.automatic,
+    this.mode = HomePrayerSelectionMode.prayerTime,
     this.manualPrayer,
+    this.autoSequencePrayer = PrayerType.fajr,
   });
 
   final HomePrayerSelectionMode mode;
+
+  /// A user-selected target that temporarily overrides the current mode.
   final PrayerType? manualPrayer;
 
-  PrayerType? get selectedPrayer =>
-      mode == HomePrayerSelectionMode.manual ? manualPrayer : null;
+  /// The current cursor for Auto Sequence mode.
+  final PrayerType autoSequencePrayer;
+
+  bool get hasManualOverride => manualPrayer != null;
 
   HomePrayerSelectionState copyWith({
     HomePrayerSelectionMode? mode,
     PrayerType? manualPrayer,
+    PrayerType? autoSequencePrayer,
     bool clearManualPrayer = false,
   }) {
     return HomePrayerSelectionState(
       mode: mode ?? this.mode,
       manualPrayer:
           clearManualPrayer ? null : (manualPrayer ?? this.manualPrayer),
+      autoSequencePrayer: autoSequencePrayer ?? this.autoSequencePrayer,
+    );
+  }
+
+  /// Advances Auto Sequence only when its intended target was completed.
+  ///
+  /// Sahib al-Tartib can temporarily force a different Fard prayer. In that
+  /// case the user's sequence cursor is preserved rather than skipping ahead.
+  HomePrayerSelectionState afterSuccessfulCompletion(
+    PrayerType completedPrayer,
+  ) {
+    if (mode == HomePrayerSelectionMode.prayerTime) {
+      return copyWith(clearManualPrayer: true);
+    }
+
+    final requestedPrayer = manualPrayer ?? autoSequencePrayer;
+    if (completedPrayer != requestedPrayer) return this;
+
+    return copyWith(
+      autoSequencePrayer: completedPrayer.nextInQazaSequence,
+      clearManualPrayer: true,
     );
   }
 }

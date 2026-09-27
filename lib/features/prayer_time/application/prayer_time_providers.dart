@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../core/constants/prayer_types.dart';
+
 import '../data/offline_city_resolver.dart';
 import '../data/prayer_location_repository.dart';
 import '../data/prayer_time_cache.dart';
@@ -110,6 +112,17 @@ final currentPrayerStateProvider =
     next: PrayerSlot.fajr,
     nextAt: today.localFor(PrayerSlot.fajr, location),
   );
+});
+
+/// The current Qaza prayer derived from the Prayer Time state.
+///
+/// Returns the current prayer during an active prayer period, or the upcoming
+/// Fajr before Fajr begins. Because this provider returns a single enum value,
+/// consumers do not rebuild every second while the clock is inside one prayer
+/// period.
+final currentQazaPrayerTypeProvider = Provider.autoDispose<PrayerType?>((ref) {
+  final state = ref.watch(currentPrayerStateProvider);
+  return (state?.current ?? state?.next)?.qazaPrayerType;
 });
 
 final restrictedTimeStateProvider =

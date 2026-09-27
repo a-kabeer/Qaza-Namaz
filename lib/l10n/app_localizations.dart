@@ -716,6 +716,12 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get homeAuto;
 
+  /// No description provided for @homeAutoSequence.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Sequence'**
+  String get homeAutoSequence;
+
   /// No description provided for @homePrayerTimeUnavailable.
   ///
   /// In en, this message translates to:

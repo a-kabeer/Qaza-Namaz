@@ -86,14 +86,14 @@ class HomeController {
   }
 
   void afterCompletion({
-    required int pendingBefore,
+    required PrayerType completedPrayer,
   }) {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    if (pendingBefore <= 1) {
-      ref.read(homePrayerSelectionProvider.notifier).useAutomatic();
-    }
+    ref
+        .read(homePrayerSelectionProvider.notifier)
+        .afterSuccessfulCompletion(completedPrayer);
   }
 
   void afterStaleCompletion() {
@@ -102,11 +102,14 @@ class HomeController {
     ref.invalidate(homeFallbackPendingProvider);
   }
 
-  void afterUndo(PrayerType prayer) {
+  void afterUndo() {
+    ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(oldestPendingProvider(prayer));
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
   }
 }
 
