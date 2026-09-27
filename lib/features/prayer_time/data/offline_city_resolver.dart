@@ -44,20 +44,14 @@ class OfflineCityResolver {
     if (countryCode == null || countryCode.isEmpty) {
       throw const PrayerLocationException('City match has no country code.');
     }
-    final countryName =
-        TimezoneConvert.countryName(countryCode) ?? countryCode;
+    final countryName = TimezoneConvert.countryName(countryCode);
 
     var timezoneId = deviceTimezoneId;
-    final timezoneCountry =
-        TimezoneConvert.timezoneToCountryCode(timezoneId);
-    if (!TimezoneConvert.isKnownTimezone(timezoneId) ||
-        timezoneCountry != countryCode) {
-      timezoneId = TimezoneConvert.nearestTimezone(
-            latitude,
-            longitude,
-            countryCode: countryCode,
-          ) ??
-          'Etc/UTC';
+    if (!TimezoneConvert.isKnownTimezone(timezoneId)) {
+      final countryZones = TimezoneConvert.countryToTimezones(countryCode);
+      timezoneId = countryZones == null || countryZones.isEmpty
+          ? 'Etc/UTC'
+          : countryZones.first;
     }
 
     return PrayerLocation(
