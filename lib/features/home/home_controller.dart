@@ -86,7 +86,6 @@ class HomeController {
   }
 
   void afterCompletion({
-    required int pendingBefore,
     required PrayerType completedPrayer,
   }) {
     invalidateDashboard();
