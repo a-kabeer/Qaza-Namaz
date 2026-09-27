@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/utils/date_formatters.dart';
 import '../../l10n/app_localizations.dart';
 import 'calendar_controller.dart';
 import 'calendar_day_colors.dart';
@@ -311,7 +310,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final state = ref.watch(calendarControllerProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final selected = state.selectedDates;
     final currentMonth = DateTime(month.year, month.month, 1);
     final canPrevious = currentMonth.isAfter(calendarFirstDate);
     final canNext = currentMonth.isBefore(_lastMonth);
