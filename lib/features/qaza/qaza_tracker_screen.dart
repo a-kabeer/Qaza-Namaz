@@ -427,6 +427,7 @@ class _TrackerBody extends ConsumerWidget {
                   }
                   final record = state.records[index];
                   final canAct = record.status == QazaStatus.pending &&
+                      !restricted &&
                       (lockedRecordId == null ||
                           record.id == lockedRecordId ||
                           record.prayerType == PrayerType.witr);
