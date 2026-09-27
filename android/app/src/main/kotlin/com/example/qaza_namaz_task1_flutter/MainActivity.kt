@@ -31,6 +31,14 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LOCATION_SETTINGS_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "ensureLocationServices" -> ensureLocationServices(result)
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     private fun ensureLocationServices(result: MethodChannel.Result) {
@@ -73,7 +81,7 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
-    @Deprecated("Use Activity Result APIs when this activity migration is complete.")
+    @Suppress("DEPRECATION")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,
