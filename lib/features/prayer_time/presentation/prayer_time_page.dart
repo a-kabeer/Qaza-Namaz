@@ -54,14 +54,16 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     }
   }
 
-  Future<void> _openAppSettings() async {
+  void _openAppSettings() {
     _resumeCurrentLocationAfterSettings = true;
-    final opened = await ref
+    ref
         .read(prayerLocationRepositoryProvider)
-        .openAppSettings();
-    if (!opened && mounted) {
-      _resumeCurrentLocationAfterSettings = false;
-    }
+        .openAppSettings()
+        .then((opened) {
+      if (!opened && mounted) {
+        _resumeCurrentLocationAfterSettings = false;
+      }
+    });
   }
 
   @override
