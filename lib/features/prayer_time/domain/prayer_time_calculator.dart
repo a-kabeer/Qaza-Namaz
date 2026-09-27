@@ -21,9 +21,19 @@ class PrayerTimeCalculator {
       calculationParameters: parameters,
       precision: true,
     );
+    final rawResult = PrayerTimes(
+      coordinates: coordinates,
+      date: date,
+      calculationParameters: parameters.copyWith(
+        adjustments: const <Prayer, int>{},
+      ),
+      precision: true,
+    );
 
     return PrayerSchedule(
       date: date,
+      astronomicalSunriseUtc: rawResult.sunrise.toUtc(),
+      astronomicalSunsetUtc: rawResult.maghrib.toUtc(),
       timesUtc: Map.unmodifiable({
         PrayerSlot.fajr: result.fajr.toUtc(),
         PrayerSlot.sunrise: result.sunrise.toUtc(),
