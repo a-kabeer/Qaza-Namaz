@@ -202,7 +202,7 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
         if (progress != null) ...[
           const SizedBox(height: 6),
           Text(
-            ${importState.processed} / ${importState.total},
+            '${importState.processed} / ${importState.total}',
           ),
         ],
       ],
@@ -251,11 +251,11 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
         ),
         const SizedBox(height: 4),
         Text(
-          ${_formatGregorian(widget.plan.startDate)} – ${_formatGregorian(widget.plan.endDate)},
+          '${_formatGregorian(widget.plan.startDate)} – ${_formatGregorian(widget.plan.endDate)}',
         ),
         const SizedBox(height: 2),
         Text(
-          ${_formatHijri(l10n, widget.plan.startDate)} – ${_formatHijri(l10n, widget.plan.endDate)},
+          '${_formatHijri(l10n, widget.plan.startDate)} – ${_formatHijri(l10n, widget.plan.endDate)}',
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
@@ -306,7 +306,7 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
       };
 
   String _formatGregorian(DateTime date) =>
-      ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString()};
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString()}';
 
   String _formatHijri(AppLocalizations l10n, DateTime date) =>
       l10n.formatHijriDate(date);
