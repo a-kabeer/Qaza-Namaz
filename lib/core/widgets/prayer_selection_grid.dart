@@ -10,13 +10,11 @@ class PrayerSelectionGrid extends StatelessWidget {
     super.key,
     required this.selected,
     required this.onPrayerSelected,
-    this.allowMultiple = false,
     this.witrAllowed = true,
   });
 
   final Set<PrayerType> selected;
   final ValueChanged<PrayerType> onPrayerSelected;
-  final bool allowMultiple;
   final bool witrAllowed;
 
   @override
