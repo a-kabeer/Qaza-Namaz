@@ -167,7 +167,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
       };
 
   Future<void> _handlePickerValue(List<DateTime?> values) async {
-    if (checkingRange) return;
+    if (checkingRange || _exclusionMode) return;
     final controller = ref.read(calendarControllerProvider.notifier);
     final state = ref.read(calendarControllerProvider);
     final dates = values.whereType<DateTime>().map(DateUtils.dateOnly).toList();
@@ -342,7 +342,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         dayMaxWidth: 44,
         dayBuilder: _dayBuilder,
         selectableDayPredicate: (date) =>
-            !_exclusionMode && _canSelect && _isDateAvailable(date),
+            _canSelect && _isDateAvailable(date),
         selectedDayHighlightColor: Colors.transparent,
         selectedRangeHighlightColor: Colors.transparent,
         selectedDayTextStyle: Theme.of(context).textTheme.bodySmall,
