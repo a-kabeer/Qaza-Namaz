@@ -187,8 +187,10 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   Future<void> _persistMode(HomePrayerSelectionMode mode) async {
+    final revision = _targetRevision;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (revision != _targetRevision) return;
       await prefs.setString(_modeStorageKey, mode.name);
     } catch (_) {}
   }
@@ -201,15 +203,19 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   Future<void> _persistSelectedPrayer(PrayerType prayer) async {
+    final revision = _targetRevision;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (revision != _targetRevision) return;
       await prefs.setString(_selectedPrayerStorageKey, prayer.name);
     } catch (_) {}
   }
 
   Future<void> _clearPersistedSelectedPrayer() async {
+    final revision = _targetRevision;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (revision != _targetRevision) return;
       await prefs.remove(_selectedPrayerStorageKey);
     } catch (_) {}
   }
