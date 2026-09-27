@@ -88,6 +88,19 @@ class _LocationPickerSheet extends ConsumerStatefulWidget {
 class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
   String? _countryCode;
   String _query = '';
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +125,8 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
         searchLabel: l10n.prayerTimeSelectCountry,
         query: _query,
         onQueryChanged: (value) => setState(() => _query = value),
+      controller: _searchController,
+        controller: _searchController,
         child: ListView.builder(
           itemCount: countries.length,
           itemBuilder: (_, index) {
@@ -124,6 +139,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               onTap: () => setState(() {
                 _countryCode = code;
                 _query = '';
+                _searchController.clear();
               }),
             );
           },
@@ -146,6 +162,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
         onPressed: () => setState(() {
           _countryCode = null;
           _query = '';
+          _searchController.clear();
         }),
         icon: const Icon(Icons.arrow_back_rounded),
       ),
@@ -172,6 +189,7 @@ class _PickerScaffold extends StatelessWidget {
     required this.searchLabel,
     required this.query,
     required this.onQueryChanged,
+    required this.controller,
     required this.child,
     this.leading,
   });
@@ -180,6 +198,7 @@ class _PickerScaffold extends StatelessWidget {
   final String searchLabel;
   final String query;
   final ValueChanged<String> onQueryChanged;
+  final TextEditingController controller;
   final Widget child;
   final Widget? leading;
 
@@ -208,8 +227,7 @@ class _PickerScaffold extends StatelessWidget {
             SearchBar(
               hintText: searchLabel,
               leading: const Icon(Icons.search_rounded),
-              controller: TextEditingController(text: query)
-                ..selection = TextSelection.collapsed(offset: query.length),
+              controller: controller,
               onChanged: onQueryChanged,
             ),
             const SizedBox(height: 8),
