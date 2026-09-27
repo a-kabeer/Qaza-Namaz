@@ -129,7 +129,7 @@
   "homeCompleteOldestQaza": "سب سے پرانی قضا مکمل کریں",
   "homeAuto": "خودکار",
   "homeAutoSequence": "خودکار ترتیب",
-  "homePrayerTimeUnavailable": "خودکار نماز کا انتخاب دستیاب نہیں جب تک نماز کے اوقات سیٹ نہ کیے جائیں۔",
+  "homePrayerTimeUnavailable": "نماز کے اوقات سیٹ ہونے تک وقتِ نماز کے مطابق انتخاب دستیاب نہیں۔",
   "homeQazaTargetReachedTitle": "الحمدللہ!",
   "homeQazaTargetReachedMessage": "آپ نے آج کا اپنا قضا منصوبہ مکمل کر لیا ہے۔\nاللہ تعالیٰ آپ کی کوششیں قبول فرمائے۔",
   "homeDailyTarget": "روزانہ ہدف",
