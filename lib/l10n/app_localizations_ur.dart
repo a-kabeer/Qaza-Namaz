@@ -1450,12 +1450,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'خالی ٹریکر سے شروع کریں۔ قضا بعد میں شامل کی جا سکتی ہے۔';
 
   @override
-  String get onboardingPreviousQazaCurrent => 'پچھلی قضا کی ترتیب';
-
-  @override
-  String get onboardingPreviousQazaChange => 'تبدیل کریں';
-
-  @override
   String get profileSetupTitle => 'اپنا پروفائل مکمل کریں';
 
   @override
