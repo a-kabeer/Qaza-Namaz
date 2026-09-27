@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_target_sheet.dart';
@@ -47,7 +48,7 @@ void main() {
               builder: (context) => FilledButton(
                 onPressed: () => showHomeQazaTargetSheet(
                   context: context,
-                  ref: ProviderScope.containerOf(context, listen: false).read,
+                  
                 ),
                 child: const Text('Open'),
               ),
@@ -105,15 +106,26 @@ void main() {
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const HomeQazaTargetSheet(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => FilledButton(
+                onPressed: () => showHomeQazaTargetSheet(
+                  context: context,
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
         ),
       ),
     );
+
+    await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    var chips = tester.widgetList<FilterChip>(find.byType(FilterChip)).toList();
+    final chips =
+        tester.widgetList<FilterChip>(find.byType(FilterChip)).toList();
     expect(chips.where((chip) => chip.selected), hasLength(1));
-    expect(chips.firstWhere((chip) => chip.selected).label.toString(), isNotNull);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Zuhr'));
     await tester.pumpAndSettle();
@@ -126,5 +138,5 @@ void main() {
       container.read(homePrayerSelectionProvider).mode,
       HomePrayerSelectionMode.prayerSelection,
     );
-  });
+  });;
 }
