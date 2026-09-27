@@ -104,10 +104,8 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     // failures.
     try {
       ref.read(homeControllerProvider).afterCompletion(
-            pendingBefore:
-                widget.summary.byPrayer[prayer]?.progress.pending ?? 0,
-            completedPrayer: prayer,
-          );
+        completedPrayer: prayer,
+      );
     } catch (error, stack) {
       diagnostics.recordFailure(
         DiagnosticArea.qazaCompletion,
