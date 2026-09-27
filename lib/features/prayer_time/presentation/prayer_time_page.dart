@@ -165,18 +165,12 @@ class _PrayerTimeContent extends ConsumerWidget {
   String _formatDuration(Duration duration) {
     if (duration.isNegative) return '0s';
     final seconds = duration.inSeconds;
-    if (seconds < 60) return seconds.toString() + 's';
+    if (seconds < 60) return '${seconds}s';
     final minutes = duration.inMinutes;
     if (minutes < 60) {
-      return minutes.toString() +
-          'm ' +
-          (seconds % 60).toString() +
-          's';
+      return '${minutes}m ${seconds % 60}s';
     }
-    return duration.inHours.toString() +
-        'h ' +
-        (minutes % 60).toString() +
-        'm';
+    return '${duration.inHours}h ${minutes % 60}m';
   }
 
   PrayerSlot? _restrictionRow(RestrictedTimeType type) => switch (type) {
@@ -225,7 +219,7 @@ class _PrayerTimeContent extends ConsumerWidget {
         nextAt == null ? null : nextAt.difference(localNow);
     final activeRestriction = restricted?.active;
     final restrictedPrayer =
-        activeRestriction == null ? null : _restrictionRow(activeRestriction.type);
+        _restrictionRow(activeRestriction?.type);
 
     return RefreshIndicator(
       onRefresh: () =>
@@ -285,9 +279,8 @@ class _PrayerTimeContent extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            l10n.prayerTimeUpdated +
-                ': ' +
-                _formatTime(context, snapshot.updatedAt, snapshot),
+            '${l10n.prayerTimeUpdated}: '
+            '${_formatTime(context, snapshot.updatedAt, snapshot)}',
             textAlign: TextAlign.end,
             style: Theme.of(context).textTheme.bodySmall,
           ),
