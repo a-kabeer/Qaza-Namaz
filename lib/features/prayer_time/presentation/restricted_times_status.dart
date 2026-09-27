@@ -24,18 +24,12 @@ class RestrictedTimesStatusCard extends ConsumerWidget {
   String _formatDuration(Duration duration) {
     if (duration.isNegative) return '0s';
     final seconds = duration.inSeconds;
-    if (seconds < 60) return seconds.toString() + 's';
+    if (seconds < 60) return '${seconds}s';
     final minutes = duration.inMinutes;
     if (minutes < 60) {
-      return minutes.toString() +
-          'm ' +
-          (seconds % 60).toString() +
-          's';
+      return '${minutes}m ${seconds % 60}s';
     }
-    return duration.inHours.toString() +
-        'h ' +
-        (minutes % 60).toString() +
-        'm';
+    return '${duration.inHours}h ${minutes % 60}m';
   }
 
   @override
@@ -81,9 +75,8 @@ class RestrictedTimesStatusCard extends ConsumerWidget {
               Text(
                 isActive
                     ? l10n.prayerTimeEndsIn(_formatDuration(remaining))
-                    : l10n.prayerTimeNextRestricted(_label(l10n, window.type)) +
-                        ' · ' +
-                        l10n.prayerTimeStartsIn(_formatDuration(remaining)),
+                    : '${l10n.prayerTimeNextRestricted(_label(l10n, window.type))} · '
+                        '${l10n.prayerTimeStartsIn(_formatDuration(remaining))}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isActive
                           ? scheme.onSecondaryContainer
