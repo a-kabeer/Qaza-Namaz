@@ -33,6 +33,7 @@ class PrayerTimeCalculator {
     return PrayerSchedule(
       date: date,
       astronomicalSunriseUtc: rawResult.sunrise.toUtc(),
+      astronomicalDhuhrUtc: rawResult.dhuhr.toUtc(),
       astronomicalSunsetUtc: rawResult.sunset.toUtc(),
       timesUtc: Map.unmodifiable({
         PrayerSlot.fajr: result.fajr.toUtc(),
