@@ -231,6 +231,12 @@ class LocaleNotifier extends Notifier<Locale> {
     } catch (_) {}
   }
 
+  void preview(Locale locale) {
+    final resolved = resolve(locale.languageCode);
+    if (resolved == null) return;
+    state = resolved;
+  }
+
   void set(Locale locale) {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
