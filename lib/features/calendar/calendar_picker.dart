@@ -95,6 +95,12 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     _goToMonth(DateTime(month.year, month.month + delta, 1));
   }
 
+  void _handleDisplayedMonthChanged(DateTime displayedMonth) {
+    _goToMonth(
+      DateTime(displayedMonth.year, displayedMonth.month, 1),
+    );
+  }
+
   /// Moves to [next] and reloads availability, if it is inside the bounds.
   ///
   /// Every navigation — arrows and the year selector alike — lands here, so
@@ -309,17 +315,28 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final currentMonth = DateTime(month.year, month.month, 1);
     final canPrevious = currentMonth.isAfter(calendarFirstDate);
     final canNext = currentMonth.isBefore(_lastMonth);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final materialL10n = MaterialLocalizations.of(context);
 
     return Column(
       children: [
         Row(
           children: [
-            IconButton(
-              key: const Key('calendar_prev_month'),
-              onPressed: canPrevious && !checkingRange
-                  ? () => _moveMonth(-1)
-                  : null,
-              icon: const Icon(Icons.chevron_left_rounded),
+            Semantics(
+              button: true,
+              label: materialL10n.previousMonthTooltip,
+              child: IconButton(
+                key: const Key('calendar_prev_month'),
+                tooltip: materialL10n.previousMonthTooltip,
+                onPressed: canPrevious && !checkingRange
+                    ? () => _moveMonth(-1)
+                    : null,
+                icon: Icon(
+                  isRtl
+                      ? Icons.chevron_right_rounded
+                      : Icons.chevron_left_rounded,
+                ),
+              ),
             ),
             Expanded(
               child: Semantics(
@@ -361,12 +378,21 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                 ),
               ),
             ),
-            IconButton(
-              key: const Key('calendar_next_month'),
-              onPressed: canNext && !checkingRange
-                  ? () => _moveMonth(1)
-                  : null,
-              icon: const Icon(Icons.chevron_right_rounded),
+            Semantics(
+              button: true,
+              label: materialL10n.nextMonthTooltip,
+              child: IconButton(
+                key: const Key('calendar_next_month'),
+                tooltip: materialL10n.nextMonthTooltip,
+                onPressed: canNext && !checkingRange
+                    ? () => _moveMonth(1)
+                    : null,
+                icon: Icon(
+                  isRtl
+                      ? Icons.chevron_left_rounded
+                      : Icons.chevron_right_rounded,
+                ),
+              ),
             ),
           ],
         ),
@@ -385,29 +411,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           config: _config(context),
           value: List<DateTime?>.from(_pickerValue),
           displayedMonthDate: month,
+          onDisplayedMonthChanged: _handleDisplayedMonthChanged,
           onValueChanged: _handlePickerValue,
         ),
-        if (selected.isNotEmpty)
-          Card(
-            key: const Key('calendar_selected_summary'),
-            child: Column(
-              children: [
-                ...selected.map(
-                  (date) => ListTile(
-                    dense: true,
-                    title: Text(DateFormatters.formatGregorianFull(date)),
-                    subtitle: Text(_hijriLabel(date, l10n)),
-                  ),
-                ),
-                TextButton(
-                  key: const Key('calendar_clear_selection'),
-                  onPressed: () =>
-                      ref.read(calendarControllerProvider.notifier).clear(),
-                  child: Text(l10n.commonClear),
-                ),
-              ],
-            ),
-          ),
       ],
     );
   }
