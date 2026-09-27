@@ -11,11 +11,36 @@ import '../domain/restricted_time.dart';
 import 'location_selector.dart';
 import 'prayer_settings_page.dart';
 
-class PrayerTimePage extends ConsumerWidget {
+class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PrayerTimePage> createState() => _PrayerTimePageState();
+}
+
+class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(prayerTimeControllerProvider.notifier).refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final asyncSnapshot = ref.watch(prayerTimeControllerProvider);
     final snapshot = asyncSnapshot.valueOrNull;
@@ -44,7 +69,7 @@ class PrayerTimePage extends ConsumerWidget {
                 ? null
                 : () => ref
                     .read(prayerTimeControllerProvider.notifier)
-                    .refresh(),
+                    .useCurrentLocation(),
             icon: const Icon(Icons.my_location_outlined),
           ),
       ],
