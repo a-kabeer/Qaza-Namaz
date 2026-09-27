@@ -48,6 +48,11 @@ class _HomeQazaTargetSheetState
   ) {
     final notifier = ref.read(homePrayerSelectionProvider.notifier);
 
+    if (mode != HomePrayerSelectionMode.prayerTime &&
+        _showPrayerTimeSetup) {
+      setState(() => _showPrayerTimeSetup = false);
+    }
+
     switch (mode) {
       case HomePrayerSelectionMode.prayerTime:
         if (availability == PrayerTimeTargetAvailability.setupRequired) {
@@ -97,8 +102,8 @@ class _HomeQazaTargetSheetState
                   key: const Key('home_qaza_target_mode_prayer_time'),
                   icon: Icons.schedule_outlined,
                   title: l10n.prayerTimeTitle,
-                  selected:
-                      selection.mode == HomePrayerSelectionMode.prayerTime,
+                  selected: selection.mode == HomePrayerSelectionMode.prayerTime ||
+                      _showPrayerTimeSetup,
                   onTap: () => _selectMode(
                     context,
                     HomePrayerSelectionMode.prayerTime,
