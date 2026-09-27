@@ -1423,6 +1423,33 @@ class AppLocalizationsUr extends AppLocalizations {
       'ایپ میں استعمال ہونے والی زبان منتخب کریں۔';
 
   @override
+  String get onboardingPreviousQazaTitle => 'پچھلی قضا';
+
+  @override
+  String get onboardingPreviousQazaIntro =>
+      'کیا باقاعدہ نماز شروع کرنے سے پہلے کی کچھ قضا نمازیں باقی ہیں؟';
+
+  @override
+  String get onboardingPreviousQazaSetUp => 'پچھلی قضا ترتیب دیں';
+
+  @override
+  String get onboardingPreviousQazaSetUpDescription =>
+      'اپنی پچھلی قضا کا حساب کریں اور اسے اپنے ٹریکر میں شامل کریں۔';
+
+  @override
+  String get onboardingPreviousQazaSkip => 'پچھلی قضا کے بغیر شروع کریں';
+
+  @override
+  String get onboardingPreviousQazaSkipDescription =>
+      'خالی ٹریکر سے شروع کریں۔ قضا بعد میں شامل کی جا سکتی ہے۔';
+
+  @override
+  String get onboardingPreviousQazaCurrent => 'پچھلی قضا کی ترتیب';
+
+  @override
+  String get onboardingPreviousQazaChange => 'تبدیل کریں';
+
+  @override
   String get profileSetupTitle => 'اپنا پروفائل مکمل کریں';
 
   @override
