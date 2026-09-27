@@ -9,7 +9,6 @@ import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
-import 'previous_qaza_choice_screen.dart';
 import 'profile_form.dart';
 import 'qaza_review_dialog.dart';
 import 'startup_gate.dart';
@@ -18,12 +17,10 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({
     super.key,
     required this.languageCode,
-    required this.previousQazaChoice,
     this.initialProfile,
   });
 
   final String languageCode;
-  final PreviousQazaChoice previousQazaChoice;
   final UserProfile? initialProfile;
 
   @override
@@ -32,7 +29,6 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   late UserProfile _draft;
-  late PreviousQazaChoice _previousQazaChoice;
   Future<void> _saveQueue = Future<void>.value();
 
   @override
@@ -40,7 +36,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.initState();
     _draft =
         widget.initialProfile ?? UserProfile(languageCode: widget.languageCode);
-    _previousQazaChoice = widget.previousQazaChoice;
   }
 
   void _saveDraft(UserProfile profile) {
@@ -51,32 +46,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<void> _changePreviousQazaChoice() async {
-    final choice = await Navigator.of(context).push<PreviousQazaChoice>(
-      MaterialPageRoute<PreviousQazaChoice>(
-        builder: (_) => PreviousQazaChoiceScreen(
-          languageCode: _draft.languageCode,
-          initialChoice: _previousQazaChoice,
-          popOnSelection: true,
-        ),
-      ),
-    );
-    if (!mounted || choice == null || choice == _previousQazaChoice) return;
-    setState(() => _previousQazaChoice = choice);
-  }
-
   Future<void> _submit(UserProfile profile) async {
     await _saveQueue;
+
+    // The onboarding profile was created/updated locally above, but the
+    // shared provider may still hold the pre-onboarding cached value. Refresh
+    // it before any Qaza import so the local repository activates the ledger.
+    ref.invalidate(userProfileProvider);
+    await ref.read(userProfileProvider.future);
 
     final finalizedProfile = profile.copyWith(
       witrIncluded: ProfileRules.effectiveWitr(profile),
       onboardingCompleted: true,
     );
-
-    if (_previousQazaChoice == PreviousQazaChoice.skip) {
-      await _finishOnboarding(finalizedProfile);
-      return;
-    }
 
     final plan = ref.read(qazaPlanServiceProvider).planFor(finalizedProfile);
     if (plan == null) {
@@ -128,7 +110,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<bool> _startQazaPlanImport(QazaPlan plan) async {
-    const userId = UserProfile.localLedgerUserId;
+    final userId = ref.read(requiredUserIdProvider);
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
     final inputSnapshot = <String, dynamic>{
@@ -166,11 +148,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final profileChoiceLabel =
-        _previousQazaChoice == PreviousQazaChoice.setup
-            ? l10n.onboardingPreviousQazaSetUp
-            : l10n.onboardingPreviousQazaSkip;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.profileSetupTitle),
@@ -178,20 +155,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Card(
-              margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: ListTile(
-                key: const Key('onboarding_previous_qaza_current'),
-                leading: const Icon(Icons.history_rounded),
-                title: Text(l10n.onboardingPreviousQazaCurrent),
-                subtitle: Text(profileChoiceLabel),
-                trailing: TextButton(
-                  key: const Key('onboarding_previous_qaza_change'),
-                  onPressed: _changePreviousQazaChoice,
-                  child: Text(l10n.onboardingPreviousQazaChange),
-                ),
-              ),
-            ),
             Expanded(
               child: ProfileForm(
                 initialProfile: _draft,

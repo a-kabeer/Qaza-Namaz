@@ -2492,18 +2492,6 @@ abstract class AppLocalizations {
   /// **'Start with an empty tracker. You can add Qaza later.'**
   String get onboardingPreviousQazaSkipDescription;
 
-  /// No description provided for @onboardingPreviousQazaCurrent.
-  ///
-  /// In en, this message translates to:
-  /// **'Previous Qaza setup'**
-  String get onboardingPreviousQazaCurrent;
-
-  /// No description provided for @onboardingPreviousQazaChange.
-  ///
-  /// In en, this message translates to:
-  /// **'Change'**
-  String get onboardingPreviousQazaChange;
-
   /// No description provided for @profileSetupTitle.
   ///
   /// In en, this message translates to:

@@ -1448,12 +1448,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start with an empty tracker. You can add Qaza later.';
 
   @override
-  String get onboardingPreviousQazaCurrent => 'Previous Qaza setup';
-
-  @override
-  String get onboardingPreviousQazaChange => 'Change';
-
-  @override
   String get profileSetupTitle => 'Set up your profile';
 
   @override

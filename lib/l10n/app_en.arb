@@ -877,8 +877,6 @@
   "onboardingPreviousQazaSetUpDescription": "Calculate your earlier Qaza and add the resulting prayers to your tracker.",
   "onboardingPreviousQazaSkip": "Start without previous Qaza",
   "onboardingPreviousQazaSkipDescription": "Start with an empty tracker. You can add Qaza later.",
-  "onboardingPreviousQazaCurrent": "Previous Qaza setup",
-  "onboardingPreviousQazaChange": "Change",
   "profileSetupTitle": "Set up your profile",
   "profileTitle": "Profile",
   "profileIntro": "These details personalize your Qaza plan and are used by the app's prayer rules.",
