@@ -23,66 +23,30 @@ class CalendarSelectionState {
   const CalendarSelectionState({
     this.selectionMode = DateSelectionMode.single,
     this.selectedDates = const <DateTime>[],
-    this.excludedDates = const <DateTime>{},
   });
 
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
-  final Set<DateTime> excludedDates;
 
-  int get selectedCount {
-    if (!isRangeComplete) return selectedDates.length;
+  int get selectedCount => selectedDates.length;
 
-    final start = selectedDates.first;
-    final end = selectedDates.last;
-    final rangeLength = end.difference(start).inDays + 1;
-    final excludedInRange = excludedDates
-        .where(
-          (date) =>
-              !date.isBefore(start) && !date.isAfter(end),
-        )
-        .length;
-    return rangeLength - excludedInRange;
-  }
-
-  bool get hasSelection => selectedCount > 0;
+  bool get hasSelection => selectedDates.isNotEmpty;
   bool get isRangeComplete =>
       selectionMode == DateSelectionMode.range && selectedDates.length == 2;
 
   DateTime? get startDate => selectedDates.isEmpty ? null : selectedDates.first;
   DateTime? get endDate => selectedDates.length > 1 ? selectedDates.last : null;
 
-  bool isRangeExcluded(DateTime date) =>
-      excludedDates.contains(_dateOnly(date));
-
-  List<DateTime> get datesForStorage {
-    if (!isRangeComplete) return selectedDates;
-
-    final start = selectedDates.first;
-    final end = selectedDates.last;
-    final dates = <DateTime>[];
-    for (var date = start;
-        !date.isAfter(end);
-        date = DateTime(date.year, date.month, date.day + 1)) {
-      if (!excludedDates.contains(date)) dates.add(date);
-    }
-    return List.unmodifiable(dates);
-  }
+  List<DateTime> get datesForStorage => selectedDates;
 
   CalendarSelectionState copyWith({
     DateSelectionMode? selectionMode,
     List<DateTime>? selectedDates,
-    Set<DateTime>? excludedDates,
   }) {
-    final nextMode = selectionMode ?? this.selectionMode;
     final dates = _canonicalize(selectedDates ?? this.selectedDates);
-    final exclusions = nextMode == DateSelectionMode.range
-        ? _canonicalizeSet(excludedDates ?? this.excludedDates)
-        : const <DateTime>{};
     return CalendarSelectionState(
-      selectionMode: nextMode,
+      selectionMode: selectionMode ?? this.selectionMode,
       selectedDates: List.unmodifiable(dates),
-      excludedDates: Set.unmodifiable(exclusions),
     );
   }
 
@@ -92,8 +56,18 @@ class CalendarSelectionState {
     return result;
   }
 
-  static Set<DateTime> _canonicalizeSet(Iterable<DateTime> dates) =>
-      <DateTime>{for (final date in dates) _dateOnly(date)};
+  static bool _isContiguous(List<DateTime> dates) {
+    if (dates.length < 2) return true;
+    for (var index = 1; index < dates.length; index++) {
+      final expected = DateTime(
+        dates[index - 1].year,
+        dates[index - 1].month,
+        dates[index - 1].day + 1,
+      );
+      if (dates[index] != expected) return false;
+    }
+    return true;
+  }
 }
 
 final calendarControllerProvider =
@@ -133,19 +107,17 @@ class CalendarController extends Notifier<CalendarSelectionState> {
         }
 
         final start = currentDates.first;
-        final end = currentDates.last;
-        final selected = currentDates.toSet();
-        final exclusions = <DateTime>{};
-        for (var date = start;
-            !date.isAfter(end);
-            date = DateTime(date.year, date.month, date.day + 1)) {
-          if (!selected.contains(date)) exclusions.add(date);
+        if (!_isContiguous(currentDates)) {
+          state = CalendarSelectionState(
+            selectionMode: mode,
+            selectedDates: [start],
+          );
+          return;
         }
 
         state = CalendarSelectionState(
           selectionMode: mode,
-          selectedDates: [start, end],
-          excludedDates: exclusions,
+          selectedDates: [start, currentDates.last],
         );
     }
   }
@@ -159,24 +131,15 @@ class CalendarController extends Notifier<CalendarSelectionState> {
 
     switch (state.selectionMode) {
       case DateSelectionMode.single:
-        state = state.copyWith(
-          selectedDates: [date],
-          excludedDates: const {},
-        );
+        state = state.copyWith(selectedDates: [date]);
       case DateSelectionMode.multiple:
         final selected = {...state.selectedDates};
         if (!selected.add(date)) selected.remove(date);
-        state = state.copyWith(
-          selectedDates: selected.toList(),
-          excludedDates: const {},
-        );
+        state = state.copyWith(selectedDates: selected.toList());
       case DateSelectionMode.range:
         final start = state.startDate;
         if (start == null || state.isRangeComplete || date.isBefore(start)) {
-          state = state.copyWith(
-            selectedDates: [date],
-            excludedDates: const {},
-          );
+          state = state.copyWith(selectedDates: [date]);
         } else if (date == start) {
           return;
         } else {
@@ -186,32 +149,10 @@ class CalendarController extends Notifier<CalendarSelectionState> {
               cursor = DateTime(cursor.year, cursor.month, cursor.day + 1)) {
             if (!isSelectable(cursor)) return;
           }
-          state = state.copyWith(
-            selectedDates: [start, end],
-            excludedDates: const {},
-          );
+          state = state.copyWith(selectedDates: [start, end]);
         }
     }
   }
 
-  void toggleRangeExclusion(DateTime value) {
-    if (state.selectionMode != DateSelectionMode.range ||
-        !state.isRangeComplete) {
-      return;
-    }
-
-    final date = _dateOnly(value);
-    final start = state.startDate!;
-    final end = state.endDate!;
-    if (date.isBefore(start) || date.isAfter(end)) return;
-
-    final exclusions = Set<DateTime>.of(state.excludedDates);
-    if (!exclusions.add(date)) exclusions.remove(date);
-    state = state.copyWith(excludedDates: exclusions);
-  }
-
-  void clear() => state = state.copyWith(
-        selectedDates: const [],
-        excludedDates: const {},
-      );
+  void clear() => state = state.copyWith(selectedDates: const []);
 }
