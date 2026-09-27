@@ -87,7 +87,7 @@ void main() {
           locale: const Locale('en'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const ProfileSetupScreen(
+          home: ProfileSetupScreen(
             languageCode: 'en',
             previousQazaChoice: PreviousQazaChoice.skip,
             initialProfile: profile,
