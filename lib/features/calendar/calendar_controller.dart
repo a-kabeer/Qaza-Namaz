@@ -30,9 +30,22 @@ class CalendarSelectionState {
   final List<DateTime> selectedDates;
   final Set<DateTime> excludedDates;
 
-  int get selectedCount =>
-      isRangeComplete ? datesForStorage.length : selectedDates.length;
-  bool get hasSelection => selectedDates.isNotEmpty;
+  int get selectedCount {
+    if (!isRangeComplete) return selectedDates.length;
+
+    final start = selectedDates.first;
+    final end = selectedDates.last;
+    final rangeLength = end.difference(start).inDays + 1;
+    final excludedInRange = excludedDates
+        .where(
+          (date) =>
+              !date.isBefore(start) && !date.isAfter(end),
+        )
+        .length;
+    return rangeLength - excludedInRange;
+  }
+
+  bool get hasSelection => selectedCount > 0;
   bool get isRangeComplete =>
       selectionMode == DateSelectionMode.range && selectedDates.length == 2;
 
