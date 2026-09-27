@@ -41,11 +41,13 @@ Widget _app({
       if (repository != null)
         userProfileRepositoryProvider.overrideWithValue(repository),
     ],
-    child: MaterialApp(
-      locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const LanguageSelectionScreen(),
+    child: Consumer(
+      builder: (context, ref, child) => MaterialApp(
+        locale: ref.watch(localeProvider),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const LanguageSelectionScreen(),
+      ),
     ),
   );
 }
