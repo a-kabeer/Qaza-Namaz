@@ -2709,6 +2709,63 @@ abstract class AppLocalizations {
   String get profileErrorWitr;
 }
 
+  String get navPrayerTime;
+  String get prayerTimeTitle;
+  String get prayerTimeLocation;
+  String get prayerTimeUseCurrentLocation;
+  String get prayerTimeSelectCity;
+  String get prayerTimeSelectCountry;
+  String get prayerTimeSearchCity;
+  String get prayerTimeCurrentLocation;
+  String get prayerTimeSavedLocation;
+  String get prayerTimeToday;
+  String get prayerTimeRestrictedTimes;
+  String get prayerTimeActive;
+  String get prayerTimeLocationUnavailable;
+  String get prayerTimeLocationPermission;
+  String get prayerTimeSelectLocation;
+  String get prayerTimeCalculationMethod;
+  String get prayerTimeAsrMethod;
+  String get prayerTimeHighLatitudeRule;
+  String get prayerTimeAdjustments;
+  String get prayerTime12Hour;
+  String get prayerTime24Hour;
+  String get prayerTimeStandard;
+  String get prayerTimeHanafi;
+  String get prayerTimeAutomatic;
+  String get prayerTimeMiddleOfTheNight;
+  String get prayerTimeSeventhOfTheNight;
+  String get prayerTimeTwilightAngle;
+  String get prayerTimeCustom;
+  String get prayerTimeFajrAngle;
+  String get prayerTimeIshaAngle;
+  String get prayerTimeSave;
+  String get prayerTimeCountry;
+  String get prayerTimeCity;
+  String get prayerTimeNoCities;
+  String get prayerTimeSettings;
+  String get prayerTimeLocationData;
+  String get prayerTimeLocationDataAttribution;
+  String get prayerTimeUpdated;
+  String get prayerTimeNoSchedule;
+  String get prayerTimeSetupTitle;
+  String get prayerTimeSetupBody;
+  String get prayerTimeRefresh;
+  String get prayerTimeAngleHint;
+  String get prayerTimeAdjustmentMinutes;
+  String get prayerTimeSunrise;
+  String get prayerTimeZawal;
+  String get prayerTimeSunset;
+  String get prayerTimeFajr;
+  String get prayerTimeDhuhr;
+  String get prayerTimeAsr;
+  String get prayerTimeMaghrib;
+  String get prayerTimeIsha;
+  String prayerTimeEndsIn(String duration);
+  String prayerTimeStartsIn(String duration);
+  String prayerTimeNextRestricted(String name);
+  String prayerTimeUsingSavedLocation(String location);
+
 class _AppLocalizationsDelegate
     extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();

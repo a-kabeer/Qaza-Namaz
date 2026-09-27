@@ -1,0 +1,154 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_location.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/restricted_time.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_settings.dart';
+
+void main() {
+  late tz.Location location;
+  setUpAll(() {
+    tzdata.initializeTimeZones();
+    location = tz.getLocation('Asia/Karachi');
+  });
+
+  group('PrayerLocation', () {
+    test('serializes and restores a manual city location', () {
+      const original = PrayerLocation(
+        latitude: 24.86,
+        longitude: 67.00,
+        city: 'Karachi',
+        region: 'Sindh',
+        country: 'Pakistan',
+        countryCode: 'PK',
+        timezoneId: 'Asia/Karachi',
+        source: PrayerLocationSource.city,
+      );
+
+      final restored = PrayerLocation.fromJson(original.toJson());
+
+      expect(restored?.city, 'Karachi');
+      expect(restored?.countryCode, 'PK');
+      expect(restored?.timezoneId, 'Asia/Karachi');
+      expect(restored?.source, PrayerLocationSource.city);
+    });
+
+    test('computes a zero distance for the same coordinates', () {
+      const location = PrayerLocation(
+        latitude: 24.86,
+        longitude: 67.00,
+        city: 'Karachi',
+        region: 'Sindh',
+        country: 'Pakistan',
+        countryCode: 'PK',
+        timezoneId: 'Asia/Karachi',
+        source: PrayerLocationSource.current,
+      );
+
+      expect(location.distanceKmTo(24.86, 67.00), closeTo(0, 0.001));
+    });
+  });
+
+  group('RestrictedTimeCalculator', () {
+    final day = DateTime.utc(2026, 9, 27);
+    final sunrise = DateTime.utc(2026, 9, 27, 1, 21);
+    final solarNoon = DateTime.utc(2026, 9, 27, 7, 17);
+    final sunset = DateTime.utc(2026, 9, 27, 13, 16);
+
+    final schedule = PrayerSchedule(
+      date: day,
+      timesUtc: {
+        PrayerSlot.fajr: DateTime.utc(2026, 9, 26, 23, 2),
+        PrayerSlot.sunrise: sunrise,
+        PrayerSlot.dhuhr: solarNoon,
+        PrayerSlot.asr: DateTime.utc(2026, 9, 27, 11, 18),
+        PrayerSlot.maghrib: sunset,
+        PrayerSlot.isha: DateTime.utc(2026, 9, 27, 14, 35),
+      },
+      astronomicalSunriseUtc: sunrise,
+      astronomicalDhuhrUtc: solarNoon,
+      astronomicalSunsetUtc: sunset,
+    );
+
+    final tomorrow = PrayerSchedule(
+      date: day.add(const Duration(days: 1)),
+      timesUtc: schedule.timesUtc,
+      astronomicalSunriseUtc: sunrise.add(const Duration(days: 1)),
+      astronomicalDhuhrUtc: solarNoon.add(const Duration(days: 1)),
+      astronomicalSunsetUtc: sunset.add(const Duration(days: 1)),
+    );
+
+    final settings = const PrayerSettings();
+    final snapshot = PrayerTimeSnapshot(
+      location: const PrayerLocation(
+        latitude: 24.86,
+        longitude: 67,
+        city: 'Karachi',
+        region: 'Sindh',
+        country: 'Pakistan',
+        countryCode: 'PK',
+        timezoneId: 'Asia/Karachi',
+        source: PrayerLocationSource.city,
+      ),
+      settings: settings,
+      today: schedule,
+      tomorrow: tomorrow,
+      updatedAt: DateTime.utc(2026, 9, 27),
+    );
+
+    test('reports the sunrise restricted window as active', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 1, 30),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.active?.type, RestrictedTimeType.sunrise);
+    });
+
+    test('reports Zawal as active around astronomical solar noon', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 7, 17),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.active?.type, RestrictedTimeType.zawal);
+    });
+
+    test('reports the sunset window as active before sunset', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 13, 10),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.active?.type, RestrictedTimeType.sunset);
+    });
+
+    test('reports the next restricted window when none is active', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 4, 0),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.active, isNull);
+      expect(state.next, isNotNull);
+    });
+  });
+}

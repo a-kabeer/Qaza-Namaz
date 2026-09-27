@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/diagnostics/diagnostics.dart';
+import '../../prayer_time/application/prayer_time_providers.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import 'qaza_completion_service.dart';
 import 'qaza_completion_state.dart';
@@ -17,6 +18,9 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
   }) async {
     if (state.isWorking) {
       throw StateError('Qaza completion is already in progress.');
+    }
+    if (ref.read(qazaCompletionRestrictedProvider)) {
+      return QazaCompletionResult.blockedByRestrictedTime;
     }
 
     final diagnostics = ref.read(diagnosticsProvider);

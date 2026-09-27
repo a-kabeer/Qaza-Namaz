@@ -8,6 +8,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_operation.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
 import '../../domain/services/qaza_service.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
 /// so the database returns both pending and completed records.
@@ -617,6 +618,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     List<String> selectedIds, {
     required bool exitSelectionModeOnSuccess,
   }) async {
+    if (ref.read(qazaCompletionRestrictedProvider)) return null;
     final userId = ref.read(activeUserIdProvider);
     if (userId == null || selectedIds.isEmpty || state.completing) {
       return null;

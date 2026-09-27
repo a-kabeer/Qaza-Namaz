@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
 import 'core/diagnostics/diagnostics.dart';
@@ -14,6 +15,7 @@ const Duration _startupStepTimeout = Duration(seconds: 10);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tzdata.initializeTimeZones();
 
   const diagnostics = DebugDiagnostics();
   final previousOnError = FlutterError.onError;

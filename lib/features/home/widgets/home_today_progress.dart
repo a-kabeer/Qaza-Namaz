@@ -17,6 +17,8 @@ import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
+import '../../prayer_time/application/prayer_time_providers.dart';
+import '../../prayer_time/presentation/restricted_times_status.dart';
 import '../../qaza/qaza_undo_feedback.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
@@ -70,6 +72,10 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       ref.read(appSnackbarServiceProvider).error(
             AppLocalizations.of(context).completeFailed,
           );
+      return;
+    }
+
+    if (result == QazaCompletionResult.blockedByRestrictedTime) {
       return;
     }
 
@@ -596,6 +602,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
         )
         .toList(growable: false);
     final tartibAsync = ref.watch(sahibAlTartibProvider);
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
 
     final prayerSelector = PopupMenuButton<String>(
       key: const Key('home_qaza_prayer_selector'),
@@ -680,6 +687,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const RestrictedTimesStatusCard(compact: true),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(child: header),
@@ -795,7 +804,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
 
                       final complete = FilledButton.icon(
                         key: const Key('home_complete_oldest_qaza'),
-                        onPressed: widget.working ||
+                        onPressed: restricted || widget.working ||
                                 (widget.selected.mode ==
                                         HomePrayerSelectionMode.manual &&
                                     !_isManualPrayerAllowed(
@@ -899,7 +908,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   }
 }
 
-class _HomeFallbackNextQaza extends StatelessWidget {
+class _HomeFallbackNextQaza extends ConsumerWidget {
   const _HomeFallbackNextQaza({
     required this.record,
     required this.onComplete,
@@ -909,7 +918,7 @@ class _HomeFallbackNextQaza extends StatelessWidget {
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -961,7 +970,9 @@ class _HomeFallbackNextQaza extends StatelessWidget {
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const Key('home_complete_oldest_qaza'),
-          onPressed: () => onComplete(record, record.prayerType),
+          onPressed: ref.watch(qazaCompletionRestrictedProvider)
+              ? null
+              : () => onComplete(record, record.prayerType),
           icon: const Icon(Icons.play_arrow_rounded),
           label: Text(l10n.homeCompleteQaza),
         ),
