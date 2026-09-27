@@ -353,7 +353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePrayerTimeUnavailable =>
-      'Automatic prayer selection is unavailable until Prayer Times are set up.';
+      'Prayer Time selection is unavailable until Prayer Times are set up.';
 
   @override
   String get homeQazaTargetReachedTitle => 'Alhamdulillah!';
