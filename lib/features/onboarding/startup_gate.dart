@@ -38,6 +38,11 @@ class StartupGate extends ConsumerWidget {
         if (!profile.isComplete || !validation.isValid) {
           return PreviousQazaChoiceScreen(
             languageCode: profile.languageCode,
+            nextScreenBuilder: (choice) => ProfileSetupScreen(
+              languageCode: profile.languageCode,
+              previousQazaChoice: choice,
+              initialProfile: profile,
+            ),
           );
         }
 
