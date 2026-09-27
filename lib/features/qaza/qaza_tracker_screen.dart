@@ -372,8 +372,7 @@ class _TrackerBody extends ConsumerWidget {
     }
     return Column(
       children: [
-        if (restricted)
-          const Padding(
+        const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,
               AppSpacing.sm,
@@ -439,7 +438,7 @@ class _TrackerBody extends ConsumerWidget {
                     busy: state.completing || state.recordMutating,
                     canAct: canAct,
                     onTap: state.selectionMode
-                        ? (record.status == QazaStatus.pending
+                        ? (record.status == QazaStatus.pending && !restricted
                             ? () => controller.toggleSelection(record.id)
                             : null)
                         : null,
