@@ -141,10 +141,7 @@ void main() {
 
       final notifier = container.read(homePrayerSelectionProvider.notifier);
       notifier.useAutoSequence();
-
-      final current = container.read(homePrayerSelectionProvider);
-      final advanced = current.afterSuccessfulCompletion(PrayerType.fajr);
-      notifier.state = advanced;
+      notifier.afterSuccessfulCompletion(PrayerType.fajr);
 
       notifier.usePrayerTime();
       expect(
