@@ -63,7 +63,7 @@ void main() {
   testWidgets('skip previous Qaza finalizes profile without calculating or importing',
       (tester) async {
     final repository = _FakeUserProfileRepository();
-    const profile = UserProfile(
+    final profile = UserProfile(
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.hanafi,
