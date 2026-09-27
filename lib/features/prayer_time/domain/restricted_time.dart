@@ -48,8 +48,8 @@ class RestrictedTimeCalculator {
     PrayerSchedule schedule,
     tz.Location location,
   ) {
-    final sunrise = schedule.localFor(PrayerSlot.sunrise, location);
-    final sunset = schedule.localFor(PrayerSlot.maghrib, location);
+    final sunrise = schedule.localAstronomicalSunrise(location);
+    final sunset = schedule.localAstronomicalSunset(location);
     final solarDay = sunset.difference(sunrise);
     final zawal = sunrise.add(
       Duration(microseconds: solarDay.inMicroseconds ~/ 2),
