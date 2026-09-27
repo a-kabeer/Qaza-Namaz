@@ -5,7 +5,7 @@ import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 
 void main() {
   test('equal puberty and prayer-start dates produce a valid zero-day plan', () {
-    const profile = UserProfile(
+    final profile = UserProfile(
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.hanafi,
