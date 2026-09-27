@@ -154,6 +154,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
       title: resolver.countryName(_countryCode!),
       searchLabel: l10n.prayerTimeSearchCity,
       onQueryChanged: (value) => setState(() => _query = value),
+      controller: _searchController,
       leading: IconButton(
         tooltip: l10n.commonBack,
         onPressed: () => setState(() {
