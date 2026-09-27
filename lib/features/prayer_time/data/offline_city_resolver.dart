@@ -41,10 +41,11 @@ class OfflineCityResolver {
 
     final place = nearest.place;
     final countryCode = place.countryCode;
+    if (countryCode == null || countryCode.isEmpty) {
+      throw const PrayerLocationException('City match has no country code.');
+    }
     final countryName =
-        TimezoneConvert.countryName(countryCode) ??
-        place.countryName ??
-        countryCode;
+        TimezoneConvert.countryName(countryCode) ?? countryCode;
 
     var timezoneId = deviceTimezoneId;
     final timezoneCountry =
