@@ -71,13 +71,19 @@ class HomePrayerSelectionState {
     );
   }
 
-  /// Advances Auto Sequence only after a successful completion.
+  /// Advances Auto Sequence only when its intended target was completed.
+  ///
+  /// Sahib al-Tartib can temporarily force a different Fard prayer. In that
+  /// case the user's sequence cursor is preserved rather than skipping ahead.
   HomePrayerSelectionState afterSuccessfulCompletion(
     PrayerType completedPrayer,
   ) {
     if (mode == HomePrayerSelectionMode.prayerTime) {
       return copyWith(clearManualPrayer: true);
     }
+
+    final requestedPrayer = manualPrayer ?? autoSequencePrayer;
+    if (completedPrayer != requestedPrayer) return this;
 
     return copyWith(
       autoSequencePrayer: completedPrayer.nextInQazaSequence,
