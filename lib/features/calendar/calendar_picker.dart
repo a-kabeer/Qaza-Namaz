@@ -252,7 +252,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           Positioned(
             bottom: 2,
             child: Container(
-              key: Key('calendar_qaza_indicator_${dayKey}'),
+              key: Key('calendar_qaza_indicator_$dayKey'),
               width: 5,
               height: 5,
               decoration: BoxDecoration(
