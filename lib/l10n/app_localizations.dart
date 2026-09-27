@@ -2707,64 +2707,343 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select a valid Witr setting.'**
   String get profileErrorWitr;
-}
 
+  /// No description provided for @navPrayerTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Time'**
   String get navPrayerTime;
+
+  /// No description provided for @prayerTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Time'**
   String get prayerTimeTitle;
+
+  /// No description provided for @prayerTimeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
   String get prayerTimeLocation;
+
+  /// No description provided for @prayerTimeUseCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Current Location'**
   String get prayerTimeUseCurrentLocation;
+
+  /// No description provided for @prayerTimeSelectCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Select City'**
   String get prayerTimeSelectCity;
+
+  /// No description provided for @prayerTimeSelectCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Country'**
   String get prayerTimeSelectCountry;
+
+  /// No description provided for @prayerTimeSearchCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Search city'**
   String get prayerTimeSearchCity;
+
+  /// No description provided for @prayerTimeCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
   String get prayerTimeCurrentLocation;
+
+  /// No description provided for @prayerTimeSavedLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved location'**
   String get prayerTimeSavedLocation;
+
+  /// No description provided for @prayerTimeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
   String get prayerTimeToday;
+
+  /// No description provided for @prayerTimeRestrictedTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted Times'**
   String get prayerTimeRestrictedTimes;
+
+  /// No description provided for @prayerTimeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'ACTIVE'**
   String get prayerTimeActive;
+
+  /// No description provided for @prayerTimeLocationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Location unavailable'**
   String get prayerTimeLocationUnavailable;
+
+  /// No description provided for @prayerTimeLocationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is needed to use your current location.'**
   String get prayerTimeLocationPermission;
+
+  /// No description provided for @prayerTimeSelectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your location'**
   String get prayerTimeSelectLocation;
+
+  /// No description provided for @prayerTimeCalculationMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculation Method'**
   String get prayerTimeCalculationMethod;
+
+  /// No description provided for @prayerTimeAsrMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Asr Method'**
   String get prayerTimeAsrMethod;
+
+  /// No description provided for @prayerTimeHighLatitudeRule.
+  ///
+  /// In en, this message translates to:
+  /// **'High Latitude Rule'**
   String get prayerTimeHighLatitudeRule;
+
+  /// No description provided for @prayerTimeAdjustments.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjustments'**
   String get prayerTimeAdjustments;
+
+  /// No description provided for @prayerTime12Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'12-hour'**
   String get prayerTime12Hour;
+
+  /// No description provided for @prayerTime24Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'24-hour'**
   String get prayerTime24Hour;
+
+  /// No description provided for @prayerTimeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
   String get prayerTimeStandard;
+
+  /// No description provided for @prayerTimeHanafi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanafi'**
   String get prayerTimeHanafi;
+
+  /// No description provided for @prayerTimeAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
   String get prayerTimeAutomatic;
+
+  /// No description provided for @prayerTimeMiddleOfTheNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle of the night'**
   String get prayerTimeMiddleOfTheNight;
+
+  /// No description provided for @prayerTimeSeventhOfTheNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Seventh of the night'**
   String get prayerTimeSeventhOfTheNight;
+
+  /// No description provided for @prayerTimeTwilightAngle.
+  ///
+  /// In en, this message translates to:
+  /// **'Twilight angle'**
   String get prayerTimeTwilightAngle;
+
+  /// No description provided for @prayerTimeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
   String get prayerTimeCustom;
+
+  /// No description provided for @prayerTimeFajrAngle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fajr angle'**
   String get prayerTimeFajrAngle;
+
+  /// No description provided for @prayerTimeIshaAngle.
+  ///
+  /// In en, this message translates to:
+  /// **'Isha angle'**
   String get prayerTimeIshaAngle;
+
+  /// No description provided for @prayerTimeSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
   String get prayerTimeSave;
+
+  /// No description provided for @prayerTimeCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
   String get prayerTimeCountry;
+
+  /// No description provided for @prayerTimeCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
   String get prayerTimeCity;
+
+  /// No description provided for @prayerTimeNoCities.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching cities'**
   String get prayerTimeNoCities;
+
+  /// No description provided for @prayerTimeSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer Time Settings'**
   String get prayerTimeSettings;
+
+  /// No description provided for @prayerTimeLocationData.
+  ///
+  /// In en, this message translates to:
+  /// **'Location data'**
   String get prayerTimeLocationData;
+
+  /// No description provided for @prayerTimeLocationDataAttribution.
+  ///
+  /// In en, this message translates to:
+  /// **'City data © GeoNames, licensed under CC BY 4.0.'**
   String get prayerTimeLocationDataAttribution;
+
+  /// No description provided for @prayerTimeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
   String get prayerTimeUpdated;
+
+  /// No description provided for @prayerTimeNoSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer times are not set up yet.'**
   String get prayerTimeNoSchedule;
+
+  /// No description provided for @prayerTimeSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up Prayer Time'**
   String get prayerTimeSetupTitle;
+
+  /// No description provided for @prayerTimeSetupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your current location or select a country and city. It works offline after a location is saved.'**
   String get prayerTimeSetupBody;
+
+  /// No description provided for @prayerTimeRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh location'**
   String get prayerTimeRefresh;
-  String get prayerTimeAngleHint;
-  String get prayerTimeAdjustmentMinutes;
-  String get prayerTimeSunrise;
-  String get prayerTimeZawal;
-  String get prayerTimeSunset;
-  String get prayerTimeFajr;
-  String get prayerTimeDhuhr;
-  String get prayerTimeAsr;
-  String get prayerTimeMaghrib;
-  String get prayerTimeIsha;
+
+  /// No description provided for @prayerTimeEndsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {duration}'**
   String prayerTimeEndsIn(String duration);
+
+  /// No description provided for @prayerTimeStartsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {duration}'**
   String prayerTimeStartsIn(String duration);
+
+  /// No description provided for @prayerTimeNextRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {name}'**
   String prayerTimeNextRestricted(String name);
+
+  /// No description provided for @prayerTimeUsingSavedLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Using your saved location: {location}'**
   String prayerTimeUsingSavedLocation(String location);
+
+  /// No description provided for @prayerTimeAngleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use degrees.'**
+  String get prayerTimeAngleHint;
+
+  /// No description provided for @prayerTimeAdjustmentMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get prayerTimeAdjustmentMinutes;
+
+  /// No description provided for @prayerTimeSunrise.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunrise'**
+  String get prayerTimeSunrise;
+
+  /// No description provided for @prayerTimeZawal.
+  ///
+  /// In en, this message translates to:
+  /// **'Zawal'**
+  String get prayerTimeZawal;
+
+  /// No description provided for @prayerTimeSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get prayerTimeSunset;
+
+  /// No description provided for @prayerTimeFajr.
+  ///
+  /// In en, this message translates to:
+  /// **'Fajr'**
+  String get prayerTimeFajr;
+
+  /// No description provided for @prayerTimeDhuhr.
+  ///
+  /// In en, this message translates to:
+  /// **'Dhuhr'**
+  String get prayerTimeDhuhr;
+
+  /// No description provided for @prayerTimeAsr.
+  ///
+  /// In en, this message translates to:
+  /// **'Asr'**
+  String get prayerTimeAsr;
+
+  /// No description provided for @prayerTimeMaghrib.
+  ///
+  /// In en, this message translates to:
+  /// **'Maghrib'**
+  String get prayerTimeMaghrib;
+
+  /// No description provided for @prayerTimeIsha.
+  ///
+  /// In en, this message translates to:
+  /// **'Isha'**
+  String get prayerTimeIsha;
+}
 
 class _AppLocalizationsDelegate
     extends LocalizationsDelegate<AppLocalizations> {

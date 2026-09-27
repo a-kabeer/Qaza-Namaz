@@ -1559,128 +1559,183 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileErrorWitr => 'Please select a valid Witr setting.';
+
   @override
-  String get navPrayerTime => "Prayer Time";
+  String get navPrayerTime => 'Prayer Time';
+
   @override
-  String get prayerTimeTitle => "Prayer Time";
+  String get prayerTimeTitle => 'Prayer Time';
+
   @override
-  String get prayerTimeLocation => "Location";
+  String get prayerTimeLocation => 'Location';
+
   @override
-  String get prayerTimeUseCurrentLocation => "Use Current Location";
+  String get prayerTimeUseCurrentLocation => 'Use Current Location';
+
   @override
-  String get prayerTimeSelectCity => "Select City";
+  String get prayerTimeSelectCity => 'Select City';
+
   @override
-  String get prayerTimeSelectCountry => "Select Country";
+  String get prayerTimeSelectCountry => 'Select Country';
+
   @override
-  String get prayerTimeSearchCity => "Search city";
+  String get prayerTimeSearchCity => 'Search city';
+
   @override
-  String get prayerTimeCurrentLocation => "Current location";
+  String get prayerTimeCurrentLocation => 'Current location';
+
   @override
-  String get prayerTimeSavedLocation => "Saved location";
+  String get prayerTimeSavedLocation => 'Saved location';
+
   @override
-  String get prayerTimeToday => "Today";
+  String get prayerTimeToday => 'Today';
+
   @override
-  String get prayerTimeRestrictedTimes => "Restricted Times";
+  String get prayerTimeRestrictedTimes => 'Restricted Times';
+
   @override
-  String get prayerTimeActive => "ACTIVE";
+  String get prayerTimeActive => 'ACTIVE';
+
   @override
-  String get prayerTimeLocationUnavailable => "Location unavailable";
+  String get prayerTimeLocationUnavailable => 'Location unavailable';
+
   @override
-  String get prayerTimeLocationPermission => "Location permission is needed to use your current location.";
+  String get prayerTimeLocationPermission =>
+      'Location permission is needed to use your current location.';
+
   @override
-  String get prayerTimeSelectLocation => "Select your location";
+  String get prayerTimeSelectLocation => 'Select your location';
+
   @override
-  String get prayerTimeCalculationMethod => "Calculation Method";
+  String get prayerTimeCalculationMethod => 'Calculation Method';
+
   @override
-  String get prayerTimeAsrMethod => "Asr Method";
+  String get prayerTimeAsrMethod => 'Asr Method';
+
   @override
-  String get prayerTimeHighLatitudeRule => "High Latitude Rule";
+  String get prayerTimeHighLatitudeRule => 'High Latitude Rule';
+
   @override
-  String get prayerTimeAdjustments => "Adjustments";
+  String get prayerTimeAdjustments => 'Adjustments';
+
   @override
-  String get prayerTime12Hour => "12-hour";
+  String get prayerTime12Hour => '12-hour';
+
   @override
-  String get prayerTime24Hour => "24-hour";
+  String get prayerTime24Hour => '24-hour';
+
   @override
-  String get prayerTimeStandard => "Standard";
+  String get prayerTimeStandard => 'Standard';
+
   @override
-  String get prayerTimeHanafi => "Hanafi";
+  String get prayerTimeHanafi => 'Hanafi';
+
   @override
-  String get prayerTimeAutomatic => "Automatic";
+  String get prayerTimeAutomatic => 'Automatic';
+
   @override
-  String get prayerTimeMiddleOfTheNight => "Middle of the night";
+  String get prayerTimeMiddleOfTheNight => 'Middle of the night';
+
   @override
-  String get prayerTimeSeventhOfTheNight => "Seventh of the night";
+  String get prayerTimeSeventhOfTheNight => 'Seventh of the night';
+
   @override
-  String get prayerTimeTwilightAngle => "Twilight angle";
+  String get prayerTimeTwilightAngle => 'Twilight angle';
+
   @override
-  String get prayerTimeCustom => "Custom";
+  String get prayerTimeCustom => 'Custom';
+
   @override
-  String get prayerTimeFajrAngle => "Fajr angle";
+  String get prayerTimeFajrAngle => 'Fajr angle';
+
   @override
-  String get prayerTimeIshaAngle => "Isha angle";
+  String get prayerTimeIshaAngle => 'Isha angle';
+
   @override
-  String get prayerTimeSave => "Save";
+  String get prayerTimeSave => 'Save';
+
   @override
-  String get prayerTimeCountry => "Country";
+  String get prayerTimeCountry => 'Country';
+
   @override
-  String get prayerTimeCity => "City";
+  String get prayerTimeCity => 'City';
+
   @override
-  String get prayerTimeNoCities => "No matching cities";
+  String get prayerTimeNoCities => 'No matching cities';
+
   @override
-  String get prayerTimeSettings => "Prayer Time Settings";
+  String get prayerTimeSettings => 'Prayer Time Settings';
+
   @override
-  String get prayerTimeLocationData => "Location data";
+  String get prayerTimeLocationData => 'Location data';
+
   @override
-  String get prayerTimeLocationDataAttribution => "City data © GeoNames, licensed under CC BY 4.0.";
+  String get prayerTimeLocationDataAttribution =>
+      'City data © GeoNames, licensed under CC BY 4.0.';
+
   @override
-  String get prayerTimeUpdated => "Updated";
+  String get prayerTimeUpdated => 'Updated';
+
   @override
-  String get prayerTimeNoSchedule => "Prayer times are not set up yet.";
+  String get prayerTimeNoSchedule => 'Prayer times are not set up yet.';
+
   @override
-  String get prayerTimeSetupTitle => "Set up Prayer Time";
+  String get prayerTimeSetupTitle => 'Set up Prayer Time';
+
   @override
-  String get prayerTimeSetupBody => "Choose your current location or select a country and city. It works offline after a location is saved.";
+  String get prayerTimeSetupBody =>
+      'Choose your current location or select a country and city. It works offline after a location is saved.';
+
   @override
-  String get prayerTimeRefresh => "Refresh location";
-  @override
-  String get prayerTimeAngleHint => "Use degrees.";
-  @override
-  String get prayerTimeAdjustmentMinutes => "Minutes";
-  @override
-  String get prayerTimeSunrise => "Sunrise";
-  @override
-  String get prayerTimeZawal => "Zawal";
-  @override
-  String get prayerTimeSunset => "Sunset";
-  @override
-  String get prayerTimeFajr => "Fajr";
-  @override
-  String get prayerTimeDhuhr => "Dhuhr";
-  @override
-  String get prayerTimeAsr => "Asr";
-  @override
-  String get prayerTimeMaghrib => "Maghrib";
-  @override
-  String get prayerTimeIsha => "Isha";
+  String get prayerTimeRefresh => 'Refresh location';
 
   @override
   String prayerTimeEndsIn(String duration) {
-    return "Ends in $duration";
+    return 'Ends in $duration';
   }
 
   @override
   String prayerTimeStartsIn(String duration) {
-    return "Starts in $duration";
+    return 'Starts in $duration';
   }
 
   @override
   String prayerTimeNextRestricted(String name) {
-    return "Next: $name";
+    return 'Next: $name';
   }
 
   @override
   String prayerTimeUsingSavedLocation(String location) {
-    return "Using your saved location: $location";
+    return 'Using your saved location: $location';
   }
+
+  @override
+  String get prayerTimeAngleHint => 'Use degrees.';
+
+  @override
+  String get prayerTimeAdjustmentMinutes => 'Minutes';
+
+  @override
+  String get prayerTimeSunrise => 'Sunrise';
+
+  @override
+  String get prayerTimeZawal => 'Zawal';
+
+  @override
+  String get prayerTimeSunset => 'Sunset';
+
+  @override
+  String get prayerTimeFajr => 'Fajr';
+
+  @override
+  String get prayerTimeDhuhr => 'Dhuhr';
+
+  @override
+  String get prayerTimeAsr => 'Asr';
+
+  @override
+  String get prayerTimeMaghrib => 'Maghrib';
+
+  @override
+  String get prayerTimeIsha => 'Isha';
 }
