@@ -49,6 +49,12 @@ final homeDailyProgressProvider =
 class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   static const _modeStorageKey = 'qaza_home_completion_mode';
   static const _sequencePrayerStorageKey = 'qaza_home_auto_sequence_prayer';
+  static const _selectedPrayerStorageKey = 'qaza_home_selected_prayer';
+
+  Timer? _undoSnapshotTimer;
+  HomePrayerSelectionState? _undoSnapshot;
+  int _targetRevision = 0;
+  int? _undoSnapshotRevision;
 
   @override
   HomePrayerSelectionState build() {
@@ -56,33 +62,60 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     return const HomePrayerSelectionState();
   }
 
+  /// Explicitly selects a prayer and switches to sticky Prayer Selection.
   void selectPrayer(PrayerType prayer) {
-    state = state.copyWith(manualPrayer: prayer);
+    state = state.copyWith(
+      mode: HomePrayerSelectionMode.prayerSelection,
+      selectedPrayer: prayer,
+    );
+    _targetRevision++;
+    _persistMode(HomePrayerSelectionMode.prayerSelection);
+    _persistSelectedPrayer(prayer);
   }
 
+  /// Switches to Prayer Time while preserving the Auto Sequence cursor.
   void usePrayerTime() {
-    state = const HomePrayerSelectionState(
+    state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerTime,
+      clearSelectedPrayer: true,
     );
+    _targetRevision++;
     _persistMode(HomePrayerSelectionMode.prayerTime);
   }
 
+  /// Switches to Auto Sequence while preserving the existing cursor.
   void useAutoSequence() {
     state = state.copyWith(
       mode: HomePrayerSelectionMode.autoSequence,
-      clearManualPrayer: true,
+      clearSelectedPrayer: true,
     );
+    _targetRevision++;
     _persistMode(HomePrayerSelectionMode.autoSequence);
   }
 
-  Timer? _undoSnapshotTimer;
-  HomePrayerSelectionState? _undoSnapshot;
+  /// Enters Prayer Selection with a valid sticky prayer.
+  ///
+  /// Reuses the previously selected prayer when available; otherwise Fajr is
+  /// the deterministic initial selection.
+  void usePrayerSelection() {
+    final prayer =
+        state.selectedPrayer ?? state.autoSequencePrayer ?? PrayerType.fajr;
+    state = state.copyWith(
+      mode: HomePrayerSelectionMode.prayerSelection,
+      selectedPrayer: prayer,
+    );
+    _targetRevision++;
+    _persistMode(HomePrayerSelectionMode.prayerSelection);
+    _persistSelectedPrayer(prayer);
+  }
 
   void afterSuccessfulCompletion(PrayerType completedPrayer) {
     _undoSnapshot ??= state;
+    _undoSnapshotRevision ??= _targetRevision;
     _undoSnapshotTimer?.cancel();
     _undoSnapshotTimer = Timer(const Duration(seconds: 5), () {
       _undoSnapshot = null;
+      _undoSnapshotRevision = null;
     });
 
     state = state.afterSuccessfulCompletion(completedPrayer);
@@ -91,13 +124,22 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
   void restoreAfterUndo() {
     final snapshot = _undoSnapshot;
+    final snapshotRevision = _undoSnapshotRevision;
     if (snapshot == null) return;
 
     _undoSnapshotTimer?.cancel();
     _undoSnapshot = null;
+    _undoSnapshotRevision = null;
+
+    // A newer explicit user target change always wins over completion undo.
+    if (snapshotRevision != _targetRevision) return;
+
     state = snapshot;
     _persistMode(snapshot.mode);
     _persistSequence(snapshot.autoSequencePrayer);
+    if (snapshot.selectedPrayer != null) {
+      _persistSelectedPrayer(snapshot.selectedPrayer!);
+    }
   }
 
   Future<void> _restore() async {
@@ -105,21 +147,36 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       final prefs = await SharedPreferences.getInstance();
       final modeName = prefs.getString(_modeStorageKey);
       final sequenceName = prefs.getString(_sequencePrayerStorageKey);
+      final selectedName = prefs.getString(_selectedPrayerStorageKey);
       final mode = HomePrayerSelectionMode.values.firstWhere(
         (value) => value.name == modeName,
-        orElse: () => HomePrayerSelectionMode.prayerTime,
+        // Existing installations without saved state keep their legacy value;
+        // genuinely new/uninitialized state defaults to Auto Sequence.
+        orElse: () => HomePrayerSelectionMode.autoSequence,
       );
       final sequencePrayer = PrayerType.values.firstWhere(
         (value) => value.name == sequenceName,
         orElse: () => PrayerType.fajr,
       );
-      state = state.copyWith(
+      var selectedPrayer = PrayerType.values.firstWhere(
+        (value) => value.name == selectedName,
+        orElse: () => PrayerType.fajr,
+      );
+
+      // A persisted Prayer Selection state must always have one valid prayer.
+      if (mode != HomePrayerSelectionMode.prayerSelection) {
+        selectedPrayer = PrayerType.fajr;
+      }
+
+      state = HomePrayerSelectionState(
         mode: mode,
+        selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
+            ? selectedPrayer
+            : null,
         autoSequencePrayer: sequencePrayer,
-        clearManualPrayer: true,
       );
     } catch (_) {
-      // The default Prayer Time mode is safe when preferences are unavailable.
+      // The default Auto Sequence/Fajr state is safe when preferences are unavailable.
     }
   }
 
@@ -134,6 +191,13 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_sequencePrayerStorageKey, prayer.name);
+    } catch (_) {}
+  }
+
+  Future<void> _persistSelectedPrayer(PrayerType prayer) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_selectedPrayerStorageKey, prayer.name);
     } catch (_) {}
   }
 }
@@ -169,12 +233,11 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  final target = selection.manualPrayer ??
-      switch (selection.mode) {
-        HomePrayerSelectionMode.prayerTime =>
-          currentPrayer,
-        HomePrayerSelectionMode.autoSequence => selection.autoSequencePrayer,
-      };
+  final target = switch (selection.mode) {
+    HomePrayerSelectionMode.prayerTime => currentPrayer,
+    HomePrayerSelectionMode.autoSequence => selection.autoSequencePrayer,
+    HomePrayerSelectionMode.prayerSelection => selection.selectedPrayer,
+  };
 
   // Witr remains governed by the existing profile eligibility rule.
   if (target == PrayerType.witr && !ref.watch(effectiveWitrProvider)) {
@@ -191,11 +254,14 @@ final homeSelectedPrayerProvider =
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: target,
-      source: selection.hasManualOverride
-          ? HomePrayerSelectionSource.manual
-          : selection.mode == HomePrayerSelectionMode.prayerTime
-              ? HomePrayerSelectionSource.prayerTime
-              : HomePrayerSelectionSource.autoSequence,
+      source: switch (selection.mode) {
+        HomePrayerSelectionMode.prayerTime =>
+          HomePrayerSelectionSource.prayerTime,
+        HomePrayerSelectionMode.autoSequence =>
+          HomePrayerSelectionSource.autoSequence,
+        HomePrayerSelectionMode.prayerSelection =>
+          HomePrayerSelectionSource.prayerSelection,
+      },
     );
   }
 
@@ -218,10 +284,13 @@ final homeSelectedPrayerProvider =
   return HomeSelectedPrayerState(
     mode: selection.mode,
     prayer: target,
-    source: selection.hasManualOverride
-        ? HomePrayerSelectionSource.manual
-        : selection.mode == HomePrayerSelectionMode.prayerTime
-            ? HomePrayerSelectionSource.prayerTime
-            : HomePrayerSelectionSource.autoSequence,
+    source: switch (selection.mode) {
+      HomePrayerSelectionMode.prayerTime =>
+        HomePrayerSelectionSource.prayerTime,
+      HomePrayerSelectionMode.autoSequence =>
+        HomePrayerSelectionSource.autoSequence,
+      HomePrayerSelectionMode.prayerSelection =>
+        HomePrayerSelectionSource.prayerSelection,
+    },
   );
 });
