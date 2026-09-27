@@ -33,7 +33,9 @@ class RestrictedTimeState {
   final RestrictedTimeWindow? next;
 
   bool get isActive => active != null;
-\n  /// Returns the remaining time for the active restriction, or until
+
+
+  /// Returns the remaining time for the active restriction, or until
   /// the next restriction starts when the state is inactive.
   Duration? remainingAt(tz.TZDateTime now) {
     final window = active ?? next;
