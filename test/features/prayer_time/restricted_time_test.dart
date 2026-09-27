@@ -150,5 +150,47 @@ void main() {
       expect(state.active, isNull);
       expect(state.next, isNotNull);
     });
+
+    test('derives remaining time from the active window end', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 1, 30),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.remainingAt(now), const Duration(minutes: 11));
+    });
+
+    test('derives remaining time until the next window when inactive', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 4, 0),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.remainingAt(now), const Duration(hours: 3, minutes: 12));
+    });
+
+    test('clamps an expired restricted countdown to zero', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 1, 30),
+        location,
+      );
+      final expired = RestrictedTimeState(
+        active: RestrictedTimeWindow(
+          type: RestrictedTimeType.sunrise,
+          startsAt: now.subtract(const Duration(minutes: 20)),
+          endsAt: now.subtract(const Duration(seconds: 1)),
+        ),
+      );
+
+      expect(expired.remainingAt(now), Duration.zero);
+    });
   });
 }

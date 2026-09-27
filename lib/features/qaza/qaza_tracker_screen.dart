@@ -372,7 +372,8 @@ class _TrackerBody extends ConsumerWidget {
     }
     return Column(
       children: [
-        const Padding(
+        if (restricted)
+          const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,
               AppSpacing.sm,

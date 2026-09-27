@@ -2966,6 +2966,12 @@ abstract class AppLocalizations {
   /// **'Ends in {duration}'**
   String prayerTimeEndsIn(String duration);
 
+  /// No description provided for @prayerTimeRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining time {duration}'**
+  String prayerTimeRemaining(String duration);
+
   /// No description provided for @prayerTimeStartsIn.
   ///
   /// In en, this message translates to:
@@ -3023,7 +3029,7 @@ abstract class AppLocalizations {
   /// No description provided for @prayerTimeDhuhr.
   ///
   /// In en, this message translates to:
-  /// **'Dhuhr'**
+  /// **'Zuhr'**
   String get prayerTimeDhuhr;
 
   /// No description provided for @prayerTimeAsr.

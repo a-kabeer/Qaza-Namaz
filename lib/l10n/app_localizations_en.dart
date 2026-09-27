@@ -1695,6 +1695,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String prayerTimeRemaining(String duration) {
+    return 'Remaining time $duration';
+  }
+
+  @override
   String prayerTimeStartsIn(String duration) {
     return 'Starts in $duration';
   }
@@ -1728,7 +1733,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prayerTimeFajr => 'Fajr';
 
   @override
-  String get prayerTimeDhuhr => 'Dhuhr';
+  String get prayerTimeDhuhr => 'Zuhr';
 
   @override
   String get prayerTimeAsr => 'Asr';

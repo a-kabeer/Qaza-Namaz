@@ -33,6 +33,18 @@ class RestrictedTimeState {
   final RestrictedTimeWindow? next;
 
   bool get isActive => active != null;
+
+
+  /// Returns the remaining time for the active restriction, or until
+  /// the next restriction starts when the state is inactive.
+  Duration? remainingAt(tz.TZDateTime now) {
+    final window = active ?? next;
+    if (window == null) return null;
+
+    final target = active != null ? window.endsAt : window.startsAt;
+    final remaining = target.difference(now);
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
 }
 
 class RestrictedTimeCalculator {

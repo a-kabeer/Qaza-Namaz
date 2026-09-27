@@ -570,6 +570,8 @@
   "prayerTimeRefresh": "مقام تازہ کریں",
   "prayerTimeEndsIn": "اختتام میں {duration}",
   "@prayerTimeEndsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "prayerTimeRemaining": "باقی وقت {duration}",
+  "@prayerTimeRemaining": { "placeholders": { "duration": { "type": "String" } } },
   "prayerTimeStartsIn": "شروع ہونے میں {duration}",
   "@prayerTimeStartsIn": { "placeholders": { "duration": { "type": "String" } } },
   "prayerTimeNextRestricted": "اگلا: {name}",
