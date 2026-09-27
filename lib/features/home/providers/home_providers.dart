@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -73,9 +75,29 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     _persistMode(HomePrayerSelectionMode.autoSequence);
   }
 
+  Timer? _undoSnapshotTimer;
+  HomePrayerSelectionState? _undoSnapshot;
+
   void afterSuccessfulCompletion(PrayerType completedPrayer) {
+    _undoSnapshot ??= state;
+    _undoSnapshotTimer?.cancel();
+    _undoSnapshotTimer = Timer(const Duration(seconds: 5), () {
+      _undoSnapshot = null;
+    });
+
     state = state.afterSuccessfulCompletion(completedPrayer);
     _persistSequence(state.autoSequencePrayer);
+  }
+
+  void restoreAfterUndo() {
+    final snapshot = _undoSnapshot;
+    if (snapshot == null) return;
+
+    _undoSnapshotTimer?.cancel();
+    _undoSnapshot = null;
+    state = snapshot;
+    _persistMode(snapshot.mode);
+    _persistSequence(snapshot.autoSequencePrayer);
   }
 
   Future<void> _restore() async {
@@ -153,6 +175,15 @@ final homeSelectedPrayerProvider =
           currentPrayer,
         HomePrayerSelectionMode.autoSequence => selection.autoSequencePrayer,
       };
+
+  // Witr remains governed by the existing profile eligibility rule.
+  if (target == PrayerType.witr && !ref.watch(effectiveWitrProvider)) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: null,
+      source: HomePrayerSelectionSource.unavailable,
+    );
+  }
 
   // Witr is independent of Sahib al-Tartib and remains actionable even while
   // the ordering check is temporarily unavailable.

@@ -139,14 +139,8 @@ class SahibAlTartibService {
     return a.id.compareTo(b.id);
   }
 
-  static int _prayerOrder(PrayerType prayer) => switch (prayer) {
-        PrayerType.fajr => 0,
-        PrayerType.zuhr => 1,
-        PrayerType.asr => 2,
-        PrayerType.maghrib => 3,
-        PrayerType.isha => 4,
-        PrayerType.witr => 5,
-      };
+  static int _prayerOrder(PrayerType prayer) =>
+      prayer.qazaSequenceIndex;
 
   /// Number of prayer slots between a missed Fard and the referenced
   /// current Fard in the repeating five-prayer cycle.

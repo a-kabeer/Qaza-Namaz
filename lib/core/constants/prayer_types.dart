@@ -8,12 +8,25 @@ enum PrayerType {
 }
 
 extension PrayerTypeX on PrayerType {
-  /// Returns the next prayer in the canonical Qaza completion sequence.
+  /// The single canonical Qaza completion order.
   ///
-  /// The order is intentionally defined by this enum rather than by any UI,
-  /// database, or filtered list ordering.
-  PrayerType get nextInQazaSequence =>
-      PrayerType.values[(index + 1) % PrayerType.values.length];
+  /// Auto Sequence and Sahib al-Tartib both consume this definition so the
+  /// prayer order cannot drift between targeting and business rules.
+  static const List<PrayerType> qazaSequence = <PrayerType>[
+    PrayerType.fajr,
+    PrayerType.zuhr,
+    PrayerType.asr,
+    PrayerType.maghrib,
+    PrayerType.isha,
+    PrayerType.witr,
+  ];
+
+  int get qazaSequenceIndex => qazaSequence.indexOf(this);
+
+  PrayerType get nextInQazaSequence {
+    final index = qazaSequenceIndex;
+    return qazaSequence[(index + 1) % qazaSequence.length];
+  }
 
   String get label {
     switch (this) {

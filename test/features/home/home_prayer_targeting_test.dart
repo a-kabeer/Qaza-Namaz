@@ -25,16 +25,19 @@ void main() {
       expect(state.autoSequencePrayer, PrayerType.fajr);
     });
 
-    test('successful Auto Sequence completion advances from the completed prayer', () {
+    test('successful Auto Sequence completion advances only its requested prayer', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.fajr,
       );
 
-      final next = state.afterSuccessfulCompletion(PrayerType.zuhr);
+      final blocked = state.afterSuccessfulCompletion(PrayerType.zuhr);
+      expect(blocked.autoSequencePrayer, PrayerType.fajr);
+      expect(blocked.manualPrayer, isNull);
 
+      final next = state.afterSuccessfulCompletion(PrayerType.fajr);
       expect(next.mode, HomePrayerSelectionMode.autoSequence);
-      expect(next.autoSequencePrayer, PrayerType.asr);
+      expect(next.autoSequencePrayer, PrayerType.zuhr);
       expect(next.manualPrayer, isNull);
     });
 
@@ -74,6 +77,17 @@ void main() {
 
       expect(next.mode, HomePrayerSelectionMode.prayerTime);
       expect(next.manualPrayer, isNull);
+    });
+
+    test('Auto Sequence follows the complete canonical cycle', () {
+      var state = const HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+      );
+
+      for (final prayer in PrayerTypeX.qazaSequence) {
+        state = state.afterSuccessfulCompletion(prayer);
+        expect(state.autoSequencePrayer, prayer.nextInQazaSequence);
+      }
     });
   });
 

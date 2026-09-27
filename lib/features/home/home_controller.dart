@@ -102,11 +102,14 @@ class HomeController {
     ref.invalidate(homeFallbackPendingProvider);
   }
 
-  void afterUndo(PrayerType prayer) {
+  void afterUndo() {
+    ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
-    ref.invalidate(oldestPendingProvider(prayer));
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
   }
 }
 

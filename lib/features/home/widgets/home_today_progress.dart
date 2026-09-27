@@ -148,7 +148,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         userId: userId,
         records: [completedRecord],
         onUndone: () async {
-          ref.read(homeControllerProvider).afterUndo(prayer);
+          ref.read(homeControllerProvider).afterUndo();
         },
       );
     } catch (error, stack) {
