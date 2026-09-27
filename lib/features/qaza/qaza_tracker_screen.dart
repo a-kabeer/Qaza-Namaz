@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../prayer_time/application/prayer_time_providers.dart';
+import '../prayer_time/presentation/restricted_times_status.dart';
+
 import '../../app/providers.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
@@ -342,6 +345,7 @@ class _TrackerBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final lockedRecordId =
         tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
     if (state.loading && state.records.isEmpty) return const _TrackerSkeleton();
@@ -368,6 +372,16 @@ class _TrackerBody extends ConsumerWidget {
     }
     return Column(
       children: [
+        if (restricted)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: RestrictedTimesStatusCard(compact: true),
+          ),
         if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -429,6 +443,7 @@ class _TrackerBody extends ConsumerWidget {
                             : null)
                         : null,
                     onLongPress: record.status == QazaStatus.pending &&
+                            !restricted &&
                             (lockedRecordId == null ||
                                 record.id == lockedRecordId ||
                                 record.prayerType == PrayerType.witr)
@@ -581,7 +596,13 @@ class _RecordRow extends StatelessWidget {
                     value: selected,
                     onChanged: selectable ? (_) => onTap!() : null,
                   )
-                : const SizedBox.shrink(),
+                : canAct
+                    ? const SizedBox.shrink()
+                    : Icon(
+                        Icons.lock_clock_rounded,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
           ),
           onTap: onTap,
           onLongPress: onLongPress,
@@ -696,6 +717,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final busy = widget.state.completing || widget.state.recordMutating;
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final count = widget.state.selected.length;
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -719,7 +741,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
                   Expanded(
                     child: FilledButton(
                       key: const Key('qaza_tracker_complete_selected'),
-                      onPressed: busy ? null : () => _complete(context),
+                      onPressed: busy || restricted || count == 0 ? null : () => _complete(context),
                       child: Text(l10n.qazaCompleteCount(count)),
                     ),
                   ),
