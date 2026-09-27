@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
+import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
 
 void main() {
@@ -17,66 +19,66 @@ void main() {
   });
 
   group('HomePrayerSelectionState', () {
-    test('defaults to Prayer Time with Fajr as the Auto Sequence cursor', () {
+    test('defaults to Auto Sequence with Fajr cursor', () {
       const state = HomePrayerSelectionState();
 
-      expect(state.mode, HomePrayerSelectionMode.prayerTime);
-      expect(state.manualPrayer, isNull);
+      expect(state.mode, HomePrayerSelectionMode.autoSequence);
+      expect(state.selectedPrayer, isNull);
       expect(state.autoSequencePrayer, PrayerType.fajr);
     });
 
-    test('successful Auto Sequence completion advances only its requested prayer', () {
+    test('successful Auto Sequence completion advances only its cursor prayer', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.fajr,
       );
 
-      final blocked = state.afterSuccessfulCompletion(PrayerType.zuhr);
-      expect(blocked.autoSequencePrayer, PrayerType.fajr);
-      expect(blocked.manualPrayer, isNull);
+      final forcedByTartib = state.afterSuccessfulCompletion(PrayerType.zuhr);
+      expect(forcedByTartib.mode, HomePrayerSelectionMode.autoSequence);
+      expect(forcedByTartib.autoSequencePrayer, PrayerType.fajr);
 
       final next = state.afterSuccessfulCompletion(PrayerType.fajr);
-      expect(next.mode, HomePrayerSelectionMode.autoSequence);
       expect(next.autoSequencePrayer, PrayerType.zuhr);
-      expect(next.manualPrayer, isNull);
     });
 
-    test('Sahib override does not skip the Auto Sequence cursor', () {
+    test('Prayer Selection remains sticky after successful completion', () {
       const state = HomePrayerSelectionState(
-        mode: HomePrayerSelectionMode.autoSequence,
-        autoSequencePrayer: PrayerType.fajr,
+        mode: HomePrayerSelectionMode.prayerSelection,
+        selectedPrayer: PrayerType.zuhr,
+        autoSequencePrayer: PrayerType.asr,
       );
 
       final next = state.afterSuccessfulCompletion(PrayerType.zuhr);
 
-      expect(next.autoSequencePrayer, PrayerType.fajr);
+      expect(next.mode, HomePrayerSelectionMode.prayerSelection);
+      expect(next.selectedPrayer, PrayerType.zuhr);
+      expect(next.autoSequencePrayer, PrayerType.asr);
     });
 
-    test(
-        'manual Auto Sequence override is preserved when Sahib forces another prayer',
-        () {
+    test('Tartib completion does not mutate Auto Sequence cursor', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
-        autoSequencePrayer: PrayerType.fajr,
-        manualPrayer: PrayerType.maghrib,
+        autoSequencePrayer: PrayerType.asr,
       );
 
       final next = state.afterSuccessfulCompletion(PrayerType.zuhr);
 
-      expect(next.autoSequencePrayer, PrayerType.fajr);
-      expect(next.manualPrayer, PrayerType.maghrib);
+      expect(next.autoSequencePrayer, PrayerType.asr);
+      expect(next.selectedPrayer, isNull);
     });
 
-    test('successful Prayer Time completion clears a manual target', () {
+    test('Prayer Time completion does not mutate targeting state', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.prayerTime,
-        manualPrayer: PrayerType.maghrib,
+        selectedPrayer: null,
+        autoSequencePrayer: PrayerType.maghrib,
       );
 
-      final next = state.afterSuccessfulCompletion(PrayerType.maghrib);
+      final next = state.afterSuccessfulCompletion(PrayerType.fajr);
 
       expect(next.mode, HomePrayerSelectionMode.prayerTime);
-      expect(next.manualPrayer, isNull);
+      expect(next.selectedPrayer, isNull);
+      expect(next.autoSequencePrayer, PrayerType.maghrib);
     });
 
     test('Auto Sequence follows the complete canonical cycle', () {
@@ -88,6 +90,77 @@ void main() {
         state = state.afterSuccessfulCompletion(prayer);
         expect(state.autoSequencePrayer, prayer.nextInQazaSequence);
       }
+    });
+
+    test('copyWith can clear Prayer Selection', () {
+      const state = HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.prayerSelection,
+        selectedPrayer: PrayerType.isha,
+      );
+
+      final next = state.copyWith(clearSelectedPrayer: true);
+
+      expect(next.selectedPrayer, isNull);
+      expect(next.mode, HomePrayerSelectionMode.prayerSelection);
+    });
+  });
+
+  group('HomePrayerSelectionNotifier', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+    });
+
+    test('new state starts in Auto Sequence and persists mode changes', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(homePrayerSelectionProvider.notifier);
+      expect(
+        container.read(homePrayerSelectionProvider).mode,
+        HomePrayerSelectionMode.autoSequence,
+      );
+
+      notifier.useAutoSequence();
+      notifier.selectPrayer(PrayerType.zuhr);
+      await Future<void>.delayed(Duration.zero);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString('qaza_home_completion_mode'),
+        HomePrayerSelectionMode.prayerSelection.name,
+      );
+      expect(
+        prefs.getString('qaza_home_selected_prayer'),
+        PrayerType.zuhr.name,
+      );
+    });
+
+    test('switching modes preserves the Auto Sequence cursor', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(homePrayerSelectionProvider.notifier);
+      notifier.useAutoSequence();
+
+      final current = container.read(homePrayerSelectionProvider);
+      final advanced = current.afterSuccessfulCompletion(PrayerType.fajr);
+      notifier.state = advanced;
+
+      notifier.usePrayerTime();
+      expect(
+        container.read(homePrayerSelectionProvider).autoSequencePrayer,
+        PrayerType.zuhr,
+      );
+
+      notifier.usePrayerSelection();
+      expect(
+        container.read(homePrayerSelectionProvider).autoSequencePrayer,
+        PrayerType.zuhr,
+      );
+      expect(
+        container.read(homePrayerSelectionProvider).selectedPrayer,
+        PrayerType.zuhr,
+      );
     });
   });
 
