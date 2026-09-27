@@ -6,6 +6,7 @@ import '../../domain/services/profile_rules.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
+import 'previous_qaza_choice_screen.dart';
 import 'splash_screen.dart';
 
 class StartupGate extends ConsumerWidget {
@@ -35,9 +36,13 @@ class StartupGate extends ConsumerWidget {
           today: DateTime.now(),
         );
         if (!profile.isComplete || !validation.isValid) {
-          return ProfileSetupScreen(
+          return PreviousQazaChoiceScreen(
             languageCode: profile.languageCode,
-            initialProfile: profile,
+            nextScreenBuilder: (choice) => ProfileSetupScreen(
+              languageCode: profile.languageCode,
+              previousQazaChoice: choice,
+              initialProfile: profile,
+            ),
           );
         }
 

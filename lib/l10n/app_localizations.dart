@@ -2445,6 +2445,22 @@ abstract class AppLocalizations {
   /// **'Select the language you want to use throughout the app.'**
   String get profileLanguageIntro;
 
+  String get onboardingPreviousQazaTitle;
+
+  String get onboardingPreviousQazaIntro;
+
+  String get onboardingPreviousQazaSetUp;
+
+  String get onboardingPreviousQazaSetUpDescription;
+
+  String get onboardingPreviousQazaSkip;
+
+  String get onboardingPreviousQazaSkipDescription;
+
+  String get onboardingPreviousQazaCurrent;
+
+  String get onboardingPreviousQazaChange;
+
   /// No description provided for @profileSetupTitle.
   ///
   /// In en, this message translates to:

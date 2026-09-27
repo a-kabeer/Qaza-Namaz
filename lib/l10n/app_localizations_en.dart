@@ -1421,6 +1421,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Select the language you want to use throughout the app.';
 
   @override
+  String get onboardingPreviousQazaTitle => 'Previous Qaza';
+
+  @override
+  String get onboardingPreviousQazaIntro =>
+      'Do you have Qaza prayers from before you started praying regularly?';
+
+  @override
+  String get onboardingPreviousQazaSetUp => 'Set up previous Qaza';
+
+  @override
+  String get onboardingPreviousQazaSetUpDescription =>
+      'Calculate your earlier Qaza and add the resulting prayers to your tracker.';
+
+  @override
+  String get onboardingPreviousQazaSkip => 'Start without previous Qaza';
+
+  @override
+  String get onboardingPreviousQazaSkipDescription =>
+      'Start with an empty tracker. You can add Qaza later.';
+
+  @override
+  String get onboardingPreviousQazaCurrent => 'Previous Qaza setup';
+
+  @override
+  String get onboardingPreviousQazaChange => 'Change';
+
+  @override
   String get profileSetupTitle => 'Set up your profile';
 
   @override
