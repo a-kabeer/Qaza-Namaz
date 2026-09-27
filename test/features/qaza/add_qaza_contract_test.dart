@@ -47,7 +47,7 @@ void main() {
     expect(source, contains('FilterChip('));
     expect(source, contains('crossAxisCount: 3'));
     expect(source, isNot(contains('CheckboxListTile')));
-    expect(source, contains('HijriDateService.format(date, l10n)'));
+    expect(source, contains('HijriDateService.format(dates.first, l10n)'));
     expect(source, contains('bottomNavigationBar: _AddQazaBottomAction('));
     expect(source, contains('l10n.addQazaReviewHeading'));
     expect(source, contains('class _AnalysisSummary'));
