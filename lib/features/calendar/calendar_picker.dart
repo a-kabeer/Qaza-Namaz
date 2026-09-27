@@ -342,7 +342,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         dayMaxWidth: 44,
         dayBuilder: _dayBuilder,
         selectableDayPredicate: (date) =>
-            _canSelect && _isDateAvailable(date),
+            !_exclusionMode && _canSelect && _isDateAvailable(date),
         selectedDayHighlightColor: Colors.transparent,
         selectedRangeHighlightColor: Colors.transparent,
         selectedDayTextStyle: Theme.of(context).textTheme.bodySmall,
