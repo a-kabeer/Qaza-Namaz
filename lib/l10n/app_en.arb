@@ -957,6 +957,8 @@
   "prayerTimeRefresh": "Refresh location",
   "prayerTimeEndsIn": "Ends in {duration}",
   "@prayerTimeEndsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "prayerTimeRemaining": "Remaining time {duration}",
+  "@prayerTimeRemaining": { "placeholders": { "duration": { "type": "String" } } },
   "prayerTimeStartsIn": "Starts in {duration}",
   "@prayerTimeStartsIn": { "placeholders": { "duration": { "type": "String" } } },
   "prayerTimeNextRestricted": "Next: {name}",
