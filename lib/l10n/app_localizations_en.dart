@@ -1733,7 +1733,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prayerTimeFajr => 'Fajr';
 
   @override
-  String get prayerTimeDhuhr => 'Dhuhr';
+  String get prayerTimeDhuhr => 'Zuhr';
 
   @override
   String get prayerTimeAsr => 'Asr';
