@@ -46,7 +46,8 @@ class OfflineCityResolver {
         TimezoneConvert.countryName(countryCode) ?? place.countryName;
 
     var timezoneId = deviceTimezoneId;
-    final timezoneCountry = TimezoneConvert.timezoneToCountryCode(timezoneId);
+    final timezoneCountry =
+        TimezoneConvert.timezoneToCountryCode(timezoneId);
     if (!TimezoneConvert.isKnownTimezone(timezoneId) ||
         timezoneCountry != countryCode) {
       timezoneId = TimezoneConvert.nearestTimezone(
@@ -54,7 +55,6 @@ class OfflineCityResolver {
             longitude,
             countryCode: countryCode,
           ) ??
-          TimezoneConvert.primaryTimezone(countryCode) ??
           'Etc/UTC';
     }
 
@@ -71,9 +71,7 @@ class OfflineCityResolver {
   }
 
   List<String> countryCodes() => List.unmodifiable(
-        TimezoneConvert.allCountryCodes.where(
-          TimezoneConvert.isValidCountryCode,
-        ),
+        TimezoneConvert.allCountryCodes,
       );
 
   String countryName(String countryCode) =>
