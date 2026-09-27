@@ -1,13 +1,38 @@
 import 'package:flutter_timezone/flutter_timezone.dart';
+
+import '../../../core/platform/app_location_settings.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../domain/prayer_location.dart';
 import 'offline_city_resolver.dart';
 
 class PrayerLocationRepository {
-  const PrayerLocationRepository(this._resolver);
+  const PrayerLocationRepository(
+    this._resolver, {
+    this._locationSettings = const AppLocationSettings(),
+  });
 
   final OfflineCityResolver _resolver;
+  final AppLocationSettings _locationSettings;
+
+  Future<PrayerLocationRequirement> currentLocationRequirement() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return PrayerLocationRequirement.locationServiceDisabled;
+    }
+
+    return switch (await Geolocator.checkPermission()) {
+      LocationPermission.denied => PrayerLocationRequirement.permissionRequired,
+      LocationPermission.deniedForever =>
+        PrayerLocationRequirement.permissionDeniedForever,
+      LocationPermission.whileInUse ||
+      LocationPermission.always =>
+        PrayerLocationRequirement.ready,
+      LocationPermission.unableToDetermine =>
+        PrayerLocationRequirement.permissionRequired,
+    };
+  }
+
+  Future<bool> openAppSettings() => _locationSettings.openAppSettings();
 
   Future<PrayerLocation?> getLastKnown() async {
     final position = await Geolocator.getLastKnownPosition();
@@ -22,19 +47,28 @@ class PrayerLocationRepository {
 
   Future<PrayerLocation> getCurrent() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
-      throw const PrayerLocationException('Location services are disabled.');
+      final enabled = await _locationSettings.ensureLocationServicesEnabled();
+      if (!enabled || !await Geolocator.isLocationServiceEnabled()) {
+        throw const PrayerLocationException(
+          PrayerLocationSetupFailure.locationServiceResolutionCancelled,
+        );
+      }
     }
 
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.unableToDetermine) {
       permission = await Geolocator.requestPermission();
     }
+
     if (permission == LocationPermission.denied) {
-      throw const PrayerLocationException('Location permission was denied.');
+      throw const PrayerLocationException(
+        PrayerLocationSetupFailure.permissionDenied,
+      );
     }
     if (permission == LocationPermission.deniedForever) {
       throw const PrayerLocationException(
-        'Location permission is permanently denied.',
+        PrayerLocationSetupFailure.permissionDeniedForever,
       );
     }
 
