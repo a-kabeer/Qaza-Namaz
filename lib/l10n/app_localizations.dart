@@ -725,7 +725,7 @@ abstract class AppLocalizations {
   /// No description provided for @homePrayerTimeUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Automatic prayer selection is unavailable until Prayer Times are set up.'**
+  /// **'Prayer Time selection is unavailable until Prayer Times are set up.'**
   String get homePrayerTimeUnavailable;
 
   /// No description provided for @homeQazaTargetReachedTitle.
@@ -1436,11 +1436,10 @@ abstract class AppLocalizations {
   /// **'Choose multiple dates'**
   String get addQazaChooseMultiple;
 
-
   /// No description provided for @addQazaAvailabilityNote.
   ///
   /// In en, this message translates to:
-  /// **'A date is disabled only when no prayer remains eligible.'**
+  /// **'In Range mode, valid dates can be selected even when no Qaza remains; Review adds only eligible prayers.'**
   String get addQazaAvailabilityNote;
 
   /// No description provided for @addQazaStepNameDates.
@@ -2445,20 +2444,52 @@ abstract class AppLocalizations {
   /// **'Select the language you want to use throughout the app.'**
   String get profileLanguageIntro;
 
+  /// No description provided for @onboardingPreviousQazaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Qaza'**
   String get onboardingPreviousQazaTitle;
 
+  /// No description provided for @onboardingPreviousQazaIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you have Qaza prayers from before you started praying regularly?'**
   String get onboardingPreviousQazaIntro;
 
+  /// No description provided for @onboardingPreviousQazaSetUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up previous Qaza'**
   String get onboardingPreviousQazaSetUp;
 
+  /// No description provided for @onboardingPreviousQazaSetUpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate your earlier Qaza and add the resulting prayers to your tracker.'**
   String get onboardingPreviousQazaSetUpDescription;
 
+  /// No description provided for @onboardingPreviousQazaSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Start without previous Qaza'**
   String get onboardingPreviousQazaSkip;
 
+  /// No description provided for @onboardingPreviousQazaSkipDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with an empty tracker. You can add Qaza later.'**
   String get onboardingPreviousQazaSkipDescription;
 
+  /// No description provided for @onboardingPreviousQazaCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Qaza setup'**
   String get onboardingPreviousQazaCurrent;
 
+  /// No description provided for @onboardingPreviousQazaChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
   String get onboardingPreviousQazaChange;
 
   /// No description provided for @profileSetupTitle.
