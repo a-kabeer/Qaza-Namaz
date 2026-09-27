@@ -59,13 +59,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   bool _isDateAvailable(DateTime date) =>
       _availableIn(widget.availablePrayersByDate, date);
 
-  bool _isDateAllowed(DateTime date) {
-    final normalized = DateUtils.dateOnly(date);
-    if (normalized.isAfter(today) || normalized.isBefore(calendarFirstDate)) {
-      return false;
-    }
-    return widget.dateSelectablePredicate?.call(normalized) ?? true;
-  }
+  bool _isDateAllowed(DateTime date) =>
+      widget.dateSelectablePredicate?.call(DateUtils.dateOnly(date)) ?? true;
 
   /// Range selection does not depend on availability loading. Single and
   /// Multiple modes still wait for their prayer-availability map.
@@ -215,9 +210,10 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final scheme = Theme.of(context).colorScheme;
     final calendarState = ref.read(calendarControllerProvider);
     final rangeMode = calendarState.selectionMode == DateSelectionMode.range;
-    final selectable = rangeMode
+    final predicateAllowed = rangeMode
         ? _isDateAllowed(date)
         : _isDateAvailable(date);
+    final selectable = predicateAllowed && isDisabled != true;
     final selected = _dayIsSelected(date) || isSelected == true;
     final colors = CalendarDayColors.resolve(
       scheme,
@@ -225,7 +221,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         selected: selected,
         inRange: _dayIsInRange(date),
         isToday: isToday == true || _sameDay(date, today),
-        available: selectable && isDisabled != true,
+        available: selectable,
       ),
     );
     final dayKey =
