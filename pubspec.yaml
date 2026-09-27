@@ -30,10 +30,7 @@ dependencies:
   geolocator: ^14.0.3
   flutter_timezone: ^5.1.0
   timezone_country: ^1.2.0
-  geonames_offline:
-    git:
-      url: https://github.com/KultivatorConsulting/geonames_offline.git
-      ref: v0.1.0
+  geonames_offline: ^0.1.0
 
 dev_dependencies:
   flutter_test:
