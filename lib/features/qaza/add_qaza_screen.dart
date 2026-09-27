@@ -392,7 +392,6 @@ class _PrayerSelection extends StatelessWidget {
                         ],
                       ),
                     ),
-                    showCheckmark: false,
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.xs,
