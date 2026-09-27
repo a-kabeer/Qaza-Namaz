@@ -49,7 +49,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.lg,
-            AppSpacing.fabClearance,
+            AppSpacing.lg,
           ),
           children: [
             Text(
@@ -79,7 +79,12 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
+            _SelectionSummary(
+              mode: state.mode,
+              dates: state.selectedDates,
+            ),
+            const SizedBox(height: AppSpacing.md),
             _PrayerSelection(
               selected: state.selectedPrayers,
               witrAllowed: ProfileRules.effectiveWitr(profile),
@@ -87,10 +92,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
                   .read(addQazaControllerProvider.notifier)
                   .togglePrayer(prayer),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            _SummaryCard(
-              state: state,
-              onReview: state.canReview ? _openReview : null,
+            const SizedBox(height: AppSpacing.md),
+            _AnalysisSummary(
+              analysis: state.analysis,
+              selectedPrayers: state.selectedPrayers,
+              loading: state.analysisLoading,
             ),
             if (state.error != null) ...[
               const SizedBox(height: AppSpacing.sm),
@@ -104,6 +110,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: _AddQazaBottomAction(
+        enabled: state.canReview,
+        onPressed: state.canReview ? _openReview : null,
+      ),
     );
   }
 
@@ -116,6 +126,8 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       context: context,
       builder: (_) => _AddQazaReviewDialog(
         analysis: initial,
+        mode: ref.read(addQazaControllerProvider).mode,
+        selectedDates: ref.read(addQazaControllerProvider).selectedDates,
         onAdd: _finalValidateAndStart,
       ),
     );
@@ -314,42 +326,65 @@ class _PrayerSelection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final prayers = [
-      (PrayerType.fajr, l10n.prayerFajr),
-      (PrayerType.zuhr, l10n.prayerZuhr),
-      (PrayerType.asr, l10n.prayerAsr),
-      (PrayerType.maghrib, l10n.prayerMaghrib),
-      (PrayerType.isha, l10n.prayerIsha),
-      (PrayerType.witr, l10n.prayerWitr),
-    ];
+    const prayers = PrayerType.values;
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                0,
-              ),
-              child: Text(
-                l10n.addQazaPrayersHeading,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+            Text(
+              l10n.addQazaPrayersHeading,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            for (final prayer in prayers)
-              CheckboxListTile(
-                title: Text(prayer.$2),
-                value: selected.contains(prayer.$1),
-                onChanged: prayer.$1 == PrayerType.witr && !witrAllowed
-                    ? null
-                    : (_) => onToggle(prayer.$1),
-                controlAffinity: ListTileControlAffinity.leading,
+            const SizedBox(height: AppSpacing.sm),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: prayers.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisExtent: 42,
+                mainAxisSpacing: AppSpacing.sm,
+                crossAxisSpacing: AppSpacing.sm,
               ),
+              itemBuilder: (context, index) {
+                final prayer = prayers[index];
+                final enabled =
+                    prayer != PrayerType.witr || witrAllowed;
+                final isSelected = selected.contains(prayer);
+                final label = _prayerLabel(l10n, prayer);
+
+                return Semantics(
+                  button: true,
+                  enabled: enabled,
+                  selected: isSelected,
+                  label: label,
+                  child: FilterChip(
+                    selected: isSelected,
+                    showCheckmark: false,
+                    onSelected:
+                        enabled ? (_) => onToggle(prayer) : null,
+                    label: SizedBox(
+                      width: double.infinity,
+                      child: Center(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -357,19 +392,133 @@ class _PrayerSelection extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.state,
-    required this.onReview,
+class _SelectionSummary extends StatelessWidget {
+  const _SelectionSummary({
+    required this.mode,
+    required this.dates,
   });
 
-  final AddQazaState state;
-  final VoidCallback? onReview;
+  final DateSelectionMode mode;
+  final List<DateTime> dates;
+
+  String _modeLabel(AppLocalizations l10n) => switch (mode) {
+        DateSelectionMode.single => l10n.addQazaModeSingleTitle,
+        DateSelectionMode.range => l10n.addQazaModeRangeTitle,
+        DateSelectionMode.multiple => l10n.addQazaModeMultipleTitle,
+      };
+
+  String _gregorianSummary(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
+    if (dates.isEmpty) {
+      return switch (mode) {
+        DateSelectionMode.single => l10n.addQazaChooseSingle,
+        DateSelectionMode.range => l10n.addQazaChooseRange,
+        DateSelectionMode.multiple => l10n.addQazaChooseMultiple,
+      };
+    }
+
+    final materialL10n = MaterialLocalizations.of(context);
+    if (mode == DateSelectionMode.multiple && dates.length > 1) {
+      return l10n.addQazaDateCount(dates.length);
+    }
+
+    final first = materialL10n.formatMediumDate(dates.first);
+    if (mode != DateSelectionMode.range || dates.length == 1) {
+      return first;
+    }
+
+    return l10n.qazaDateFilterRange(
+      first,
+      materialL10n.formatMediumDate(dates.last),
+    );
+  }
+
+  String? _hijriSummary(
+    AppLocalizations l10n,
+  ) {
+    if (dates.isEmpty || (mode == DateSelectionMode.multiple && dates.length > 1)) {
+      return null;
+    }
+
+    final first = HijriDateService.format(dates.first, l10n);
+    if (mode != DateSelectionMode.range || dates.length == 1) {
+      return first;
+    }
+
+    return l10n.qazaDateFilterRange(
+      first,
+      HijriDateService.format(dates.last, l10n),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final analysis = state.analysis;
+    final hijri = _hijriSummary(l10n);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.addQazaSelectionLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                Text(
+                  _modeLabel(l10n),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _gregorianSummary(context, l10n),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            if (hijri != null)
+              Text(
+                hijri,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            if (dates.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.addQazaDateCount(dates.length),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnalysisSummary extends StatelessWidget {
+  const _AnalysisSummary({
+    required this.analysis,
+    required this.selectedPrayers,
+    required this.loading,
+  });
+
+  final AddQazaAnalysis analysis;
+  final Set<PrayerType> selectedPrayers;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final prayers = PrayerType.values
+        .where(selectedPrayers.contains)
+        .toList(growable: false);
 
     return Card(
       child: Padding(
@@ -381,46 +530,49 @@ class _SummaryCard extends StatelessWidget {
               l10n.addQazaReviewHeading,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            if (state.analysisLoading)
+            if (loading)
               const Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                child: LinearProgressIndicator(),
+                padding: EdgeInsets.only(top: AppSpacing.sm),
+                child: LinearProgressIndicator(minHeight: 2),
               ),
-            _CountRow(
-              label: l10n.addQazaDateCountLabel,
-              value: state.selectedDates.length,
-            ),
-            _CountRow(
-              label: l10n.addQazaPrayersLabel,
-              value: state.selectedPrayers.length,
-            ),
-            _CountRow(
-              label: l10n.addQazaCombinationCountLabel,
-              value: analysis.total,
-            ),
-            _CountRow(
-              label: l10n.addQazaNewRecordsLabel,
-              value: analysis.newCount,
-            ),
-            _CountRow(
-              label: l10n.addQazaExistingLabel,
-              value: analysis.existingCount,
-            ),
-            _CountRow(
-              label: l10n.addQazaUnavailableLabel,
-              value: analysis.unavailableCount,
-            ),
             const SizedBox(height: AppSpacing.sm),
-            FilledButton.icon(
-              onPressed: onReview,
-              icon: const Icon(Icons.fact_check_outlined),
-              label: Text(
-                analysis.newCount == 0
-                    ? l10n.addQazaNothingNew
-                    : l10n.addQazaAddCount(
-                        analysis.newCount.toString(),
-                      ),
+            if (prayers.isNotEmpty)
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: prayers.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisExtent: 44,
+                  mainAxisSpacing: AppSpacing.xs,
+                  crossAxisSpacing: AppSpacing.xs,
+                ),
+                itemBuilder: (context, index) {
+                  final prayer = prayers[index];
+                  return _PrayerCount(
+                    label: _prayerLabel(l10n, prayer),
+                    count: analysis.countForPrayer(prayer),
+                  );
+                },
               ),
+            if (prayers.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                _CompactStatusCount(
+                  label: l10n.addQazaNewLabel,
+                  count: analysis.newCount,
+                ),
+                _CompactStatusCount(
+                  label: l10n.addQazaAlreadyAddedLabel,
+                  count: analysis.existingCount,
+                ),
+                _CompactStatusCount(
+                  label: l10n.addQazaUnavailableLabel,
+                  count: analysis.unavailableCount,
+                ),
+              ],
             ),
           ],
         ),
@@ -429,27 +581,100 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _CountRow extends StatelessWidget {
-  const _CountRow({
+class _PrayerCount extends StatelessWidget {
+  const _PrayerCount({
     required this.label,
-    required this.value,
+    required this.count,
   });
 
   final String label;
-  final int value;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(label)),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           Text(
-            value.toString(),
-            style: Theme.of(context).textTheme.titleMedium,
+            count.toString(),
+            style: theme.textTheme.titleSmall,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CompactStatusCount extends StatelessWidget {
+  const _CompactStatusCount({
+    required this.label,
+    required this.count,
+  });
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text('$label: $count'),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+class _AddQazaBottomAction extends StatelessWidget {
+  const _AddQazaBottomAction({
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final bool enabled;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return SafeArea(
+      top: false,
+      child: Material(
+        color: theme.colorScheme.surfaceContainer,
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: enabled ? onPressed : null,
+              icon: const Icon(Icons.fact_check_outlined),
+              label: Text(l10n.addQazaReviewHeading),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -458,10 +683,14 @@ class _CountRow extends StatelessWidget {
 class _AddQazaReviewDialog extends StatefulWidget {
   const _AddQazaReviewDialog({
     required this.analysis,
+    required this.mode,
+    required this.selectedDates,
     required this.onAdd,
   });
 
   final AddQazaAnalysis analysis;
+  final DateSelectionMode mode;
+  final List<DateTime> selectedDates;
   final Future<AddQazaAnalysis?> Function() onAdd;
 
   @override
@@ -516,88 +745,50 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
     final l10n = AppLocalizations.of(context);
     final size = MediaQuery.sizeOf(context);
     final width = (size.width - 48).clamp(280.0, 560.0).toDouble();
-    final height = (size.height - 180).clamp(360.0, 640.0).toDouble();
+    final height = (size.height * 0.62).clamp(360.0, 560.0).toDouble();
 
     return AlertDialog(
       title: Text(l10n.addQazaReviewHeading),
       content: SizedBox(
         width: width,
         height: height,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _StatusCount(
-                    label: l10n.addQazaNewLabel,
-                    count: _analysis.newCount,
-                  ),
-                ),
-                Expanded(
-                  child: _StatusCount(
-                    label: l10n.addQazaAlreadyAddedLabel,
-                    count: _analysis.existingCount,
-                  ),
-                ),
-                Expanded(
-                  child: _StatusCount(
-                    label: l10n.addQazaUnavailableLabel,
-                    count: _analysis.unavailableCount,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SelectionSummary(
+                mode: widget.mode,
+                dates: widget.selectedDates,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _AnalysisSummary(
+                analysis: _analysis,
+                selectedPrayers: {
+                  for (final item in _analysis.items) item.key.prayerType,
+                },
+                loading: _busy,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.addQazaReviewNote,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (_analysis.newCount == 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Text(
-                  l10n.addQazaNothingNew,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            Expanded(
-              child: Builder(
-                builder: (context) {
-                  final groups = _groupItemsByDate(_analysis.items);
-                  return ListView.separated(
-                    itemCount: groups.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      final group = groups[index];
-                      return _ReviewDateGroup(
-                        date: group.date,
-                        items: group.items,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.addQazaReviewNote,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _error!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
       actions: [
         TextButton(
-          onPressed: _busy
-              ? null
-              : () => Navigator.of(context).pop(false),
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
           child: Text(l10n.commonBack),
         ),
         FilledButton.icon(
@@ -624,194 +815,15 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
   }
 }
 
-class _ReviewDateGroupData {
-  const _ReviewDateGroupData({
-    required this.date,
-    required this.items,
-  });
-
-  final DateTime date;
-  final List<AddQazaCandidate> items;
-}
-
-List<_ReviewDateGroupData> _groupItemsByDate(
-  List<AddQazaCandidate> items,
-) {
-  final groups = <DateTime, List<AddQazaCandidate>>{};
-  for (final item in items) {
-    final date = QazaDate.normalize(item.key.date);
-    (groups[date] ??= <AddQazaCandidate>[]).add(item);
-  }
-
-  return [
-    for (final entry in groups.entries)
-      _ReviewDateGroupData(
-        date: entry.key,
-        items: List<AddQazaCandidate>.unmodifiable(entry.value),
-      ),
-  ];
-}
-
-class _ReviewDateGroup extends StatelessWidget {
-  const _ReviewDateGroup({
-    required this.date,
-    required this.items,
-  });
-
-  final DateTime date;
-  final List<AddQazaCandidate> items;
-
-  String _prayerLabel(AppLocalizations l10n, PrayerType prayer) =>
-      switch (prayer) {
-        PrayerType.fajr => l10n.prayerFajr,
-        PrayerType.zuhr => l10n.prayerZuhr,
-        PrayerType.asr => l10n.prayerAsr,
-        PrayerType.maghrib => l10n.prayerMaghrib,
-        PrayerType.isha => l10n.prayerIsha,
-        PrayerType.witr => l10n.prayerWitr,
-      };
-
-  String _statusLabel(
-    AppLocalizations l10n,
-    AddQazaCandidateStatus status,
-  ) =>
-      switch (status) {
-        AddQazaCandidateStatus.newRecord => l10n.addQazaNewLabel,
-        AddQazaCandidateStatus.alreadyAdded =>
-          l10n.addQazaAlreadyAddedLabel,
-        AddQazaCandidateStatus.unavailable =>
-          l10n.addQazaUnavailableLabel,
-      };
-
-  IconData _statusIcon(AddQazaCandidateStatus status) =>
-      switch (status) {
-        AddQazaCandidateStatus.newRecord =>
-          Icons.add_circle_outline_rounded,
-        AddQazaCandidateStatus.alreadyAdded =>
-          Icons.check_circle_outline_rounded,
-        AddQazaCandidateStatus.unavailable => Icons.block_outlined,
-      };
-
-  Color _statusColor(
-    BuildContext context,
-    AddQazaCandidateStatus status,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return switch (status) {
-      AddQazaCandidateStatus.newRecord => scheme.primary,
-      AddQazaCandidateStatus.alreadyAdded => scheme.secondary,
-      AddQazaCandidateStatus.unavailable => scheme.outline,
+String _prayerLabel(AppLocalizations l10n, PrayerType prayer) =>
+    switch (prayer) {
+      PrayerType.fajr => l10n.prayerFajr,
+      PrayerType.zuhr => l10n.prayerZuhr,
+      PrayerType.asr => l10n.prayerAsr,
+      PrayerType.maghrib => l10n.prayerMaghrib,
+      PrayerType.isha => l10n.prayerIsha,
+      PrayerType.witr => l10n.prayerWitr,
     };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormatters.formatGregorianFull(date),
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              Text(
-                HijriDateService.format(date, l10n),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: items.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: AppSpacing.xs,
-            crossAxisSpacing: AppSpacing.xs,
-            childAspectRatio: 1.65,
-          ),
-          itemBuilder: (context, index) {
-            final item = items[index];
-            final color = _statusColor(context, item.status);
-            final prayer = _prayerLabel(l10n, item.key.prayerType);
-            final status = _statusLabel(l10n, item.status);
-
-            return Semantics(
-              label: '$prayer — $status',
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: color.withValues(alpha: 0.08),
-                  border: Border.all(
-                    color: color.withValues(alpha: 0.28),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: AppSpacing.xs,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _statusIcon(item.status),
-                      size: 16,
-                      color: color,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Flexible(
-                      child: Text(
-                        prayer,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _StatusCount extends StatelessWidget {
-  const _StatusCount({
-    required this.label,
-    required this.count,
-  });
-
-  final String label;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          count.toString(),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ],
-    );
-  }
-}
 
 class _AddQazaProgressDialog extends ConsumerStatefulWidget {
   const _AddQazaProgressDialog();
