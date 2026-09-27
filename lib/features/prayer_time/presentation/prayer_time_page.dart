@@ -237,7 +237,7 @@ class _PrayerTimeContent extends ConsumerWidget {
               ),
               active: prayer == currentPrayer || prayer == restrictedPrayer,
               countdown: prayer == countdownPrayer && nextRemaining != null
-                  ? DateFormatters.formatDurationHhMmSs(nextRemaining!)
+                  ? DateFormatters.formatDurationHhMmSs(nextRemaining)
                   : null,
             ),
             if (prayer != PrayerSlot.values.last)
