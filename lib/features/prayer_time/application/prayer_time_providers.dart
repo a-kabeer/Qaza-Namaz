@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/platform/app_location_settings.dart';
 
 import '../data/offline_city_resolver.dart';
 import '../data/prayer_location_repository.dart';
@@ -38,8 +39,15 @@ final offlineCityResolverProvider = Provider<OfflineCityResolver>(
   (ref) => OfflineCityResolver(),
 );
 
+final appLocationSettingsProvider = Provider<AppLocationSettings>(
+  (ref) => const AppLocationSettings(),
+);
+
 final prayerLocationRepositoryProvider = Provider<PrayerLocationRepository>(
-  (ref) => PrayerLocationRepository(ref.read(offlineCityResolverProvider)),
+  (ref) => PrayerLocationRepository(
+    ref.read(offlineCityResolverProvider),
+    locationSettings: ref.read(appLocationSettingsProvider),
+  ),
 );
 
 final prayerTimeCalculatorProvider = Provider<PrayerTimeCalculator>(
