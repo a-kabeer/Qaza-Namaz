@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
@@ -336,7 +337,7 @@ class _CurrentPrayerCard extends StatelessWidget {
                   ),
                   if (nextName != null && nextTime != null)
                     Text(
-                      nextName + ' · ' + nextTime,
+                      '${nextName!} · ${nextTime!}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: scheme.onPrimaryContainer,
                           ),
