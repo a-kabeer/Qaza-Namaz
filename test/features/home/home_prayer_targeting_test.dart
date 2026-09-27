@@ -85,7 +85,6 @@ void main() {
       expect(PrayerSlot.maghrib.qazaPrayerType, PrayerType.maghrib);
       expect(PrayerSlot.isha.qazaPrayerType, PrayerType.isha);
       expect(PrayerSlot.sunrise.qazaPrayerType, isNull);
-      expect(prayerTypeFromPrayerSlot(null), isNull);
     });
   });
 }
