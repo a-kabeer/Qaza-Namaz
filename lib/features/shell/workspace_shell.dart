@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
+import '../prayer_time/presentation/prayer_time_page.dart';
 import '../qaza/qaza_tracker_controller.dart';
 import '../qaza/qaza_tracker_screen.dart';
 import '../settings/settings_screen.dart';
@@ -14,6 +15,7 @@ import '../settings/settings_screen.dart';
 enum WorkspaceDestination {
   home,
   qaza,
+  prayerTime,
   knowledge,
   settings,
 }
@@ -37,6 +39,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   static const _pages = <Widget>[
     HomeScreen(),
     QazaTrackerScreen(),
+    PrayerTimePage(),
     KnowledgeBasePage(),
     SettingsScreen(),
   ];
@@ -45,6 +48,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   static const _barDestinations = [
     WorkspaceDestination.home,
     WorkspaceDestination.qaza,
+    WorkspaceDestination.prayerTime,
     WorkspaceDestination.knowledge,
     WorkspaceDestination.settings,
   ];
@@ -112,6 +116,10 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                 icon: const Icon(Icons.checklist_outlined),
                 selectedIcon: const Icon(Icons.checklist_rounded),
                 label: l10n.navQaza),
+            NavigationDestination(
+                icon: const Icon(Icons.schedule_outlined),
+                selectedIcon: const Icon(Icons.schedule_rounded),
+                label: l10n.navPrayerTime),
             NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book_rounded),
