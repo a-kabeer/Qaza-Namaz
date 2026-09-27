@@ -14,6 +14,7 @@ import '../domain/prayer_time_calculator.dart';
 import 'prayer_time_providers.dart';
 
 class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
+  static const refreshInterval = Duration(hours: 4);
   PrayerTimeCache get _cache => ref.read(prayerTimeCacheProvider);
   PrayerLocationRepository get _locations =>
       ref.read(prayerLocationRepositoryProvider);
@@ -73,6 +74,8 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
 
   Future<void> _silentRefresh(PrayerTimeSnapshot cached) async {
     if (cached.location.source != PrayerLocationSource.current) return;
+    final age = DateTime.now().toUtc().difference(cached.updatedAt);
+    if (age >= Duration.zero && age < refreshInterval) return;
     try {
       final latest = await _locations.getLastKnown();
       if (latest != null) {
