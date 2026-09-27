@@ -352,6 +352,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeAutoSequence => 'Auto Sequence';
 
   @override
+  String get homeQazaTarget => 'Qaza Target';
+
+  @override
+  String get homePrayerSelection => 'Prayer Selection';
+
+  @override
   String get homePrayerTimeUnavailable =>
       'Prayer Time selection is unavailable until Prayer Times are set up.';
 

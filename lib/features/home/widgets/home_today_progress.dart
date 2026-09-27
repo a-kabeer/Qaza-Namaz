@@ -22,6 +22,7 @@ import '../../prayer_time/presentation/restricted_times_status.dart';
 import '../../qaza/qaza_undo_feedback.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
+import 'home_qaza_target_sheet.dart';
 import 'home_skeleton.dart';
 import '../home_state.dart';
 
@@ -545,40 +546,6 @@ class _TartibUnavailable extends StatelessWidget {
 
 /// Prayer target is driven by the selected Home completion mode, while Sahib al-Tartib remains authoritative.
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
-  PopupMenuItem<String> _buildPrayerMenuItem(
-    BuildContext context,
-    PrayerType prayer,
-    AsyncValue<SahibAlTartibState> tartibAsync,
-    AppLocalizations l10n,
-  ) {
-    final tartib = tartibAsync.valueOrNull;
-    final locked = prayer != PrayerType.witr &&
-        (!tartibAsync.hasValue ||
-            (tartib?.requiresOrder == true && tartib?.nextPrayer != prayer));
-    final selected = widget.selected.prayer == prayer;
-
-    return PopupMenuItem<String>(
-      key: Key('home_qaza_prayer_option_${prayer.name}'),
-      value: prayer.name,
-      enabled: !locked,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            selected ? Icons.check_rounded : _prayerIcon(prayer),
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Text(prayer.localizedLabel(l10n)),
-          if (locked) ...[
-            const SizedBox(width: 8),
-            const Icon(Icons.lock_outline_rounded, size: 16),
-          ],
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -587,81 +554,28 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final selection = ref.watch(homePrayerSelectionProvider);
 
-    final prayerSelector = PopupMenuButton<String>(
+    final targetLabel = switch (selection.mode) {
+      HomePrayerSelectionMode.prayerTime => l10n.prayerTimeTitle,
+      HomePrayerSelectionMode.autoSequence => l10n.homeAutoSequence,
+      HomePrayerSelectionMode.prayerSelection =>
+        selection.selectedPrayer?.localizedLabel(l10n) ??
+            l10n.homePrayerSelection,
+    };
+
+    final prayerSelector = ActionChip(
       key: const Key('home_qaza_prayer_selector'),
-      tooltip: l10n.homeNextQaza,
-      position: PopupMenuPosition.under,
-      onSelected: (value) {
-        final notifier = ref.read(homePrayerSelectionProvider.notifier);
-        if (value == 'mode_prayer_time') {
-          notifier.usePrayerTime();
-          return;
-        }
-        if (value == 'mode_auto_sequence') {
-          notifier.useAutoSequence();
-          return;
-        }
-        final selectedPrayer = PrayerType.values.firstWhere(
-          (item) => item.name == value,
-        );
-        notifier.selectPrayer(selectedPrayer);
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          key: const Key('home_qaza_mode_prayer_time'),
-          value: 'mode_prayer_time',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                selection.mode == HomePrayerSelectionMode.prayerTime
-                    ? Icons.check_rounded
-                    : Icons.schedule_outlined,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.prayerTimeTitle),
-            ],
-          ),
-        ),
-        PopupMenuItem<String>(
-          key: const Key('home_qaza_mode_auto_sequence'),
-          value: 'mode_auto_sequence',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                selection.mode == HomePrayerSelectionMode.autoSequence
-                    ? Icons.check_rounded
-                    : Icons.repeat_rounded,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(l10n.homeAutoSequence),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        for (final item in PrayerType.values)
-          _buildPrayerMenuItem(
-            context,
-            item,
-            tartibAsync,
-            l10n,
-          ),
-      ],
-      child: Chip(
-        avatar: Icon(
-          selection.mode == HomePrayerSelectionMode.prayerTime
-              ? Icons.schedule_outlined
-              : Icons.repeat_rounded,
-          size: 18,
-        ),
-        label: Text(
-          selection.mode == HomePrayerSelectionMode.prayerTime
-              ? l10n.prayerTimeTitle
-              : l10n.homeAutoSequence,
-        ),
+      tooltip: l10n.homeQazaTarget,
+      avatar: Icon(
+        switch (selection.mode) {
+          HomePrayerSelectionMode.prayerTime => Icons.schedule_outlined,
+          HomePrayerSelectionMode.autoSequence => Icons.repeat_rounded,
+          HomePrayerSelectionMode.prayerSelection => Icons.touch_app_outlined,
+        },
+        size: 18,
+      ),
+      label: Text(targetLabel),
+      onPressed: () => showHomeQazaTargetSheet(
+        context: context,
       ),
     );
 

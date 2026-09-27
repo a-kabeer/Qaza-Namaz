@@ -16,18 +16,16 @@ class HomeDailyProgress {
 }
 
 /// How Home determines the next Complete Qaza target.
-///
-/// Manual prayer selection is an override inside the selected mode; it is not
-/// presented as a third user-facing mode.
 enum HomePrayerSelectionMode {
   prayerTime,
   autoSequence,
+  prayerSelection,
 }
 
 enum HomePrayerSelectionSource {
   prayerTime,
   autoSequence,
-  manual,
+  prayerSelection,
   sahibAlTartib,
 
   /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
@@ -42,53 +40,53 @@ enum HomePrayerSelectionSource {
 
 class HomePrayerSelectionState {
   const HomePrayerSelectionState({
-    this.mode = HomePrayerSelectionMode.prayerTime,
-    this.manualPrayer,
+    this.mode = HomePrayerSelectionMode.autoSequence,
+    this.selectedPrayer,
     this.autoSequencePrayer = PrayerType.fajr,
   });
 
   final HomePrayerSelectionMode mode;
 
-  /// A user-selected target that temporarily overrides the current mode.
-  final PrayerType? manualPrayer;
+  /// Explicit Prayer Selection target. It is sticky until the user changes it.
+  final PrayerType? selectedPrayer;
 
   /// The current cursor for Auto Sequence mode.
   final PrayerType autoSequencePrayer;
 
-  bool get hasManualOverride => manualPrayer != null;
-
   HomePrayerSelectionState copyWith({
     HomePrayerSelectionMode? mode,
-    PrayerType? manualPrayer,
+    PrayerType? selectedPrayer,
     PrayerType? autoSequencePrayer,
-    bool clearManualPrayer = false,
+    bool clearSelectedPrayer = false,
   }) {
     return HomePrayerSelectionState(
       mode: mode ?? this.mode,
-      manualPrayer:
-          clearManualPrayer ? null : (manualPrayer ?? this.manualPrayer),
+      selectedPrayer:
+          clearSelectedPrayer ? null : (selectedPrayer ?? this.selectedPrayer),
       autoSequencePrayer: autoSequencePrayer ?? this.autoSequencePrayer,
     );
   }
 
-  /// Advances Auto Sequence only when its intended target was completed.
+  /// Updates targeting after a successful completion.
   ///
-  /// Sahib al-Tartib can temporarily force a different Fard prayer. In that
-  /// case the user's sequence cursor is preserved rather than skipping ahead.
+  /// Prayer Selection is sticky. Prayer Time is resolved from the live
+  /// Prayer Time provider, so completion does not mutate its target.
+  /// Auto Sequence advances only when its own cursor prayer is completed.
+  /// Sahib al-Tartib overrides the actionable prayer without changing this
+  /// underlying state.
   HomePrayerSelectionState afterSuccessfulCompletion(
     PrayerType completedPrayer,
   ) {
-    if (mode == HomePrayerSelectionMode.prayerTime) {
-      return copyWith(clearManualPrayer: true);
+    switch (mode) {
+      case HomePrayerSelectionMode.prayerTime:
+      case HomePrayerSelectionMode.prayerSelection:
+        return this;
+      case HomePrayerSelectionMode.autoSequence:
+        if (completedPrayer != autoSequencePrayer) return this;
+        return copyWith(
+          autoSequencePrayer: completedPrayer.nextInQazaSequence,
+        );
     }
-
-    final requestedPrayer = manualPrayer ?? autoSequencePrayer;
-    if (completedPrayer != requestedPrayer) return this;
-
-    return copyWith(
-      autoSequencePrayer: completedPrayer.nextInQazaSequence,
-      clearManualPrayer: true,
-    );
   }
 }
 

@@ -48,8 +48,11 @@ void main() {
     expect(source, contains('CalendarPicker('));
     expect(source, contains('class _SelectionSummary'));
     expect(source, contains('class _PrayerSelection'));
-    expect(source, contains('FilterChip('));
-    expect(source, contains('crossAxisCount: 3'));
+    expect(source, contains('PrayerSelectionGrid('));
+    final prayerGrid =
+        File('lib/core/widgets/prayer_selection_grid.dart').readAsStringSync();
+    expect(prayerGrid, contains('FilterChip('));
+    expect(prayerGrid, contains('crossAxisCount: 3'));
     expect(source, isNot(contains('CheckboxListTile')));
     expect(source, contains('HijriDateService.format(dates.first, l10n)'));
     expect(source, contains('bottomNavigationBar: _AddQazaBottomAction('));
