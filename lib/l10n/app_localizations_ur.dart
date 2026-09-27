@@ -803,7 +803,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get addQazaAvailabilityNote =>
-      'کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔';
+      'رینج موڈ میں درست تاریخیں منتخب کی جا سکتی ہیں، چاہے ان پر کوئی قضا باقی نہ ہو؛ جائزہ صرف اہل نمازیں شامل کرتا ہے۔';
 
   @override
   String get addQazaStepNameDates => 'تاریخیں منتخب کریں';
