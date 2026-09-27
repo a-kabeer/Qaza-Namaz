@@ -121,7 +121,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           DropdownButtonFormField<PrayerCalculationMethod>(
-            value: _settings.calculationMethod,
+            initialValue: _settings.calculationMethod,
             decoration: InputDecoration(
               labelText: l10n.prayerTimeCalculationMethod,
             ),
@@ -174,7 +174,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
             const SizedBox(height: 12),
           ],
           DropdownButtonFormField<PrayerAsrMethod>(
-            value: _settings.asrMethod,
+            initialValue: _settings.asrMethod,
             decoration: InputDecoration(labelText: l10n.prayerTimeAsrMethod),
             items: [
               DropdownMenuItem(
@@ -198,7 +198,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<PrayerHighLatitudeRule>(
-            value: _settings.highLatitudeRule,
+            initialValue: _settings.highLatitudeRule,
             decoration: InputDecoration(
               labelText: l10n.prayerTimeHighLatitudeRule,
             ),
