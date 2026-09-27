@@ -80,7 +80,7 @@ void main() {
       astronomicalSunsetUtc: sunset.add(const Duration(days: 1)),
     );
 
-    final settings = const PrayerSettings();
+    const settings = PrayerSettings();
     final snapshot = PrayerTimeSnapshot(
       location: const PrayerLocation(
         latitude: 24.86,
