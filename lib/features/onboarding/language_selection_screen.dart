@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
-import 'profile_setup_screen.dart';
+import 'previous_qaza_choice_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerWidget {
   const LanguageSelectionScreen({super.key});
@@ -24,7 +24,9 @@ class LanguageSelectionScreen extends ConsumerWidget {
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProfileSetupScreen(languageCode: locale.languageCode),
+        builder: (_) => PreviousQazaChoiceScreen(
+          languageCode: locale.languageCode,
+        ),
       ),
     );
   }
