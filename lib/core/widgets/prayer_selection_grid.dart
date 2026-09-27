@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/prayer_types.dart';
-import '../../features/home/providers/home_providers.dart';
+import '../constants/prayer_types.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 
