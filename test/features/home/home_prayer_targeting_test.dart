@@ -39,6 +39,32 @@ void main() {
       expect(next.manualPrayer, isNull);
     });
 
+    test('Sahib override does not skip the Auto Sequence cursor', () {
+      const state = HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+        autoSequencePrayer: PrayerType.fajr,
+      );
+
+      final next = state.afterSuccessfulCompletion(PrayerType.zuhr);
+
+      expect(next.autoSequencePrayer, PrayerType.fajr);
+    });
+
+    test(
+        'manual Auto Sequence override is preserved when Sahib forces another prayer',
+        () {
+      const state = HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+        autoSequencePrayer: PrayerType.fajr,
+        manualPrayer: PrayerType.maghrib,
+      );
+
+      final next = state.afterSuccessfulCompletion(PrayerType.zuhr);
+
+      expect(next.autoSequencePrayer, PrayerType.fajr);
+      expect(next.manualPrayer, PrayerType.maghrib);
+    });
+
     test('successful Prayer Time completion clears a manual target', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.prayerTime,
