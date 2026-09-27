@@ -1561,4 +1561,128 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileErrorWitr => 'براہ کرم وتر کی درست ترتیب منتخب کریں۔';
+  @override
+  String get navPrayerTime => "نماز کے اوقات";
+  @override
+  String get prayerTimeTitle => "نماز کے اوقات";
+  @override
+  String get prayerTimeLocation => "مقام";
+  @override
+  String get prayerTimeUseCurrentLocation => "موجودہ مقام استعمال کریں";
+  @override
+  String get prayerTimeSelectCity => "شہر منتخب کریں";
+  @override
+  String get prayerTimeSelectCountry => "ملک منتخب کریں";
+  @override
+  String get prayerTimeSearchCity => "شہر تلاش کریں";
+  @override
+  String get prayerTimeCurrentLocation => "موجودہ مقام";
+  @override
+  String get prayerTimeSavedLocation => "محفوظ مقام";
+  @override
+  String get prayerTimeToday => "آج";
+  @override
+  String get prayerTimeRestrictedTimes => "محدود اوقات";
+  @override
+  String get prayerTimeActive => "فعال";
+  @override
+  String get prayerTimeLocationUnavailable => "مقام دستیاب نہیں";
+  @override
+  String get prayerTimeLocationPermission => "موجودہ مقام استعمال کرنے کے لیے مقام کی اجازت درکار ہے۔";
+  @override
+  String get prayerTimeSelectLocation => "اپنا مقام منتخب کریں";
+  @override
+  String get prayerTimeCalculationMethod => "حساب کا طریقہ";
+  @override
+  String get prayerTimeAsrMethod => "عصر کا طریقہ";
+  @override
+  String get prayerTimeHighLatitudeRule => "بلند عرض بلد کا اصول";
+  @override
+  String get prayerTimeAdjustments => "تعدیلات";
+  @override
+  String get prayerTime12Hour => "12 گھنٹے";
+  @override
+  String get prayerTime24Hour => "24 گھنٹے";
+  @override
+  String get prayerTimeStandard => "معیاری";
+  @override
+  String get prayerTimeHanafi => "حنفی";
+  @override
+  String get prayerTimeAutomatic => "خودکار";
+  @override
+  String get prayerTimeMiddleOfTheNight => "نصف شب";
+  @override
+  String get prayerTimeSeventhOfTheNight => "رات کا ساتواں حصہ";
+  @override
+  String get prayerTimeTwilightAngle => "شفق کا زاویہ";
+  @override
+  String get prayerTimeCustom => "حسب ضرورت";
+  @override
+  String get prayerTimeFajrAngle => "فجر کا زاویہ";
+  @override
+  String get prayerTimeIshaAngle => "عشاء کا زاویہ";
+  @override
+  String get prayerTimeSave => "محفوظ کریں";
+  @override
+  String get prayerTimeCountry => "ملک";
+  @override
+  String get prayerTimeCity => "شہر";
+  @override
+  String get prayerTimeNoCities => "کوئی مطابقت رکھنے والا شہر نہیں";
+  @override
+  String get prayerTimeSettings => "نماز کے اوقات کی ترتیبات";
+  @override
+  String get prayerTimeLocationData => "مقام کا ڈیٹا";
+  @override
+  String get prayerTimeLocationDataAttribution => "شہری ڈیٹا © GeoNames، CC BY 4.0 کے تحت لائسنس یافتہ ہے۔";
+  @override
+  String get prayerTimeUpdated => "اپ ڈیٹ";
+  @override
+  String get prayerTimeNoSchedule => "نماز کے اوقات ابھی ترتیب نہیں دیے گئے۔";
+  @override
+  String get prayerTimeSetupTitle => "نماز کے اوقات ترتیب دیں";
+  @override
+  String get prayerTimeSetupBody => "اپنا موجودہ مقام استعمال کریں یا ملک اور شہر منتخب کریں۔ مقام محفوظ ہونے کے بعد یہ آف لائن کام کرے گا۔";
+  @override
+  String get prayerTimeRefresh => "مقام تازہ کریں";
+  @override
+  String get prayerTimeAngleHint => "درجات میں درج کریں۔";
+  @override
+  String get prayerTimeAdjustmentMinutes => "منٹ";
+  @override
+  String get prayerTimeSunrise => "طلوعِ آفتاب";
+  @override
+  String get prayerTimeZawal => "زوال";
+  @override
+  String get prayerTimeSunset => "غروبِ آفتاب";
+  @override
+  String get prayerTimeFajr => "فجر";
+  @override
+  String get prayerTimeDhuhr => "ظہر";
+  @override
+  String get prayerTimeAsr => "عصر";
+  @override
+  String get prayerTimeMaghrib => "مغرب";
+  @override
+  String get prayerTimeIsha => "عشاء";
+
+  @override
+  String prayerTimeEndsIn(String duration) {
+    return "اختتام میں $duration";
+  }
+
+  @override
+  String prayerTimeStartsIn(String duration) {
+    return "شروع ہونے میں $duration";
+  }
+
+  @override
+  String prayerTimeNextRestricted(String name) {
+    return "اگلا: $name";
+  }
+
+  @override
+  String prayerTimeUsingSavedLocation(String location) {
+    return "آپ کا محفوظ مقام استعمال ہو رہا ہے: $location";
+  }
 }
