@@ -915,7 +915,7 @@ class _HomeFallbackNextQaza extends ConsumerWidget {
   final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
