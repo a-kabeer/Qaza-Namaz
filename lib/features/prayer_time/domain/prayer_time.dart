@@ -21,12 +21,14 @@ class PrayerSchedule {
     required this.date,
     required this.timesUtc,
     required this.astronomicalSunriseUtc,
+    required this.astronomicalDhuhrUtc,
     required this.astronomicalSunsetUtc,
   });
 
   final DateTime date;
   final Map<PrayerSlot, DateTime> timesUtc;
   final DateTime astronomicalSunriseUtc;
+  final DateTime astronomicalDhuhrUtc;
   final DateTime astronomicalSunsetUtc;
 
   DateTime utcFor(PrayerSlot prayer) => timesUtc[prayer]!;
@@ -36,6 +38,9 @@ class PrayerSchedule {
 
   tz.TZDateTime localAstronomicalSunrise(tz.Location location) =>
       tz.TZDateTime.from(astronomicalSunriseUtc, location);
+
+  tz.TZDateTime localAstronomicalDhuhr(tz.Location location) =>
+      tz.TZDateTime.from(astronomicalDhuhrUtc, location);
 
   tz.TZDateTime localAstronomicalSunset(tz.Location location) =>
       tz.TZDateTime.from(astronomicalSunsetUtc, location);
@@ -54,6 +59,7 @@ class PrayerSchedule {
             entry.key.name: entry.value.toUtc().toIso8601String(),
         },
         'astronomicalSunriseUtc': astronomicalSunriseUtc.toUtc().toIso8601String(),
+        'astronomicalDhuhrUtc': astronomicalDhuhrUtc.toUtc().toIso8601String(),
         'astronomicalSunsetUtc': astronomicalSunsetUtc.toUtc().toIso8601String(),
       };
 
@@ -74,6 +80,9 @@ class PrayerSchedule {
     final rawSunrise = DateTime.tryParse(
       json['astronomicalSunriseUtc'] as String? ?? '',
     );
+    final rawDhuhr = DateTime.tryParse(
+      json['astronomicalDhuhrUtc'] as String? ?? '',
+    );
     final rawSunset = DateTime.tryParse(
       json['astronomicalSunsetUtc'] as String? ?? '',
     );
@@ -81,6 +90,7 @@ class PrayerSchedule {
       date: DateTime(date.year, date.month, date.day),
       timesUtc: Map.unmodifiable(times),
       astronomicalSunriseUtc: (rawSunrise ?? times[PrayerSlot.sunrise]!).toUtc(),
+      astronomicalDhuhrUtc: (rawDhuhr ?? times[PrayerSlot.dhuhr]!).toUtc(),
       astronomicalSunsetUtc: (rawSunset ?? times[PrayerSlot.maghrib]!).toUtc(),
     );
   }
