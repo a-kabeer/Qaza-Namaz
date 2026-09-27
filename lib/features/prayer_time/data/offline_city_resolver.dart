@@ -46,7 +46,9 @@ class OfflineCityResolver {
         TimezoneConvert.countryName(countryCode) ?? place.countryName;
 
     var timezoneId = deviceTimezoneId;
-    if (!TimezoneConvert.isKnownTimezone(timezoneId)) {
+    final timezoneCountry = TimezoneConvert.timezoneToCountryCode(timezoneId);
+    if (!TimezoneConvert.isKnownTimezone(timezoneId) ||
+        timezoneCountry != countryCode) {
       timezoneId = TimezoneConvert.nearestTimezone(
             latitude,
             longitude,
@@ -118,12 +120,4 @@ class OfflineCityResolver {
     return List.unmodifiable(options);
   }
 
-  Future<PrayerLocation> currentLocation() async {
-    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-    return resolveCurrent(
-      latitude: 0,
-      longitude: 0,
-      deviceTimezoneId: timezoneInfo.identifier,
-    );
-  }
 }
