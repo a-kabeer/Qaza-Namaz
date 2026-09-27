@@ -216,7 +216,12 @@ void main() {
         scrollable: find.byType(Scrollable),
       );
       await tester.tap(find.byKey(const Key('profile_submit')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      for (var i = 0;
+          i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       expect(find.byKey(const Key('qaza_review_add')), findsNothing);
       expect(importController.startCount, 0);
