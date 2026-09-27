@@ -44,6 +44,11 @@ class AddQazaAnalysis {
       .where((item) => item.status == AddQazaCandidateStatus.unavailable)
       .length;
 
+  int countForPrayer(PrayerType prayer) =>
+      items.where((item) => item.key.prayerType == prayer).length;
+
+  int get statusCountTotal => newCount + existingCount + unavailableCount;
+
   static const empty = AddQazaAnalysis(
     items: <AddQazaCandidate>[],
   );
