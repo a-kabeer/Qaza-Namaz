@@ -53,10 +53,8 @@ class _LanguageSelectionScreenState
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => PreviousQazaChoiceScreen(
-            languageCode: locale.languageCode,
-            nextScreenBuilder: (choice) => ProfileSetupScreen(
+            setupScreenBuilder: () => ProfileSetupScreen(
               languageCode: locale.languageCode,
-              previousQazaChoice: choice,
             ),
           ),
         ),
