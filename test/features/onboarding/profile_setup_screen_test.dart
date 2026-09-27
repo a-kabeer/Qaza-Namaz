@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/domain/entities/qaza_operation.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/features/onboarding/previous_qaza_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
+import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeUserProfileRepository implements UserProfileRepository {
@@ -37,6 +40,25 @@ class _ThrowingQazaPlanService extends QazaPlanService {
   }
 }
 
+class _ThrowingImportController extends QazaImportController {
+  @override
+  QazaImportTaskState build() => const QazaImportTaskState();
+
+  @override
+  bool start({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayers,
+    required QazaOperationType operationType,
+    required Map<String, dynamic> inputSnapshot,
+    DateTime? earliestDate,
+    DateTime? today,
+    bool witrAllowed = true,
+  }) {
+    throw StateError('QazaImportController must not start for skip onboarding');
+  }
+}
+
 void main() {
   testWidgets('skip previous Qaza finalizes profile without calculating or importing',
       (tester) async {
@@ -58,6 +80,8 @@ void main() {
           userProfileRepositoryProvider.overrideWithValue(repository),
           qazaPlanServiceProvider
               .overrideWithValue(_ThrowingQazaPlanService()),
+          qazaImportProvider
+              .overrideWith(_ThrowingImportController.new),
         ],
         child: MaterialApp(
           locale: const Locale('en'),
