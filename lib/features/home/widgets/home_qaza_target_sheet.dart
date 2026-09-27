@@ -11,7 +11,6 @@ import '../providers/home_providers.dart';
 
 Future<void> showHomeQazaTargetSheet({
   required BuildContext context,
-  required WidgetRef ref,
 }) {
   return showModalBottomSheet<void>(
     context: context,
