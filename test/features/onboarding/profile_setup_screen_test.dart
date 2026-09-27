@@ -53,6 +53,7 @@ class _OneDayQazaPlanService extends QazaPlanService {
 
 class _CompletingImportController extends QazaImportController {
   String? startedUserId;
+  int startCount = 0;
 
   @override
   QazaImportTaskState build() => const QazaImportTaskState();
@@ -68,6 +69,7 @@ class _CompletingImportController extends QazaImportController {
     DateTime? today,
     bool witrAllowed = true,
   }) {
+    startCount++;
     startedUserId = userId;
     state = QazaImportTaskState(
       phase: QazaImportTaskPhase.completed,
@@ -160,4 +162,64 @@ void main() {
       expect(repository.saveCount, greaterThan(1));
     },
   );
+
+
+  testWidgets(
+    'zero-Qaza onboarding completes directly without review or import',
+    (tester) async {
+      final repository = _FakeUserProfileRepository();
+      final importController = _CompletingImportController();
+      final initialProfile = UserProfile(
+        languageCode: 'en',
+        gender: Gender.male,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(2000, 1, 1),
+        pubertyAge: 12,
+        startPrayingAge: 12,
+        witrIncluded: true,
+        onboardingCompleted: false,
+      );
+
+      final calculatedPlan = const QazaPlanService().planFor(initialProfile);
+      expect(calculatedPlan, isNotNull);
+      expect(calculatedPlan!.startDate, calculatedPlan.endDate);
+      expect(calculatedPlan.totalWithWitr, 0);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userProfileRepositoryProvider.overrideWithValue(repository),
+            qazaPlanServiceProvider.overrideWithValue(
+              const QazaPlanService(),
+            ),
+            qazaImportProvider.overrideWith(
+              () => importController,
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: ProfileSetupScreen(
+              languageCode: 'en',
+              initialProfile: initialProfile,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('qaza_review_add')), findsNothing);
+      expect(importController.startCount, 0);
+      expect(find.byType(ProfileSetupScreen), findsNothing);
+      expect(find.byType(WorkspaceShell), findsOneWidget);
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+      expect(repository.stored?.onboardingCompleted, isTrue);
+    },
+  );
+
 }
