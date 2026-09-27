@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_record.dart';
-import '../../prayer_time/domain/prayer_time.dart';
 import '../home_state.dart';
 
 final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
@@ -128,22 +127,12 @@ final homeFallbackPendingProvider =
   return ref.read(qazaServiceProvider).oldestPendingOverall(userId: userId);
 });
 
-final PrayerType? prayerTypeFromPrayerSlot(PrayerSlot? slot) =>
-    switch (slot) {
-      PrayerSlot.fajr => PrayerType.fajr,
-      PrayerSlot.dhuhr => PrayerType.zuhr,
-      PrayerSlot.asr => PrayerType.asr,
-      PrayerSlot.maghrib => PrayerType.maghrib,
-      PrayerSlot.isha => PrayerType.isha,
-      PrayerSlot.sunrise || null => null,
-    };
-
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
   final tartibAsync = ref.watch(sahibAlTartibProvider);
   final tartib = tartibAsync.valueOrNull;
-  final currentPrayerState = ref.watch(currentPrayerStateProvider);
+  final currentPrayer = ref.watch(currentQazaPrayerTypeProvider);
 
   // Sahib al-Tartib remains the final authority. Targeting modes never bypass
   // an active ordering requirement.
@@ -160,9 +149,7 @@ final homeSelectedPrayerProvider =
   final target = selection.manualPrayer ??
       switch (selection.mode) {
         HomePrayerSelectionMode.prayerTime =>
-          prayerTypeFromPrayerSlot(
-            currentPrayerState?.current ?? currentPrayerState?.next,
-          ),
+          currentPrayer,
         HomePrayerSelectionMode.autoSequence => selection.autoSequencePrayer,
       };
 
