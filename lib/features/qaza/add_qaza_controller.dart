@@ -242,22 +242,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     }
   }
 
-  Future<Map<DateTime, Set<PrayerType>>> resolveAvailability(
-    DateTime start,
-    DateTime end,
-  ) async {
+  bool isDateAllowed(DateTime date) {
     final profile = ref.read(userProfileProvider).valueOrNull;
-    if (profile == null) return const <DateTime, Set<PrayerType>>{};
-
-    final dates = _dateRange(start, end);
-    final available =
-        await ref.read(qazaServiceProvider).getAvailablePrayersByDate(
-              userId: ref.read(requiredUserIdProvider),
-              dates: dates,
-              prayerTypes: _profileAllowedPrayers(profile),
-            );
-
-    return _applyDateRules(available, dates, profile);
+    return profile != null && _dateAllowed(date, profile);
   }
 
   Future<AddQazaAnalysis> refreshAnalysis() async {
@@ -422,19 +409,4 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     ];
   }
 
-  List<DateTime> _dateRange(DateTime start, DateTime end) {
-    final normalizedStart = QazaDate.normalize(start);
-    final normalizedEnd = QazaDate.normalize(end);
-    if (normalizedEnd.isBefore(normalizedStart)) {
-      return const <DateTime>[];
-    }
-
-    final dates = <DateTime>[];
-    for (var date = normalizedStart;
-        !date.isAfter(normalizedEnd);
-        date = DateTime(date.year, date.month, date.day + 1)) {
-      dates.add(date);
-    }
-    return dates;
-  }
 }
