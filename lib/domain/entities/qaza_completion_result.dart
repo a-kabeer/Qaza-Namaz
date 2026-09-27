@@ -7,4 +7,5 @@ enum QazaCompletionResult {
   completed,
   alreadyCompleted,
   notFound,
+  blockedByRestrictedTime,
 }
