@@ -174,7 +174,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
             const SizedBox(height: 12),
           ],
           DropdownButtonFormField<PrayerAsrMethod>(
-            initialValue: _settings.asrMethod,
+            value: _settings.asrMethod,
             decoration: InputDecoration(labelText: l10n.prayerTimeAsrMethod),
             items: [
               DropdownMenuItem(
@@ -198,7 +198,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<PrayerHighLatitudeRule>(
-            initialValue: _settings.highLatitudeRule,
+            value: _settings.highLatitudeRule,
             decoration: InputDecoration(
               labelText: l10n.prayerTimeHighLatitudeRule,
             ),
