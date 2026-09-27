@@ -173,7 +173,8 @@ class _PrayerTimeContent extends ConsumerWidget {
     return '${duration.inHours}h ${minutes % 60}m';
   }
 
-  PrayerSlot? _restrictionRow(RestrictedTimeType type) => switch (type) {
+  PrayerSlot? _restrictionRow(RestrictedTimeType? type) => switch (type) {
+        null => null,
         RestrictedTimeType.sunrise => PrayerSlot.sunrise,
         RestrictedTimeType.zawal => null,
         RestrictedTimeType.sunset => PrayerSlot.maghrib,
@@ -215,8 +216,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final currentPrayer = current?.current;
     final nextPrayer = current?.next;
     final nextAt = current?.nextAt;
-    final nextRemaining =
-        nextAt == null ? null : nextAt.difference(localNow);
+    final nextRemaining = nextAt?.difference(localNow);
     final activeRestriction = restricted?.active;
     final restrictedPrayer =
         _restrictionRow(activeRestriction?.type);
