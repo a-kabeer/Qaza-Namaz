@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
 
 enum PreviousQazaChoice { setup, skip }
