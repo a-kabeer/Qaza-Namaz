@@ -5,7 +5,6 @@ import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/widgets/prayer_selection_grid.dart';
 import '../../../features/prayer_time/application/prayer_time_providers.dart';
-import '../../../features/prayer_time/prayer_time.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../shell/workspace_shell.dart';
@@ -134,7 +133,7 @@ class _HomeQazaTargetSheetState
                                   ),
                                   onPressed: () => _openPrayerTimeSetup(context),
                                   icon: const Icon(Icons.settings_outlined),
-                                  label: Text(l10n.prayerTimeSettings),
+                                  label: Text(l10n.prayerTimeSetupTitle),
                                 ),
                               ],
                             ),
