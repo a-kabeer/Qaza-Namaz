@@ -3029,7 +3029,7 @@ abstract class AppLocalizations {
   /// No description provided for @prayerTimeDhuhr.
   ///
   /// In en, this message translates to:
-  /// **'Dhuhr'**
+  /// **'Zuhr'**
   String get prayerTimeDhuhr;
 
   /// No description provided for @prayerTimeAsr.
