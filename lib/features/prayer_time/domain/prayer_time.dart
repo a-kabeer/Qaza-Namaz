@@ -1,5 +1,6 @@
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../core/constants/prayer_types.dart';
 import 'prayer_location.dart';
 import 'prayer_settings.dart';
 
@@ -14,6 +15,17 @@ enum PrayerSlot {
 
 extension PrayerSlotX on PrayerSlot {
   bool get isDailyPrayer => this != PrayerSlot.sunrise;
+}
+
+extension PrayerSlotQazaX on PrayerSlot {
+  PrayerType? get qazaPrayerType => switch (this) {
+        PrayerSlot.fajr => PrayerType.fajr,
+        PrayerSlot.dhuhr => PrayerType.zuhr,
+        PrayerSlot.asr => PrayerType.asr,
+        PrayerSlot.maghrib => PrayerType.maghrib,
+        PrayerSlot.isha => PrayerType.isha,
+        PrayerSlot.sunrise => null,
+      };
 }
 
 class PrayerSchedule {
