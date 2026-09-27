@@ -110,7 +110,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<bool> _startQazaPlanImport(QazaPlan plan) async {
-    const userId = UserProfile.localLedgerUserId;
+    final userId = ref.read(requiredUserIdProvider);
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
     final inputSnapshot = <String, dynamic>{
