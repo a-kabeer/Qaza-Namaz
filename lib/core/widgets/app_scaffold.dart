@@ -8,6 +8,7 @@ class AppScaffold extends StatelessWidget {
     this.onBack,
     this.actions = const <Widget>[],
     this.floatingActionButton,
+    this.bottomNavigationBar,
   });
 
   final String title;
@@ -15,6 +16,7 @@ class AppScaffold extends StatelessWidget {
   final VoidCallback? onBack;
   final List<Widget> actions;
   final Widget? floatingActionButton;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class AppScaffold extends StatelessWidget {
       ),
       body: body,
       floatingActionButton: floatingActionButton,
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
 }
