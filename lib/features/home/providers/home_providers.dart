@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../prayer_time/domain/prayer_time.dart';
 import '../home_state.dart';
 
 final homeNowProvider = Provider<DateTime>((ref) => DateTime.now());
