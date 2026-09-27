@@ -68,6 +68,17 @@ class DateFormatters {
     return buffer.toString();
   }
 
+  /// Formats a countdown as zero-padded HH:MM:SS.
+  static String formatDurationHhMmSs(Duration duration) {
+    final totalSeconds = duration.isNegative ? 0 : duration.inSeconds;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
   static String formatClockTime(DateTime value) {
     final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
     final suffix = value.hour < 12 ? 'AM' : 'PM';
