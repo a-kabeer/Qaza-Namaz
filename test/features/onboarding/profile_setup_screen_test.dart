@@ -144,8 +144,11 @@ void main() {
       expect(find.byKey(const Key('qaza_review_add')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('qaza_review_add')));
-      await tester.pump();
-      await tester.pump();
+      for (var i = 0;
+          i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       expect(importController.startedUserId, UserProfile.localLedgerUserId);
       expect(find.byType(WorkspaceShell), findsOneWidget);
