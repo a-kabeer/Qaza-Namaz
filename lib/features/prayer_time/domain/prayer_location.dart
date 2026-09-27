@@ -14,8 +14,8 @@ enum PrayerLocationSetupFailure {
   permissionDeniedForever,
 }
 
-class PrayerLocationException implements Exception {
-  const PrayerLocationException(this.failure);
+class PrayerLocationSetupException implements Exception {
+  const PrayerLocationSetupException(this.failure);
 
   final PrayerLocationSetupFailure failure;
 }
