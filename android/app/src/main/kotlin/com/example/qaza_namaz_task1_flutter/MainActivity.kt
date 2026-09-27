@@ -3,6 +3,11 @@ package com.example.qaza_namaz_task1_flutter
 import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.os.Build
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
+import com.google.android.gms.common.api.ResolvableApiException
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -11,7 +16,11 @@ import java.security.MessageDigest
 class MainActivity : FlutterFragmentActivity() {
     private companion object {
         const val SIGNING_CHANNEL = "qaza_namaz/signing_identity"
+        const val LOCATION_SETTINGS_CHANNEL = "qaza_namaz/location_settings"
+        const val LOCATION_SETTINGS_REQUEST_CODE = 2047
     }
+
+    private var pendingLocationSettingsResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -22,6 +31,60 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun ensureLocationServices(result: MethodChannel.Result) {
+        if (pendingLocationSettingsResult != null) {
+            result.success(false)
+            return
+        }
+
+        val request = LocationRequest.Builder(
+            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+            10_000L,
+        ).setMinUpdateIntervalMillis(5_000L).build()
+
+        val settingsRequest = LocationSettingsRequest.Builder()
+            .addLocationRequest(request)
+            .setAlwaysShow(true)
+            .build()
+
+        LocationServices.getSettingsClient(this)
+            .checkLocationSettings(settingsRequest)
+            .addOnSuccessListener {
+                result.success(true)
+            }
+            .addOnFailureListener { error ->
+                if (error is ResolvableApiException) {
+                    pendingLocationSettingsResult = result
+                    try {
+                        @Suppress("DEPRECATION")
+                        error.startResolutionForResult(
+                            this,
+                            LOCATION_SETTINGS_REQUEST_CODE,
+                        )
+                    } catch (_: Exception) {
+                        pendingLocationSettingsResult = null
+                        result.success(false)
+                    }
+                } else {
+                    result.success(false)
+                }
+            }
+    }
+
+    @Deprecated("Use Activity Result APIs when this activity migration is complete.")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: android.content.Intent?,
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != LOCATION_SETTINGS_REQUEST_CODE) return
+
+        val result = pendingLocationSettingsResult ?: return
+        pendingLocationSettingsResult = null
+        result.success(resultCode == RESULT_OK)
     }
 
     /**
