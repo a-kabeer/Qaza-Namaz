@@ -52,7 +52,6 @@ void main() {
     expect(source, contains('l10n.addQazaReviewHeading'));
     expect(source, contains('class _AnalysisSummary'));
     expect(source, contains('analysis.countForPrayer(prayer)'));
-    expect(source, contains('statusCountTotal'));
     expect(source, contains('.colorScheme'));
     expect(source, isNot(contains('_ReviewDateGroup')));
   });
@@ -105,6 +104,7 @@ void main() {
     expect(source, contains('ProfileRules.startPrayingDate(profile)'));
     expect(source, contains('calendarTodayProvider'));
     expect(source, contains('ProfileRules.effectiveWitr(profile)'));
+    expect(source, contains('statusCountTotal'));
   });
 
   test('Add Qaza maps operation types to the existing model', () {
