@@ -123,16 +123,15 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
       return _PickerScaffold(
         title: l10n.prayerTimeSelectCountry,
         searchLabel: l10n.prayerTimeSelectCountry,
-        query: _query,
         onQueryChanged: (value) => setState(() => _query = value),
-      controller: _searchController,
+        controller: _searchController,
         controller: _searchController,
         child: ListView.builder(
           itemCount: countries.length,
           itemBuilder: (_, index) {
             final code = countries[index];
             return ListTile(
-              leading: Text(resolver.countryName(code)),
+              leading: const Icon(Icons.public_rounded),
               title: Text(resolver.countryName(code)),
               subtitle: Text(code),
               trailing: const Icon(Icons.chevron_right_rounded),
@@ -187,7 +186,6 @@ class _PickerScaffold extends StatelessWidget {
   const _PickerScaffold({
     required this.title,
     required this.searchLabel,
-    required this.query,
     required this.onQueryChanged,
     required this.controller,
     required this.child,
@@ -196,7 +194,6 @@ class _PickerScaffold extends StatelessWidget {
 
   final String title;
   final String searchLabel;
-  final String query;
   final ValueChanged<String> onQueryChanged;
   final TextEditingController controller;
   final Widget child;
