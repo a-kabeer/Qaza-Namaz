@@ -116,7 +116,6 @@ class HomeQazaTargetSheet extends ConsumerWidget {
                             selected: {
                               selection.selectedPrayer ?? PrayerType.fajr,
                             },
-                            allowMultiple: false,
                             witrAllowed: witrAllowed,
                             onPrayerSelected: (prayer) {
                               ref
