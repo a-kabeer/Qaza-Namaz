@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_operation.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
@@ -234,10 +235,57 @@ void main() {
 
       expect(find.byKey(const Key('qaza_review_add')), findsNothing);
       expect(importController.startCount, 0);
-      expect(find.byType(ProfileSetupScreen), findsNothing);
+      expect(repository.stored?.onboardingCompleted, isTrue);
+    },
+  );
+
+
+  testWidgets(
+    'completed zero-Qaza profile resolves to Home through StartupGate',
+    (tester) async {
+      final repository = _FakeUserProfileRepository();
+      final profile = UserProfile(
+        languageCode: 'en',
+        gender: Gender.male,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(2000, 1, 1),
+        pubertyAge: 12,
+        startPrayingAge: 12,
+        witrIncluded: true,
+        onboardingCompleted: true,
+      );
+      repository.stored = profile;
+
+      final plan = const QazaPlanService().planFor(profile);
+      expect(plan, isNotNull);
+      expect(plan!.totalWithWitr, 0);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userProfileRepositoryProvider.overrideWithValue(repository),
+            progressSummaryProvider.overrideWith(
+              (ref) async => QazaProgressSummary.empty(),
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const StartupGate(),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      for (var i = 0;
+          i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
       expect(find.byType(WorkspaceShell), findsOneWidget);
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
-      expect(repository.stored?.onboardingCompleted, isTrue);
     },
   );
 
