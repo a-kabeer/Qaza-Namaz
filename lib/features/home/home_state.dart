@@ -25,7 +25,7 @@ enum HomePrayerSelectionMode {
 enum HomePrayerSelectionSource {
   prayerTime,
   autoSequence,
-  manual,
+  prayerSelection,
   sahibAlTartib,
 
   /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
