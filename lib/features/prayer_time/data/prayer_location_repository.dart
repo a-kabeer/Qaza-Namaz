@@ -9,8 +9,8 @@ import 'offline_city_resolver.dart';
 class PrayerLocationRepository {
   const PrayerLocationRepository(
     this._resolver, {
-    this._locationSettings = const AppLocationSettings(),
-  });
+    AppLocationSettings locationSettings = const AppLocationSettings(),
+  }) : _locationSettings = locationSettings;
 
   final OfflineCityResolver _resolver;
   final AppLocationSettings _locationSettings;
@@ -49,7 +49,7 @@ class PrayerLocationRepository {
     if (!await Geolocator.isLocationServiceEnabled()) {
       final enabled = await _locationSettings.ensureLocationServicesEnabled();
       if (!enabled || !await Geolocator.isLocationServiceEnabled()) {
-        throw const PrayerLocationException(
+        throw const PrayerLocationSetupException(
           PrayerLocationSetupFailure.locationServiceResolutionCancelled,
         );
       }
@@ -62,12 +62,12 @@ class PrayerLocationRepository {
     }
 
     if (permission == LocationPermission.denied) {
-      throw const PrayerLocationException(
+      throw const PrayerLocationSetupException(
         PrayerLocationSetupFailure.permissionDenied,
       );
     }
     if (permission == LocationPermission.deniedForever) {
-      throw const PrayerLocationException(
+      throw const PrayerLocationSetupException(
         PrayerLocationSetupFailure.permissionDeniedForever,
       );
     }
