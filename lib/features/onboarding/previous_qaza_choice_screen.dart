@@ -1,37 +1,30 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-
-enum PreviousQazaChoice { setup, skip }
+import '../shell/workspace_shell.dart';
 
 class PreviousQazaChoiceScreen extends StatelessWidget {
   const PreviousQazaChoiceScreen({
     super.key,
-    required this.languageCode,
-    this.initialChoice,
-    this.popOnSelection = false,
-    this.nextScreenBuilder,
+    required this.setupScreenBuilder,
   });
 
-  final String languageCode;
-  final PreviousQazaChoice? initialChoice;
-  final bool popOnSelection;
-  final Widget Function(PreviousQazaChoice choice)? nextScreenBuilder;
+  final Widget Function() setupScreenBuilder;
 
   void _select(BuildContext context, PreviousQazaChoice choice) {
-    if (popOnSelection) {
-      Navigator.of(context).pop(choice);
+    if (choice == PreviousQazaChoice.skip) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (_) => const WorkspaceShell(),
+        ),
+        (_) => false,
+      );
       return;
     }
 
-    final builder = nextScreenBuilder;
-    if (builder == null) {
-      Navigator.of(context).pop(choice);
-      return;
-    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => builder(choice),
+        builder: (_) => setupScreenBuilder(),
       ),
     );
   }
@@ -76,7 +69,6 @@ class PreviousQazaChoiceScreen extends StatelessWidget {
                   icon: Icons.calculate_outlined,
                   title: l10n.onboardingPreviousQazaSetUp,
                   subtitle: l10n.onboardingPreviousQazaSetUpDescription,
-                  selected: initialChoice == PreviousQazaChoice.setup,
                   onPressed: () => _select(
                     context,
                     PreviousQazaChoice.setup,
@@ -88,7 +80,6 @@ class PreviousQazaChoiceScreen extends StatelessWidget {
                   icon: Icons.arrow_forward_rounded,
                   title: l10n.onboardingPreviousQazaSkip,
                   subtitle: l10n.onboardingPreviousQazaSkipDescription,
-                  selected: initialChoice == PreviousQazaChoice.skip,
                   onPressed: () => _select(
                     context,
                     PreviousQazaChoice.skip,
@@ -103,20 +94,20 @@ class PreviousQazaChoiceScreen extends StatelessWidget {
   }
 }
 
+enum PreviousQazaChoice { setup, skip }
+
 class _ChoiceCard extends StatelessWidget {
   const _ChoiceCard({
     super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.selected,
     required this.onPressed,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final bool selected;
   final VoidCallback onPressed;
 
   @override
@@ -146,10 +137,6 @@ class _ChoiceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (selected) ...[
-                const SizedBox(width: 12),
-                Icon(Icons.check_circle, color: scheme.primary),
-              ],
             ],
           ),
         ),
