@@ -340,7 +340,6 @@ class _PrayerSelection extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             PrayerSelectionGrid(
               selected: selected,
-              allowMultiple: true,
               witrAllowed: witrAllowed,
               onPrayerSelected: onToggle,
             ),
