@@ -247,9 +247,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           child: Text(
             date.day.toString(),
             style: textStyle?.copyWith(
-              color: excluded ? scheme.outline : colors.foreground,
+              color: colors.foreground,
               fontWeight: colors.bold ? FontWeight.w700 : null,
-              decoration: excluded ? TextDecoration.lineThrough : null,
             ),
           ),
         ),
