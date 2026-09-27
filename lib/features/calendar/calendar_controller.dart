@@ -56,6 +56,13 @@ class CalendarSelectionState {
     return result;
   }
 
+}
+
+final calendarControllerProvider =
+    NotifierProvider<CalendarController, CalendarSelectionState>(
+        CalendarController.new);
+
+class CalendarController extends Notifier<CalendarSelectionState> {
   static bool _isContiguous(List<DateTime> dates) {
     if (dates.length < 2) return true;
     for (var index = 1; index < dates.length; index++) {
@@ -68,13 +75,7 @@ class CalendarSelectionState {
     }
     return true;
   }
-}
 
-final calendarControllerProvider =
-    NotifierProvider<CalendarController, CalendarSelectionState>(
-        CalendarController.new);
-
-class CalendarController extends Notifier<CalendarSelectionState> {
   @override
   CalendarSelectionState build() => const CalendarSelectionState();
 
