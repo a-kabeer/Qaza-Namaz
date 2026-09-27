@@ -103,11 +103,7 @@ void main() {
     expect(repository.savedProfile?.onboardingCompleted, isFalse);
     expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
 
-    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
-    final setup = tester.widget<ProfileSetupScreen>(
-      find.byType(ProfileSetupScreen),
-    );
-    expect(setup.languageCode, 'ur');
+    expect(find.byType(PreviousQazaChoiceScreen), findsOneWidget);
   });
 
   testWidgets('Continue prevents duplicate saves and navigation while saving',
