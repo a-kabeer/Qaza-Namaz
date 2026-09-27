@@ -28,16 +28,30 @@ class CalendarSelectionState {
   final DateSelectionMode selectionMode;
   final List<DateTime> selectedDates;
 
-  int get selectedCount => selectedDates.length;
+  int get selectedCount {
+    if (!isRangeComplete) return selectedDates.length;
+    return selectedDates.last.difference(selectedDates.first).inDays + 1;
+  }
 
-  bool get hasSelection => selectedDates.isNotEmpty;
+  bool get hasSelection => selectedCount > 0;
   bool get isRangeComplete =>
       selectionMode == DateSelectionMode.range && selectedDates.length == 2;
 
   DateTime? get startDate => selectedDates.isEmpty ? null : selectedDates.first;
   DateTime? get endDate => selectedDates.length > 1 ? selectedDates.last : null;
 
-  List<DateTime> get datesForStorage => selectedDates;
+  List<DateTime> get datesForStorage {
+    if (!isRangeComplete) return selectedDates;
+
+    final start = selectedDates.first;
+    final end = selectedDates.last;
+    return List.unmodifiable([
+      for (var date = start;
+          !date.isAfter(end);
+          date = DateTime(date.year, date.month, date.day + 1))
+        date,
+    ]);
+  }
 
   CalendarSelectionState copyWith({
     DateSelectionMode? selectionMode,
