@@ -123,7 +123,7 @@ class _PrayerTimeSetup extends ConsumerWidget {
     Object error,
   ) {
     final l10n = AppLocalizations.of(context);
-    if (error is PrayerLocationException) {
+    if (error is PrayerLocationSetupException) {
       return switch (error.failure) {
         PrayerLocationSetupFailure.permissionDeniedForever =>
           _SetupFailurePresentation(
