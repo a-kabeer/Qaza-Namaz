@@ -162,6 +162,48 @@ void main() {
         PrayerType.zuhr,
       );
     });
+
+    test('Undo restores an Auto Sequence cursor changed by completion', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(homePrayerSelectionProvider.notifier);
+      notifier.useAutoSequence();
+      notifier.afterSuccessfulCompletion(PrayerType.fajr);
+
+      expect(
+        container.read(homePrayerSelectionProvider).autoSequencePrayer,
+        PrayerType.zuhr,
+      );
+
+      notifier.restoreAfterUndo();
+
+      expect(
+        container.read(homePrayerSelectionProvider).autoSequencePrayer,
+        PrayerType.fajr,
+      );
+      expect(
+        container.read(homePrayerSelectionProvider).mode,
+        HomePrayerSelectionMode.autoSequence,
+      );
+    });
+
+    test('Undo does not overwrite a newer explicit target change', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(homePrayerSelectionProvider.notifier);
+      notifier.useAutoSequence();
+      notifier.afterSuccessfulCompletion(PrayerType.fajr);
+      notifier.selectPrayer(PrayerType.maghrib);
+
+      notifier.restoreAfterUndo();
+
+      final state = container.read(homePrayerSelectionProvider);
+      expect(state.mode, HomePrayerSelectionMode.prayerSelection);
+      expect(state.selectedPrayer, PrayerType.maghrib);
+      expect(state.autoSequencePrayer, PrayerType.zuhr);
+    });
   });
 
   group('Prayer Time slot mapping', () {
