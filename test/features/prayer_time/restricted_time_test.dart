@@ -8,7 +8,11 @@ import 'package:qaza_namaz/features/prayer_time/domain/restricted_time.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_settings.dart';
 
 void main() {
-  setUpAll(tzdata.initializeTimeZones);
+  late tz.Location location;
+  setUpAll(() {
+    tzdata.initializeTimeZones();
+    location = tz.getLocation('Asia/Karachi');
+  });
 
   group('PrayerLocation', () {
     test('serializes and restores a manual city location', () {
@@ -48,7 +52,6 @@ void main() {
   });
 
   group('RestrictedTimeCalculator', () {
-    final location = tz.getLocation('Asia/Karachi');
     final day = DateTime.utc(2026, 9, 27);
     final sunrise = DateTime.utc(2026, 9, 27, 1, 21);
     final solarNoon = DateTime.utc(2026, 9, 27, 7, 17);
