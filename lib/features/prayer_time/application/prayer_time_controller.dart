@@ -15,6 +15,7 @@ import 'prayer_time_providers.dart';
 
 class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   static const refreshInterval = Duration(hours: 4);
+  bool _dateRefreshInFlight = false;
   PrayerTimeCache get _cache => ref.read(prayerTimeCacheProvider);
   PrayerLocationRepository get _locations =>
       ref.read(prayerLocationRepositoryProvider);
@@ -186,6 +187,19 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
       return false;
     } finally {
       ref.read(prayerTimeRefreshProvider.notifier).state = false;
+    }
+  }
+
+  Future<void> refreshForDateIfNeeded(DateTime localDate) async {
+    final current = state.valueOrNull;
+    if (current == null || current.today.date == localDate) return;
+    if (_dateRefreshInFlight) return;
+
+    _dateRefreshInFlight = true;
+    try {
+      await refreshSchedule();
+    } finally {
+      _dateRefreshInFlight = false;
     }
   }
 
