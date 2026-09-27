@@ -1,4 +1,3 @@
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geonames_offline/geonames_offline.dart';
 import 'package:timezone_country/timezone_country.dart';
 
@@ -43,7 +42,9 @@ class OfflineCityResolver {
     final place = nearest.place;
     final countryCode = place.countryCode;
     final countryName =
-        TimezoneConvert.countryName(countryCode) ?? place.countryName;
+        TimezoneConvert.countryName(countryCode) ??
+        place.countryName ??
+        countryCode;
 
     var timezoneId = deviceTimezoneId;
     final timezoneCountry =
@@ -82,7 +83,8 @@ class OfflineCityResolver {
     String query = '',
   }) {
     final normalizedQuery = query.trim().toLowerCase();
-    final zones = TimezoneConvert.countryToTimezones(countryCode);
+    final zones =
+        TimezoneConvert.countryToTimezones(countryCode) ?? const <String>[];
     final seen = <String>{};
     final options = <CityOption>[];
 
