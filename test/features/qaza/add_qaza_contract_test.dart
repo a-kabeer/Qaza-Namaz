@@ -3,27 +3,22 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('CalendarPicker uses the same responsive geometry for weekdays and dates', () {
+  test('CalendarPicker uses the shared calendar package and preserves app constraints', () {
     final source =
         File('lib/features/calendar/calendar_picker.dart').readAsStringSync();
 
     expect(
       source,
-      contains('for (final weekday in const [1, 2, 3, 4, 5, 6, 0])'),
+      contains("package:calendar_date_picker2/calendar_date_picker2.dart"),
     );
-    expect(
-      source,
-      contains('for (var column = 0; column < 7; column++)'),
-    );
-    expect(
-      source,
-      contains('Expanded(\n                          child: _cell('),
-    );
-    expect(
-      source,
-      isNot(contains('width: 44,\n                          child: _cell(')),
-    );
+    expect(source, contains('CalendarDatePicker2('));
+    expect(source, contains('CalendarDatePicker2Type.single'));
+    expect(source, contains('CalendarDatePicker2Type.range'));
+    expect(source, contains('CalendarDatePicker2Type.multi'));
+    expect(source, contains('selectableDayPredicate'));
     expect(source, contains('_hijriMonthLabel(month, l10n)'));
+    expect(source, contains('displayedMonthDate: month'));
+    expect(source, contains('resolveAvailability'));
   });
 
   test('Add Qaza is a single-page flow with three date modes', () {

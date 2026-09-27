@@ -1,3 +1,4 @@
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -87,43 +88,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     return false;
   }
 
-  /// Handles a tap on a day.
-  ///
-  /// Completing a range is the one case that needs to know about dates the
-  /// visible month has never loaded, so it asks for the whole span first and
-  /// judges every date in it against that answer. Eligibility still applies to
-  /// every date in the range — it is simply now applied with the facts.
-  Future<void> _selectDate(DateTime date) async {
-    final controller = ref.read(calendarControllerProvider.notifier);
-    final selection = ref.read(calendarControllerProvider);
-    final start = selection.startDate;
-    final resolve = widget.resolveAvailability;
-    final completesRange = selection.selectionMode == DateSelectionMode.range &&
-        start != null &&
-        !selection.isRangeComplete &&
-        date.isAfter(start);
-
-    if (!completesRange || resolve == null) {
-      controller.select(date, isDateSelectable: _isDateAvailable);
-      return;
-    }
-
-    setState(() => checkingRange = true);
-    try {
-      final span = await resolve(start, date);
-      if (!mounted) return;
-      controller.select(
-        date,
-        isDateSelectable: (day) => _availableIn(span, day),
-      );
-    } finally {
-      if (mounted) setState(() => checkingRange = false);
-    }
-  }
-
-  bool _hasExistingQaza(DateTime date) =>
-      widget.qazaDates.any((item) => _sameDay(item, date));
-
   /// The latest month the calendar may show: the current one.
   DateTime get _lastMonth => DateTime(today.year, today.month, 1);
 
@@ -165,6 +129,177 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   String _hijriMonthLabel(DateTime month, AppLocalizations l10n) =>
       HijriDateService.monthYearLabel(month, l10n);
 
+  DateSelectionMode get _mode =>
+      ref.read(calendarControllerProvider).selectionMode;
+
+  List<DateTime?> get _pickerValue =>
+      ref.read(calendarControllerProvider).selectedDates;
+
+  CalendarDatePicker2Type _pickerType(DateSelectionMode mode) => switch (mode) {
+        DateSelectionMode.single => CalendarDatePicker2Type.single,
+        DateSelectionMode.range => CalendarDatePicker2Type.range,
+        DateSelectionMode.multiple => CalendarDatePicker2Type.multi,
+      };
+
+  Future<void> _handlePickerValue(List<DateTime?> values) async {
+    if (checkingRange) return;
+    final controller = ref.read(calendarControllerProvider.notifier);
+    final state = ref.read(calendarControllerProvider);
+    final dates = values.whereType<DateTime>().map(DateUtils.dateOnly).toList();
+
+    switch (state.selectionMode) {
+      case DateSelectionMode.single:
+        if (dates.isEmpty) {
+          controller.clear();
+        } else {
+          controller.select(dates.last, isDateSelectable: _isDateAvailable);
+        }
+      case DateSelectionMode.multiple:
+        final target = dates.toSet();
+        final current = state.selectedDates.toSet();
+        for (final date in current.difference(target)) {
+          controller.select(date, isDateSelectable: (_) => true);
+        }
+        for (final date in target.difference(current)) {
+          controller.select(date, isDateSelectable: _isDateAvailable);
+        }
+      case DateSelectionMode.range:
+        if (dates.isEmpty) {
+          controller.clear();
+          return;
+        }
+
+        final startDate = dates.first;
+        controller.select(startDate, isDateSelectable: _isDateAvailable);
+        if (dates.length < 2) return;
+
+        final endDate = dates.last;
+        final resolve = widget.resolveAvailability;
+        if (resolve == null) {
+          controller.select(endDate, isDateSelectable: _isDateAvailable);
+          return;
+        }
+
+        setState(() => checkingRange = true);
+        try {
+          final span = await resolve(startDate, endDate);
+          if (!mounted) return;
+          controller.select(
+            endDate,
+            isDateSelectable: (date) => _availableIn(span, date),
+          );
+        } finally {
+          if (mounted) setState(() => checkingRange = false);
+        }
+    }
+  }
+
+  bool _dayIsSelected(DateTime date) {
+    final state = ref.read(calendarControllerProvider);
+    return state.selectedDates.any((item) => _sameDay(item, date));
+  }
+
+  bool _dayIsInRange(DateTime date) {
+    final state = ref.read(calendarControllerProvider);
+    return state.selectionMode == DateSelectionMode.range &&
+        state.selectedDates.length == 2 &&
+        !date.isBefore(state.selectedDates.first) &&
+        !date.isAfter(state.selectedDates.last);
+  }
+
+  Widget? _dayBuilder({
+    required DateTime date,
+    BoxDecoration? decoration,
+    bool? isDisabled,
+    bool? isSelected,
+    bool? isToday,
+    TextStyle? textStyle,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final available = !date.isAfter(today) &&
+        !date.isBefore(calendarFirstDate) &&
+        _isDateAvailable(date);
+    final selected = _dayIsSelected(date) || isSelected == true;
+    final inRange = _dayIsInRange(date);
+    final colors = CalendarDayColors.resolve(
+      scheme,
+      CalendarDayColors.statusFor(
+        selected: selected,
+        inRange: inRange,
+        isToday: isToday == true || _sameDay(date, today),
+        available: available && isDisabled != true,
+      ),
+    );
+    final dayKey =
+        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    return Semantics(
+      label:
+          '${MaterialLocalizations.of(context).formatMediumDate(date)}, ${_hijriLabel(date, AppLocalizations.of(context))}${available ? '' : ', unavailable'}',
+      selected: selected,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: colors.background == null
+                ? null
+                : BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.background,
+                  ),
+            alignment: Alignment.center,
+            child: Text(
+              '${date.day}',
+              style: textStyle?.copyWith(
+                color: colors.foreground,
+                fontWeight: colors.bold ? FontWeight.w700 : null,
+              ),
+            ),
+          ),
+          if (widget.qazaDates.any((item) => _sameDay(item, date)))
+            Positioned(
+              bottom: 2,
+              child: Container(
+                key: Key('calendar_qaza_indicator_$dayKey'),
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.tertiary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  CalendarDatePicker2Config _config(BuildContext context) =>
+      CalendarDatePicker2Config(
+        calendarType: _pickerType(_mode),
+        firstDate: calendarFirstDate,
+        lastDate: today,
+        currentDate: today,
+        firstDayOfWeek: 1,
+        dynamicCalendarRows: true,
+        animateToDisplayedMonthDate: true,
+        hideLastMonthIcon: true,
+        hideNextMonthIcon: true,
+        disableModePicker: true,
+        controlsHeight: 0,
+        dayMaxWidth: 44,
+        dayBuilder: _dayBuilder,
+        selectableDayPredicate: (date) =>
+            _canSelect && _isDateAvailable(date),
+        selectedDayHighlightColor: Colors.transparent,
+        selectedRangeHighlightColor: Colors.transparent,
+        selectedDayTextStyle: Theme.of(context).textTheme.bodySmall,
+        controlsTextStyle: Theme.of(context).textTheme.labelLarge,
+        weekdayLabelTextStyle: Theme.of(context).textTheme.labelSmall,
+      );
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarControllerProvider);
@@ -181,12 +316,12 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           children: [
             IconButton(
               key: const Key('calendar_prev_month'),
-              onPressed: canPrevious ? () => _moveMonth(-1) : null,
+              onPressed: canPrevious && !checkingRange
+                  ? () => _moveMonth(-1)
+                  : null,
               icon: const Icon(Icons.chevron_left_rounded),
             ),
             Expanded(
-              // The header is the shortcut to a year: reaching 1950 by arrow
-              // would be several hundred taps.
               child: Semantics(
                 button: true,
                 label: l10n.calendarSelectYear,
@@ -214,7 +349,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                             const Icon(Icons.arrow_drop_down_rounded, size: 20),
                           ],
                         ),
-                        // Gregorian leads; the Hijri month stays secondary.
                         Text(
                           _hijriMonthLabel(month, l10n),
                           key: const Key('calendar_hijri_month_label'),
@@ -229,7 +363,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
             ),
             IconButton(
               key: const Key('calendar_next_month'),
-              onPressed: canNext ? () => _moveMonth(1) : null,
+              onPressed: canNext && !checkingRange
+                  ? () => _moveMonth(1)
+                  : null,
               icon: const Icon(Icons.chevron_right_rounded),
             ),
           ],
@@ -244,15 +380,12 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           key: const Key('calendar_selection_prompt'),
         ),
         const SizedBox(height: 12),
-        _Grid(
-          anchor: month,
-          today: today,
-          enabled: _canSelect,
-          state: state,
-          onTap: _selectDate,
-          available: _isDateAvailable,
-          qaza: _hasExistingQaza,
-          hijri: (date) => _hijriLabel(date, l10n),
+        CalendarDatePicker2(
+          key: const Key('qaza_calendar_date_picker'),
+          config: _config(context),
+          value: List<DateTime?>.from(_pickerValue),
+          displayedMonthDate: month,
+          onValueChanged: _handlePickerValue,
         ),
         if (selected.isNotEmpty)
           Card(
@@ -262,7 +395,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                 ...selected.map(
                   (date) => ListTile(
                     dense: true,
-                    // Day, month and year: a date acted on is never partial.
                     title: Text(DateFormatters.formatGregorianFull(date)),
                     subtitle: Text(_hijriLabel(date, l10n)),
                   ),
@@ -277,169 +409,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _Grid extends StatelessWidget {
-  const _Grid({
-    required this.anchor,
-    required this.today,
-    required this.enabled,
-    required this.state,
-    required this.onTap,
-    required this.available,
-    required this.qaza,
-    required this.hijri,
-  });
-
-  final DateTime anchor;
-  final DateTime today;
-
-  /// False while availability is being fetched.
-  final bool enabled;
-  final CalendarSelectionState state;
-  final ValueChanged<DateTime> onTap;
-  final bool Function(DateTime) available;
-  final bool Function(DateTime) qaza;
-  final String Function(DateTime) hijri;
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  bool _selected(DateTime date) =>
-      state.selectedDates.any((item) => _sameDay(item, date));
-
-  bool _inRange(DateTime date) =>
-      state.selectionMode == DateSelectionMode.range &&
-      state.selectedDates.length == 2 &&
-      !date.isBefore(state.selectedDates.first) &&
-      !date.isAfter(state.selectedDates.last);
-
-  @override
-  Widget build(BuildContext context) {
-    final daysInMonth = DateTime(anchor.year, anchor.month + 1, 0).day;
-    final leadingDays = anchor.weekday - 1;
-    final totalCells = ((leadingDays + daysInMonth + 6) ~/ 7) * 7;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            // Weekday names come from Material's own localizations. The grid
-            // stays Monday-first, so the Sunday-indexed list is re-ordered
-            // rather than hard-coded in English.
-            for (final weekday in const [1, 2, 3, 4, 5, 6, 0])
-              Expanded(
-                child: Center(
-                  child: Text(
-                    MaterialLocalizations.of(context).narrowWeekdays[weekday],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        SizedBox(
-          height: (totalCells ~/ 7) * 44,
-          child: Column(
-            children: [
-              for (var row = 0; row < totalCells ~/ 7; row++)
-                SizedBox(
-                  height: 44,
-                  child: Row(
-                    children: [
-                      for (var column = 0; column < 7; column++)
-                        Expanded(
-                          child: _cell(
-                            context,
-                            row * 7 + column,
-                            leadingDays,
-                            daysInMonth,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _cell(
-    BuildContext context,
-    int index,
-    int leadingDays,
-    int daysInMonth,
-  ) {
-    final dayNumber = index - leadingDays + 1;
-    if (dayNumber < 1 || dayNumber > daysInMonth) {
-      return const SizedBox.shrink();
-    }
-
-    final date = DateTime(anchor.year, anchor.month, dayNumber);
-    final isAvailable = !date.isAfter(today) &&
-        !date.isBefore(calendarFirstDate) &&
-        available(date);
-    final isSelected = _selected(date);
-    final scheme = Theme.of(context).colorScheme;
-    final colors = CalendarDayColors.resolve(
-      scheme,
-      CalendarDayColors.statusFor(
-        selected: isSelected,
-        inRange: _inRange(date),
-        isToday: _sameDay(date, today),
-        available: isAvailable,
-      ),
-    );
-    final key =
-        '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-    return Semantics(
-      label:
-          '${MaterialLocalizations.of(context).formatMediumDate(date)}, ${hijri(date)}${isAvailable ? '' : ', unavailable'}',
-      button: isAvailable && enabled,
-      selected: isSelected,
-      child: InkWell(
-        key: Key('calendar_day_$key'),
-        onTap: isAvailable && enabled ? () => onTap(date) : null,
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.background,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '$dayNumber',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colors.foreground,
-                      fontWeight: colors.bold ? FontWeight.w700 : null,
-                    ),
-              ),
-            ),
-            if (qaza(date))
-              Positioned(
-                bottom: 2,
-                child: Container(
-                  key: Key('calendar_qaza_indicator_$key'),
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: scheme.tertiary,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

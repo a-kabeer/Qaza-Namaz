@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import 'app_button.dart';
 import 'app_scaffold.dart';
 
 class LoadingState extends StatelessWidget {
@@ -75,11 +74,10 @@ class ErrorState extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSpacing.lg),
-              AppButton(
-                label: AppLocalizations.of(context).commonRetry,
-                icon: Icons.refresh_rounded,
-                secondary: true,
+              OutlinedButton.icon(
                 onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(AppLocalizations.of(context).commonRetry),
               ),
             ],
           ],

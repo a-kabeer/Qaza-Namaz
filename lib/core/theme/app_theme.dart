@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/prayer_types.dart';
@@ -12,43 +13,14 @@ import 'app_colors.dart';
 /// palette: fresh greens, sage neutrals, a soft purple accent, semantic
 /// feedback colors, and Noto Serif / Manrope typography.
 class AppTheme {
-  // Canonical palette aliases. Keep theme construction centralized while the
-  // raw color values live in AppColors.
-  static const Color darkBase = AppColors.darkBase;
-  static const Color darkPrimary = AppColors.darkPrimary;
-  static const Color darkOnPrimary = AppColors.darkOnPrimary;
-  static const Color darkPrimaryContainer = AppColors.darkPrimaryContainer;
-  static const Color darkOnPrimaryContainer = AppColors.darkOnPrimaryContainer;
-  static const Color amber = AppColors.darkSecondary;
-  static const Color mint = AppColors.darkTertiary;
-  static const Color kineticMint = AppColors.darkTertiaryContainer;
-
-  static const Color interactive = AppColors.lightPrimary;
-
-  static const Color darkSurfaceLowest = AppColors.darkSurfaceLowest;
-  static const Color darkSurfaceLow = AppColors.darkSurfaceLow;
-  static const Color darkSurface = AppColors.darkSurface;
-  static const Color darkSurfaceHigh = AppColors.darkSurfaceHigh;
-  static const Color darkSurfaceHighest = AppColors.darkSurfaceHighest;
-  static const Color darkOnSurface = AppColors.darkOnSurface;
-  static const Color darkOnSurfaceVariant = AppColors.darkOnSurfaceVariant;
-  static const Color darkOutline = AppColors.darkOutline;
-  static const Color darkOutlineVariant = AppColors.darkOutlineVariant;
-
-  static const Color lightBase = AppColors.lightBase;
-  static const Color lightSurface = AppColors.lightSurface;
-  static const Color lightSurfaceLow = AppColors.lightSurfaceLow;
-  static const Color lightBorder = AppColors.lightBorder;
-  static const Color lightOnSurface = AppColors.lightOnSurface;
-  static const Color lightSecondary = AppColors.lightSecondary;
-  static const Color white = AppColors.white;
-
-  static const Color primaryFixed = AppColors.primaryFixed;
-  static const Color onPrimaryFixed = AppColors.onPrimaryFixed;
-  static const Color secondaryFixed = AppColors.secondaryFixed;
-  static const Color onSecondaryFixed = AppColors.onSecondaryFixed;
-  static const Color tertiaryFixed = AppColors.tertiaryFixed;
-  static const Color onTertiaryFixed = AppColors.onTertiaryFixed;
+  static const _subThemesData = FlexSubThemesData(
+    defaultRadius: 12,
+    cardRadius: 16,
+    cardElevation: 0,
+    cardBackgroundSchemeColor: SchemeColor.surfaceContainerLow,
+    cardBorderSchemeColor: SchemeColor.outlineVariant,
+    cardBorderWidth: 1,
+  );
 
   static const String _serif = 'Noto Serif';
   static const String _sans = 'Manrope';
@@ -98,90 +70,96 @@ class AppTheme {
   );
 
   static ThemeData light({Locale? locale}) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.lightPrimary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.lightPrimary,
-      onPrimary: AppColors.white,
-      primaryContainer: AppColors.lightPrimaryContainer,
-      onPrimaryContainer: AppColors.lightOnPrimaryContainer,
-      secondary: AppColors.lightSecondary,
-      onSecondary: AppColors.white,
-      secondaryContainer: AppColors.lightSecondaryContainer,
-      onSecondaryContainer: AppColors.lightOnSecondaryContainer,
-      tertiary: AppColors.lightTertiary,
-      onTertiary: AppColors.white,
-      tertiaryContainer: AppColors.lightTertiaryContainer,
-      onTertiaryContainer: AppColors.lightOnTertiaryContainer,
-      error: AppColors.lightError,
-      onError: AppColors.white,
-      errorContainer: AppColors.lightError.withValues(alpha: 0.12),
-      onErrorContainer: AppColors.lightError,
-      surface: lightBase,
-      onSurface: lightOnSurface,
-      surfaceContainerLowest: white,
-      surfaceContainerLow: lightSurfaceLow,
-      surfaceContainer: lightSurface,
-      surfaceContainerHigh: white,
-      surfaceContainerHighest: lightSurfaceLow,
-      outline: lightBorder,
-      outlineVariant: lightBorder,
-      surfaceTint: AppColors.lightPrimary,
+    return _base(
+      FlexThemeData.light(
+        primary: _lightPrimary,
+        onPrimary: Colors.white,
+        primaryContainer: _lightPrimaryContainer,
+        onPrimaryContainer: _lightOnPrimaryContainer,
+        secondary: _lightSecondary,
+        onSecondary: Colors.white,
+        secondaryContainer: _lightSecondaryContainer,
+        onSecondaryContainer: _lightOnSecondaryContainer,
+        tertiary: _lightTertiary,
+        onTertiary: _lightOnTertiary,
+        tertiaryContainer: _lightTertiaryContainer,
+        onTertiaryContainer: _lightOnTertiaryContainer,
+        error: _lightError,
+        onError: Colors.white,
+        errorContainer: _lightErrorContainer,
+        onErrorContainer: _lightError,
+        surface: _lightSurface,
+        onSurface: _lightOnSurface,
+        scaffoldBackground: _lightSurface,
+        subThemesData: _subThemesData,
+      ),
+      Brightness.light,
+      urdu: isUrdu(locale),
     );
-    return _base(scheme, Brightness.light, urdu: isUrdu(locale));
   }
 
   static ThemeData dark({Locale? locale}) {
-    const scheme = ColorScheme(
-      brightness: Brightness.dark,
-      primary: darkPrimary,
-      onPrimary: darkOnPrimary,
-      primaryContainer: darkPrimaryContainer,
-      onPrimaryContainer: darkOnPrimaryContainer,
-      secondary: AppColors.darkSecondary,
-      onSecondary: AppColors.darkOnSecondary,
-      secondaryContainer: AppColors.darkSecondaryContainer,
-      onSecondaryContainer: AppColors.darkOnSecondaryContainer,
-      tertiary: AppColors.darkTertiary,
-      onTertiary: AppColors.darkOnTertiary,
-      tertiaryContainer: AppColors.darkTertiaryContainer,
-      onTertiaryContainer: AppColors.darkOnTertiaryContainer,
-      error: AppColors.darkError,
-      onError: AppColors.darkOnError,
-      errorContainer: AppColors.darkErrorContainer,
-      onErrorContainer: AppColors.darkOnErrorContainer,
-      surface: darkBase,
-      onSurface: darkOnSurface,
-      surfaceDim: darkBase,
-      surfaceBright: AppColors.darkSurfaceBright,
-      surfaceContainerLowest: darkSurfaceLowest,
-      surfaceContainerLow: darkSurfaceLow,
-      surfaceContainer: darkSurface,
-      surfaceContainerHigh: darkSurfaceHigh,
-      surfaceContainerHighest: darkSurfaceHighest,
-      onSurfaceVariant: darkOnSurfaceVariant,
-      outline: darkOutline,
-      outlineVariant: darkOutlineVariant,
-      inverseSurface: darkOnSurface,
-      onInverseSurface: AppColors.darkOnInverseSurface,
-      inversePrimary: AppColors.lightPrimary,
-      surfaceTint: AppColors.darkPrimaryContainer,
-      primaryFixed: AppColors.primaryFixed,
-      primaryFixedDim: AppColors.primaryFixedDim,
-      onPrimaryFixed: AppColors.onPrimaryFixed,
-      onPrimaryFixedVariant: AppColors.onPrimaryFixedVariant,
-      secondaryFixed: AppColors.secondaryFixed,
-      secondaryFixedDim: AppColors.secondaryFixedDim,
-      onSecondaryFixed: AppColors.onSecondaryFixed,
-      onSecondaryFixedVariant: AppColors.onSecondaryFixedVariant,
-      tertiaryFixed: AppColors.tertiaryFixed,
-      tertiaryFixedDim: AppColors.tertiaryFixedDim,
-      onTertiaryFixed: AppColors.onTertiaryFixed,
-      onTertiaryFixedVariant: AppColors.onTertiaryFixedVariant,
+    return _base(
+      FlexThemeData.dark(
+        primary: _darkPrimary,
+        onPrimary: _darkOnPrimary,
+        primaryContainer: _darkPrimaryContainer,
+        onPrimaryContainer: _darkOnPrimaryContainer,
+        secondary: _darkSecondary,
+        onSecondary: _darkOnSecondary,
+        secondaryContainer: _darkSecondaryContainer,
+        onSecondaryContainer: _darkOnSecondaryContainer,
+        tertiary: _darkTertiary,
+        onTertiary: _darkOnTertiary,
+        tertiaryContainer: _darkTertiaryContainer,
+        onTertiaryContainer: _darkOnTertiaryContainer,
+        error: _darkError,
+        onError: _darkOnError,
+        errorContainer: _darkErrorContainer,
+        onErrorContainer: _darkOnErrorContainer,
+        surface: _darkSurface,
+        onSurface: _darkOnSurface,
+        scaffoldBackground: _darkSurface,
+        subThemesData: _subThemesData,
+      ),
+      Brightness.dark,
+      urdu: isUrdu(locale),
     );
-    return _base(scheme, Brightness.dark, urdu: isUrdu(locale));
   }
+
+  static const _lightSurface = Color(0xFFFAFDF9);
+  static const _lightOnSurface = Color(0xFF0F172A);
+  static const _lightPrimary = Color(0xFF2E7D5B);
+  static const _lightPrimaryContainer = Color(0xFFD8F0E4);
+  static const _lightOnPrimaryContainer = Color(0xFF0F5132);
+  static const _lightSecondary = Color(0xFF6B8576);
+  static const _lightSecondaryContainer = Color(0xFFEAF5EE);
+  static const _lightOnSecondaryContainer = Color(0xFF2E7D5B);
+  static const _lightTertiary = Color(0xFFA78BFA);
+  static const _lightOnTertiary = Color(0xFF5B21B6);
+  static const _lightTertiaryContainer = Color(0xFFEDE9FE);
+  static const _lightOnTertiaryContainer = Color(0xFF5B21B6);
+  static const _lightError = Color(0xFFEF4444);
+  static const _lightErrorContainer = Color(0x1FEF4444);
+
+  static const _darkSurface = Color(0xFF081612);
+  static const _darkOnSurface = Color(0xFFF1F8F4);
+  static const _darkPrimary = Color(0xFF63D8A0);
+  static const _darkOnPrimary = Color(0xFF073B27);
+  static const _darkPrimaryContainer = Color(0xFF185B3F);
+  static const _darkOnPrimaryContainer = Color(0xFFB8F1D1);
+  static const _darkSecondary = Color(0xFF8FAF9F);
+  static const _darkOnSecondary = Color(0xFF10251E);
+  static const _darkSecondaryContainer = Color(0xFF29483B);
+  static const _darkOnSecondaryContainer = Color(0xFFD5E9DF);
+  static const _darkTertiary = Color(0xFFB59AFF);
+  static const _darkOnTertiary = Color(0xFF35116F);
+  static const _darkTertiaryContainer = Color(0xFF4B2A91);
+  static const _darkOnTertiaryContainer = Color(0xFFE8DEFF);
+  static const _darkError = Color(0xFFFF6B61);
+  static const _darkOnError = Color(0xFF5A0000);
+  static const _darkErrorContainer = Color(0xFF7F1D1D);
+  static const _darkOnErrorContainer = Color(0xFFFFDAD6);
 
   /// The Qaza Namaz type scale: Noto Serif for display/headline and the
   /// large title used by prayer names, Manrope for everything else.
@@ -280,48 +258,25 @@ class AppTheme {
   }
 
   static ThemeData _base(
-    ColorScheme scheme,
+    ThemeData baseTheme,
     Brightness brightness, {
     required bool urdu,
   }) {
+    final scheme = baseTheme.colorScheme;
     final typography = AppTypography(
       latin: _latinTextTheme(scheme),
       urdu: _urduTextTheme(scheme),
     );
     final textTheme = typography.forScript(urduScript: urdu);
 
-    // Shape scale: 12dp actions, 16dp cards, 24dp modals, pill chips.
-    final buttonShape = WidgetStatePropertyAll<OutlinedBorder>(
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
-
-    return ThemeData(
+    return baseTheme.copyWith(
       useMaterial3: true,
-      brightness: brightness,
-      colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
+      cardTheme: baseTheme.cardTheme.copyWith(margin: EdgeInsets.zero),
       textTheme: textTheme,
-      // Both scales travel with the theme so bilingual content can ask for the
-      // one matching the text it is about to draw, without naming a font.
-      extensions: [
-        typography,
-        AppChartColors.forBrightness(brightness),
-      ],
-      appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
-        foregroundColor: scheme.onSurface,
-        elevation: 0,
+      appBarTheme: baseTheme.appBarTheme.copyWith(
         centerTitle: false,
         titleTextStyle: textTheme.titleLarge,
-      ),
-      cardTheme: CardThemeData(
-        color: scheme.surfaceContainerLow,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: scheme.outlineVariant),
-        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 80,
@@ -331,7 +286,9 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? textTheme.labelSmall?.copyWith(color: scheme.primary)
-              : textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              : textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
         ),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
@@ -358,56 +315,39 @@ class AppTheme {
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
       ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: ButtonStyle(
-          shape: buttonShape,
-          minimumSize: const WidgetStatePropertyAll(Size(120, 48)),
-          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: ButtonStyle(
-          shape: buttonShape,
-          minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
-          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: ButtonStyle(
-          shape: buttonShape,
-          textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
-        ),
-      ),
-      iconButtonTheme:
-          IconButtonThemeData(style: ButtonStyle(shape: buttonShape)),
-      dialogTheme: DialogThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: scheme.surfaceContainerHigh,
+      dialogTheme: baseTheme.dialogTheme.copyWith(
         titleTextStyle: textTheme.titleLarge,
         contentTextStyle: textTheme.bodyMedium,
+        backgroundColor: scheme.surfaceContainerHigh,
       ),
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: baseTheme.bottomSheetTheme.copyWith(
         backgroundColor: scheme.surfaceContainerHigh,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
-      snackBarTheme: SnackBarThemeData(
+      snackBarTheme: baseTheme.snackBarTheme.copyWith(
         backgroundColor: scheme.inverseSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         behavior: SnackBarBehavior.floating,
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
+      progressIndicatorTheme: baseTheme.progressIndicatorTheme.copyWith(
         color: scheme.primary,
         linearTrackColor: scheme.surfaceContainerHighest,
         circularTrackColor: scheme.surfaceContainerHighest,
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant),
-      chipTheme: ChipThemeData(
+      chipTheme: baseTheme.chipTheme.copyWith(
         shape: const StadiumBorder(),
         side: BorderSide(color: scheme.outlineVariant),
         labelStyle: textTheme.labelLarge,
       ),
+      extensions: <ThemeExtension<dynamic>>[
+        typography,
+        AppChartColors.forBrightness(brightness),
+      ],
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/date_formatters.dart';
@@ -26,58 +25,60 @@ class HomePendingByPrayer extends ConsumerWidget {
         )
         .toList(growable: false);
 
-    return AppCard(
+    return Card(
       key: const Key('home_pending_by_prayer'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.homePendingByPrayer,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.homePendingByPrayer,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
                 ),
-              ),
-              TextButton(
-                key: const Key('home_pending_by_prayer_view_all'),
-                onPressed: () => openQazaAll(ref),
-                child: Text(l10n.homeViewAll),
-              ),
-            ],
-          ),
-          if (pendingPrayers.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 20,
-                    color: charts.completed,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.completeNoPendingTitle,
-                    key: const Key('home_pending_by_prayer_empty'),
-                  ),
-                ],
-              ),
-            )
-          else
-            for (final prayer in pendingPrayers)
-              _PrayerPendingBar(
-                prayer: prayer,
-                progress: summary.byPrayer[prayer]!.progress,
-                charts: charts,
-                onTap: () => openQazaForPrayer(ref, prayer),
-              ),
-        ],
-      ),
+                TextButton(
+                  key: const Key('home_pending_by_prayer_view_all'),
+                  onPressed: () => openQazaAll(ref),
+                  child: Text(l10n.homeViewAll),
+                ),
+              ],
+            ),
+            if (pendingPrayers.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 20,
+                      color: charts.completed,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.completeNoPendingTitle,
+                      key: const Key('home_pending_by_prayer_empty'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (final prayer in pendingPrayers)
+                _PrayerPendingBar(
+                  prayer: prayer,
+                  progress: summary.byPrayer[prayer]!.progress,
+                  charts: charts,
+                  onTap: () => openQazaForPrayer(ref, prayer),
+                ),
+          ],
+        )
+      )
     );
   }
 }

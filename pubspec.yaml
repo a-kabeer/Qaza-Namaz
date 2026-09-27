@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   fl_chart: ^1.2.0
+  flex_color_scheme: ^8.4.0
+  calendar_date_picker2: ^3.0.0
   flutter_localizations:
     sdk: flutter
   intl: any

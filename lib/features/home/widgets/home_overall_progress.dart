@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -22,96 +21,98 @@ class HomeOverallProgress extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return AppCard(
+    return Card(
       key: const Key('home_overall_qaza'),
-      padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stats = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final title = Text(
-                    l10n.homeOverallQaza,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  );
-                  final action = TextButton(
-                    key: const Key('home_overall_view_details'),
-                    onPressed: onDetails,
-                    child: Text(l10n.homeViewDetails),
-                  );
-                  if (constraints.maxWidth < 300) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        title,
-                        Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: action,
-                        ),
-                      ],
-                    );
-                  }
-                  return Row(
-                    children: [
-                      Expanded(child: title),
-                      action,
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              HomeStatLine(
-                key: const Key('home_completed_value'),
-                label: l10n.homeCompleted,
-                value: DateFormatters.formatCount(progress.completed),
-                color: AppChartColors.of(context).completed,
-              ),
-              HomeStatLine(
-                key: const Key('home_pending_value'),
-                label: l10n.homePending,
-                value: DateFormatters.formatCount(progress.pending),
-                color: AppChartColors.of(context).pending,
-              ),
-              HomeStatLine(
-                key: const Key('home_total_value'),
-                label: l10n.homeStatTotal,
-                value: DateFormatters.formatCount(progress.total),
-                color: AppChartColors.of(context).total,
-              ),
-            ],
-          );
-
-          final donut = _OverviewDonut(progress: progress.percentage);
-
-          if (constraints.maxWidth < 520) {
-            return Column(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stats = Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    donut,
-                    const SizedBox(width: 16),
-                    Expanded(child: stats),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final title = Text(
+                      l10n.homeOverallQaza,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                    final action = TextButton(
+                      key: const Key('home_overall_view_details'),
+                      onPressed: onDetails,
+                      child: Text(l10n.homeViewDetails),
+                    );
+                    if (constraints.maxWidth < 300) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          title,
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: action,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: title),
+                        action,
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                HomeStatLine(
+                  key: const Key('home_completed_value'),
+                  label: l10n.homeCompleted,
+                  value: DateFormatters.formatCount(progress.completed),
+                  color: AppChartColors.of(context).completed,
+                ),
+                HomeStatLine(
+                  key: const Key('home_pending_value'),
+                  label: l10n.homePending,
+                  value: DateFormatters.formatCount(progress.pending),
+                  color: AppChartColors.of(context).pending,
+                ),
+                HomeStatLine(
+                  key: const Key('home_total_value'),
+                  label: l10n.homeStatTotal,
+                  value: DateFormatters.formatCount(progress.total),
+                  color: AppChartColors.of(context).total,
                 ),
               ],
             );
-          }
-
-          return Row(
-            children: [
-              donut,
-              const SizedBox(width: 24),
-              Expanded(child: stats),
-            ],
-          );
-        },
-      ),
+  
+            final donut = _OverviewDonut(progress: progress.percentage);
+  
+            if (constraints.maxWidth < 520) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      donut,
+                      const SizedBox(width: 16),
+                      Expanded(child: stats),
+                    ],
+                  ),
+                ],
+              );
+            }
+  
+            return Row(
+              children: [
+                donut,
+                const SizedBox(width: 24),
+                Expanded(child: stats),
+              ],
+            );
+          },
+        )
+      )
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'app_card.dart';
 import 'confirmation_dialog.dart';
 import 'section_header.dart';
 
@@ -18,7 +17,7 @@ class SettingsSection extends StatelessWidget {
         children: [
           SectionHeader(title: title, subtitle: subtitle),
           const SizedBox(height: 8),
-          AppCard(padding: EdgeInsets.zero, child: child),
+          Card(child: child),
         ],
       );
 }
@@ -98,14 +97,13 @@ class DestructiveActionRow extends StatelessWidget {
       if (confirmed) await onConfirm();
     }
 
-    return AppCard(
+    return Card(
       color: enabled
           ? scheme.errorContainer.withValues(alpha: .35)
           : scheme.surfaceContainerHighest.withValues(alpha: .35),
-      padding: EdgeInsets.zero,
-      onTap: enabled ? confirm : null,
       child: ListTile(
         enabled: enabled,
+        onTap: enabled ? confirm : null,
         leading: Icon(icon, color: accent),
         title: Text(
           label,

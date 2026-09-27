@@ -6,7 +6,6 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import '../constants/prayer_types.dart';
-import 'app_card.dart';
 import 'prayer_visuals.dart';
 
 /// One prayer's standing, tappable across its whole width.
@@ -38,11 +37,12 @@ class PrayerProgressRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: AppCard(
+      child: Card(
         key: Key('${keyPrefix}_prayer_row_${prayer.name}'),
-        padding: EdgeInsets.zero,
-        onTap: onTap,
-        child: Padding(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,7 +122,9 @@ class PrayerProgressRow extends StatelessWidget {
                   ],
                 ),
               ],
-            )),
+            ),
+          ),
+        ),
       ),
     );
   }

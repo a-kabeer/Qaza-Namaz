@@ -5,7 +5,6 @@ import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
-import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/prayer_type_l10n.dart';
@@ -82,71 +81,73 @@ class _DetailedOverallStatistics extends StatelessWidget {
     final charts = AppChartColors.of(context);
     final percent = (progress.percentage * 100).round();
 
-    return AppCard(
+    return Card(
       key: const Key('detailed_overall_statistics'),
-      padding: const EdgeInsets.all(16),
-      child: Semantics(
-        container: true,
-        label:
-            '${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.homeOverallQaza,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Semantics(
+          container: true,
+          label:
+              '${progress.completed} ${l10n.homeCompleted}, ${progress.pending} ${l10n.homePending}, ${progress.total} ${l10n.homeStatTotal}, $percent%',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.homeOverallQaza,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '$percent%',
-                  key: const Key('detailed_overall_percent'),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.primary,
+                  const SizedBox(width: 12),
+                  Text(
+                    '$percent%',
+                    key: const Key('detailed_overall_percent'),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                key: const Key('detailed_overall_progress'),
-                value: progress.percentage.clamp(0.0, 1.0).toDouble(),
-                minHeight: 10,
-                backgroundColor: charts.track,
-                color: theme.colorScheme.primary,
+                ],
               ),
-            ),
-            const SizedBox(height: 14),
-            HomeStatLine(
-              key: const Key('detailed_overall_completed'),
-              label: l10n.homeCompleted,
-              value: DateFormatters.formatCount(progress.completed),
-              color: charts.completed,
-            ),
-            HomeStatLine(
-              key: const Key('detailed_overall_pending'),
-              label: l10n.homePending,
-              value: DateFormatters.formatCount(progress.pending),
-              color: charts.pending,
-            ),
-            HomeStatLine(
-              key: const Key('detailed_overall_total'),
-              label: l10n.homeStatTotal,
-              value: DateFormatters.formatCount(progress.total),
-              color: charts.total,
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  key: const Key('detailed_overall_progress'),
+                  value: progress.percentage.clamp(0.0, 1.0).toDouble(),
+                  minHeight: 10,
+                  backgroundColor: charts.track,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 14),
+              HomeStatLine(
+                key: const Key('detailed_overall_completed'),
+                label: l10n.homeCompleted,
+                value: DateFormatters.formatCount(progress.completed),
+                color: charts.completed,
+              ),
+              HomeStatLine(
+                key: const Key('detailed_overall_pending'),
+                label: l10n.homePending,
+                value: DateFormatters.formatCount(progress.pending),
+                color: charts.pending,
+              ),
+              HomeStatLine(
+                key: const Key('detailed_overall_total'),
+                label: l10n.homeStatTotal,
+                value: DateFormatters.formatCount(progress.total),
+                color: charts.total,
+              ),
+            ],
+          ),
+        )
+      )
     );
   }
 }
@@ -161,33 +162,35 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return AppCard(
+    return Card(
       key: const Key('detailed_prayer_breakdown'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.homePrayerBreakdown,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (var index = 0; index < PrayerType.values.length; index++) ...[
-            _DetailedPrayerRow(
-              prayer: PrayerType.values[index],
-              progress: summary.byPrayer[PrayerType.values[index]]?.progress ??
-                  const QazaProgress(pending: 0, completed: 0),
-            ),
-            if (index != PrayerType.values.length - 1)
-              Divider(
-                height: 20,
-                color: theme.colorScheme.outlineVariant,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.homePrayerBreakdown,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
+            ),
+            const SizedBox(height: 8),
+            for (var index = 0; index < PrayerType.values.length; index++) ...[
+              _DetailedPrayerRow(
+                prayer: PrayerType.values[index],
+                progress: summary.byPrayer[PrayerType.values[index]]?.progress ??
+                    const QazaProgress(pending: 0, completed: 0),
+              ),
+              if (index != PrayerType.values.length - 1)
+                Divider(
+                  height: 20,
+                  color: theme.colorScheme.outlineVariant,
+                ),
+            ],
           ],
-        ],
-      ),
+        )
+      )
     );
   }
 }
