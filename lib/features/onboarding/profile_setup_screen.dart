@@ -49,12 +49,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _submit(UserProfile profile) async {
     await _saveQueue;
 
-    // The onboarding profile was created/updated locally above, but the
-    // shared provider may still hold the pre-onboarding cached value. Refresh
-    // it before any Qaza import so the local repository activates the ledger.
-    ref.invalidate(userProfileProvider);
-    await ref.read(userProfileProvider.future);
-
     final finalizedProfile = profile.copyWith(
       witrIncluded: ProfileRules.effectiveWitr(profile),
       onboardingCompleted: true,
@@ -74,6 +68,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       await _finishOnboarding(finalizedProfile);
       return;
     }
+
+    // The onboarding profile was created/updated locally above, but the
+    // shared provider may still hold the pre-onboarding cached value. Refresh
+    // it before the Qaza import so the local repository activates the ledger.
+    ref.invalidate(userProfileProvider);
+    await ref.read(userProfileProvider.future);
 
     if (!mounted) return;
 
