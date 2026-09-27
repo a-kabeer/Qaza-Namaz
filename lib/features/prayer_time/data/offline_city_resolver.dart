@@ -41,7 +41,7 @@ class OfflineCityResolver {
 
     final place = nearest.place;
     final countryCode = place.countryCode;
-    if (countryCode == null || countryCode.isEmpty) {
+    if (countryCode.isEmpty) {
       throw const PrayerLocationException('City match has no country code.');
     }
     // Normalize optional GeoNames metadata before constructing the UI model.
@@ -100,7 +100,7 @@ class OfflineCityResolver {
         latitude: coordinates.$1,
         longitude: coordinates.$2,
       );
-      final identity = city.toLowerCase() + '|' + zone;
+      final identity = '${city.toLowerCase()}|$zone';
       if (!seen.add(identity)) continue;
       if (normalizedQuery.isNotEmpty &&
           !option.displayName.toLowerCase().contains(normalizedQuery) &&
