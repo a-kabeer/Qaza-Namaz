@@ -69,12 +69,12 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
                 child: CalendarPicker(
                   availablePrayersByDate: state.calendarAvailability,
                   availabilityLoading: state.calendarLoading,
+                  dateSelectablePredicate: ref
+                      .read(addQazaControllerProvider.notifier)
+                      .isDateAllowed,
                   onMonthChanged: (month) => ref
                       .read(addQazaControllerProvider.notifier)
                       .refreshCalendarMonth(month),
-                  resolveAvailability: (start, end) => ref
-                      .read(addQazaControllerProvider.notifier)
-                      .resolveAvailability(start, end),
                 ),
               ),
             ),

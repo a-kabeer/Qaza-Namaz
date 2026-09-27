@@ -16,7 +16,7 @@ class CalendarPicker extends ConsumerStatefulWidget {
     this.availablePrayersByDate,
     this.availabilityLoading = false,
     this.onMonthChanged,
-    this.resolveAvailability,
+    this.dateSelectablePredicate,
   });
 
   final Set<DateTime> qazaDates;
@@ -26,15 +26,12 @@ class CalendarPicker extends ConsumerStatefulWidget {
   final bool availabilityLoading;
   final ValueChanged<DateTime>? onMonthChanged;
 
-  /// Availability for an arbitrary span, for a range that reaches past the
-  /// month on screen.
+  /// Date validity for the current feature.
   ///
-  /// A range is checked date by date before it is accepted, and the month's
-  /// own map knows nothing about the months either side of it. Without this
-  /// the check fails for every date it has not heard of, which is what made
-  /// ranges look like they could not leave the visible month.
-  final Future<Map<DateTime, Set<PrayerType>>> Function(
-      DateTime start, DateTime end)? resolveAvailability;
+  /// Range selection uses this predicate rather than prayer availability:
+  /// a valid date remains selectable even when every Qaza prayer on it has
+  /// already been completed. Review/import decides which prayers are eligible.
+  final bool Function(DateTime date)? dateSelectablePredicate;
 
   @override
   ConsumerState<CalendarPicker> createState() => _CalendarPickerState();
@@ -43,12 +40,7 @@ class CalendarPicker extends ConsumerStatefulWidget {
 class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   late DateTime month;
 
-  /// calendar_date_picker2 has no native range-exclusion state.
-  bool _exclusionMode = false;
 
-  /// Small application-level state used only for the missing exclusion UX.
-  ProviderSubscription<CalendarSelectionState>? _calendarSubscription;
-  bool checkingRange = false;
 
   DateTime get today => ref.read(calendarTodayProvider);
 
@@ -59,36 +51,23 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   void initState() {
     super.initState();
     month = DateTime(today.year, today.month, 1);
-    _calendarSubscription = ref.listenManual<CalendarSelectionState>(
-      calendarControllerProvider,
-      (previous, next) {
-        if (previous?.selectionMode != next.selectionMode &&
-            next.selectionMode != DateSelectionMode.range &&
-            mounted) {
-          setState(() => _exclusionMode = false);
-        }
-      },
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.onMonthChanged?.call(month);
     });
   }
 
-  @override
-  void dispose() {
-    _calendarSubscription?.close();
-    super.dispose();
-  }
-
   bool _isDateAvailable(DateTime date) =>
       _availableIn(widget.availablePrayersByDate, date);
 
-  /// Days can only be tapped once their availability is known.
-  ///
-  /// While a month is loading the picker has nothing to judge a date by, and
-  /// acting on availability it cannot vouch for is worse than a short wait —
-  /// the progress bar above the grid says why.
-  bool get _canSelect => !widget.availabilityLoading && !checkingRange;
+  bool _isDateAllowed(DateTime date) =>
+      widget.dateSelectablePredicate?.call(DateUtils.dateOnly(date)) ?? true;
+
+  /// Range selection does not depend on availability loading. Single and
+  /// Multiple modes still wait for their prayer-availability map.
+  bool get _canSelect {
+    if (_mode == DateSelectionMode.range) return true;
+    return !widget.availabilityLoading;
+  }
 
   /// Whether [date] still has a prayer left to record, according to
   /// [availability]. An absent map means nothing is known to be unavailable.
@@ -166,8 +145,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         DateSelectionMode.multiple => CalendarDatePicker2Type.multi,
       };
 
-  Future<void> _handlePickerValue(List<DateTime?> values) async {
-    if (checkingRange || _exclusionMode) return;
+  void _handlePickerValue(List<DateTime?> values) {
+    if (!_canSelect) return;
     final controller = ref.read(calendarControllerProvider.notifier);
     final state = ref.read(calendarControllerProvider);
     final dates = values.whereType<DateTime>().map(DateUtils.dateOnly).toList();
@@ -195,31 +174,18 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         }
 
         final startDate = dates.first;
-        if (_exclusionMode) setState(() => _exclusionMode = false);
-        controller.select(startDate, isDateSelectable: _isDateAvailable);
+        controller.select(
+          startDate,
+          isDateSelectable: _isDateAllowed,
+        );
         if (dates.length < 2) return;
 
-        final endDate = dates.last;
-        final resolve = widget.resolveAvailability;
-        if (resolve == null) {
-          controller.select(endDate, isDateSelectable: _isDateAvailable);
-          return;
-        }
-
-        setState(() => checkingRange = true);
-        try {
-          final span = await resolve(startDate, endDate);
-          if (!mounted) return;
-          controller.select(
-            endDate,
-            isDateSelectable: (date) => _availableIn(span, date),
-          );
-        } finally {
-          if (mounted) setState(() => checkingRange = false);
-        }
+        controller.select(
+          dates.last,
+          isDateSelectable: _isDateAllowed,
+        );
     }
   }
-
   bool _dayIsSelected(DateTime date) {
     final state = ref.read(calendarControllerProvider);
     return state.selectedDates.any((item) => _sameDay(item, date));
@@ -243,26 +209,19 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   }) {
     final scheme = Theme.of(context).colorScheme;
     final calendarState = ref.read(calendarControllerProvider);
-    final available = !date.isAfter(today) &&
-        !date.isBefore(calendarFirstDate) &&
-        _isDateAvailable(date);
-    final inRange = _dayIsInRange(date);
-    final excluded = calendarState.isRangeExcluded(date);
-    final selected =
-        !excluded && (_dayIsSelected(date) || isSelected == true);
-    final canExcludeDate = _exclusionMode &&
-        calendarState.selectionMode == DateSelectionMode.range &&
-        calendarState.isRangeComplete &&
-        inRange &&
-        available &&
-        isDisabled != true;
+    final rangeMode = calendarState.selectionMode == DateSelectionMode.range;
+    final predicateAllowed = rangeMode
+        ? _isDateAllowed(date)
+        : _isDateAvailable(date);
+    final selectable = predicateAllowed && isDisabled != true;
+    final selected = _dayIsSelected(date) || isSelected == true;
     final colors = CalendarDayColors.resolve(
       scheme,
       CalendarDayColors.statusFor(
         selected: selected,
-        inRange: inRange,
+        inRange: _dayIsInRange(date),
         isToday: isToday == true || _sameDay(date, today),
-        available: available && isDisabled != true,
+        available: selectable,
       ),
     );
     final dayKey =
@@ -284,9 +243,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           child: Text(
             date.day.toString(),
             style: textStyle?.copyWith(
-              color: excluded ? scheme.outline : colors.foreground,
+              color: colors.foreground,
               fontWeight: colors.bold ? FontWeight.w700 : null,
-              decoration: excluded ? TextDecoration.lineThrough : null,
             ),
           ),
         ),
@@ -310,18 +268,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
       label:
           '${MaterialLocalizations.of(context).formatMediumDate(date)}, '
           '${_hijriLabel(date, AppLocalizations.of(context))}'
-          '${available ? '' : ', unavailable'}',
+          '${selectable ? '' : ', unavailable'}',
       selected: selected,
-      button: canExcludeDate,
-      child: canExcludeDate
-          ? GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => ref
-                  .read(calendarControllerProvider.notifier)
-                  .toggleRangeExclusion(date),
-              child: cell,
-            )
-          : cell,
+      child: cell,
     );
   }
 
@@ -341,7 +290,10 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         dayMaxWidth: 44,
         dayBuilder: _dayBuilder,
         selectableDayPredicate: (date) =>
-            _canSelect && _isDateAvailable(date),
+            _canSelect &&
+            (_mode == DateSelectionMode.range
+                ? _isDateAllowed(date)
+                : _isDateAvailable(date)),
         selectedDayHighlightColor: Colors.transparent,
         selectedRangeHighlightColor: Colors.transparent,
         selectedDayTextStyle: Theme.of(context).textTheme.bodySmall,
@@ -370,7 +322,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               child: IconButton(
                 key: const Key('calendar_prev_month'),
                 tooltip: materialL10n.previousMonthTooltip,
-                onPressed: canPrevious && !checkingRange
+                onPressed: canPrevious
                     ? () => _moveMonth(-1)
                     : null,
                 icon: Icon(
@@ -426,7 +378,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               child: IconButton(
                 key: const Key('calendar_next_month'),
                 tooltip: materialL10n.nextMonthTooltip,
-                onPressed: canNext && !checkingRange
+                onPressed: canNext
                     ? () => _moveMonth(1)
                     : null,
                 icon: Icon(
@@ -438,7 +390,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
             ),
           ],
         ),
-        if (widget.availabilityLoading || checkingRange)
+        if (widget.availabilityLoading)
           const LinearProgressIndicator(minHeight: 2),
         const SizedBox(height: 8),
         Text(
@@ -456,28 +408,6 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           onDisplayedMonthChanged: _handleDisplayedMonthChanged,
           onValueChanged: _handlePickerValue,
         ),
-        if (state.selectionMode == DateSelectionMode.range &&
-            state.isRangeComplete)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: OutlinedButton.icon(
-                key: const Key('calendar_toggle_exclusion_mode'),
-                onPressed: checkingRange
-                    ? null
-                    : () => setState(
-                          () => _exclusionMode = !_exclusionMode,
-                        ),
-                icon: Icon(
-                  _exclusionMode
-                      ? Icons.check_rounded
-                      : Icons.remove_circle_outline_rounded,
-                ),
-                label: Text(l10n.addQazaExcludeDates),
-              ),
-            ),
-          ),
       ],
     );
   }
