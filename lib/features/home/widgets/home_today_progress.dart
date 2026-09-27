@@ -576,7 +576,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       label: Text(targetLabel),
       onPressed: () => showHomeQazaTargetSheet(
         context: context,
-        ref: ref,
       ),
     );
 
