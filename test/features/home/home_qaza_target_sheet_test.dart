@@ -48,7 +48,6 @@ void main() {
               builder: (context) => FilledButton(
                 onPressed: () => showHomeQazaTargetSheet(
                   context: context,
-                  
                 ),
                 child: const Text('Open'),
               ),
@@ -138,5 +137,4 @@ void main() {
       container.read(homePrayerSelectionProvider).mode,
       HomePrayerSelectionMode.prayerSelection,
     );
-  });;
-}
+  })
