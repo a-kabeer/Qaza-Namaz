@@ -17,6 +17,7 @@ import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
+import '../../prayer_time/application/prayer_time_providers.dart';
 import '../../prayer_time/presentation/restricted_times_status.dart';
 import '../../qaza/qaza_undo_feedback.dart';
 import '../home_controller.dart';
@@ -163,7 +164,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final working = ref.watch(qazaCompletionControllerProvider).isWorking;
     final daily = ref.watch(homeDailyProgressProvider);
