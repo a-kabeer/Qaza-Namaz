@@ -16,7 +16,7 @@ void main() {
     );
     expect(
       source,
-      contains('DateFormatters.formatDurationHhMmSs(nextRemaining!)'),
+      contains('DateFormatters.formatDurationHhMmSs(nextRemaining)'),
     );
     expect(
       source,
