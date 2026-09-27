@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/onboarding/previous_qaza_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
+import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
@@ -15,8 +16,12 @@ void main() {
   testWidgets('previous qaza choice opens Profile and supports back', (tester) async {
     await tester.pumpWidget(
       app(
-        const PreviousQazaChoiceScreen(
+        PreviousQazaChoiceScreen(
           languageCode: 'en',
+          nextScreenBuilder: (_) => const ProfileSetupScreen(
+            languageCode: 'en',
+            previousQazaChoice: PreviousQazaChoice.setup,
+          ),
         ),
       ),
     );
@@ -48,8 +53,12 @@ void main() {
   testWidgets('previous qaza skip choice opens Profile without qaza setup', (tester) async {
     await tester.pumpWidget(
       app(
-        const PreviousQazaChoiceScreen(
+        PreviousQazaChoiceScreen(
           languageCode: 'en',
+          nextScreenBuilder: (_) => const ProfileSetupScreen(
+            languageCode: 'en',
+            previousQazaChoice: PreviousQazaChoice.skip,
+          ),
         ),
       ),
     );
