@@ -125,7 +125,6 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
         searchLabel: l10n.prayerTimeSelectCountry,
         onQueryChanged: (value) => setState(() => _query = value),
         controller: _searchController,
-        controller: _searchController,
         child: ListView.builder(
           itemCount: countries.length,
           itemBuilder: (_, index) {
@@ -154,7 +153,6 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
     return _PickerScaffold(
       title: resolver.countryName(_countryCode!),
       searchLabel: l10n.prayerTimeSearchCity,
-      query: _query,
       onQueryChanged: (value) => setState(() => _query = value),
       leading: IconButton(
         tooltip: l10n.commonBack,
