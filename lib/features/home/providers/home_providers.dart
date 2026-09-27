@@ -98,8 +98,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   /// Reuses the previously selected prayer when available; otherwise Fajr is
   /// the deterministic initial selection.
   void usePrayerSelection() {
-    final prayer =
-        state.selectedPrayer ?? state.autoSequencePrayer ?? PrayerType.fajr;
+    final prayer = state.selectedPrayer ?? state.autoSequencePrayer;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
