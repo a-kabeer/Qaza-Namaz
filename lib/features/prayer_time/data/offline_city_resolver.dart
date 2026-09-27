@@ -44,6 +44,7 @@ class OfflineCityResolver {
     if (countryCode == null || countryCode.isEmpty) {
       throw const PrayerLocationException('City match has no country code.');
     }
+    // Normalize optional GeoNames metadata before constructing the UI model.
     final countryName = TimezoneConvert.countryName(countryCode) ?? countryCode;
 
     var timezoneId = deviceTimezoneId;
