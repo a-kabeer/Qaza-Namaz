@@ -32,7 +32,3 @@ void main() {
   });
 }
 
-
-void mainPrayerTargetSequenceContract() {
-  // Kept out of the existing provider test entry point intentionally.
-}
