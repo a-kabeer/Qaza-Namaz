@@ -294,7 +294,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
           Positioned(
             bottom: 2,
             child: Container(
-              key: Key('calendar_qaza_indicator_' + dayKey),
+              key: Key('calendar_qaza_indicator_${dayKey}'),
               width: 5,
               height: 5,
               decoration: BoxDecoration(
@@ -308,10 +308,9 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
 
     return Semantics(
       label:
-          MaterialLocalizations.of(context).formatMediumDate(date) +
-          ', ' +
-          _hijriLabel(date, AppLocalizations.of(context)) +
-          (available ? '' : ', unavailable'),
+          '${MaterialLocalizations.of(context).formatMediumDate(date)}, '
+          '${_hijriLabel(date, AppLocalizations.of(context))}'
+          '${available ? '' : ', unavailable'}',
       selected: selected,
       button: canExcludeDate,
       child: canExcludeDate
