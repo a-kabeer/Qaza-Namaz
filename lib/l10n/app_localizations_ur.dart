@@ -799,6 +799,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaChooseMultiple => 'متعدد تاریخیں منتخب کریں';
 
   @override
+  String get addQazaExcludeDates => 'تاریخیں خارج کریں';
+
+  @override
   String get addQazaAvailabilityNote =>
       'کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔';
 
