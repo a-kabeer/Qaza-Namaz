@@ -292,6 +292,7 @@
   "addQazaChooseSingle": "ایک تاریخ منتخب کریں",
   "addQazaChooseRange": "تاریخوں کا دورانیہ منتخب کریں",
   "addQazaChooseMultiple": "متعدد تاریخیں منتخب کریں",
+  "addQazaExcludeDates": "تاریخیں خارج کریں",
   "addQazaAvailabilityNote": "کوئی تاریخ صرف اسی صورت غیر فعال ہوتی ہے جب اس پر کوئی نماز باقی نہ رہے۔",
   "addQazaStepNameDates": "تاریخیں منتخب کریں",
   "addQazaStepNamePrayers": "قضا نمازیں",

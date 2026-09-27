@@ -367,13 +367,29 @@ class _PrayerSelection extends StatelessWidget {
                         enabled ? (_) => onToggle(prayer) : null,
                     label: SizedBox(
                       width: double.infinity,
-                      child: Center(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(width: 18),
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 16,
+                                  )
+                                : null,
+                          ),
+                        ],
                       ),
                     ),
                     visualDensity: VisualDensity.compact,
@@ -406,56 +422,157 @@ class _SelectionSummary extends StatelessWidget {
         DateSelectionMode.multiple => l10n.addQazaModeMultipleTitle,
       };
 
-  String _gregorianSummary(
+  bool _isContiguous(List<DateTime> values) {
+    if (values.length < 2) return true;
+    for (var index = 1; index < values.length; index++) {
+      final previous = values[index - 1];
+      final expected = DateTime(
+        previous.year,
+        previous.month,
+        previous.day + 1,
+      );
+      if (values[index] != expected) return false;
+    }
+    return true;
+  }
+
+  List<List<DateTime>> _groupConsecutiveDates() {
+    if (dates.isEmpty) return const <List<DateTime>>[];
+    final sorted = List<DateTime>.of(dates)..sort();
+    final groups = <List<DateTime>>[];
+    var group = <DateTime>[sorted.first];
+
+    for (var index = 1; index < sorted.length; index++) {
+      final previous = group.last;
+      final current = sorted[index];
+      final expected = DateTime(
+        previous.year,
+        previous.month,
+        previous.day + 1,
+      );
+      if (current == expected) {
+        group.add(current);
+      } else {
+        groups.add(group);
+        group = <DateTime>[current];
+      }
+    }
+
+    groups.add(group);
+    return groups;
+  }
+
+  String _rangeLabel(
     BuildContext context,
     AppLocalizations l10n,
+    List<DateTime> group,
   ) {
-    if (dates.isEmpty) {
-      return switch (mode) {
-        DateSelectionMode.single => l10n.addQazaChooseSingle,
-        DateSelectionMode.range => l10n.addQazaChooseRange,
-        DateSelectionMode.multiple => l10n.addQazaChooseMultiple,
-      };
-    }
-
     final materialL10n = MaterialLocalizations.of(context);
-    if (mode == DateSelectionMode.multiple && dates.length > 1) {
-      return l10n.addQazaDateCount(dates.length);
-    }
-
-    final first = materialL10n.formatMediumDate(dates.first);
-    if (mode != DateSelectionMode.range || dates.length == 1) {
-      return first;
-    }
-
+    final from = materialL10n.formatMediumDate(group.first);
+    if (group.length == 1) return from;
     return l10n.qazaDateFilterRange(
-      first,
-      materialL10n.formatMediumDate(dates.last),
+      from,
+      materialL10n.formatMediumDate(group.last),
     );
   }
 
-  String? _hijriSummary(
+  bool get _showDateDetails =>
+      dates.length > 1 &&
+      (mode == DateSelectionMode.multiple ||
+          (mode == DateSelectionMode.range && !_isContiguous(dates)));
+
+  Widget _dateDetails(
+    BuildContext context,
     AppLocalizations l10n,
   ) {
-    if (dates.isEmpty || (mode == DateSelectionMode.multiple && dates.length > 1)) {
-      return null;
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      title: Text(l10n.addQazaDatesLabel),
+      subtitle: Text(l10n.addQazaDateCount(dates.length)),
+      children: [
+        SizedBox(
+          height: 220,
+          child: ListView.builder(
+            itemCount: dates.length,
+            itemBuilder: (context, index) {
+              final date = dates[index];
+              return ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  MaterialLocalizations.of(context).formatMediumDate(date),
+                ),
+                subtitle: Text(HijriDateService.format(date, l10n)),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _compactDateSummary(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
+    final groups = _groupConsecutiveDates();
+    final visibleGroups = groups.length > 6 ? groups.take(6) : groups;
+    final labels = visibleGroups
+        .map((group) => _rangeLabel(context, l10n, group))
+        .join(' · ');
+    final suffix = groups.length > visibleGroups.length ? ' …' : '';
+
+    if (mode == DateSelectionMode.multiple || !_isContiguous(dates)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.addQazaDateCount(dates.length),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (labels.isNotEmpty)
+            Text(
+              labels + suffix,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+        ],
+      );
     }
 
-    final first = HijriDateService.format(dates.first, l10n);
-    if (mode != DateSelectionMode.range || dates.length == 1) {
-      return first;
-    }
-
-    return l10n.qazaDateFilterRange(
-      first,
-      HijriDateService.format(dates.last, l10n),
+    final materialL10n = MaterialLocalizations.of(context);
+    final first = materialL10n.formatMediumDate(dates.first);
+    final last = materialL10n.formatMediumDate(dates.last);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          mode == DateSelectionMode.range && dates.length > 1
+              ? l10n.qazaDateFilterRange(first, last)
+              : first,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        Text(
+          dates.length == 1
+              ? HijriDateService.format(dates.first, l10n)
+              : l10n.qazaDateFilterRange(
+                  HijriDateService.format(dates.first, l10n),
+                  HijriDateService.format(dates.last, l10n),
+                ),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (dates.length > 1)
+          Text(
+            l10n.addQazaDateCount(dates.length),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final hijri = _hijriSummary(l10n);
 
     return Card(
       child: Padding(
@@ -478,21 +595,21 @@ class _SelectionSummary extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              _gregorianSummary(context, l10n),
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            if (hijri != null)
+            if (dates.isEmpty)
               Text(
-                hijri,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            if (dates.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                l10n.addQazaDateCount(dates.length),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+                switch (mode) {
+                  DateSelectionMode.single => l10n.addQazaChooseSingle,
+                  DateSelectionMode.range => l10n.addQazaChooseRange,
+                  DateSelectionMode.multiple => l10n.addQazaChooseMultiple,
+                },
+                style: Theme.of(context).textTheme.titleSmall,
+              )
+            else ...[
+              _compactDateSummary(context, l10n),
+              if (_showDateDetails) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _dateDetails(context, l10n),
+              ],
             ],
           ],
         ),

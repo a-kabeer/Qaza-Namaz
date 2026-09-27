@@ -561,6 +561,7 @@
   "addQazaChooseSingle": "Choose a date",
   "addQazaChooseRange": "Choose a date range",
   "addQazaChooseMultiple": "Choose multiple dates",
+  "addQazaExcludeDates": "Exclude dates",
   "addQazaAvailabilityNote": "A date is disabled only when no prayer remains eligible.",
   "addQazaStepNameDates": "Select Dates",
   "addQazaStepNamePrayers": "Missed Prayers",

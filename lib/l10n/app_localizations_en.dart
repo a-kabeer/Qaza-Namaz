@@ -798,6 +798,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaChooseMultiple => 'Choose multiple dates';
 
   @override
+  String get addQazaExcludeDates => 'Exclude dates';
+
+  @override
   String get addQazaAvailabilityNote =>
       'A date is disabled only when no prayer remains eligible.';
 
