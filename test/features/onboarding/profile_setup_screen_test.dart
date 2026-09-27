@@ -102,7 +102,8 @@ void main() {
       scrollable: find.byType(Scrollable),
     );
     await tester.tap(find.byKey(const Key('profile_submit')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(repository.stored, isNotNull);
     expect(repository.stored!.onboardingCompleted, isTrue);
