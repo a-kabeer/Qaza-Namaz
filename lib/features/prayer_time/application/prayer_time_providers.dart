@@ -7,9 +7,28 @@ import '../data/offline_city_resolver.dart';
 import '../data/prayer_location_repository.dart';
 import '../data/prayer_time_cache.dart';
 import '../domain/prayer_time_calculator.dart';
+import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'prayer_time_controller.dart';
+
+enum PrayerTimeTargetAvailability {
+  available,
+  setupRequired,
+}
+
+final prayerTimeTargetAvailabilityProvider =
+    Provider<PrayerTimeTargetAvailability>((ref) {
+  return ref.watch(prayerTimeControllerProvider).valueOrNull == null
+      ? PrayerTimeTargetAvailability.setupRequired
+      : PrayerTimeTargetAvailability.available;
+});
+
+final prayerLocationRequirementProvider =
+    FutureProvider.autoDispose<PrayerLocationRequirement>((ref) {
+  return ref.read(prayerLocationRepositoryProvider).currentLocationRequirement();
+});
+
 
 final prayerTimeCacheProvider = Provider<PrayerTimeCache>(
   (ref) => PrayerTimeCache(),
