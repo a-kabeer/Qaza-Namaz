@@ -10,6 +10,7 @@ import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/previous_qaza_choice_screen.dart';
+import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeUserProfileRepository implements UserProfileRepository {
@@ -102,10 +103,11 @@ void main() {
     expect(repository.savedProfile?.onboardingCompleted, isFalse);
     expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
 
-    final next = tester.widget<PreviousQazaChoiceScreen>(
-      find.byType(PreviousQazaChoiceScreen),
+    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
+    final setup = tester.widget<ProfileSetupScreen>(
+      find.byType(ProfileSetupScreen),
     );
-    expect(next.languageCode, 'ur');
+    expect(setup.languageCode, 'ur');
   });
 
   testWidgets('Continue prevents duplicate saves and navigation while saving',
