@@ -97,10 +97,10 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
       ishaAngle: double.tryParse(_ishaAngleController.text.trim()),
       adjustments: adjustments,
     );
-    await ref
+    final saved = await ref
         .read(prayerTimeControllerProvider.notifier)
         .updateSettings(settings);
-    if (mounted) Navigator.of(context).pop();
+    if (saved && mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -121,7 +121,7 @@ class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           DropdownButtonFormField<PrayerCalculationMethod>(
-            initialValue: _settings.calculationMethod,
+            value: _settings.calculationMethod,
             decoration: InputDecoration(
               labelText: l10n.prayerTimeCalculationMethod,
             ),
