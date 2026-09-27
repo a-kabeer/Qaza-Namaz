@@ -96,6 +96,11 @@ void main() {
       ),
     );
 
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile_submit')),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
     await tester.tap(find.byKey(const Key('profile_submit')));
     await tester.pumpAndSettle();
 
