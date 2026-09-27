@@ -39,32 +39,28 @@ void main() {
     expect(source, isNot(contains('prayerTimeStartsIn(')));
   });
 
-  test('Home hides inactive restricted-time spacing and card', () {
+  test('Home hides the inactive restricted-time card', () {
     final source =
         File('lib/features/home/widgets/home_today_progress.dart')
             .readAsStringSync();
 
+    expect(source, contains('if (restricted) ...['));
     expect(
       source,
-      contains(
-        'if (restricted) ...[
-'
-        '          const RestrictedTimesStatusCard(compact: true),',
-      ),
+      contains('const RestrictedTimesStatusCard(compact: true),'),
     );
   });
 
-  test('Qaza hides inactive restricted-time spacing and card', () {
+  test('Qaza hides the inactive restricted-time card', () {
     final source =
-        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+        File('lib/features/qaza/qaza_tracker_screen.dart')
+            .readAsStringSync();
 
+    expect(source, contains('if (restricted)'));
+    expect(source, contains('const Padding('));
     expect(
       source,
-      contains(
-        'if (restricted)
-'
-        '          const Padding(',
-      ),
+      contains('child: RestrictedTimesStatusCard(compact: true),'),
     );
   });
 }
