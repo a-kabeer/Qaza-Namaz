@@ -26,7 +26,11 @@ void main() {
     expect(source, contains('previousMonthTooltip'));
     expect(source, contains('nextMonthTooltip'));
     expect(source, contains('Directionality.of(context)'));
-    expect(source, contains('resolveAvailability'));
+    expect(source, contains('dateSelectablePredicate'));
+    expect(source, isNot(contains('resolveAvailability')));
+    expect(source, isNot(contains('_exclusionMode')));
+    expect(source, isNot(contains('toggleRangeExclusion')));
+    expect(source, isNot(contains('excludedDates')));
     expect(
       source,
       isNot(contains('calendar_selected_summary')),
