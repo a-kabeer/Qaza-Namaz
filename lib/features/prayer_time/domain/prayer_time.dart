@@ -20,15 +20,25 @@ class PrayerSchedule {
   const PrayerSchedule({
     required this.date,
     required this.timesUtc,
+    required this.astronomicalSunriseUtc,
+    required this.astronomicalSunsetUtc,
   });
 
   final DateTime date;
   final Map<PrayerSlot, DateTime> timesUtc;
+  final DateTime astronomicalSunriseUtc;
+  final DateTime astronomicalSunsetUtc;
 
   DateTime utcFor(PrayerSlot prayer) => timesUtc[prayer]!;
 
   tz.TZDateTime localFor(PrayerSlot prayer, tz.Location location) =>
       tz.TZDateTime.from(utcFor(prayer), location);
+
+  tz.TZDateTime localAstronomicalSunrise(tz.Location location) =>
+      tz.TZDateTime.from(astronomicalSunriseUtc, location);
+
+  tz.TZDateTime localAstronomicalSunset(tz.Location location) =>
+      tz.TZDateTime.from(astronomicalSunsetUtc, location);
 
   static String _dateKey(DateTime value) =>
       value.year.toString().padLeft(4, '0') +
@@ -43,6 +53,8 @@ class PrayerSchedule {
           for (final entry in timesUtc.entries)
             entry.key.name: entry.value.toUtc().toIso8601String(),
         },
+        'astronomicalSunriseUtc': astronomicalSunriseUtc.toUtc().toIso8601String(),
+        'astronomicalSunsetUtc': astronomicalSunsetUtc.toUtc().toIso8601String(),
       };
 
   static PrayerSchedule? fromJson(Map<String, dynamic> json) {
@@ -59,9 +71,17 @@ class PrayerSchedule {
       if (parsed == null) return null;
       times[slot] = parsed.toUtc();
     }
+    final rawSunrise = DateTime.tryParse(
+      json['astronomicalSunriseUtc'] as String? ?? '',
+    );
+    final rawSunset = DateTime.tryParse(
+      json['astronomicalSunsetUtc'] as String? ?? '',
+    );
     return PrayerSchedule(
       date: DateTime(date.year, date.month, date.day),
       timesUtc: Map.unmodifiable(times),
+      astronomicalSunriseUtc: (rawSunrise ?? times[PrayerSlot.sunrise]!).toUtc(),
+      astronomicalSunsetUtc: (rawSunset ?? times[PrayerSlot.maghrib]!).toUtc(),
     );
   }
 }
