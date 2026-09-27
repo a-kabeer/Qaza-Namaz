@@ -1436,7 +1436,6 @@ abstract class AppLocalizations {
   /// **'Choose multiple dates'**
   String get addQazaChooseMultiple;
 
-  /// Toggle excluding individual dates from a completed date range.
 
   /// No description provided for @addQazaAvailabilityNote.
   ///
