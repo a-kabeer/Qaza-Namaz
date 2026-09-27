@@ -7,6 +7,9 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_target_sheet.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_controller.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _TestPrayerTimeController extends PrayerTimeController {
