@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
 import 'previous_qaza_choice_screen.dart';
+import 'profile_setup_screen.dart';
 
 class LanguageSelectionScreen extends ConsumerWidget {
   const LanguageSelectionScreen({super.key});
@@ -26,6 +27,10 @@ class LanguageSelectionScreen extends ConsumerWidget {
       MaterialPageRoute<void>(
         builder: (_) => PreviousQazaChoiceScreen(
           languageCode: locale.languageCode,
+          nextScreenBuilder: (choice) => ProfileSetupScreen(
+            languageCode: locale.languageCode,
+            previousQazaChoice: choice,
+          ),
         ),
       ),
     );
