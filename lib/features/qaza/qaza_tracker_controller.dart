@@ -617,6 +617,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     List<String> selectedIds, {
     required bool exitSelectionModeOnSuccess,
   }) async {
+    if (ref.read(qazaCompletionRestrictedProvider)) return null;
     final userId = ref.read(activeUserIdProvider);
     if (userId == null || selectedIds.isEmpty || state.completing) {
       return null;
