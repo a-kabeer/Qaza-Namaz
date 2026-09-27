@@ -285,6 +285,11 @@ void main() {
       }
 
       expect(find.byType(WorkspaceShell), findsOneWidget);
+      for (var i = 0;
+          i < 20 && find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
     },
   );
