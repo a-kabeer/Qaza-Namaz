@@ -85,6 +85,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     // A zero-day/zero-record calculation is valid. There is nothing to
     // review or import, so onboarding can finish normally.
+    // QazaPlan currently represents exactly five Fard prayers per day plus
+    // the optional Witr count, so this is the domain result's exact number
+    // of records this onboarding import would generate before duplicates.
     if (plan.totalWithWitr == 0) {
       await _finishOnboarding(finalizedProfile);
       return;
