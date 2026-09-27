@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../core/utils/date_formatters.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -560,6 +559,10 @@ class _AnalysisSummary extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.xs,
               children: [
+                _CompactStatusCount(
+                  label: l10n.commonTotal,
+                  count: analysis.total,
+                ),
                 _CompactStatusCount(
                   label: l10n.addQazaNewLabel,
                   count: analysis.newCount,
