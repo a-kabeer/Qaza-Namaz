@@ -111,6 +111,13 @@ class CalendarController extends Notifier<CalendarSelectionState> {
           state = CalendarSelectionState(selectionMode: mode);
           return;
         }
+        if (currentDates.length == 1) {
+          state = CalendarSelectionState(
+            selectionMode: mode,
+            selectedDates: currentDates,
+          );
+          return;
+        }
 
         final start = currentDates.first;
         final end = currentDates.last;
@@ -193,4 +200,5 @@ class CalendarController extends Notifier<CalendarSelectionState> {
   void clear() => state = state.copyWith(
         selectedDates: const [],
         excludedDates: const {},
-      );}
+      );
+}
