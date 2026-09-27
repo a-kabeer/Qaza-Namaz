@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/widgets/prayer_selection_grid.dart';
+import '../../../features/prayer_time/application/prayer_time_providers.dart';
+import '../../../features/prayer_time/prayer_time.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
+import '../../shell/workspace_shell.dart';
 import '../home_state.dart';
 import '../providers/home_providers.dart';
 
@@ -21,18 +24,37 @@ Future<void> showHomeQazaTargetSheet({
   );
 }
 
-class HomeQazaTargetSheet extends ConsumerWidget {
+class HomeQazaTargetSheet extends ConsumerStatefulWidget {
   const HomeQazaTargetSheet({super.key});
+
+  @override
+  ConsumerState<HomeQazaTargetSheet> createState() =>
+      _HomeQazaTargetSheetState();
+}
+
+class _HomeQazaTargetSheetState
+    extends ConsumerState<HomeQazaTargetSheet> {
+  bool _showPrayerTimeSetup = false;
+
+  void _openPrayerTimeSetup(BuildContext context) {
+    ref.read(workspaceDestinationProvider.notifier).state =
+        WorkspaceDestination.prayerTime;
+    Navigator.of(context).pop();
+  }
 
   void _selectMode(
     BuildContext context,
-    WidgetRef ref,
     HomePrayerSelectionMode mode,
+    PrayerTimeTargetAvailability availability,
   ) {
     final notifier = ref.read(homePrayerSelectionProvider.notifier);
 
     switch (mode) {
       case HomePrayerSelectionMode.prayerTime:
+        if (availability == PrayerTimeTargetAvailability.setupRequired) {
+          setState(() => _showPrayerTimeSetup = true);
+          return;
+        }
         notifier.usePrayerTime();
         Navigator.of(context).pop();
       case HomePrayerSelectionMode.autoSequence:
@@ -44,10 +66,14 @@ class HomeQazaTargetSheet extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final selection = ref.watch(homePrayerSelectionProvider);
     final witrAllowed = ref.watch(effectiveWitrProvider);
+    final availability = ref.watch(prayerTimeTargetAvailabilityProvider);
+    final showSetup = _showPrayerTimeSetup ||
+        (selection.mode == HomePrayerSelectionMode.prayerTime &&
+            availability == PrayerTimeTargetAvailability.setupRequired);
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -76,9 +102,45 @@ class HomeQazaTargetSheet extends ConsumerWidget {
                       selection.mode == HomePrayerSelectionMode.prayerTime,
                   onTap: () => _selectMode(
                     context,
-                    ref,
                     HomePrayerSelectionMode.prayerTime,
+                    availability,
                   ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 150),
+                  alignment: Alignment.topCenter,
+                  child: showSetup
+                      ? Card(
+                          key: const Key('home_qaza_target_prayer_time_setup'),
+                          margin: const EdgeInsets.only(top: 4, bottom: 4),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  l10n.prayerTimeNoSchedule,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(l10n.prayerTimeSetupBody),
+                                const SizedBox(height: 12),
+                                FilledButton.icon(
+                                  key: const Key(
+                                    'home_qaza_target_setup_prayer_times',
+                                  ),
+                                  onPressed: () => _openPrayerTimeSetup(context),
+                                  icon: const Icon(Icons.settings_outlined),
+                                  label: Text(l10n.prayerTimeSettings),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 _ModeTile(
                   key: const Key('home_qaza_target_mode_auto_sequence'),
@@ -88,8 +150,8 @@ class HomeQazaTargetSheet extends ConsumerWidget {
                       selection.mode == HomePrayerSelectionMode.autoSequence,
                   onTap: () => _selectMode(
                     context,
-                    ref,
                     HomePrayerSelectionMode.autoSequence,
+                    availability,
                   ),
                 ),
                 _ModeTile(
@@ -100,8 +162,8 @@ class HomeQazaTargetSheet extends ConsumerWidget {
                       HomePrayerSelectionMode.prayerSelection,
                   onTap: () => _selectMode(
                     context,
-                    ref,
                     HomePrayerSelectionMode.prayerSelection,
+                    availability,
                   ),
                 ),
                 AnimatedSize(
