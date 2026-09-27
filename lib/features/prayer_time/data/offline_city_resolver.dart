@@ -44,7 +44,7 @@ class OfflineCityResolver {
     if (countryCode == null || countryCode.isEmpty) {
       throw const PrayerLocationException('City match has no country code.');
     }
-    final countryName = TimezoneConvert.countryName(countryCode);
+    final countryName = TimezoneConvert.countryName(countryCode) ?? countryCode;
 
     var timezoneId = deviceTimezoneId;
     if (!TimezoneConvert.isKnownTimezone(timezoneId)) {
@@ -58,7 +58,7 @@ class OfflineCityResolver {
       latitude: latitude,
       longitude: longitude,
       city: place.name,
-      region: place.admin1Name,
+      region: place.admin1Name ?? '',
       country: countryName,
       countryCode: countryCode,
       timezoneId: timezoneId,
