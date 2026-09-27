@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
-import 'profile_setup_screen.dart';
 
 enum PreviousQazaChoice { setup, skip }
 
-class PreviousQazaChoiceScreen extends ConsumerWidget {
+class PreviousQazaChoiceScreen extends StatelessWidget {
   const PreviousQazaChoiceScreen({
     super.key,
     required this.languageCode,
     this.initialChoice,
     this.popOnSelection = false,
+    this.nextScreenBuilder,
   });
 
   final String languageCode;
   final PreviousQazaChoice? initialChoice;
   final bool popOnSelection;
+  final Widget Function(PreviousQazaChoice choice)? nextScreenBuilder;
 
   void _select(BuildContext context, PreviousQazaChoice choice) {
     if (popOnSelection) {
@@ -25,18 +24,20 @@ class PreviousQazaChoiceScreen extends ConsumerWidget {
       return;
     }
 
+    final builder = nextScreenBuilder;
+    if (builder == null) {
+      Navigator.of(context).pop(choice);
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => ProfileSetupScreen(
-          languageCode: languageCode,
-          previousQazaChoice: choice,
-        ),
+        builder: (_) => builder(choice),
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
