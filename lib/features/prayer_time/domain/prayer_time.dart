@@ -46,11 +46,9 @@ class PrayerSchedule {
       tz.TZDateTime.from(astronomicalSunsetUtc, location);
 
   static String _dateKey(DateTime value) =>
-      value.year.toString().padLeft(4, '0') +
-      '-' +
-      value.month.toString().padLeft(2, '0') +
-      '-' +
-      value.day.toString().padLeft(2, '0');
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}';
 
   Map<String, dynamic> toJson() => {
         'date': _dateKey(date),
