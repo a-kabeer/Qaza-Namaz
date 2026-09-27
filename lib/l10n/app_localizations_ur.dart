@@ -802,7 +802,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaChooseMultiple => 'متعدد تاریخیں منتخب کریں';
 
   @override
-  String get addQazaExcludeDates => 'تاریخیں خارج کریں';
 
   @override
   String get addQazaAvailabilityNote =>
