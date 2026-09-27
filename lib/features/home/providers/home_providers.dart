@@ -81,6 +81,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     );
     _targetRevision++;
     _persistMode(HomePrayerSelectionMode.prayerTime);
+    _clearPersistedSelectedPrayer();
   }
 
   /// Switches to Auto Sequence while preserving the existing cursor.
@@ -91,6 +92,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     );
     _targetRevision++;
     _persistMode(HomePrayerSelectionMode.autoSequence);
+    _clearPersistedSelectedPrayer();
   }
 
   /// Enters Prayer Selection with a valid sticky prayer.
@@ -142,6 +144,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   Future<void> _restore() async {
+    final restoreRevision = _targetRevision;
     try {
       final prefs = await SharedPreferences.getInstance();
       final modeName = prefs.getString(_modeStorageKey);
@@ -161,6 +164,10 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
         (value) => value.name == selectedName,
         orElse: () => PrayerType.fajr,
       );
+
+      // Do not let an asynchronous restore overwrite an explicit choice made
+      // while preferences were loading.
+      if (restoreRevision != _targetRevision) return;
 
       // A persisted Prayer Selection state must always have one valid prayer.
       if (mode != HomePrayerSelectionMode.prayerSelection) {
@@ -197,6 +204,13 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_selectedPrayerStorageKey, prayer.name);
+    } catch (_) {}
+  }
+
+  Future<void> _clearPersistedSelectedPrayer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_selectedPrayerStorageKey);
     } catch (_) {}
   }
 }
