@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../qaza/qaza_import_controller.dart';
+
 enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
 
-class QazaReviewDialog extends StatefulWidget {
+class QazaReviewDialog extends ConsumerStatefulWidget {
   const QazaReviewDialog({
     super.key,
     required this.profile,
@@ -22,11 +25,13 @@ class QazaReviewDialog extends StatefulWidget {
   final QazaReviewConfirm onConfirm;
 
   @override
-  State<QazaReviewDialog> createState() => _QazaReviewDialogState();
+  ConsumerState<QazaReviewDialog> createState() => _QazaReviewDialogState();
 }
 
-class _QazaReviewDialogState extends State<QazaReviewDialog> {
+class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
   bool _starting = false;
+  bool _watchingImport = false;
+  bool _didComplete = false;
   String? _error;
 
   Future<void> _confirm() async {
@@ -44,9 +49,25 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
         });
         return;
       }
-      Navigator.of(context).pop(QazaReviewAction.add);
+      setState(() {
+        _watchingImport = true;
+      });
     } catch (_) {
       if (!mounted) return;
+      setState(() {
+        _starting = false;
+        _error = AppLocalizations.of(context).qazaReviewError;
+      });
+    }
+  }
+
+  Future<void> _retry() async {
+    setState(() {
+      _starting = true;
+      _error = null;
+    });
+    final started = ref.read(qazaImportProvider.notifier).retry();
+    if (!started && mounted) {
       setState(() {
         _starting = false;
         _error = AppLocalizations.of(context).qazaReviewError;
@@ -57,8 +78,22 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final maxHeight = (size.height - 180).clamp(280.0, 600.0).toDouble();
+    final importState = ref.watch(qazaImportProvider);
+    final importIsActive = importState.isActive;
+    final importFailed =
+        _watchingImport && importState.phase == QazaImportTaskPhase.failed;
+
+    if (_watchingImport &&
+        importState.phase == QazaImportTaskPhase.completed &&
+        !_didComplete) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didComplete) return;
+        _didComplete = true;
+        Navigator.of(context).pop(QazaReviewAction.add);
+      });
+    }
+
+    final actionsBusy = _starting || importIsActive;
 
     return PopScope(
       canPop: false,
@@ -77,7 +112,9 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
         content: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 500,
-            maxHeight: maxHeight.clamp(420.0, 620.0).toDouble(),
+            maxHeight: (MediaQuery.sizeOf(context).height - 180)
+                .clamp(420.0, 620.0)
+                .toDouble(),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -93,6 +130,10 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
                   l10n.qazaReviewNote,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (_watchingImport && (importIsActive || importFailed)) ...[
+                  const SizedBox(height: 12),
+                  _buildImportStatus(context, l10n, importState),
+                ],
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -113,7 +154,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
               Expanded(
                 child: TextButton(
                   key: const Key('qaza_review_edit'),
-                  onPressed: _starting
+                  onPressed: actionsBusy
                       ? null
                       : () => Navigator.of(context).pop(QazaReviewAction.edit),
                   child: Text(l10n.qazaReviewEdit),
@@ -123,9 +164,15 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
               Expanded(
                 child: FilledButton(
                   key: const Key('qaza_review_add'),
-                  onPressed: _starting ? null : _confirm,
+                  onPressed: importFailed
+                      ? _retry
+                      : (actionsBusy ? null : _confirm),
                   child: Text(
-                    _starting ? l10n.qazaReviewAdding : l10n.qazaReviewAdd,
+                    importFailed
+                        ? l10n.commonRetry
+                        : (actionsBusy
+                            ? l10n.qazaReviewAdding
+                            : l10n.qazaReviewAdd),
                   ),
                 ),
               ),
@@ -133,6 +180,34 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildImportStatus(
+    BuildContext context,
+    AppLocalizations l10n,
+    QazaImportTaskState importState,
+  ) {
+    final progress = importState.progress;
+    final failed = importState.phase == QazaImportTaskPhase.failed;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          failed ? l10n.qazaReviewError : l10n.qazaReviewAdding,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(value: progress),
+        if (progress != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            importState.processed.toString() +
+                ' / ' +
+                importState.total.toString(),
+          ),
+        ],
+      ],
     );
   }
 
@@ -178,13 +253,15 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
         ),
         const SizedBox(height: 4),
         Text(
-          '${_formatGregorian(widget.plan.startDate)} – '
-          '${_formatGregorian(widget.plan.endDate)}',
+          _formatGregorian(widget.plan.startDate) +
+              ' – ' +
+              _formatGregorian(widget.plan.endDate),
         ),
         const SizedBox(height: 2),
         Text(
-          '${_formatHijri(l10n, widget.plan.startDate)} – '
-          '${_formatHijri(l10n, widget.plan.endDate)}',
+          _formatHijri(l10n, widget.plan.startDate) +
+              ' – ' +
+              _formatHijri(l10n, widget.plan.endDate),
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
@@ -235,9 +312,11 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
       };
 
   String _formatGregorian(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}/'
-      '${date.month.toString().padLeft(2, '0')}/'
-      '${date.year}';
+      date.day.toString().padLeft(2, '0') +
+      '/' +
+      date.month.toString().padLeft(2, '0') +
+      '/' +
+      date.year.toString();
 
   String _formatHijri(AppLocalizations l10n, DateTime date) =>
       l10n.formatHijriDate(date);
