@@ -5,10 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_operation.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
+import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -53,6 +55,7 @@ class _OneDayQazaPlanService extends QazaPlanService {
 
 class _CompletingImportController extends QazaImportController {
   String? startedUserId;
+  int startCount = 0;
 
   @override
   QazaImportTaskState build() => const QazaImportTaskState();
@@ -68,6 +71,7 @@ class _CompletingImportController extends QazaImportController {
     DateTime? today,
     bool witrAllowed = true,
   }) {
+    startCount++;
     startedUserId = userId;
     state = QazaImportTaskState(
       phase: QazaImportTaskPhase.completed,
@@ -160,4 +164,134 @@ void main() {
       expect(repository.saveCount, greaterThan(1));
     },
   );
+
+
+  testWidgets(
+    'zero-Qaza onboarding completes directly without review or import',
+    (tester) async {
+      final repository = _FakeUserProfileRepository();
+      final importController = _CompletingImportController();
+      final initialProfile = UserProfile(
+        languageCode: 'en',
+        gender: Gender.male,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(2000, 1, 1),
+        pubertyAge: 12,
+        startPrayingAge: 12,
+        witrIncluded: true,
+        onboardingCompleted: false,
+      );
+
+      final calculatedPlan = const QazaPlanService().planFor(initialProfile);
+      expect(calculatedPlan, isNotNull);
+      expect(calculatedPlan!.startDate, calculatedPlan.endDate);
+      expect(calculatedPlan.totalWithWitr, 0);
+
+      repository.stored = initialProfile;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userProfileRepositoryProvider.overrideWithValue(repository),
+            qazaPlanServiceProvider.overrideWithValue(
+              const QazaPlanService(),
+            ),
+            qazaImportProvider.overrideWith(
+              () => importController,
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const StartupGate(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('onboarding_previous_qaza_setup')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('onboarding_previous_qaza_setup')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_submit')),
+        500,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_submit')));
+      await tester.pump();
+      for (var i = 0;
+          i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(find.byKey(const Key('qaza_review_add')), findsNothing);
+      expect(importController.startCount, 0);
+      expect(repository.stored?.onboardingCompleted, isTrue);
+    },
+  );
+
+
+  testWidgets(
+    'completed zero-Qaza profile resolves to Home through StartupGate',
+    (tester) async {
+      final repository = _FakeUserProfileRepository();
+      final profile = UserProfile(
+        languageCode: 'en',
+        gender: Gender.male,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(2000, 1, 1),
+        pubertyAge: 12,
+        startPrayingAge: 12,
+        witrIncluded: true,
+        onboardingCompleted: true,
+      );
+      repository.stored = profile;
+
+      final plan = const QazaPlanService().planFor(profile);
+      expect(plan, isNotNull);
+      expect(plan!.totalWithWitr, 0);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userProfileRepositoryProvider.overrideWithValue(repository),
+            progressSummaryProvider.overrideWith(
+              (ref) async => QazaProgressSummary.empty(),
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const StartupGate(),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      for (var i = 0;
+          i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      expect(find.byType(WorkspaceShell), findsOneWidget);
+      for (var i = 0;
+          i < 20 && find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
+    },
+  );
+
 }
