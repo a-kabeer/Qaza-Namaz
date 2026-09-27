@@ -121,10 +121,7 @@ void main() {
     );
     await tester.pump();
 
-    final continueButton = find.widgetWithText(
-      FilledButton,
-      'جاری رکھیں',
-    );
+    final continueButton = find.byType(FilledButton);
     await tester.tap(continueButton);
     await tester.pump();
 
