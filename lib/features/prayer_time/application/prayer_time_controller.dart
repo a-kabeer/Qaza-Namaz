@@ -68,7 +68,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
 
   Future<void> _persist(PrayerTimeSnapshot snapshot) async {
     await _cache.save(snapshot);
-    if (!mounted) return;
+    if (!ref.mounted) return;
     state = AsyncData(snapshot);
   }
 
@@ -143,7 +143,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
       );
       return true;
     } catch (error, stack) {
-      if (state.valueOrNull == null && mounted) {
+      if (state.valueOrNull == null && ref.mounted) {
         state = AsyncError(error, stack);
       }
       return false;
@@ -162,7 +162,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
       );
       return true;
     } catch (error, stack) {
-      if (state.valueOrNull == null && mounted) {
+      if (state.valueOrNull == null && ref.mounted) {
         state = AsyncError(error, stack);
       }
       return false;
