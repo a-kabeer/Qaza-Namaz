@@ -10,6 +10,7 @@ import 'package:qaza_namaz/features/home/widgets/home_qaza_target_sheet.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_controller.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _TestPrayerTimeController extends PrayerTimeController {
@@ -106,6 +107,24 @@ void main() {
     expect(find.text('Maghrib'), findsOneWidget);
     expect(find.text('Isha'), findsOneWidget);
     expect(find.text('Witr'), findsOneWidget);
+
+    await tester.tap(find.byKey(
+      const Key('home_qaza_target_mode_prayer_time'),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(
+      const Key('home_qaza_target_setup_prayer_times'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.prayerTime,
+    );
+    expect(
+      find.byKey(const Key('home_qaza_target_sheet')),
+      findsNothing,
+    );
   });
 
   testWidgets('Prayer Selection keeps exactly one selected prayer', (
