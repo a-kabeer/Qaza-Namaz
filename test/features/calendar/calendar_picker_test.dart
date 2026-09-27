@@ -49,10 +49,9 @@ void main() {
       await tester.pumpAndSettle();
 
       final daySeven = find.text('7').last;
-      expect(
-        tester.getSemantics(daySeven).label,
-        isNot(contains('unavailable')),
-      );
+      final daySevenText = tester.widget<Text>(daySeven);
+      final scheme = Theme.of(tester.element(daySeven)).colorScheme;
+      expect(daySevenText.style?.color, scheme.onSurface);
 
       await tester.tap(daySeven);
       await tester.pump();
