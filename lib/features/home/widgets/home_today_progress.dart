@@ -686,10 +686,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (restricted) ...[
-          const RestrictedTimesStatusCard(compact: true),
-          const SizedBox(height: 8),
-        ],
+        const RestrictedTimesStatusCard(compact: true),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(child: header),
