@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/onboarding/previous_qaza_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
-import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
