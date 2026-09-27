@@ -350,6 +350,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeAutoSequence => 'خودکار ترتیب';
 
   @override
+  String get homeQazaTarget => 'قضا کا ہدف';
+
+  @override
+  String get homePrayerSelection => 'نماز کا انتخاب';
+
+  @override
   String get homePrayerTimeUnavailable =>
       'نماز کے اوقات سیٹ ہونے تک وقتِ نماز کے مطابق انتخاب دستیاب نہیں۔';
 
