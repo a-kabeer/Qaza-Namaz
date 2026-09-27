@@ -49,11 +49,8 @@ class RestrictedTimeCalculator {
     tz.Location location,
   ) {
     final sunrise = schedule.localAstronomicalSunrise(location);
+    final zawal = schedule.localAstronomicalDhuhr(location);
     final sunset = schedule.localAstronomicalSunset(location);
-    final solarDay = sunset.difference(sunrise);
-    final zawal = sunrise.add(
-      Duration(microseconds: solarDay.inMicroseconds ~/ 2),
-    );
 
     return [
       RestrictedTimeWindow(
