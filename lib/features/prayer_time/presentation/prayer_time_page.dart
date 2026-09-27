@@ -214,7 +214,7 @@ class _PrayerTimeContent extends ConsumerWidget {
       Future.microtask(
         () => ref
             .read(prayerTimeControllerProvider.notifier)
-            .refreshSchedule(),
+            .refreshForDateIfNeeded(displayDate),
       );
     }
 
