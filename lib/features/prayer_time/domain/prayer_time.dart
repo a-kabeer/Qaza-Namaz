@@ -1,6 +1,7 @@
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/user_profile.dart';
 import 'prayer_location.dart';
 import 'prayer_settings.dart';
 
@@ -113,6 +114,7 @@ class PrayerTimeSnapshot {
     required this.today,
     required this.tomorrow,
     required this.updatedAt,
+    this.calculationMadhab,
   });
 
   final PrayerLocation location;
@@ -121,9 +123,14 @@ class PrayerTimeSnapshot {
   final PrayerSchedule tomorrow;
   final DateTime updatedAt;
 
+  /// Cache metadata only; the Profile remains the runtime source of truth.
+  /// Null means an older snapshot that must be recalculated.
+  final Madhab? calculationMadhab;
+
   Map<String, dynamic> toJson() => {
         'location': location.toJson(),
         'settings': settings.toJson(),
+        'calculationMadhab': calculationMadhab?.name,
         'today': today.toJson(),
         'tomorrow': tomorrow.toJson(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
@@ -136,7 +143,6 @@ class PrayerTimeSnapshot {
     final tomorrowRaw = json['tomorrow'];
     final updatedRaw = json['updatedAt'];
     if (locationRaw is! Map ||
-        settingsRaw is! Map ||
         todayRaw is! Map ||
         tomorrowRaw is! Map ||
         updatedRaw is! String) {
@@ -145,9 +151,9 @@ class PrayerTimeSnapshot {
     final location = PrayerLocation.fromJson(
       Map<String, dynamic>.from(locationRaw),
     );
-    final settings = PrayerSettings.fromJson(
-      Map<String, dynamic>.from(settingsRaw),
-    );
+    final settings = settingsRaw is Map
+        ? PrayerSettings.fromJson(Map<String, dynamic>.from(settingsRaw))
+        : const PrayerSettings();
     final today = PrayerSchedule.fromJson(
       Map<String, dynamic>.from(todayRaw),
     );
@@ -155,6 +161,10 @@ class PrayerTimeSnapshot {
       Map<String, dynamic>.from(tomorrowRaw),
     );
     final updatedAt = DateTime.tryParse(updatedRaw);
+    final calculationMadhabName = json['calculationMadhab'];
+    final calculationMadhab = calculationMadhabName is String
+        ? Madhab.values.where((value) => value.name == calculationMadhabName).firstOrNull
+        : null;
     if (location == null ||
         today == null ||
         tomorrow == null ||
@@ -167,6 +177,7 @@ class PrayerTimeSnapshot {
       today: today,
       tomorrow: tomorrow,
       updatedAt: updatedAt.toUtc(),
+      calculationMadhab: calculationMadhab,
     );
   }
 }

@@ -8,7 +8,6 @@ import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import 'profile_screen.dart';
 import 'qaza_reset_controller.dart';
-import '../prayer_time/presentation/prayer_settings_page.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -64,16 +63,6 @@ class SettingsScreen extends ConsumerWidget {
                   ref.read(localeProvider.notifier).set(Locale(value.first));
                 },
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: SettingsNavRow(
-              key: const Key('settings_prayer_time'),
-              icon: Icons.schedule_outlined,
-              title: l10n.prayerTimeTitle,
-              subtitle: l10n.prayerTimeSettings,
-              onTap: () => open(const PrayerSettingsPage()),
             ),
           ),
           const SizedBox(height: 12),

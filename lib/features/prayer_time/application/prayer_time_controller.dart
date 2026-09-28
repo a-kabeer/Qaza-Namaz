@@ -24,25 +24,29 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
 
   @override
   Future<PrayerTimeSnapshot?> build() async {
+    final profile = await ref.watch(userProfileProvider.future);
     final cached = await _cache.load();
-    if (cached != null) {
-      Future<void>.microtask(() => _silentRefresh(cached));
-    }
-    return cached;
-  }
+    final madhab = profile?.madhab;
 
-  PrayerSettings _defaultSettings() {
-    final profile = ref.read(userProfileProvider).valueOrNull;
-    return PrayerSettings(
-      asrMethod: profile?.madhab == Madhab.hanafi
-          ? PrayerAsrMethod.hanafi
-          : PrayerAsrMethod.standard,
-    );
+    if (cached == null || madhab == null) return cached;
+
+    // Old snapshots have no calculationMadhab metadata and cannot be trusted
+    // to represent the current Profile. Recalculate before exposing them.
+    if (cached.calculationMadhab != madhab) {
+      final normalized = await _calculate(
+        location: cached.location,
+        madhab: madhab,
+      );
+      await _cache.save(normalized);
+      return normalized;
+    }
+
+    return cached;
   }
 
   Future<PrayerTimeSnapshot> _calculate({
     required PrayerLocation location,
-    required PrayerSettings settings,
+    required Madhab madhab,
   }) async {
     final zone = tz.getLocation(location.timezoneId);
     final localNow = tz.TZDateTime.now(zone);
@@ -52,18 +56,19 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
 
     return PrayerTimeSnapshot(
       location: location,
-      settings: settings,
+      settings: const PrayerSettings(),
       today: _calculator.calculate(
         location: location,
-        settings: settings,
+        madhab: madhab,
         localDate: today,
       ),
       tomorrow: _calculator.calculate(
         location: location,
-        settings: settings,
+        madhab: madhab,
         localDate: tomorrow,
       ),
       updatedAt: DateTime.now().toUtc(),
+      calculationMadhab: madhab,
     );
   }
 
@@ -77,14 +82,16 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     final age = DateTime.now().toUtc().difference(cached.updatedAt);
     if (age >= Duration.zero && age < refreshInterval) return;
     try {
+      final madhab = await _currentMadhab();
       final latest = await _locations.getLastKnown();
       if (latest != null) {
-        await _applyLocationIfNeeded(cached, latest);
+        await _applyLocationIfNeeded(cached, latest, madhab);
       }
       final current = await _locations.getCurrent();
       await _applyLocationIfNeeded(
         state.valueOrNull ?? cached,
         current,
+        madhab,
       );
     } catch (_) {
       // Keep the valid cached schedule when a silent refresh cannot complete.
@@ -94,6 +101,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   Future<void> _applyLocationIfNeeded(
     PrayerTimeSnapshot baseline,
     PrayerLocation location,
+    Madhab madhab,
   ) async {
     final movedKm = baseline.location.distanceKmTo(
       location.latitude,
@@ -116,10 +124,11 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
       await _persist(
         PrayerTimeSnapshot(
           location: updatedLocation,
-          settings: baseline.settings,
+          settings: const PrayerSettings(),
           today: baseline.today,
           tomorrow: baseline.tomorrow,
           updatedAt: baseline.updatedAt,
+          calculationMadhab: madhab,
         ),
       );
       return;
@@ -128,7 +137,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     await _persist(
       await _calculate(
         location: location,
-        settings: baseline.settings,
+        madhab: madhab,
       ),
     );
   }
@@ -137,9 +146,9 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     ref.read(prayerTimeRefreshProvider.notifier).state = true;
     try {
       final location = await _locations.getCurrent();
-      final settings = state.valueOrNull?.settings ?? _defaultSettings();
+      final madhab = await _currentMadhab();
       await _persist(
-        await _calculate(location: location, settings: settings),
+        await _calculate(location: location, madhab: madhab),
       );
       return true;
     } catch (error, stack) {
@@ -156,34 +165,15 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     ref.read(prayerTimeRefreshProvider.notifier).state = true;
     try {
       final location = _locations.fromCity(option);
-      final settings = state.valueOrNull?.settings ?? _defaultSettings();
+      final madhab = await _currentMadhab();
       await _persist(
-        await _calculate(location: location, settings: settings),
+        await _calculate(location: location, madhab: madhab),
       );
       return true;
     } catch (error, stack) {
       if (state.valueOrNull == null) {
         state = AsyncError(error, stack);
       }
-      return false;
-    } finally {
-      ref.read(prayerTimeRefreshProvider.notifier).state = false;
-    }
-  }
-
-  Future<bool> updateSettings(PrayerSettings settings) async {
-    final current = state.valueOrNull;
-    if (current == null) return false;
-    ref.read(prayerTimeRefreshProvider.notifier).state = true;
-    try {
-      await _persist(
-        await _calculate(
-          location: current.location,
-          settings: settings,
-        ),
-      );
-      return true;
-    } catch (_) {
       return false;
     } finally {
       ref.read(prayerTimeRefreshProvider.notifier).state = false;
@@ -208,16 +198,22 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     if (current == null) return false;
     ref.read(prayerTimeRefreshProvider.notifier).state = true;
     try {
+      final madhab = await _currentMadhab();
       await _persist(
         await _calculate(
           location: current.location,
-          settings: current.settings,
+          madhab: madhab,
         ),
       );
       return true;
     } finally {
       ref.read(prayerTimeRefreshProvider.notifier).state = false;
     }
+  }
+
+  Future<Madhab> _currentMadhab() async {
+    final profile = await ref.read(userProfileProvider.future);
+    return profile?.madhab ?? Madhab.hanafi;
   }
 
   Future<void> refresh() async {
