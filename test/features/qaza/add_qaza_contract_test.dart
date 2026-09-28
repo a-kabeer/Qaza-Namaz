@@ -59,6 +59,9 @@ void main() {
     expect(source, contains('l10n.addQazaReviewHeading'));
     expect(source, contains('class _AnalysisSummary'));
     expect(source, contains('analysis.countForPrayer(prayer)'));
+    expect(source, contains('addablePrayers'));
+    expect(source, contains('prayerAvailabilityLoading'));
+    expect(source, contains('disabledPrayers'));
     expect(source, contains('.colorScheme'));
     expect(source, isNot(contains('_ReviewDateGroup')));
   });
@@ -93,8 +96,10 @@ void main() {
 
     final analysis = AddQazaAnalysis(items: items);
 
-    expect(analysis.countForPrayer(PrayerType.fajr), 2);
-    expect(analysis.countForPrayer(PrayerType.zuhr), 1);
+    expect(analysis.countForPrayer(PrayerType.fajr), 1);
+    expect(analysis.countForPrayer(PrayerType.zuhr), 0);
+    expect(analysis.newPrayers, contains(PrayerType.fajr));
+    expect(analysis.newPrayers, isNot(contains(PrayerType.zuhr)));
     expect(analysis.statusCountTotal, analysis.total);
     expect(
       analysis.newCount + analysis.existingCount + analysis.unavailableCount,
@@ -108,6 +113,8 @@ void main() {
 
     expect(source, contains('getAvailablePrayersByDate('));
     expect(source, contains('analyzeAvailability('));
+    expect(source, contains('_refreshPrayerAvailability()'));
+    expect(source, contains('retainAll(addable)'));
     expect(source, contains('ProfileRules.startPrayingDate(profile)'));
     expect(source, contains('calendarTodayProvider'));
     expect(source, contains('ProfileRules.effectiveWitr(profile)'));
