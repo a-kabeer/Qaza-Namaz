@@ -331,10 +331,13 @@ abstract class QazaLocalStore {
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   }) async {
     final snapshot = await load();
     return (snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
         .where((record) => record.status == QazaStatus.completed)
+        .where((record) =>
+            prayerTypes == null || prayerTypes.contains(record.prayerType))
         .where((record) {
       final completedAt = record.completedAt;
       return completedAt != null &&
