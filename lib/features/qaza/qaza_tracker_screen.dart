@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../prayer_time/application/prayer_time_providers.dart';
-import '../prayer_time/presentation/restricted_times_status.dart';
+import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 import '../../app/providers.dart';
 import '../../core/calendar/hijri_date_service.dart';
@@ -442,7 +442,7 @@ class _TrackerBody extends ConsumerWidget {
               AppSpacing.lg,
               AppSpacing.xs,
             ),
-            child: RestrictedTimesStatusCard(compact: true),
+            child: RestrictedTimeTimelineRow(),
           ),
         if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
           Padding(
