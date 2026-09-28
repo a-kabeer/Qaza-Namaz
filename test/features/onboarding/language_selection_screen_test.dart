@@ -134,7 +134,7 @@ void main() {
     await tester.pump();
 
     expect(repository.saveCount, 1);
-    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
 
     completer.complete();
     await tester.pumpAndSettle();
