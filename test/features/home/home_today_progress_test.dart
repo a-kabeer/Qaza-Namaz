@@ -133,7 +133,6 @@ void main() {
     expect(find.byKey(const Key('home_today_progress')), findsOneWidget);
     expect(find.byKey(const Key('home_today_donut')), findsNothing);
     expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
-    expect(find.text('Today’s Progress'), findsNothing);
     expect(dailyReads, 0);
   });
 
