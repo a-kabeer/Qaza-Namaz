@@ -107,6 +107,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
         userId: userId,
         from: from,
         to: to,
+        prayerTypes: prayerTypes?.map((value) => value.name),
       );
 
   @override
