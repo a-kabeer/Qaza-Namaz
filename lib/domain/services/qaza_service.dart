@@ -150,9 +150,16 @@ class QazaService {
           to: to,
           afterOriginalDate: afterOriginalDate,
           afterId: afterId);
-  Future<QazaRecord?> oldestPending(
-          {required String userId, required PrayerType prayerType}) =>
-      repository.getOldestPending(userId: userId, prayerType: prayerType);
+  Future<QazaRecord?> oldestPending({
+    required String userId,
+    required PrayerType prayerType,
+  }) {
+    if (prayerType == PrayerType.witr && !_witrAllowed) return Future.value(null);
+    return repository.getOldestPending(
+      userId: userId,
+      prayerType: prayerType,
+    );
+  }
 
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
@@ -253,6 +260,7 @@ class QazaService {
         userId: userId,
         from: from,
         to: to,
+        prayerTypes: _enabledPrayerTypes,
       );
 
   /// The most recent pending record for [prayerType], or null when there is
