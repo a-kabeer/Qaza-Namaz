@@ -107,6 +107,73 @@ void main() {
     );
   });
 
+  test('Add Qaza review counts only records that will be added', () {
+    final date = DateTime(2026, 9, 27);
+    final items = [
+      PrayerType.fajr,
+      PrayerType.zuhr,
+      PrayerType.asr,
+      PrayerType.maghrib,
+    ].map(
+      (prayer) => AddQazaCandidate(
+        key: QazaPrayerKey(
+          userId: 'user',
+          date: date,
+          prayerType: prayer,
+        ),
+        status: AddQazaCandidateStatus.alreadyAdded,
+      ),
+    ).toList()
+      ..addAll([
+        for (final prayer in [PrayerType.isha, PrayerType.witr])
+          AddQazaCandidate(
+            key: QazaPrayerKey(
+              userId: 'user',
+              date: date,
+              prayerType: prayer,
+            ),
+            status: AddQazaCandidateStatus.newRecord,
+          ),
+      ]);
+
+    final analysis = AddQazaAnalysis(items: items);
+
+    expect(analysis.countForPrayer(PrayerType.fajr), 0);
+    expect(analysis.countForPrayer(PrayerType.zuhr), 0);
+    expect(analysis.countForPrayer(PrayerType.asr), 0);
+    expect(analysis.countForPrayer(PrayerType.maghrib), 0);
+    expect(analysis.countForPrayer(PrayerType.isha), 1);
+    expect(analysis.countForPrayer(PrayerType.witr), 1);
+    expect(analysis.newCount, 2);
+    expect(analysis.existingCount, 4);
+  });
+
+  test('Add Qaza keeps a prayer addable when a later selected date is new', () {
+    final items = [
+      AddQazaCandidate(
+        key: QazaPrayerKey(
+          userId: 'user',
+          date: DateTime(2026, 9, 27),
+          prayerType: PrayerType.fajr,
+        ),
+        status: AddQazaCandidateStatus.alreadyAdded,
+      ),
+      AddQazaCandidate(
+        key: QazaPrayerKey(
+          userId: 'user',
+          date: DateTime(2026, 9, 28),
+          prayerType: PrayerType.fajr,
+        ),
+        status: AddQazaCandidateStatus.newRecord,
+      ),
+    ];
+
+    final analysis = AddQazaAnalysis(items: items);
+
+    expect(analysis.countForPrayer(PrayerType.fajr), 1);
+    expect(analysis.newPrayers, contains(PrayerType.fajr));
+  });
+
   test('Add Qaza preserves centralized availability and final preflight', () {
     final source =
         File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
