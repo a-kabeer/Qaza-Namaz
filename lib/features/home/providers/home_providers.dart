@@ -58,12 +58,37 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
   @override
   HomePrayerSelectionState build() {
+    ref.listen<bool>(effectiveWitrProvider, (_, next) {
+      if (!next &&
+          (state.autoSequencePrayer == PrayerType.witr ||
+              state.selectedPrayer == PrayerType.witr)) {
+        _normalizeDisabledWitr();
+      }
+    });
     Future<void>.microtask(_restore);
     return const HomePrayerSelectionState();
   }
 
+  void _normalizeDisabledWitr() {
+    final selectedPrayer = state.selectedPrayer == PrayerType.witr
+        ? PrayerType.fajr
+        : state.selectedPrayer;
+    state = state.copyWith(
+      autoSequencePrayer: PrayerType.fajr,
+      selectedPrayer: selectedPrayer,
+      clearSelectedPrayer: selectedPrayer == null,
+    );
+    _persistSequence(PrayerType.fajr);
+    if (selectedPrayer != null) {
+      _persistSelectedPrayer(selectedPrayer);
+    } else {
+      _clearPersistedSelectedPrayer();
+    }
+  }
+
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
   void selectPrayer(PrayerType prayer) {
+    if (prayer == PrayerType.witr && !ref.read(effectiveWitrProvider)) return;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
@@ -119,7 +144,10 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       _undoSnapshotRevision = null;
     });
 
-    state = state.afterSuccessfulCompletion(completedPrayer);
+    state = state.afterSuccessfulCompletion(
+      completedPrayer,
+      witrEnabled: ref.read(effectiveWitrProvider),
+    );
     _persistSequence(state.autoSequencePrayer);
   }
 
