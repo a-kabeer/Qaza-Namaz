@@ -10,7 +10,8 @@ void main() {
 
     expect(source, contains("import 'prayer_timeline_row.dart';"));
     expect(source, contains('PrayerTimelineRow('));
-    expect(source, contains('timeline.sort((a, b) => a.at.compareTo(b.at));'));
+    expect(source, contains('final byTime = a.at.compareTo(b.at);'));
+    expect(source, contains('return a.isRestricted ? -1 : 1;'));
     expect(source, contains('RestrictedTimeType.zawal'));
     expect(source, contains('RestrictedTimeType.sunset'));
     expect(
