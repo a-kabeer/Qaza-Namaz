@@ -4,7 +4,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/profile_rules.dart';
 
-UserProfile profile(Madhab madhab, {bool? witr}) => UserProfile(
+UserProfile makeProfile(Madhab madhab, {bool? witr}) => UserProfile(
       madhab: madhab,
       witrIncluded: witr ?? (madhab == Madhab.hanafi),
     );
@@ -13,7 +13,7 @@ void main() {
   group('ProfileRules.enabledPrayerTypes', () {
     test('Hanafi includes Witr', () {
       expect(
-        ProfileRules.enabledPrayerTypes(profile(Madhab.hanafi)),
+        ProfileRules.enabledPrayerTypes(makeProfile(Madhab.hanafi)),
         PrayerType.values,
       );
     });
@@ -24,7 +24,7 @@ void main() {
         Madhab.maliki,
         Madhab.hanbali,
       ]) {
-        final prayers = ProfileRules.enabledPrayerTypes(profile(madhab));
+        final prayers = ProfileRules.enabledPrayerTypes(makeProfile(madhab));
         expect(prayers, isNot(contains(PrayerType.witr)));
         expect(prayers, hasLength(5));
       }
@@ -32,11 +32,11 @@ void main() {
 
     test('Other follows explicit Witr choice', () {
       expect(
-        ProfileRules.enabledPrayerTypes(profile(Madhab.other, witr: false)),
+        ProfileRules.enabledPrayerTypes(makeProfile(Madhab.other, witr: false)),
         isNot(contains(PrayerType.witr)),
       );
       expect(
-        ProfileRules.enabledPrayerTypes(profile(Madhab.other, witr: true)),
+        ProfileRules.enabledPrayerTypes(makeProfile(Madhab.other, witr: true)),
         contains(PrayerType.witr),
       );
     });
