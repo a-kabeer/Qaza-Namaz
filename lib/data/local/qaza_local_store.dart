@@ -267,6 +267,7 @@ abstract class QazaLocalStore {
     required bool matchLastAction,
     required DateTime operationAt,
     QazaStatus? status,
+    Iterable<PrayerType>? prayerTypes,
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
