@@ -160,9 +160,6 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
   @override
   Widget build(BuildContext context) {
-    final selection = ref.watch(homePrayerSelectionProvider);
-    final showTodayProgress =
-        selection.mode == HomePrayerSelectionMode.autoSequence;
     final working = ref.watch(qazaCompletionControllerProvider).isWorking;
     final selected = ref.watch(homeSelectedPrayerProvider);
 
@@ -170,36 +167,28 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       key: const Key('home_today_progress'),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: showTodayProgress
-            ? _TodayProgressSection(
-                summary: widget.summary,
-                selected: selected,
-                working: working,
-                onComplete: _complete,
-              )
-            : _NextQazaPanel(
-                summary: widget.summary,
-                selected: selected,
-                working: working,
-                onComplete: _complete,
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _TodayProgressSection(summary: widget.summary),
+            const SizedBox(height: 18),
+            _NextQazaPanel(
+              summary: widget.summary,
+              selected: selected,
+              working: working,
+              onComplete: _complete,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _TodayProgressSection extends ConsumerWidget {
-  const _TodayProgressSection({
-    required this.summary,
-    required this.selected,
-    required this.working,
-    required this.onComplete,
-  });
+  const _TodayProgressSection({required this.summary});
 
   final QazaProgressSummary summary;
-  final HomeSelectedPrayerState selected;
-  final bool working;
-  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -235,104 +224,40 @@ class _TodayProgressSection extends ConsumerWidget {
         ],
       ),
       data: (progress) {
-        final next = _NextQazaPanel(
-          summary: summary,
-          selected: selected,
-          working: working,
-          onComplete: onComplete,
-        );
+        final percent = (progress.percentage * 100).round();
+        final summaryText =
+            l10n.homeDailyProgress(progress.completed, progress.target);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final title = Text(
-                  l10n.homeTodayProgressHeader,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                );
-                final date = Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      MaterialLocalizations.of(context).formatFullDate(today),
-                      key: const Key('home_today_date'),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    Text(
-                      l10n.formatHijriDate(today),
-                      key: const Key('home_today_date_hijri'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                );
-                if (constraints.maxWidth < 360) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      title,
-                      const SizedBox(height: 4),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: date,
-                      ),
-                    ],
-                  );
-                }
-                return Row(
-                  children: [
-                    Expanded(child: title),
-                    const SizedBox(width: 12),
-                    date,
-                  ],
-                );
-              },
+            Text(
+              l10n.homeTodayProgressHeader,
+              key: const Key('home_today_progress_header'),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final donut = _TodayDonut(
-                  progress: progress.percentage,
-                  completed: progress.completed,
-                  target: progress.target,
-                );
-
-                if (constraints.maxWidth < 500) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(child: donut),
-                      const SizedBox(height: 18),
-                      next,
-                    ],
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(width: 190, child: Center(child: donut)),
-                    const SizedBox(width: 18),
-                    Container(
-                      width: 1,
-                      height: 128,
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(child: next),
-                  ],
-                );
-              },
+            const SizedBox(height: 10),
+            Semantics(
+              label: '$summaryText, $percent%',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  key: const Key('home_today_progress_bar'),
+                  value: progress.percentage,
+                  minHeight: 8,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$summaryText • $percent%',
+              key: const Key('home_today_progress_summary'),
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             if (summary.overall.pending > 0) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _EstimatedCompletion(
                 date: homeEstimatedCompletionDate(
                   now: today,
@@ -340,7 +265,6 @@ class _TodayProgressSection extends ConsumerWidget {
                   dailyTarget: progress.target,
                   completedToday: progress.completed,
                 ),
-                dailyTarget: progress.target,
               ),
             ],
           ],
@@ -351,135 +275,33 @@ class _TodayProgressSection extends ConsumerWidget {
 }
 
 class _EstimatedCompletion extends StatelessWidget {
-  const _EstimatedCompletion({
-    required this.date,
-    required this.dailyTarget,
-  });
+  const _EstimatedCompletion({required this.date});
 
   final DateTime date;
-  final int dailyTarget;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
 
-    return Container(
+    return Row(
       key: const Key('home_estimated_completion'),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.event_available_outlined,
-            size: 20,
-            color: scheme.primary,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.homeEstimatedCompletion(
-                    DateFormatters.formatGregorianDatePadded(date),
-                  ),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${l10n.homeDailyTarget}: ${l10n.homePerDay(dailyTarget)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TodayDonut extends StatelessWidget {
-  const _TodayDonut({
-    required this.progress,
-    required this.completed,
-    required this.target,
-  });
-
-  final double progress;
-  final int completed;
-  final int target;
-
-  @override
-  Widget build(BuildContext context) {
-    final charts = AppChartColors.of(context);
-    final percent = (progress * 100).round();
-
-    return Semantics(
-      label: '$percent%, $completed of $target',
-      child: SizedBox(
-        key: const Key('home_today_donut'),
-        width: 150,
-        height: 150,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            PieChart(
-              PieChartData(
-                sectionsSpace: 0,
-                centerSpaceRadius: 50,
-                startDegreeOffset: -90,
-                sections: [
-                  PieChartSectionData(
-                    value: progress.clamp(0.0, 1.0).toDouble(),
-                    color: charts.primary,
-                    radius: 16,
-                    showTitle: false,
-                  ),
-                  PieChartSectionData(
-                    value: (1 - progress).clamp(0.0, 1.0).toDouble(),
-                    color: charts.track,
-                    radius: 16,
-                    showTitle: false,
-                  ),
-                ],
-              ),
-              duration: Duration.zero,
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$percent%',
-                  key: const Key('home_today_percent'),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                Text(
-                  '$completed of $target',
-                  key: const Key('home_today_count'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  AppLocalizations.of(context).homeCompleted,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ],
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.event_available_outlined,
+          size: 18,
+          color: Theme.of(context).colorScheme.primary,
         ),
-      ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            l10n.homeEstimatedCompletion(
+              DateFormatters.formatGregorianDatePadded(date),
+            ),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
     );
   }
 }

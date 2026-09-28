@@ -47,121 +47,21 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
-              children: [
-                Expanded(child: SkeletonText(width: 150, height: 20)),
-                SizedBox(width: 12),
-                SkeletonText(width: 92, height: 14),
-              ],
-            ),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const progress = Column(
-                  children: [
-                    SkeletonCircle(size: 150),
-                  ],
-                );
-
-                const next = Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: SkeletonText(width: 150, height: 18)),
-                        SizedBox(width: 8),
-                        SkeletonText(width: 74, height: 30),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SkeletonCircle(size: 52),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SkeletonText(width: 92, height: 22),
-                              SizedBox(height: 7),
-                              SkeletonText(width: 130, height: 14),
-                              SizedBox(height: 5),
-                              SkeletonText(width: 112, height: 12),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        SkeletonText(width: 72, height: 24),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SkeletonBox(
-                            width: double.infinity,
-                            height: 44,
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(12),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        SkeletonBox(
-                          width: 126,
-                          height: 44,
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-
-                if (constraints.maxWidth < 500) {
-                  return const Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      progress,
-                      SizedBox(height: 18),
-                      next,
-                    ],
-                  );
-                }
-
-                return const Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(width: 190, child: progress),
-                    SizedBox(width: 18),
-                    SkeletonBox(width: 1, height: 128),
-                    SizedBox(width: 18),
-                    Expanded(child: next),
-                  ],
-                );
-              },
-            ),
+            const HomeTodayProgressSkeleton(),
+            const SizedBox(height: 18),
+            const HomeNextQazaSkeleton(),
             const SizedBox(height: 16),
             const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonBox(
-                  width: 20,
-                  height: 20,
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  width: 18,
+                  height: 18,
+                  borderRadius: BorderRadius.all(Radius.circular(9)),
                 ),
-                SizedBox(width: 10),
+                SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SkeletonText(width: 210, height: 16),
-                      SizedBox(height: 5),
-                      SkeletonText(width: 120, height: 12),
-                    ],
-                  ),
+                  child: SkeletonText(width: 210, height: 14),
                 ),
               ],
             ),
@@ -428,13 +328,22 @@ class HomeTodayProgressSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SkeletonCircle(size: 138),
-        SizedBox(height: 18),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SkeletonText(width: 150, height: 18),
+        ),
+        SizedBox(height: 10),
         SkeletonBox(
           width: double.infinity,
-          height: 56,
-          borderRadius: BorderRadius.all(Radius.circular(12)),
+          height: 8,
+          borderRadius: BorderRadius.all(Radius.circular(999)),
+        ),
+        SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SkeletonText(width: 148, height: 14),
         ),
       ],
     );
