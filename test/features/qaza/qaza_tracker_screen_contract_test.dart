@@ -284,4 +284,19 @@ void main() {
     expect(method, contains('copyWith(prayerFilter: prayer)'));
     expect(method, contains('clearPrayerFilter: true'));
   });
+
+  test('disabled Witr is absent from tracker filters', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        'final enabledPrayers = ref.watch(enabledPrayerTypesProvider);',
+      ),
+    );
+    expect(source, contains('for (final prayer in enabledPrayers)'));
+    expect(source, isNot(contains('for (final prayer in PrayerType.values)')));
+  });
+
 }
