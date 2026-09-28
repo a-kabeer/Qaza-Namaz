@@ -28,6 +28,13 @@ extension PrayerTypeX on PrayerType {
     return qazaSequence[(index + 1) % qazaSequence.length];
   }
 
+  /// Advances in canonical Qaza order while skipping Witr when it is disabled.
+  PrayerType nextInQazaSequenceSkippingWitr({required bool witrEnabled}) {
+    final next = nextInQazaSequence;
+    return !witrEnabled && next == PrayerType.witr ? PrayerType.fajr : next;
+  }
+
+
   String get label {
     switch (this) {
       case PrayerType.fajr:
