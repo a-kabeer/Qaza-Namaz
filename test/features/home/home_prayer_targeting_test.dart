@@ -227,4 +227,28 @@ void main() {
       );
     });
 
+
+    test('Auto Sequence skips disabled Witr in Home state', () {
+      const state = HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+        autoSequencePrayer: PrayerType.isha,
+      );
+
+      expect(
+        state.afterSuccessfulCompletion(
+          PrayerType.isha,
+          witrEnabled: false,
+        ).autoSequencePrayer,
+        PrayerType.fajr,
+      );
+
+      expect(
+        state.afterSuccessfulCompletion(
+          PrayerType.isha,
+          witrEnabled: true,
+        ).autoSequencePrayer,
+        PrayerType.witr,
+      );
+    });
+
 }
