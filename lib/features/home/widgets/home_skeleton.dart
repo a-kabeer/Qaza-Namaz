@@ -41,17 +41,17 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const HomeTodayProgressSkeleton(),
-            const SizedBox(height: 18),
-            const HomeNextQazaSkeleton(),
-            const SizedBox(height: 16),
-            const Row(
+            HomeTodayProgressSkeleton(),
+            SizedBox(height: 18),
+            HomeNextQazaSkeleton(),
+            SizedBox(height: 16),
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonBox(
