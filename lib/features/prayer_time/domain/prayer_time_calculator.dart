@@ -1,13 +1,22 @@
 import 'package:adhan_dart/adhan_dart.dart';
 
-import '../../../domain/entities/user_profile.dart' as profile;\nimport 'prayer_location.dart';
+import '../../../domain/entities/user_profile.dart' as profile;
+import 'prayer_location.dart';
 import 'prayer_settings.dart';
 import 'prayer_time.dart';
 
 class PrayerTimeCalculator {
   const PrayerTimeCalculator();
 
-  static const _defaultSettings = PrayerSettings();\n\n  PrayerSchedule calculate({\n    required PrayerLocation location,\n    required profile.Madhab madhab,\n    required DateTime localDate,\n  }) {\n    final coordinates = Coordinates(location.latitude, location.longitude);\n    final parameters = _parameters(_defaultSettings, madhab, coordinates);
+  static const _defaultSettings = PrayerSettings();
+
+  PrayerSchedule calculate({
+    required PrayerLocation location,
+    required profile.Madhab madhab,
+    required DateTime localDate,
+  }) {
+    final coordinates = Coordinates(location.latitude, location.longitude);
+    final parameters = _parameters(_defaultSettings, madhab, coordinates);
     final date = DateTime(localDate.year, localDate.month, localDate.day);
     final result = PrayerTimes(
       coordinates: coordinates,
@@ -40,7 +49,11 @@ class PrayerTimeCalculator {
     );
   }
 
-  CalculationParameters _parameters(\n    PrayerSettings settings,\n    profile.Madhab madhab,\n    Coordinates coordinates,\n  ) {
+  CalculationParameters _parameters(
+    PrayerSettings settings,
+    profile.Madhab madhab,
+    Coordinates coordinates,
+  ) {
     final parameters = switch (settings.calculationMethod) {
       PrayerCalculationMethod.karachi => CalculationMethodParameters.karachi(),
       PrayerCalculationMethod.muslimWorldLeague =>
@@ -60,7 +73,8 @@ class PrayerTimeCalculator {
         ),
     };
 
-    parameters.madhab =\n        madhab == profile.Madhab.hanafi ? Madhab.hanafi : Madhab.shafi;
+    parameters.madhab =
+        madhab == profile.Madhab.hanafi ? Madhab.hanafi : Madhab.shafi;
 
     parameters.highLatitudeRule = switch (settings.highLatitudeRule) {
       PrayerHighLatitudeRule.automatic =>
