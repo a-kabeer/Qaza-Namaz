@@ -163,6 +163,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       matchLastAction: matchLastAction,
       operationAt: operationAt,
       status: status,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       limit: limit,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
@@ -598,6 +599,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     final page = await _database.qazaRecordsDao.getRecentlyDeletedPage(
       userId: userId,
       limit: limit,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       beforeDeletedAt: beforeDeletedAt,
       beforeId: beforeId,
     );
