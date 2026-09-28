@@ -152,13 +152,13 @@ class _DetailedOverallStatistics extends StatelessWidget {
   }
 }
 
-class _DetailedPrayerBreakdown extends StatelessWidget {
+class _DetailedPrayerBreakdown extends ConsumerWidget {
   const _DetailedPrayerBreakdown({required this.summary});
 
   final QazaProgressSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
