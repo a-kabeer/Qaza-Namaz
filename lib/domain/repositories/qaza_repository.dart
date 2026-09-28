@@ -149,6 +149,7 @@ abstract interface class QazaRepository {
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   });
 
   Future<void> addRecord(QazaRecord record);
