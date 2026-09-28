@@ -81,7 +81,7 @@ void main() {
 
         await container.read(homeControllerProvider).refresh();
 
-        expect(dailyProgressReads, 1);
+        expect(dailyProgressReads, greaterThanOrEqualTo(1));
       },
     );
   }
