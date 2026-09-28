@@ -54,36 +54,12 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
     required String recordId,
     required DateTime completedAt,
   }) async {
-    if (state.isWorking) {
-      throw StateError('Qaza completion is already in progress.');
-    }
-    if (ref.read(qazaCompletionRestrictedProvider)) {
-      return QazaCompletionResult.blockedByRestrictedTime;
-    }
-
-    final diagnostics = ref.read(diagnosticsProvider);
-    // Recorded before anything can fail, so a report that stops here tells
-    // you the attempt was made and where it stopped.
-    diagnostics.recordEvent(DiagnosticArea.qazaCompletion, 'completion_start');
-
-    state = state.copyWith(isWorking: true);
-    try {
-      final result =
-          await ref.read(qazaCompletionServiceProvider).completeRecord(
-                userId: userId,
-                recordId: recordId,
-                completedAt: completedAt,
-              );
-      if (result == QazaCompletionResult.completed) {
-        diagnostics.recordEvent(
-          DiagnosticArea.qazaCompletion,
-          'completion_succeeded',
-        );
-      }
-      return result;
-    } finally {
-      state = state.copyWith(isWorking: false);
-    }
+    final receipt = await completeRecordWithReceipt(
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+    );
+    return receipt.result;
   }
 }
 
