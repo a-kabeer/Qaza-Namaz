@@ -9,5 +9,4 @@ export 'domain/prayer_time.dart';
 export 'domain/prayer_time_calculator.dart';
 export 'domain/restricted_time.dart';
 export 'presentation/prayer_time_page.dart';
-export 'presentation/prayer_settings_page.dart';
 export 'presentation/restricted_times_status.dart';
