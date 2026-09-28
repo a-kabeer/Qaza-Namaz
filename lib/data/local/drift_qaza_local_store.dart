@@ -102,6 +102,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   }) =>
       _database.qazaRecordsDao.countCompletedBetween(
         userId: userId,
