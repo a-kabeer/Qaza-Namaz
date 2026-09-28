@@ -19,6 +19,16 @@ class RestrictedTimeWindow {
   final tz.TZDateTime startsAt;
   final tz.TZDateTime endsAt;
 
+  /// Canonical timeline instant for displaying the restricted event.
+  ///
+  /// Sunrise and Zawal use the start of their existing restricted interval;
+  /// Sunset uses the interval end, matching sunset/Maghrib.
+  tz.TZDateTime get displayAt => switch (type) {
+        RestrictedTimeType.sunrise => startsAt,
+        RestrictedTimeType.zawal => startsAt,
+        RestrictedTimeType.sunset => endsAt,
+      };
+
   bool contains(tz.TZDateTime now) =>
       !now.isBefore(startsAt) && now.isBefore(endsAt);
 }

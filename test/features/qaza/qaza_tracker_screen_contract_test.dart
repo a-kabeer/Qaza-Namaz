@@ -299,4 +299,19 @@ void main() {
     expect(source, isNot(contains('for (final prayer in PrayerType.values)')));
   });
 
+
+  test('Qaza reuses the shared active restricted-time timeline row', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        "import '../prayer_time/presentation/prayer_timeline_row.dart';",
+      ),
+    );
+    expect(source, contains('child: RestrictedTimeTimelineRow(),'));
+    expect(source, isNot(contains('RestrictedTimesStatusCard')));
+  });
+
 }

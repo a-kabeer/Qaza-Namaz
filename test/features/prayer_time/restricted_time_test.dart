@@ -137,6 +137,26 @@ void main() {
       expect(state.active?.type, RestrictedTimeType.sunset);
     });
 
+    test('uses event-specific display instants for the timeline', () {
+      final calculator = const RestrictedTimeCalculator();
+
+      final windows = calculator.forSchedule(schedule, location);
+
+      final sunriseWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunrise,
+      );
+      final zawalWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.zawal,
+      );
+      final sunsetWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunset,
+      );
+
+      expect(sunriseWindow.displayAt, sunriseWindow.startsAt);
+      expect(zawalWindow.displayAt, zawalWindow.startsAt);
+      expect(sunsetWindow.displayAt, sunsetWindow.endsAt);
+    });
+
     test('reports the next restricted window when none is active', () {
       final now = tz.TZDateTime.from(
         DateTime.utc(2026, 9, 27, 4, 0),

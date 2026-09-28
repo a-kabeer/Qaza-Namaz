@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +6,6 @@ import '../../../app/providers.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
@@ -18,7 +16,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
-import '../../prayer_time/presentation/restricted_times_status.dart';
+import '../../prayer_time/presentation/prayer_timeline_row.dart';
 import '../../qaza/qaza_undo_feedback.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
@@ -455,10 +453,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (restricted) ...[
-          const RestrictedTimesStatusCard(compact: true),
-          const SizedBox(height: 8),
-        ],
+        const RestrictedTimeTimelineRow(),
         Row(
           children: [
             Expanded(child: header),
