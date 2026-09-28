@@ -201,6 +201,15 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       // while preferences were loading.
       if (restoreRevision != _targetRevision) return;
 
+      final witrEnabled = ref.read(effectiveWitrProvider);
+      var restoredSequencePrayer = sequencePrayer;
+      if (!witrEnabled && restoredSequencePrayer == PrayerType.witr) {
+        restoredSequencePrayer = PrayerType.fajr;
+      }
+      if (!witrEnabled && selectedPrayer == PrayerType.witr) {
+        selectedPrayer = PrayerType.fajr;
+      }
+
       // A persisted Prayer Selection state must always have one valid prayer.
       if (mode != HomePrayerSelectionMode.prayerSelection) {
         selectedPrayer = PrayerType.fajr;
