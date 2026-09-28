@@ -1,10 +1,13 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
@@ -244,11 +247,6 @@ class _TodayProgressSection extends ConsumerWidget {
                   key: const Key('home_today_progress_bar'),
                   value: progress.percentage,
                   minHeight: 8,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
-                  ),
                 ),
               ),
             ),
@@ -306,6 +304,23 @@ class _EstimatedCompletion extends StatelessWidget {
       ],
     );
   }
+}
+
+class _NextQazaPanel extends ConsumerStatefulWidget {
+  const _NextQazaPanel({
+    required this.summary,
+    required this.selected,
+    required this.working,
+    required this.onComplete,
+  });
+
+  final QazaProgressSummary summary;
+  final HomeSelectedPrayerState selected;
+  final bool working;
+  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+
+  @override
+  ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
 }
 
 /// Shown while the ordering rule is unknown, in place of any Fard action.
