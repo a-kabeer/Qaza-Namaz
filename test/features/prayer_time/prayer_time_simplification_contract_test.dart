@@ -72,7 +72,7 @@ void main() {
 
   test('Asr calculation follows Profile Madhab mapping', () {
     const calculator = PrayerTimeCalculator();
-    const date = DateTime(2026, 9, 28);
+    final date = DateTime(2026, 9, 28);
 
     final hanafi = calculator.calculate(
       location: location,
