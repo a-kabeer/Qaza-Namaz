@@ -138,7 +138,7 @@ void main() {
     });
 
     test('uses event-specific display instants for the timeline', () {
-      final calculator = const RestrictedTimeCalculator();
+      const calculator = RestrictedTimeCalculator();
 
       final windows = calculator.forSchedule(schedule, location);
 
