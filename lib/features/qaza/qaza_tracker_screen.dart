@@ -61,15 +61,7 @@ class QazaTrackerScreen extends ConsumerWidget {
             length: 2,
             child: Column(
               children: [
-                if (!state.selectionMode) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  const TabBar(
-                    tabs: [
-                      Tab(text: 'Pending'),
-                      Tab(text: 'History'),
-                    ],
-                  ),
-                ],
+                _QazaTrackerHeader(selectionMode: state.selectionMode),
                 Expanded(
                   child: TabBarView(
                     physics: state.selectionMode
@@ -89,6 +81,75 @@ class QazaTrackerScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Stable header slot above the Qaza workspace content.
+///
+/// Normal mode shows the Pending/History tabs. Selection mode replaces them
+/// with a compact context row, but the slot height never changes, so the
+/// tracker content remains vertically stable.
+class _QazaTrackerHeader extends StatelessWidget {
+  const _QazaTrackerHeader({required this.selectionMode});
+
+  static const double _headerContentHeight = kTextTabBarHeight;
+
+  final bool selectionMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          height: _headerContentHeight,
+          child: selectionMode
+              ? const _SelectionContextHeader()
+              : const TabBar(
+                  tabs: [
+                    Tab(text: 'Pending'),
+                    Tab(text: 'History'),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectionContextHeader extends StatelessWidget {
+  const _SelectionContextHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.checklist_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  l10n.addQazaSelectionLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+      ],
     );
   }
 }

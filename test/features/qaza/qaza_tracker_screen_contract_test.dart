@@ -63,6 +63,29 @@ void main() {
     );
   });
 
+  test('selection mode preserves the shared tracker header slot', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains('class _QazaTrackerHeader extends StatelessWidget {'),
+    );
+    expect(
+      source,
+      contains(
+        'static const double _headerContentHeight = kTextTabBarHeight;',
+      ),
+    );
+    expect(source, contains('const SizedBox(height: AppSpacing.sm),'));
+    expect(source, contains('height: _headerContentHeight,'));
+    expect(source, contains('child: selectionMode'));
+    expect(source, contains('? const _SelectionContextHeader()'));
+    expect(source, contains('l10n.addQazaSelectionLabel'));
+    expect(source, contains('Icons.checklist_rounded'));
+    expect(source, isNot(contains('if (!state.selectionMode) ...[')));
+  });
+
   test(
     'selection mode keeps the Qaza row footprint stable and uses trailing checkbox',
     () {
