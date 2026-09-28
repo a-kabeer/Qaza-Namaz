@@ -75,8 +75,9 @@ class HomePrayerSelectionState {
   /// Sahib al-Tartib overrides the actionable prayer without changing this
   /// underlying state.
   HomePrayerSelectionState afterSuccessfulCompletion(
-    PrayerType completedPrayer,
-  ) {
+    PrayerType completedPrayer, {
+    bool witrEnabled = true,
+  }) {
     switch (mode) {
       case HomePrayerSelectionMode.prayerTime:
       case HomePrayerSelectionMode.prayerSelection:
