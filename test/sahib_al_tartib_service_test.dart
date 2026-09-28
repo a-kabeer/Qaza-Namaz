@@ -370,8 +370,8 @@ void main() {
       final repository = _FakeRepository(records);
       final service = QazaService(repository);
 
-      expect(
-        () => service.completeRecordWithReceipt(
+      await expectLater(
+        service.completeRecordWithReceipt(
           userId: 'u1',
           recordId: 'zuhr',
           completedAt: DateTime(2026, 9, 28, 11),
