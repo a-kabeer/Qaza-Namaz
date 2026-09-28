@@ -48,6 +48,7 @@ Future<ProviderContainer> _containerFor({
   required QazaRecord targetRecord,
   required void Function() onDailyProgressRead,
   Future<HomeDailyProgress> Function()? dailyProgress,
+  bool useFixedTargetResolution = false,
 }) async {
   return ProviderContainer(
     overrides: [
@@ -68,6 +69,21 @@ Future<ProviderContainer> _containerFor({
       oldestPendingProvider(targetRecord.prayerType).overrideWith(
         (ref) async => targetRecord,
       ),
+      if (useFixedTargetResolution)
+        homeSelectedPrayerProvider.overrideWith(
+          (ref) => HomeSelectedPrayerState(
+            mode: selection.mode,
+            prayer: targetRecord.prayerType,
+            source: switch (selection.mode) {
+              HomePrayerSelectionMode.prayerTime =>
+                HomePrayerSelectionSource.prayerTime,
+              HomePrayerSelectionMode.autoSequence =>
+                HomePrayerSelectionSource.autoSequence,
+              HomePrayerSelectionMode.prayerSelection =>
+                HomePrayerSelectionSource.prayerSelection,
+            },
+          ),
+        ),
       homeDailyProgressProvider.overrideWith(
         (ref) {
           onDailyProgressRead();
@@ -224,6 +240,7 @@ void main() {
       targetRecord: record,
       onDailyProgressRead: () => dailyReads++,
       dailyProgress: () => loading.future,
+      useFixedTargetResolution: true,
     );
     addTearDown(container.dispose);
 
