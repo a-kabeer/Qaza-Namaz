@@ -1,5 +1,25 @@
 import 'dart:math' as math;
 
+enum PrayerLocationRequirement {
+  ready,
+  locationServiceDisabled,
+  permissionRequired,
+  permissionDenied,
+  permissionDeniedForever,
+}
+
+enum PrayerLocationSetupFailure {
+  locationServiceResolutionCancelled,
+  permissionDenied,
+  permissionDeniedForever,
+}
+
+class PrayerLocationSetupException implements Exception {
+  const PrayerLocationSetupException(this.failure);
+
+  final PrayerLocationSetupFailure failure;
+}
+
 enum PrayerLocationSource { current, city }
 
 class PrayerLocation {

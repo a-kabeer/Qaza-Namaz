@@ -7,7 +7,16 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_target_sheet.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_controller.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
+
+class _TestPrayerTimeController extends PrayerTimeController {
+  @override
+  Future<PrayerTimeSnapshot?> build() async => null;
+}
 
 class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
   _TestHomePrayerSelectionNotifier(this.initial);
@@ -32,6 +41,9 @@ void main() {
           () => _TestHomePrayerSelectionNotifier(
             const HomePrayerSelectionState(),
           ),
+        ),
+        prayerTimeControllerProvider.overrideWith(
+          _TestPrayerTimeController.new,
         ),
       ],
     );
@@ -66,6 +78,21 @@ void main() {
     expect(find.text('Prayer Selection'), findsOneWidget);
 
     await tester.tap(find.byKey(
+      const Key('home_qaza_target_mode_prayer_time'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('home_qaza_target_prayer_time_setup')),
+      findsOneWidget,
+    );
+    expect(find.text('Prayer times are not set up yet.'), findsOneWidget);
+    expect(
+      container.read(homePrayerSelectionProvider).mode,
+      HomePrayerSelectionMode.autoSequence,
+    );
+
+    await tester.tap(find.byKey(
       const Key('home_qaza_target_mode_prayer_selection'),
     ));
     await tester.pumpAndSettle();
@@ -80,6 +107,24 @@ void main() {
     expect(find.text('Maghrib'), findsOneWidget);
     expect(find.text('Isha'), findsOneWidget);
     expect(find.text('Witr'), findsOneWidget);
+
+    await tester.tap(find.byKey(
+      const Key('home_qaza_target_mode_prayer_time'),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(
+      const Key('home_qaza_target_setup_prayer_times'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.prayerTime,
+    );
+    expect(
+      find.byKey(const Key('home_qaza_target_sheet')),
+      findsNothing,
+    );
   });
 
   testWidgets('Prayer Selection keeps exactly one selected prayer', (

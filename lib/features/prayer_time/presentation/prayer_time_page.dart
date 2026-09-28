@@ -8,6 +8,7 @@ import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
+import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'location_selector.dart';
@@ -23,6 +24,7 @@ class PrayerTimePage extends ConsumerStatefulWidget {
 
 class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     with WidgetsBindingObserver {
+  bool _resumeCurrentLocationAfterSettings = false;
   @override
   void initState() {
     super.initState();
@@ -37,9 +39,31 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state != AppLifecycleState.resumed) return;
+
+    ref.invalidate(prayerLocationRequirementProvider);
+    if (_resumeCurrentLocationAfterSettings) {
+      _resumeCurrentLocationAfterSettings = false;
+      Future<void>.microtask(
+        () => ref
+            .read(prayerTimeControllerProvider.notifier)
+            .useCurrentLocation(),
+      );
+    } else {
       ref.read(prayerTimeControllerProvider.notifier).refresh();
     }
+  }
+
+  void _openAppSettings() {
+    _resumeCurrentLocationAfterSettings = true;
+    ref
+        .read(prayerLocationRepositoryProvider)
+        .openAppSettings()
+        .then((opened) {
+      if (!opened && mounted) {
+        _resumeCurrentLocationAfterSettings = false;
+      }
+    });
   }
 
   @override
@@ -78,7 +102,9 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
       ],
       body: SafeArea(
         child: snapshot == null
-            ? const _PrayerTimeSetup()
+            ? _PrayerTimeSetup(
+                onOpenAppSettings: _openAppSettings,
+              )
             : const _PrayerTimeContent(),
       ),
     );
@@ -86,13 +112,52 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
 }
 
 class _PrayerTimeSetup extends ConsumerWidget {
-  const _PrayerTimeSetup();
+  const _PrayerTimeSetup({
+    required this.onOpenAppSettings,
+  });
+
+  final VoidCallback onOpenAppSettings;
+
+  _SetupFailurePresentation _failurePresentation(
+    BuildContext context,
+    Object error,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    if (error is PrayerLocationSetupException) {
+      return switch (error.failure) {
+        PrayerLocationSetupFailure.permissionDeniedForever =>
+          _SetupFailurePresentation(
+            message: l10n.prayerTimeLocationPermission,
+            actionLabel: l10n.commonOpenSettings,
+            onAction: onOpenAppSettings,
+          ),
+        PrayerLocationSetupFailure.permissionDenied =>
+          _SetupFailurePresentation(
+            message: l10n.prayerTimeLocationPermission,
+            actionLabel: l10n.commonRetry,
+          ),
+        PrayerLocationSetupFailure.locationServiceResolutionCancelled =>
+          _SetupFailurePresentation(
+            message: l10n.prayerTimeSetupBody,
+            actionLabel: l10n.commonRetry,
+          ),
+      };
+    }
+
+    return _SetupFailurePresentation(
+      message: l10n.errorUnknown,
+      actionLabel: l10n.commonRetry,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final asyncState = ref.watch(prayerTimeControllerProvider);
     final refreshing = ref.watch(prayerTimeRefreshProvider);
+    final failure = asyncState.hasError
+        ? _failurePresentation(context, asyncState.error!)
+        : null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -135,17 +200,52 @@ class _PrayerTimeSetup extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         LocationSelector(location: asyncState.valueOrNull?.location),
-        if (asyncState.hasError) ...[
+        if (failure != null) ...[
           const SizedBox(height: 12),
-          Text(
-            l10n.prayerTimeLocationUnavailable,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          Card(
+            key: const Key('prayer_time_setup_failure'),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    failure.message,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton(
+                    key: const Key('prayer_time_setup_failure_action'),
+                    onPressed: refreshing
+                        ? null
+                        : failure.onAction ??
+                            () => ref
+                                .read(
+                                  prayerTimeControllerProvider.notifier,
+                                )
+                                .useCurrentLocation(),
+                    child: Text(failure.actionLabel),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ],
     );
   }
+}
+
+class _SetupFailurePresentation {
+  const _SetupFailurePresentation({
+    required this.message,
+    required this.actionLabel,
+    this.onAction,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback? onAction;
 }
 
 class _PrayerTimeContent extends ConsumerWidget {
