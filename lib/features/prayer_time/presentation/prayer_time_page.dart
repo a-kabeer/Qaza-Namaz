@@ -12,7 +12,6 @@ import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'location_selector.dart';
-import 'prayer_settings_page.dart';
 import 'restricted_times_status.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
@@ -76,18 +75,6 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     return AppScaffold(
       title: l10n.prayerTimeTitle,
       actions: [
-        IconButton(
-          key: const Key('prayer_time_settings'),
-          tooltip: l10n.prayerTimeSettings,
-          onPressed: snapshot == null
-              ? null
-              : () => Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const PrayerSettingsPage(),
-                    ),
-                  ),
-          icon: const Icon(Icons.settings_outlined),
-        ),
         if (snapshot != null)
           IconButton(
             key: const Key('prayer_time_refresh'),
@@ -259,9 +246,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final location = tz.getLocation(snapshot.location.timezoneId);
     final local = tz.TZDateTime.from(utc, location);
     final locale = Localizations.localeOf(context).toLanguageTag();
-    return snapshot.settings.use24HourFormat
-        ? intl.DateFormat.Hm(locale).format(local)
-        : intl.DateFormat.jm(locale).format(local);
+    return intl.DateFormat.jm(locale).format(local);
   }
 
   PrayerSlot? _restrictionRow(RestrictedTimeType? type) => switch (type) {
