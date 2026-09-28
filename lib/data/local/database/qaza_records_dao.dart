@@ -86,6 +86,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       {required String userId,
       int limit = defaultPageSize,
       String? prayerType,
+      Iterable<String>? prayerTypes,
       String? status,
       DateTime? from,
       DateTime? to,
@@ -102,6 +103,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
         if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
+        }
+        if (prayerTypes != null) {
+          predicates.add(row.prayerType.isIn(prayerTypes));
         }
         if (status == QazaStatus.deleted.name) {
           predicates.add(row.status.equals(QazaStatus.deleted.name));
@@ -155,6 +159,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
         if (prayerType != null) {
           predicates.add(row.prayerType.equals(prayerType));
+        }
+        if (prayerTypes != null) {
+          predicates.add(row.prayerType.isIn(prayerTypes));
         }
         if (status == QazaStatus.deleted.name) {
           predicates.add(row.status.equals(QazaStatus.deleted.name));
@@ -498,6 +505,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     required bool matchLastAction,
     required DateTime operationAt,
     QazaStatus? status,
+    Iterable<String>? prayerTypes,
     int limit = defaultPageSize,
     DateTime? beforeOriginalDate,
     String? beforeId,
@@ -513,6 +521,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         }
         if (status != null) {
           predicates.add(row.status.equals(status.name));
+        }
+        if (prayerTypes != null) {
+          predicates.add(row.prayerType.isIn(prayerTypes));
         }
         if (beforeOriginalDate != null) {
           predicates.add(
@@ -541,6 +552,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
+    Iterable<String>? prayerTypes,
   }) async {
     final countExpression = qazaRecords.id.count();
     final grouped = selectOnly(qazaRecords)
@@ -590,6 +602,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = defaultPageSize,
+    Iterable<String>? prayerTypes,
     DateTime? beforeDeletedAt,
     String? beforeId,
   }) async {
@@ -600,6 +613,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           row.userId.equals(userId),
           row.status.equals(QazaStatus.deleted.name),
         ];
+        if (prayerTypes != null) {
+          predicates.add(row.prayerType.isIn(prayerTypes));
+        }
         if (beforeDeletedAt != null) {
           predicates.add(row.updatedAt.isSmallerThanValue(beforeDeletedAt) |
               (row.updatedAt.equals(beforeDeletedAt) &
