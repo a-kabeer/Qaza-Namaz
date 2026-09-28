@@ -143,6 +143,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       {required String userId,
       int limit = defaultPageSize,
       String? prayerType,
+      Iterable<String>? prayerTypes,
       String? status,
       DateTime? from,
       DateTime? to,
