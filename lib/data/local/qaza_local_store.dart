@@ -114,6 +114,7 @@ abstract class QazaLocalStore {
   Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
+    Iterable<PrayerType>? prayerTypes,
     DateTime? beforeDeletedAt,
     String? beforeId,
   }) async {
@@ -126,6 +127,8 @@ abstract class QazaLocalStore {
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
       ..removeWhere((r) => r.status != QazaStatus.deleted)
+      ..removeWhere((r) =>
+          prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..sort((a, b) {
         final d = b.updatedAt.compareTo(a.updatedAt);
         return d != 0 ? d : b.id.compareTo(a.id);
@@ -156,6 +159,7 @@ abstract class QazaLocalStore {
       {required String userId,
       int limit = 50,
       PrayerType? prayerType,
+      Iterable<PrayerType>? prayerTypes,
       QazaStatus? status,
       DateTime? from,
       DateTime? to,
@@ -173,6 +177,8 @@ abstract class QazaLocalStore {
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
       ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
+      ..removeWhere((r) =>
+          prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..removeWhere((r) => status == QazaStatus.deleted
           ? r.status != QazaStatus.deleted
           : r.status == QazaStatus.deleted ||
@@ -210,6 +216,7 @@ abstract class QazaLocalStore {
       {required String userId,
       int limit = 50,
       PrayerType? prayerType,
+      Iterable<PrayerType>? prayerTypes,
       QazaStatus? status = QazaStatus.completed,
       DateTime? from,
       DateTime? to,
@@ -227,6 +234,8 @@ abstract class QazaLocalStore {
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
       ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
+      ..removeWhere((r) =>
+          prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..removeWhere((r) => status == QazaStatus.deleted
           ? r.status != QazaStatus.deleted
           : r.status == QazaStatus.deleted ||
@@ -280,7 +289,9 @@ abstract class QazaLocalStore {
             ? record.updatedAt.isAtSameMomentAs(operationAt)
             : record.operationId == operationId;
         final statusMatch = status == null || record.status == status;
-        return !actionMatch || !statusMatch;
+        final prayerMatch = prayerTypes == null ||
+            prayerTypes.contains(record.prayerType);
+        return !actionMatch || !statusMatch || !prayerMatch;
       })
       ..sort((a, b) {
         final d = b.originalDate.compareTo(a.originalDate);
@@ -405,6 +416,7 @@ abstract class QazaLocalStore {
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
+    Iterable<PrayerType>? prayerTypes,
   }) async {
     final snapshot = await load();
     final records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
@@ -415,6 +427,9 @@ abstract class QazaLocalStore {
 
     for (final record in records) {
       if (record.operationId != operationId) continue;
+      if (prayerTypes != null && !prayerTypes.contains(record.prayerType)) {
+        continue;
+      }
       switch (record.status) {
         case QazaStatus.pending:
           pending++;
