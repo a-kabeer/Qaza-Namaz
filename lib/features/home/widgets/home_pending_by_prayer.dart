@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/qaza_progress.dart';
@@ -19,7 +20,8 @@ class HomePendingByPrayer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final charts = AppChartColors.of(context);
-    final pendingPrayers = PrayerType.values
+    final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
+    final pendingPrayers = enabledPrayers
         .where(
           (prayer) => (summary.byPrayer[prayer]?.progress.pending ?? 0) > 0,
         )
