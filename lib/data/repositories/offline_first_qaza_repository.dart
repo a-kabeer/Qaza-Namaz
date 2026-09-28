@@ -175,12 +175,14 @@ class OfflineFirstQazaRepository
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   }) {
     _validateActive(userId);
     return _localStore.countCompletedBetween(
       userId: userId,
       from: from,
       to: to,
+      prayerTypes: prayerTypes,
     );
   }
 
