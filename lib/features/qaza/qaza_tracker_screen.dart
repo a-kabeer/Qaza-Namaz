@@ -31,6 +31,7 @@ class QazaTrackerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(qazaTrackerControllerProvider);
     final controller = ref.read(qazaTrackerControllerProvider.notifier);
+    final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
         ? '${state.selected.length} selected'
@@ -332,7 +333,7 @@ class _FilterSheet extends ConsumerWidget {
                 selected: state.prayerFilter == null,
                 onSelected: (_) => controller.setPrayerFilter(null),
               ),
-              for (final prayer in PrayerType.values)
+              for (final prayer in enabledPrayers)
                 FilterChip(
                   label: Text(prayer.localizedLabel(l10n)),
                   selected: state.prayerFilter == prayer,
