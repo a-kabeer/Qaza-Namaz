@@ -87,6 +87,8 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             const SizedBox(height: AppSpacing.md),
             _PrayerSelection(
               selected: state.selectedPrayers,
+              addablePrayers: state.addablePrayers,
+              availabilityLoading: state.prayerAvailabilityLoading,
               witrAllowed: ProfileRules.effectiveWitr(profile),
               onToggle: (prayer) => ref
                   .read(addQazaControllerProvider.notifier)
@@ -315,11 +317,15 @@ class _ModeSelector extends StatelessWidget {
 class _PrayerSelection extends StatelessWidget {
   const _PrayerSelection({
     required this.selected,
+    required this.addablePrayers,
+    required this.availabilityLoading,
     required this.witrAllowed,
     required this.onToggle,
   });
 
   final Set<PrayerType> selected;
+  final Set<PrayerType> addablePrayers;
+  final bool availabilityLoading;
   final bool witrAllowed;
   final ValueChanged<PrayerType> onToggle;
 
@@ -341,8 +347,19 @@ class _PrayerSelection extends StatelessWidget {
             PrayerSelectionGrid(
               selected: selected,
               witrAllowed: witrAllowed,
+              disabledPrayers: availabilityLoading
+                  ? const <PrayerType>{}
+                  : PrayerType.values
+                      .where((prayer) => !addablePrayers.contains(prayer))
+                      .toSet(),
+              disabledReasonBuilder: (prayer) =>
+                  l10n.addQazaAlreadyAddedLabel,
               onPrayerSelected: onToggle,
             ),
+            if (availabilityLoading) ...[
+              const SizedBox(height: AppSpacing.sm),
+              const LinearProgressIndicator(minHeight: 2),
+            ],
           ],
         ),
       ),
@@ -575,9 +592,9 @@ class _AnalysisSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final prayers = PrayerType.values
-        .where(selectedPrayers.contains)
-        .toList(growable: false);
+    // Keep all six prayers visible so a zero count clearly communicates
+    // that the prayer is not part of the current addable selection.
+    final prayers = PrayerType.values.toList(growable: false);
 
     return Card(
       child: Padding(
@@ -619,10 +636,6 @@ class _AnalysisSummary extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.xs,
               children: [
-                _CompactStatusCount(
-                  label: l10n.commonTotal,
-                  count: analysis.total,
-                ),
                 _CompactStatusCount(
                   label: l10n.addQazaNewLabel,
                   count: analysis.newCount,
