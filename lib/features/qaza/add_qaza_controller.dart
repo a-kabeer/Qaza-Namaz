@@ -44,8 +44,20 @@ class AddQazaAnalysis {
       .where((item) => item.status == AddQazaCandidateStatus.unavailable)
       .length;
 
-  int countForPrayer(PrayerType prayer) =>
-      items.where((item) => item.key.prayerType == prayer).length;
+  /// Number of new records that will actually be created for [prayer].
+  int countForPrayer(PrayerType prayer) => items
+      .where(
+        (item) =>
+            item.key.prayerType == prayer &&
+            item.status == AddQazaCandidateStatus.newRecord,
+      )
+      .length;
+
+  Set<PrayerType> get newPrayers => {
+        for (final item in items)
+          if (item.status == AddQazaCandidateStatus.newRecord)
+            item.key.prayerType,
+      };
 
   int get statusCountTotal => newCount + existingCount + unavailableCount;
 
@@ -66,8 +78,16 @@ class AddQazaState {
       PrayerType.maghrib,
       PrayerType.isha,
     },
+    this.addablePrayers = const <PrayerType>{
+      PrayerType.fajr,
+      PrayerType.zuhr,
+      PrayerType.asr,
+      PrayerType.maghrib,
+      PrayerType.isha,
+    },
     this.calendarAvailability = const <DateTime, Set<PrayerType>>{},
     this.calendarLoading = true,
+    this.prayerAvailabilityLoading = false,
     this.analysisLoading = false,
     this.analysis = AddQazaAnalysis.empty,
     this.error,
@@ -76,8 +96,13 @@ class AddQazaState {
   final DateSelectionMode mode;
   final List<DateTime> selectedDates;
   final Set<PrayerType> selectedPrayers;
+
+  /// Prayers with at least one new occurrence across the selected dates.
+  final Set<PrayerType> addablePrayers;
+
   final Map<DateTime, Set<PrayerType>> calendarAvailability;
   final bool calendarLoading;
+  final bool prayerAvailabilityLoading;
   final bool analysisLoading;
   final AddQazaAnalysis analysis;
   final Object? error;
@@ -85,14 +110,18 @@ class AddQazaState {
   bool get canReview =>
       selectedDates.isNotEmpty &&
       selectedPrayers.isNotEmpty &&
+      analysis.newCount > 0 &&
+      !prayerAvailabilityLoading &&
       !analysisLoading;
 
   AddQazaState copyWith({
     DateSelectionMode? mode,
     List<DateTime>? selectedDates,
     Set<PrayerType>? selectedPrayers,
+    Set<PrayerType>? addablePrayers,
     Map<DateTime, Set<PrayerType>>? calendarAvailability,
     bool? calendarLoading,
+    bool? prayerAvailabilityLoading,
     bool? analysisLoading,
     AddQazaAnalysis? analysis,
     Object? error,
@@ -102,9 +131,12 @@ class AddQazaState {
         mode: mode ?? this.mode,
         selectedDates: selectedDates ?? this.selectedDates,
         selectedPrayers: selectedPrayers ?? this.selectedPrayers,
+        addablePrayers: addablePrayers ?? this.addablePrayers,
         calendarAvailability:
             calendarAvailability ?? this.calendarAvailability,
         calendarLoading: calendarLoading ?? this.calendarLoading,
+        prayerAvailabilityLoading:
+            prayerAvailabilityLoading ?? this.prayerAvailabilityLoading,
         analysisLoading: analysisLoading ?? this.analysisLoading,
         analysis: analysis ?? this.analysis,
         error: clearError ? null : error ?? this.error,
@@ -120,6 +152,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   DateTime? _visibleMonth;
   bool _disposed = false;
   int _calendarRequest = 0;
+  int _prayerAvailabilityRequest = 0;
   int _analysisRequest = 0;
 
   @override
@@ -175,6 +208,14 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     if (prayer == PrayerType.witr &&
         profile != null &&
         !ProfileRules.effectiveWitr(profile)) {
+      return;
+    }
+
+    // Once dates are selected, never allow a prayer with no addable
+    // occurrence to re-enter the selection.
+    if (state.selectedDates.isNotEmpty &&
+        (state.prayerAvailabilityLoading ||
+            !state.addablePrayers.contains(prayer))) {
       return;
     }
 
@@ -336,7 +377,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
     final visible = _visibleMonth;
     if (visible != null) refreshCalendarMonth(visible);
-    _refreshAnalysis();
+    _refreshPrayerAvailability();
   }
 
   void _onCalendarSelectionChanged(CalendarSelectionState next) {
@@ -348,7 +389,67 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       selectedDates: List.unmodifiable(dates),
       clearError: true,
     );
-    _refreshAnalysis();
+    _refreshPrayerAvailability();
+  }
+
+  Future<void> _refreshPrayerAvailability() async {
+    final dates = List<DateTime>.of(state.selectedDates);
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    if (profile == null) return;
+
+    final allowed = _profileAllowedPrayers(profile).toSet();
+    if (dates.isEmpty) {
+      final selected = Set<PrayerType>.of(state.selectedPrayers)
+        ..retainAll(allowed);
+      state = state.copyWith(
+        addablePrayers: Set.unmodifiable(allowed),
+        selectedPrayers: Set.unmodifiable(selected),
+        prayerAvailabilityLoading: false,
+        analysis: AddQazaAnalysis.empty,
+        analysisLoading: false,
+      );
+      return;
+    }
+
+    final request = ++_prayerAvailabilityRequest;
+    state = state.copyWith(
+      prayerAvailabilityLoading: true,
+      analysis: AddQazaAnalysis.empty,
+      clearError: true,
+    );
+
+    try {
+      final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
+            userId: ref.read(requiredUserIdProvider),
+            dates: dates,
+            prayerTypes: allowed,
+          );
+
+      if (_disposed || request != _prayerAvailabilityRequest) return;
+
+      final addable = <PrayerType>{
+        for (final key in raw.newCandidates)
+          if (_dateAllowed(key.date, profile) &&
+              allowed.contains(key.prayerType))
+            key.prayerType,
+      };
+      final selected = Set<PrayerType>.of(state.selectedPrayers)
+        ..retainAll(addable);
+
+      state = state.copyWith(
+        addablePrayers: Set.unmodifiable(addable),
+        selectedPrayers: Set.unmodifiable(selected),
+        prayerAvailabilityLoading: false,
+      );
+
+      await refreshAnalysis();
+    } catch (error) {
+      if (_disposed || request != _prayerAvailabilityRequest) return;
+      state = state.copyWith(
+        prayerAvailabilityLoading: false,
+        error: error,
+      );
+    }
   }
 
   Future<void> _refreshAnalysis() async {
