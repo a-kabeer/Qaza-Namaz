@@ -966,13 +966,12 @@ class QazaService {
       if (page.records.isEmpty) break;
 
       for (final record in page.records) {
-        if (record.updatedAt.isBefore(cutoff) &&
-            await repository.deleteRecord(
-              userId: userId,
-              recordId: record.id,
-            )) {
-          removed++;
-        }
+        if (!record.updatedAt.isBefore(cutoff)) continue;
+        await repository.deleteRecord(
+          userId: userId,
+          recordId: record.id,
+        );
+        removed++;
       }
 
       if (!page.hasMore) break;
