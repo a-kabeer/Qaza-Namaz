@@ -151,79 +151,6 @@ class _FakeRepository implements QazaRepository {
   Future<void> resetUserRecords({required String userId}) =>
       throw UnimplementedError();
 
-  test('single completion reuses one Tartib evaluation and returns its marker', () async {
-    final records = <QazaRecord>[
-      _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
-      _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
-      _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
-      _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
-      _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
-    ];
-    final repository = _FakeRepository(records);
-    final service = QazaService(repository);
-
-    final receipt = await service.completeRecordWithReceipt(
-      userId: 'u1',
-      recordId: 'fajr',
-      completedAt: DateTime(2026, 9, 28, 11),
-    );
-
-    expect(receipt.result, QazaCompletionResult.completed);
-    expect(receipt.completionId, isNotNull);
-    expect(receipt.completionId, isNotEmpty);
-    expect(repository.progressSummaryCalls, 1);
-    expect(repository.oldestPendingCalls, 5);
-    expect(repository.pendingRecordsByIdsCalls, 1);
-  });
-
-  test('Tartib still blocks a non-required Fard with one evaluation', () async {
-    final records = <QazaRecord>[
-      _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
-      _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
-      _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
-      _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
-      _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
-    ];
-    final repository = _FakeRepository(records);
-    final service = QazaService(repository);
-
-    expect(
-      () => service.completeRecordWithReceipt(
-        userId: 'u1',
-        recordId: 'zuhr',
-        completedAt: DateTime(2026, 9, 28, 11),
-      ),
-      throwsA(isA<QazaTartibViolationException>()),
-    );
-    expect(repository.progressSummaryCalls, 1);
-    expect(repository.oldestPendingCalls, 5);
-  });
-
-  test('Witr remains independently completable while Tartib is active', () async {
-    final records = <QazaRecord>[
-      _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
-      _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
-      _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
-      _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
-      _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
-      _record(id: 'witr', prayer: PrayerType.witr, date: DateTime(2026, 9, 24)),
-    ];
-    final repository = _FakeRepository(records);
-    final service = QazaService(repository);
-
-    final receipt = await service.completeRecordWithReceipt(
-      userId: 'u1',
-      recordId: 'witr',
-      completedAt: DateTime(2026, 9, 28, 11),
-    );
-
-    expect(receipt.result, QazaCompletionResult.completed);
-    expect(receipt.completionId, isNotNull);
-    expect(repository.progressSummaryCalls, 1);
-    expect(repository.oldestPendingCalls, 5);
-  });
-
-
 }
 
 QazaRecord _record({
@@ -402,4 +329,79 @@ void main() {
       expect(state.nextPending, isNull);
     });
   });
+
+  group('QazaService completion validation', () {
+    test('single completion reuses one Tartib evaluation and returns its marker', () async {
+      final records = <QazaRecord>[
+        _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
+        _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
+        _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
+        _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
+        _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
+      ];
+      final repository = _FakeRepository(records);
+      final service = QazaService(repository);
+
+      final receipt = await service.completeRecordWithReceipt(
+        userId: 'u1',
+        recordId: 'fajr',
+        completedAt: DateTime(2026, 9, 28, 11),
+      );
+
+      expect(receipt.result, QazaCompletionResult.completed);
+      expect(receipt.completionId, isNotNull);
+      expect(receipt.completionId, isNotEmpty);
+      expect(repository.progressSummaryCalls, 1);
+      expect(repository.oldestPendingCalls, 5);
+      expect(repository.pendingRecordsByIdsCalls, 1);
+    });
+
+    test('Tartib still blocks a non-required Fard with one evaluation', () async {
+      final records = <QazaRecord>[
+        _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
+        _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
+        _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
+        _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
+        _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
+      ];
+      final repository = _FakeRepository(records);
+      final service = QazaService(repository);
+
+      expect(
+        () => service.completeRecordWithReceipt(
+          userId: 'u1',
+          recordId: 'zuhr',
+          completedAt: DateTime(2026, 9, 28, 11),
+        ),
+        throwsA(isA<QazaTartibViolationException>()),
+      );
+      expect(repository.progressSummaryCalls, 1);
+      expect(repository.oldestPendingCalls, 5);
+    });
+
+    test('Witr remains independently completable while Tartib is active', () async {
+      final records = <QazaRecord>[
+        _record(id: 'fajr', prayer: PrayerType.fajr, date: DateTime(2026, 9, 20)),
+        _record(id: 'zuhr', prayer: PrayerType.zuhr, date: DateTime(2026, 9, 21)),
+        _record(id: 'asr', prayer: PrayerType.asr, date: DateTime(2026, 9, 22)),
+        _record(id: 'maghrib', prayer: PrayerType.maghrib, date: DateTime(2026, 9, 23)),
+        _record(id: 'isha', prayer: PrayerType.isha, date: DateTime(2026, 9, 24)),
+        _record(id: 'witr', prayer: PrayerType.witr, date: DateTime(2026, 9, 24)),
+      ];
+      final repository = _FakeRepository(records);
+      final service = QazaService(repository);
+
+      final receipt = await service.completeRecordWithReceipt(
+        userId: 'u1',
+        recordId: 'witr',
+        completedAt: DateTime(2026, 9, 28, 11),
+      );
+
+      expect(receipt.result, QazaCompletionResult.completed);
+      expect(receipt.completionId, isNotNull);
+      expect(repository.progressSummaryCalls, 1);
+      expect(repository.oldestPendingCalls, 5);
+    });
+  });
+
 }
