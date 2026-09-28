@@ -21,16 +21,11 @@ class RestrictedTimeWindow {
 
   /// Canonical timeline instant for displaying the restricted event.
   ///
-  /// Sunrise begins at sunrise, Zawal is centered on astronomical solar noon,
-  /// and sunset ends at sunset.
+  /// Sunrise and Zawal use the start of their existing restricted interval;
+  /// Sunset uses the interval end, matching sunset/Maghrib.
   tz.TZDateTime get displayAt => switch (type) {
         RestrictedTimeType.sunrise => startsAt,
-        RestrictedTimeType.zawal => startsAt.add(
-            Duration(
-              microseconds:
-                  endsAt.difference(startsAt).inMicroseconds ~/ 2,
-            ),
-          ),
+        RestrictedTimeType.zawal => startsAt,
         RestrictedTimeType.sunset => endsAt,
       };
 
