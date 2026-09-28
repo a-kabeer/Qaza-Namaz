@@ -9,3 +9,18 @@ enum QazaCompletionResult {
   notFound,
   blockedByRestrictedTime,
 }
+
+
+/// Persistence receipt for a completed Qaza.
+///
+/// Carries the exact completion marker generated for the durable write so
+/// callers can register Undo without a second record lookup.
+class QazaCompletionReceipt {
+  const QazaCompletionReceipt({
+    required this.result,
+    this.completionId,
+  });
+
+  final QazaCompletionResult result;
+  final String? completionId;
+}
