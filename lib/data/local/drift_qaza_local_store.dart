@@ -480,11 +480,13 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    String? completionId,
   }) =>
       _database.qazaRecordsDao.completeByIds(
         userId: userId,
         ids: recordIds,
         completedAt: completedAt,
+        completionId: completionId,
       );
 
   @override

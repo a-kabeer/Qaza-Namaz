@@ -43,11 +43,11 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     final completedAt = DateTime.now();
     final diagnostics = ref.read(diagnosticsProvider);
 
-    QazaCompletionResult result;
+    QazaCompletionReceipt receipt;
     try {
-      result = await ref
+      receipt = await ref
           .read(qazaCompletionControllerProvider.notifier)
-          .completeRecord(
+          .completeRecordWithReceipt(
             userId: userId,
             recordId: record.id,
             completedAt: completedAt,
@@ -75,6 +75,8 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
           );
       return;
     }
+
+    final result = receipt.result;
 
     if (result == QazaCompletionResult.blockedByRestrictedTime) {
       return;
@@ -120,26 +122,19 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     HapticFeedback.mediumImpact();
 
     try {
-      final completedRecords =
-          await ref.read(qazaServiceProvider).getRecordsByIds(
-        userId: userId,
-        recordIds: [record.id],
-      );
-      final completedRecord = completedRecords
-          .where(
-            (candidate) =>
-                candidate.id == record.id &&
-                candidate.status == QazaStatus.completed &&
-                candidate.completionId != null &&
-                candidate.completionId!.isNotEmpty,
-          )
-          .firstOrNull;
-
-      if (completedRecord == null) {
+      final completionId = receipt.completionId;
+      if (completionId == null || completionId.isEmpty) {
         throw StateError(
           'Completed Qaza record is missing its completion marker.',
         );
       }
+
+      final completedRecord = record.copyWith(
+        status: QazaStatus.completed,
+        completedAt: completedAt,
+        completionId: completionId,
+        updatedAt: completedAt,
+      );
 
       if (!mounted) return;
 
@@ -165,10 +160,51 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final selection = ref.watch(homePrayerSelectionProvider);
+    final showTodayProgress =
+        selection.mode == HomePrayerSelectionMode.autoSequence;
     final working = ref.watch(qazaCompletionControllerProvider).isWorking;
-    final daily = ref.watch(homeDailyProgressProvider);
     final selected = ref.watch(homeSelectedPrayerProvider);
+
+    return Card(
+      key: const Key('home_today_progress'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: showTodayProgress
+            ? _TodayProgressSection(
+                summary: widget.summary,
+                selected: selected,
+                working: working,
+                onComplete: _complete,
+              )
+            : _NextQazaPanel(
+                summary: widget.summary,
+                selected: selected,
+                working: working,
+                onComplete: _complete,
+              ),
+      ),
+    );
+  }
+}
+
+class _TodayProgressSection extends ConsumerWidget {
+  const _TodayProgressSection({
+    required this.summary,
+    required this.selected,
+    required this.working,
+    required this.onComplete,
+  });
+
+  final QazaProgressSummary summary;
+  final HomeSelectedPrayerState selected;
+  final bool working;
+  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final daily = ref.watch(homeDailyProgressProvider);
     final today = ref.watch(homeLocalDateProvider);
 
     ref.listen<AsyncValue<HomeDailyProgress>>(
@@ -184,141 +220,132 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
       },
     );
 
-    return Card(
-      key: const Key('home_today_progress'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: daily.when(
-          loading: () => const HomeTodayProgressSkeleton(),
-          error: (_, __) => Row(
-            children: [
-              const Icon(Icons.refresh_rounded),
-              const SizedBox(width: 12),
-              Expanded(child: Text(l10n.homeDailyProgressError)),
-              TextButton(
-                key: const Key('home_daily_progress_retry'),
-                onPressed: () => ref.invalidate(homeDailyProgressProvider),
-                child: Text(l10n.commonRetry),
+    return daily.when(
+      loading: () => const HomeTodayProgressSkeleton(),
+      error: (_, __) => Row(
+        children: [
+          const Icon(Icons.refresh_rounded),
+          const SizedBox(width: 12),
+          Expanded(child: Text(l10n.homeDailyProgressError)),
+          TextButton(
+            key: const Key('home_daily_progress_retry'),
+            onPressed: () => ref.invalidate(homeDailyProgressProvider),
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
+      data: (progress) {
+        final next = _NextQazaPanel(
+          summary: summary,
+          selected: selected,
+          working: working,
+          onComplete: onComplete,
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final title = Text(
+                  l10n.homeTodayProgressHeader,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                );
+                final date = Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      MaterialLocalizations.of(context).formatFullDate(today),
+                      key: const Key('home_today_date'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      l10n.formatHijriDate(today),
+                      key: const Key('home_today_date_hijri'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                );
+                if (constraints.maxWidth < 360) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      title,
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: date,
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: title),
+                    const SizedBox(width: 12),
+                    date,
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final donut = _TodayDonut(
+                  progress: progress.percentage,
+                  completed: progress.completed,
+                  target: progress.target,
+                );
+
+                if (constraints.maxWidth < 500) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(child: donut),
+                      const SizedBox(height: 18),
+                      next,
+                    ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 190, child: Center(child: donut)),
+                    const SizedBox(width: 18),
+                    Container(
+                      width: 1,
+                      height: 128,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(child: next),
+                  ],
+                );
+              },
+            ),
+            if (summary.overall.pending > 0) ...[
+              const SizedBox(height: 16),
+              _EstimatedCompletion(
+                date: homeEstimatedCompletionDate(
+                  now: today,
+                  pending: summary.overall.pending,
+                  dailyTarget: progress.target,
+                  completedToday: progress.completed,
+                ),
+                dailyTarget: progress.target,
               ),
             ],
-          ),
-          data: (progress) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final title = Text(
-                      l10n.homeTodayProgressHeader,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    );
-                    // Gregorian leads and carries the weekday, month and year,
-                    // localized by Material so Urdu reads as Urdu rather than
-                    // English month names in an Urdu sentence. The Hijri
-                    // reading of the same day sits underneath as secondary.
-                    final date = Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          MaterialLocalizations.of(context).formatFullDate(today),
-                          key: const Key('home_today_date'),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        Text(
-                          l10n.formatHijriDate(today),
-                          key: const Key('home_today_date_hijri'),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    );
-                    if (constraints.maxWidth < 360) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          title,
-                          const SizedBox(height: 4),
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: date,
-                          ),
-                        ],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        Expanded(child: title),
-                        const SizedBox(width: 12),
-                        date,
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 14),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final donut = _TodayDonut(
-                      progress: progress.percentage,
-                      completed: progress.completed,
-                      target: progress.target,
-                    );
-                    final next = _NextQazaPanel(
-                      summary: widget.summary,
-                      selected: selected,
-                      working: working,
-                      onComplete: _complete,
-                    );
-  
-                    if (constraints.maxWidth < 500) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Center(child: donut),
-                          const SizedBox(height: 18),
-                          next,
-                        ],
-                      );
-                    }
-  
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(width: 190, child: Center(child: donut)),
-                        const SizedBox(width: 18),
-                        Container(
-                          width: 1,
-                          height: 128,
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(child: next),
-                      ],
-                    );
-                  },
-                ),
-                if (widget.summary.overall.pending > 0) ...[
-                  const SizedBox(height: 16),
-                  _EstimatedCompletion(
-                    date: homeEstimatedCompletionDate(
-                      now: today,
-                      pending: widget.summary.overall.pending,
-                      dailyTarget: progress.target,
-                      completedToday: progress.completed,
-                    ),
-                    dailyTarget: progress.target,
-                  ),
-                ],
-              ],
-            );
-          },
-        )
-      )
+          ],
+        );
+      },
     );
   }
 }

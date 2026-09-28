@@ -169,6 +169,10 @@ abstract interface class QazaRepository {
     required String userId,
     required String recordId,
     required DateTime completedAt,
+
+    /// Exact completion marker to persist for a single-record completion.
+    /// Bulk callers leave this null so each record receives its own marker.
+    String? completionId,
   });
 
   Future<void> completeRecords({

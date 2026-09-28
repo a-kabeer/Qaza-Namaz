@@ -194,15 +194,17 @@ class SahibAlTartibService {
     required Iterable<String> recordIds,
     DateTime? currentDate,
     PrayerType? currentPrayer,
+    SahibAlTartibState? evaluatedState,
   }) async {
     final ids = recordIds.toSet();
     if (ids.isEmpty) return true;
 
-    final state = await evaluate(
-      userId: userId,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
-    );
+    final state = evaluatedState ??
+        await evaluate(
+          userId: userId,
+          currentDate: currentDate,
+          currentPrayer: currentPrayer,
+        );
     if (!state.requiresOrder || state.nextPending == null) return true;
 
     final witrIds = await _findPendingWitrIds(

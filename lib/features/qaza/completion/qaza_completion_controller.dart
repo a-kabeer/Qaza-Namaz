@@ -11,7 +11,7 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
   @override
   QazaCompletionState build() => const QazaCompletionState();
 
-  Future<QazaCompletionResult> completeRecord({
+  Future<QazaCompletionReceipt> completeRecordWithReceipt({
     required String userId,
     required String recordId,
     required DateTime completedAt,
@@ -20,32 +20,46 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
       throw StateError('Qaza completion is already in progress.');
     }
     if (ref.read(qazaCompletionRestrictedProvider)) {
-      return QazaCompletionResult.blockedByRestrictedTime;
+      return const QazaCompletionReceipt(
+        result: QazaCompletionResult.blockedByRestrictedTime,
+      );
     }
 
     final diagnostics = ref.read(diagnosticsProvider);
-    // Recorded before anything can fail, so a report that stops here tells
-    // you the attempt was made and where it stopped.
     diagnostics.recordEvent(DiagnosticArea.qazaCompletion, 'completion_start');
 
     state = state.copyWith(isWorking: true);
     try {
-      final result =
-          await ref.read(qazaCompletionServiceProvider).completeRecord(
-                userId: userId,
-                recordId: recordId,
-                completedAt: completedAt,
-              );
-      if (result == QazaCompletionResult.completed) {
+      final receipt = await ref
+          .read(qazaCompletionServiceProvider)
+          .completeRecordWithReceipt(
+            userId: userId,
+            recordId: recordId,
+            completedAt: completedAt,
+          );
+      if (receipt.result == QazaCompletionResult.completed) {
         diagnostics.recordEvent(
           DiagnosticArea.qazaCompletion,
           'completion_succeeded',
         );
       }
-      return result;
+      return receipt;
     } finally {
       state = state.copyWith(isWorking: false);
     }
+  }
+
+  Future<QazaCompletionResult> completeRecord({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    final receipt = await completeRecordWithReceipt(
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+    );
+    return receipt.result;
   }
 }
 

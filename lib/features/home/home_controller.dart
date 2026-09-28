@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import 'providers/home_providers.dart';
+import 'home_state.dart';
 
 class HomeController {
   const HomeController(this.ref);
@@ -30,10 +31,13 @@ class HomeController {
       'home_summary_refresh_failed',
     );
 
-    await _refreshOptional(
-      homeDailyProgressProvider,
-      'home_daily_progress_refresh_failed',
-    );
+    final homeMode = ref.read(homePrayerSelectionProvider).mode;
+    if (homeMode == HomePrayerSelectionMode.autoSequence) {
+      await _refreshOptional(
+        homeDailyProgressProvider,
+        'home_daily_progress_refresh_failed',
+      );
+    }
     await _refreshOptional(
       sahibAlTartibProvider,
       'home_sahib_al_tartib_refresh_failed',

@@ -272,6 +272,7 @@ class OfflineFirstQazaRepository
     required String userId,
     required String recordId,
     required DateTime completedAt,
+    String? completionId,
   }) async {
     _validateActive(userId);
     if (recordId.isEmpty) return QazaCompletionResult.notFound;
@@ -280,6 +281,7 @@ class OfflineFirstQazaRepository
       userId: userId,
       recordIds: [recordId],
       completedAt: completedAt,
+      completionId: completionId,
     );
 
     if (changed.isNotEmpty) {

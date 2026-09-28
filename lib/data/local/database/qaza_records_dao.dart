@@ -662,8 +662,14 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     required String userId,
     required List<String> ids,
     required DateTime completedAt,
+    String? completionId,
   }) async {
     if (ids.isEmpty) return const <String>[];
+    if (completionId != null && ids.length != 1) {
+      throw ArgumentError(
+        'A single completion marker can only be used for one record.',
+      );
+    }
     return transaction(() async {
       final changed = <String>[];
       for (final id in ids) {
@@ -694,7 +700,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
-          completionId: Value(newQazaCompletionId()),
+          completionId: Value(completionId ?? newQazaCompletionId()),
           updatedAt: Value(completedAt),
         ));
         if (updated > 0) changed.add(id);

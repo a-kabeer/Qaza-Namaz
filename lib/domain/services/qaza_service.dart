@@ -191,6 +191,7 @@ class QazaService {
         recordIds: [recordId],
         currentDate: currentDate,
         currentPrayer: currentPrayer,
+        evaluatedState: state,
       );
     } catch (error, stack) {
       // The ordering rule could not be read. That is not a violation and not
@@ -428,16 +429,41 @@ class QazaService {
     DateTime? currentDate,
     PrayerType? currentPrayer,
   }) async {
+    final receipt = await completeRecordWithReceipt(
+      userId: userId,
+      recordId: recordId,
+      completedAt: completedAt,
+      currentDate: currentDate,
+      currentPrayer: currentPrayer,
+    );
+    return receipt.result;
+  }
+
+  /// Completes one record and returns the exact marker persisted for it.
+  Future<QazaCompletionReceipt> completeRecordWithReceipt({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
+  }) async {
+    final completionId = newQazaCompletionId();
     await _ensureCompletionAllowed(
       userId: userId,
       recordId: recordId,
       currentDate: currentDate,
       currentPrayer: currentPrayer,
     );
-    return repository.completeRecord(
+    final result = await repository.completeRecord(
       userId: userId,
       recordId: recordId,
       completedAt: completedAt,
+      completionId: completionId,
+    );
+    return QazaCompletionReceipt(
+      result: result,
+      completionId:
+          result == QazaCompletionResult.completed ? completionId : null,
     );
   }
 
@@ -460,6 +486,7 @@ class QazaService {
           recordIds: recordIds,
           currentDate: currentDate,
           currentPrayer: currentPrayer,
+          evaluatedState: state,
         ))) {
       throw QazaTartibViolationException(
         requiredPrayer: state.nextPrayer!,

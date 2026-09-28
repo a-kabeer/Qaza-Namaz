@@ -596,7 +596,13 @@ abstract class QazaLocalStore {
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    String? completionId,
   }) async {
+    if (completionId != null && recordIds.length != 1) {
+      throw ArgumentError(
+        'A single completion marker can only be used for one record.',
+      );
+    }
     final snapshot = await load();
     final records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
@@ -613,7 +619,7 @@ abstract class QazaLocalStore {
       records[index] = record.copyWith(
           status: QazaStatus.completed,
           completedAt: completedAt,
-          completionId: newQazaCompletionId(),
+          completionId: completionId ?? newQazaCompletionId(),
           updatedAt: completedAt);
       changed.add(record.id);
     }
