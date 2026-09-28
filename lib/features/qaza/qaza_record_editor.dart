@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
@@ -19,16 +21,16 @@ Future<QazaRecord?> showQazaRecordEditor(
       builder: (_) => _QazaRecordEditor(record: record),
     );
 
-class _QazaRecordEditor extends StatefulWidget {
+class _QazaRecordEditor extends ConsumerStatefulWidget {
   const _QazaRecordEditor({required this.record});
 
   final QazaRecord record;
 
   @override
-  State<_QazaRecordEditor> createState() => _QazaRecordEditorState();
+  ConsumerState<_QazaRecordEditor> createState() => _QazaRecordEditorState();
 }
 
-class _QazaRecordEditorState extends State<_QazaRecordEditor> {
+class _QazaRecordEditorState extends ConsumerState<_QazaRecordEditor> {
   late PrayerType _prayerType = widget.record.prayerType;
   late DateTime _originalDate = QazaDate.normalize(widget.record.originalDate);
 
@@ -49,6 +51,7 @@ class _QazaRecordEditorState extends State<_QazaRecordEditor> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -73,7 +76,7 @@ class _QazaRecordEditorState extends State<_QazaRecordEditor> {
               labelText: l10n.qazaEditPrayer,
             ),
             items: [
-              for (final prayer in PrayerType.values)
+              for (final prayer in enabledPrayers)
                 DropdownMenuItem(
                   value: prayer,
                   child: Text(prayer.localizedLabel(l10n)),
