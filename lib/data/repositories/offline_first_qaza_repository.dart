@@ -73,6 +73,7 @@ class OfflineFirstQazaRepository
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
     DateTime? from,
     DateTime? to,
@@ -140,6 +141,7 @@ class OfflineFirstQazaRepository
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status = QazaStatus.completed,
     DateTime? from,
     DateTime? to,
@@ -482,6 +484,7 @@ class OfflineFirstQazaRepository
     required bool matchLastAction,
     required DateTime operationAt,
     QazaStatus? status,
+    Iterable<PrayerType>? prayerTypes,
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
@@ -504,11 +507,13 @@ class OfflineFirstQazaRepository
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
+    Iterable<PrayerType>? prayerTypes,
   }) {
     _validateActive(userId);
     return _localStore.getOperationSummary(
       userId: userId,
       operationId: operationId,
+      prayerTypes: prayerTypes,
     );
   }
 
@@ -516,6 +521,7 @@ class OfflineFirstQazaRepository
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
+    Iterable<PrayerType>? prayerTypes,
     DateTime? beforeDeletedAt,
     String? beforeId,
   }) async {
