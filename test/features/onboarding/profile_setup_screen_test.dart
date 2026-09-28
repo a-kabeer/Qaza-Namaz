@@ -263,7 +263,7 @@ void main() {
               (ref) async => QazaProgressSummary.empty(),
             ),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             locale: const Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -303,7 +303,7 @@ void main() {
           overrides: [
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             locale: const Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
