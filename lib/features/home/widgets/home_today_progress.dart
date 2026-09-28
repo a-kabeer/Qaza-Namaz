@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +6,6 @@ import '../../../app/providers.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
