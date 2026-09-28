@@ -12,7 +12,7 @@ import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'location_selector.dart';
-import 'restricted_times_status.dart';
+import 'prayer_timeline_row.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
@@ -249,11 +249,14 @@ class _PrayerTimeContent extends ConsumerWidget {
     return intl.DateFormat.jm(locale).format(local);
   }
 
-  PrayerSlot? _restrictionRow(RestrictedTimeType? type) => switch (type) {
-        null => null,
-        RestrictedTimeType.sunrise => PrayerSlot.sunrise,
-        RestrictedTimeType.zawal => null,
-        RestrictedTimeType.sunset => PrayerSlot.maghrib,
+  String _restrictedLabel(
+    AppLocalizations l10n,
+    RestrictedTimeType type,
+  ) =>
+      switch (type) {
+        RestrictedTimeType.sunrise => l10n.prayerTimeSunrise,
+        RestrictedTimeType.zawal => l10n.prayerTimeZawal,
+        RestrictedTimeType.sunset => l10n.prayerTimeSunset,
       };
 
   String _prayerLabel(AppLocalizations l10n, PrayerSlot prayer) =>
@@ -295,7 +298,55 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextRemaining = nextAt?.difference(localNow);
     final countdownPrayer = currentPrayer ?? nextPrayer;
     final activeRestriction = restricted?.active;
-    final restrictedPrayer = _restrictionRow(activeRestriction?.type);
+    final restrictedRemaining = activeRestriction == null
+        ? null
+        : restricted?.remainingAt(localNow);
+
+    final timeline = <_PrayerTimelineItem>[];
+
+    for (final prayer in PrayerSlot.values) {
+      final prayerTimeUtc = contentSchedule.utcFor(prayer);
+      final isActiveRestrictedSunrise =
+          activeRestriction?.type == RestrictedTimeType.sunrise &&
+          prayer == PrayerSlot.sunrise;
+      final active = activeRestriction != null
+          ? isActiveRestrictedSunrise
+          : prayer == currentPrayer;
+      final countdown = activeRestriction != null
+          ? isActiveRestrictedSunrise && restrictedRemaining != null
+              ? DateFormatters.formatDurationHhMmSs(restrictedRemaining)
+              : null
+          : prayer == countdownPrayer && nextRemaining != null
+              ? DateFormatters.formatDurationHhMmSs(nextRemaining)
+              : null;
+
+      timeline.add(
+        _PrayerTimelineItem(
+          at: prayerTimeUtc,
+          name: _prayerLabel(l10n, prayer),
+          time: _formatTime(context, prayerTimeUtc, snapshot),
+          active: active,
+          countdown: countdown,
+        ),
+      );
+    }
+
+    if (activeRestriction != null &&
+        activeRestriction.type != RestrictedTimeType.sunrise &&
+        restrictedRemaining != null) {
+      final displayAt = activeRestriction.displayAt;
+      timeline.add(
+        _PrayerTimelineItem(
+          at: displayAt.toUtc(),
+          name: _restrictedLabel(l10n, activeRestriction.type),
+          time: _formatTime(context, displayAt.toUtc(), snapshot),
+          active: true,
+          countdown: DateFormatters.formatDurationHhMmSs(restrictedRemaining),
+        ),
+      );
+    }
+
+    timeline.sort((a, b) => a.at.compareTo(b.at));
 
     return RefreshIndicator(
       onRefresh: () =>
@@ -311,25 +362,16 @@ class _PrayerTimeContent extends ConsumerWidget {
             hijri: l10n.formatHijriDate(displayDate),
           ),
           const SizedBox(height: 12),
-          const SizedBox(height: 8),
-          for (final prayer in PrayerSlot.values) ...[
-            _PrayerTimeRow(
-              name: _prayerLabel(l10n, prayer),
-              time: _formatTime(
-                context,
-                contentSchedule.utcFor(prayer),
-                snapshot,
-              ),
-              active: prayer == currentPrayer || prayer == restrictedPrayer,
-              countdown: prayer == countdownPrayer && nextRemaining != null
-                  ? DateFormatters.formatDurationHhMmSs(nextRemaining)
-                  : null,
+          for (var i = 0; i < timeline.length; i++) ...[
+            PrayerTimelineRow(
+              key: Key('prayer_timeline_row_$i'),
+              name: timeline[i].name,
+              time: timeline[i].time,
+              countdown: timeline[i].countdown,
+              active: timeline[i].active,
             ),
-            if (prayer != PrayerSlot.values.last)
-              const SizedBox(height: 8),
+            if (i != timeline.length - 1) const SizedBox(height: 8),
           ],
-          const SizedBox(height: 12),
-          const RestrictedTimesStatusCard(showUpcomingWhenInactive: true),
           const SizedBox(height: 8),
           Text(
             '${l10n.prayerTimeUpdated}: '
@@ -341,6 +383,22 @@ class _PrayerTimeContent extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _PrayerTimelineItem {
+  const _PrayerTimelineItem({
+    required this.at,
+    required this.name,
+    required this.time,
+    required this.active,
+    required this.countdown,
+  });
+
+  final DateTime at;
+  final String name;
+  final String time;
+  final bool active;
+  final String? countdown;
 }
 
 class _DateHeader extends StatelessWidget {
@@ -372,63 +430,3 @@ class _DateHeader extends StatelessWidget {
   }
 }
 
-class _PrayerTimeRow extends StatelessWidget {
-  const _PrayerTimeRow({
-    required this.name,
-    required this.time,
-    required this.active,
-    this.countdown,
-  });
-
-  final String name;
-  final String time;
-  final bool active;
-  final String? countdown;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: active ? scheme.primaryContainer : null,
-      child: ListTile(
-        leading: Icon(
-          active
-              ? Icons.radio_button_checked_rounded
-              : Icons.schedule_outlined,
-          color: active ? scheme.onPrimaryContainer : null,
-        ),
-        title: Text(
-          name,
-          style: active
-              ? Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onPrimaryContainer,
-                  )
-              : null,
-        ),
-        trailing: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              time,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: active ? scheme.onPrimaryContainer : null,
-                  ),
-            ),
-            if (countdown != null)
-              Text(
-                countdown!,
-                key: const Key('prayer_time_countdown'),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: active ? scheme.onPrimaryContainer : null,
-                    ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
