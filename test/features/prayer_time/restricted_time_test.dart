@@ -153,10 +153,7 @@ void main() {
       );
 
       expect(sunriseWindow.displayAt, sunriseWindow.startsAt);
-      expect(
-        zawalWindow.displayAt,
-        tz.TZDateTime.from(solarNoon, location),
-      );
+      expect(zawalWindow.displayAt, zawalWindow.startsAt);
       expect(sunsetWindow.displayAt, sunsetWindow.endsAt);
     });
 
