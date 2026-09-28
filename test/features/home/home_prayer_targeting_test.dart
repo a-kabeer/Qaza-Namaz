@@ -214,4 +214,16 @@ void main() {
       expect(PrayerSlot.sunrise.qazaPrayerType, isNull);
     });
   });
+
+    test('Qaza sequence skips Witr when Witr is disabled', () {
+      expect(
+        PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+      expect(
+        PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+    });
+
 }
