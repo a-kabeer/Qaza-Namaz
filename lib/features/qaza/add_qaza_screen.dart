@@ -87,6 +87,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             const SizedBox(height: AppSpacing.md),
             _PrayerSelection(
               selected: state.selectedPrayers,
+              addablePrayers: state.addablePrayers,
+              availabilityLoading: state.prayerAvailabilityLoading,
+              hasSelectedDates: state.selectedDates.isNotEmpty,
               witrAllowed: ProfileRules.effectiveWitr(profile),
               onToggle: (prayer) => ref
                   .read(addQazaControllerProvider.notifier)
@@ -95,7 +98,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             const SizedBox(height: AppSpacing.md),
             _AnalysisSummary(
               analysis: state.analysis,
-              selectedPrayers: state.selectedPrayers,
               loading: state.analysisLoading,
             ),
             if (state.error != null) ...[
@@ -315,11 +317,17 @@ class _ModeSelector extends StatelessWidget {
 class _PrayerSelection extends StatelessWidget {
   const _PrayerSelection({
     required this.selected,
+    required this.addablePrayers,
+    required this.availabilityLoading,
+    required this.hasSelectedDates,
     required this.witrAllowed,
     required this.onToggle,
   });
 
   final Set<PrayerType> selected;
+  final Set<PrayerType> addablePrayers;
+  final bool availabilityLoading;
+  final bool hasSelectedDates;
   final bool witrAllowed;
   final ValueChanged<PrayerType> onToggle;
 
@@ -341,8 +349,23 @@ class _PrayerSelection extends StatelessWidget {
             PrayerSelectionGrid(
               selected: selected,
               witrAllowed: witrAllowed,
+              disabledPrayers: availabilityLoading || !hasSelectedDates
+                  ? const <PrayerType>{}
+                  : PrayerType.values
+                      .where(
+                        (prayer) =>
+                            prayer != PrayerType.witr &&
+                            !addablePrayers.contains(prayer),
+                      )
+                      .toSet(),
+              disabledReasonBuilder: (prayer) =>
+                  l10n.addQazaAlreadyAddedLabel,
               onPrayerSelected: onToggle,
             ),
+            if (availabilityLoading) ...[
+              const SizedBox(height: AppSpacing.sm),
+              const LinearProgressIndicator(minHeight: 2),
+            ],
           ],
         ),
       ),
@@ -564,20 +587,18 @@ class _SelectionSummary extends StatelessWidget {
 class _AnalysisSummary extends StatelessWidget {
   const _AnalysisSummary({
     required this.analysis,
-    required this.selectedPrayers,
     required this.loading,
   });
 
   final AddQazaAnalysis analysis;
-  final Set<PrayerType> selectedPrayers;
   final bool loading;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final prayers = PrayerType.values
-        .where(selectedPrayers.contains)
-        .toList(growable: false);
+    // Keep all six prayers visible so a zero count clearly communicates
+    // that the prayer is not part of the current addable selection.
+    final prayers = PrayerType.values.toList(growable: false);
 
     return Card(
       child: Padding(
@@ -619,10 +640,6 @@ class _AnalysisSummary extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.xs,
               children: [
-                _CompactStatusCount(
-                  label: l10n.commonTotal,
-                  count: analysis.total,
-                ),
                 _CompactStatusCount(
                   label: l10n.addQazaNewLabel,
                   count: analysis.newCount,
@@ -826,9 +843,6 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
               const SizedBox(height: AppSpacing.md),
               _AnalysisSummary(
                 analysis: _analysis,
-                selectedPrayers: {
-                  for (final item in _analysis.items) item.key.prayerType,
-                },
                 loading: _busy,
               ),
               const SizedBox(height: AppSpacing.sm),
