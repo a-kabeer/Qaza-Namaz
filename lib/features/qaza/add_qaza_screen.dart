@@ -89,6 +89,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               selected: state.selectedPrayers,
               addablePrayers: state.addablePrayers,
               availabilityLoading: state.prayerAvailabilityLoading,
+              hasSelectedDates: state.selectedDates.isNotEmpty,
               witrAllowed: ProfileRules.effectiveWitr(profile),
               onToggle: (prayer) => ref
                   .read(addQazaControllerProvider.notifier)
@@ -318,6 +319,7 @@ class _PrayerSelection extends StatelessWidget {
     required this.selected,
     required this.addablePrayers,
     required this.availabilityLoading,
+    required this.hasSelectedDates,
     required this.witrAllowed,
     required this.onToggle,
   });
@@ -325,6 +327,7 @@ class _PrayerSelection extends StatelessWidget {
   final Set<PrayerType> selected;
   final Set<PrayerType> addablePrayers;
   final bool availabilityLoading;
+  final bool hasSelectedDates;
   final bool witrAllowed;
   final ValueChanged<PrayerType> onToggle;
 
@@ -346,10 +349,14 @@ class _PrayerSelection extends StatelessWidget {
             PrayerSelectionGrid(
               selected: selected,
               witrAllowed: witrAllowed,
-              disabledPrayers: availabilityLoading
+              disabledPrayers: availabilityLoading || !hasSelectedDates
                   ? const <PrayerType>{}
                   : PrayerType.values
-                      .where((prayer) => !addablePrayers.contains(prayer))
+                      .where(
+                        (prayer) =>
+                            prayer != PrayerType.witr &&
+                            !addablePrayers.contains(prayer),
+                      )
                       .toSet(),
               disabledReasonBuilder: (prayer) =>
                   l10n.addQazaAlreadyAddedLabel,
