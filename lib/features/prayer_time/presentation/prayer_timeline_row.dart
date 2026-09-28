@@ -109,6 +109,12 @@ class RestrictedTimeTimelineRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Reuse the existing completion gate before subscribing directly to the
+    // clock/state. Screens that already override this gate remain timer-free
+    // when restricted time is known to be inactive.
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
+    if (!restricted) return const SizedBox.shrink();
+
     final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
     final state = ref.watch(restrictedTimeStateProvider);
     final now = ref.watch(prayerTimeClockProvider).valueOrNull;
