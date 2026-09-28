@@ -327,6 +327,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           time: _formatTime(context, prayerTimeUtc, snapshot),
           active: active,
           countdown: countdown,
+          isRestricted: false,
         ),
       );
     }
@@ -342,11 +343,17 @@ class _PrayerTimeContent extends ConsumerWidget {
           time: _formatTime(context, displayAt.toUtc(), snapshot),
           active: true,
           countdown: DateFormatters.formatDurationHhMmSs(restrictedRemaining),
+          isRestricted: true,
         ),
       );
     }
 
-    timeline.sort((a, b) => a.at.compareTo(b.at));
+    timeline.sort((a, b) {
+      final byTime = a.at.compareTo(b.at);
+      if (byTime != 0) return byTime;
+      if (a.isRestricted == b.isRestricted) return 0;
+      return a.isRestricted ? -1 : 1;
+    });
 
     return RefreshIndicator(
       onRefresh: () =>
@@ -392,6 +399,7 @@ class _PrayerTimelineItem {
     required this.time,
     required this.active,
     required this.countdown,
+    required this.isRestricted,
   });
 
   final DateTime at;
@@ -399,6 +407,7 @@ class _PrayerTimelineItem {
   final String time;
   final bool active;
   final String? countdown;
+  final bool isRestricted;
 }
 
 class _DateHeader extends StatelessWidget {
