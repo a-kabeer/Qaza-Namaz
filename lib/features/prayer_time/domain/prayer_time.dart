@@ -1,7 +1,7 @@
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
-import 'prayer_location.dart';
+import '../../../domain/entities/user_profile.dart';\nimport 'prayer_location.dart';
 import 'prayer_settings.dart';
 
 enum PrayerSlot {
@@ -112,31 +112,26 @@ class PrayerTimeSnapshot {
     required this.settings,
     required this.today,
     required this.tomorrow,
-    required this.updatedAt,
-  });
+    required this.updatedAt,\n    this.calculationMadhab,\n  });
 
   final PrayerLocation location;
   final PrayerSettings settings;
   final PrayerSchedule today;
   final PrayerSchedule tomorrow;
-  final DateTime updatedAt;
-
+  final DateTime updatedAt;\n\n  /// Cache metadata only; the Profile remains the runtime source of truth.\n  /// Null means an older snapshot that must be recalculated.\n  final Madhab? calculationMadhab;\n
   Map<String, dynamic> toJson() => {
         'location': location.toJson(),
-        'settings': settings.toJson(),
-        'today': today.toJson(),
+        'settings': settings.toJson(),\n        'calculationMadhab': calculationMadhab?.name,\n        'today': today.toJson(),
         'tomorrow': tomorrow.toJson(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
 
   static PrayerTimeSnapshot? fromJson(Map<String, dynamic> json) {
     final locationRaw = json['location'];
-    final settingsRaw = json['settings'];
-    final todayRaw = json['today'];
+    final settingsRaw = json['settings'];\n    final todayRaw = json['today'];
     final tomorrowRaw = json['tomorrow'];
     final updatedRaw = json['updatedAt'];
     if (locationRaw is! Map ||
-        settingsRaw is! Map ||
         todayRaw is! Map ||
         tomorrowRaw is! Map ||
         updatedRaw is! String) {
@@ -145,17 +140,14 @@ class PrayerTimeSnapshot {
     final location = PrayerLocation.fromJson(
       Map<String, dynamic>.from(locationRaw),
     );
-    final settings = PrayerSettings.fromJson(
-      Map<String, dynamic>.from(settingsRaw),
-    );
+    final settings = settingsRaw is Map\n        ? PrayerSettings.fromJson(Map<String, dynamic>.from(settingsRaw))\n        : const PrayerSettings();
     final today = PrayerSchedule.fromJson(
       Map<String, dynamic>.from(todayRaw),
     );
     final tomorrow = PrayerSchedule.fromJson(
       Map<String, dynamic>.from(tomorrowRaw),
     );
-    final updatedAt = DateTime.tryParse(updatedRaw);
-    if (location == null ||
+    final updatedAt = DateTime.tryParse(updatedRaw);\n    final calculationMadhabName = json['calculationMadhab'];\n    final calculationMadhab = calculationMadhabName is String\n        ? Madhab.values.where((value) => value.name == calculationMadhabName).firstOrNull\n        : null;\n    if (location == null ||
         today == null ||
         tomorrow == null ||
         updatedAt == null) {
@@ -166,7 +158,6 @@ class PrayerTimeSnapshot {
       settings: settings,
       today: today,
       tomorrow: tomorrow,
-      updatedAt: updatedAt.toUtc(),
-    );
+      updatedAt: updatedAt.toUtc(),\n      calculationMadhab: calculationMadhab,\n    );
   }
 }
