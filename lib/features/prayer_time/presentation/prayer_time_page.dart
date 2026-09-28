@@ -23,7 +23,7 @@ class PrayerTimePage extends ConsumerStatefulWidget {
 
 class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     with WidgetsBindingObserver {
-  bool _resumeCurrentLocationAfterSettings = false;
+  bool _resumeCurrentLocationAfterAppSettings = false;
   @override
   void initState() {
     super.initState();
@@ -41,8 +41,8 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     if (state != AppLifecycleState.resumed) return;
 
     ref.invalidate(prayerLocationRequirementProvider);
-    if (_resumeCurrentLocationAfterSettings) {
-      _resumeCurrentLocationAfterSettings = false;
+    if (_resumeCurrentLocationAfterAppSettings) {
+      _resumeCurrentLocationAfterAppSettings = false;
       Future<void>.microtask(
         () => ref
             .read(prayerTimeControllerProvider.notifier)
@@ -54,13 +54,13 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
   }
 
   void _openAppSettings() {
-    _resumeCurrentLocationAfterSettings = true;
+    _resumeCurrentLocationAfterAppSettings = true;
     ref
         .read(prayerLocationRepositoryProvider)
         .openAppSettings()
         .then((opened) {
       if (!opened && mounted) {
-        _resumeCurrentLocationAfterSettings = false;
+        _resumeCurrentLocationAfterAppSettings = false;
       }
     });
   }
