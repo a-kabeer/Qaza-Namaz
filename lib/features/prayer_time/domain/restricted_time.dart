@@ -19,6 +19,21 @@ class RestrictedTimeWindow {
   final tz.TZDateTime startsAt;
   final tz.TZDateTime endsAt;
 
+  /// Canonical timeline instant for displaying the restricted event.
+  ///
+  /// Sunrise begins at sunrise, Zawal is centered on astronomical solar noon,
+  /// and sunset ends at sunset.
+  tz.TZDateTime get displayAt => switch (type) {
+        RestrictedTimeType.sunrise => startsAt,
+        RestrictedTimeType.zawal => startsAt.add(
+            Duration(
+              microseconds:
+                  endsAt.difference(startsAt).inMicroseconds ~/ 2,
+            ),
+          ),
+        RestrictedTimeType.sunset => endsAt,
+      };
+
   bool contains(tz.TZDateTime now) =>
       !now.isBefore(startsAt) && now.isBefore(endsAt);
 }
