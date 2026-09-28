@@ -2810,6 +2810,18 @@ abstract class AppLocalizations {
   /// **'Location permission is needed to use your current location.'**
   String get prayerTimeLocationPermission;
 
+  /// No description provided for @prayerTimeLocationServiceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Services must be turned on to use your current location.'**
+  String get prayerTimeLocationServiceRequired;
+
+  /// No description provided for @prayerTimeEnableLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Location'**
+  String get prayerTimeEnableLocation;
+
   /// No description provided for @prayerTimeSelectLocation.
   ///
   /// In en, this message translates to:

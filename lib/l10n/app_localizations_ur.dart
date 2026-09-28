@@ -1615,6 +1615,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'موجودہ مقام استعمال کرنے کے لیے مقام کی اجازت درکار ہے۔';
 
   @override
+  String get prayerTimeLocationServiceRequired =>
+      'موجودہ مقام استعمال کرنے کے لیے لوکیشن سروسز کو آن کرنا ضروری ہے۔';
+
+  @override
+  String get prayerTimeEnableLocation => 'مقام آن کریں';
+
+  @override
   String get prayerTimeSelectLocation => 'اپنا مقام منتخب کریں';
 
   @override

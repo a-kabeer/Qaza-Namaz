@@ -138,8 +138,8 @@ class _PrayerTimeSetup extends ConsumerWidget {
           ),
         PrayerLocationSetupFailure.locationServiceResolutionCancelled =>
           _SetupFailurePresentation(
-            message: l10n.prayerTimeSetupBody,
-            actionLabel: l10n.commonRetry,
+            message: l10n.prayerTimeLocationServiceRequired,
+            actionLabel: l10n.prayerTimeEnableLocation,
           ),
       };
     }
