@@ -97,7 +97,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             const SizedBox(height: AppSpacing.md),
             _AnalysisSummary(
               analysis: state.analysis,
-              selectedPrayers: state.selectedPrayers,
               loading: state.analysisLoading,
             ),
             if (state.error != null) ...[
@@ -581,12 +580,10 @@ class _SelectionSummary extends StatelessWidget {
 class _AnalysisSummary extends StatelessWidget {
   const _AnalysisSummary({
     required this.analysis,
-    required this.selectedPrayers,
     required this.loading,
   });
 
   final AddQazaAnalysis analysis;
-  final Set<PrayerType> selectedPrayers;
   final bool loading;
 
   @override
@@ -839,9 +836,6 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
               const SizedBox(height: AppSpacing.md),
               _AnalysisSummary(
                 analysis: _analysis,
-                selectedPrayers: {
-                  for (final item in _analysis.items) item.key.prayerType,
-                },
                 loading: _busy,
               ),
               const SizedBox(height: AppSpacing.sm),
