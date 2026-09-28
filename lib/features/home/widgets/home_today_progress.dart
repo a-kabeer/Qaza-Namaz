@@ -400,6 +400,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
     final tartibAsync = ref.watch(sahibAlTartibProvider);
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final selection = ref.watch(homePrayerSelectionProvider);
 
     final targetLabel = switch (selection.mode) {
