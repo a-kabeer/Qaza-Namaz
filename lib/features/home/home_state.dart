@@ -85,7 +85,10 @@ class HomePrayerSelectionState {
       case HomePrayerSelectionMode.autoSequence:
         if (completedPrayer != autoSequencePrayer) return this;
         return copyWith(
-          autoSequencePrayer: completedPrayer.nextInQazaSequence,
+          autoSequencePrayer:
+              completedPrayer.nextInQazaSequenceSkippingWitr(
+            witrEnabled: witrEnabled,
+          ),
         );
     }
   }
