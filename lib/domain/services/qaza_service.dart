@@ -944,14 +944,44 @@ class QazaService {
   Future<int> purgeDeletedBefore({
     required String userId,
     required DateTime cutoff,
-  }) {
+  }) async {
     if (repository is! QazaRecoveryRepository) {
       throw StateError('Qaza recovery is not supported by this repository.');
     }
-    return (repository as QazaRecoveryRepository).purgeDeletedBefore(
-      userId: userId,
-      cutoff: cutoff,
-    );
+
+    // Purge only records visible to the current profile. This deliberately
+    // preserves hidden Witr records so disabling Witr never destroys data that
+    // can become visible again if the user later enables it.
+    DateTime? cursorDeletedAt;
+    String? cursorId;
+    var removed = 0;
+
+    while (true) {
+      final page = await getRecentlyDeletedPage(
+        userId: userId,
+        limit: 200,
+        beforeDeletedAt: cursorDeletedAt,
+        beforeId: cursorId,
+      );
+      if (page.records.isEmpty) break;
+
+      for (final record in page.records) {
+        if (record.updatedAt.isBefore(cutoff) &&
+            await repository.deleteRecord(
+              userId: userId,
+              recordId: record.id,
+            )) {
+          removed++;
+        }
+      }
+
+      if (!page.hasMore) break;
+      final last = page.records.last;
+      cursorDeletedAt = last.updatedAt;
+      cursorId = last.id;
+    }
+
+    return removed;
   }
 
   Future<QazaProgress> overallProgress(String userId) async =>
