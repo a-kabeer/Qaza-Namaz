@@ -49,9 +49,7 @@ class PrayerSelectionGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final prayer = prayers[index];
         final disabledByAvailability = disabledPrayers.contains(prayer);
-        final enabled =
-            !disabledByAvailability &&
-            (prayer != PrayerType.witr || witrAllowed);
+        final enabled = !disabledByAvailability;
         final isSelected = selected.contains(prayer);
         final label = prayer.localizedLabel(l10n);
         final reason = disabledByAvailability
@@ -60,12 +58,13 @@ class PrayerSelectionGrid extends StatelessWidget {
 
         return Semantics(
           button: true,
+          enabled: enabled,
           selected: isSelected,
           label: reason == null ? label : '$label, $reason',
           child: FilterChip(
             selected: isSelected,
             showCheckmark: false,
-            onSelected: (_) => onPrayerSelected(prayer),
+            onSelected: enabled ? (_) => onPrayerSelected(prayer) : null,
             label: SizedBox(
               width: double.infinity,
               child: Row(

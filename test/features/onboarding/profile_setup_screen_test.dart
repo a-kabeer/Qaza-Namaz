@@ -264,10 +264,10 @@ void main() {
             ),
           ],
           child: const MaterialApp(
-            locale: const Locale('en'),
+            locale: Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const StartupGate(),
+            home: StartupGate(),
           ),
         ),
       );
@@ -304,10 +304,10 @@ void main() {
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],
           child: const MaterialApp(
-            locale: const Locale('en'),
+            locale: Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const StartupGate(),
+            home: StartupGate(),
           ),
         ),
       );

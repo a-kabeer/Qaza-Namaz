@@ -70,7 +70,7 @@ ProviderContainer _containerFor({
 void main() {
   for (final mode in HomePrayerSelectionMode.values) {
     test(
-      'HomeController.refresh reads daily progress in ' + mode.name,
+      'HomeController.refresh reads daily progress in ${mode.name}',
       () async {
         var dailyProgressReads = 0;
         final container = _containerFor(
