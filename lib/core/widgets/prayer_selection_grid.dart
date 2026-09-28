@@ -11,11 +11,22 @@ class PrayerSelectionGrid extends StatelessWidget {
     required this.selected,
     required this.onPrayerSelected,
     this.witrAllowed = true,
+    this.disabledPrayers = const <PrayerType>{},
+    this.disabledReasonBuilder,
   });
 
   final Set<PrayerType> selected;
   final ValueChanged<PrayerType> onPrayerSelected;
   final bool witrAllowed;
+
+  /// Additional prayers that cannot currently be selected.
+  ///
+  /// Reusable consumers can keep the full six-prayer grid visible while
+  /// feature-specific availability remains owned by the caller.
+  final Set<PrayerType> disabledPrayers;
+
+  /// Optional accessibility/context label for disabled prayers.
+  final String Function(PrayerType prayer)? disabledReasonBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +44,21 @@ class PrayerSelectionGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final prayer = PrayerType.values[index];
-        final enabled = prayer != PrayerType.witr || witrAllowed;
+        final disabledByAvailability = disabledPrayers.contains(prayer);
+        final enabled =
+            !disabledByAvailability &&
+            (prayer != PrayerType.witr || witrAllowed);
         final isSelected = selected.contains(prayer);
         final label = prayer.localizedLabel(l10n);
+        final reason = disabledByAvailability
+            ? disabledReasonBuilder?.call(prayer)
+            : null;
 
         return Semantics(
           button: true,
           enabled: enabled,
           selected: isSelected,
-          label: label,
+          label: reason == null ? label : '$label, $reason',
           child: FilterChip(
             selected: isSelected,
             showCheckmark: false,
