@@ -39,6 +39,8 @@ void main() {
             .readAsStringSync();
 
     expect(source, contains('ref.watch(prayerTimeClockProvider)'));
+    expect(source, contains('ref.watch(qazaCompletionRestrictedProvider)'));
+    expect(source, contains('if (!restricted) return const SizedBox.shrink();'));
     expect(source, contains('ref.watch(restrictedTimeStateProvider)'));
     expect(source, contains('state.remainingAt(localNow)'));
     expect(
