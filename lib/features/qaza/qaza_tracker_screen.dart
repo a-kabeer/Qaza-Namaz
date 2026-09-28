@@ -314,6 +314,7 @@ class _FilterSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(qazaTrackerControllerProvider);
     final controller = ref.read(qazaTrackerControllerProvider.notifier);
+    final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
     final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: ListView(
