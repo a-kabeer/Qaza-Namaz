@@ -1613,6 +1613,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location permission is needed to use your current location.';
 
   @override
+  String get prayerTimeLocationServiceRequired =>
+      'Location Services must be turned on to use your current location.';
+
+  @override
+  String get prayerTimeEnableLocation => 'Enable Location';
+
+  @override
   String get prayerTimeSelectLocation => 'Select your location';
 
   @override

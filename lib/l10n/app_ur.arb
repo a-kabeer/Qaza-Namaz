@@ -543,6 +543,8 @@
   "prayerTimeActive": "فعال",
   "prayerTimeLocationUnavailable": "مقام دستیاب نہیں",
   "prayerTimeLocationPermission": "موجودہ مقام استعمال کرنے کے لیے مقام کی اجازت درکار ہے۔",
+  "prayerTimeLocationServiceRequired": "موجودہ مقام استعمال کرنے کے لیے لوکیشن سروسز کو آن کرنا ضروری ہے۔",
+  "prayerTimeEnableLocation": "مقام آن کریں",
   "prayerTimeSelectLocation": "اپنا مقام منتخب کریں",
   "prayerTimeCalculationMethod": "حساب کا طریقہ",
   "prayerTimeAsrMethod": "عصر کا طریقہ",
