@@ -72,13 +72,6 @@ class _HomeTodaySkeletonCard extends StatelessWidget {
   }
 }
 
-            const SizedBox(height: 16),
-        ),
-      ),
-    );
-  }
-}
-
 class _HomeOverallSkeletonCard extends StatelessWidget {
   const _HomeOverallSkeletonCard();
 
