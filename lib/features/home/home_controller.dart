@@ -16,7 +16,7 @@ class HomeController {
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDailyProgressProvider);
-    for (final prayer in PrayerType.values) {
+    for (final prayer in ref.read(enabledPrayerTypesProvider)) {
       ref.invalidate(oldestPendingProvider(prayer));
     }
   }

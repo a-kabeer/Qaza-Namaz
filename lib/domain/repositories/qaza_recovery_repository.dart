@@ -1,3 +1,4 @@
+import '../../core/constants/prayer_types.dart';
 import '../entities/qaza_record.dart';
 import '../repositories/qaza_repository.dart';
 
@@ -69,6 +70,7 @@ abstract class QazaRecoveryRepository {
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
+    Iterable<PrayerType>? prayerTypes,
   });
 
   Future<QazaPage> getOperationPage({
@@ -77,6 +79,7 @@ abstract class QazaRecoveryRepository {
     required bool matchLastAction,
     required DateTime operationAt,
     QazaStatus? status,
+    Iterable<PrayerType>? prayerTypes,
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
@@ -85,6 +88,7 @@ abstract class QazaRecoveryRepository {
   Future<QazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
+    Iterable<PrayerType>? prayerTypes,
     DateTime? beforeDeletedAt,
     String? beforeId,
   });

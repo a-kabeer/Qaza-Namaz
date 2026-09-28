@@ -239,4 +239,19 @@ void main() {
     expect(source, contains('this.bottomNavigationBar'));
     expect(source, contains('bottomNavigationBar: bottomNavigationBar'));
   });
+
+  test('disabled Witr is removed from shared selection grid', () {
+    final source =
+        File('lib/core/widgets/prayer_selection_grid.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        ".where((prayer) => prayer != PrayerType.witr || witrAllowed)",
+      ),
+    );
+    expect(source, contains('itemCount: prayers.length'));
+    expect(source, contains('final prayer = prayers[index];'));
+  });
+
 }

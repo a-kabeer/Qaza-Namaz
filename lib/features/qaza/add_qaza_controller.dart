@@ -458,14 +458,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     } catch (_) {}
   }
 
-  List<PrayerType> _profileAllowedPrayers(UserProfile profile) => [
-        PrayerType.fajr,
-        PrayerType.zuhr,
-        PrayerType.asr,
-        PrayerType.maghrib,
-        PrayerType.isha,
-        if (ProfileRules.effectiveWitr(profile)) PrayerType.witr,
-      ];
+  List<PrayerType> _profileAllowedPrayers(UserProfile profile) =>
+      ProfileRules.enabledPrayerTypes(profile);
 
   Map<DateTime, Set<PrayerType>> _applyDateRules(
     Map<DateTime, Set<PrayerType>> available,

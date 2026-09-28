@@ -87,6 +87,7 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
     DateTime? from,
     DateTime? to,
@@ -99,6 +100,7 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status = QazaStatus.completed,
     DateTime? from,
     DateTime? to,
@@ -111,6 +113,7 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   }) => throw UnimplementedError();
 
   @override

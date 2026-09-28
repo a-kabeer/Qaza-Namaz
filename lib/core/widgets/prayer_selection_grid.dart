@@ -32,10 +32,14 @@ class PrayerSelectionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    final prayers = PrayerType.values
+        .where((prayer) => prayer != PrayerType.witr || witrAllowed)
+        .toList(growable: false);
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: PrayerType.values.length,
+      itemCount: prayers.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisExtent: 42,
@@ -43,7 +47,7 @@ class PrayerSelectionGrid extends StatelessWidget {
         crossAxisSpacing: 8,
       ),
       itemBuilder: (context, index) {
-        final prayer = PrayerType.values[index];
+        final prayer = prayers[index];
         final disabledByAvailability = disabledPrayers.contains(prayer);
         final enabled =
             !disabledByAvailability &&
@@ -56,13 +60,12 @@ class PrayerSelectionGrid extends StatelessWidget {
 
         return Semantics(
           button: true,
-          enabled: enabled,
           selected: isSelected,
           label: reason == null ? label : '$label, $reason',
           child: FilterChip(
             selected: isSelected,
             showCheckmark: false,
-            onSelected: enabled ? (_) => onPrayerSelected(prayer) : null,
+            onSelected: (_) => onPrayerSelected(prayer),
             label: SizedBox(
               width: double.infinity,
               child: Row(

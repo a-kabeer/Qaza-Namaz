@@ -10,6 +10,7 @@ import '../repositories/qaza_bulk_write_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
 import '../repositories/qaza_recovery_repository.dart';
 import 'qaza_availability_service.dart';
+import 'profile_rules.dart';
 import 'sahib_al_tartib_service.dart';
 
 export '../entities/qaza_progress.dart';
@@ -97,6 +98,33 @@ class QazaService {
   final SahibAlTartibService tartib;
   final bool Function()? witrInclusionResolver;
 
+  bool get _witrAllowed => witrInclusionResolver?.call() ?? true;
+
+  List<PrayerType> get _enabledPrayerTypes =>
+      ProfileRules.prayerTypesForWitr(_witrAllowed);
+
+  QazaProgressSummary _scopeProgress(QazaProgressSummary summary) {
+    final allowed = _enabledPrayerTypes.toSet();
+    var pending = 0;
+    var completed = 0;
+    for (final prayer in allowed) {
+      final progress = summary.byPrayer[prayer]?.progress;
+      pending += progress?.pending ?? 0;
+      completed += progress?.completed ?? 0;
+    }
+    return QazaProgressSummary(
+      overall: QazaProgress(pending: pending, completed: completed),
+      byPrayer: {
+        for (final prayer in allowed)
+          prayer: summary.byPrayer[prayer] ??
+              PrayerProgress(
+                prayerType: prayer,
+                progress: const QazaProgress(pending: 0, completed: 0),
+              ),
+      },
+    );
+  }
+
   Future<List<QazaRecord>> getRecords(
           {required String userId,
           PrayerType? prayerType,
@@ -116,14 +144,22 @@ class QazaService {
           userId: userId,
           limit: limit,
           prayerType: prayerType,
+          prayerTypes: _enabledPrayerTypes,
           status: status,
           from: from,
           to: to,
           afterOriginalDate: afterOriginalDate,
           afterId: afterId);
-  Future<QazaRecord?> oldestPending(
-          {required String userId, required PrayerType prayerType}) =>
-      repository.getOldestPending(userId: userId, prayerType: prayerType);
+  Future<QazaRecord?> oldestPending({
+    required String userId,
+    required PrayerType prayerType,
+  }) {
+    if (prayerType == PrayerType.witr && !_witrAllowed) return Future.value(null);
+    return repository.getOldestPending(
+      userId: userId,
+      prayerType: prayerType,
+    );
+  }
 
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
@@ -155,6 +191,7 @@ class QazaService {
     final page = await repository.getPage(
       userId: userId,
       limit: 1,
+      prayerTypes: _enabledPrayerTypes,
       status: QazaStatus.pending,
     );
     return page.records.isEmpty ? null : page.records.first;
@@ -223,6 +260,7 @@ class QazaService {
         userId: userId,
         from: from,
         to: to,
+        prayerTypes: _enabledPrayerTypes,
       );
 
   /// The most recent pending record for [prayerType], or null when there is
@@ -236,6 +274,7 @@ class QazaService {
       userId: userId,
       limit: 1,
       prayerType: prayerType,
+      prayerTypes: _enabledPrayerTypes,
       status: QazaStatus.pending,
     );
     return page.records.isEmpty ? null : page.records.first;
@@ -254,13 +293,18 @@ class QazaService {
           userId: userId,
           limit: limit,
           prayerType: prayerType,
+          prayerTypes: _enabledPrayerTypes,
           status: status,
           from: from,
           to: to,
           beforeOriginalDate: beforeOriginalDate,
           beforeId: beforeId);
-  Future<QazaProgressSummary> getProgressSummary({required String userId}) =>
-      repository.getProgressSummary(userId: userId);
+  Future<QazaProgressSummary> getProgressSummary({
+    required String userId,
+  }) async {
+    final summary = await repository.getProgressSummary(userId: userId);
+    return _scopeProgress(summary);
+  }
   Future<List<QazaRecord>> getPendingForUser({required String userId}) =>
       getRecords(userId: userId, status: QazaStatus.pending);
   Future<List<QazaRecord>> getPendingForPrayer(
@@ -791,6 +835,7 @@ class QazaService {
       operationId: operationId,
       matchLastAction: matchLastAction,
       operationAt: operationAt,
+      prayerTypes: _enabledPrayerTypes,
       limit: limit,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
@@ -810,6 +855,7 @@ class QazaService {
     return (repository as QazaRecoveryRepository).getRecentlyDeletedPage(
       userId: userId,
       limit: limit,
+      prayerTypes: _enabledPrayerTypes,
       beforeDeletedAt: beforeDeletedAt,
       beforeId: beforeId,
     );
@@ -891,20 +937,50 @@ class QazaService {
     return (repository as QazaRecoveryRepository).getOperationSummary(
       userId: userId,
       operationId: operationId,
+      prayerTypes: _enabledPrayerTypes,
     );
   }
 
   Future<int> purgeDeletedBefore({
     required String userId,
     required DateTime cutoff,
-  }) {
+  }) async {
     if (repository is! QazaRecoveryRepository) {
       throw StateError('Qaza recovery is not supported by this repository.');
     }
-    return (repository as QazaRecoveryRepository).purgeDeletedBefore(
-      userId: userId,
-      cutoff: cutoff,
-    );
+
+    // Purge only records visible to the current profile. This deliberately
+    // preserves hidden Witr records so disabling Witr never destroys data that
+    // can become visible again if the user later enables it.
+    DateTime? cursorDeletedAt;
+    String? cursorId;
+    var removed = 0;
+
+    while (true) {
+      final page = await getRecentlyDeletedPage(
+        userId: userId,
+        limit: 200,
+        beforeDeletedAt: cursorDeletedAt,
+        beforeId: cursorId,
+      );
+      if (page.records.isEmpty) break;
+
+      for (final record in page.records) {
+        if (!record.updatedAt.isBefore(cutoff)) continue;
+        await repository.deleteRecord(
+          userId: userId,
+          recordId: record.id,
+        );
+        removed++;
+      }
+
+      if (!page.hasMore) break;
+      final last = page.records.last;
+      cursorDeletedAt = last.updatedAt;
+      cursorId = last.id;
+    }
+
+    return removed;
   }
 
   Future<QazaProgress> overallProgress(String userId) async =>

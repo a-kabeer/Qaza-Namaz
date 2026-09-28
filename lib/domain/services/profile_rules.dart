@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../core/constants/prayer_types.dart';
 import '../entities/user_profile.dart';
 
 enum ProfileValidationError {
@@ -57,6 +58,24 @@ class ProfileRules {
         return profile.witrIncluded ?? false;
     }
   }
+
+  /// Returns the prayer types that are active for the profile.
+  ///
+  /// Fard prayers are always available. Witr is included only when the
+  /// profile's effective Witr rule allows it.
+  static List<PrayerType> enabledPrayerTypes(UserProfile profile) =>
+      prayerTypesForWitr(effectiveWitr(profile));
+
+  /// Profile-independent helper used by services that only have the resolved
+  /// Witr flag available.
+  static List<PrayerType> prayerTypesForWitr(bool witrEnabled) => [
+        PrayerType.fajr,
+        PrayerType.zuhr,
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.isha,
+        if (witrEnabled) PrayerType.witr,
+      ];
 
   static DateTime anniversaryDate(DateTime dob, int age) {
     final year = dob.year + age;

@@ -214,4 +214,41 @@ void main() {
       expect(PrayerSlot.sunrise.qazaPrayerType, isNull);
     });
   });
+
+
+    test('Qaza sequence skips Witr when Witr is disabled', () {
+      expect(
+        PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+      expect(
+        PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+    });
+
+
+    test('Auto Sequence skips disabled Witr in Home state', () {
+      const state = HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+        autoSequencePrayer: PrayerType.isha,
+      );
+
+      expect(
+        state.afterSuccessfulCompletion(
+          PrayerType.isha,
+          witrEnabled: false,
+        ).autoSequencePrayer,
+        PrayerType.fajr,
+      );
+
+      expect(
+        state.afterSuccessfulCompletion(
+          PrayerType.isha,
+          witrEnabled: true,
+        ).autoSequencePrayer,
+        PrayerType.witr,
+      );
+    });
+
 }

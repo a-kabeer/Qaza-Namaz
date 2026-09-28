@@ -58,12 +58,37 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
   @override
   HomePrayerSelectionState build() {
+    ref.listen<bool>(effectiveWitrProvider, (_, next) {
+      if (!next &&
+          (state.autoSequencePrayer == PrayerType.witr ||
+              state.selectedPrayer == PrayerType.witr)) {
+        _normalizeDisabledWitr();
+      }
+    });
     Future<void>.microtask(_restore);
     return const HomePrayerSelectionState();
   }
 
+  void _normalizeDisabledWitr() {
+    final selectedPrayer = state.selectedPrayer == PrayerType.witr
+        ? PrayerType.fajr
+        : state.selectedPrayer;
+    state = state.copyWith(
+      autoSequencePrayer: PrayerType.fajr,
+      selectedPrayer: selectedPrayer,
+      clearSelectedPrayer: selectedPrayer == null,
+    );
+    _persistSequence(PrayerType.fajr);
+    if (selectedPrayer != null) {
+      _persistSelectedPrayer(selectedPrayer);
+    } else {
+      _clearPersistedSelectedPrayer();
+    }
+  }
+
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
   void selectPrayer(PrayerType prayer) {
+    if (prayer == PrayerType.witr && !ref.read(effectiveWitrProvider)) return;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
@@ -100,7 +125,11 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   /// Reuses the previously selected prayer when available; otherwise Fajr is
   /// the deterministic initial selection.
   void usePrayerSelection() {
-    final prayer = state.selectedPrayer ?? state.autoSequencePrayer;
+    final witrEnabled = ref.read(effectiveWitrProvider);
+    final candidate = state.selectedPrayer ?? state.autoSequencePrayer;
+    final prayer = !witrEnabled && candidate == PrayerType.witr
+        ? PrayerType.fajr
+        : candidate;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
@@ -119,7 +148,10 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       _undoSnapshotRevision = null;
     });
 
-    state = state.afterSuccessfulCompletion(completedPrayer);
+    state = state.afterSuccessfulCompletion(
+      completedPrayer,
+      witrEnabled: ref.read(effectiveWitrProvider),
+    );
     _persistSequence(state.autoSequencePrayer);
   }
 
@@ -169,6 +201,15 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       // while preferences were loading.
       if (restoreRevision != _targetRevision) return;
 
+      final witrEnabled = ref.read(effectiveWitrProvider);
+      var restoredSequencePrayer = sequencePrayer;
+      if (!witrEnabled && restoredSequencePrayer == PrayerType.witr) {
+        restoredSequencePrayer = PrayerType.fajr;
+      }
+      if (!witrEnabled && selectedPrayer == PrayerType.witr) {
+        selectedPrayer = PrayerType.fajr;
+      }
+
       // A persisted Prayer Selection state must always have one valid prayer.
       if (mode != HomePrayerSelectionMode.prayerSelection) {
         selectedPrayer = PrayerType.fajr;
@@ -179,7 +220,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
         selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
             ? selectedPrayer
             : null,
-        autoSequencePrayer: sequencePrayer,
+        autoSequencePrayer: restoredSequencePrayer,
       );
     } catch (_) {
       // The default Auto Sequence/Fajr state is safe when preferences are unavailable.

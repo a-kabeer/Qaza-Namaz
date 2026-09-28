@@ -50,6 +50,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
     DateTime? from,
     DateTime? to,
@@ -60,6 +61,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       userId: userId,
       limit: limit,
       prayerType: prayerType?.name,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       status: status?.name,
       from: from,
       to: to,
@@ -74,6 +76,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     int limit = 50,
     PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
     QazaStatus? status = QazaStatus.completed,
     DateTime? from,
     DateTime? to,
@@ -84,6 +87,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       userId: userId,
       limit: limit,
       prayerType: prayerType?.name,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       status: status?.name,
       from: from,
       to: to,
@@ -98,11 +102,13 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<PrayerType>? prayerTypes,
   }) =>
       _database.qazaRecordsDao.countCompletedBetween(
         userId: userId,
         from: from,
         to: to,
+        prayerTypes: prayerTypes?.map((value) => value.name),
       );
 
   @override
@@ -147,6 +153,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required bool matchLastAction,
     required DateTime operationAt,
     QazaStatus? status,
+    Iterable<PrayerType>? prayerTypes,
     int limit = 50,
     DateTime? beforeOriginalDate,
     String? beforeId,
@@ -157,6 +164,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       matchLastAction: matchLastAction,
       operationAt: operationAt,
       status: status,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       limit: limit,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
@@ -171,10 +179,12 @@ class DriftQazaLocalStore extends QazaLocalStore {
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
+    Iterable<PrayerType>? prayerTypes,
   }) =>
       _database.qazaRecordsDao.getOperationSummary(
         userId: userId,
         operationId: operationId,
+        prayerTypes: prayerTypes?.map((value) => value.name),
       );
 
   @override
@@ -583,12 +593,14 @@ class DriftQazaLocalStore extends QazaLocalStore {
   Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
     required String userId,
     int limit = 50,
+    Iterable<PrayerType>? prayerTypes,
     DateTime? beforeDeletedAt,
     String? beforeId,
   }) async {
     final page = await _database.qazaRecordsDao.getRecentlyDeletedPage(
       userId: userId,
       limit: limit,
+      prayerTypes: prayerTypes?.map((value) => value.name),
       beforeDeletedAt: beforeDeletedAt,
       beforeId: beforeId,
     );

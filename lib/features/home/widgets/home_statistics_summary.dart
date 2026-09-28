@@ -152,15 +152,16 @@ class _DetailedOverallStatistics extends StatelessWidget {
   }
 }
 
-class _DetailedPrayerBreakdown extends StatelessWidget {
+class _DetailedPrayerBreakdown extends ConsumerWidget {
   const _DetailedPrayerBreakdown({required this.summary});
 
   final QazaProgressSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
 
     return Card(
       key: const Key('detailed_prayer_breakdown'),
@@ -176,13 +177,13 @@ class _DetailedPrayerBreakdown extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            for (var index = 0; index < PrayerType.values.length; index++) ...[
+            for (var index = 0; index < enabledPrayers.length; index++) ...[
               _DetailedPrayerRow(
-                prayer: PrayerType.values[index],
-                progress: summary.byPrayer[PrayerType.values[index]]?.progress ??
+                prayer: enabledPrayers[index],
+                progress: summary.byPrayer[enabledPrayers[index]]?.progress ??
                     const QazaProgress(pending: 0, completed: 0),
               ),
-              if (index != PrayerType.values.length - 1)
+              if (index != enabledPrayers.length - 1)
                 Divider(
                   height: 20,
                   color: theme.colorScheme.outlineVariant,

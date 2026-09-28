@@ -56,6 +56,12 @@ final effectiveWitrProvider = Provider<bool>((ref) {
   return profile == null ? true : ProfileRules.effectiveWitr(profile);
 });
 
+final enabledPrayerTypesProvider = Provider<List<PrayerType>>((ref) {
+  final profile = ref.watch(userProfileProvider).valueOrNull;
+  if (profile == null) return List<PrayerType>.of(allPrayerTypes);
+  return ProfileRules.enabledPrayerTypes(profile);
+});
+
 final qazaPlanServiceProvider = Provider<QazaPlanService>(
   (ref) => const QazaPlanService(),
 );
