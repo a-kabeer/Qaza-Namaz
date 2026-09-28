@@ -300,6 +300,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     required String userId,
     required DateTime from,
     required DateTime to,
+    Iterable<String>? prayerTypes,
   }) async {
     if (!from.isBefore(to)) {
       throw ArgumentError('from must be before to');
@@ -311,7 +312,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         qazaRecords.userId.equals(userId) &
             qazaRecords.status.equals(QazaStatus.completed.name) &
             qazaRecords.completedAt.isBiggerOrEqualValue(from) &
-            qazaRecords.completedAt.isSmallerThanValue(to),
+            qazaRecords.completedAt.isSmallerThanValue(to) &
+            (prayerTypes == null
+                ? const Constant(true)
+                : qazaRecords.prayerType.isIn(prayerTypes)),
       );
     return (await query.getSingle()).read(countExpression) ?? 0;
   }
