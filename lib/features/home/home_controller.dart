@@ -4,6 +4,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import 'providers/home_providers.dart';
+import 'home_state.dart';
 
 class HomeController {
   const HomeController(this.ref);
