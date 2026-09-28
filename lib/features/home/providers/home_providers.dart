@@ -125,7 +125,11 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   /// Reuses the previously selected prayer when available; otherwise Fajr is
   /// the deterministic initial selection.
   void usePrayerSelection() {
-    final prayer = state.selectedPrayer ?? state.autoSequencePrayer;
+    final witrEnabled = ref.read(effectiveWitrProvider);
+    final candidate = state.selectedPrayer ?? state.autoSequencePrayer;
+    final prayer = !witrEnabled && candidate == PrayerType.witr
+        ? PrayerType.fajr
+        : candidate;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
@@ -207,7 +211,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
         selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
             ? selectedPrayer
             : null,
-        autoSequencePrayer: sequencePrayer,
+        autoSequencePrayer: restoredSequencePrayer,
       );
     } catch (_) {
       // The default Auto Sequence/Fajr state is safe when preferences are unavailable.
