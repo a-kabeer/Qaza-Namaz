@@ -14,6 +14,7 @@ import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_today_progress.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
+import 'package:qaza_namaz/core/widgets/skeleton.dart';
 
 class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
   _TestHomePrayerSelectionNotifier(this.initial);
@@ -168,6 +169,7 @@ void main() {
 
     expect(find.byKey(const Key('home_today_progress_bar')), findsOneWidget);
     expect(find.byKey(const Key('home_today_donut')), findsNothing);
+    expect(find.text('2 / 5 completed • 40%'), findsOneWidget);
     expect(find.text('Zuhr'), findsWidgets);
     expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
     expect(find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
@@ -201,6 +203,7 @@ void main() {
     expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
     expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
     expect(find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
+    expect(find.text('2 / 5 completed • 40%'), findsOneWidget);
     expect(find.text('Asr'), findsWidgets);
     expect(find.byKey(const Key('home_today_date')), findsNothing);
     expect(find.byKey(const Key('home_today_date_hijri')), findsNothing);
@@ -238,10 +241,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      find.byType(HomeTodayProgressSkeleton),
-      findsOneWidget,
-    );
+    expect(find.byType(HomeTodayProgressSkeleton), findsOneWidget);
+    expect(find.byType(SkeletonCircle), findsNothing);
     expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
     expect(dailyReads, 1);
 
