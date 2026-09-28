@@ -9,7 +9,6 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
-import 'package:qaza_namaz/features/onboarding/previous_qaza_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -73,7 +72,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
 
     expect(find.byType(LanguageSelectionScreen), findsOneWidget);
-    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
     expect(repository.saveCount, 0);
     expect(prefs.getString(LocaleNotifier.storageKey), isNull);
     expect(
@@ -103,7 +102,11 @@ void main() {
     expect(repository.savedProfile?.onboardingCompleted, isFalse);
     expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
 
-    expect(find.byType(PreviousQazaChoiceScreen), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(
+      find.text('اپنا پروفائل مکمل کریں'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Continue prevents duplicate saves and navigation while saving',
@@ -124,19 +127,19 @@ void main() {
     await tester.pump();
 
     expect(repository.saveCount, 1);
-    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.tap(continueButton);
     await tester.pump();
 
     expect(repository.saveCount, 1);
-    expect(find.byType(PreviousQazaChoiceScreen), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
 
     completer.complete();
     await tester.pumpAndSettle();
 
-    expect(find.byType(PreviousQazaChoiceScreen), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(repository.saveCount, 1);
   });
 }

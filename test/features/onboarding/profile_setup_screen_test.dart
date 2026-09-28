@@ -167,7 +167,7 @@ void main() {
 
 
   testWidgets(
-    'zero-Qaza onboarding completes directly without review or import',
+    'zero-Qaza onboarding completes directly from Profile Setup without review or import',
     (tester) async {
       final repository = _FakeUserProfileRepository();
       final importController = _CompletingImportController();
@@ -187,8 +187,6 @@ void main() {
       expect(calculatedPlan!.startDate, calculatedPlan.endDate);
       expect(calculatedPlan.totalWithWitr, 0);
 
-      repository.stored = initialProfile;
-
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -204,21 +202,17 @@ void main() {
             locale: const Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const StartupGate(),
+            home: ProfileSetupScreen(
+              languageCode: 'en',
+              initialProfile: initialProfile,
+            ),
           ),
         ),
       );
 
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('onboarding_previous_qaza_setup')),
-        findsOneWidget,
-      );
 
-      await tester.tap(
-        find.byKey(const Key('onboarding_previous_qaza_setup')),
-      );
-      await tester.pumpAndSettle();
+      expect(find.byType(ProfileSetupScreen), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_submit')),
@@ -227,6 +221,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('profile_submit')));
       await tester.pump();
+
       for (var i = 0;
           i < 20 && find.byType(WorkspaceShell).evaluate().isEmpty;
           i++) {
@@ -235,10 +230,10 @@ void main() {
 
       expect(find.byKey(const Key('qaza_review_add')), findsNothing);
       expect(importController.startCount, 0);
+      expect(find.byType(WorkspaceShell), findsOneWidget);
       expect(repository.stored?.onboardingCompleted, isTrue);
     },
   );
-
 
   testWidgets(
     'completed zero-Qaza profile resolves to Home through StartupGate',
@@ -293,5 +288,35 @@ void main() {
       expect(find.byKey(const Key('home_empty_state')), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'StartupGate opens Profile Setup for an incomplete profile',
+    (tester) async {
+      final repository = _FakeUserProfileRepository();
+      repository.stored = const UserProfile(
+        languageCode: 'en',
+        onboardingCompleted: false,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userProfileRepositoryProvider.overrideWithValue(repository),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const StartupGate(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    },
+  );
+
 
 }
