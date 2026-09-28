@@ -16,7 +16,9 @@ enum PrayerHighLatitudeRule {
   twilightAngle,
 }
 
-/// Internal application-owned Prayer Time calculation defaults.\n/// Asr and display format are resolved outside this object.\nclass PrayerSettings {
+/// Internal application-owned Prayer Time calculation defaults.
+/// Asr and display format are resolved outside this object.
+class PrayerSettings {
   const PrayerSettings({
     this.calculationMethod = PrayerCalculationMethod.karachi,
     this.highLatitudeRule = PrayerHighLatitudeRule.automatic,
@@ -55,7 +57,8 @@ enum PrayerHighLatitudeRule {
         'adjustments': adjustments,
       };
 
-  /// Reads the current shape and ignores legacy user preference fields.\n  static PrayerSettings fromJson(Map<String, dynamic> json) {
+  /// Reads the current shape and ignores legacy user preference fields.
+  static PrayerSettings fromJson(Map<String, dynamic> json) {
     final method = PrayerCalculationMethod.values.firstWhere(
       (item) => item.name == json['calculationMethod'],
       orElse: () => PrayerCalculationMethod.karachi,
