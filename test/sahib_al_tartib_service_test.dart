@@ -15,6 +15,7 @@ class _FakeRepository implements QazaRepository {
   int progressSummaryCalls = 0;
   int oldestPendingCalls = 0;
   int pendingRecordsByIdsCalls = 0;
+  String? receivedCompletionId;
 
   @override
   Future<QazaProgressSummary> getProgressSummary({
@@ -137,6 +138,7 @@ class _FakeRepository implements QazaRepository {
     required DateTime completedAt,
     String? completionId,
   }) async {
+    receivedCompletionId = completionId;
     return QazaCompletionResult.completed;
   }
 
@@ -351,6 +353,7 @@ void main() {
       expect(receipt.result, QazaCompletionResult.completed);
       expect(receipt.completionId, isNotNull);
       expect(receipt.completionId, isNotEmpty);
+      expect(repository.receivedCompletionId, receipt.completionId);
       expect(repository.progressSummaryCalls, 1);
       expect(repository.oldestPendingCalls, 5);
       expect(repository.pendingRecordsByIdsCalls, 1);
