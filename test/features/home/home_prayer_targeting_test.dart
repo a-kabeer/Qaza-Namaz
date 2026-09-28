@@ -226,4 +226,16 @@ void main() {
       );
     });
 
+
+    test('skips Witr in the shared auto-sequence helper', () {
+      expect(
+        PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+      expect(
+        PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr,
+      );
+    });
+
 }
