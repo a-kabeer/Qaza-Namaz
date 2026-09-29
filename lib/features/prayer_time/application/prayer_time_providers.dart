@@ -13,24 +13,6 @@ import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'prayer_time_controller.dart';
 
-enum PrayerTimeTargetAvailability {
-  available,
-  setupRequired,
-}
-
-final prayerTimeTargetAvailabilityProvider =
-    Provider<PrayerTimeTargetAvailability>((ref) {
-  return ref.watch(prayerTimeControllerProvider).valueOrNull == null
-      ? PrayerTimeTargetAvailability.setupRequired
-      : PrayerTimeTargetAvailability.available;
-});
-
-final prayerLocationRequirementProvider =
-    FutureProvider.autoDispose<PrayerLocationRequirement>((ref) {
-  return ref.read(prayerLocationRepositoryProvider).currentLocationRequirement();
-});
-
-
 final prayerTimeCacheProvider = Provider<PrayerTimeCache>(
   (ref) => PrayerTimeCache(),
 );
