@@ -159,7 +159,7 @@ void main() {
     final raw = await rootBundle.loadString(
       'assets/data/geonames_cities15000.tsv',
     );
-    final header = raw.split('\n').first;
+    final header = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n').first;
 
     expect(
       header,
