@@ -33,12 +33,15 @@ void main() {
   testWidgets(
     'selects Pakistan to Karachi end-to-end and preserves location data',
     (tester) async {
+      final catalog = OfflineCityCatalog();
+      await catalog.load();
       final fakeController = _FakePrayerTimeController();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             prayerTimeControllerProvider.overrideWith(() => fakeController),
+            offlineCityCatalogProvider.overrideWith((ref) async => catalog),
           ],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
