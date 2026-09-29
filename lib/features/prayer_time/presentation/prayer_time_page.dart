@@ -43,11 +43,7 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
   }
 
   void _openAppSettings() {
-    ref
-        .read(prayerLocationRepositoryProvider)
-        .openAppSettings()
-        .then((opened) {
-    });
+    ref.read(prayerLocationRepositoryProvider).openAppSettings();
   }
 
   @override
@@ -62,8 +58,8 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
       actions: [
         if (snapshot != null)
           IconButton(
-            key: const Key('prayer_time_refresh'),
-            tooltip: l10n.prayerTimeRefresh,
+            key: const Key('prayer_time_use_current_location'),
+            tooltip: l10n.prayerTimeUseCurrentLocation,
             onPressed: refreshing
                 ? null
                 : () => ref
