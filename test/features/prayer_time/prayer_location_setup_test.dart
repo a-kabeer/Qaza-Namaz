@@ -29,7 +29,7 @@ void main() {
   test('cancelled Location Services resolution gets an actionable recovery state', () {
     final source = File(
       'lib/features/prayer_time/presentation/prayer_time_page.dart',
-    ).readAsStringSync();
+    ).readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
     expect(
       source,
