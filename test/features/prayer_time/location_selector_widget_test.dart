@@ -34,9 +34,12 @@ void main() {
     'selects Pakistan to Karachi end-to-end and preserves location data',
     (tester) async {
       final catalog = OfflineCityCatalog();
+      print('MARK 1 before catalog.load');
       await catalog.load();
+      print('MARK 2 after catalog.load');
       final fakeController = _FakePrayerTimeController();
 
+      print('MARK 3 before pumpWidget');
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -52,47 +55,61 @@ void main() {
           ),
         ),
       );
+      print('MARK 4 after pumpWidget');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
+      print('MARK 5 after initial pumps');
 
       expect(
         find.byKey(const Key('prayer_time_location_selector')),
         findsOneWidget,
       );
+      print('MARK 6 before opening picker');
       await tester.tap(
         find.byKey(const Key('prayer_time_location_selector')),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
+      print('MARK 7 after opening picker');
 
       final countrySearch = find.byKey(
         const Key('prayer_time_country_search'),
       );
+      print('MARK 8 before country search visibility');
       await pumpUntilVisible(tester, countrySearch);
+      print('MARK 9 after country search visibility');
       expect(find.byType(ListTile), findsWidgets);
+      print('MARK 10 before country enterText');
       await tester.enterText(countrySearch, 'Pakistan');
+      print('MARK 11 after country enterText');
       await tester.pump();
 
       final pakistan = find.byKey(const Key('prayer_time_country_PK'));
       expect(pakistan, findsOneWidget);
+      print('MARK 12 before Pakistan tap');
       await tester.tap(pakistan);
       await tester.pump();
+      print('MARK 13 after Pakistan tap');
 
       expect(find.byKey(const Key('prayer_time_city_search')), findsOneWidget);
       expect(find.text('Karachi'), findsAtLeastNWidgets(1));
 
+      print('MARK 14 before city enterText');
       await tester.enterText(
         find.byKey(const Key('prayer_time_city_search')),
         ' Karachi ',
       );
       await tester.pump();
+      print('MARK 15 after city enterText');
 
       expect(find.text('Karachi'), findsAtLeastNWidgets(1));
       expect(find.text('Lahore'), findsNothing);
 
+      print('MARK 16 before Karachi tap');
       await tester.tap(find.text('Karachi').last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
+      print('MARK 17 after Karachi tap');
 
       final selectedCity = fakeController.selectedCity;
       expect(selectedCity, isNotNull);
