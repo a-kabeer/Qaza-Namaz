@@ -142,14 +142,14 @@ void main() {
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
 
-      final countrySearch = find.byKey(
+      final countrySearchAfterBack = find.byKey(
         const Key('prayer_time_country_search'),
       );
-      expect(countrySearch, findsOneWidget);
-      final searchBar = tester.widget<SearchBar>(countrySearch);
+      expect(countrySearchAfterBack, findsOneWidget);
+      final searchBar = tester.widget<SearchBar>(countrySearchAfterBack);
       expect(searchBar.controller?.text, isEmpty);
 
-      await tester.enterText(countrySearch, 'Japan');
+      await tester.enterText(countrySearchAfterBack, 'Japan');
       await tester.pump();
 
       final japan = find.byKey(const Key('prayer_time_country_JP'));
