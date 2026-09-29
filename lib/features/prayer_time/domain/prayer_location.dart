@@ -32,6 +32,7 @@ class PrayerLocation {
     required this.countryCode,
     required this.timezoneId,
     required this.source,
+    this.geonameId,
   });
 
   final double latitude;
@@ -42,6 +43,7 @@ class PrayerLocation {
   final String countryCode;
   final String timezoneId;
   final PrayerLocationSource source;
+  final int? geonameId;
 
   String get primaryLabel => city.isEmpty ? country : city;
 
@@ -80,6 +82,7 @@ class PrayerLocation {
         'countryCode': countryCode,
         'timezoneId': timezoneId,
         'source': source.name,
+        if (geonameId != null) 'geonameId': geonameId,
       };
 
   static PrayerLocation? fromJson(Map<String, dynamic> json) {
@@ -90,6 +93,7 @@ class PrayerLocation {
     final countryCode = json['countryCode'] as String?;
     final timezoneId = json['timezoneId'] as String?;
     final sourceName = json['source'] as String?;
+    final geonameId = (json['geonameId'] as num?)?.toInt();
     if (latitude == null ||
         longitude == null ||
         city == null ||
@@ -112,6 +116,7 @@ class PrayerLocation {
       countryCode: countryCode,
       timezoneId: timezoneId,
       source: source.first,
+      geonameId: geonameId,
     );
   }
 }
@@ -125,6 +130,7 @@ class CityOption {
     required this.timezoneId,
     required this.latitude,
     required this.longitude,
+    required this.geonameId,
   });
 
   final String city;
@@ -134,6 +140,7 @@ class CityOption {
   final String timezoneId;
   final double latitude;
   final double longitude;
+  final int geonameId;
 
   String get displayName => region.trim().isEmpty
       ? '$city, $country'
