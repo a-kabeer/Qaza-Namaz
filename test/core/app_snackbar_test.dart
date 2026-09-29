@@ -246,14 +246,14 @@ void main() {
 
     final violations = <String>[];
     for (final entity in root.listSync(recursive: true)) {
-      if (entity is! File ||
-          !entity.path.endsWith('.dart') ||
-          entity.path == infrastructurePath) {
+      if (entity is! File || !entity.path.endsWith('.dart')) {
         continue;
       }
+      final normalizedPath = entity.path.replaceAll(r'\', '/');
+      if (normalizedPath == infrastructurePath) continue;
       final source = entity.readAsStringSync();
       if (forbidden.hasMatch(source)) {
-        violations.add(entity.path);
+        violations.add(normalizedPath);
       }
     }
 
