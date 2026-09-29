@@ -17,6 +17,19 @@ void main() {
 
   setUpAll(tzdata.initializeTimeZones);
 
+  Future<void> pumpUntilVisible(
+    WidgetTester tester,
+    Finder finder, {
+    Duration step = const Duration(milliseconds: 100),
+    int maxPumps = 30,
+  }) async {
+    for (var i = 0; i < maxPumps; i++) {
+      if (finder.evaluate().isNotEmpty) return;
+      await tester.pump(step);
+    }
+    expect(finder, findsOneWidget);
+  }
+
   testWidgets(
     'selects Pakistan to Karachi end-to-end and preserves location data',
     (tester) async {
@@ -46,12 +59,12 @@ void main() {
         find.byKey(const Key('prayer_time_location_selector')),
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 100));
 
       final countrySearch = find.byKey(
         const Key('prayer_time_country_search'),
       );
-      expect(countrySearch, findsOneWidget);
+      await pumpUntilVisible(tester, countrySearch);
       expect(find.byType(ListTile), findsWidgets);
       await tester.enterText(countrySearch, 'Pakistan');
       await tester.pump();
@@ -121,12 +134,12 @@ void main() {
         find.byKey(const Key('prayer_time_location_selector')),
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 100));
 
       final countrySearch = find.byKey(
         const Key('prayer_time_country_search'),
       );
-      expect(countrySearch, findsOneWidget);
+      await pumpUntilVisible(tester, countrySearch);
       await tester.enterText(countrySearch, 'Pakistan');
       await tester.pump();
 
