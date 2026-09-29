@@ -48,8 +48,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
+      final countrySearch = find.byKey(
+        const Key('prayer_time_country_search'),
+      );
+      expect(countrySearch, findsOneWidget);
+      expect(find.byType(ListTile), findsWidgets);
+      await tester.enterText(countrySearch, 'Pakistan');
+      await tester.pump();
+
       final pakistan = find.byKey(const Key('prayer_time_country_PK'));
-      await tester.ensureVisible(pakistan);
       expect(pakistan, findsOneWidget);
       await tester.tap(pakistan);
       await tester.pump();
@@ -116,8 +123,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
+      final countrySearch = find.byKey(
+        const Key('prayer_time_country_search'),
+      );
+      expect(countrySearch, findsOneWidget);
+      await tester.enterText(countrySearch, 'Pakistan');
+      await tester.pump();
+
       final pakistan = find.byKey(const Key('prayer_time_country_PK'));
-      await tester.ensureVisible(pakistan);
+      expect(pakistan, findsOneWidget);
       await tester.tap(pakistan);
       await tester.pump();
 
@@ -135,8 +149,11 @@ void main() {
       final searchBar = tester.widget<SearchBar>(countrySearch);
       expect(searchBar.controller?.text, isEmpty);
 
+      await tester.enterText(countrySearch, 'Japan');
+      await tester.pump();
+
       final japan = find.byKey(const Key('prayer_time_country_JP'));
-      await tester.ensureVisible(japan);
+      expect(japan, findsOneWidget);
       await tester.tap(japan);
       await tester.pump();
 
