@@ -34,7 +34,7 @@ class QazaDailyActivity {
 
   bool get goalReached => hasGoal && completed >= target;
 
-  int get remaining => math.max(target - completed, 0);
+  int get remaining => hasGoal ? math.max(target - completed, 0) : 0;
 
   double get progress =>
       target <= 0 ? 0.0 : (completed / target).clamp(0.0, 1.0).toDouble();
