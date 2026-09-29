@@ -9,7 +9,6 @@ import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 
-import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import 'home_qaza_activity.dart';
