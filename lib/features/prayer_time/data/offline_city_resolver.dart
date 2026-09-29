@@ -181,7 +181,7 @@ String _normalizeSearchText(String value) {
 
   return buffer
       .toString()
-      .replaceAll(RegExp(r'[\\u0300-\\u036f]'), '');
+      .replaceAll(RegExp(r'[\u0300-\u036f]'), '');
 }
 
 class OfflineCityCatalog {
