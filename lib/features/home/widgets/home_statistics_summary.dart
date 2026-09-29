@@ -9,8 +9,10 @@ import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 
+import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
+import 'home_qaza_activity.dart';
 import 'home_skeleton.dart';
 
 class HomeStatisticsSummaryScreen extends ConsumerWidget {
@@ -64,6 +66,8 @@ class _DetailedStatisticsContent extends StatelessWidget {
         _DetailedOverallStatistics(progress: summary.overall),
         const SizedBox(height: 12),
         _DetailedPrayerBreakdown(summary: summary),
+        const SizedBox(height: 12),
+        const HomeQazaActivity(),
       ],
     );
   }
