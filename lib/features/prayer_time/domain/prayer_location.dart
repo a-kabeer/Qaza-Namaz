@@ -1,5 +1,13 @@
 import 'dart:math' as math;
 
+enum PrayerLocationRequirement {
+  ready,
+  locationServiceDisabled,
+  permissionRequired,
+  permissionDenied,
+  permissionDeniedForever,
+}
+
 enum PrayerLocationSetupFailure {
   locationServiceResolutionCancelled,
   permissionDenied,
@@ -74,7 +82,7 @@ class PrayerLocation {
         'countryCode': countryCode,
         'timezoneId': timezoneId,
         'source': source.name,
-        if (geonameId != null) 'geonameId': geonameId,
+        'geonameId': geonameId,
       };
 
   static PrayerLocation? fromJson(Map<String, dynamic> json) {
@@ -86,6 +94,7 @@ class PrayerLocation {
     final timezoneId = json['timezoneId'] as String?;
     final sourceName = json['source'] as String?;
     final geonameId = (json['geonameId'] as num?)?.toInt();
+
     if (latitude == null ||
         longitude == null ||
         city == null ||
@@ -95,10 +104,12 @@ class PrayerLocation {
         sourceName == null) {
       return null;
     }
+
     final source = PrayerLocationSource.values.where(
       (value) => value.name == sourceName,
     );
     if (source.isEmpty) return null;
+
     return PrayerLocation(
       latitude: latitude,
       longitude: longitude,
@@ -115,6 +126,7 @@ class PrayerLocation {
 
 class CityOption {
   const CityOption({
+    required this.geonameId,
     required this.city,
     required this.region,
     required this.country,
@@ -122,9 +134,10 @@ class CityOption {
     required this.timezoneId,
     required this.latitude,
     required this.longitude,
-    required this.geonameId,
+    this.searchName = '',
   });
 
+  final int geonameId;
   final String city;
   final String region;
   final String country;
@@ -132,7 +145,7 @@ class CityOption {
   final String timezoneId;
   final double latitude;
   final double longitude;
-  final int geonameId;
+  final String searchName;
 
   String get displayName => region.trim().isEmpty
       ? '$city, $country'
