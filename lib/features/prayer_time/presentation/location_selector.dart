@@ -105,78 +105,92 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final resolver = ref.read(offlineCityResolverProvider);
+    final catalogAsync = ref.watch(offlineCityCatalogProvider);
 
-    if (_countryCode == null) {
-      final countries = resolver
-          .countryCodes()
-          .where(
-            (code) => _query.isEmpty
-                ? true
-                : resolver
-                    .countryName(code)
-                    .toLowerCase()
-                    .contains(_query.toLowerCase()),
-          )
-          .toList(growable: false);
-
-      return _PickerScaffold(
-        title: l10n.prayerTimeSelectCountry,
-        searchLabel: l10n.prayerTimeSelectCountry,
-        onQueryChanged: (value) => setState(() => _query = value),
-        controller: _searchController,
-        child: ListView.builder(
-          itemCount: countries.length,
-          itemBuilder: (_, index) {
-            final code = countries[index];
-            return ListTile(
-              leading: const Icon(Icons.public_rounded),
-              title: Text(resolver.countryName(code)),
-              subtitle: Text(code),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => setState(() {
-                _countryCode = code;
-                _query = '';
-                _searchController.clear();
-              }),
-            );
-          },
-        ),
-      );
-    }
-
-    final cities = resolver.citiesForCountry(
-      _countryCode!,
-      query: _query,
-    );
-
-    return _PickerScaffold(
-      title: resolver.countryName(_countryCode!),
-      searchLabel: l10n.prayerTimeSearchCity,
-      onQueryChanged: (value) => setState(() => _query = value),
-      controller: _searchController,
-      leading: IconButton(
-        tooltip: l10n.commonBack,
-        onPressed: () => setState(() {
-          _countryCode = null;
-          _query = '';
-          _searchController.clear();
-        }),
-        icon: const Icon(Icons.arrow_back_rounded),
+    return catalogAsync.when(
+      loading: () => SizedBox(
+        height: MediaQuery.sizeOf(context).height * .35,
+        child: const Center(child: CircularProgressIndicator()),
       ),
-      child: cities.isEmpty
-          ? Center(child: Text(l10n.prayerTimeNoCities))
-          : ListView.builder(
-              itemCount: cities.length,
+      error: (_, __) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * .35,
+        child: Center(child: Text(l10n.prayerTimeNoCities)),
+      ),
+      data: (catalog) {
+        if (_countryCode == null) {
+          final query = _query.trim().toLowerCase();
+          final codes = catalog.countryCodes();
+          final countries = query.isEmpty
+              ? codes
+              : codes.where((code) {
+                  return catalog.countryName(code)
+                      .toLowerCase()
+                      .contains(query);
+                }).toList(growable: false);
+
+          return _PickerScaffold(
+            title: l10n.prayerTimeSelectCountry,
+            searchLabel: l10n.prayerTimeSelectCountry,
+            onQueryChanged: (value) => setState(() => _query = value),
+            controller: _searchController,
+            child: ListView.builder(
+              itemCount: countries.length,
               itemBuilder: (_, index) {
-                final city = cities[index];
+                final code = countries[index];
                 return ListTile(
-                  title: Text(city.city),
-                  subtitle: Text(city.timezoneId),
-                  onTap: () => Navigator.of(context).pop(city),
+                  leading: const Icon(Icons.public_rounded),
+                  title: Text(catalog.countryName(code)),
+                  subtitle: Text(code),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => setState(() {
+                    _countryCode = code;
+                    _query = '';
+                    _searchController.clear();
+                  }),
                 );
               },
             ),
+          );
+        }
+
+        final cities = catalog.citiesForCountry(
+          _countryCode!,
+          query: _query,
+        );
+
+        return _PickerScaffold(
+          title: catalog.countryName(_countryCode!),
+          searchLabel: l10n.prayerTimeSearchCity,
+          onQueryChanged: (value) => setState(() => _query = value),
+          controller: _searchController,
+          leading: IconButton(
+            tooltip: l10n.commonBack,
+            onPressed: () => setState(() {
+              _countryCode = null;
+              _query = '';
+              _searchController.clear();
+            }),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          child: cities.isEmpty
+              ? Center(child: Text(l10n.prayerTimeNoCities))
+              : ListView.builder(
+                  itemCount: cities.length,
+                  itemBuilder: (_, index) {
+                    final city = cities[index];
+                    return ListTile(
+                      title: Text(city.city),
+                      subtitle: Text(
+                        city.region.isEmpty
+                            ? city.timezoneId
+                            : '${city.region} • ${city.timezoneId}',
+                      ),
+                      onTap: () => Navigator.of(context).pop(city),
+                    );
+                  },
+                ),
+        );
+      },
     );
   }
 }
