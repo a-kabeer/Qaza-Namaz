@@ -1058,14 +1058,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.1"
-  timezone_country:
-    dependency: "direct main"
-    description:
-      name: timezone_country
-      sha256: f1b04a275d283a60ab47d0caf97a8b7a826ac3a46fcdc638ef2c341eb9597e4c
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   typed_data:
     dependency: transitive
     description:
