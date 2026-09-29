@@ -1,5 +1,4 @@
 import '../../core/constants/prayer_types.dart';
-import '../entities/qaza_activity.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../entities/qaza_completion_result.dart';
@@ -139,17 +138,6 @@ abstract interface class QazaRepository {
     DateTime? beforeOriginalDate,
     String? beforeId,
   });
-
-  /// Returns only the completion instant and prayer type for a bounded activity range.
-  /// Production local storage overrides this with a targeted SQLite projection.
-  Future<List<QazaActivityRow>> getCompletedActivityRows({
-    required String userId,
-    required DateTime from,
-    required DateTime toExclusive,
-    Iterable<PrayerType>? prayerTypes,
-  }) => throw UnimplementedError(
-        'The repository must provide a bounded activity projection.',
-      );
 
   Future<QazaProgressSummary> getProgressSummary({required String userId});
 
