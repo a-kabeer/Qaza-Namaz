@@ -11,6 +11,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../providers/home_providers.dart';
+import 'home_prayer_icon.dart';
 
 enum _ActivityRange { sevenDays, thirtyDays, monthly }
 
