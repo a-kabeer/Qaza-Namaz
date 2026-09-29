@@ -21,27 +21,7 @@ class PrayerTimePage extends ConsumerStatefulWidget {
   ConsumerState<PrayerTimePage> createState() => _PrayerTimePageState();
 }
 
-class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
-    with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-
-    ref.invalidate(prayerLocationRequirementProvider);
-  }
-
+class _PrayerTimePageState extends ConsumerState<PrayerTimePage> {
   void _openAppSettings() {
     ref.read(prayerLocationRepositoryProvider).openAppSettings();
   }
