@@ -7,6 +7,7 @@ import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../../domain/repositories/qaza_activity_repository.dart';
 import '../../../domain/services/qaza_activity_service.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../home_state.dart';
@@ -49,8 +50,12 @@ final homeDailyProgressProvider =
 });
 
 final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
+  final repository = ref.watch(qazaRepositoryProvider);
+  if (repository is! QazaActivityRepository) {
+    throw StateError('Local Qaza repository does not support activity history.');
+  }
   return QazaActivityService(
-    ref.watch(qazaRepositoryProvider),
+    repository,
     enabledPrayerTypes: ref.watch(enabledPrayerTypesProvider),
   );
 });
