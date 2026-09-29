@@ -144,15 +144,9 @@ void main() {
     expect(controller, isNot(contains('_silentRefresh')));
     expect(repository, isNot(contains('getLastKnownPosition')));
 
-    final lifecycleStart = page.indexOf('void didChangeAppLifecycleState');
-    final lifecycleEnd = page.indexOf(
-      'void _openAppSettings()',
-      lifecycleStart,
-    );
-    expect(lifecycleStart, greaterThanOrEqualTo(0));
-    expect(lifecycleEnd, greaterThan(lifecycleStart));
-    final lifecycle = page.substring(lifecycleStart, lifecycleEnd);
-    expect(lifecycle, isNot(contains('useCurrentLocation')));
+    expect(page, isNot(contains('WidgetsBindingObserver')));
+    expect(page, isNot(contains('didChangeAppLifecycleState')));
+    expect(page, isNot(contains('WidgetsBinding.instance.addObserver')));
 
     expect(resolver, isNot(contains('timezone_country')));
     expect(resolver, isNot(contains('TimezoneConvert')));
