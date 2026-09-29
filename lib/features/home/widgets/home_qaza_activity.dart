@@ -362,6 +362,7 @@ class _ActivityBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
     final maxCompleted = period.days.fold<int>(
       0,
       (maxValue, day) => math.max(maxValue, day.completed),
@@ -421,7 +422,9 @@ class _ActivityBarChart extends StatelessWidget {
                   return SideTitleWidget(
                     meta: meta,
                     child: Text(
-                      period.days[index].date.day.toString(),
+                      compact
+                          ? period.days[index].date.day.toString()
+                          : DateFormat.E(locale).format(period.days[index].date),
                       style: theme.textTheme.labelSmall,
                     ),
                   );
