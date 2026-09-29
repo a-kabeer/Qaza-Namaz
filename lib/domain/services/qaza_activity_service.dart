@@ -1,6 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 import '../entities/qaza_activity.dart';
-import '../repositories/qaza_repository.dart';
+import '../repositories/qaza_activity_repository.dart';
 
 /// Builds activity periods from a bounded completion projection.
 ///
@@ -14,7 +14,7 @@ class QazaActivityService {
           enabledPrayerTypes,
         );
 
-  final QazaRepository repository;
+  final QazaActivityRepository repository;
   final List<PrayerType> enabledPrayerTypes;
 
   Future<QazaActivityPeriod> buildPeriod({
@@ -37,7 +37,7 @@ class QazaActivityService {
         : await repository.getCompletedActivityRows(
             userId: userId,
             from: normalizedFrom,
-            to: normalizedTo,
+            toExclusive: normalizedTo,
             prayerTypes: enabledPrayerTypes,
           );
 
