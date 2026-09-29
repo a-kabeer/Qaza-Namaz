@@ -1407,6 +1407,57 @@ class AppLocalizationsEn extends AppLocalizations {
       'Overall and prayer-wise completion';
 
   @override
+  String get homeQazaActivity => 'Qaza Activity';
+
+  @override
+  String get homeProgressHistory => 'Progress History';
+
+  @override
+  String get homeLastSevenDays => 'Last 7 Days';
+
+  @override
+  String get homeRangeSevenDays => '7 Days';
+
+  @override
+  String get homeRangeThirtyDays => '30 Days';
+
+  @override
+  String get homeRangeMonthly => 'Monthly';
+
+  @override
+  String get homeDailyTarget => 'Daily Target';
+
+  @override
+  String get homeGoalReached => 'Goal Reached';
+
+  @override
+  String get homeRemaining => 'Remaining';
+
+  @override
+  String get homeActual => 'Actual';
+
+  @override
+  String get homeNoActivity => 'No completed Qaza in this period.';
+
+  @override
+  String get homeSelectDay => 'Tap a day to see details.';
+
+  @override
+  String get homePreviousMonth => 'Previous month';
+
+  @override
+  String get homeNextMonth => 'Next month';
+
+  @override
+  String get homeFutureDay => 'Future';
+
+  @override
+  String get homeGoalsLastSevenDays => 'Qaza Goals · Last 7 Days';
+
+  @override
+  String get homeDayActivityDetails => 'Day Details';
+
+  @override
   String get homeTodayDate => 'Today';
 
   @override
