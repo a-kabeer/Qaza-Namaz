@@ -1,5 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
@@ -160,6 +161,22 @@ class OfflineFirstQazaRepository
       beforeId: beforeId,
     );
     return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
+  }
+
+  @override
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<PrayerType>? prayerTypes,
+  }) {
+    _validateActive(userId);
+    return _localStore.getCompletedActivityRows(
+      userId: userId,
+      from: from,
+      toExclusive: toExclusive,
+      prayerTypes: prayerTypes,
+    );
   }
 
   @override
