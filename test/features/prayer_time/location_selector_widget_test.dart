@@ -15,7 +15,13 @@ import 'package:qaza_namaz/l10n/app_localizations.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(tzdata.initializeTimeZones);
+  late OfflineCityCatalog testCatalog;
+
+  setUpAll(() async {
+    tzdata.initializeTimeZones();
+    testCatalog = OfflineCityCatalog();
+    await testCatalog.load();
+  });
 
   Future<void> pumpUntilVisible(
     WidgetTester tester,
@@ -33,8 +39,7 @@ void main() {
   testWidgets(
     'selects Pakistan to Karachi end-to-end and preserves location data',
     (tester) async {
-      final catalog = OfflineCityCatalog();
-      await catalog.load();
+      final catalog = testCatalog;
       final fakeController = _FakePrayerTimeController();
 
       await tester.pumpWidget(
@@ -116,8 +121,7 @@ void main() {
   testWidgets(
     'clears city search when returning to countries and allows Japan to Tokyo',
     (tester) async {
-      final catalog = OfflineCityCatalog();
-      await catalog.load();
+      final catalog = testCatalog;
       final fakeController = _FakePrayerTimeController();
 
       await tester.pumpWidget(
