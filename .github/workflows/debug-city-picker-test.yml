@@ -9,7 +9,7 @@ jobs:
   city_picker_test:
     name: City picker widget test
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
