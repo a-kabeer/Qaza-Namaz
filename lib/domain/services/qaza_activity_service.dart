@@ -111,6 +111,9 @@ class QazaActivityService {
     final normalizedFrom = _dateOnly(from);
     final normalizedTo = _dateOnly(toExclusive);
     final normalizedToday = _dateOnly(today);
+    if (!normalizedFrom.isBefore(normalizedTo)) {
+      throw ArgumentError('from must be before toExclusive');
+    }
     final enabled = enabledPrayerTypes.toSet();
 
     final counts = <DateTime, Map<PrayerType, int>>{};
