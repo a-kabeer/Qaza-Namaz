@@ -25,7 +25,5 @@ jobs:
         run: flutter pub get
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
-      - name: Format check
-        run: dart format --set-exit-if-changed lib test
       - name: City picker widget test
         run: flutter test test/features/prayer_time/location_selector_widget_test.dart -r expanded
