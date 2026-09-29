@@ -31,14 +31,16 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   }
 }
 
-Widget _app(ProviderContainer container, Locale locale) {
+Widget _app(ProviderContainer container) {
   return UncontrolledProviderScope(
     container: container,
-    child: MaterialApp(
-      locale: locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const SettingsScreen(),
+    child: Consumer(
+      builder: (context, ref, child) => MaterialApp(
+        locale: ref.watch(localeProvider),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const SettingsScreen(),
+      ),
     ),
   );
 }
@@ -78,7 +80,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await tester.pumpWidget(_app(container, const Locale('ur')));
+      await tester.pumpWidget(_app(container));
 
       await tester.tap(find.text('English'));
       await tester.pumpAndSettle();
@@ -134,7 +136,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await tester.pumpWidget(_app(container, const Locale('en')));
+      await tester.pumpWidget(_app(container));
 
       await tester.tap(find.text('Urdu'));
       await tester.pumpAndSettle();
