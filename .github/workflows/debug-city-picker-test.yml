@@ -1,0 +1,31 @@
+name: Debug City Picker Test
+
+on:
+  push:
+    branches:
+      - debug/city-picker-test
+
+jobs:
+  city_picker_test:
+    name: City picker widget test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Flutter clean
+        run: flutter clean
+      - name: pub get
+        run: flutter pub get
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Format check
+        run: dart format --set-exit-if-changed lib test
+      - name: City picker widget test
+        run: flutter test test/features/prayer_time/location_selector_widget_test.dart -r expanded
