@@ -45,7 +45,8 @@ void main() {
       await tester.tap(
         find.byKey(const Key('prayer_time_location_selector')),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       final pakistan = find.byKey(const Key('prayer_time_country_PK'));
       await tester.ensureVisible(pakistan);
@@ -66,7 +67,8 @@ void main() {
       expect(find.text('Lahore'), findsNothing);
 
       await tester.tap(find.text('Karachi').last);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       final selectedCity = fakeController.selectedCity;
       expect(selectedCity, isNotNull);
@@ -111,7 +113,8 @@ void main() {
       await tester.tap(
         find.byKey(const Key('prayer_time_location_selector')),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       final pakistan = find.byKey(const Key('prayer_time_country_PK'));
       await tester.ensureVisible(pakistan);
