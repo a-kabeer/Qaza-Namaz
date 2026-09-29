@@ -11,6 +11,7 @@ import '../../../l10n/prayer_type_l10n.dart';
 
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
+import 'home_prayer_icon.dart';
 import 'home_qaza_activity.dart';
 import 'home_skeleton.dart';
 
@@ -331,22 +332,6 @@ class _DetailedMetric extends StatelessWidget {
   }
 }
 
-IconData homePrayerIcon(PrayerType prayer) {
-  switch (prayer) {
-    case PrayerType.fajr:
-      return Icons.wb_twilight_outlined;
-    case PrayerType.zuhr:
-      return Icons.wb_sunny_outlined;
-    case PrayerType.asr:
-      return Icons.sunny_snowing;
-    case PrayerType.maghrib:
-      return Icons.wb_twilight;
-    case PrayerType.isha:
-      return Icons.nightlight_outlined;
-    case PrayerType.witr:
-      return Icons.nightlight_round;
-  }
-}
 
 class HomeStatLine extends StatelessWidget {
   const HomeStatLine({
