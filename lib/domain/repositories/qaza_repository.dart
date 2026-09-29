@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../entities/qaza_activity.dart';
 import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../entities/qaza_completion_result.dart';
@@ -137,6 +138,14 @@ abstract interface class QazaRepository {
     DateTime? to,
     DateTime? beforeOriginalDate,
     String? beforeId,
+  });
+
+  /// Returns only the completion instant and prayer type for a bounded activity range.
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<PrayerType>? prayerTypes,
   });
 
   Future<QazaProgressSummary> getProgressSummary({required String userId});
