@@ -138,7 +138,7 @@ void main() {
 
       await tester.pumpWidget(_app(container));
 
-      await tester.tap(find.text('Urdu'));
+      await tester.tap(find.text('اردو'));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
