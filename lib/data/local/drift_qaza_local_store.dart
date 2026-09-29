@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/repositories/qaza_recovery_repository.dart';
@@ -96,6 +97,20 @@ class DriftQazaLocalStore extends QazaLocalStore {
     );
     return LocalQazaHistoryPage(records: page.records, hasMore: page.hasMore);
   }
+
+  @override
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<PrayerType>? prayerTypes,
+  }) =>
+      _database.qazaRecordsDao.getCompletedActivityRows(
+        userId: userId,
+        from: from,
+        toExclusive: toExclusive,
+        prayerTypes: prayerTypes?.map((value) => value.name),
+      );
 
   @override
   Future<int> countCompletedBetween({
