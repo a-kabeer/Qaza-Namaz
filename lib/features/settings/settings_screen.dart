@@ -27,7 +27,8 @@ class SettingsScreen extends ConsumerWidget {
 
     Future<void> changeLanguage(Locale selectedLocale) async {
       final resolved = LocaleNotifier.resolve(selectedLocale.languageCode);
-      if (resolved == null || locale.languageCode == resolved.languageCode) {
+      if (resolved == null ||
+          ref.read(localeProvider).languageCode == resolved.languageCode) {
         return;
       }
 
