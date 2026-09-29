@@ -76,7 +76,7 @@ void main() {
       expect(selectedCity.latitude.isFinite, isTrue);
       expect(selectedCity.longitude.isFinite, isTrue);
 
-      final location = const PrayerLocationRepository(
+      final location = PrayerLocationRepository(
         OfflineCityResolver(),
       ).fromCity(selectedCity);
       expect(location.city, 'Karachi');
