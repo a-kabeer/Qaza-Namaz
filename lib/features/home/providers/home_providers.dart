@@ -54,8 +54,9 @@ final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
   if (repository is! QazaActivityRepository) {
     throw StateError('Local Qaza repository does not support activity history.');
   }
+  final activityRepository = repository as QazaActivityRepository;
   return QazaActivityService(
-    repository,
+    activityRepository,
     enabledPrayerTypes: ref.watch(enabledPrayerTypesProvider),
   );
 });
