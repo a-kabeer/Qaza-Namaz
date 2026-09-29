@@ -90,7 +90,10 @@ void main() {
     'selection mode keeps the Qaza row footprint stable and uses trailing checkbox',
     () {
       final source =
-          File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+          File('lib/features/qaza/qaza_tracker_screen.dart')
+              .readAsStringSync()
+              .replaceAll('\r\n', '\n')
+              .replaceAll('\r', '\n');
 
       expect(source, contains('static const double _rowHeight = 68;'));
       expect(
