@@ -13,6 +13,18 @@ import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'prayer_time_controller.dart';
 
+enum PrayerTimeTargetAvailability {
+  available,
+  setupRequired,
+}
+
+final prayerTimeTargetAvailabilityProvider =
+    Provider<PrayerTimeTargetAvailability>((ref) {
+  return ref.watch(prayerTimeControllerProvider).valueOrNull == null
+      ? PrayerTimeTargetAvailability.setupRequired
+      : PrayerTimeTargetAvailability.available;
+});
+
 final prayerTimeCacheProvider = Provider<PrayerTimeCache>(
   (ref) => PrayerTimeCache(),
 );
@@ -129,12 +141,6 @@ final currentPrayerStateProvider =
   );
 });
 
-/// The current Qaza prayer derived from the Prayer Time state.
-///
-/// Returns the current prayer during an active prayer period, or the upcoming
-/// Fajr before Fajr begins. Because this provider returns a single enum value,
-/// consumers do not rebuild every second while the clock is inside one prayer
-/// period.
 final currentQazaPrayerTypeProvider = Provider.autoDispose<PrayerType?>((ref) {
   final state = ref.watch(currentPrayerStateProvider);
   return (state?.current ?? state?.next)?.qazaPrayerType;
