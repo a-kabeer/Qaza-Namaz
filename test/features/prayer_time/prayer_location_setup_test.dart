@@ -6,7 +6,7 @@ void main() {
   test('current location resolves Location Services before permission', () {
     final source = File(
       'lib/features/prayer_time/data/prayer_location_repository.dart',
-    ).readAsStringSync();
+    ).readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
     final services = source.indexOf(
       'ensureLocationServicesEnabled()',
