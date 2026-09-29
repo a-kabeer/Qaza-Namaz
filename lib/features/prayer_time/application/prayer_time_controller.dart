@@ -151,10 +151,6 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   }
 
   Future<void> refresh() async {
-    final current = state.valueOrNull;
-    if (current == null || current.location.source != PrayerLocationSource.current) {
-      return;
-    }
-    await _silentRefresh(current);
+    await refreshSchedule();
   }
 }
