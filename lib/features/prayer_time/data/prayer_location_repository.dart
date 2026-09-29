@@ -34,17 +34,6 @@ class PrayerLocationRepository {
 
   Future<bool> openAppSettings() => _locationSettings.openAppSettings();
 
-  Future<PrayerLocation?> getLastKnown() async {
-    final position = await Geolocator.getLastKnownPosition();
-    if (position == null) return null;
-    final timezone = await FlutterTimezone.getLocalTimezone();
-    return _resolver.resolveCurrent(
-      latitude: position.latitude,
-      longitude: position.longitude,
-      deviceTimezoneId: timezone.identifier,
-    );
-  }
-
   Future<PrayerLocation> getCurrent() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       final enabled = await _locationSettings.ensureLocationServicesEnabled();
@@ -96,5 +85,6 @@ class PrayerLocationRepository {
         countryCode: city.countryCode,
         timezoneId: city.timezoneId,
         source: PrayerLocationSource.city,
+        geonameId: city.geonameId,
       );
 }
