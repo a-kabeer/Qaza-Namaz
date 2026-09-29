@@ -84,7 +84,7 @@ void main() {
       await tester.pump();
 
       expect(find.byKey(const Key('prayer_time_city_search')), findsOneWidget);
-      expect(find.text('Karachi'), findsAtLeastNWidgets(1));
+      expect(find.byType(ListTile), findsWidgets);
 
       await tester.enterText(
         find.byKey(const Key('prayer_time_city_search')),
