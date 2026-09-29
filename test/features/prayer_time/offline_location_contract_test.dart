@@ -116,6 +116,20 @@ void main() {
     );
   });
 
+  test('city-name search does not match shared timezone text', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final results = catalog.citiesForCountry('PK', query: 'Karachi');
+
+    expect(results, isNotEmpty);
+    expect(
+      results.every((city) => city.city == 'Karachi'),
+      isTrue,
+      reason: 'All Pakistani cities must not match just because they share Asia/Karachi.',
+    );
+  });
+
   test('city search is diacritic-insensitive', () async {
     final catalog = OfflineCityCatalog();
     await catalog.load();
