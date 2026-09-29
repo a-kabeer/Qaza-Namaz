@@ -22,7 +22,8 @@ class OfflineFirstQazaRepository
         QazaRepository,
         QazaBulkWriteRepository,
         QazaUndoRepository,
-        QazaRecoveryRepository {
+        QazaRecoveryRepository,
+        QazaActivityRepository {
   OfflineFirstQazaRepository({
     required QazaLocalStore localStore,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
