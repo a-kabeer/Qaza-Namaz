@@ -179,6 +179,11 @@ void main() {
       expect(find.byKey(const Key('prayer_time_city_search')), findsOneWidget);
       expect(find.text('Tokyo'), findsAtLeastNWidgets(1));
       expect(find.text('Karachi'), findsNothing);
+
+      Navigator.of(tester.element(find.byKey(
+        const Key('prayer_time_city_search'),
+      ))).pop();
+      await tester.pump();
     },
   );
 }
