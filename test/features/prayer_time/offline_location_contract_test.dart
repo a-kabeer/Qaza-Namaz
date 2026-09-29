@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geonames_offline/geonames_offline.dart';
 import 'package:qaza_namaz/features/prayer_time/data/offline_city_resolver.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_location.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
+import 'package:qaza_namaz/features/prayer_time/domain/prayer_time_calculator.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -45,23 +48,44 @@ void main() {
     expect(catalog.countryCodes(), contains('US'));
     expect(catalog.countryCodes(), contains('JP'));
 
-    final karachi = catalog.citiesForCountry('PK', query: 'Karachi');
-    final tokyo = catalog.citiesForCountry('JP', query: 'Tokyo');
-    final london = catalog.citiesForCountry('GB', query: 'London');
+    const pakistanCities = [
+      ('Karachi', 'Asia/Karachi'),
+      ('Hyderabad', 'Asia/Karachi'),
+      ('Lahore', 'Asia/Karachi'),
+      ('Islamabad', 'Asia/Karachi'),
+      ('Peshawar', 'Asia/Karachi'),
+      ('Quetta', 'Asia/Karachi'),
+    ];
+    for (final (name, timezoneId) in pakistanCities) {
+      final results = catalog.citiesForCountry('PK', query: name);
+      expect(results, isNotEmpty, reason: 'Missing $name');
+      final city = results.first;
+      expect(city.geonameId, greaterThan(0));
+      expect(city.region, isNotEmpty, reason: 'Missing region for $name');
+      expect(city.country, 'Pakistan');
+      expect(city.countryCode, 'PK');
+      expect(city.timezoneId, timezoneId);
+      expect(tz.getLocation(city.timezoneId), isNotNull);
+    }
 
-    expect(karachi, isNotEmpty);
-    expect(karachi.first.geonameId, greaterThan(0));
-    expect(karachi.first.region, isNotEmpty);
-    expect(karachi.first.country, isNotEmpty);
-    expect(karachi.first.timezoneId, 'Asia/Karachi');
-    expect(tokyo, isNotEmpty);
-    expect(tokyo.first.timezoneId, 'Asia/Tokyo');
-    expect(london, isNotEmpty);
-    expect(london.first.timezoneId, 'Europe/London');
-
-    expect(tz.getLocation(karachi.first.timezoneId), isNotNull);
-    expect(tz.getLocation(tokyo.first.timezoneId), isNotNull);
-    expect(tz.getLocation(london.first.timezoneId), isNotNull);
+    const internationalCities = [
+      ('Tokyo', 'JP', 'Asia/Tokyo'),
+      ('London', 'GB', 'Europe/London'),
+      ('New York', 'US', 'America/New_York'),
+      ('Cairo', 'EG', 'Africa/Cairo'),
+      ('Sydney', 'AU', 'Australia/Sydney'),
+      ('Jakarta', 'ID', 'Asia/Jakarta'),
+    ];
+    for (final (name, countryCode, timezoneId) in internationalCities) {
+      final results = catalog.citiesForCountry(countryCode, query: name);
+      expect(results, isNotEmpty, reason: 'Missing $name ($countryCode)');
+      final city = results.first;
+      expect(city.countryCode, countryCode);
+      expect(city.timezoneId, timezoneId);
+      expect(city.latitude.isFinite, isTrue);
+      expect(city.longitude.isFinite, isTrue);
+      expect(tz.getLocation(city.timezoneId), isNotNull);
+    }
   });
 
   test('reverse GeoNames lookup keeps the actual requested GPS coordinates', () {
@@ -149,3 +173,50 @@ void main() {
     );
   });
 }
+
+
+test('manual city coordinates drive distinct prayer calculations', () async {
+  final catalog = OfflineCityCatalog();
+  await catalog.load();
+  final karachi = catalog.citiesForCountry('PK', query: 'Karachi').first;
+  final tokyo = catalog.citiesForCountry('JP', query: 'Tokyo').first;
+  const calculator = PrayerTimeCalculator();
+  final date = DateTime(2026, 9, 29);
+
+  const madhab = Madhab.hanafi;
+  final karachiSchedule = calculator.calculate(
+    location: PrayerLocation(
+      latitude: karachi.latitude,
+      longitude: karachi.longitude,
+      city: karachi.city,
+      region: karachi.region,
+      country: karachi.country,
+      countryCode: karachi.countryCode,
+      timezoneId: karachi.timezoneId,
+      source: PrayerLocationSource.city,
+      geonameId: karachi.geonameId,
+    ),
+    madhab: madhab,
+    localDate: date,
+  );
+  final tokyoSchedule = calculator.calculate(
+    location: PrayerLocation(
+      latitude: tokyo.latitude,
+      longitude: tokyo.longitude,
+      city: tokyo.city,
+      region: tokyo.region,
+      country: tokyo.country,
+      countryCode: tokyo.countryCode,
+      timezoneId: tokyo.timezoneId,
+      source: PrayerLocationSource.city,
+      geonameId: tokyo.geonameId,
+    ),
+    madhab: madhab,
+    localDate: date,
+  );
+
+  expect(
+    karachiSchedule.utcFor(PrayerSlot.fajr),
+    isNot(tokyoSchedule.utcFor(PrayerSlot.fajr)),
+  );
+});
