@@ -108,7 +108,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await tester.pumpWidget(_app(container, const Locale('ur')));
+      await tester.pumpWidget(_app(container));
 
       await tester.tap(find.text('English'));
       await tester.pumpAndSettle();
