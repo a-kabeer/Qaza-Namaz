@@ -15,11 +15,6 @@ class PrayerLocationRepository {
   final OfflineCityResolver _resolver;
   final AppLocationSettings _locationSettings;
 
-  Future<PrayerLocationRequirement> currentLocationRequirement() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      return PrayerLocationRequirement.locationServiceDisabled;
-    }
-
     return switch (await Geolocator.checkPermission()) {
       LocationPermission.denied => PrayerLocationRequirement.permissionRequired,
       LocationPermission.deniedForever =>
