@@ -25,6 +25,22 @@ class SettingsScreen extends ConsumerWidget {
       );
     }
 
+    Future<void> changeLanguage(Locale selectedLocale) async {
+      final resolved = LocaleNotifier.resolve(selectedLocale.languageCode);
+      if (resolved == null || locale.languageCode == resolved.languageCode) {
+        return;
+      }
+
+      final profile = await ref.read(userProfileProvider.future);
+      if (profile == null) return;
+
+      await ref.read(userProfileRepositoryProvider).save(
+            profile.copyWith(languageCode: resolved.languageCode),
+          );
+      ref.invalidate(userProfileProvider);
+      ref.read(localeProvider.notifier).set(resolved);
+    }
+
     return AppScaffold(
       title: l10n.settingsTitle,
       body: ListView(
@@ -61,7 +77,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {
-                  ref.read(localeProvider.notifier).set(Locale(value.first));
+                  changeLanguage(Locale(value.first));
                 },
               ),
             ),
