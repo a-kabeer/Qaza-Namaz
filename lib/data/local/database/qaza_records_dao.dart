@@ -323,8 +323,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                 : qazaRecords.prayerType.isIn(prayerTypes)),
       )
       ..orderBy([
-        (r) => OrderingTerm.asc(r.completedAt),
-        (r) => OrderingTerm.asc(r.id),
+        OrderingTerm.asc(qazaRecords.completedAt),
+        OrderingTerm.asc(qazaRecords.id),
       ]);
 
     final rows = await query.get();
