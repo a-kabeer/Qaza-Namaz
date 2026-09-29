@@ -1,8 +1,7 @@
 import 'package:flutter_timezone/flutter_timezone.dart';
-
-import '../../../core/platform/app_location_settings.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/platform/app_location_settings.dart';
 import '../domain/prayer_location.dart';
 import 'offline_city_resolver.dart';
 
@@ -14,6 +13,11 @@ class PrayerLocationRepository {
 
   final OfflineCityResolver _resolver;
   final AppLocationSettings _locationSettings;
+
+  Future<PrayerLocationRequirement> currentLocationRequirement() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return PrayerLocationRequirement.locationServiceDisabled;
+    }
 
     return switch (await Geolocator.checkPermission()) {
       LocationPermission.denied => PrayerLocationRequirement.permissionRequired,
@@ -29,6 +33,8 @@ class PrayerLocationRepository {
 
   Future<bool> openAppSettings() => _locationSettings.openAppSettings();
 
+  /// Performs a single explicit GPS acquisition. No other code path should
+  /// call this method automatically.
   Future<PrayerLocation> getCurrent() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       final enabled = await _locationSettings.ensureLocationServicesEnabled();
