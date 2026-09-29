@@ -41,16 +41,7 @@ class _PrayerTimePageState extends ConsumerState<PrayerTimePage>
     if (state != AppLifecycleState.resumed) return;
 
     ref.invalidate(prayerLocationRequirementProvider);
-    if (_resumeCurrentLocationAfterAppSettings) {
-      _resumeCurrentLocationAfterAppSettings = false;
-      Future<void>.microtask(
-        () => ref
-            .read(prayerTimeControllerProvider.notifier)
-            .useCurrentLocation(),
-      );
-    } else {
-      ref.read(prayerTimeControllerProvider.notifier).refresh();
-    }
+    _resumeCurrentLocationAfterAppSettings = false;
   }
 
   void _openAppSettings() {
