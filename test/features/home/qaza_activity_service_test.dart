@@ -40,6 +40,7 @@ void main() {
       expect(period.days[0].byPrayer[PrayerType.zuhr], 1);
       expect(period.days[0].goalReached, isTrue);
       expect(period.days[0].remaining, 0);
+      expect(period.days[0].progress, 1.0);
 
       expect(period.days[1].completed, 0);
       expect(period.days[1].byPrayer[PrayerType.fajr], 0);
@@ -100,6 +101,7 @@ void main() {
       expect(period.days[1].isFuture, isTrue);
       expect(period.days[1].hasGoal, isFalse);
       expect(period.days[1].goalReached, isFalse);
+      expect(period.days[1].remaining, 0);
       expect(period.totalTarget, 5);
       expect(period.remaining, 5);
     });
