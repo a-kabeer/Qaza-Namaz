@@ -1409,8 +1409,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeDetailedStatisticsSubtitle => 'مجموعی اور نماز وار تکمیل';
 
   @override
-
-  @override
   String get homeQazaActivity => 'قضا سرگرمی';
 
   @override
@@ -1427,9 +1425,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeRangeMonthly => 'ماہانہ';
-
-  @override
-  String get homeDailyTarget => 'روزانہ ہدف';
 
   @override
   String get homeGoalReached => 'ہدف مکمل';
@@ -1460,6 +1455,8 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeDayActivityDetails => 'دن کی تفصیلات';
+
+  @override
   String get homeTodayDate => 'آج';
 
   @override

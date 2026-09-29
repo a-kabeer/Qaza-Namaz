@@ -369,7 +369,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'You have completed your Qaza plan for today.\nMay Allah accept your efforts.';
 
   @override
-  String get homeDailyTarget => 'Daily target';
+  String get homeDailyTarget => 'Daily Target';
 
   @override
   String homePerDay(int count) {
@@ -1423,9 +1423,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeRangeMonthly => 'Monthly';
-
-  @override
-  String get homeDailyTarget => 'Daily Target';
 
   @override
   String get homeGoalReached => 'Goal Reached';

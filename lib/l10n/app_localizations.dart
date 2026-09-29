@@ -755,7 +755,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeDailyTarget.
   ///
   /// In en, this message translates to:
-  /// **'Daily target'**
+  /// **'Daily Target'**
   String get homeDailyTarget;
 
   /// No description provided for @homePerDay.
@@ -2425,22 +2425,101 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
+
+  /// No description provided for @homeQazaActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Activity'**
   String get homeQazaActivity;
+
+  /// No description provided for @homeProgressHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress History'**
   String get homeProgressHistory;
+
+  /// No description provided for @homeLastSevenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 Days'**
   String get homeLastSevenDays;
+
+  /// No description provided for @homeRangeSevenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'7 Days'**
   String get homeRangeSevenDays;
+
+  /// No description provided for @homeRangeThirtyDays.
+  ///
+  /// In en, this message translates to:
+  /// **'30 Days'**
   String get homeRangeThirtyDays;
+
+  /// No description provided for @homeRangeMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
   String get homeRangeMonthly;
-  String get homeDailyTarget;
+
+  /// No description provided for @homeGoalReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal Reached'**
   String get homeGoalReached;
+
+  /// No description provided for @homeRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
   String get homeRemaining;
+
+  /// No description provided for @homeActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
   String get homeActual;
+
+  /// No description provided for @homeNoActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed Qaza in this period.'**
   String get homeNoActivity;
+
+  /// No description provided for @homeSelectDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a day to see details.'**
   String get homeSelectDay;
+
+  /// No description provided for @homePreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
   String get homePreviousMonth;
+
+  /// No description provided for @homeNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
   String get homeNextMonth;
+
+  /// No description provided for @homeFutureDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Future'**
   String get homeFutureDay;
+
+  /// No description provided for @homeGoalsLastSevenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Goals · Last 7 Days'**
   String get homeGoalsLastSevenDays;
+
+  /// No description provided for @homeDayActivityDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Day Details'**
   String get homeDayActivityDetails;
 
   /// No description provided for @homeTodayDate.
