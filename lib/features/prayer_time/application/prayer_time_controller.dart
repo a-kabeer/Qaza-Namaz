@@ -14,7 +14,6 @@ import '../domain/prayer_time_calculator.dart';
 import 'prayer_time_providers.dart';
 
 class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
-  static const refreshInterval = Duration(hours: 4);
   bool _dateRefreshInFlight = false;
   PrayerTimeCache get _cache => ref.read(prayerTimeCacheProvider);
   PrayerLocationRepository get _locations =>
@@ -75,71 +74,6 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   Future<void> _persist(PrayerTimeSnapshot snapshot) async {
     await _cache.save(snapshot);
     state = AsyncData(snapshot);
-  }
-
-  Future<void> _silentRefresh(PrayerTimeSnapshot cached) async {
-    if (cached.location.source != PrayerLocationSource.current) return;
-    final age = DateTime.now().toUtc().difference(cached.updatedAt);
-    if (age >= Duration.zero && age < refreshInterval) return;
-    try {
-      final madhab = await _currentMadhab();
-      final latest = await _locations.getLastKnown();
-      if (latest != null) {
-        await _applyLocationIfNeeded(cached, latest, madhab);
-      }
-      final current = await _locations.getCurrent();
-      await _applyLocationIfNeeded(
-        state.valueOrNull ?? cached,
-        current,
-        madhab,
-      );
-    } catch (_) {
-      // Keep the valid cached schedule when a silent refresh cannot complete.
-    }
-  }
-
-  Future<void> _applyLocationIfNeeded(
-    PrayerTimeSnapshot baseline,
-    PrayerLocation location,
-    Madhab madhab,
-  ) async {
-    final movedKm = baseline.location.distanceKmTo(
-      location.latitude,
-      location.longitude,
-    );
-    final timezoneChanged =
-        baseline.location.timezoneId != location.timezoneId;
-
-    if (movedKm < 5 && !timezoneChanged) {
-      final updatedLocation = PrayerLocation(
-        latitude: location.latitude,
-        longitude: location.longitude,
-        city: location.city,
-        region: location.region,
-        country: location.country,
-        countryCode: location.countryCode,
-        timezoneId: baseline.location.timezoneId,
-        source: PrayerLocationSource.current,
-      );
-      await _persist(
-        PrayerTimeSnapshot(
-          location: updatedLocation,
-          settings: const PrayerSettings(),
-          today: baseline.today,
-          tomorrow: baseline.tomorrow,
-          updatedAt: baseline.updatedAt,
-          calculationMadhab: madhab,
-        ),
-      );
-      return;
-    }
-
-    await _persist(
-      await _calculate(
-        location: location,
-        madhab: madhab,
-      ),
-    );
   }
 
   Future<bool> useCurrentLocation() async {
