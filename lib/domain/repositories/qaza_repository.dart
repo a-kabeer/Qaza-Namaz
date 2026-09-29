@@ -141,7 +141,6 @@ abstract interface class QazaRepository {
   });
 
   /// Returns only the completion instant and prayer type for a bounded activity range.
-  /// Returns only the completion instant and prayer type for a bounded activity range.
   /// Production local storage overrides this with a targeted SQLite projection.
   Future<List<QazaActivityRow>> getCompletedActivityRows({
     required String userId,
