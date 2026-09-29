@@ -222,6 +222,15 @@ class _ActivityPeriodContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ActivitySummary(period: period),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            key: const Key('home_activity_progress'),
+            value: period.progress,
+            minHeight: 7,
+          ),
+        ),
         const SizedBox(height: 14),
         if (period.totalCompleted == 0)
           Padding(
