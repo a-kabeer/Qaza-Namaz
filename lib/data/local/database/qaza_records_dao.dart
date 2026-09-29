@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../core/utils/qaza_completion_id.dart';
 import '../../../domain/repositories/qaza_recovery_repository.dart';
@@ -297,6 +298,55 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           limit: limit,
           prayerType: prayerType,
           status: QazaStatus.completed.name);
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<String>? prayerTypes,
+  }) async {
+    if (!from.isBefore(toExclusive)) {
+      throw ArgumentError('from must be before toExclusive');
+    }
+    if (prayerTypes != null && prayerTypes.isEmpty) {
+      return const <QazaActivityRow>[];
+    }
+
+    final query = selectOnly(qazaRecords)
+      ..addColumns([qazaRecords.completedAt, qazaRecords.prayerType])
+      ..where(
+        qazaRecords.userId.equals(userId) &
+            qazaRecords.status.equals(QazaStatus.completed.name) &
+            qazaRecords.completedAt.isBiggerOrEqualValue(from) &
+            qazaRecords.completedAt.isSmallerThanValue(toExclusive) &
+            (prayerTypes == null
+                ? const Constant(true)
+                : qazaRecords.prayerType.isIn(prayerTypes)),
+      )
+      ..orderBy([
+        (r) => OrderingTerm.asc(r.completedAt),
+        (r) => OrderingTerm.asc(r.id),
+      ]);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final completedAt = row.read(qazaRecords.completedAt);
+      final prayerName = row.read(qazaRecords.prayerType);
+      if (completedAt == null || prayerName == null) {
+        throw StateError('Completed Qaza activity row is missing required data.');
+      }
+      final prayerType = PrayerType.values.firstWhere(
+        (value) => value.name == prayerName,
+        orElse: () => throw StateError(
+          'Unknown prayer type "$prayerName" in local database.',
+        ),
+      );
+      return QazaActivityRow(
+        completedAt: completedAt,
+        prayerType: prayerType,
+      );
+    }).toList(growable: false);
+  }
+
   Future<int> countCompletedBetween({
     required String userId,
     required DateTime from,
