@@ -80,7 +80,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 if (_range == _ActivityRange.monthly)
                   _MonthNavigator(
                     month: _month,
-                    canNext: !_month.isBefore(currentMonth),
+                    canNext: _month.isBefore(currentMonth),
                     onPrevious: () {
                       setState(() {
                         _month = DateTime(_month.year, _month.month - 1);
