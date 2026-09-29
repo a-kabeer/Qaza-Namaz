@@ -39,6 +39,12 @@ final offlineCityResolverProvider = Provider<OfflineCityResolver>(
   (ref) => OfflineCityResolver(),
 );
 
+final offlineCityCatalogProvider = FutureProvider<OfflineCityCatalog>((ref) async {
+  final catalog = OfflineCityCatalog();
+  await catalog.load();
+  return catalog;
+});
+
 final appLocationSettingsProvider = Provider<AppLocationSettings>(
   (ref) => const AppLocationSettings(),
 );
