@@ -15,6 +15,9 @@ class HomeController {
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDailyProgressProvider);
+    ref.invalidate(homeQazaActivitySevenDaysProvider);
+    ref.invalidate(homeQazaActivityThirtyDaysProvider);
+    ref.invalidate(homeQazaActivityMonthProvider);
     for (final prayer in ref.read(enabledPrayerTypesProvider)) {
       ref.invalidate(oldestPendingProvider(prayer));
     }

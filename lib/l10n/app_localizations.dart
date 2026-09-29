@@ -2425,6 +2425,23 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overall and prayer-wise completion'**
   String get homeDetailedStatisticsSubtitle;
+  String get homeQazaActivity;
+  String get homeProgressHistory;
+  String get homeLastSevenDays;
+  String get homeRangeSevenDays;
+  String get homeRangeThirtyDays;
+  String get homeRangeMonthly;
+  String get homeDailyTarget;
+  String get homeGoalReached;
+  String get homeRemaining;
+  String get homeActual;
+  String get homeNoActivity;
+  String get homeSelectDay;
+  String get homePreviousMonth;
+  String get homeNextMonth;
+  String get homeFutureDay;
+  String get homeGoalsLastSevenDays;
+  String get homeDayActivityDetails;
 
   /// No description provided for @homeTodayDate.
   ///

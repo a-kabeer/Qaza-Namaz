@@ -5,7 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../../domain/repositories/qaza_activity_repository.dart';
+import '../../../domain/services/qaza_activity_service.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../home_state.dart';
 
@@ -44,6 +47,89 @@ final homeDailyProgressProvider =
         to: end,
       );
   return HomeDailyProgress(completed: completed, target: target);
+});
+
+final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
+  final repository = ref.watch(qazaRepositoryProvider);
+  if (repository is! QazaActivityRepository) {
+    throw StateError('Local Qaza repository does not support activity history.');
+  }
+  final activityRepository = repository as QazaActivityRepository;
+  return QazaActivityService(
+    activityRepository,
+    enabledPrayerTypes: ref.watch(enabledPrayerTypesProvider),
+  );
+});
+
+final homeQazaActivitySevenDaysProvider =
+    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  if (userId == null) {
+    return QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: DateTime(today.year, today.month, today.day - 6),
+      toExclusive: DateTime(today.year, today.month, today.day + 1),
+      today: today,
+      dailyTarget: target,
+      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+    );
+  }
+  return ref.read(qazaActivityServiceProvider).buildRolling(
+        userId: userId,
+        today: today,
+        days: 7,
+        dailyTarget: target,
+      );
+});
+
+final homeQazaActivityThirtyDaysProvider =
+    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  if (userId == null) {
+    return QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: DateTime(today.year, today.month, today.day - 29),
+      toExclusive: DateTime(today.year, today.month, today.day + 1),
+      today: today,
+      dailyTarget: target,
+      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+    );
+  }
+  return ref.read(qazaActivityServiceProvider).buildRolling(
+        userId: userId,
+        today: today,
+        days: 30,
+        dailyTarget: target,
+      );
+});
+
+final homeQazaActivityMonthProvider =
+    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
+        (ref, month) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  final normalizedMonth = DateTime(month.year, month.month);
+  if (userId == null) {
+    return QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: normalizedMonth,
+      toExclusive: DateTime(normalizedMonth.year, normalizedMonth.month + 1),
+      today: today,
+      dailyTarget: target,
+      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+    );
+  }
+  return ref.read(qazaActivityServiceProvider).buildMonth(
+        userId: userId,
+        month: normalizedMonth,
+        today: today,
+        dailyTarget: target,
+      );
 });
 
 class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
