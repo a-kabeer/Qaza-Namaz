@@ -172,51 +172,51 @@ void main() {
       'geonameId\tcity\tregion\tcountry\tcountryCode\tlatitude\tlongitude\ttimezoneId',
     );
   });
+
+
+  test('manual city coordinates drive distinct prayer calculations', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+    final karachi = catalog.citiesForCountry('PK', query: 'Karachi').first;
+    final tokyo = catalog.citiesForCountry('JP', query: 'Tokyo').first;
+    const calculator = PrayerTimeCalculator();
+    final date = DateTime(2026, 9, 29);
+  
+    const madhab = Madhab.hanafi;
+    final karachiSchedule = calculator.calculate(
+      location: PrayerLocation(
+        latitude: karachi.latitude,
+        longitude: karachi.longitude,
+        city: karachi.city,
+        region: karachi.region,
+        country: karachi.country,
+        countryCode: karachi.countryCode,
+        timezoneId: karachi.timezoneId,
+        source: PrayerLocationSource.city,
+        geonameId: karachi.geonameId,
+      ),
+      madhab: madhab,
+      localDate: date,
+    );
+    final tokyoSchedule = calculator.calculate(
+      location: PrayerLocation(
+        latitude: tokyo.latitude,
+        longitude: tokyo.longitude,
+        city: tokyo.city,
+        region: tokyo.region,
+        country: tokyo.country,
+        countryCode: tokyo.countryCode,
+        timezoneId: tokyo.timezoneId,
+        source: PrayerLocationSource.city,
+        geonameId: tokyo.geonameId,
+      ),
+      madhab: madhab,
+      localDate: date,
+    );
+  
+    expect(
+      karachiSchedule.utcFor(PrayerSlot.fajr),
+      isNot(tokyoSchedule.utcFor(PrayerSlot.fajr)),
+    );
+  });
 }
-
-
-test('manual city coordinates drive distinct prayer calculations', () async {
-  final catalog = OfflineCityCatalog();
-  await catalog.load();
-  final karachi = catalog.citiesForCountry('PK', query: 'Karachi').first;
-  final tokyo = catalog.citiesForCountry('JP', query: 'Tokyo').first;
-  const calculator = PrayerTimeCalculator();
-  final date = DateTime(2026, 9, 29);
-
-  const madhab = Madhab.hanafi;
-  final karachiSchedule = calculator.calculate(
-    location: PrayerLocation(
-      latitude: karachi.latitude,
-      longitude: karachi.longitude,
-      city: karachi.city,
-      region: karachi.region,
-      country: karachi.country,
-      countryCode: karachi.countryCode,
-      timezoneId: karachi.timezoneId,
-      source: PrayerLocationSource.city,
-      geonameId: karachi.geonameId,
-    ),
-    madhab: madhab,
-    localDate: date,
-  );
-  final tokyoSchedule = calculator.calculate(
-    location: PrayerLocation(
-      latitude: tokyo.latitude,
-      longitude: tokyo.longitude,
-      city: tokyo.city,
-      region: tokyo.region,
-      country: tokyo.country,
-      countryCode: tokyo.countryCode,
-      timezoneId: tokyo.timezoneId,
-      source: PrayerLocationSource.city,
-      geonameId: tokyo.geonameId,
-    ),
-    madhab: madhab,
-    localDate: date,
-  );
-
-  expect(
-    karachiSchedule.utcFor(PrayerSlot.fajr),
-    isNot(tokyoSchedule.utcFor(PrayerSlot.fajr)),
-  );
-});
