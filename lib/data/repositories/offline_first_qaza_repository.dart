@@ -1,6 +1,7 @@
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_activity.dart';
+import '../../domain/repositories/qaza_activity_repository.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
