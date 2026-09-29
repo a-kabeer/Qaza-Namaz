@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../core/utils/qaza_completion_id.dart';
@@ -325,6 +326,34 @@ abstract class QazaLocalStore {
           in snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
         if (wanted.contains(record.id)) record,
     ];
+  }
+
+  /// Returns the minimal completion projection needed for activity history.
+  /// Production Drift storage overrides this with a bounded SQLite query.
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<PrayerType>? prayerTypes,
+  }) async {
+    if (!from.isBefore(toExclusive)) {
+      throw ArgumentError('from must be before toExclusive');
+    }
+    final snapshot = await load();
+    final allowed = prayerTypes?.toSet();
+    return (snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
+        .where((record) => record.status == QazaStatus.completed)
+        .where((record) => allowed == null || allowed.contains(record.prayerType))
+        .map((record) => record.completedAt == null
+            ? null
+            : QazaActivityRow(
+                completedAt: record.completedAt!,
+                prayerType: record.prayerType,
+              ))
+        .whereType<QazaActivityRow>()
+        .where((row) => !row.completedAt.isBefore(from))
+        .where((row) => row.completedAt.isBefore(toExclusive))
+        .toList(growable: false);
   }
 
   /// Counts completions in [from, to) without materializing unrelated records.
