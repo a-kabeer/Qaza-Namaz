@@ -288,9 +288,7 @@ class OfflineCityCatalog {
       if (normalizedQuery.isEmpty) return true;
 
       return _normalizeSearchText(city.city).contains(normalizedQuery) ||
-          _normalizeSearchText(city.region).contains(normalizedQuery) ||
-          _normalizeSearchText(city.country).contains(normalizedQuery) ||
-          _normalizeSearchText(city.timezoneId).contains(normalizedQuery);
+          _normalizeSearchText(city.region).contains(normalizedQuery);
     }).toList(growable: false);
 
     return List.unmodifiable(result);
