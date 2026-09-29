@@ -29,7 +29,6 @@ dependencies:
   adhan_dart: ^2.0.1
   geolocator: ^14.0.3
   flutter_timezone: ^5.1.0
-  timezone_country: ^1.2.0
   geonames_offline: ^0.1.0
 
 dev_dependencies:
@@ -50,6 +49,7 @@ flutter:
   assets:
     - assets/knowledge_base/content/qaza_masail_mugalat_en.json
     - assets/knowledge_base/content/qaza_masail_mugalat_ur.json
+    - assets/data/geonames_cities15000.tsv
   fonts:
     # Noto Nastaliq Urdu, SIL Open Font License 1.1 (assets/fonts/OFL.txt).
     # A single variable file covering wght 400-700; the theme selects a weight
