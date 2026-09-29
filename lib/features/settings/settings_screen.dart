@@ -6,6 +6,7 @@ import '../../core/constants/app_metadata.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
 import 'qaza_reset_controller.dart';
 
@@ -121,11 +122,11 @@ class _ResetQazaCounterRow extends ConsumerWidget {
   }
 }
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return AppScaffold(
       title: l10n.settingsAboutSection,
@@ -139,6 +140,12 @@ class AboutScreen extends StatelessWidget {
           ListTile(
             title: Text(l10n.commonVersion),
             subtitle: Text(appDisplayVersion),
+          ),
+          ListTile(
+            title: const Text('GeoNames attribution'),
+            subtitle: Text(
+              ref.read(offlineCityResolverProvider).attribution,
+            ),
           ),
         ],
       ),
