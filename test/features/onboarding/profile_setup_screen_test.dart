@@ -215,6 +215,9 @@ void main() {
             qazaImportProvider.overrideWith(
               () => importController,
             ),
+            qazaPlanRevisionRepositoryProvider.overrideWithValue(
+              _FakeQazaPlanRevisionRepository(),
+            ),
           ],
           child: MaterialApp(
             locale: const Locale('en'),
