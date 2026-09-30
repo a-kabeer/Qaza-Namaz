@@ -114,6 +114,7 @@ abstract class QazaLocalStore {
       PrayerType? prayerType,
       Iterable<PrayerType>? prayerTypes,
       QazaStatus? status,
+      String? additionId,
       DateTime? from,
       DateTime? to,
       DateTime? afterOriginalDate,
