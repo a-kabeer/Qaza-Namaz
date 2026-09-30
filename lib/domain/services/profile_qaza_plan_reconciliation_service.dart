@@ -131,9 +131,7 @@ class ProfileQazaPlanReconciliationService {
     }
 
     final generationOperationIds =
-        oldRevision?.ledgerDecision == QazaPlanLedgerDecision.applied
-            ? oldRevision?.generationOperationIds ?? const <String>[]
-            : const <String>[];
+        oldRevision?.generationOperationIds ?? const <String>[];
 
     final generatedPending = await _loadGeneratedPendingRecords(
       userId: userId,
