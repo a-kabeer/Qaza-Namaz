@@ -1620,6 +1620,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileQazaToAdd => 'New Qaza to add';
 
   @override
+  String get profileQazaRestored => 'Previously removed Qaza to restore';
+
+  @override
+  String get profileQazaUpdatedKeptExisting =>
+      'Profile updated. Your existing Qaza records were kept.';
+
+  @override
   String get profileQazaNoLongerRequired => 'Pending Qaza no longer required';
 
   @override
