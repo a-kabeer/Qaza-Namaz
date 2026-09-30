@@ -19,7 +19,6 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_undo_feedback.dart';
-import 'history/qaza_history_screen.dart';
 import 'qaza_navigation.dart';
 
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
@@ -57,27 +56,16 @@ class QazaTrackerScreen extends ConsumerWidget {
         floatingActionButton:
             state.selectionMode ? null : const AddQazaFab(),
         body: SafeArea(
-          child: DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                _QazaTrackerHeader(selectionMode: state.selectionMode),
-                Expanded(
-                  child: TabBarView(
-                    physics: state.selectionMode
-                        ? const NeverScrollableScrollPhysics()
-                        : null,
-                    children: [
-                      _PendingTrackerContent(
-                        state: state,
-                        controller: controller,
-                      ),
-                      const QazaHistoryScreen(embedded: true),
-                    ],
-                  ),
+          child: Column(
+            children: [
+              _QazaTrackerHeader(selectionMode: state.selectionMode),
+              Expanded(
+                child: _PendingTrackerContent(
+                  state: state,
+                  controller: controller,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -106,12 +94,7 @@ class _QazaTrackerHeader extends StatelessWidget {
           height: _headerContentHeight,
           child: selectionMode
               ? const _SelectionContextHeader()
-              : const TabBar(
-                  tabs: [
-                    Tab(text: 'Pending'),
-                    Tab(text: 'History'),
-                  ],
-                ),
+              : const Divider(height: 1),
         ),
       ],
     );
