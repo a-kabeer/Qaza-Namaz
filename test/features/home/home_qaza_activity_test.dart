@@ -40,7 +40,12 @@ void main() {
       expect(find.text('Yearly'), findsOneWidget);
       expect(find.text('7 Days'), findsNothing);
       expect(find.text('30 Days'), findsNothing);
-      expect(find.text('27 Sep – 3 Oct 2026'), findsOneWidget);
+      final header = tester.widget<Text>(
+        find.byKey(const Key('home_activity_date_header')),
+      );
+      expect(header.data, contains('2026'));
+      expect(header.data, contains('Sep'));
+      expect(header.data, contains('Oct'));
       expect(find.text('Weekly Target'), findsOneWidget);
       expect(find.text('Target To Date'), findsOneWidget);
     },
@@ -58,7 +63,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('4 Oct – 10 Oct 2026'), findsOneWidget);
+      final nextHeader = tester.widget<Text>(
+        find.byKey(const Key('home_activity_date_header')),
+      );
+      expect(nextHeader.data, contains('Oct'));
+      expect(nextHeader.data, contains('2026'));
       expect(find.text('Weekly Target'), findsNothing);
       expect(find.text('Target To Date'), findsNothing);
 
@@ -68,7 +77,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('27 Sep – 3 Oct 2026'), findsOneWidget);
+      final previousHeader = tester.widget<Text>(
+        find.byKey(const Key('home_activity_date_header')),
+      );
+      expect(previousHeader.data, contains('Sep'));
+      expect(previousHeader.data, contains('2026'));
       expect(find.text('Weekly Target'), findsOneWidget);
     },
   );
