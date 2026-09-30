@@ -266,10 +266,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomeTodayProgress(summary: summary),
                   const SizedBox(height: 12),
                 ],
-                if (!allCompleted) ...[
-                  HomePendingByPrayer(summary: summary),
-                  const SizedBox(height: 16),
-                ],
                 HomeDailyGoals(
                   onDetails: () => _open(
                     context,
@@ -285,6 +281,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     const HomeStatisticsSummaryScreen(),
                   ),
                 ),
+                if (!allCompleted) ...[
+                  const SizedBox(height: 16),
+                  HomePendingByPrayer(summary: summary),
+                ],
               ],
             ),
           ),
