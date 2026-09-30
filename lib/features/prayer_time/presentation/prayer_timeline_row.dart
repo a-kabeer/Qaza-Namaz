@@ -8,6 +8,11 @@ import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
 import '../domain/restricted_time.dart';
 
+enum PrayerTimelineRowVariant {
+  card,
+  cohesive,
+}
+
 class PrayerTimelineRow extends StatelessWidget {
   const PrayerTimelineRow({
     super.key,
@@ -15,6 +20,9 @@ class PrayerTimelineRow extends StatelessWidget {
     required this.time,
     this.countdown,
     this.active = false,
+    this.icon,
+    this.variant = PrayerTimelineRowVariant.card,
+    this.restricted = false,
   });
 
   static const double _countdownWidth = 96;
@@ -24,9 +32,18 @@ class PrayerTimelineRow extends StatelessWidget {
   final String time;
   final String? countdown;
   final bool active;
+  final IconData? icon;
+  final PrayerTimelineRowVariant variant;
+  final bool restricted;
 
   @override
   Widget build(BuildContext context) {
+    return variant == PrayerTimelineRowVariant.cohesive
+        ? _buildCohesive(context)
+        : _buildCard(context);
+  }
+
+  Widget _buildCard(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final labelColor = active ? scheme.onPrimaryContainer : scheme.onSurface;
     final timeColor = active ? scheme.onPrimaryContainer : scheme.onSurface;
@@ -84,6 +101,81 @@ class PrayerTimelineRow extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildCohesive(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final accent = restricted ? scheme.tertiary : scheme.primary;
+    final background = active
+        ? (restricted ? scheme.surfaceContainerHighest : scheme.primaryContainer)
+        : null;
+    final nameColor = active && !restricted
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface;
+    final timeColor = active && !restricted
+        ? scheme.onPrimaryContainer
+        : scheme.onSurfaceVariant;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+        border: active
+            ? Border.all(
+                color: accent.withValues(alpha: .18),
+              )
+            : null,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 20,
+                color: accent,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                color: nameColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            time,
+            maxLines: 1,
+            overflow: TextOverflow.clip,
+            textAlign: TextAlign.end,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+              color: timeColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class RestrictedTimeTimelineRow extends ConsumerWidget {
@@ -109,9 +201,6 @@ class RestrictedTimeTimelineRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Reuse the existing completion gate before subscribing directly to the
-    // clock/state. Screens that already override this gate remain timer-free
-    // when restricted time is known to be inactive.
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
     if (!restricted) return const SizedBox.shrink();
 
