@@ -8,7 +8,6 @@ import '../../core/utils/qaza_date.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_selection_grid.dart';
 import '../../core/widgets/state_widgets.dart';
-import '../../domain/entities/qaza_operation.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
@@ -156,23 +155,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             userId: ref.read(requiredUserIdProvider),
             dates: current.selectedDates,
             prayers: current.selectedPrayers,
-            operationType: switch (current.mode) {
-              DateSelectionMode.single => QazaOperationType.singleDateAdd,
-              DateSelectionMode.range => QazaOperationType.rangeAdd,
-              DateSelectionMode.multiple =>
-                QazaOperationType.multipleDateAdd,
-            },
-            inputSnapshot: {
-              'version': 1,
-              'mode': current.mode.name,
-              'dates': [
-                for (final date in current.selectedDates)
-                  QazaDate.normalize(date).toIso8601String(),
-              ],
-              'prayers': [
-                for (final prayer in current.selectedPrayers) prayer.name,
-              ],
-            },
             earliestDate: controller.startPrayingDate,
             today: controller.today,
             witrAllowed: ProfileRules.effectiveWitr(profile),
