@@ -80,6 +80,50 @@ class QazaActivityService {
     );
   }
 
+  /// Builds the current local Sunday-through-Saturday calendar week.
+  Future<QazaActivityPeriod> buildCurrentCalendarWeek({
+    required String userId,
+    required DateTime today,
+    required int dailyTarget,
+  }) {
+    final normalizedToday = _dateOnly(today);
+    final from = calendarWeekStartForDate(normalizedToday);
+    final toExclusive = calendarWeekEndExclusiveForDate(normalizedToday);
+
+    return buildPeriod(
+      userId: userId,
+      from: from,
+      toExclusive: toExclusive,
+      today: normalizedToday,
+      dailyTarget: dailyTarget,
+    );
+  }
+
+  /// Returns the Sunday at the start of the local calendar week containing [date].
+  static DateTime calendarWeekStartForDate(DateTime date) {
+    final normalized = _dateOnly(date);
+    final daysSinceSunday = normalized.weekday % 7;
+    return DateTime(
+      normalized.year,
+      normalized.month,
+      normalized.day - daysSinceSunday,
+    );
+  }
+
+  /// Returns the exclusive boundary immediately after the Saturday of [date]'s week.
+  static DateTime calendarWeekEndExclusiveForDate(DateTime date) =>
+      DateTime(
+        calendarWeekStartForDate(date).year,
+        calendarWeekStartForDate(date).month,
+        calendarWeekStartForDate(date).day + 7,
+      );
+
+  /// The weekly target always represents all seven calendar days, including future days.
+  static int weeklyTargetFromDailyTarget(int dailyTarget) {
+    if (dailyTarget <= 0) return 0;
+    return dailyTarget * 7;
+  }
+
   Future<QazaActivityPeriod> buildMonth({
     required String userId,
     required DateTime month,
