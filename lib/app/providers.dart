@@ -18,16 +18,20 @@ import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/local/qaza_plan_revision_repository.dart';
 import '../data/local/user_profile_repository.dart';
+import '../data/local/database/qaza_addition_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
 import '../domain/entities/qaza_record.dart';
+import '../domain/entities/qaza_addition.dart';
 import '../domain/entities/user_profile.dart';
 import '../domain/repositories/qaza_plan_revision_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
+import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
 import '../domain/services/qaza_service.dart';
+import '../domain/services/qaza_addition_service.dart';
 import '../domain/services/qaza_undo_service.dart';
 import '../domain/services/save_profile_use_case.dart';
 
@@ -122,6 +126,29 @@ final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
       witrInclusionResolver: () => ref.read(effectiveWitrProvider),
       diagnostics: ref.watch(diagnosticsProvider),
     ));
+
+final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>(
+  (ref) => DriftQazaAdditionRepository(ref.watch(appDatabaseProvider)),
+);
+
+final qazaAdditionServiceProvider = Provider<QazaAdditionService>(
+  (ref) => QazaAdditionService(
+    qazaService: ref.watch(qazaServiceProvider),
+    repository: ref.watch(qazaAdditionRepositoryProvider),
+  ),
+);
+
+final qazaAdditionDetailProvider =
+    FutureProvider.autoDispose.family<QazaAdditionDetail?, String>(
+  (ref, additionId) {
+    final userId = ref.watch(activeUserIdProvider);
+    if (userId == null) return Future.value(null);
+    return ref.read(qazaAdditionRepositoryProvider).getAdditionDetail(
+          userId: userId,
+          additionId: additionId,
+        );
+  },
+);
 
 final sahibAlTartibProvider =
     FutureProvider.autoDispose<SahibAlTartibState>((ref) {
