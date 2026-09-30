@@ -529,7 +529,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'قضا ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
 
   @override
-  String get qazaRecordDeleted => 'قضا حالیہ حذف شدہ میں منتقل کر دی گئی ہے۔';
+  String get qazaRecordDeleted => 'قضا مستقل طور پر حذف ہو گئی ہے۔';
 
   @override
   String get qazaRecordDeleteFailed =>
