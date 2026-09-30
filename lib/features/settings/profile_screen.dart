@@ -56,6 +56,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     final useCase = ref.read(saveProfileUseCaseProvider);
     final snackbar = ref.read(appSnackbarServiceProvider);
+    final l10n = AppLocalizations.of(context);
 
     try {
       final preview = await useCase.prepareSettingsSave(
