@@ -2792,6 +2792,48 @@ abstract class AppLocalizations {
   /// **'Save Changes'**
   String get profileSave;
 
+  /// No description provided for @profileQazaPlanChangedTitle.
+
+  /// In en, this message translates to:
+  /// **'Qaza plan will be updated'**
+  String get profileQazaPlanChangedTitle;
+
+  /// No description provided for @profileQazaPlanSummary.
+
+  /// In en, this message translates to:
+  /// **'Your profile change changes the calculated Qaza plan.'**
+  String get profileQazaPlanSummary;
+
+  /// No description provided for @profileQazaPreviousTotal.
+  String get profileQazaPreviousTotal;
+
+  /// No description provided for @profileQazaNewTotal.
+  String get profileQazaNewTotal;
+
+  /// No description provided for @profileQazaCompletedInPlan.
+  String get profileQazaCompletedInPlan;
+
+  /// No description provided for @profileQazaToAdd.
+  String get profileQazaToAdd;
+
+  /// No description provided for @profileQazaNoLongerRequired.
+  String get profileQazaNoLongerRequired;
+
+  /// No description provided for @profileQazaKeepExisting.
+  String get profileQazaKeepExisting;
+
+  /// No description provided for @profileQazaApply.
+  String get profileQazaApply;
+
+  /// No description provided for @profileQazaCompletedProtected.
+  String get profileQazaCompletedProtected;
+
+  /// No description provided for @profileQazaUpdated.
+  String get profileQazaUpdated;
+
+  /// No description provided for @profileQazaUpdatedNoChange.
+  String get profileQazaUpdatedNoChange;
+
   /// No description provided for @qazaReviewTitle.
   ///
   /// In en, this message translates to:
