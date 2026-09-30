@@ -8,13 +8,12 @@ import '../entities/qaza_completion_result.dart';
 import '../repositories/qaza_repository.dart';
 import '../repositories/qaza_bulk_write_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
-import '../repositories/qaza_recovery_repository.dart';
 import 'qaza_availability_service.dart';
 import 'profile_rules.dart';
 import 'sahib_al_tartib_service.dart';
 
 export '../entities/qaza_progress.dart';
-export '../repositories/qaza_repository.dart' show QazaHistoryPage, QazaPage;
+export '../repositories/qaza_repository.dart' show QazaPage;
 export 'qaza_availability_service.dart'
     show QazaAvailabilityAnalysis, QazaEligibility, QazaPrayerKey;
 export 'sahib_al_tartib_service.dart'
@@ -270,35 +269,17 @@ class QazaService {
   /// first, bounded to a single row — no ledger is materialized to find it.
   Future<QazaRecord?> latestPending(
       {required String userId, required PrayerType prayerType}) async {
-    final page = await repository.getHistoryPage(
+    final page = await repository.getPage(
       userId: userId,
       limit: 1,
       prayerType: prayerType,
       prayerTypes: _enabledPrayerTypes,
       status: QazaStatus.pending,
+      descending: true,
     );
     return page.records.isEmpty ? null : page.records.first;
   }
 
-  Future<QazaHistoryPage> getHistoryPage(
-          {required String userId,
-          int limit = 50,
-          PrayerType? prayerType,
-          QazaStatus? status = QazaStatus.completed,
-          DateTime? from,
-          DateTime? to,
-          DateTime? beforeOriginalDate,
-          String? beforeId}) =>
-      repository.getHistoryPage(
-          userId: userId,
-          limit: limit,
-          prayerType: prayerType,
-          prayerTypes: _enabledPrayerTypes,
-          status: status,
-          from: from,
-          to: to,
-          beforeOriginalDate: beforeOriginalDate,
-          beforeId: beforeId);
   Future<QazaProgressSummary> getProgressSummary({
     required String userId,
   }) async {
@@ -322,24 +303,23 @@ class QazaService {
     final sortedDates = normalizedDates.toList()..sort();
     final result = <QazaRecord>[];
     for (final prayer in selectedPrayers) {
-      for (final status in <QazaStatus?>[null, QazaStatus.deleted]) {
-        DateTime? beforeDate;
-        String? beforeId;
-        while (true) {
-          final page = await repository.getHistoryPage(
-              userId: userId,
-              limit: 500,
-              prayerType: prayer,
-              status: status,
-              from: sortedDates.first,
-              to: sortedDates.last,
-              beforeOriginalDate: beforeDate,
-              beforeId: beforeId);
-          result.addAll(page.records);
-          if (!page.hasMore) break;
-          beforeDate = page.nextOriginalDate;
-          beforeId = page.nextId;
-        }
+      DateTime? afterDate;
+      String? afterId;
+      while (true) {
+        final page = await repository.getPage(
+          userId: userId,
+          limit: 500,
+          prayerType: prayer,
+          status: null,
+          from: sortedDates.first,
+          to: sortedDates.last,
+          afterOriginalDate: afterDate,
+          afterId: afterId,
+        );
+        result.addAll(page.records);
+        if (!page.hasMore) break;
+        afterDate = page.nextOriginalDate;
+        afterId = page.nextId;
       }
     }
     return result;
@@ -443,26 +423,11 @@ class QazaService {
   Future<void> deleteRecord({
     required String userId,
     required String recordId,
-    String? operationId,
-    DateTime? deletedAt,
-  }) async {
-    if (userId.isEmpty || recordId.isEmpty) {
-      throw ArgumentError('Invalid Qaza record deletion.');
-    }
-    final recovery = repository is QazaRecoveryRepository
-        ? repository as QazaRecoveryRepository
-        : null;
-    if (recovery != null) {
-      await recovery.softDeleteRecords(
+  }) =>
+      repository.deleteRecord(
         userId: userId,
-        recordIds: [recordId],
-        deletedAt: deletedAt ?? DateTime.now(),
-        operationId: operationId ?? 'legacy_delete',
+        recordId: recordId,
       );
-      return;
-    }
-    await repository.deleteRecord(userId: userId, recordId: recordId);
-  }
 
   Future<void> addRecords(List<QazaRecord> records) =>
       repository.addRecords(records);
@@ -587,8 +552,6 @@ class QazaService {
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
     int batchSize = 500,
     void Function(QazaImportProgress progress)? onProgress,
-    String? operationId,
-    DateTime? operationCreatedAt,
     DateTime? earliestDate,
     DateTime? today,
     bool? witrAllowed,
@@ -663,7 +626,7 @@ class QazaService {
       return const QazaImportResult(total: 0, added: 0, skipped: 0);
     }
 
-    final now = operationCreatedAt ?? DateTime.now();
+    final now = DateTime.now();
     var processed = 0;
     var added = 0;
     for (var start = 0; start < total; start += batchSize) {
@@ -682,7 +645,6 @@ class QazaService {
           QazaRecord(
             id: candidate.value,
             userId: userId,
-            operationId: operationId,
             prayerType: candidate.prayerType,
             originalDate: candidate.date,
             status: QazaStatus.pending,
@@ -727,8 +689,6 @@ class QazaService {
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
     int batchSize = 500,
     void Function(int processed, int total)? onProgress,
-    String? operationId,
-    DateTime? operationCreatedAt,
   }) async {
     final result = await importQazaForDates(
       userId: userId,
@@ -739,8 +699,6 @@ class QazaService {
       onProgress: onProgress == null
           ? null
           : (progress) => onProgress(progress.processed, progress.total),
-      operationId: operationId,
-      operationCreatedAt: operationCreatedAt,
     );
     return result.added;
   }
@@ -817,172 +775,6 @@ class QazaService {
     return valid.length;
   }
 
-  Future<QazaPage> getOperationPage({
-    required String userId,
-    required String operationId,
-    required bool matchLastAction,
-    required DateTime operationAt,
-    int limit = 50,
-    DateTime? beforeOriginalDate,
-    String? beforeId,
-    QazaStatus? status,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).getOperationPage(
-      userId: userId,
-      operationId: operationId,
-      matchLastAction: matchLastAction,
-      operationAt: operationAt,
-      prayerTypes: _enabledPrayerTypes,
-      limit: limit,
-      beforeOriginalDate: beforeOriginalDate,
-      beforeId: beforeId,
-      status: status,
-    );
-  }
-
-  Future<QazaHistoryPage> getRecentlyDeletedPage({
-    required String userId,
-    int limit = 50,
-    DateTime? beforeDeletedAt,
-    String? beforeId,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).getRecentlyDeletedPage(
-      userId: userId,
-      limit: limit,
-      prayerTypes: _enabledPrayerTypes,
-      beforeDeletedAt: beforeDeletedAt,
-      beforeId: beforeId,
-    );
-  }
-
-  Future<int> deleteRecordsWithRecovery({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime deletedAt,
-    required String operationId,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).softDeleteRecords(
-      userId: userId,
-      recordIds: recordIds,
-      deletedAt: deletedAt,
-      operationId: operationId,
-    );
-  }
-
-  Future<int> restoreDeletedRecords({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime restoredAt,
-    required String operationId,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).restoreDeletedRecords(
-      userId: userId,
-      recordIds: recordIds,
-      restoredAt: restoredAt,
-      operationId: operationId,
-    );
-  }
-
-  Future<int> undoAddedOperation({
-    required String userId,
-    required String operationId,
-    required DateTime expectedCreatedAt,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).undoAddedOperation(
-      userId: userId,
-      operationId: operationId,
-      expectedCreatedAt: expectedCreatedAt,
-    );
-  }
-
-  Future<int> removeAddition({
-    required String userId,
-    required String operationId,
-    required DateTime expectedCreatedAt,
-    required DateTime deletedAt,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).removeAddition(
-      userId: userId,
-      operationId: operationId,
-      expectedCreatedAt: expectedCreatedAt,
-      deletedAt: deletedAt,
-    );
-  }
-
-  Future<QazaOperationSummary> getOperationSummary({
-    required String userId,
-    required String operationId,
-  }) {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-    return (repository as QazaRecoveryRepository).getOperationSummary(
-      userId: userId,
-      operationId: operationId,
-      prayerTypes: _enabledPrayerTypes,
-    );
-  }
-
-  Future<int> purgeDeletedBefore({
-    required String userId,
-    required DateTime cutoff,
-  }) async {
-    if (repository is! QazaRecoveryRepository) {
-      throw StateError('Qaza recovery is not supported by this repository.');
-    }
-
-    // Purge only records visible to the current profile. This deliberately
-    // preserves hidden Witr records so disabling Witr never destroys data that
-    // can become visible again if the user later enables it.
-    DateTime? cursorDeletedAt;
-    String? cursorId;
-    var removed = 0;
-
-    while (true) {
-      final page = await getRecentlyDeletedPage(
-        userId: userId,
-        limit: 200,
-        beforeDeletedAt: cursorDeletedAt,
-        beforeId: cursorId,
-      );
-      if (page.records.isEmpty) break;
-
-      for (final record in page.records) {
-        if (!record.updatedAt.isBefore(cutoff)) continue;
-        await repository.deleteRecord(
-          userId: userId,
-          recordId: record.id,
-        );
-        removed++;
-      }
-
-      if (!page.hasMore) break;
-      final last = page.records.last;
-      cursorDeletedAt = last.updatedAt;
-      cursorId = last.id;
-    }
-
-    return removed;
-  }
-
   Future<QazaProgress> overallProgress(String userId) async =>
       (await getProgressSummary(userId: userId)).overall;
   Future<PrayerProgress> prayerProgress(
@@ -1002,29 +794,10 @@ class QazaService {
     return completed;
   }
 
-  Future<List<QazaRecord>> history(String userId) async {
-    final result = <QazaRecord>[];
-    DateTime? date;
-    String? id;
-    while (true) {
-      final page = await getHistoryPage(
-          userId: userId,
-          limit: 500,
-          status: QazaStatus.completed,
-          beforeOriginalDate: date,
-          beforeId: id);
-      result.addAll(page.records);
-      if (!page.hasMore) return result;
-      date = page.nextOriginalDate;
-      id = page.nextId;
-    }
-  }
-
   static QazaProgress progressOf(Iterable<QazaRecord> records) {
     var completed = 0;
     var total = 0;
     for (final record in records) {
-      if (record.status == QazaStatus.deleted) continue;
       total++;
       if (record.status == QazaStatus.completed) completed++;
     }
