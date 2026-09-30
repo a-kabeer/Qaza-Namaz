@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../app/providers.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/prayer_types.dart';
@@ -626,6 +628,7 @@ class _ActivityBarChart extends StatelessWidget {
 
   String _chartSemantics(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
     return [
       for (var index = 0; index < period.days.length; index++)
         labelsAreDates
