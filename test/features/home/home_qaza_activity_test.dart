@@ -36,6 +36,7 @@ void main() {
   QazaActivityPeriod activityPeriod({
     required DateTime today,
     required int completedOnWednesday,
+    bool fillEveryDay = false,
   }) {
     const dates = <DateTime>[
       DateTime(2026, 9, 27),
@@ -57,7 +58,11 @@ void main() {
         for (var index = 0; index < dates.length; index++)
           QazaDailyActivity(
             date: dates[index],
-            completed: index == 3 ? completedOnWednesday : 0,
+            completed: index == 3
+                ? completedOnWednesday
+                : fillEveryDay
+                    ? 1
+                    : 0,
             byPrayer: const {},
             target: 5,
             isFuture: dates[index].isAfter(today),
@@ -174,6 +179,43 @@ void main() {
       expect(find.byKey(const Key('home_activity_year_chart')), findsOneWidget);
       expect(find.text('Monthly Target'), findsNothing);
       expect(find.text('Weekly Target'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'tapping each weekly bar updates the selected day',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 10, 3),
+        completedOnWednesday: 3,
+        fillEveryDay: true,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.byKey(const Key('home_activity_week_chart'));
+      final rect = tester.getRect(chart);
+      const expectedDates = <String>[
+        'Sunday, September 27, 2026',
+        'Monday, September 28, 2026',
+        'Tuesday, September 29, 2026',
+        'Wednesday, September 30, 2026',
+        'Thursday, October 1, 2026',
+        'Friday, October 2, 2026',
+        'Saturday, October 3, 2026',
+      ];
+
+      for (var index = 0; index < expectedDates.length; index++) {
+        await tester.tapAt(
+          Offset(
+            rect.left + rect.width * ((index + 0.5) / 7),
+            rect.bottom - 28,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text(expectedDates[index]), findsOneWidget);
+      }
     },
   );
 
