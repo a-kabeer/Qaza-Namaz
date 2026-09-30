@@ -2816,6 +2816,12 @@ abstract class AppLocalizations {
   /// No description provided for @profileQazaToAdd.
   String get profileQazaToAdd;
 
+  /// No description provided for @profileQazaRestored.
+  String get profileQazaRestored;
+
+  /// No description provided for @profileQazaUpdatedKeptExisting.
+  String get profileQazaUpdatedKeptExisting;
+
   /// No description provided for @profileQazaNoLongerRequired.
   String get profileQazaNoLongerRequired;
 
