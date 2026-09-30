@@ -1,3 +1,4 @@
+import '../../core/constants/prayer_types.dart';
 import '../services/qaza_plan_service.dart';
 
 enum QazaPlanLedgerDecision {
@@ -198,7 +199,16 @@ class QazaPlanRevision {
         totalDays: ledgerTotalDays,
         includeWitr: ledgerIncludeWitr,
         totalPrayers: ledgerTotalPrayers,
-        prayerBreakdown: const {},
+        prayerBreakdown: {
+          for (final prayer in const [
+            PrayerType.fajr,
+            PrayerType.zuhr,
+            PrayerType.asr,
+            PrayerType.maghrib,
+            PrayerType.isha,
+          ])
+            prayer: ledgerTotalDays,
+        },
       );
 
   static dynamic _freeze(dynamic value) {
