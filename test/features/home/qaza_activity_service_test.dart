@@ -203,6 +203,36 @@ void main() {
       expect(period.remainingTarget, 0);
     });
 
+    test('daily remaining clamps at zero and includes future days', () {
+      const today = DateTime(2026, 9, 30);
+      const day = QazaDailyActivity(
+        date: DateTime(2026, 10, 1),
+        completed: 0,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: true,
+      );
+      expect(day.remaining, 5);
+
+      const complete = QazaDailyActivity(
+        date: today,
+        completed: 5,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: false,
+      );
+      expect(complete.remaining, 0);
+
+      const overTarget = QazaDailyActivity(
+        date: today,
+        completed: 7,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: false,
+      );
+      expect(overTarget.remaining, 0);
+    });
+
     test('monthly period uses calendar month lengths', () {
       for (final month in [
         DateTime(2026, 2),
@@ -236,7 +266,7 @@ void main() {
         enabledPrayerTypes: _allPrayers,
       );
       expect(feb2028.fullTarget, 145);
-      expect(feb2028.remainingTarget, 75);
+      expect(feb2028.remainingTarget, 145);
     });
 
     test('year is exactly twelve monthly buckets with active metrics', () {
