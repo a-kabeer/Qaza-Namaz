@@ -188,14 +188,18 @@ void main() {
     expect(source, contains('statusCountTotal'));
   });
 
-  test('Add Qaza maps operation types to the existing model', () {
+  test('Add Qaza starts the import pipeline without operation logging', () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
 
-    expect(source, contains('QazaOperationType.singleDateAdd'));
-    expect(source, contains('QazaOperationType.rangeAdd'));
-    expect(source, contains('QazaOperationType.multipleDateAdd'));
     expect(source, contains('qazaImportProvider.notifier).start('));
+    expect(source, isNot(contains('QazaOperationType')));
+    expect(source, isNot(contains('inputSnapshot')));
+    expect(controller, isNot(contains('QazaOperationType')));
+    expect(controller, isNot(contains('qazaOperationServiceProvider')));
+    expect(controller, contains('importQazaForDates('));
   });
 
   test('Add Qaza progress has real cancellation and determinate progress', () {
