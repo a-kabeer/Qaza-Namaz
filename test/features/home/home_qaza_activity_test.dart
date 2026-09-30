@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -231,7 +232,12 @@ void main() {
           spot: spot,
         );
 
-        callback!(const FlTapUpEvent(TapUpDetails()), response);
+        callback!(
+          const FlTapUpEvent(
+            TapUpDetails(kind: PointerDeviceKind.touch),
+          ),
+          response,
+        );
         await tester.pump();
 
         final detail = find.byKey(const Key('home_activity_day_details'));
