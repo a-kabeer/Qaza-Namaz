@@ -55,6 +55,22 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return row == null ? null : _toDomain(row);
   }
 
+  Future<List<QazaRecord>> getByAdditionId({
+    required String userId,
+    required String additionId,
+  }) async {
+    final rows = await (select(qazaRecords)
+          ..where(
+            (row) => row.userId.equals(userId) & row.additionId.equals(additionId),
+          )
+          ..orderBy([
+            (row) => OrderingTerm.asc(row.originalDate),
+            (row) => OrderingTerm.asc(row.id),
+          ]))
+        .get();
+    return rows.map(_toDomain).toList(growable: false);
+  }
+
   Future<List<QazaRecord>> getAll({required String userId}) async {
     final records = <QazaRecord>[];
     DateTime? cursorDate;
@@ -79,6 +95,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     String? prayerType,
     Iterable<String>? prayerTypes,
     String? status,
+    String? additionId,
     DateTime? from,
     DateTime? to,
     DateTime? afterOriginalDate,
@@ -108,6 +125,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         }
         if (status != null) {
           predicates.add(row.status.equals(status));
+        }
+        if (additionId != null) {
+          predicates.add(row.additionId.equals(additionId));
         }
         if (from != null) {
           predicates.add(row.originalDate.isBiggerOrEqualValue(from));
@@ -444,6 +464,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
           completionId: Value(completionId ?? newQazaCompletionId()),
+          recordVersion: Value(current.recordVersion + 1),
           updatedAt: Value(completedAt),
         ));
         if (updated > 0) changed.add(id);
@@ -479,6 +500,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           status: Value(QazaStatus.pending.name),
           completedAt: const Value(null),
           completionId: const Value(null),
+          recordVersion: Value(current.recordVersion + 1),
           updatedAt: Value(undoneAt),
         ));
         if (updated > 0) {
@@ -492,6 +514,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             status: QazaStatus.pending,
             completedAt: null,
             completionId: null,
+            additionId: current.additionId,
+            recordVersion: current.recordVersion + 1,
             createdAt: current.createdAt,
             updatedAt: undoneAt,
           ));
@@ -561,8 +585,23 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
-  Future<bool> updateRecord(QazaRecord record) =>
-      update(qazaRecords).replace(_toCompanion(record));
+  Future<bool> updateRecord(QazaRecord record) async {
+    final updated = await (update(qazaRecords)
+          ..where(
+            (row) =>
+                row.userId.equals(record.userId) &
+                row.id.equals(record.id) &
+                row.recordVersion.equals(record.recordVersion),
+          ))
+        .write(
+      _toCompanion(
+        record.copyWith(
+          recordVersion: record.recordVersion + 1,
+        ),
+      ),
+    );
+    return updated > 0;
+  }
   Future<int> deleteById({required String userId, required String id}) =>
       (delete(qazaRecords)
             ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
@@ -582,6 +621,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                 'Unknown Qaza status "${row.status}" in local database.')),
         completedAt: row.completedAt,
         completionId: row.completionId,
+        additionId: row.additionId,
+        recordVersion: row.recordVersion,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       );
