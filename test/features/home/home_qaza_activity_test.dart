@@ -209,7 +209,7 @@ void main() {
         await tester.tapAt(
           Offset(
             rect.left + rect.width * ((index + 0.5) / 7),
-            rect.bottom - 28,
+            rect.bottom - 60,
           ),
         );
         await tester.pumpAndSettle();
@@ -234,7 +234,7 @@ void main() {
       await tester.tapAt(
         Offset(
           rect.left + rect.width * (3.5 / 7),
-          rect.bottom - 28,
+          rect.bottom - 60,
         ),
       );
       await tester.pumpAndSettle();
@@ -266,7 +266,7 @@ void main() {
       await tester.tapAt(
         Offset(
           rect.left + rect.width * (4.5 / 7),
-          rect.bottom - 28,
+          rect.bottom - 60,
         ),
       );
       await tester.pumpAndSettle();
