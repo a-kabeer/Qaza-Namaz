@@ -41,7 +41,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _saveDraft(UserProfile profile) {
     _draft = profile;
-    final repository = ref.read(userProfileRepositoryProvider);
     _saveQueue = _saveQueue.then(
       (_) => ref.read(saveProfileUseCaseProvider).saveDraft(profile),
     );
