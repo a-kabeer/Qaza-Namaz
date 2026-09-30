@@ -123,8 +123,12 @@ void main() {
       for (final day in period.days)
         DateFormat('EEEEE', 'en').format(day.date),
     ];
+    final expectedCounts = <String, int>{};
     for (final label in labels) {
-      expect(find.text(label), findsOneWidget);
+      expectedCounts[label] = (expectedCounts[label] ?? 0) + 1;
+    }
+    for (final entry in expectedCounts.entries) {
+      expect(find.text(entry.key), findsNWidgets(entry.value));
     }
   });
 
@@ -207,7 +211,7 @@ void main() {
         child: _app(child: HomeDailyGoals(onDetails: () {})),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Unable to load your Qaza progress. Pull to retry.'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('home_daily_goals_retry')));
