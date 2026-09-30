@@ -62,7 +62,9 @@ Widget _buildWidget(QazaActivityPeriod period) {
 }
 
 void main() {
-  testWidgets('renders current Sunday-Saturday date range and weekly progress', (
+  testWidgets(
+    'renders current Sunday-Saturday date range and weekly progress',
+    (
     tester,
   ) async {
     final period = _period(completed: 29, dailyTarget: 5);
@@ -80,7 +82,9 @@ void main() {
     expect(progress.value, closeTo(29 / 35, 0.0001));
   });
 
-  testWidgets('includes all seven days in weekly target even when three are future', (
+  testWidgets(
+    'includes all seven days in weekly target even when three are future',
+    (
     tester,
   ) async {
     final period = _period(completed: 20, dailyTarget: 5);
@@ -93,7 +97,9 @@ void main() {
     expect(find.text('20 of 35'), findsOneWidget);
   });
 
-  testWidgets('zero daily target keeps the card stable without division by zero', (
+  testWidgets(
+    'zero daily target keeps the card stable without division by zero',
+    (
     tester,
   ) async {
     final period = _period(completed: 0, dailyTarget: 0);
