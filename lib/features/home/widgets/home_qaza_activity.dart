@@ -555,6 +555,7 @@ class _ActivityBarChart extends StatelessWidget {
     super.key,
     required this.period,
     required this.labelsAreDates,
+    required this.selectedDay,
     required this.onSelectedDay,
   });
 
