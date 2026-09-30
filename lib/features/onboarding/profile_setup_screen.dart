@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
-import '../../domain/entities/qaza_operation.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_plan_service.dart';
@@ -119,7 +118,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           dates: dates,
           prayers: prayers,
         );
-    );
   }
 
   Iterable<DateTime> _planDates(QazaPlan plan) sync* {
