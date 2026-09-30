@@ -1,12 +1,10 @@
-import 'dart:math' as math;
-
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/widgets/icon_action_button.dart';
 import '../../../domain/entities/qaza_activity.dart';
+import '../../../domain/services/qaza_activity_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
 
@@ -21,7 +19,7 @@ class HomeQazaGoals extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activity = ref.watch(homeQazaActivitySevenDaysProvider);
+    final activity = ref.watch(homeQazaActivityCurrentWeekProvider);
 
     return Card(
       key: const Key('home_qaza_goals'),
@@ -29,7 +27,7 @@ class HomeQazaGoals extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: activity.when(
           loading: () => const SizedBox(
-            height: 112,
+            height: 104,
             child: Center(
               child: SizedBox(
                 width: 22,
@@ -46,7 +44,7 @@ class HomeQazaGoals extends ConsumerWidget {
               TextButton(
                 key: const Key('home_qaza_goals_retry'),
                 onPressed: () => ref.invalidate(
-                  homeQazaActivitySevenDaysProvider,
+                  homeQazaActivityCurrentWeekProvider,
                 ),
                 child: Text(l10n.commonRetry),
               ),
@@ -55,14 +53,17 @@ class HomeQazaGoals extends ConsumerWidget {
           data: (period) {
             final theme = Theme.of(context);
             final scheme = theme.colorScheme;
-            final locale = Localizations.localeOf(context).languageCode;
-            final maxY = period.days.fold<double>(
-              1,
-              (current, day) => math.max(
-                current,
-                math.max(day.completed, day.target).toDouble(),
-              ),
-            );
+            final start = period.from;
+            final end = period.toExclusive.subtract(const Duration(days: 1));
+            final dailyTarget = period.days.isEmpty ? 0 : period.days.first.target;
+            final weeklyTarget =
+                QazaActivityService.weeklyTargetFromDailyTarget(dailyTarget);
+            final weeklyCompleted = period.totalCompleted;
+            final progress = weeklyTarget <= 0
+                ? 0.0
+                : (weeklyCompleted / weeklyTarget)
+                    .clamp(0.0, 1.0)
+                    .toDouble();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -70,23 +71,11 @@ class HomeQazaGoals extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.homeGoalsLastSevenDays,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            l10n.homeLastSevenDays,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        l10n.homeWeeklyTarget,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconActionButton(
@@ -97,40 +86,39 @@ class HomeQazaGoals extends ConsumerWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 3),
+                Text(
+                  _formatWeekRange(context, start, end),
+                  key: const Key('home_qaza_goals_date_range'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      width: 58,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            period.goalDays.toString() +
-                                '/' +
-                                period.days.length.toString(),
-                            key: const Key('home_qaza_goals_achievement'),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            l10n.homeGoalsAchieved,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      l10n.homeWeeklyTargetProgress(
+                        weeklyCompleted,
+                        weeklyTarget,
+                      ),
+                      key: const Key('home_qaza_goals_progress_text'),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: _HomeQazaGoalsChart(
-                        period: period,
-                        locale: locale,
-                        maxY: maxY,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          key: const Key('home_qaza_goals_progress'),
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: scheme.surfaceContainerHighest,
+                          color: scheme.primary,
+                        ),
                       ),
                     ),
                   ],
@@ -142,91 +130,15 @@ class HomeQazaGoals extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _HomeQazaGoalsChart extends StatelessWidget {
-  const _HomeQazaGoalsChart({
-    super.key,
-    required this.period,
-    required this.locale,
-    required this.maxY,
-  });
-
-  final QazaActivityPeriod period;
-  final String locale;
-  final double maxY;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      height: 92,
-      child: BarChart(
-        key: const Key('home_qaza_goals_chart'),
-        BarChartData(
-          minY: 0,
-          maxY: maxY,
-          alignment: BarChartAlignment.spaceAround,
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                reservedSize: 20,
-                getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= period.days.length) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      DateFormat.E(locale).format(period.days[index].date),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          barTouchData: const BarTouchData(enabled: false),
-          barGroups: [
-            for (var index = 0; index < period.days.length; index++)
-              BarChartGroupData(
-                x: index,
-                barRods: [
-                  BarChartRodData(
-                    toY: period.days[index].completed.toDouble(),
-                    width: 10,
-                    color: scheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                    backDrawRodData: BackgroundBarChartRodData(
-                      show: period.days[index].target > 0,
-                      toY: period.days[index].target.toDouble(),
-                      color: scheme.primary.withAlpha(35),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-        duration: Duration.zero,
-      ),
-    );
+  static String _formatWeekRange(
+    BuildContext context,
+    DateTime start,
+    DateTime end,
+  ) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final sameYear = start.year == end.year;
+    final formatter = sameYear ? DateFormat.MMMd(locale) : DateFormat.yMMMd(locale);
+    return '${formatter.format(start)} – ${formatter.format(end)}';
   }
 }
