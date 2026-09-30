@@ -6,9 +6,9 @@ import 'package:qaza_namaz/domain/repositories/qaza_activity_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_activity_service.dart';
 
 class _FakeActivityRepository implements QazaActivityRepository {
-  _FakeActivityRepository([this.rows = const []]);
+  _FakeActivityRepository();
 
-  final List<QazaActivityRow> rows;
+  final List<QazaActivityRow> rows = const [];
   DateTime? from;
   DateTime? toExclusive;
   Iterable<PrayerType>? prayerTypes;

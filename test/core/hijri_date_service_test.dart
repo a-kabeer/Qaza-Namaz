@@ -85,16 +85,22 @@ void main() {
     expect(sourceYear, isNotNull);
     expect(month, isNotNull);
 
+    final resolvedSourceYear = sourceYear;
+    final resolvedMonth = month;
+    if (resolvedSourceYear == null || resolvedMonth == null) {
+      fail('Could not find a Hijri 30-to-29 month transition.');
+    }
+
     final source = HijriDateService.toGregorian(
-      year: sourceYear!,
-      month: month!,
+      year: resolvedSourceYear,
+      month: resolvedMonth,
       day: 30,
     );
     final result = HijriDateService.addHijriYears(source, 1);
     final resultHijri = HijriDateService.fromGregorian(result);
 
-    expect(resultHijri.year, sourceYear! + 1);
-    expect(resultHijri.month, month);
+    expect(resultHijri.year, resolvedSourceYear + 1);
+    expect(resultHijri.month, resolvedMonth);
     expect(resultHijri.day, 29);
   });
 

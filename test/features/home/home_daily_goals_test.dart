@@ -120,7 +120,7 @@ void main() {
       find.byKey(const Key('home_daily_goals_chart')),
     );
     expect(chart.data.barGroups[1].barRods.single.toY, 6);
-    expect(chart.data.barGroups[1].barRods.single.backDrawRodData?.toY, 5);
+    expect(chart.data.barGroups[1].barRods.single.backDrawRodData.toY, 5);
     expect(chart.data.barGroups[4].barRods.single.toY, 8);
     expect(chart.data.maxY, 8);
   });

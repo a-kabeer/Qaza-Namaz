@@ -420,9 +420,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              l10n.prayerTimeUpdated +
-                  ': ' +
-                  _formatTime(context, snapshot.updatedAt, snapshot),
+              '${l10n.prayerTimeUpdated}: ${_formatTime(context, snapshot.updatedAt, snapshot)}',
               textAlign: TextAlign.end,
               style: Theme.of(context).textTheme.bodySmall,
             ),

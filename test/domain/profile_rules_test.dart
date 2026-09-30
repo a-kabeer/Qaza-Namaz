@@ -106,14 +106,20 @@ void main() {
     expect(sourceYear, isNotNull);
     expect(month, isNotNull);
 
+    final resolvedSourceYear = sourceYear;
+    final resolvedMonth = month;
+    if (resolvedSourceYear == null || resolvedMonth == null) {
+      fail('Could not find a Hijri 30-to-29 month transition.');
+    }
+
     final dob = HijriDateService.toGregorian(
-      year: sourceYear!,
-      month: month!,
+      year: resolvedSourceYear,
+      month: resolvedMonth,
       day: 30,
     );
     final clampedBirthday = HijriDateService.toGregorian(
-      year: sourceYear! + 1,
-      month: month,
+      year: resolvedSourceYear + 1,
+      month: resolvedMonth,
       day: 29,
     );
 
