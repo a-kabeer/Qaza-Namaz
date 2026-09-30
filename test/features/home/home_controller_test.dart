@@ -68,6 +68,36 @@ ProviderContainer _containerFor({
 }
 
 void main() {
+  test(
+    'dashboard invalidation refreshes the current Home calendar-week activity provider',
+    () async {
+      var reads = 0;
+      final period = QazaActivityPeriod(
+        from: DateTime(2026, 9, 27),
+        toExclusive: DateTime(2026, 10, 4),
+        today: DateTime(2026, 9, 30),
+        days: const [],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          homeQazaActivityCurrentWeekProvider.overrideWith((ref) async {
+            reads++;
+            return period;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(homeQazaActivityCurrentWeekProvider.future);
+      expect(reads, 1);
+
+      container.read(homeControllerProvider).afterStaleCompletion();
+
+      await container.read(homeQazaActivityCurrentWeekProvider.future);
+      expect(reads, 2);
+    },
+  );
+
   for (final mode in HomePrayerSelectionMode.values) {
     test(
       'HomeController.refresh reads daily progress in ${mode.name}',
