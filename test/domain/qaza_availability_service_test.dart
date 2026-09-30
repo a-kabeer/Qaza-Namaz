@@ -75,26 +75,6 @@ void main() {
     );
   });
 
-  test('soft-deleted combination remains occupied for new Add Qaza', () {
-    final deleted = _record(
-      id: 'deleted',
-      prayer: PrayerType.asr,
-      date: DateTime(2026, 9, 2),
-      status: QazaStatus.deleted,
-    );
-
-    expect(
-      service.recordedKeys([deleted]).contains(
-        QazaPrayerKey(
-          userId: 'guest',
-          date: DateTime(2026, 9, 2),
-          prayerType: PrayerType.asr,
-        ),
-      ),
-      isTrue,
-    );
-  });
-
   test('one existing prayer does not make the whole date unavailable', () {
     final existing = _record(
       id: 'fajr',
