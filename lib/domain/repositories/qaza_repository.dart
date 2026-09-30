@@ -33,6 +33,7 @@ abstract interface class QazaRepository {
     PrayerType? prayerType,
     Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
+    String? additionId,
     DateTime? from,
     DateTime? to,
     DateTime? afterOriginalDate,
@@ -136,7 +137,7 @@ abstract interface class QazaRepository {
   Future<void> addRecords(List<QazaRecord> records);
 
   /// Updates only the editable fields of a Qaza record while preserving its identity.
-  Future<void> updateRecord({required QazaRecord record});
+  Future<bool> updateRecord({required QazaRecord record});
 
   /// Permanently deletes one Qaza record owned by [userId].
   Future<void> deleteRecord({
