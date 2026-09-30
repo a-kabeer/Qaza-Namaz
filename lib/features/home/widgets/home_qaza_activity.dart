@@ -641,6 +641,12 @@ class _ActivityBarChart extends StatelessWidget {
             ),
             barTouchData: BarTouchData(
               enabled: onSelectedDay != null,
+              // Keep the interaction forgiving for zero-height bars, especially
+              // future days whose completed value is normally zero.
+              touchExtraThreshold: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 20,
+              ),
               touchCallback: (event, response) {
                 if (onSelectedDay == null || event is! FlTapUpEvent) return;
                 final index = response?.spot?.touchedBarGroupIndex;
