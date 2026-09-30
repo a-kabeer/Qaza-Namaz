@@ -54,6 +54,7 @@ class HomeDailyGoals extends ConsumerWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
