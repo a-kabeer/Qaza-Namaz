@@ -2522,18 +2522,6 @@ abstract class AppLocalizations {
   /// **'{completed} of {target}'**
   String homeWeeklyTargetProgress(int completed, int target);
 
-  /// No description provided for @homeGoalsLastSevenDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Your daily goals'**
-  String get homeGoalsLastSevenDays;
-
-  /// No description provided for @homeGoalsAchieved.
-  ///
-  /// In en, this message translates to:
-  /// **'Achieved'**
-  String get homeGoalsAchieved;
-
   /// No description provided for @homeDayActivityDetails.
   ///
   /// In en, this message translates to:
