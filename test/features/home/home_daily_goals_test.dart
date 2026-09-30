@@ -13,7 +13,7 @@ import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 QazaActivityPeriod _period({
   required DateTime today,
-  List<int> completed = const [0, 1, 5, 3, 5, 4, 2],
+  List<int> completed = const [0, 5, 5, 5, 5, 4, 2],
   int target = 5,
 }) {
   final from = DateTime(today.year, today.month, today.day - 6);
@@ -36,8 +36,7 @@ QazaActivityPeriod _period({
   );
 }
 
-Widget _app({required Widget child}) => ProviderScope(
-      child: MaterialApp(
+Widget _app({required Widget child}) => MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
@@ -46,8 +45,7 @@ Widget _app({required Widget child}) => ProviderScope(
           useMaterial3: true,
         ),
         home: Scaffold(body: child),
-      ),
-    );
+      );
 
 void main() {
   const today = DateTime(2026, 9, 30);
