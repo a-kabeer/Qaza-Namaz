@@ -194,7 +194,23 @@ void main() {
       await tester.pumpAndSettle();
 
       final chart = find.byKey(const Key('home_activity_week_chart'));
+      final chartWidget = tester.widget<BarChart>(chart);
       final rect = tester.getRect(chart);
+      final leftReserved = chartWidget
+          .data
+          .titlesData
+          .leftTitles
+          .sideTitles
+          .reservedSize;
+      final rightReserved = chartWidget
+          .data
+          .titlesData
+          .rightTitles
+          .sideTitles
+          .reservedSize;
+      final plotLeft = rect.left + leftReserved;
+      final plotRight = rect.right - rightReserved;
+      final plotWidth = plotRight - plotLeft;
       const expectedDates = <String>[
         'Sunday, September 27, 2026',
         'Monday, September 28, 2026',
@@ -208,7 +224,7 @@ void main() {
       for (var index = 0; index < expectedDates.length; index++) {
         await tester.tapAt(
           Offset(
-            rect.left + rect.width * ((index + 0.5) / 7),
+            plotLeft + plotWidth * ((index + 0.5) / 7),
             rect.bottom - 60,
           ),
         );
