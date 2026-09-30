@@ -195,8 +195,12 @@ void main() {
       await tester.pumpAndSettle();
 
       final chart = find.byKey(const Key('home_activity_week_chart'));
-      final chartWidget = tester.widget<BarChart>(chart);
-      final rect = tester.getRect(chart);
+      final barChart = find.descendant(
+        of: chart,
+        matching: find.byType(BarChart),
+      );
+      final chartWidget = tester.widget<BarChart>(barChart);
+      final rect = tester.getRect(barChart);
       final leftReserved = chartWidget
           .data
           .titlesData
