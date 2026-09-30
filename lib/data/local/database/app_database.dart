@@ -102,7 +102,7 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       '''DELETE FROM sync_outbox
          WHERE record_json LIKE '%"status":"deleted"%'
-            OR record_json LIKE '%"status": "deleted"%'
+            OR record_json LIKE '%"status": "deleted"%' '''
     );
 
     // Rebuild the table so the obsolete operation_id column is physically
