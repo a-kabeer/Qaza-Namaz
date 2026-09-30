@@ -57,8 +57,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get statusPending => 'باقی';
 
   @override
-
-  @override
   String get statusCompleted => 'مکمل';
 
   @override
@@ -1628,7 +1626,8 @@ class AppLocalizationsUr extends AppLocalizations {
       'پروفائل اپ ڈیٹ ہوگئی۔ موجودہ قضا ریکارڈ برقرار رہے۔';
 
   @override
-  String get profileQazaNoLongerRequired => 'وہ زیرِ التوا قضا جو اب درکار نہیں';
+  String get profileQazaNoLongerRequired =>
+      'وہ زیرِ التوا قضا جو اب درکار نہیں';
 
   @override
   String get profileQazaKeepExisting => 'موجودہ قضا ریکارڈ برقرار رکھیں';

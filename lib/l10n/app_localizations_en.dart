@@ -58,8 +58,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusPending => 'Pending';
 
   @override
-
-  @override
   String get statusCompleted => 'Completed';
 
   @override

@@ -977,7 +977,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaDeleteRecordMessage.
   ///
   /// In en, this message translates to:
-  /// **'Move the {prayer} Qaza from {date} to Recently Deleted? You can restore it for 30 days.'**
+  /// **'Permanently delete the {prayer} Qaza from {date}? This cannot be undone.'**
   String qazaDeleteRecordMessage(Object date, Object prayer);
 
   /// No description provided for @qazaRecordUpdated.
@@ -1001,7 +1001,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaRecordDeleted.
   ///
   /// In en, this message translates to:
-  /// **'Qaza moved to Recently Deleted.'**
+  /// **'Qaza permanently deleted.'**
   String get qazaRecordDeleted;
 
   /// No description provided for @qazaRecordDeleteFailed.
@@ -2787,51 +2787,87 @@ abstract class AppLocalizations {
   String get profileSave;
 
   /// No description provided for @profileQazaPlanChangedTitle.
-
+  ///
   /// In en, this message translates to:
   /// **'Qaza plan will be updated'**
   String get profileQazaPlanChangedTitle;
 
   /// No description provided for @profileQazaPlanSummary.
-
+  ///
   /// In en, this message translates to:
   /// **'Your profile change changes the calculated Qaza plan.'**
   String get profileQazaPlanSummary;
 
   /// No description provided for @profileQazaPreviousTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous plan'**
   String get profileQazaPreviousTotal;
 
   /// No description provided for @profileQazaNewTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'New plan'**
   String get profileQazaNewTotal;
 
   /// No description provided for @profileQazaCompletedInPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed in new plan'**
   String get profileQazaCompletedInPlan;
 
   /// No description provided for @profileQazaToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'New Qaza to add'**
   String get profileQazaToAdd;
 
   /// No description provided for @profileQazaRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously removed Qaza to restore'**
   String get profileQazaRestored;
 
   /// No description provided for @profileQazaUpdatedKeptExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated. Your existing Qaza records were kept.'**
   String get profileQazaUpdatedKeptExisting;
 
   /// No description provided for @profileQazaNoLongerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Qaza no longer required'**
   String get profileQazaNoLongerRequired;
 
   /// No description provided for @profileQazaKeepExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep existing Qaza records'**
   String get profileQazaKeepExisting;
 
   /// No description provided for @profileQazaApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Qaza plan'**
   String get profileQazaApply;
 
   /// No description provided for @profileQazaCompletedProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed and manually added Qaza will not be removed.'**
   String get profileQazaCompletedProtected;
 
   /// No description provided for @profileQazaUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile and Qaza plan updated.'**
   String get profileQazaUpdated;
 
   /// No description provided for @profileQazaUpdatedNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated. Your Qaza plan was unchanged.'**
   String get profileQazaUpdatedNoChange;
 
   /// No description provided for @qazaReviewTitle.
