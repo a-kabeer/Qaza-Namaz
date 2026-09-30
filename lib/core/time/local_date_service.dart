@@ -9,9 +9,21 @@ import 'package:timezone/timezone.dart' as tz;
 class LocalDateService {
   const LocalDateService._();
 
-  /// Returns the current local Gregorian calendar date using [tz.local].
+  static bool _configured = false;
+
+  /// Configures [tz.local] from the device's IANA timezone identifier.
+  static void configureLocalTimezone(String identifier) {
+    tz.setLocalLocation(tz.getLocation(identifier));
+    _configured = true;
+  }
+
+  /// Returns the current local Gregorian calendar date.
+  ///
+  /// The application configures the device IANA timezone during startup. The
+  /// [DateTime.now] fallback preserves the platform's local-date behavior if
+  /// native timezone detection is unavailable.
   static DateTime today() {
-    final now = tz.TZDateTime.now(tz.local);
+    final now = _configured ? tz.TZDateTime.now(tz.local) : DateTime.now();
     return DateTime(now.year, now.month, now.day);
   }
 
