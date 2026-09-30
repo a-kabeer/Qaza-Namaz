@@ -15,6 +15,7 @@ import '../qaza/qaza_navigation.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
 import 'widgets/home_all_completed_state.dart';
+import 'widgets/home_daily_goals.dart';
 import 'widgets/home_empty_state.dart';
 import 'widgets/home_overall_progress.dart';
 import 'widgets/home_pending_by_prayer.dart';
@@ -269,6 +270,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomePendingByPrayer(summary: summary),
                   const SizedBox(height: 16),
                 ],
+                HomeDailyGoals(
+                  onDetails: () => _open(
+                    context,
+                    ref,
+                    const HomeStatisticsSummaryScreen(),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 HomeQazaGoals(
                   onDetails: () => _open(
                     context,
