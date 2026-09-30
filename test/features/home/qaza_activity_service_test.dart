@@ -204,8 +204,8 @@ void main() {
     });
 
     test('daily remaining clamps at zero and includes future days', () {
-      const today = DateTime(2026, 9, 30);
-      const day = QazaDailyActivity(
+      final today = DateTime(2026, 9, 30);
+      final day = QazaDailyActivity(
         date: DateTime(2026, 10, 1),
         completed: 0,
         byPrayer: <PrayerType, int>{},
@@ -214,7 +214,7 @@ void main() {
       );
       expect(day.remaining, 5);
 
-      const complete = QazaDailyActivity(
+      final complete = QazaDailyActivity(
         date: today,
         completed: 5,
         byPrayer: <PrayerType, int>{},
@@ -223,7 +223,7 @@ void main() {
       );
       expect(complete.remaining, 0);
 
-      const overTarget = QazaDailyActivity(
+      final overTarget = QazaDailyActivity(
         date: today,
         completed: 7,
         byPrayer: <PrayerType, int>{},
