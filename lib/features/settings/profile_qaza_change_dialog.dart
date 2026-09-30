@@ -35,7 +35,7 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
             const SizedBox(height: 20),
             _StatRow(
               label: l10n.profileQazaPreviousTotal,
-              value: (preview.oldPlan?.totalWithWitr ?? 0).toString(),
+              value: (preview.previousLedgerPlan?.totalWithWitr ?? 0).toString(),
             ),
             _StatRow(
               label: l10n.profileQazaNewTotal,
@@ -68,23 +68,23 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
                   style: TextStyle(color: scheme.onErrorContainer),
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.profileQazaCompletedProtected,
-                style: theme.textTheme.bodySmall,
-              ),
             ],
+            const SizedBox(height: 12),
+            Text(
+              l10n.profileQazaCompletedProtected,
+              style: theme.textTheme.bodySmall,
+            ),
           ],
         ),
       ),
       actions: [
         TextButton(
-            key: const Key('profile_qaza_keep_existing'),
-            onPressed: () => Navigator.of(context).pop(
-              ProfileQazaChangeChoice.keepExisting,
-            ),
-          child: Text(l10n.profileQazaKeepExisting),
+          key: const Key('profile_qaza_keep_existing'),
+          onPressed: () => Navigator.of(context).pop(
+            ProfileQazaChangeChoice.keepExisting,
           ),
+          child: Text(l10n.profileQazaKeepExisting),
+        ),
         TextButton(
           key: const Key('profile_qaza_cancel'),
           onPressed: () => Navigator.of(context).pop(),
