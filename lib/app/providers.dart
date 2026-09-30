@@ -22,9 +22,6 @@ import '../domain/entities/qaza_record.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/services/qaza_service.dart';
 import '../domain/services/qaza_undo_service.dart';
-import '../domain/services/qaza_operation_service.dart';
-import '../domain/repositories/qaza_operation_repository.dart';
-import '../data/repositories/shared_preferences_qaza_operation_repository.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
 import '../domain/repositories/user_profile_repository.dart';
@@ -114,14 +111,6 @@ final sahibAlTartibProvider =
   }
   return ref.read(qazaServiceProvider).sahibAlTartibState(userId: userId);
 });
-
-final qazaOperationRepositoryProvider = Provider<QazaOperationRepository>(
-  (ref) => SharedPreferencesQazaOperationRepository(),
-);
-
-final qazaOperationServiceProvider = Provider<QazaOperationService>(
-  (ref) => QazaOperationService(ref.watch(qazaOperationRepositoryProvider)),
-);
 
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
