@@ -1459,12 +1459,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get homeGoalsLastSevenDays => 'آپ کے روزانہ اہداف';
-
-  @override
-  String get homeGoalsAchieved => 'مکمل شدہ';
-
-  @override
   String get homeDayActivityDetails => 'دن کی تفصیلات';
 
   @override
