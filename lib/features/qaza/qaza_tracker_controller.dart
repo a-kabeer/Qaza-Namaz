@@ -478,7 +478,6 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
     }
   }
 
-  /// Deletes a single tracker record and reloads the bounded page.
   /// Permanently deletes a single tracker record and reloads the bounded page.
   Future<void> deleteRecord(String recordId) async {
     final userId = ref.read(activeUserIdProvider);
@@ -505,8 +504,8 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 
     // Single-row swipe completion must not enter selection mode. The same
     // completion pipeline is reused so business rules, Tartib validation,
-    // operation logging, persistence, refresh, and Undo metadata remain
-    // identical to bulk completion.
+    // persistence, refresh, and completion Undo metadata remain identical
+    // to bulk completion.
     return _completeRecordIdsWithUndo(
       <String>[recordId],
       exitSelectionModeOnSuccess: false,
@@ -596,6 +595,39 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         recordIds: selectedIds,
         completedAt: completedAt,
       );
+      state = state.copyWith(
+        completing: false,
+        selectionMode:
+            exitSelectionModeOnSuccess ? false : state.selectionMode,
+        selected:
+            exitSelectionModeOnSuccess ? const <String>{} : state.selected,
+      );
+      ref.invalidate(sahibAlTartibProvider);
+      ref.invalidate(progressSummaryProvider);
+      await refresh();
+      if (completed == 0) return null;
+
+      List<QazaRecord> undoableRecords;
+      try {
+        final completedRecords = await service.getRecordsByIds(
+          userId: userId,
+          recordIds: selectedIds,
+        );
+        undoableRecords = completedRecords
+            .where(
+              (record) =>
+                  record.status == QazaStatus.completed &&
+                  record.completionId != null &&
+                  record.completionId!.isNotEmpty,
+            )
+            .toList(growable: false);
+      } catch (error, stack) {
+        ref.read(diagnosticsProvider).recordFailure(
+              DiagnosticArea.qazaCompletion,
+              'completion_marker_lookup_failed',
+              error,
+              stack: stack,
+            );
         undoableRecords = const <QazaRecord>[];
       }
 
@@ -608,28 +640,17 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
             );
         return null;
       }
+
       return QazaCompletionBatch(
         completedRecords: undoableRecords,
         completedAt: completedAt,
         count: undoableRecords.length,
       );
     } on QazaTartibViolationException {
-      await ref.read(qazaOperationServiceProvider).finish(
-            operation,
-            status: QazaOperationStatus.failed,
-            affectedRecordCount: 0,
-            note: 'blocked_by_order',
-          );
       state = state.copyWith(completing: false, clearError: true);
       ref.invalidate(sahibAlTartibProvider);
       return null;
     } catch (error) {
-      await ref.read(qazaOperationServiceProvider).finish(
-            operation,
-            status: QazaOperationStatus.failed,
-            affectedRecordCount: 0,
-            note: error.toString(),
-          );
       state = state.copyWith(
         completing: false,
         error: error.toString(),
