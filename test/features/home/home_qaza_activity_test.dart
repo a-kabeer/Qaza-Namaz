@@ -233,7 +233,7 @@ void main() {
         );
 
         callback!(
-          const FlTapUpEvent(
+          FlTapUpEvent(
             TapUpDetails(kind: PointerDeviceKind.touch),
           ),
           response,
