@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -221,6 +223,11 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
           mode: mode,
           dates: snapshot.selectedDates,
         );
+    if (snapshot.selectedDates.isNotEmpty) {
+      final first = QazaDate.normalize(snapshot.selectedDates.first);
+      unawaited(refreshCalendarMonth(first));
+    }
+    unawaited(_refreshPrayerAvailability());
   }
 
   void setMode(DateSelectionMode mode) {
