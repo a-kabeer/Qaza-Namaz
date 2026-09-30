@@ -1451,7 +1451,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeFutureDay => 'آنے والا دن';
 
   @override
-  String get homeGoalsLastSevenDays => 'گزشتہ 7 دن کے قضا اہداف';
+  String get homeGoalsLastSevenDays => 'آپ کے روزانہ اہداف';
+
+  @override
+  String get homeGoalsAchieved => 'مکمل شدہ';
 
   @override
   String get homeDayActivityDetails => 'دن کی تفصیلات';

@@ -269,7 +269,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomePendingByPrayer(summary: summary),
                   const SizedBox(height: 16),
                 ],
-                const HomeQazaGoals(),
+                HomeQazaGoals(
+                  onDetails: () => _open(
+                    context,
+                    ref,
+                    const HomeStatisticsSummaryScreen(),
+                  ),
+                ),
               ],
             ),
           ),

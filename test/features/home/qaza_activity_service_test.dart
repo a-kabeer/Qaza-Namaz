@@ -2,7 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_activity_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_activity_service.dart';
+
+class _FakeActivityRepository implements QazaActivityRepository {
+  DateTime? from;
+  DateTime? toExclusive;
+
+  @override
+  Future<List<QazaActivityRow>> getCompletedActivityRows({
+    required String userId,
+    required DateTime from,
+    required DateTime toExclusive,
+    Iterable<PrayerType>? prayerTypes,
+  }) async {
+    this.from = from;
+    this.toExclusive = toExclusive;
+    return const [];
+  }
+}
 
 void main() {
   group('QazaActivityService aggregation', () {
@@ -45,6 +63,27 @@ void main() {
       expect(period.days[1].completed, 0);
       expect(period.days[1].byPrayer[PrayerType.fajr], 0);
       expect(period.days[1].byPrayer[PrayerType.zuhr], 0);
+    });
+
+    test('buildRolling returns a seven-day window ending on today', () async {
+      final repository = _FakeActivityRepository();
+      final service = QazaActivityService(
+        repository,
+        enabledPrayerTypes: const [PrayerType.fajr],
+      );
+
+      final period = await service.buildRolling(
+        userId: 'local',
+        today: DateTime(2026, 9, 30),
+        days: 7,
+        dailyTarget: 5,
+      );
+
+      expect(period.days, hasLength(7));
+      expect(period.days.first.date, DateTime(2026, 9, 24));
+      expect(period.days.last.date, DateTime(2026, 9, 30));
+      expect(repository.from, DateTime(2026, 9, 24));
+      expect(repository.toExclusive, DateTime(2026, 10, 1));
     });
 
     test('filters disabled prayer types without deleting the underlying completion projection', () {
