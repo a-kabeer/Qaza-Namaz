@@ -1476,6 +1476,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFutureDay => 'Future';
 
   @override
+  @override
+  String get homeDailyGoalsTitle => 'Your daily goals';
+
+  @override
+  String get homeLastSevenDays => 'Last 7 days';
+
+  @override
+  String get homeGoalsAchieved => 'Achieved';
+
   String get homeWeeklyTarget => 'Your weekly target';
 
   @override
