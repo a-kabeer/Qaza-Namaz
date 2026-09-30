@@ -102,7 +102,7 @@ class _QazaImportRequest {
     required this.userId,
     required this.dates,
     required this.prayers,
-    required this.mode,
+    this.mode,
     this.additionId,
     this.expectedRevision,
     this.earliestDate,
@@ -113,7 +113,7 @@ class _QazaImportRequest {
   final String userId;
   final List<DateTime> dates;
   final Set<PrayerType> prayers;
-  final QazaAdditionMode mode;
+  final QazaAdditionMode? mode;
   final String? additionId;
   final int? expectedRevision;
   final DateTime? earliestDate;
@@ -137,7 +137,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayers,
-    required QazaAdditionMode mode,
+    QazaAdditionMode? mode,
     String? additionId,
     int? expectedRevision,
     DateTime? earliestDate,
@@ -194,31 +194,101 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   Future<void> _run(_QazaImportRequest request) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final result =
-          await ref.read(qazaAdditionServiceProvider).createOrEdit(
-                userId: request.userId,
-                mode: request.mode,
-                selectedDates: request.dates,
-                selectedPrayers: request.prayers,
-                additionId: request.additionId,
-                expectedRevision: request.expectedRevision,
-                earliestDate: request.earliestDate,
-                today: request.today,
-                witrAllowed: request.witrAllowed,
-                isCancellationRequested: () => _cancelRequested,
-                onProgress: (processed, total, added) {
-                  if (!state.isActive || state.userId != request.userId) {
-                    return;
-                  }
-                  state = state.copyWith(
-                    phase: QazaImportTaskPhase.importing,
-                    processed: processed,
-                    total: total,
-                    added: added,
-                    skipped: processed - added,
-                  );
-                },
-              );
+      if (request.mode == null) {
+        final legacy = await ref.read(qazaServiceProvider).importQazaForDates(
+              userId: request.userId,
+              dates: request.dates,
+              prayerTypes: request.prayers,
+              earliestDate: request.earliestDate,
+              today: request.today,
+              witrAllowed: request.witrAllowed,
+              isCancellationRequested: () => _cancelRequested,
+              onProgress: (progress) {
+                if (!state.isActive || state.userId != request.userId) return;
+                state = state.copyWith(
+                  phase: progress.phase == QazaImportProgressPhase.preparing
+                      ? QazaImportTaskPhase.preparing
+                      : QazaImportTaskPhase.importing,
+                  processed: progress.processed,
+                  total: progress.total,
+                  added: progress.added,
+                  skipped: progress.skipped,
+                );
+              },
+            );
+        if (legacy.cancelled) {
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.cancelled,
+            cancelRequested: false,
+            completedAt: DateTime.now(),
+            clearError: true,
+          );
+        } else {
+          ref.invalidate(progressSummaryProvider);
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.completed,
+            cancelRequested: false,
+            processed: legacy.processed,
+            total: legacy.total,
+            added: legacy.added,
+            skipped: legacy.skipped,
+            completedAt: DateTime.now(),
+            clearError: true,
+          );
+        }
+      } else {
+        final result =
+            await ref.read(qazaAdditionServiceProvider).createOrEdit(
+                  userId: request.userId,
+                  mode: request.mode!,
+                  selectedDates: request.dates,
+                  selectedPrayers: request.prayers,
+                  additionId: request.additionId,
+                  expectedRevision: request.expectedRevision,
+                  earliestDate: request.earliestDate,
+                  today: request.today,
+                  witrAllowed: request.witrAllowed,
+                  isCancellationRequested: () => _cancelRequested,
+                  onProgress: (processed, total, added) {
+                    if (!state.isActive || state.userId != request.userId) {
+                      return;
+                    }
+                    state = state.copyWith(
+                      phase: QazaImportTaskPhase.importing,
+                      processed: processed,
+                      total: total,
+                      added: added,
+                      skipped: processed - added,
+                    );
+                  },
+                );
+
+        if (result.cancelled) {
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.cancelled,
+            cancelRequested: false,
+            completedAt: DateTime.now(),
+            clearError: true,
+          );
+        } else {
+          ref.invalidate(progressSummaryProvider);
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.completed,
+            cancelRequested: false,
+            processed: result.addedCount + result.skippedCount,
+            total: result.addedCount + result.skippedCount,
+            added: result.addedCount,
+            skipped: result.skippedCount,
+            removed: result.removedCount,
+            protected: result.protectedCount,
+            additionId: result.additionId,
+            revision: result.revision,
+            completedAt: DateTime.now(),
+            elapsed: stopwatch.elapsed,
+            clearError: true,
+          );
+        }
+      }
       stopwatch.stop();
 
       if (result.cancelled) {
