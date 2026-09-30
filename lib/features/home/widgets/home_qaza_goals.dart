@@ -22,7 +22,10 @@ class HomeQazaGoals extends ConsumerWidget {
 
     return Card(
       key: const Key('home_qaza_goals'),
-      child: Padding(
+      child: InkWell(
+        key: const Key('home_qaza_goals_tap'),
+        onTap: onDetails,
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: activity.when(
           loading: () => const SizedBox(
@@ -78,12 +81,6 @@ class HomeQazaGoals extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    IconActionButton(
-                      key: const Key('home_qaza_goals_details'),
-                      tooltip: l10n.homeViewDetails,
-                      icon: Icons.chevron_right_rounded,
-                      onPressed: onDetails,
-                    ),
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -126,6 +123,7 @@ class HomeQazaGoals extends ConsumerWidget {
               ],
             );
           },
+          ),
         ),
       ),
     );
