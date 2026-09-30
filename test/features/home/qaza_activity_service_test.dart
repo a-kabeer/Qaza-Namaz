@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_activity_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_activity_service.dart';
 
 class _FakeActivityRepository implements QazaActivityRepository {
