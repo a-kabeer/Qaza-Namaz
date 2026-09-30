@@ -133,10 +133,7 @@ abstract class QazaLocalStore {
       ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
       ..removeWhere((r) =>
           prayerTypes != null && !prayerTypes.contains(r.prayerType))
-      ..removeWhere((r) => status == QazaStatus.deleted
-          ? r.status != QazaStatus.deleted
-          : r.status == QazaStatus.deleted ||
-              (status != null && r.status != status))
+      ..removeWhere((r) => status != null && r.status != status)
       ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
       ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
       ..sort((a, b) {
