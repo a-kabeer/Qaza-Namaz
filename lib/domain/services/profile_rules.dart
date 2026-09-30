@@ -1,6 +1,6 @@
-import 'dart:math' as math;
-
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
+import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
 
 enum ProfileValidationError {
@@ -77,17 +77,40 @@ class ProfileRules {
         if (witrEnabled) PrayerType.witr,
       ];
 
-  static DateTime anniversaryDate(DateTime dob, int age) {
-    final year = dob.year + age;
-    final lastDay = DateTime(year, dob.month + 1, 0).day;
-    return DateTime(year, dob.month, math.min(dob.day, lastDay));
-  }
+  /// Returns the Gregorian date on which [age] whole Hijri calendar years
+  /// have elapsed from the supplied Gregorian DOB.
+  static DateTime anniversaryDate(DateTime dob, int age) =>
+      HijriDateService.addHijriYears(dob, age);
 
+  /// Returns completed age measured in Hijri calendar years.
+  ///
+  /// The current year's anniversary is calculated with the same Hijri
+  /// month/day preservation and target-month clamping used by [anniversaryDate].
   static int currentAge(DateTime dob, DateTime today) {
-    final birth = _dateOnly(dob);
-    final now = _dateOnly(today);
-    var age = now.year - birth.year;
-    if (anniversaryDate(birth, age).isAfter(now)) age--;
+    final birth = HijriDateService.fromGregorian(dob);
+    final now = LocalDateService.dateOnly(today);
+    final nowHijri = HijriDateService.fromGregorian(now);
+
+    var age = nowHijri.year - birth.year;
+    if (age < 0) return age;
+
+    final anniversary = HijriDateService.toGregorian(
+      year: nowHijri.year,
+      month: birth.month,
+      day: birth.day
+          .clamp(
+            1,
+            HijriDateService.daysInMonth(
+              year: nowHijri.year,
+              month: birth.month,
+            ),
+          )
+          .toInt(),
+    );
+
+    if (LocalDateService.compareCalendarDates(anniversary, now) > 0) {
+      age--;
+    }
     return age;
   }
 
@@ -126,7 +149,7 @@ class ProfileRules {
     if (dob == null) {
       return const ProfileValidation(error: ProfileValidationError.dobMissing);
     }
-    if (_dateOnly(dob).isAfter(_dateOnly(today))) {
+    if (_compareCalendarDates(dob, today) > 0) {
       return const ProfileValidation(error: ProfileValidationError.dobFuture);
     }
 
@@ -190,7 +213,7 @@ class ProfileRules {
         start != null &&
         validGender != null &&
         validPuberty != null) {
-      final maxStart = currentAge(dob, DateTime.now());
+      final maxStart = currentAge(dob, LocalDateService.today());
       if (start < validPuberty || start > maxStart) {
         next = next.copyWith(clearStartPrayingAge: true);
       }
@@ -199,6 +222,6 @@ class ProfileRules {
     return next;
   }
 
-  static DateTime _dateOnly(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
+  static int _compareCalendarDates(DateTime a, DateTime b) =>
+      LocalDateService.compareCalendarDates(a, b);
 }
