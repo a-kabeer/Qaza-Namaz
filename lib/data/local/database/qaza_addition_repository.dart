@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import '../../../core/constants/prayer_types.dart';
 
 import '../../../core/utils/qaza_completion_id.dart';
 import '../../../domain/entities/qaza_addition.dart';
@@ -371,7 +372,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
 
         final nextRevision = addition.revision + 1;
         final now = DateTime.now().toIso8601String();
-        await database.customStatement(
+        await database.customUpdate(
           '''UPDATE qaza_additions
              SET mode = ?, input_snapshot = ?, revision = ?, updated_at = ?
              WHERE user_id = ? AND id = ? AND revision = ?''',
@@ -436,7 +437,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
 
         final actionId = newQazaCompletionId();
         final createdAt = DateTime.now();
-        await database.customStatement(
+        await database.customInsert(
           '''INSERT INTO qaza_deletion_actions
              (id, user_id, addition_id, created_at)
              VALUES (?, ?, ?, ?)''',
@@ -449,7 +450,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         );
 
         for (final record in eligible) {
-          await database.customStatement(
+          await database.customInsert(
             '''INSERT INTO qaza_deletion_action_record_snapshots
                (deletion_action_id, record_id, user_id, addition_id,
                 prayer_type, original_date, status, completed_at,
@@ -578,7 +579,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
       });
 
   Future<void> _insertAddition(QazaAddition addition) =>
-      database.customStatement(
+      database.customInsert(
         '''INSERT INTO qaza_additions
            (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
