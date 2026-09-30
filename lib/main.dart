@@ -11,6 +11,7 @@ import 'app/app.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
+import 'core/time/local_date_service.dart';
 import 'data/migration/user_profile_migration.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
@@ -44,7 +45,7 @@ Future<void> main() async {
 
   await _step('timezone', () async {
     final timezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezone.identifier));
+    LocalDateService.configureLocalTimezone(timezone.identifier);
   });
 
   await _step('database', () async {
