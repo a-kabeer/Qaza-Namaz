@@ -54,7 +54,7 @@ void main() {
     expect(
       source,
       contains(
-        'ref.read(qazaTrackerControllerProvider.notifier).exitSelectionMode();',
+        'ref.read(qazaTrackerControllerProvider(null).notifier).exitSelectionMode();',
       ),
     );
     expect(
@@ -223,23 +223,23 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
     expect(source, contains('class _FilterSheet extends ConsumerWidget {'));
-    expect(source, contains('const _FilterSheet();'));
+    expect(source, contains('_FilterSheet(additionId: additionId)'));
     expect(
       source,
       contains(
-        'builder: (context) => const _FilterSheet(),',
+        'builder: (context) => _FilterSheet(additionId: additionId),',
       ),
     );
     expect(
       source,
       contains(
-        'final state = ref.watch(qazaTrackerControllerProvider);',
+        'final state = ref.watch(qazaTrackerControllerProvider(additionId));',
       ),
     );
     expect(
       source,
       contains(
-        'final controller = ref.read(qazaTrackerControllerProvider.notifier);',
+        'final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);',
       ),
     );
     expect(
