@@ -1433,9 +1433,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeProgressHistory => 'پیش رفت کی تاریخ';
 
   @override
-  String get homeLastSevenDays => 'گزشتہ 7 دن';
-
-  @override
   String get homeRangeWeekly => 'ہفتہ وار';
 
   @override
