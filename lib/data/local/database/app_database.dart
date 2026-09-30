@@ -101,7 +101,8 @@ class AppDatabase extends _$AppDatabase {
     // a legacy deleted QazaRecord after the enum value has been removed.
     await customStatement(
       '''DELETE FROM sync_outbox
-         WHERE record_json LIKE '%"status":"deleted"%' ''',
+         WHERE record_json LIKE '%"status":"deleted"%'
+            OR record_json LIKE '%"status": "deleted"%'
     );
 
     // Rebuild the table so the obsolete operation_id column is physically
