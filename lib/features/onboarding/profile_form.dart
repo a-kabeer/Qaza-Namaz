@@ -84,7 +84,10 @@ class _ProfileFormState extends State<ProfileForm> {
   }
 
   Future<void> _submit() async {
-    final validation = ProfileRules.validate(_profile, today: LocalDateService.today());
+    final validation = ProfileRules.validate(
+      _profile,
+      today: LocalDateService.today(),
+    );
     if (!validation.isValid) {
       setState(() => _error = validation.error);
       return;
@@ -111,7 +114,10 @@ class _ProfileFormState extends State<ProfileForm> {
     final pubertyOptions = ProfileRules.pubertyAgeOptions(gender);
     final currentAge = profile.dateOfBirth == null
         ? null
-        : ProfileRules.currentAge(profile.dateOfBirth!, LocalDateService.today());
+        : ProfileRules.currentAge(
+            profile.dateOfBirth!,
+            LocalDateService.today(),
+          );
     final startOptions = currentAge == null || profile.pubertyAge == null
         ? const <int>[]
         : [
