@@ -377,8 +377,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeMonthlyTarget => 'Monthly Target';
 
-  @override
-  String get homeTargetToDate => 'Target To Date';
 
   @override
   String get homeProgressLabel => 'Progress';
