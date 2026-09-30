@@ -58,7 +58,7 @@ void main() {
       final period = _period();
 
       await tester.pumpWidget(_buildWidget(period));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       final chart = tester.widget<BarChart>(
         find.byKey(const Key('home_qaza_goals_chart')),
