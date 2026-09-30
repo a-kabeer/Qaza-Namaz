@@ -1449,6 +1449,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFutureDay => 'Future';
 
   @override
+  String get homeWeeklyTarget => 'Your weekly target';
+
+  @override
+  String homeWeeklyTargetProgress(int completed, int target) {
+    return '$completed of $target';
+  }
+
+  @override
   String get homeGoalsLastSevenDays => 'Your daily goals';
 
   @override
