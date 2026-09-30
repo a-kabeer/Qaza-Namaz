@@ -111,7 +111,6 @@ final profileQazaPlanReconciliationServiceProvider =
   return ProfileQazaPlanReconciliationService(
     planService: ref.watch(qazaPlanServiceProvider),
     qazaService: ref.watch(qazaServiceProvider),
-    operationService: ref.watch(qazaOperationServiceProvider),
     revisionRepository: ref.watch(qazaPlanRevisionRepositoryProvider),
   );
 });
