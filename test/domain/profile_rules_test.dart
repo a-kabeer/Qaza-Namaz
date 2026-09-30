@@ -112,7 +112,7 @@ void main() {
       day: 30,
     );
     final clampedBirthday = HijriDateService.toGregorian(
-      year: sourceYear + 1,
+      year: sourceYear! + 1,
       month: month,
       day: 29,
     );
