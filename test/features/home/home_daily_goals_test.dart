@@ -48,7 +48,7 @@ Widget _app({required Widget child}) => MaterialApp(
       );
 
 void main() {
-  const today = DateTime(2026, 9, 30);
+  final today = DateTime(2026, 9, 30);
   testWidgets('renders Daily Goals with exactly seven FL Chart groups',
       (tester) async {
     final period = _period(today: today);
@@ -166,7 +166,7 @@ void main() {
   });
 
   testWidgets('daily goals rolls forward with the local date', (tester) async {
-    const nextDay = DateTime(2026, 10, 1);
+    final nextDay = DateTime(2026, 10, 1);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
