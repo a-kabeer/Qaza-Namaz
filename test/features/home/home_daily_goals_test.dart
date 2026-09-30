@@ -141,7 +141,8 @@ void main() {
           activeUserIdProvider.overrideWithValue(null),
           dailyQazaTargetProvider.overrideWithValue(5),
         ],
-        child: Consumer(
+        child: _app(
+          child: Consumer(
           builder: (context, ref, child) {
             final period = ref.watch(homeQazaActivityDailyGoalsProvider);
             return period.when(
@@ -152,6 +153,7 @@ void main() {
               ),
             );
           },
+        ),
         ),
       ),
     );
@@ -174,7 +176,8 @@ void main() {
           activeUserIdProvider.overrideWithValue(null),
           dailyQazaTargetProvider.overrideWithValue(5),
         ],
-        child: Consumer(
+        child: _app(
+          child: Consumer(
           builder: (context, ref, child) {
             final period = ref.watch(homeQazaActivityDailyGoalsProvider);
             return period.when(
@@ -185,6 +188,7 @@ void main() {
               ),
             );
           },
+        ),
         ),
       ),
     );
