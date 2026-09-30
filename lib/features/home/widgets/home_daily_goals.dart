@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/widgets/icon_action_button.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
@@ -26,8 +25,8 @@ class HomeDailyGoals extends ConsumerWidget {
         key: const Key('home_daily_goals_tap'),
         onTap: onDetails,
         child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        child: activity.when(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: activity.when(
           loading: () => const SizedBox(
             height: 108,
             child: Center(
@@ -52,10 +51,8 @@ class HomeDailyGoals extends ConsumerWidget {
           ),
           data: (period) => _DailyGoalsContent(
             period: period,
-            onDetails: onDetails,
           ),
-        ),
-      ),
+          ),
         ),
       ),
     );
@@ -63,10 +60,9 @@ class HomeDailyGoals extends ConsumerWidget {
 }
 
 class _DailyGoalsContent extends StatelessWidget {
-  const _DailyGoalsContent({required this.period, required this.onDetails});
+  const _DailyGoalsContent({required this.period});
 
   final QazaActivityPeriod period;
-  final VoidCallback onDetails;
 
   @override
   Widget build(BuildContext context) {
