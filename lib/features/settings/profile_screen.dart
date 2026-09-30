@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
-import '../../domain/services/profile_rules.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../../domain/services/profile_rules.dart';
 import '../../domain/services/save_profile_use_case.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/profile_form.dart';
