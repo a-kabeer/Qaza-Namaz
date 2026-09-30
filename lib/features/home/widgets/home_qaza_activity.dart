@@ -7,13 +7,14 @@ import 'package:intl/intl.dart';
 
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/utils/date_formatters.dart';
+import '../../../domain/entities/qaza_activity.dart';
+import '../../../domain/services/qaza_activity_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
-import '../../../domain/entities/qaza_activity.dart';
 import '../providers/home_providers.dart';
 import 'home_prayer_icon.dart';
 
-enum _ActivityRange { sevenDays, thirtyDays, monthly }
+enum _ActivityRange { weekly, monthly, yearly }
 
 class HomeQazaActivity extends ConsumerStatefulWidget {
   const HomeQazaActivity({super.key});
@@ -23,32 +24,71 @@ class HomeQazaActivity extends ConsumerStatefulWidget {
 }
 
 class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
-  late DateTime _month;
-  _ActivityRange _range = _ActivityRange.sevenDays;
+  static const _basePage = 10000;
+  static const _pageCount = _basePage + 1;
+
+  late final PageController _pageController;
+  var _range = _ActivityRange.weekly;
+  var _pageIndex = _basePage;
   DateTime? _selectedDay;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _month = DateTime(now.year, now.month);
+    _pageController = PageController(initialPage: _basePage);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  int get _periodOffset => _pageIndex - _basePage;
+
+  DateTime _anchorForOffset(DateTime today, int offset) {
+    switch (_range) {
+      case _ActivityRange.weekly:
+        final currentStart =
+            QazaActivityService.calendarWeekStartForDate(today);
+        return DateTime(
+          currentStart.year,
+          currentStart.month,
+          currentStart.day + offset * 7,
+        );
+      case _ActivityRange.monthly:
+        return DateTime(today.year, today.month + offset);
+      case _ActivityRange.yearly:
+        return DateTime(today.year + offset, 1);
+    }
+  }
+
+  void _selectRange(_ActivityRange range) {
+    if (_range == range) return;
+    setState(() {
+      _range = range;
+      _pageIndex = _basePage;
+      _selectedDay = null;
+    });
+    _pageController.jumpToPage(_basePage);
+  }
+
+  void _goToPage(int page) {
+    if (page < 0 || page >= _pageCount) return;
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final today = ref.watch(homeLocalDateProvider);
-    final periodAsync = switch (_range) {
-      _ActivityRange.sevenDays =>
-        ref.watch(homeQazaActivitySevenDaysProvider),
-      _ActivityRange.thirtyDays =>
-        ref.watch(homeQazaActivityThirtyDaysProvider),
-      _ActivityRange.monthly =>
-        ref.watch(homeQazaActivityMonthProvider(_month)),
-    };
-
-    final currentMonth = DateTime(today.year, today.month);
-    if (_month.isAfter(currentMonth)) _month = currentMonth;
+    final anchor = _anchorForOffset(today, _periodOffset);
+    final canPrevious = _pageIndex > 0;
+    final canNext = _pageIndex < _basePage;
 
     return Card(
       key: const Key('home_qaza_activity'),
@@ -57,88 +97,102 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.homeQazaActivity,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        l10n.homeProgressHistory,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+            Text(
+              l10n.homeQazaActivity,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                ),
-                if (_range == _ActivityRange.monthly)
-                  _MonthNavigator(
-                    month: _month,
-                    canNext: _month.isBefore(currentMonth),
-                    onPrevious: () {
-                      setState(() {
-                        _month = DateTime(_month.year, _month.month - 1);
-                        _selectedDay = null;
-                      });
-                    },
-                    onNext: () {
-                      if (!_month.isBefore(currentMonth)) return;
-                      setState(() {
-                        _month = DateTime(_month.year, _month.month + 1);
-                        _selectedDay = null;
-                      });
-                    },
-                  ),
-              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.homeProgressHistory,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 14),
             SegmentedButton<_ActivityRange>(
               key: const Key('home_activity_range_selector'),
               segments: [
                 ButtonSegment(
-                  value: _ActivityRange.sevenDays,
-                  label: Text(l10n.homeRangeSevenDays),
-                ),
-                ButtonSegment(
-                  value: _ActivityRange.thirtyDays,
-                  label: Text(l10n.homeRangeThirtyDays),
+                  value: _ActivityRange.weekly,
+                  label: Text(l10n.homeRangeWeekly),
                 ),
                 ButtonSegment(
                   value: _ActivityRange.monthly,
                   label: Text(l10n.homeRangeMonthly),
                 ),
+                ButtonSegment(
+                  value: _ActivityRange.yearly,
+                  label: Text(l10n.homeRangeYearly),
+                ),
               ],
               selected: {_range},
               onSelectionChanged: (selected) {
-                setState(() {
-                  _range = selected.first;
-                  _selectedDay = null;
-                });
+                if (selected.isNotEmpty) _selectRange(selected.first);
               },
             ),
-            const SizedBox(height: 16),
-            periodAsync.when(
-              loading: () => const SizedBox(
-                height: 238,
-                child: Center(
-                  child: CircularProgressIndicator(),
+            const SizedBox(height: 14),
+            Row(
+              key: const Key('home_activity_period_header'),
+              children: [
+                IconButton(
+                  key: const Key('home_activity_previous'),
+                  tooltip: _previousTooltip(l10n),
+                  onPressed: canPrevious
+                      ? () => _goToPage(_pageIndex - 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_left_rounded),
                 ),
-              ),
-              error: (_, __) => _ActivityError(
-                onRetry: () => _invalidateCurrentRange(),
-              ),
-              data: (period) => _ActivityPeriodContent(
-                period: period,
-                range: _range,
-                selectedDay: _selectedDay,
-                onSelectedDay: (date) => setState(() => _selectedDay = date),
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      _formatHeader(context, anchor),
+                      key: const Key('home_activity_date_header'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  key: const Key('home_activity_next'),
+                  tooltip: _nextTooltip(l10n),
+                  onPressed: canNext
+                      ? () => _goToPage(_pageIndex + 1)
+                      : null,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: _range == _ActivityRange.monthly ? 470 : 430,
+              child: PageView.builder(
+                key: ValueKey('home_activity_pager_${_range.name}'),
+                controller: _pageController,
+                itemCount: _pageCount,
+                onPageChanged: (index) {
+                  setState(() {
+                    _pageIndex = index;
+                    _selectedDay = null;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final pageAnchor =
+                      _anchorForOffset(today, index - _basePage);
+                  return _ActivityPeriodPage(
+                    key: ValueKey(
+                      'home_activity_page_${_range.name}_$index',
+                    ),
+                    range: _range,
+                    anchor: pageAnchor,
+                    selectedDay: index == _pageIndex ? _selectedDay : null,
+                    onSelectedDay: index == _pageIndex
+                        ? (date) => setState(() => _selectedDay = date)
+                        : null,
+                  );
+                },
               ),
             ),
           ],
@@ -147,60 +201,105 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     );
   }
 
-  void _invalidateCurrentRange() {
+  String _formatHeader(BuildContext context, DateTime anchor) {
+    final locale = Localizations.localeOf(context).languageCode;
+
     switch (_range) {
-      case _ActivityRange.sevenDays:
-        ref.invalidate(homeQazaActivitySevenDaysProvider);
-      case _ActivityRange.thirtyDays:
-        ref.invalidate(homeQazaActivityThirtyDaysProvider);
+      case _ActivityRange.weekly:
+        final start = QazaActivityService.calendarWeekStartForDate(anchor);
+        final end = DateTime(start.year, start.month, start.day + 6);
+        if (start.year == end.year) {
+          return '${DateFormat.MMMd(locale).format(start)} – ${DateFormat.MMMd(locale).format(end)} ${end.year}';
+        }
+        return '${DateFormat.yMMMd(locale).format(start)} – ${DateFormat.yMMMd(locale).format(end)}';
       case _ActivityRange.monthly:
-        ref.invalidate(homeQazaActivityMonthProvider(_month));
+        return DateFormat.yMMMM(locale).format(anchor);
+      case _ActivityRange.yearly:
+        return anchor.year.toString();
+    }
+  }
+
+  String _previousTooltip(AppLocalizations l10n) {
+    switch (_range) {
+      case _ActivityRange.weekly:
+        return l10n.homePreviousWeek;
+      case _ActivityRange.monthly:
+        return l10n.homePreviousMonth;
+      case _ActivityRange.yearly:
+        return l10n.homePreviousYear;
+    }
+  }
+
+  String _nextTooltip(AppLocalizations l10n) {
+    switch (_range) {
+      case _ActivityRange.weekly:
+        return l10n.homeNextWeek;
+      case _ActivityRange.monthly:
+        return l10n.homeNextMonth;
+      case _ActivityRange.yearly:
+        return l10n.homeNextYear;
     }
   }
 }
 
-class _MonthNavigator extends StatelessWidget {
-  const _MonthNavigator({
-    required this.month,
-    required this.canNext,
-    required this.onPrevious,
-    required this.onNext,
+class _ActivityPeriodPage extends ConsumerWidget {
+  const _ActivityPeriodPage({
+    super.key,
+    required this.range,
+    required this.anchor,
+    required this.selectedDay,
+    required this.onSelectedDay,
   });
 
-  final DateTime month;
-  final bool canNext;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
+  final _ActivityRange range;
+  final DateTime anchor;
+  final DateTime? selectedDay;
+  final ValueChanged<DateTime>? onSelectedDay;
 
   @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
-    final l10n = AppLocalizations.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          tooltip: l10n.homePreviousMonth,
-          onPressed: onPrevious,
-          icon: const Icon(Icons.chevron_left_rounded),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final periodAsync = switch (range) {
+      _ActivityRange.weekly =>
+        ref.watch(homeQazaActivityWeekProvider(anchor)),
+      _ActivityRange.monthly =>
+        ref.watch(homeQazaActivityMonthProvider(anchor)),
+      _ActivityRange.yearly =>
+        ref.watch(homeQazaActivityYearProvider(anchor)),
+    };
+
+    return periodAsync.when(
+      loading: () => const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
         ),
-        Text(
-          DateFormat.yMMMM(locale).format(month),
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        IconButton(
-          tooltip: l10n.homeNextMonth,
-          onPressed: canNext ? onNext : null,
-          icon: const Icon(Icons.chevron_right_rounded),
-        ),
-      ],
+      ),
+      error: (_, __) => _ActivityError(
+        onRetry: () => _invalidate(ref),
+      ),
+      data: (period) => _ActivityPeriodContent(
+        period: period,
+        range: range,
+        selectedDay: selectedDay,
+        onSelectedDay: onSelectedDay,
+      ),
     );
+  }
+
+  void _invalidate(WidgetRef ref) {
+    switch (range) {
+      case _ActivityRange.weekly:
+        ref.invalidate(homeQazaActivityWeekProvider(anchor));
+      case _ActivityRange.monthly:
+        ref.invalidate(homeQazaActivityMonthProvider(anchor));
+      case _ActivityRange.yearly:
+        ref.invalidate(homeQazaActivityYearProvider(anchor));
+    }
   }
 }
 
-class _ActivityPeriodContent extends StatelessWidget {
+class _ActivityPeriodContent extends ConsumerWidget {
   const _ActivityPeriodContent({
     required this.period,
     required this.range,
@@ -211,28 +310,34 @@ class _ActivityPeriodContent extends StatelessWidget {
   final QazaActivityPeriod period;
   final _ActivityRange range;
   final DateTime? selectedDay;
-  final ValueChanged<DateTime> onSelectedDay;
+  final ValueChanged<DateTime>? onSelectedDay;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final target = period.days.isEmpty ? 0 : period.days.first.target;
-    final selected = selectedDay == null ? null : period.dayFor(selectedDay!);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListView(
+      key: Key('home_activity_${range.name}_content'),
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 4),
       children: [
-        _ActivitySummary(period: period),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            key: const Key('home_activity_progress'),
-            value: period.progress,
-            minHeight: 7,
-          ),
-        ),
-        const SizedBox(height: 14),
+        if (range == _ActivityRange.weekly ||
+            range == _ActivityRange.monthly) ...[
+          _ActivityTargetSummary(period: period, range: range),
+          if (period.targetAvailable) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                key: const Key('home_activity_progress'),
+                value: period.progressToDate,
+                minHeight: 7,
+              ),
+            ),
+          ],
+        ] else
+          _ActivityYearSummary(period: period),
+        const SizedBox(height: 12),
         if (period.totalCompleted == 0)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -247,42 +352,84 @@ class _ActivityPeriodContent extends StatelessWidget {
             selectedDay: selectedDay,
             onSelectedDay: onSelectedDay,
           )
+        else if (range == _ActivityRange.weekly)
+          _ActivityBarChart(
+            key: const Key('home_activity_week_chart'),
+            period: period,
+            labelsAreDates: true,
+            onSelectedDay: onSelectedDay,
+          )
         else
           _ActivityBarChart(
+            key: const Key('home_activity_year_chart'),
             period: period,
-            compact: range == _ActivityRange.thirtyDays,
-            onSelectedDay: onSelectedDay,
+            labelsAreDates: false,
+            onSelectedDay: null,
           ),
-        const SizedBox(height: 8),
+        if (selectedDay != null &&
+            (range == _ActivityRange.weekly ||
+                range == _ActivityRange.monthly))
+          _ActivityDayDetails(
+            day: period.dayFor(selectedDay!),
+            period: period,
+          ),
+      ],
+    );
+  }
+}
+
+class _ActivityTargetSummary extends StatelessWidget {
+  const _ActivityTargetSummary({
+    required this.period,
+    required this.range,
+  });
+
+  final QazaActivityPeriod period;
+  final _ActivityRange range;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final metrics = <_SummaryMetricData>[
+      _SummaryMetricData(
+        label: l10n.homeCompleted,
+        value: DateFormatters.formatCount(period.totalCompleted),
+      ),
+    ];
+
+    if (period.targetAvailable) {
+      metrics.addAll([
+        _SummaryMetricData(
+          label: range == _ActivityRange.weekly
+              ? l10n.homeWeeklyTargetLabel
+              : l10n.homeMonthlyTarget,
+          value: DateFormatters.formatCount(period.fullTarget ?? 0),
+        ),
+        _SummaryMetricData(
+          label: l10n.homeTargetToDate,
+          value: DateFormatters.formatCount(period.targetToDate ?? 0),
+        ),
+      ]);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Row(
           children: [
-            Container(
-              width: 9,
-              height: 9,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
+            for (final metric in metrics)
+              Expanded(
+                child: _SummaryMetric(
+                  label: metric.label,
+                  value: metric.value,
+                ),
               ),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              '${l10n.homeActual}: ${DateFormatters.formatCount(period.totalCompleted)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const Spacer(),
-            Text(
-              '${l10n.homeDailyTarget}: ${DateFormatters.formatCount(target)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
           ],
         ),
-        if (selected != null) ...[
-          const SizedBox(height: 14),
-          _ActivityDayDetails(day: selected),
-        ] else ...[
-          const SizedBox(height: 4),
+        if (period.targetAvailable) ...[
+          const SizedBox(height: 6),
           Text(
-            l10n.homeSelectDay,
+            '${l10n.homeDailyTarget}: ${DateFormatters.formatCount(period.dailyTarget)}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -291,8 +438,8 @@ class _ActivityPeriodContent extends StatelessWidget {
   }
 }
 
-class _ActivitySummary extends StatelessWidget {
-  const _ActivitySummary({required this.period});
+class _ActivityYearSummary extends StatelessWidget {
+  const _ActivityYearSummary({required this.period});
 
   final QazaActivityPeriod period;
 
@@ -309,19 +456,26 @@ class _ActivitySummary extends StatelessWidget {
         ),
         Expanded(
           child: _SummaryMetric(
-            label: l10n.homeDailyTarget,
-            value: DateFormatters.formatCount(period.totalTarget),
+            label: l10n.homeActiveDays,
+            value: DateFormatters.formatCount(period.activeDays),
           ),
         ),
         Expanded(
           child: _SummaryMetric(
-            label: l10n.homeRemaining,
-            value: DateFormatters.formatCount(period.remaining),
+            label: l10n.homeActiveMonths,
+            value: DateFormatters.formatCount(period.activeMonths),
           ),
         ),
       ],
     );
   }
+}
+
+class _SummaryMetricData {
+  const _SummaryMetricData({required this.label, required this.value});
+
+  final String label;
+  final String value;
 }
 
 class _SummaryMetric extends StatelessWidget {
@@ -350,14 +504,15 @@ class _SummaryMetric extends StatelessWidget {
 
 class _ActivityBarChart extends StatelessWidget {
   const _ActivityBarChart({
+    super.key,
     required this.period,
-    required this.compact,
+    required this.labelsAreDates,
     required this.onSelectedDay,
   });
 
   final QazaActivityPeriod period;
-  final bool compact;
-  final ValueChanged<DateTime> onSelectedDay;
+  final bool labelsAreDates;
+  final ValueChanged<DateTime>? onSelectedDay;
 
   @override
   Widget build(BuildContext context) {
@@ -365,103 +520,118 @@ class _ActivityBarChart extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     final maxCompleted = period.days.fold<int>(
       0,
-      (maxValue, day) => math.max(maxValue, day.completed),
+      (maxValue, bucket) => math.max(maxValue, bucket.completed),
     );
     final maxY = math.max(
       1,
       maxCompleted + math.max(1, (maxCompleted * 0.15).ceil()),
     ).toDouble();
     final leftInterval = maxY > 10 ? 5.0 : 1.0;
-    final bottomInterval = compact ? 5.0 : 1.0;
 
-    return SizedBox(
-      key: Key(compact ? 'home_activity_30_chart' : 'home_activity_7_chart'),
-      height: 220,
-      child: BarChart(
-        BarChartData(
-          maxY: maxY,
-          minY: 0,
-          alignment: BarChartAlignment.spaceAround,
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: leftInterval,
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
+    return Semantics(
+      container: true,
+      label: _chartSemantics(context),
+      child: SizedBox(
+        height: 235,
+        child: BarChart(
+          BarChartData(
+            maxY: maxY,
+            minY: 0,
+            alignment: BarChartAlignment.spaceAround,
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: leftInterval,
             ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                interval: leftInterval,
-                getTitlesWidget: (value, meta) => SideTitleWidget(
-                  meta: meta,
-                  child: Text(
-                    value.toInt().toString(),
-                    style: theme.textTheme.labelSmall,
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  interval: leftInterval,
+                  getTitlesWidget: (value, meta) => SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      value.toInt().toString(),
+                      style: theme.textTheme.labelSmall,
+                    ),
                   ),
                 ),
               ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                interval: bottomInterval,
-                getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index < 0 || index >= period.days.length) {
-                    return const SizedBox.shrink();
-                  }
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      compact
-                          ? period.days[index].date.day.toString()
-                          : DateFormat.E(locale).format(period.days[index].date),
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  );
-                },
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 32,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index < 0 || index >= period.days.length) {
+                      return const SizedBox.shrink();
+                    }
+                    final date = period.days[index].date;
+                    final label = labelsAreDates
+                        ? DateFormat.E(locale).format(date)
+                        : DateFormat.MMM(locale).format(date);
+                    return SideTitleWidget(
+                      meta: meta,
+                      child: Text(
+                        label,
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-          barTouchData: BarTouchData(
-            enabled: true,
-            touchCallback: (event, response) {
-              if (event is! FlTapUpEvent) return;
-              final index = response?.spot?.touchedBarGroupIndex;
-              if (index == null || index < 0 || index >= period.days.length) {
-                return;
-              }
-              onSelectedDay(period.days[index].date);
-            },
-          ),
-          barGroups: [
-            for (var index = 0; index < period.days.length; index++)
-              BarChartGroupData(
-                x: index,
-                barRods: [
-                  BarChartRodData(
-                    toY: period.days[index].completed.toDouble(),
-                    width: compact ? 8 : 20,
-                    color: theme.colorScheme.primary,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
+            barTouchData: BarTouchData(
+              enabled: onSelectedDay != null,
+              touchCallback: (event, response) {
+                if (onSelectedDay == null || event is! FlTapUpEvent) return;
+                final index = response?.spot?.touchedBarGroupIndex;
+                if (index == null ||
+                    index < 0 ||
+                    index >= period.days.length) {
+                  return;
+                }
+                onSelectedDay!(period.days[index].date);
+              },
+            ),
+            barGroups: [
+              for (var index = 0; index < period.days.length; index++)
+                BarChartGroupData(
+                  x: index,
+                  barRods: [
+                    BarChartRodData(
+                      toY: period.days[index].completed.toDouble(),
+                      width: labelsAreDates ? 20 : 15,
+                      color: theme.colorScheme.primary,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(4),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-          ],
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _chartSemantics(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      for (var index = 0; index < period.days.length; index++)
+        labelsAreDates
+            ? '${DateFormat.EEEE().format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}'
+            : '${DateFormat.MMMM().format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}',
+    ].join(', ');
   }
 }
 
@@ -474,17 +644,19 @@ class _ActivityMonthGrid extends StatelessWidget {
 
   final QazaActivityPeriod period;
   final DateTime? selectedDay;
-  final ValueChanged<DateTime> onSelectedDay;
+  final ValueChanged<DateTime>? onSelectedDay;
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
     final first = period.days.first.date;
-    final leading = first.weekday - 1;
-    final cells = leading + period.days.length;
+    final leading = first.weekday % 7;
+    final totalCells = leading + period.days.length;
+    final cellCount = ((totalCells + 6) ~/ 7) * 7;
     final labels = [
       for (var index = 0; index < 7; index++)
-        DateFormat.E(locale).format(DateTime(2024, 1, 1 + index)),
+        DateFormat.E(locale).format(DateTime(2024, 1, 7 + index)),
     ];
 
     return Column(
@@ -496,9 +668,9 @@ class _ActivityMonthGrid extends StatelessWidget {
                 child: Center(
                   child: Text(
                     label,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -509,21 +681,25 @@ class _ActivityMonthGrid extends StatelessWidget {
           key: const Key('home_activity_month_grid'),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: cells,
+          itemCount: cellCount,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 7,
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
-            childAspectRatio: 1.0,
+            childAspectRatio: 1,
           ),
           itemBuilder: (context, index) {
-            if (index < leading) return const SizedBox.shrink();
+            if (index < leading || index - leading >= period.days.length) {
+              return const SizedBox.shrink();
+            }
             final day = period.days[index - leading];
             final selected = selectedDay != null && day.date == selectedDay;
             return _ActivityDayCell(
               day: day,
               selected: selected,
-              onTap: () => onSelectedDay(day.date),
+              onTap: onSelectedDay == null
+                  ? null
+                  : () => onSelectedDay!(day.date),
             );
           },
         ),
@@ -541,22 +717,29 @@ class _ActivityDayCell extends StatelessWidget {
 
   final QazaDailyActivity day;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final intensity = math.min(day.completed, 10);
-    final alpha = day.isFuture ? 18 : (day.completed == 0 ? 22 : 35 + intensity * 12);
+    final fill = day.isFuture
+        ? scheme.surfaceContainerHighest
+        : day.completed == 0
+            ? scheme.surfaceContainerHighest
+            : scheme.primary.withAlpha(35 + intensity * 12);
+
     return Semantics(
-      button: true,
-      label: '${day.date.day}, ${day.completed} ${AppLocalizations.of(context).homeCompleted}',
+      button: onTap != null,
+      enabled: onTap != null,
+      label:
+          '${day.date.day}, ${day.completed} ${AppLocalizations.of(context).homeCompleted}',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
           decoration: BoxDecoration(
-            color: scheme.primary.withAlpha(alpha),
+            color: fill,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: selected ? scheme.primary : scheme.outlineVariant,
@@ -586,83 +769,106 @@ class _ActivityDayCell extends StatelessWidget {
   }
 }
 
-class _ActivityDayDetails extends StatelessWidget {
-  const _ActivityDayDetails({required this.day});
+class _ActivityDayDetails extends ConsumerWidget {
+  const _ActivityDayDetails({
+    required this.day,
+    required this.period,
+  });
 
-  final QazaDailyActivity day;
+  final QazaDailyActivity? day;
+  final QazaActivityPeriod period;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final title = DateFormat.yMMMMEEEEd(locale).format(day.date);
-    final enabled = [
-      for (final prayer in PrayerType.values)
-        if (day.byPrayer.containsKey(prayer)) prayer,
-    ];
+    final isToday =
+        day != null && !day!.isFuture && day!.date == period.today;
+    final enabledNow = ref.watch(enabledPrayerTypesProvider);
+    final selected = day;
+
+    if (selected == null) return const SizedBox.shrink();
+
+    if (selected.isFuture) {
+      return Card(
+        key: const Key('home_activity_day_details'),
+        margin: const EdgeInsets.only(top: 12),
+        color: theme.colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(
+                Icons.event_available_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.homeFutureDay,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final prayers = isToday
+        ? enabledNow
+        : PrayerType.values.toList(growable: false);
 
     return Card(
       key: const Key('home_activity_day_details'),
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.only(top: 12),
       color: theme.colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ),
-                if (day.isFuture)
-                  Text(
-                    l10n.homeFutureDay,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                  )
-                else if (day.goalReached)
-                  Text(
-                    l10n.homeGoalReached,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-              ],
+            Text(
+              DateFormat.yMMMMEEEEd(
+                Localizations.localeOf(context).languageCode,
+              ).format(selected.date),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 10),
             _DetailMetricRow(
-              label: l10n.homeActual,
-              value: day.completed.toString(),
+              label: l10n.homeCompleted,
+              value: selected.completed.toString(),
             ),
-            _DetailMetricRow(
-              label: l10n.homeDailyTarget,
-              value: day.hasGoal ? day.target.toString() : '–',
-            ),
-            _DetailMetricRow(
-              label: l10n.homeRemaining,
-              value: day.hasGoal ? day.remaining.toString() : '–',
-            ),
+            if (isToday && period.targetAvailable) ...[
+              _DetailMetricRow(
+                label: l10n.homeDailyTarget,
+                value: period.dailyTarget.toString(),
+              ),
+              _DetailMetricRow(
+                label: l10n.homeRemaining,
+                value: selected.remaining.toString(),
+              ),
+              _DetailMetricRow(
+                label: l10n.homeProgressLabel,
+                value: '${(selected.progress * 100).round()}%',
+              ),
+            ],
             const SizedBox(height: 8),
             Text(
               l10n.homePrayerBreakdown,
               style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 4),
-            for (final prayer in enabled)
+            for (final prayer in prayers)
               _PrayerActivityRow(
                 prayer: prayer,
-                completed: day.byPrayer[prayer] ?? 0,
+                completed: selected.byPrayer[prayer] ?? 0,
               ),
           ],
         ),
@@ -741,7 +947,10 @@ class _ActivityError extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline_rounded, size: 28),
           const SizedBox(height: 8),
-          Text(l10n.homeProgressError, textAlign: TextAlign.center),
+          Text(
+            l10n.homeProgressError,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: onRetry,
