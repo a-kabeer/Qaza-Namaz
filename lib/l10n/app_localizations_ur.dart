@@ -1622,6 +1622,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileQazaToAdd => 'نئی قضا جوڑی جائے گی';
 
   @override
+  String get profileQazaRestored => 'پہلے ہٹائی گئی قضا بحال کی جائے گی';
+
+  @override
+  String get profileQazaUpdatedKeptExisting =>
+      'پروفائل اپ ڈیٹ ہوگئی۔ موجودہ قضا ریکارڈ برقرار رہے۔';
+
+  @override
   String get profileQazaNoLongerRequired => 'وہ زیرِ التوا قضا جو اب درکار نہیں';
 
   @override
