@@ -770,11 +770,6 @@ abstract class AppLocalizations {
   /// **'Monthly Target'**
   String get homeMonthlyTarget;
 
-  /// No description provided for @homeTargetToDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Target To Date'**
-  String get homeTargetToDate;
 
   /// No description provided for @homeProgressLabel.
   ///
