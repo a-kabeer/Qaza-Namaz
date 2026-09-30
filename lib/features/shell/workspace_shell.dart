@@ -66,9 +66,9 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     // Selection mode is an in-screen interaction state, not a route.
     // Cancel it before the workspace shell handles its normal back behavior.
     if (destination == WorkspaceDestination.qaza) {
-      final qazaState = ref.read(qazaTrackerControllerProvider);
+      final qazaState = ref.read(qazaTrackerControllerProvider(null));
       if (qazaState.selectionMode) {
-        ref.read(qazaTrackerControllerProvider.notifier).exitSelectionMode();
+        ref.read(qazaTrackerControllerProvider(null).notifier).exitSelectionMode();
         return;
       }
     }
