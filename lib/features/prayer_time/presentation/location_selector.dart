@@ -39,6 +39,9 @@ class LocationSelector extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     final content = InkWell(
+      key: style == LocationSelectorStyle.header
+          ? null
+          : const Key('prayer_time_location_selector'),
       borderRadius: BorderRadius.circular(16),
       onTap: refreshing ? null : () => _pick(context, ref),
       child: Padding(
@@ -149,6 +152,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
           return _PickerScaffold(
             title: l10n.prayerTimeSelectCountry,
             searchLabel: l10n.prayerTimeSelectCountry,
+            searchKey: const Key('prayer_time_country_search'),
             onQueryChanged: (value) => setState(() => _query = value),
             controller: _searchController,
             child: ListView.builder(
@@ -156,6 +160,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               itemBuilder: (_, index) {
                 final code = countries[index];
                 return ListTile(
+                  key: Key('prayer_time_country_$code'),
                   leading: const Icon(Icons.public_rounded),
                   title: Text(catalog.countryName(code)),
                   subtitle: Text(code),
@@ -179,6 +184,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
         return _PickerScaffold(
           title: catalog.countryName(_countryCode!),
           searchLabel: l10n.prayerTimeSearchCity,
+          searchKey: const Key('prayer_time_city_search'),
           onQueryChanged: (value) => setState(() => _query = value),
           controller: _searchController,
           leading: IconButton(
@@ -221,6 +227,7 @@ class _PickerScaffold extends StatelessWidget {
     required this.controller,
     required this.child,
     this.leading,
+    this.searchKey,
   });
 
   final String title;
@@ -229,6 +236,7 @@ class _PickerScaffold extends StatelessWidget {
   final TextEditingController controller;
   final Widget child;
   final Widget? leading;
+  final Key? searchKey;
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +261,7 @@ class _PickerScaffold extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SearchBar(
+              key: searchKey,
               hintText: searchLabel,
               leading: const Icon(Icons.search_rounded),
               controller: controller,
