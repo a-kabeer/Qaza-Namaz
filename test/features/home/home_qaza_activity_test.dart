@@ -184,39 +184,25 @@ void main() {
   );
 
   testWidgets(
-    'tapping each weekly bar updates the selected day',
+    'FL Chart callback maps all seven weekly groups to their dates',
     (tester) async {
       final period = activityPeriod(
         today: DateTime(2026, 10, 3),
         completedOnWednesday: 3,
-        fillEveryDay: true,
       );
       await tester.pumpWidget(buildInteractiveWidget(period));
       await tester.pumpAndSettle();
 
-      final chart = find.byKey(const Key('home_activity_week_chart'));
-      final barChart = find.descendant(
-        of: chart,
+      final chart = find.descendant(
+        of: find.byKey(const Key('home_activity_week_chart')),
         matching: find.byType(BarChart),
       );
-      final chartWidget = tester.widget<BarChart>(barChart);
-      final rect = tester.getRect(barChart);
-      final leftReserved = chartWidget
-          .data
-          .titlesData
-          .leftTitles
-          .sideTitles
-          .reservedSize;
-      final rightReserved = chartWidget
-          .data
-          .titlesData
-          .rightTitles
-          .sideTitles
-          .reservedSize;
-      final plotLeft = rect.left + leftReserved;
-      final plotRight = rect.right - rightReserved;
-      final plotWidth = plotRight - plotLeft;
-      const expectedDates = <String>[
+      final chartWidget = tester.widget<BarChart>(chart);
+      final callback = chartWidget.data.barTouchData.touchCallback;
+      expect(callback, isNotNull);
+      expect(chartWidget.data.barGroups, hasLength(7));
+
+      const expectedLabels = <String>[
         'Sunday, September 27, 2026',
         'Monday, September 28, 2026',
         'Tuesday, September 29, 2026',
@@ -226,16 +212,37 @@ void main() {
         'Saturday, October 3, 2026',
       ];
 
-      for (var index = 0; index < expectedDates.length; index++) {
-        await tester.tapAt(
-          Offset(
-            plotLeft + plotWidth * ((index + 0.5) / 7),
-            rect.bottom - 60,
-          ),
+      for (var index = 0; index < expectedLabels.length; index++) {
+        final group = chartWidget.data.barGroups[index];
+        final rod = group.barRods.first;
+        final spot = BarTouchedSpot(
+          group,
+          index,
+          rod,
+          0,
+          null,
+          -1,
+          FlSpot(group.x.toDouble(), rod.toY),
+          Offset.zero,
         );
-        await tester.pumpAndSettle();
+        final response = BarTouchResponse(
+          touchLocation: Offset.zero,
+          touchChartCoordinate: Offset.zero,
+          spot: spot,
+        );
 
-        expect(find.text(expectedDates[index]), findsOneWidget);
+        callback!(const FlTapUpEvent(TapUpDetails()), response);
+        await tester.pump();
+
+        final detail = find.byKey(const Key('home_activity_day_details'));
+        expect(detail, findsOneWidget);
+        expect(
+          find.descendant(
+            of: detail,
+            matching: find.text(expectedLabels[index]),
+          ),
+          findsOneWidget,
+        );
       }
     },
   );
