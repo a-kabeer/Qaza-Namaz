@@ -8,6 +8,8 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../l10n/app_localizations.dart';
+import '../../l10n/prayer_type_l10n.dart';
 import 'add_qaza_screen.dart';
 import 'qaza_tracker_screen.dart';
 
@@ -88,7 +90,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       subtitle: Text(
                         snapshot.selectedPrayers
                             .map((prayer) => prayer.localizedLabel(
-                                  null,
+                                  AppLocalizations.of(context),
                                 ))
                             .join(', '),
                       ),
