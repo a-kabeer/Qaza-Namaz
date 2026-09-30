@@ -79,6 +79,7 @@ class HomePendingByPrayer extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
