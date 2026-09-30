@@ -22,7 +22,10 @@ class HomeDailyGoals extends ConsumerWidget {
 
     return Card(
       key: const Key('home_daily_goals'),
-      child: Padding(
+      child: InkWell(
+        key: const Key('home_daily_goals_tap'),
+        onTap: onDetails,
+        child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: activity.when(
           loading: () => const SizedBox(
@@ -51,6 +54,8 @@ class HomeDailyGoals extends ConsumerWidget {
             period: period,
             onDetails: onDetails,
           ),
+        ),
+      ),
         ),
       ),
     );
@@ -97,12 +102,6 @@ class _DailyGoalsContent extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            IconActionButton(
-              key: const Key('home_daily_goals_details'),
-              tooltip: l10n.homeViewDetails,
-              icon: Icons.chevron_right_rounded,
-              onPressed: onDetails,
             ),
           ],
         ),
