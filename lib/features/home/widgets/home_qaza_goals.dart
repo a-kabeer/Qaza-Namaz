@@ -128,7 +128,6 @@ class HomeQazaGoals extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _HomeQazaGoalsChart(
-                        key: const Key('home_qaza_goals_chart'),
                         period: period,
                         locale: locale,
                         maxY: maxY,
@@ -164,6 +163,7 @@ class _HomeQazaGoalsChart extends StatelessWidget {
     return SizedBox(
       height: 92,
       child: BarChart(
+        key: const Key('home_qaza_goals_chart'),
         BarChartData(
           minY: 0,
           maxY: maxY,
