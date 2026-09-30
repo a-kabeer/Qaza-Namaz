@@ -7,7 +7,7 @@ extension QazaAdditionModeX on QazaAdditionMode {
   static QazaAdditionMode fromName(String name) =>
       QazaAdditionMode.values.firstWhere(
         (value) => value.name == name,
-        orElse: () => StateError(
+        orElse: () => throw StateError(
           'Unknown Qaza addition mode "' + name + '".',
         ),
       );
@@ -96,8 +96,7 @@ class QazaAdditionInputSnapshot {
         (rawPrayers is List ? rawPrayers : const <dynamic>[]).map(
           (value) => PrayerType.values.firstWhere(
             (prayer) => prayer.name == value,
-            orElse: () =>
-                StateError('Unknown prayer type "' + value.toString() + '".'),
+            orElse: () => throw StateError('Unknown prayer type "' + value.toString() + '".'),
           ),
         ),
       ),
