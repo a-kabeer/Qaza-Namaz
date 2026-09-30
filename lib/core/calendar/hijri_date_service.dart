@@ -2,7 +2,7 @@ import 'package:hijri/hijri_calendar.dart';
 
 import '../../l10n/app_localizations.dart';
 
-/// Canonical boundary for all Gregorian -> Hijri presentation.
+/// Canonical boundary for all Gregorian ↔ Hijri conversion and presentation.
 ///
 /// Gregorian [DateTime] values remain the application's source of truth.
 /// Hijri values are derived on demand and are never exposed as package types.
@@ -32,6 +32,48 @@ class HijriDateService {
       day: hijri.hDay,
       month: hijri.hMonth,
       year: hijri.hYear,
+    );
+  }
+
+  /// Converts a Hijri date to a date-only Gregorian [DateTime].
+  static DateTime toGregorian({
+    required int year,
+    required int month,
+    required int day,
+  }) {
+    final gregorian = HijriCalendar().hijriToGregorian(year, month, day);
+    return DateTime(gregorian.year, gregorian.month, gregorian.day);
+  }
+
+  /// Returns the number of days in a Hijri month according to the active
+  /// calendar engine/convention.
+  static int daysInMonth({
+    required int year,
+    required int month,
+  }) =>
+      HijriCalendar().getDaysInMonth(year, month);
+
+  /// Adds whole Hijri calendar years to a Gregorian date.
+  ///
+  /// The source Gregorian date is first converted to its Hijri date. The
+  /// target Hijri year keeps the same month/day, clamping the day to the
+  /// target month's actual length when necessary, and is then converted back
+  /// to Gregorian.
+  static DateTime addHijriYears(DateTime date, int years) {
+    if (years < 0) {
+      throw ArgumentError.value(years, 'years', 'Must be non-negative.');
+    }
+
+    final source = fromGregorian(date);
+    final targetYear = source.year + years;
+    final targetDay = source.day
+        .clamp(1, daysInMonth(year: targetYear, month: source.month))
+        .toInt();
+
+    return toGregorian(
+      year: targetYear,
+      month: source.month,
+      day: targetDay,
     );
   }
 
