@@ -300,6 +300,11 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           userId: userId,
           additionId: additionId,
         );
+        if (current.isEmpty) {
+          throw StateError(
+            'This Qaza addition has no active records and cannot be edited. Restore it first.',
+          );
+        }
 
         final removable = <QazaRecord>[];
         var protectedCount = 0;
