@@ -138,7 +138,10 @@ class QazaService {
           DateTime? from,
           DateTime? to,
           DateTime? afterOriginalDate,
-          String? afterId}) =>
+          String? afterId,
+          DateTime? beforeOriginalDate,
+          String? beforeId,
+          bool descending = false}) =>
       repository.getPage(
           userId: userId,
           limit: limit,
@@ -148,7 +151,10 @@ class QazaService {
           from: from,
           to: to,
           afterOriginalDate: afterOriginalDate,
-          afterId: afterId);
+          afterId: afterId,
+          beforeOriginalDate: beforeOriginalDate,
+          beforeId: beforeId,
+          descending: descending);
   Future<QazaRecord?> oldestPending({
     required String userId,
     required PrayerType prayerType,
@@ -265,8 +271,7 @@ class QazaService {
   /// The most recent pending record for [prayerType], or null when there is
   /// none.
   ///
-  /// Uses the history page, which the data source already returns newest
-  /// first, bounded to a single row — no ledger is materialized to find it.
+  /// Uses the generic ledger page in descending order, bounded to a single row.
   Future<QazaRecord?> latestPending(
       {required String userId, required PrayerType prayerType}) async {
     final page = await repository.getPage(
