@@ -375,8 +375,6 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get homeMonthlyTarget => 'ماہانہ ہدف';
 
-  @override
-  String get homeTargetToDate => 'اب تک کا ہدف';
 
   @override
   String get homeProgressLabel => 'پیش رفت';

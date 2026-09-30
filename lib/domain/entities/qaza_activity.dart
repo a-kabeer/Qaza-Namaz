@@ -32,7 +32,7 @@ class QazaDailyActivity {
 
   bool get goalReached => hasGoal && completed >= target;
 
-  int get remaining => hasGoal ? math.max(target - completed, 0) : 0;
+  int get remaining => target > 0 ? math.max(target - completed, 0) : 0;
 
   double get progress =>
       target <= 0 ? 0.0 : (completed / target).clamp(0.0, 1.0).toDouble();
@@ -68,30 +68,23 @@ class QazaActivityPeriod {
       ? dailyTarget * days.length
       : null;
 
-  int? get targetToDate => targetAvailable && dailyTarget > 0
-      ? days.where((day) => !day.isFuture).length * dailyTarget
-      : null;
-
-  int? get remainingToDate {
-    final target = targetToDate;
+  int? get remainingTarget {
+    final target = fullTarget;
     if (target == null) return null;
     return math.max(target - totalCompleted, 0);
   }
 
-  double get progressToDate {
-    final target = targetToDate;
+  double get progress {
+    final target = fullTarget;
     return target == null || target <= 0
         ? 0.0
         : (totalCompleted / target).clamp(0.0, 1.0).toDouble();
   }
 
-  /// Compatibility aliases. totalTarget is the elapsed target, not the
-  /// full future-inclusive target.
-  int get totalTarget => targetToDate ?? 0;
+  /// Full selected-period target for compatibility with existing callers.
+  int get totalTarget => fullTarget ?? 0;
 
-  int get remaining => remainingToDate ?? 0;
-
-  double get progress => progressToDate;
+  int get remaining => remainingTarget ?? 0;
 
   int get goalDays =>
       days.where((day) => day.hasGoal && day.goalReached).length;

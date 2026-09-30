@@ -63,7 +63,8 @@ void main() {
 
       expect(period.days, hasLength(7));
       expect(period.fullTarget, 35);
-      expect(period.targetToDate, 20);
+      expect(period.remainingTarget, 35);
+      expect(period.progress, 0);
       expect(repo.from, DateTime(2026, 9, 27));
       expect(repo.toExclusive, DateTime(2026, 10, 4));
     });
@@ -102,9 +103,9 @@ void main() {
       expect(period.days.where((day) => day.isFuture), hasLength(3));
       expect(period.days.map((day) => day.target), everyElement(5));
       expect(period.fullTarget, 35);
-      expect(period.targetToDate, 20);
-      expect(period.remainingToDate, 20);
-      expect(period.days[4].remaining, 0);
+      expect(period.remainingTarget, 35);
+      expect(period.progress, 0);
+      expect(period.days[4].remaining, 5);
     });
 
     test('completed records after today cannot create future activity', () {
@@ -146,8 +147,90 @@ void main() {
       expect(period.totalCompleted, 1);
       expect(period.targetAvailable, isFalse);
       expect(period.fullTarget, isNull);
-      expect(period.targetToDate, isNull);
+      expect(period.remainingTarget, isNull);
       expect(period.days.every((day) => day.target == 0), isTrue);
+    });
+
+    test('period remaining uses full target, not elapsed days', () {
+      final period = QazaActivityService.buildPeriodFromRows(
+        rows: [
+          QazaActivityRow(
+            completedAt: DateTime(2026, 9, 30, 9),
+            prayerType: PrayerType.fajr,
+          ),
+          QazaActivityRow(
+            completedAt: DateTime(2026, 9, 30, 10),
+            prayerType: PrayerType.zuhr,
+          ),
+          QazaActivityRow(
+            completedAt: DateTime(2026, 9, 30, 11),
+            prayerType: PrayerType.asr,
+          ),
+        ],
+        from: DateTime(2026, 9, 27),
+        toExclusive: DateTime(2026, 10, 4),
+        today: DateTime(2026, 9, 30),
+        dailyTarget: 5,
+        targetAvailable: true,
+        enabledPrayerTypes: _allPrayers,
+      );
+
+      expect(period.totalCompleted, 3);
+      expect(period.fullTarget, 35);
+      expect(period.remainingTarget, 32);
+      expect(period.progress, closeTo(3 / 35, 0.0001));
+    });
+
+    test('period remaining clamps at zero when completed exceeds target', () {
+      final rows = List.generate(
+        40,
+        (_) => QazaActivityRow(
+          completedAt: DateTime(2026, 9, 30, 9),
+          prayerType: PrayerType.fajr,
+        ),
+      );
+      final period = QazaActivityService.buildPeriodFromRows(
+        rows: rows,
+        from: DateTime(2026, 9, 27),
+        toExclusive: DateTime(2026, 10, 4),
+        today: DateTime(2026, 9, 30),
+        dailyTarget: 5,
+        targetAvailable: true,
+        enabledPrayerTypes: _allPrayers,
+      );
+
+      expect(period.fullTarget, 35);
+      expect(period.remainingTarget, 0);
+    });
+
+    test('daily remaining clamps at zero and includes future days', () {
+      final today = DateTime(2026, 9, 30);
+      final day = QazaDailyActivity(
+        date: DateTime(2026, 10, 1),
+        completed: 0,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: true,
+      );
+      expect(day.remaining, 5);
+
+      final complete = QazaDailyActivity(
+        date: today,
+        completed: 5,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: false,
+      );
+      expect(complete.remaining, 0);
+
+      final overTarget = QazaDailyActivity(
+        date: today,
+        completed: 7,
+        byPrayer: <PrayerType, int>{},
+        target: 5,
+        isFuture: false,
+      );
+      expect(overTarget.remaining, 0);
     });
 
     test('monthly period uses calendar month lengths', () {
@@ -183,7 +266,7 @@ void main() {
         enabledPrayerTypes: _allPrayers,
       );
       expect(feb2028.fullTarget, 145);
-      expect(feb2028.targetToDate, 75);
+      expect(feb2028.remainingTarget, 145);
     });
 
     test('year is exactly twelve monthly buckets with active metrics', () {
@@ -277,7 +360,7 @@ void main() {
       expect(period.days.single.hasGoal, isFalse);
       expect(period.days.single.goalReached, isFalse);
       expect(period.fullTarget, isNull);
-      expect(period.targetToDate, isNull);
+      expect(period.remainingTarget, isNull);
     });
   });
 }

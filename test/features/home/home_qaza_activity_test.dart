@@ -1,8 +1,11 @@
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_activity.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -12,6 +15,71 @@ void main() {
     return ProviderScope(
       overrides: [
         homeLocalDateProvider.overrideWithValue(DateTime(2026, 9, 30)),
+        activeUserIdProvider.overrideWithValue(null),
+        dailyQazaTargetProvider.overrideWithValue(5),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          useMaterial3: true,
+        ),
+        home: const Scaffold(
+          body: SingleChildScrollView(
+            child: HomeQazaActivity(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  QazaActivityPeriod activityPeriod({
+    required DateTime today,
+    required int completedOnWednesday,
+    bool fillEveryDay = false,
+  }) {
+    final dates = <DateTime>[
+      DateTime(2026, 9, 27),
+      DateTime(2026, 9, 28),
+      DateTime(2026, 9, 29),
+      DateTime(2026, 9, 30),
+      DateTime(2026, 10, 1),
+      DateTime(2026, 10, 2),
+      DateTime(2026, 10, 3),
+    ];
+
+    return QazaActivityPeriod(
+      from: dates.first,
+      toExclusive: DateTime(2026, 10, 4),
+      today: today,
+      dailyTarget: 5,
+      targetAvailable: true,
+      days: [
+        for (var index = 0; index < dates.length; index++)
+          QazaDailyActivity(
+            date: dates[index],
+            completed: index == 3
+                ? completedOnWednesday
+                : fillEveryDay
+                    ? 1
+                    : 0,
+            byPrayer: const {},
+            target: 5,
+            isFuture: dates[index].isAfter(today),
+          ),
+      ],
+    );
+  }
+
+  Widget buildInteractiveWidget(QazaActivityPeriod period) {
+    return ProviderScope(
+      overrides: [
+        homeLocalDateProvider.overrideWithValue(period.today),
+        homeQazaActivityWeekProvider.overrideWith(
+          (ref, _) async => period,
+        ),
         activeUserIdProvider.overrideWithValue(null),
         dailyQazaTargetProvider.overrideWithValue(5),
       ],
@@ -50,7 +118,8 @@ void main() {
       expect(header.data, contains('Sep'));
       expect(header.data, contains('Oct'));
       expect(find.text('Weekly Target'), findsOneWidget);
-      expect(find.text('Target To Date'), findsOneWidget);
+      expect(find.text('Remaining'), findsOneWidget);
+      expect(find.text('Target To Date'), findsNothing);
     },
   );
 
@@ -93,7 +162,8 @@ void main() {
 
     expect(find.text('September 2026'), findsOneWidget);
     expect(find.text('Monthly Target'), findsOneWidget);
-    expect(find.text('Target To Date'), findsOneWidget);
+    expect(find.text('Remaining'), findsOneWidget);
+    expect(find.text('Target To Date'), findsNothing);
     expect(find.byKey(const Key('home_activity_month_grid')), findsOneWidget);
   });
 
@@ -111,6 +181,133 @@ void main() {
       expect(find.byKey(const Key('home_activity_year_chart')), findsOneWidget);
       expect(find.text('Monthly Target'), findsNothing);
       expect(find.text('Weekly Target'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'FL Chart callback maps all seven weekly groups to their dates',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 10, 3),
+        completedOnWednesday: 3,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.descendant(
+        of: find.byKey(const Key('home_activity_week_chart')),
+        matching: find.byType(BarChart),
+      );
+      final chartWidget = tester.widget<BarChart>(chart);
+      final callback = chartWidget.data.barTouchData.touchCallback;
+      expect(callback, isNotNull);
+      expect(chartWidget.data.barGroups, hasLength(7));
+
+      const expectedLabels = <String>[
+        'Sunday, September 27, 2026',
+        'Monday, September 28, 2026',
+        'Tuesday, September 29, 2026',
+        'Wednesday, September 30, 2026',
+        'Thursday, October 1, 2026',
+        'Friday, October 2, 2026',
+        'Saturday, October 3, 2026',
+      ];
+
+      for (var index = 0; index < expectedLabels.length; index++) {
+        final group = chartWidget.data.barGroups[index];
+        final rod = group.barRods.first;
+        final spot = BarTouchedSpot(
+          group,
+          index,
+          rod,
+          0,
+          null,
+          -1,
+          FlSpot(group.x.toDouble(), rod.toY),
+          Offset.zero,
+        );
+        final response = BarTouchResponse(
+          touchLocation: Offset.zero,
+          touchChartCoordinate: Offset.zero,
+          spot: spot,
+        );
+
+        callback!(
+          FlTapUpEvent(
+            TapUpDetails(kind: PointerDeviceKind.touch),
+          ),
+          response,
+        );
+        await tester.pump();
+
+        final detail = find.byKey(const Key('home_activity_day_details'));
+        expect(detail, findsOneWidget);
+        expect(
+          find.descendant(
+            of: detail,
+            matching: find.text(expectedLabels[index]),
+          ),
+          findsOneWidget,
+        );
+      }
+    },
+  );
+
+  testWidgets(
+    'tapping Wednesday shows completed, daily target and remaining',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 3,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.byKey(const Key('home_activity_week_chart'));
+      final rect = tester.getRect(chart);
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * (3.5 / 7),
+          rect.bottom - 60,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wednesday, September 30, 2026'), findsOneWidget);
+      expect(find.text('Daily Target'), findsOneWidget);
+      expect(find.text('Remaining'), findsWidgets);
+      final detail = find.byKey(const Key('home_activity_day_details'));
+      expect(detail, findsOneWidget);
+      expect(
+        find.descendant(of: detail, matching: find.text('2')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'future selected day shows its remaining target',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 3,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.byKey(const Key('home_activity_week_chart'));
+      final rect = tester.getRect(chart);
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * (4.5 / 7),
+          rect.bottom - 60,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Thursday, October 1, 2026'), findsOneWidget);
+      expect(find.text('Daily Target'), findsOneWidget);
+      expect(find.text('5'), findsWidgets);
     },
   );
 
