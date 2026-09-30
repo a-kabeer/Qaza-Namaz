@@ -242,7 +242,12 @@ void main() {
       expect(find.text('Wednesday, September 30, 2026'), findsOneWidget);
       expect(find.text('Daily Target'), findsOneWidget);
       expect(find.text('Remaining'), findsWidgets);
-      expect(find.byKey(const Key('home_activity_day_details')), findsOneWidget);
+      final detail = find.byKey(const Key('home_activity_day_details'));
+      expect(detail, findsOneWidget);
+      expect(
+        find.descendant(of: detail, matching: find.text('2')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -260,7 +265,7 @@ void main() {
       final rect = tester.getRect(chart);
       await tester.tapAt(
         Offset(
-          rect.left + rect.width * (5.5 / 7),
+          rect.left + rect.width * (4.5 / 7),
           rect.bottom - 28,
         ),
       );
