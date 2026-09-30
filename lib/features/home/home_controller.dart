@@ -15,6 +15,7 @@ class HomeController {
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDailyProgressProvider);
+    ref.invalidate(homeQazaActivityCurrentWeekProvider);
     ref.invalidate(homeQazaActivitySevenDaysProvider);
     ref.invalidate(homeQazaActivityThirtyDaysProvider);
     ref.invalidate(homeQazaActivityMonthProvider);
