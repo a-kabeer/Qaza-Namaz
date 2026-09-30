@@ -2474,12 +2474,6 @@ abstract class AppLocalizations {
   /// **'Progress History'**
   String get homeProgressHistory;
 
-  /// No description provided for @homeLastSevenDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Last 7 Days'**
-  String get homeLastSevenDays;
-
   /// No description provided for @homeRangeWeekly.
   ///
   /// In en, this message translates to:
