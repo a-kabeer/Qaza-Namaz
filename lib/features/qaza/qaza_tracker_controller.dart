@@ -323,6 +323,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         status: state.statusFilter.status,
         from: state.from,
         to: state.to,
+        additionId: _additionId,
         beforeOriginalDate:
             state.sortOrder.isOldestFirst ? null : after?.originalDate,
         beforeId: state.sortOrder.isOldestFirst ? null : after?.id,
