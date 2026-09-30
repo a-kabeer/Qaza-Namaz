@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
-import 'package:qaza_namaz/domain/entities/qaza_operation.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
@@ -65,8 +64,6 @@ class _CompletingImportController extends QazaImportController {
     required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayers,
-    required QazaOperationType operationType,
-    required Map<String, dynamic> inputSnapshot,
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
