@@ -188,7 +188,7 @@ void main() {
     expect(source, contains('statusCountTotal'));
   });
 
-  test('Add Qaza starts the import pipeline without operation logging', () {
+  test('Add Qaza starts the addition pipeline without operation logging', () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
     final controller =
@@ -199,7 +199,9 @@ void main() {
     expect(source, isNot(contains('inputSnapshot')));
     expect(controller, isNot(contains('QazaOperationType')));
     expect(controller, isNot(contains('qazaOperationServiceProvider')));
-    expect(controller, contains('importQazaForDates('));
+    expect(controller, contains('createOrEdit('));
+    expect(controller, contains('additionId'));
+    expect(controller, contains('expectedRevision'));
   });
 
   test('Add Qaza progress has real cancellation and determinate progress', () {
