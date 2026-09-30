@@ -944,6 +944,8 @@
   "profileQazaNewTotal": "New plan",
   "profileQazaCompletedInPlan": "Completed in new plan",
   "profileQazaToAdd": "New Qaza to add",
+  "profileQazaRestored": "Previously removed Qaza to restore",
+  "profileQazaUpdatedKeptExisting": "Profile updated. Your existing Qaza records were kept.",
   "profileQazaNoLongerRequired": "Pending Qaza no longer required",
   "profileQazaKeepExisting": "Keep existing Qaza records",
   "profileQazaApply": "Apply Qaza plan",
