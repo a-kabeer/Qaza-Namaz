@@ -50,8 +50,7 @@ class ProfileQazaPlanPreview {
       oldRevision == null ||
       oldRevision!.ledgerPlanFingerprint != planFingerprint(newPlan);
 
-  bool get requiresUserDecision =>
-      calculationChanged && ledgerPlanChanged && hasLedgerChanges;
+  bool get requiresUserDecision => calculationChanged && hasLedgerChanges;
 }
 
 class ProfileQazaPlanReconciliationResult {
@@ -198,23 +197,30 @@ class ProfileQazaPlanReconciliationService {
     final oldRetirementIds =
         preview.oldRevision?.retirementOperationIds ?? const <String>[];
 
-    if (!preview.calculationChanged) {
+    if (!preview.hasLedgerChanges) {
+      final ledgerPlan = preview.calculationChanged
+          ? preview.newPlan
+          : oldLedgerPlan;
+      final decision = preview.calculationChanged
+          ? QazaPlanLedgerDecision.applied
+          : (preview.oldRevision?.ledgerDecision ??
+              QazaPlanLedgerDecision.applied);
       final revision = await _saveRevision(
         userId: userId,
         profile: newProfile,
         plan: preview.newPlan,
-        ledgerPlan: oldLedgerPlan,
+        ledgerPlan: ledgerPlan,
         generatedOperationId: null,
         generationOperationIds: oldGenerationIds,
         retirementOperationIds: oldRetirementIds,
-        decision: QazaPlanLedgerDecision.applied,
+        decision: decision,
       );
       return ProfileQazaPlanReconciliationResult(
         revision: revision,
         added: 0,
         removed: 0,
         restored: 0,
-        keptExisting: false,
+        keptExisting: decision == QazaPlanLedgerDecision.keptExisting,
       );
     }
 
