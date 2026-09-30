@@ -49,6 +49,11 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
               label: l10n.profileQazaToAdd,
               value: preview.pendingToAdd.toString(),
             ),
+            if (preview.pendingToRestore > 0)
+              _StatRow(
+                label: l10n.profileQazaRestored,
+                value: preview.pendingToRestore.toString(),
+              ),
             if (preview.pendingToRemove > 0) ...[
               const SizedBox(height: 12),
               Container(
@@ -73,13 +78,12 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        if (preview.pendingToRemove > 0)
-          TextButton(
+        TextButton(
             key: const Key('profile_qaza_keep_existing'),
             onPressed: () => Navigator.of(context).pop(
               ProfileQazaChangeChoice.keepExisting,
             ),
-            child: Text(l10n.profileQazaKeepExisting),
+          child: Text(l10n.profileQazaKeepExisting),
           ),
         TextButton(
           key: const Key('profile_qaza_cancel'),
