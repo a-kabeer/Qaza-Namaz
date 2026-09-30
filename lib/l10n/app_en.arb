@@ -867,8 +867,18 @@
   "homePreviousMonth": "Previous month",
   "homeNextMonth": "Next month",
   "homeFutureDay": "Future",
-  "homeGoalsLastSevenDays": "Your daily goals",
-  "homeGoalsAchieved": "Achieved",
+  "homeWeeklyTarget": "Your weekly target",
+  "homeWeeklyTargetProgress": "{completed} of {target}",
+  "@homeWeeklyTargetProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "homeDayActivityDetails": "Day Details",
   "homeTodayDate": "Today",
   "homeCurrentPrayerLabel": "Current prayer: {prayer}",

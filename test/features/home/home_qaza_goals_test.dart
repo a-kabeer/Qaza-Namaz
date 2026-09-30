@@ -1,29 +1,39 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/intl.dart';
 
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_goals.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
-QazaActivityPeriod _period() {
-  final start = DateTime(2026, 9, 24);
-  final days = [
-    for (var index = 0; index < 7; index++)
+QazaActivityPeriod _period({
+  required int completed,
+  required int dailyTarget,
+}) {
+  final from = DateTime(2026, 9, 27);
+  final days = <QazaDailyActivity>[];
+  var remaining = completed;
+
+  for (var index = 0; index < 7; index++) {
+    final dayCompleted = index == 6
+        ? remaining
+        : (remaining > 0 ? remaining.clamp(0, dailyTarget + 10).toInt() : 0);
+    remaining -= dayCompleted;
+    days.add(
       QazaDailyActivity(
-        date: DateTime(2026, 9, 24 + index),
-        completed: index == 6 ? 2 : index,
+        date: DateTime(2026, 9, 27 + index),
+        completed: dayCompleted,
         byPrayer: const {},
-        target: 5,
-        isFuture: false,
+        target: dailyTarget,
+        isFuture: index > 3,
       ),
-  ];
+    );
+  }
+
   return QazaActivityPeriod(
-    from: start,
-    toExclusive: DateTime(2026, 10, 1),
+    from: from,
+    toExclusive: DateTime(2026, 10, 4),
     today: DateTime(2026, 9, 30),
     days: days,
   );
@@ -32,7 +42,7 @@ QazaActivityPeriod _period() {
 Widget _buildWidget(QazaActivityPeriod period) {
   return ProviderScope(
     overrides: [
-      homeQazaActivitySevenDaysProvider.overrideWith(
+      homeQazaActivityCurrentWeekProvider.overrideWith(
         (ref) => Future.value(period),
       ),
     ],
@@ -53,54 +63,97 @@ Widget _buildWidget(QazaActivityPeriod period) {
 
 void main() {
   testWidgets(
-    'renders seven data-driven goal bars and target backgrounds',
-    (tester) async {
-      final period = _period();
+    'renders current Sunday-Saturday date range and weekly progress',
+    (
+    tester,
+  ) async {
+    final period = _period(completed: 29, dailyTarget: 5);
 
-      await tester.pumpWidget(_buildWidget(period));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_buildWidget(period));
+    await tester.pumpAndSettle();
 
-      final chart = tester.widget<BarChart>(
-        find.byKey(const Key('home_qaza_goals_chart')),
-      );
+    expect(find.text('Your weekly target'), findsOneWidget);
+    expect(find.text('Sep 27 – Oct 3'), findsOneWidget);
+    expect(find.text('29 of 35'), findsOneWidget);
 
-      expect(chart.data.barGroups, hasLength(7));
-      expect(chart.data.barGroups.first.x, 0);
-      expect(chart.data.barGroups.last.x, 6);
-      expect(chart.data.barGroups.last.barRods.single.toY, 2);
-      expect(
-        chart.data.barGroups.last.barRods.single.backDrawRodData?.toY,
-        5,
-      );
-      expect(chart.data.maxY, 5);
-
-      expect(
-        find.text(
-          period.goalDays.toString() + '/' + period.days.length.toString(),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Achieved'), findsOneWidget);
-      expect(
-        find.text(DateFormat.E('en').format(period.days.first.date)),
-        findsOneWidget,
-      );
-      expect(
-        find.text(DateFormat.E('en').format(period.days.last.date)),
-        findsOneWidget,
-      );
-    },
-  );
+    final progress = tester.widget<LinearProgressIndicator>(
+      find.byKey(const Key('home_qaza_goals_progress')),
+    );
+    expect(progress.value, closeTo(29 / 35, 0.0001));
+  });
 
   testWidgets(
-    'does not use the old scrolling or circular goal presentation',
-    (tester) async {
-      await tester.pumpWidget(_buildWidget(_period()));
-      await tester.pump();
+    'includes all seven days in weekly target even when three are future',
+    (
+    tester,
+  ) async {
+    final period = _period(completed: 20, dailyTarget: 5);
 
-      expect(find.byType(SingleChildScrollView), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.byKey(const Key('home_qaza_goals_chart')), findsOneWidget);
-    },
-  );
+    await tester.pumpWidget(_buildWidget(period));
+    await tester.pumpAndSettle();
+
+    expect(period.days, hasLength(7));
+    expect(period.days.where((day) => day.isFuture), hasLength(3));
+    expect(find.text('20 of 35'), findsOneWidget);
+  });
+
+  testWidgets(
+    'zero daily target keeps the card stable without division by zero',
+    (
+    tester,
+  ) async {
+    final period = _period(completed: 0, dailyTarget: 0);
+
+    await tester.pumpWidget(_buildWidget(period));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 of 0'), findsOneWidget);
+
+    final progress = tester.widget<LinearProgressIndicator>(
+      find.byKey(const Key('home_qaza_goals_progress')),
+    );
+    expect(progress.value, 0);
+  });
+
+  testWidgets('weekly progress is clamped at 100 percent', (tester) async {
+    final period = _period(completed: 40, dailyTarget: 5);
+
+    await tester.pumpWidget(_buildWidget(period));
+    await tester.pumpAndSettle();
+
+    expect(find.text('40 of 35'), findsOneWidget);
+
+    final progress = tester.widget<LinearProgressIndicator>(
+      find.byKey(const Key('home_qaza_goals_progress')),
+    );
+    expect(progress.value, 1);
+  });
+
+  testWidgets('details action is preserved', (tester) async {
+    var tapped = false;
+    final period = _period(completed: 0, dailyTarget: 5);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeQazaActivityCurrentWeekProvider.overrideWith(
+            (ref) => Future.value(period),
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          theme: ThemeData(useMaterial3: true),
+          home: Scaffold(
+            body: HomeQazaGoals(onDetails: () => tapped = true),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('home_qaza_goals_details')));
+    expect(tapped, isTrue);
+  });
 }

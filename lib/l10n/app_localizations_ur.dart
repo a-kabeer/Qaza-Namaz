@@ -1451,10 +1451,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeFutureDay => 'آنے والا دن';
 
   @override
-  String get homeGoalsLastSevenDays => 'آپ کے روزانہ اہداف';
+  String get homeWeeklyTarget => 'آپ کا ہفتہ وار ہدف';
 
   @override
-  String get homeGoalsAchieved => 'مکمل شدہ';
+  String homeWeeklyTargetProgress(int completed, int target) {
+    return '$target میں سے $completed';
+  }
 
   @override
   String get homeDayActivityDetails => 'دن کی تفصیلات';

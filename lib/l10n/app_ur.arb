@@ -480,8 +480,18 @@
   "homePreviousMonth": "پچھلا مہینہ",
   "homeNextMonth": "اگلا مہینہ",
   "homeFutureDay": "آنے والا دن",
-  "homeGoalsLastSevenDays": "آپ کے روزانہ اہداف",
-  "homeGoalsAchieved": "مکمل شدہ",
+  "homeWeeklyTarget": "آپ کا ہفتہ وار ہدف",
+  "homeWeeklyTargetProgress": "{target} میں سے {completed}",
+  "@homeWeeklyTargetProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "homeDayActivityDetails": "دن کی تفصیلات",
   "homeTodayDate": "آج",
   "homeCurrentPrayerLabel": "موجودہ نماز: {prayer}",

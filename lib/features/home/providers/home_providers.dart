@@ -25,6 +25,12 @@ DateTime homeLocalDayStartForDate(DateTime date) =>
 DateTime homeLocalDayEndForDate(DateTime date) =>
     DateTime(date.year, date.month, date.day + 1);
 
+DateTime homeCurrentWeekStartForDate(DateTime date) =>
+    QazaActivityService.calendarWeekStartForDate(date);
+
+DateTime homeCurrentWeekEndExclusiveForDate(DateTime date) =>
+    QazaActivityService.calendarWeekEndExclusiveForDate(date);
+
 final homeLocalDateProvider = Provider<DateTime>((ref) {
   return homeLocalDateForInstant(ref.watch(homeNowProvider));
 });
@@ -59,6 +65,32 @@ final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
     activityRepository,
     enabledPrayerTypes: ref.watch(enabledPrayerTypesProvider),
   );
+});
+
+final homeQazaActivityCurrentWeekProvider =
+    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  final from = homeCurrentWeekStartForDate(today);
+  final toExclusive = homeCurrentWeekEndExclusiveForDate(today);
+
+  if (userId == null) {
+    return QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: from,
+      toExclusive: toExclusive,
+      today: today,
+      dailyTarget: target,
+      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+    );
+  }
+
+  return ref.read(qazaActivityServiceProvider).buildCurrentCalendarWeek(
+        userId: userId,
+        today: today,
+        dailyTarget: target,
+      );
 });
 
 final homeQazaActivitySevenDaysProvider =
