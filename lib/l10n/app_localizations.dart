@@ -2568,6 +2568,9 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Your weekly target'**
+  String get homeDailyGoalsTitle;
+  String get homeLastSevenDays;
+  String get homeGoalsAchieved;
   String get homeWeeklyTarget;
 
   /// No description provided for @homeWeeklyTargetProgress.

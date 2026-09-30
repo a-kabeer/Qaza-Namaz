@@ -93,6 +93,35 @@ final homeQazaActivityCurrentWeekProvider =
       );
 });
 
+
+final homeQazaActivityDailyGoalsProvider =
+    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  final from = DateTime(today.year, today.month, today.day - 6);
+  final toExclusive = DateTime(today.year, today.month, today.day + 1);
+
+  if (userId == null) {
+    return QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: from,
+      toExclusive: toExclusive,
+      today: today,
+      dailyTarget: target,
+      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+    );
+  }
+
+  return ref.read(qazaActivityServiceProvider).buildPeriod(
+        userId: userId,
+        from: from,
+        toExclusive: toExclusive,
+        today: today,
+        dailyTarget: target,
+      );
+});
+
 final homeQazaActivityWeekProvider =
     FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
         (ref, selectedDate) async {
