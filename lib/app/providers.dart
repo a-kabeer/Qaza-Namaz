@@ -1,5 +1,36 @@
 // Centralized application state.
 //
+// Composition root for the Qaza Namaz app.
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/diagnostics/diagnostics.dart';
+import '../core/constants/prayer_types.dart';
+import '../core/theme/app_theme.dart';
+import '../core/widgets/app_snackbar.dart';
+import '../l10n/app_localizations.dart';
+import '../data/data_transfer/qaza_data_transfer_service.dart';
+import '../data/local/database/app_database.dart';
+import '../data/local/drift_qaza_local_store.dart';
+import '../data/local/qaza_local_store.dart';
+import '../data/local/qaza_plan_revision_repository.dart';
+import '../data/local/user_profile_repository.dart';
+import '../data/repositories/offline_first_qaza_repository.dart';
+import '../domain/entities/qaza_record.dart';
+import '../domain/entities/user_profile.dart';
+import '../domain/repositories/qaza_plan_revision_repository.dart';
+import '../domain/repositories/qaza_repository.dart';
+import '../domain/repositories/user_profile_repository.dart';
+import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../domain/services/profile_rules.dart';
+import '../domain/services/qaza_plan_service.dart';
+import '../domain/services/qaza_service.dart';
+import '../domain/services/qaza_undo_service.dart';
+import '../domain/services/save_profile_use_case.dart';
+
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
   (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
 );
