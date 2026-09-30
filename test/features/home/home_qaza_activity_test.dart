@@ -38,7 +38,7 @@ void main() {
     required int completedOnWednesday,
     bool fillEveryDay = false,
   }) {
-    const dates = <DateTime>[
+    final dates = <DateTime>[
       DateTime(2026, 9, 27),
       DateTime(2026, 9, 28),
       DateTime(2026, 9, 29),
