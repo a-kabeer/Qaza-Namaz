@@ -24,6 +24,7 @@ class SharedPreferencesToDriftMigrator {
   static const String legacyStorageKey = 'qaza_offline_cache_v1';
   static const String migrationKey = 'qaza_drift_migration_v1_complete';
   static const String migrationVersionKey = '${migrationKey}_version';
+  static const String legacyOperationPrefix = 'qaza_operation_v1_';
 
   final AppDatabase _database;
   final SharedPreferences _preferences;
@@ -48,6 +49,7 @@ class SharedPreferencesToDriftMigrator {
           '${storedVersion ?? 'missing'} (expected $migrationVersion).',
         );
       }
+      await _cleanupLegacyOperationPreferences();
       return const MigrationResult(alreadyComplete: true);
     }
 
@@ -56,6 +58,8 @@ class SharedPreferencesToDriftMigrator {
         'Qaza migration is newer than this app: version $storedVersion.',
       );
     }
+
+    await _cleanupLegacyOperationPreferences();
 
     final raw = _preferences.getString(storageKey);
     if (raw == null || raw.trim().isEmpty) {
@@ -122,6 +126,16 @@ class SharedPreferencesToDriftMigrator {
     );
   }
 
+  Future<void> _cleanupLegacyOperationPreferences() async {
+    final keys = _preferences
+        .getKeys()
+        .where((key) => key.startsWith(legacyOperationPrefix))
+        .toList(growable: false);
+    for (final key in keys) {
+      await _preferences.remove(key);
+    }
+  }
+
   Future<void> _markComplete() async {
     final versionWritten =
         await _preferences.setInt(migrationVersionKey, migrationVersion);
@@ -134,7 +148,10 @@ class SharedPreferencesToDriftMigrator {
     }
   }
 
-  List<QazaRecord> _normalizeRecords(String userId, List<QazaRecord> records) {
+  List<QazaRecord> _normalizeRecords(
+    String userId,
+    List<QazaRecord> records,
+  ) {
     final byKey = <String, QazaRecord>{};
     for (final input in records) {
       if (input.userId != userId) {
@@ -144,9 +161,6 @@ class SharedPreferencesToDriftMigrator {
         );
       }
 
-      // Qaza dates are calendar dates, not instants. Canonicalize legacy
-      // timezone-aware values before deduplication and persistence so the
-      // same missed calendar date cannot become two SQLite rows.
       final record = input.copyWith(
         originalDate: QazaDate.normalize(input.originalDate),
       );
@@ -221,14 +235,19 @@ class SharedPreferencesToDriftMigrator {
             'recordsByUser.${entry.key} must be a JSON array.',
           );
         }
-        recordsByUser[entry.key] = (entry.value as List<dynamic>).map((item) {
+        final parsed = <QazaRecord>[];
+        for (final item in entry.value as List<dynamic>) {
           if (item is! Map<String, dynamic>) {
             throw const FormatException(
               'A Qaza record must be a JSON object.',
             );
           }
-          return QazaRecord.fromJson(item);
-        }).toList(growable: false);
+          if (item['status'] == 'deleted') {
+            continue;
+          }
+          parsed.add(QazaRecord.fromJson(item));
+        }
+        recordsByUser[entry.key] = parsed;
       }
       return OfflineSnapshot(recordsByUser: recordsByUser);
     } catch (error) {

@@ -26,17 +26,13 @@ class QazaPlanRevision {
     required this.ledgerTotalWithWitr,
     required this.ledgerPlanFingerprint,
     required this.profileSnapshot,
-    required this.generationOperationIds,
-    required this.retirementOperationIds,
     required this.ledgerDecision,
-    this.generatedOperationId,
   });
 
   final String revisionId;
   final String userId;
   final DateTime createdAt;
 
-  /// The plan calculated from the current profile snapshot.
   final DateTime planStartDate;
   final DateTime planEndDate;
   final int totalDays;
@@ -47,8 +43,8 @@ class QazaPlanRevision {
 
   /// The plan that the actual Qaza ledger currently represents.
   ///
-  /// This can differ from the current profile calculation after the user
-  /// chooses “Keep existing Qaza records”.
+  /// Existing Qaza records are never implicitly removed when a profile
+  /// calculation changes. The ledger plan is the plan applied to new records.
   final DateTime ledgerPlanStartDate;
   final DateTime ledgerPlanEndDate;
   final int ledgerTotalDays;
@@ -58,17 +54,7 @@ class QazaPlanRevision {
   final String ledgerPlanFingerprint;
 
   final Map<String, dynamic> profileSnapshot;
-
-  /// Operations that safely generated pending profile-owned Qaza records.
-  final List<String> generationOperationIds;
-
-  /// Profile reconciliation operations that retired generated records.
-  final List<String> retirementOperationIds;
-
   final QazaPlanLedgerDecision ledgerDecision;
-
-  /// The operation that directly created records for the current revision.
-  final String? generatedOperationId;
 
   factory QazaPlanRevision.fromPlan({
     required String revisionId,
@@ -77,12 +63,9 @@ class QazaPlanRevision {
     required QazaPlan plan,
     required String planFingerprint,
     required Map<String, dynamic> profileSnapshot,
-    required Iterable<String> generationOperationIds,
-    required Iterable<String> retirementOperationIds,
     required QazaPlanLedgerDecision ledgerDecision,
     required QazaPlan ledgerPlan,
     required String ledgerPlanFingerprint,
-    String? generatedOperationId,
   }) {
     return QazaPlanRevision(
       revisionId: revisionId,
@@ -106,12 +89,7 @@ class QazaPlanRevision {
         for (final entry in profileSnapshot.entries)
           entry.key: _freeze(entry.value),
       }),
-      generationOperationIds:
-          List.unmodifiable(generationOperationIds.toSet()),
-      retirementOperationIds:
-          List.unmodifiable(retirementOperationIds.toSet()),
       ledgerDecision: ledgerDecision,
-      generatedOperationId: generatedOperationId,
     );
   }
 
@@ -134,16 +112,11 @@ class QazaPlanRevision {
         'ledgerTotalWithWitr': ledgerTotalWithWitr,
         'ledgerPlanFingerprint': ledgerPlanFingerprint,
         'profileSnapshot': profileSnapshot,
-        'generationOperationIds': generationOperationIds,
-        'retirementOperationIds': retirementOperationIds,
         'ledgerDecision': ledgerDecision.name,
-        'generatedOperationId': generatedOperationId,
       };
 
   factory QazaPlanRevision.fromJson(Map<String, dynamic> json) {
     final rawSnapshot = json['profileSnapshot'];
-    final generationIds = json['generationOperationIds'];
-    final retirementIds = json['retirementOperationIds'];
     final start = DateTime.parse(json['planStartDate'] as String);
     final end = DateTime.parse(json['planEndDate'] as String);
     final totalDays = (json['totalDays'] as num?)?.toInt() ?? 0;
@@ -179,17 +152,10 @@ class QazaPlanRevision {
       profileSnapshot: rawSnapshot is Map
           ? Map.unmodifiable(Map<String, dynamic>.from(rawSnapshot))
           : const {},
-      generationOperationIds: generationIds is Iterable
-          ? List.unmodifiable(generationIds.whereType<String>())
-          : const [],
-      retirementOperationIds: retirementIds is Iterable
-          ? List.unmodifiable(retirementIds.whereType<String>())
-          : const [],
       ledgerDecision: QazaPlanLedgerDecision.values.firstWhere(
         (value) => value.name == json['ledgerDecision'],
         orElse: () => QazaPlanLedgerDecision.applied,
       ),
-      generatedOperationId: json['generatedOperationId'] as String?,
     );
   }
 

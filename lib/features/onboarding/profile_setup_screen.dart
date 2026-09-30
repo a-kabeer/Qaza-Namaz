@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
-import '../../domain/entities/qaza_operation.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_plan_service.dart';
@@ -41,8 +40,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _saveDraft(UserProfile profile) {
     _draft = profile;
+    final repository = ref.read(userProfileRepositoryProvider);
     _saveQueue = _saveQueue.then(
-      (_) => ref.read(saveProfileUseCaseProvider).saveDraft(profile),
+      (_) => repository.save(profile.copyWith(onboardingCompleted: false)),
     );
   }
 
@@ -65,10 +65,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // the optional Witr count, so this is the domain result's exact number
     // of records this onboarding import would generate before duplicates.
     if (plan.totalWithWitr == 0) {
-      await _finishOnboarding(
-        finalizedProfile,
-        plan: plan,
-      );
+      await _finishOnboarding(finalizedProfile);
       return;
     }
 
@@ -86,33 +83,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        onConfirm: () => _startQazaPlanImport(
-        plan,
-        profile: finalizedProfile,
-      ),
+        onConfirm: () => _startQazaPlanImport(plan),
       ),
     );
 
     if (!mounted || action != QazaReviewAction.add) return;
 
-    // QazaReviewDialog returns the add action only after the existing import
-    // task has completed, so its operation id is ready for the plan revision.
-    await _finishOnboarding(
-      finalizedProfile,
-      plan: plan,
-      generatedOperationId: ref.read(qazaImportProvider).operationId,
-    );
+    // QazaReviewDialog only returns the add action after the existing import
+    // task reports completed. Starting the task is not treated as completion.
+    await _finishOnboarding(finalizedProfile);
   }
 
-  Future<void> _finishOnboarding(
-    UserProfile profile, {
-    required QazaPlan plan,
-    String? generatedOperationId,
-  }) async {
-    await ref.read(saveProfileUseCaseProvider).completeOnboarding(
-          profile: profile.copyWith(onboardingCompleted: true),
-          plan: plan,
-          generatedOperationId: generatedOperationId,
+  Future<void> _finishOnboarding(UserProfile profile) async {
+    await ref.read(userProfileRepositoryProvider).save(
+          profile.copyWith(onboardingCompleted: true),
         );
     ref.invalidate(userProfileProvider);
 
@@ -125,35 +109,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<bool> _startQazaPlanImport(
-    QazaPlan plan, {
-    required UserProfile profile,
-  }) async {
-    final userId = UserProfile.localLedgerUserId;
+  Future<bool> _startQazaPlanImport(QazaPlan plan) async {
+    final userId = ref.read(requiredUserIdProvider);
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
-    final inputSnapshot = <String, dynamic>{
-      'version': 1,
-      'startDate': plan.startDate.toIso8601String(),
-      'endDate': plan.endDate.toIso8601String(),
-      'totalDays': plan.totalDays,
-      'includeWitr': plan.includeWitr,
-      'prayers': prayers.map((prayer) => prayer.name).toList(growable: false),
-      'profile': {
-        'gender': profile.gender?.name,
-        'madhab': profile.madhab?.name,
-        'dateOfBirth': profile.dateOfBirth?.toIso8601String(),
-        'pubertyAge': profile.pubertyAge,
-        'startPrayingAge': profile.startPrayingAge,
-        'effectiveWitr': ProfileRules.effectiveWitr(profile),
-      },
-    };
     return ref.read(qazaImportProvider.notifier).start(
           userId: userId,
           dates: dates,
           prayers: prayers,
-          operationType: QazaOperationType.calculatorImport,
-          inputSnapshot: inputSnapshot,
         );
   }
 

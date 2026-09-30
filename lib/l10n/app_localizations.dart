@@ -194,12 +194,6 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get statusPending;
 
-  /// No description provided for @statusDeleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Recently deleted'**
-  String get statusDeleted;
-
   /// No description provided for @statusCompleted.
   ///
   /// In en, this message translates to:

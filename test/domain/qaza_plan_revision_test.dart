@@ -31,10 +31,7 @@ void main() {
           ProfileQazaPlanReconciliationService.planFingerprint(plan),
       profileSnapshot:
           ProfileQazaPlanReconciliationService.profileSnapshot(profile),
-      generationOperationIds: const ['op_initial'],
-      retirementOperationIds: const [],
       ledgerDecision: QazaPlanLedgerDecision.applied,
-      generatedOperationId: 'op_initial',
       ledgerPlan: plan,
       ledgerPlanFingerprint:
           ProfileQazaPlanReconciliationService.planFingerprint(plan),
@@ -45,11 +42,8 @@ void main() {
     expect(restored.revisionId, revision.revisionId);
     expect(restored.planFingerprint, revision.planFingerprint);
     expect(restored.profileSnapshot, revision.profileSnapshot);
-    expect(restored.generationOperationIds, ['op_initial']);
     expect(restored.ledgerDecision, QazaPlanLedgerDecision.applied);
-    expect(restored.generatedOperationId, 'op_initial');
     expect(restored.ledgerPlanFingerprint, revision.ledgerPlanFingerprint);
-    expect(restored.retirementOperationIds, isEmpty);
   });
 
   test('plan fingerprint represents the effective calculated plan', () {

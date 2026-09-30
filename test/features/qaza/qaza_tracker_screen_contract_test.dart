@@ -128,7 +128,7 @@ void main() {
       'Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId)',
     );
     final end = source.indexOf(
-      'Future<int> deleteSelectedWithRecovery()',
+      'Future<int> deleteSelected()',
       start,
     );
 
@@ -173,6 +173,21 @@ void main() {
 
     expect(completionIndex, greaterThanOrEqualTo(0));
     expect(feedbackIndex, greaterThan(completionIndex));
+  });
+
+
+  test('Qaza tracker has no dedicated History tab or operation subsystem', () {
+    final screen =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(screen, isNot(contains('QazaHistoryScreen')));
+    expect(screen, isNot(contains('TabBar(')));
+    expect(screen, isNot(contains('Pending/History')));
+    expect(controller, isNot(contains('QazaOperation')));
+    expect(controller, isNot(contains('QazaRecoveryRepository')));
+    expect(controller, isNot(contains('deleteSelectedWithRecovery')));
   });
 
   test('Qaza Undo feedback uses the global Undo Snackbar service', () {

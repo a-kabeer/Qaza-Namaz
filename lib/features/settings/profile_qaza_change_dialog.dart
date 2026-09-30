@@ -49,26 +49,6 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
               label: l10n.profileQazaToAdd,
               value: preview.pendingToAdd.toString(),
             ),
-            if (preview.pendingToRestore > 0)
-              _StatRow(
-                label: l10n.profileQazaRestored,
-                value: preview.pendingToRestore.toString(),
-              ),
-            if (preview.pendingToRemove > 0) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${l10n.profileQazaNoLongerRequired}: ${preview.pendingToRemove}',
-                  style: TextStyle(color: scheme.onErrorContainer),
-                ),
-              ),
-            ],
             const SizedBox(height: 12),
             Text(
               l10n.profileQazaCompletedProtected,

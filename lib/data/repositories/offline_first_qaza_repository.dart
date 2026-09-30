@@ -8,7 +8,6 @@ import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/repositories/qaza_bulk_write_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
-import '../../domain/repositories/qaza_recovery_repository.dart';
 import '../local/qaza_local_store.dart';
 
 /// Local-only Qaza repository.
@@ -22,7 +21,6 @@ class OfflineFirstQazaRepository
         QazaRepository,
         QazaBulkWriteRepository,
         QazaUndoRepository,
-        QazaRecoveryRepository,
         QazaActivityRepository {
   OfflineFirstQazaRepository({
     required QazaLocalStore localStore,
@@ -82,6 +80,9 @@ class OfflineFirstQazaRepository
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+    bool descending = false,
   }) async {
     _validateActive(userId);
     final page = await _localStore.getPage(
@@ -93,6 +94,9 @@ class OfflineFirstQazaRepository
       to: to,
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
+      beforeOriginalDate: beforeOriginalDate,
+      beforeId: beforeId,
+      descending: descending,
     );
     return QazaPage(records: page.records, hasMore: page.hasMore);
   }
@@ -137,32 +141,6 @@ class OfflineFirstQazaRepository
     return records
         .where((record) => record.status == QazaStatus.pending)
         .toList(growable: false);
-  }
-
-  @override
-  Future<QazaHistoryPage> getHistoryPage({
-    required String userId,
-    int limit = 50,
-    PrayerType? prayerType,
-    Iterable<PrayerType>? prayerTypes,
-    QazaStatus? status = QazaStatus.completed,
-    DateTime? from,
-    DateTime? to,
-    DateTime? beforeOriginalDate,
-    String? beforeId,
-  }) async {
-    _validateActive(userId);
-    final page = await _localStore.getHistoryPage(
-      userId: userId,
-      limit: limit,
-      prayerType: prayerType,
-      status: status,
-      from: from,
-      to: to,
-      beforeOriginalDate: beforeOriginalDate,
-      beforeId: beforeId,
-    );
-    return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
   }
 
   @override
@@ -289,7 +267,6 @@ class OfflineFirstQazaRepository
       recordId: recordId,
     );
   }
-
   @override
   Future<QazaCompletionResult> completeRecord({
     required String userId,
@@ -356,259 +333,6 @@ class OfflineFirstQazaRepository
       undoneAt: undoneAt,
     );
     return changed.length;
-  }
-
-  @override
-  Future<int> softDeleteRecords({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime deletedAt,
-    required String operationId,
-  }) async {
-    _validateActive(userId);
-    if (recordIds.isEmpty) return 0;
-
-    final records = await _localStore.getRecordsByIds(
-      userId: userId,
-      ids: recordIds,
-    );
-    var changed = 0;
-
-    for (final record in records) {
-      if (record.isDeleted) continue;
-      final deleted = record.copyWith(
-        status: QazaStatus.deleted,
-        updatedAt: deletedAt,
-      );
-      if (await _localStore.updateRecord(deleted)) {
-        changed++;
-      }
-    }
-    return changed;
-  }
-
-  @override
-  Future<int> restoreDeletedRecords({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime restoredAt,
-    required String operationId,
-  }) async {
-    _validateActive(userId);
-    if (recordIds.isEmpty) return 0;
-
-    final records = await _localStore.getRecordsByIds(
-      userId: userId,
-      ids: recordIds,
-    );
-    var changed = 0;
-
-    for (final record in records) {
-      if (!record.isDeleted) continue;
-
-      final duplicate = await _localStore.hasRecordCombination(
-        userId: userId,
-        prayerType: record.prayerType,
-        originalDate: record.originalDate,
-        excludingRecordId: record.id,
-      );
-      if (duplicate) continue;
-
-      final restored = record.copyWith(
-        status: record.completedAt == null
-            ? QazaStatus.pending
-            : QazaStatus.completed,
-        updatedAt: restoredAt,
-      );
-      if (await _localStore.updateRecord(restored)) {
-        changed++;
-      }
-    }
-    return changed;
-  }
-
-  @override
-  Future<int> undoAddedOperation({
-    required String userId,
-    required String operationId,
-    required DateTime expectedCreatedAt,
-  }) =>
-      _removeUnchangedPendingFromOperation(
-        userId: userId,
-        operationId: operationId,
-        expectedCreatedAt: expectedCreatedAt,
-        deletedAt: DateTime.now(),
-      );
-
-  @override
-  Future<int> removeAddition({
-    required String userId,
-    required String operationId,
-    required DateTime expectedCreatedAt,
-    required DateTime deletedAt,
-  }) =>
-      _removeUnchangedPendingFromOperation(
-        userId: userId,
-        operationId: operationId,
-        expectedCreatedAt: expectedCreatedAt,
-        deletedAt: deletedAt,
-      );
-
-  @override
-  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime expectedCreatedAt,
-    required DateTime deletedAt,
-    required String operationId,
-  }) async {
-    _validateActive(userId);
-    return _localStore.softDeletePendingIfUnchanged(
-      userId: userId,
-      recordIds: recordIds,
-      expectedCreatedAt: expectedCreatedAt,
-      deletedAt: deletedAt,
-      operationId: operationId,
-    );
-  }
-
-  Future<int> _removeUnchangedPendingFromOperation({
-    required String userId,
-    required String operationId,
-    required DateTime expectedCreatedAt,
-    required DateTime deletedAt,
-  }) async {
-    _validateActive(userId);
-    DateTime? cursorDate;
-    String? cursorId;
-    var removed = 0;
-
-    while (true) {
-      final page = await _localStore.getOperationPage(
-        userId: userId,
-        operationId: operationId,
-        matchLastAction: false,
-        operationAt: expectedCreatedAt,
-        status: QazaStatus.pending,
-        limit: 200,
-        beforeOriginalDate: cursorDate,
-        beforeId: cursorId,
-      );
-      if (page.records.isEmpty) break;
-
-      for (final record in page.records) {
-        if (!record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
-            !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
-          continue;
-        }
-        removed += await softDeleteRecords(
-          userId: userId,
-          recordIds: [record.id],
-          deletedAt: deletedAt,
-          operationId: operationId,
-        );
-      }
-
-      if (!page.hasMore) break;
-      cursorDate = page.nextOriginalDate;
-      cursorId = page.nextId;
-    }
-    return removed;
-  }
-
-  @override
-  Future<QazaPage> getOperationPage({
-    required String userId,
-    required String operationId,
-    required bool matchLastAction,
-    required DateTime operationAt,
-    QazaStatus? status,
-    Iterable<PrayerType>? prayerTypes,
-    int limit = 50,
-    DateTime? beforeOriginalDate,
-    String? beforeId,
-  }) async {
-    _validateActive(userId);
-    final page = await _localStore.getOperationPage(
-      userId: userId,
-      operationId: operationId,
-      matchLastAction: matchLastAction,
-      operationAt: operationAt,
-      status: status,
-      limit: limit,
-      beforeOriginalDate: beforeOriginalDate,
-      beforeId: beforeId,
-    );
-    return QazaPage(records: page.records, hasMore: page.hasMore);
-  }
-
-  @override
-  Future<QazaOperationSummary> getOperationSummary({
-    required String userId,
-    required String operationId,
-    Iterable<PrayerType>? prayerTypes,
-  }) {
-    _validateActive(userId);
-    return _localStore.getOperationSummary(
-      userId: userId,
-      operationId: operationId,
-      prayerTypes: prayerTypes,
-    );
-  }
-
-  @override
-  Future<QazaHistoryPage> getRecentlyDeletedPage({
-    required String userId,
-    int limit = 50,
-    Iterable<PrayerType>? prayerTypes,
-    DateTime? beforeDeletedAt,
-    String? beforeId,
-  }) async {
-    _validateActive(userId);
-    final page = await _localStore.getRecentlyDeletedPage(
-      userId: userId,
-      limit: limit,
-      beforeDeletedAt: beforeDeletedAt,
-      beforeId: beforeId,
-    );
-    return QazaHistoryPage(records: page.records, hasMore: page.hasMore);
-  }
-
-  @override
-  Future<int> purgeDeletedBefore({
-    required String userId,
-    required DateTime cutoff,
-  }) async {
-    _validateActive(userId);
-    DateTime? cursorDeletedAt;
-    String? cursorId;
-    var removed = 0;
-
-    while (true) {
-      final page = await _localStore.getRecentlyDeletedPage(
-        userId: userId,
-        limit: 200,
-        beforeDeletedAt: cursorDeletedAt,
-        beforeId: cursorId,
-      );
-      if (page.records.isEmpty) break;
-
-      for (final record in page.records) {
-        if (record.updatedAt.isBefore(cutoff) &&
-            await _localStore.deleteRecord(
-              userId: userId,
-              recordId: record.id,
-            )) {
-          removed++;
-        }
-      }
-
-      if (!page.hasMore) break;
-      final last = page.records.last;
-      cursorDeletedAt = last.updatedAt;
-      cursorId = last.id;
-    }
-    return removed;
   }
 
   @override
