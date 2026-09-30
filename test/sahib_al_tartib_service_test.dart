@@ -93,19 +93,9 @@ class _FakeRepository implements QazaRepository {
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
-  }) => throw UnimplementedError();
-
-  @override
-  Future<QazaHistoryPage> getHistoryPage({
-    required String userId,
-    int limit = 50,
-    PrayerType? prayerType,
-    Iterable<PrayerType>? prayerTypes,
-    QazaStatus? status = QazaStatus.completed,
-    DateTime? from,
-    DateTime? to,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    bool descending = false,
   }) => throw UnimplementedError();
 
   @override
