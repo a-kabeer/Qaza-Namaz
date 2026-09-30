@@ -206,7 +206,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
               onProgress: (progress) {
                 if (!state.isActive || state.userId != request.userId) return;
                 state = state.copyWith(
-                  phase: progress.phase == QazaImportProgressPhase.preparing
+                  phase: progress.phase == QazaImportPhase.preparing
                       ? QazaImportTaskPhase.preparing
                       : QazaImportTaskPhase.importing,
                   processed: progress.processed,
