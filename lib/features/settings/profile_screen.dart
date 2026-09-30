@@ -90,9 +90,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (!mounted) return;
 
       snackbar.success(
-        result.qazaPlanChanged
-            ? l10n.profileQazaUpdated
-            : l10n.profileQazaUpdatedNoChange,
+        result.keptExistingQaza
+            ? l10n.profileQazaUpdatedKeptExisting
+            : result.qazaPlanChanged
+                ? l10n.profileQazaUpdated
+                : l10n.profileQazaUpdatedNoChange,
       );
       Navigator.of(context).pop();
     } catch (_) {
