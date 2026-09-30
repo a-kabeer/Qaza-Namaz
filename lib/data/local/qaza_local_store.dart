@@ -117,7 +117,10 @@ abstract class QazaLocalStore {
       DateTime? from,
       DateTime? to,
       DateTime? afterOriginalDate,
-      String? afterId}) async {
+      String? afterId,
+      DateTime? beforeOriginalDate,
+      String? beforeId,
+      bool descending = false}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
     if ((afterOriginalDate == null) != (afterId == null) ||
         (beforeOriginalDate == null) != (beforeId == null) ||
