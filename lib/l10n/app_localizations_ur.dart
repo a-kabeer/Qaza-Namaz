@@ -370,6 +370,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeDailyTarget => 'روزانہ ہدف';
 
   @override
+  String get homeWeeklyTargetLabel => 'ہفتہ وار ہدف';
+
+  @override
+  String get homeMonthlyTarget => 'ماہانہ ہدف';
+
+  @override
+  String get homeTargetToDate => 'اب تک کا ہدف';
+
+  @override
+  String get homeProgressLabel => 'پیش رفت';
+
+  @override
+  String get homeActiveDays => 'فعال دن';
+
+  @override
+  String get homeActiveMonths => 'فعال مہینے';
+
+  @override
   String homePerDay(int count) {
     return 'روزانہ $count';
   }
@@ -1415,16 +1433,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeProgressHistory => 'پیش رفت کی تاریخ';
 
   @override
-  String get homeLastSevenDays => 'گزشتہ 7 دن';
-
-  @override
-  String get homeRangeSevenDays => '7 دن';
-
-  @override
-  String get homeRangeThirtyDays => '30 دن';
+  String get homeRangeWeekly => 'ہفتہ وار';
 
   @override
   String get homeRangeMonthly => 'ماہانہ';
+
+  @override
+  String get homeRangeYearly => 'سالانہ';
 
   @override
   String get homeGoalReached => 'ہدف مکمل';
@@ -1442,10 +1457,22 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeSelectDay => 'تفصیلات دیکھنے کے لیے کسی دن کو منتخب کریں۔';
 
   @override
+  String get homePreviousWeek => 'پچھلا ہفتہ';
+
+  @override
+  String get homeNextWeek => 'اگلا ہفتہ';
+
+  @override
   String get homePreviousMonth => 'پچھلا مہینہ';
 
   @override
   String get homeNextMonth => 'اگلا مہینہ';
+
+  @override
+  String get homePreviousYear => 'پچھلا سال';
+
+  @override
+  String get homeNextYear => 'اگلا سال';
 
   @override
   String get homeFutureDay => 'آنے والا دن';

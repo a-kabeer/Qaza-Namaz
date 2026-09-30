@@ -3,8 +3,6 @@ import 'dart:math' as math;
 import '../../core/constants/prayer_types.dart';
 
 /// Minimal projection used by Qaza activity/history.
-///
-/// Only the completion instant and prayer type cross the data boundary.
 class QazaActivityRow {
   const QazaActivityRow({
     required this.completedAt,
@@ -46,25 +44,54 @@ class QazaActivityPeriod {
     required this.toExclusive,
     required this.today,
     required this.days,
-  });
+    this.targetAvailable = true,
+    int? dailyTarget,
+    this.activeDays = 0,
+    this.activeMonths = 0,
+  }) : _configuredDailyTarget = dailyTarget;
 
   final DateTime from;
   final DateTime toExclusive;
   final DateTime today;
   final List<QazaDailyActivity> days;
+  final bool targetAvailable;
+  final int? _configuredDailyTarget;
+  int get dailyTarget =>
+      _configuredDailyTarget ?? (days.isEmpty ? 0 : days.first.target);
+  final int activeDays;
+  final int activeMonths;
 
   int get totalCompleted =>
       days.fold(0, (total, day) => total + day.completed);
 
-  /// Future calendar days do not contribute to the target total.
-  int get totalTarget =>
-      days.fold(0, (total, day) => total + (day.hasGoal ? day.target : 0));
+  int? get fullTarget => targetAvailable && dailyTarget > 0
+      ? dailyTarget * days.length
+      : null;
 
-  int get remaining => math.max(totalTarget - totalCompleted, 0);
+  int? get targetToDate => targetAvailable && dailyTarget > 0
+      ? days.where((day) => !day.isFuture).length * dailyTarget
+      : null;
 
-  double get progress => totalTarget <= 0
-      ? 0.0
-      : (totalCompleted / totalTarget).clamp(0.0, 1.0).toDouble();
+  int? get remainingToDate {
+    final target = targetToDate;
+    if (target == null) return null;
+    return math.max(target - totalCompleted, 0);
+  }
+
+  double get progressToDate {
+    final target = targetToDate;
+    return target == null || target <= 0
+        ? 0.0
+        : (totalCompleted / target).clamp(0.0, 1.0).toDouble();
+  }
+
+  /// Compatibility aliases. totalTarget is the elapsed target, not the
+  /// full future-inclusive target.
+  int get totalTarget => targetToDate ?? 0;
+
+  int get remaining => remainingToDate ?? 0;
+
+  double get progress => progressToDate;
 
   int get goalDays =>
       days.where((day) => day.hasGoal && day.goalReached).length;

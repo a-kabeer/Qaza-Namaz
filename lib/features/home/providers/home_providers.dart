@@ -93,49 +93,41 @@ final homeQazaActivityCurrentWeekProvider =
       );
 });
 
-final homeQazaActivitySevenDaysProvider =
-    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
+final homeQazaActivityWeekProvider =
+    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
+        (ref, selectedDate) async {
   final userId = ref.watch(activeUserIdProvider);
   final today = ref.watch(homeLocalDateProvider);
   final target = ref.watch(dailyQazaTargetProvider);
-  if (userId == null) {
-    return QazaActivityService.buildPeriodFromRows(
-      rows: const <QazaActivityRow>[],
-      from: DateTime(today.year, today.month, today.day - 6),
-      toExclusive: DateTime(today.year, today.month, today.day + 1),
-      today: today,
-      dailyTarget: target,
-      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
-    );
-  }
-  return ref.read(qazaActivityServiceProvider).buildRolling(
-        userId: userId,
-        today: today,
-        days: 7,
-        dailyTarget: target,
-      );
-});
+  final selectedWeek =
+      QazaActivityService.calendarWeekStartForDate(selectedDate);
+  final currentWeek =
+      QazaActivityService.calendarWeekStartForDate(today);
+  final targetAvailable = selectedWeek == currentWeek;
 
-final homeQazaActivityThirtyDaysProvider =
-    FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
-  final userId = ref.watch(activeUserIdProvider);
-  final today = ref.watch(homeLocalDateProvider);
-  final target = ref.watch(dailyQazaTargetProvider);
   if (userId == null) {
     return QazaActivityService.buildPeriodFromRows(
       rows: const <QazaActivityRow>[],
-      from: DateTime(today.year, today.month, today.day - 29),
-      toExclusive: DateTime(today.year, today.month, today.day + 1),
+      from: selectedWeek,
+      toExclusive: DateTime(
+        selectedWeek.year,
+        selectedWeek.month,
+        selectedWeek.day + 7,
+      ),
       today: today,
       dailyTarget: target,
-      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+      targetAvailable: targetAvailable,
+      enabledPrayerTypes: allPrayerTypes,
     );
   }
-  return ref.read(qazaActivityServiceProvider).buildRolling(
+
+  return ref.read(qazaActivityServiceProvider).buildWeek(
         userId: userId,
+        selectedDate: selectedWeek,
         today: today,
-        days: 30,
         dailyTarget: target,
+        targetAvailable: targetAvailable,
+        prayerTypes: allPrayerTypes,
       );
 });
 
@@ -146,6 +138,9 @@ final homeQazaActivityMonthProvider =
   final today = ref.watch(homeLocalDateProvider);
   final target = ref.watch(dailyQazaTargetProvider);
   final normalizedMonth = DateTime(month.year, month.month);
+  final currentMonth = DateTime(today.year, today.month);
+  final targetAvailable = normalizedMonth == currentMonth;
+
   if (userId == null) {
     return QazaActivityService.buildPeriodFromRows(
       rows: const <QazaActivityRow>[],
@@ -153,14 +148,43 @@ final homeQazaActivityMonthProvider =
       toExclusive: DateTime(normalizedMonth.year, normalizedMonth.month + 1),
       today: today,
       dailyTarget: target,
-      enabledPrayerTypes: ref.read(enabledPrayerTypesProvider),
+      targetAvailable: targetAvailable,
+      enabledPrayerTypes: allPrayerTypes,
     );
   }
+
   return ref.read(qazaActivityServiceProvider).buildMonth(
         userId: userId,
         month: normalizedMonth,
         today: today,
         dailyTarget: target,
+        targetAvailable: targetAvailable,
+        prayerTypes: allPrayerTypes,
+      );
+});
+
+final homeQazaActivityYearProvider =
+    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
+        (ref, year) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final normalizedYear = DateTime(year.year);
+
+  if (userId == null) {
+    return QazaActivityService.buildYearFromRows(
+      rows: const <QazaActivityRow>[],
+      from: normalizedYear,
+      toExclusive: DateTime(normalizedYear.year + 1, 1, 1),
+      today: today,
+      enabledPrayerTypes: allPrayerTypes,
+    );
+  }
+
+  return ref.read(qazaActivityServiceProvider).buildYear(
+        userId: userId,
+        year: normalizedYear,
+        today: today,
+        prayerTypes: allPrayerTypes,
       );
 });
 
