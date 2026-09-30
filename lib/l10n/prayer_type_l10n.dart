@@ -24,7 +24,6 @@ extension QazaStatusL10n on QazaStatus {
   String localizedLabel(AppLocalizations l10n) => switch (this) {
         QazaStatus.pending => l10n.statusPending,
         QazaStatus.completed => l10n.statusCompleted,
-        QazaStatus.deleted => l10n.statusDeleted,
       };
 }
 
