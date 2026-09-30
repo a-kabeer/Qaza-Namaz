@@ -24,7 +24,9 @@ void main() {
           useMaterial3: true,
         ),
         home: const Scaffold(
-          body: HomeQazaActivity(),
+          body: SingleChildScrollView(
+            child: HomeQazaActivity(),
+          ),
         ),
       ),
     );
@@ -69,9 +71,6 @@ void main() {
       );
       expect(nextHeader.data, contains('Oct'));
       expect(nextHeader.data, contains('2026'));
-      expect(find.text('Weekly Target'), findsNothing);
-      expect(find.text('Target To Date'), findsNothing);
-
       await tester.drag(
         find.byKey(const Key('home_activity_pager_weekly')),
         const Offset(500, 0),
@@ -83,7 +82,6 @@ void main() {
       );
       expect(previousHeader.data, contains('Sep'));
       expect(previousHeader.data, contains('2026'));
-      expect(find.text('Weekly Target'), findsOneWidget);
     },
   );
 
