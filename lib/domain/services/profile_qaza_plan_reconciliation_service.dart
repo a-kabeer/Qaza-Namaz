@@ -48,7 +48,7 @@ class ProfileQazaPlanPreview {
 
   bool get ledgerPlanChanged =>
       oldRevision == null ||
-      oldRevision!.ledgerPlanFingerprint != planFingerprint(newPlan);
+      oldRevision!.ledgerPlanFingerprint != ProfileQazaPlanReconciliationService.planFingerprint(newPlan);
 
   bool get requiresUserDecision => calculationChanged && hasLedgerChanges;
 }
@@ -325,7 +325,7 @@ class ProfileQazaPlanReconciliationService {
           ).then(
             (_) async => _qazaService.repository.getRecordsByIds(
               userId: userId,
-              ids: safeRestoreIds,
+              recordIds: safeRestoreIds,
             ),
           ),
         );
