@@ -48,14 +48,16 @@ class QazaActivityPeriod {
     int? dailyTarget,
     this.activeDays = 0,
     this.activeMonths = 0,
-  }) : dailyTarget = dailyTarget ?? (days.isEmpty ? 0 : days.first.target);
+  }) : _configuredDailyTarget = dailyTarget;
 
   final DateTime from;
   final DateTime toExclusive;
   final DateTime today;
   final List<QazaDailyActivity> days;
   final bool targetAvailable;
-  final int dailyTarget;
+  final int? _configuredDailyTarget;
+  int get dailyTarget =>
+      _configuredDailyTarget ?? (days.isEmpty ? 0 : days.first.target);
   final int activeDays;
   final int activeMonths;
 
