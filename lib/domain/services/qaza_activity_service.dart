@@ -99,7 +99,8 @@ class QazaActivityService {
     );
   }
 
-  /// Returns the Sunday at the start of the local calendar week containing [date].
+  /// Returns the Sunday at the start of the local calendar week
+  /// containing [date].
   static DateTime calendarWeekStartForDate(DateTime date) {
     final normalized = _dateOnly(date);
     final daysSinceSunday = normalized.weekday % 7;
@@ -110,15 +111,15 @@ class QazaActivityService {
     );
   }
 
-  /// Returns the exclusive boundary immediately after the Saturday of [date]'s week.
-  static DateTime calendarWeekEndExclusiveForDate(DateTime date) =>
-      DateTime(
-        calendarWeekStartForDate(date).year,
-        calendarWeekStartForDate(date).month,
-        calendarWeekStartForDate(date).day + 7,
-      );
+  /// Returns the exclusive boundary immediately after the Saturday of
+  /// [date]'s week.
+  static DateTime calendarWeekEndExclusiveForDate(DateTime date) {
+    final start = calendarWeekStartForDate(date);
+    return DateTime(start.year, start.month, start.day + 7);
+  }
 
-  /// The weekly target always represents all seven calendar days, including future days.
+  /// The weekly target represents all seven calendar days, including future
+  /// days.
   static int weeklyTargetFromDailyTarget(int dailyTarget) {
     if (dailyTarget <= 0) return 0;
     return dailyTarget * 7;
