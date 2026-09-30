@@ -123,7 +123,6 @@ class HomeQazaGoals extends ConsumerWidget {
             );
           },
           ),
-          ),
         ),
       ),
     );
