@@ -330,8 +330,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         (row) =>
             row.userId.equals(userId) &
             row.prayerType.equals(prayerType) &
-            row.originalDate.equals(originalDate) &
-            row.status.isNotIn([QazaStatus.deleted.name]),
+            row.originalDate.equals(originalDate),
       )
       ..limit(2);
     final rows = await query.get();
@@ -513,7 +512,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (status != null) {
       query.where(qazaRecords.status.equals(status));
     } else {
-      query.where(qazaRecords.status.isNotIn([QazaStatus.deleted.name]));
+      // A deleted state no longer exists; a null status counts all live rows.
     }
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
