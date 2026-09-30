@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../domain/services/save_profile_use_case.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/profile_form.dart';
+import 'profile_qaza_change_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -47,13 +50,56 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _save(UserProfile profile) async {
-    await ref.read(userProfileRepositoryProvider).save(
-          profile.copyWith(
-            onboardingCompleted: true,
-            witrIncluded: ProfileRules.effectiveWitr(profile),
-          ),
+    final finalizedProfile = profile.copyWith(
+      onboardingCompleted: true,
+      witrIncluded: ProfileRules.effectiveWitr(profile),
+    );
+    final useCase = ref.read(saveProfileUseCaseProvider);
+    final snackbar = ref.read(appSnackbarServiceProvider);
+    final l10n = AppLocalizations.of(context);
+
+    try {
+      final preview = await useCase.prepareSettingsSave(
+        newProfile: finalizedProfile,
+      );
+
+      if (!mounted) return;
+
+      ProfileQazaChangeChoice? choice;
+      if (preview.requiresUserDecision) {
+        choice = await showProfileQazaChangeDialog(
+          context: context,
+          preview: preview,
         );
-    ref.invalidate(userProfileProvider);
-    if (mounted) Navigator.of(context).pop();
+        if (!mounted || choice == null) return;
+      } else {
+        choice = ProfileQazaChangeChoice.apply;
+      }
+
+      final result = await useCase.saveSettings(
+        newProfile: finalizedProfile,
+        preview: preview,
+        choice: choice,
+      );
+
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(enabledPrayerTypesProvider);
+      ref.invalidate(effectiveWitrProvider);
+
+      if (!mounted) return;
+
+      snackbar.success(
+        result.keptExistingQaza
+            ? l10n.profileQazaUpdatedKeptExisting
+            : result.qazaPlanChanged
+                ? l10n.profileQazaUpdated
+                : l10n.profileQazaUpdatedNoChange,
+      );
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      snackbar.error(l10n.errorUnknown);
+    }
   }
 }

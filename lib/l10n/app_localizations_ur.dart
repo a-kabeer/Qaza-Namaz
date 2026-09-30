@@ -1602,6 +1602,52 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileSave => 'تبدیلیاں محفوظ کریں';
 
   @override
+  String get profileQazaPlanChangedTitle => 'قضا پلان اپ ڈیٹ ہوگا';
+
+  @override
+  String get profileQazaPlanSummary =>
+      'آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔';
+
+  @override
+  String get profileQazaPreviousTotal => 'پچھلا پلان';
+
+  @override
+  String get profileQazaNewTotal => 'نیا پلان';
+
+  @override
+  String get profileQazaCompletedInPlan => 'نئے پلان میں مکمل شدہ';
+
+  @override
+  String get profileQazaToAdd => 'نئی قضا جوڑی جائے گی';
+
+  @override
+  String get profileQazaRestored => 'پہلے ہٹائی گئی قضا بحال کی جائے گی';
+
+  @override
+  String get profileQazaUpdatedKeptExisting =>
+      'پروفائل اپ ڈیٹ ہوگئی۔ موجودہ قضا ریکارڈ برقرار رہے۔';
+
+  @override
+  String get profileQazaNoLongerRequired => 'وہ زیرِ التوا قضا جو اب درکار نہیں';
+
+  @override
+  String get profileQazaKeepExisting => 'موجودہ قضا ریکارڈ برقرار رکھیں';
+
+  @override
+  String get profileQazaApply => 'قضا پلان لاگو کریں';
+
+  @override
+  String get profileQazaCompletedProtected =>
+      'مکمل شدہ اور دستی طور پر شامل کی گئی قضا حذف نہیں ہوگی۔';
+
+  @override
+  String get profileQazaUpdated => 'پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔';
+
+  @override
+  String get profileQazaUpdatedNoChange =>
+      'پروفائل اپ ڈیٹ ہوگئی۔ قضا پلان میں کوئی تبدیلی نہیں ہوئی۔';
+
+  @override
   String get qazaReviewTitle => 'اپنا قضا پلان دیکھیں';
 
   @override
