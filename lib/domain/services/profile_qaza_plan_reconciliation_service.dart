@@ -310,7 +310,6 @@ class ProfileQazaPlanReconciliationService {
       QazaDate.key(plan.endDate),
       plan.totalDays,
       plan.includeWitr,
-      plan.totalPrayers,
       plan.totalWithWitr,
     ].join('|');
   }
