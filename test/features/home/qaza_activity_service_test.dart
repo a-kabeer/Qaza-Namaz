@@ -131,8 +131,8 @@ void main() {
 
     test(
       'calendar week contains exactly seven dates across month boundary',
-      () {
-      final repository = _FakeActivityRepository();
+      () async {
+        final repository = _FakeActivityRepository();
       final service = QazaActivityService(
         repository,
         enabledPrayerTypes: const [PrayerType.fajr],
