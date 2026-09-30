@@ -246,6 +246,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                HomeOverallProgress(
+                  progress: summary.overall,
+                  onDetails: () => _open(
+                    context,
+                    ref,
+                    const HomeStatisticsSummaryScreen(),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 if (allCompleted) ...[
                   const SizedBox(height: 6),
                   HomeAllCompletedState(
@@ -257,15 +266,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   HomeTodayProgress(summary: summary),
                   const SizedBox(height: 12),
                 ],
-                HomeOverallProgress(
-                  progress: summary.overall,
-                  onDetails: () => _open(
-                    context,
-                    ref,
-                    const HomeStatisticsSummaryScreen(),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 if (!allCompleted) ...[
                   HomePendingByPrayer(summary: summary),
                   const SizedBox(height: 16),
