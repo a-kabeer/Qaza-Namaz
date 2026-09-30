@@ -114,21 +114,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final userId = ref.read(requiredUserIdProvider);
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
-    final inputSnapshot = <String, dynamic>{
-      'version': 1,
-      'startDate': plan.startDate.toIso8601String(),
-      'endDate': plan.endDate.toIso8601String(),
-      'totalDays': plan.totalDays,
-      'includeWitr': plan.includeWitr,
-      'prayers': prayers.map((prayer) => prayer.name).toList(growable: false),
-    };
     return ref.read(qazaImportProvider.notifier).start(
           userId: userId,
           dates: dates,
           prayers: prayers,
-          operationType: QazaOperationType.calculatorImport,
-          inputSnapshot: inputSnapshot,
         );
+    );
   }
 
   Iterable<DateTime> _planDates(QazaPlan plan) sync* {
