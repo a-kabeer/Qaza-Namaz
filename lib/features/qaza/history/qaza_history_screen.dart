@@ -47,6 +47,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
           QazaOperationType.singleRecordDelete => 'ایک ریکارڈ حذف',
           QazaOperationType.bulkDelete => 'متعدد قضا حذف',
           QazaOperationType.restore => 'بحال',
+          QazaOperationType.profileReconciliation => 'پروفائل قضا پلان اپ ڈیٹ',
         }
       : switch (type) {
           QazaOperationType.calculatorImport => 'Calculator import',
@@ -58,6 +59,7 @@ class _QazaHistoryScreenState extends ConsumerState<QazaHistoryScreen> {
           QazaOperationType.singleRecordDelete => 'Single-record deletion',
           QazaOperationType.bulkDelete => 'Bulk deletion',
           QazaOperationType.restore => 'Restore',
+          QazaOperationType.profileReconciliation => 'Profile Qaza plan update',
         };
 
   String _statusLabel(QazaOperationStatus status) => _urdu
