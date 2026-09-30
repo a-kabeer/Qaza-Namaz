@@ -30,12 +30,12 @@ class QazaTrackerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(qazaTrackerControllerProvider(widget.additionId));
-    final controller = ref.read(qazaTrackerControllerProvider(widget.additionId).notifier);
+    final state = ref.watch(qazaTrackerControllerProvider(additionId));
+    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
         ? '${state.selected.length} selected'
-        : widget.additionId == null ? l10n.qazaTitle : 'Addition Records';
+        : additionId == null ? l10n.qazaTitle : 'Addition Records';
 
     return PopScope(
       canPop: !state.selectionMode,
@@ -47,7 +47,7 @@ class QazaTrackerScreen extends ConsumerWidget {
       child: AppScaffold(
         title: title,
         actions: [
-          if (!state.selectionMode && widget.additionId == null)
+          if (!state.selectionMode && additionId == null)
             IconButton(
               tooltip: 'Qaza History',
               onPressed: () => openQazaAdditionHistory(context),
@@ -71,7 +71,7 @@ class QazaTrackerScreen extends ConsumerWidget {
                 child: _PendingTrackerContent(
                   state: state,
                   controller: controller,
-                  additionId: widget.additionId,
+                  additionId: additionId,
                 ),
               ),
             ],
