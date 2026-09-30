@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/services/qaza_service.dart';
 
 enum QazaImportTaskPhase {
   idle,
