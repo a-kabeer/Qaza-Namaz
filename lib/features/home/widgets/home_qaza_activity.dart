@@ -629,8 +629,8 @@ class _ActivityBarChart extends StatelessWidget {
     return [
       for (var index = 0; index < period.days.length; index++)
         labelsAreDates
-            ? '${DateFormat.EEEE().format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}'
-            : '${DateFormat.MMMM().format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}',
+            ? '${DateFormat.EEEE(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}'
+            : '${DateFormat.MMMM(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}',
     ].join(', ');
   }
 }
