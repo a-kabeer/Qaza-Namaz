@@ -32,6 +32,66 @@ void main() {
     );
   }
 
+  QazaActivityPeriod activityPeriod({
+    required DateTime today,
+    required int completedOnWednesday,
+  }) {
+    const dates = <DateTime>[
+      DateTime(2026, 9, 27),
+      DateTime(2026, 9, 28),
+      DateTime(2026, 9, 29),
+      DateTime(2026, 9, 30),
+      DateTime(2026, 10, 1),
+      DateTime(2026, 10, 2),
+      DateTime(2026, 10, 3),
+    ];
+
+    return QazaActivityPeriod(
+      from: dates.first,
+      toExclusive: DateTime(2026, 10, 4),
+      today: today,
+      dailyTarget: 5,
+      targetAvailable: true,
+      days: [
+        for (var index = 0; index < dates.length; index++)
+          QazaDailyActivity(
+            date: dates[index],
+            completed: index == 3 ? completedOnWednesday : 0,
+            byPrayer: const {},
+            target: 5,
+            isFuture: dates[index].isAfter(today),
+          ),
+      ],
+    );
+  }
+
+  Widget buildInteractiveWidget(QazaActivityPeriod period) {
+    return ProviderScope(
+      overrides: [
+        homeLocalDateProvider.overrideWithValue(period.today),
+        homeQazaActivityWeekProvider.overrideWith(
+          (ref, _) async => period,
+        ),
+        activeUserIdProvider.overrideWithValue(null),
+        dailyQazaTargetProvider.overrideWithValue(5),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          useMaterial3: true,
+        ),
+        home: const Scaffold(
+          body: SingleChildScrollView(
+            child: HomeQazaActivity(),
+          ),
+        ),
+      ),
+    );
+  }
+
   testWidgets(
     'shows Weekly, Monthly and Yearly without rolling ranges',
     (tester) async {
@@ -50,7 +110,8 @@ void main() {
       expect(header.data, contains('Sep'));
       expect(header.data, contains('Oct'));
       expect(find.text('Weekly Target'), findsOneWidget);
-      expect(find.text('Target To Date'), findsOneWidget);
+      expect(find.text('Remaining'), findsOneWidget);
+      expect(find.text('Target To Date'), findsNothing);
     },
   );
 
@@ -93,7 +154,8 @@ void main() {
 
     expect(find.text('September 2026'), findsOneWidget);
     expect(find.text('Monthly Target'), findsOneWidget);
-    expect(find.text('Target To Date'), findsOneWidget);
+    expect(find.text('Remaining'), findsOneWidget);
+      expect(find.text('Target To Date'), findsNothing);
     expect(find.byKey(const Key('home_activity_month_grid')), findsOneWidget);
   });
 
@@ -111,6 +173,59 @@ void main() {
       expect(find.byKey(const Key('home_activity_year_chart')), findsOneWidget);
       expect(find.text('Monthly Target'), findsNothing);
       expect(find.text('Weekly Target'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'tapping Wednesday shows completed, daily target and remaining',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 3,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.byKey(const Key('home_activity_week_chart'));
+      final rect = tester.getRect(chart);
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * (3.5 / 7),
+          rect.bottom - 28,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wednesday, September 30, 2026'), findsOneWidget);
+      expect(find.text('Daily Target'), findsOneWidget);
+      expect(find.text('Remaining'), findsWidgets);
+      expect(find.byKey(const Key('home_activity_day_details')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'future selected day shows its remaining target',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 3,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = find.byKey(const Key('home_activity_week_chart'));
+      final rect = tester.getRect(chart);
+      await tester.tapAt(
+        Offset(
+          rect.left + rect.width * (5.5 / 7),
+          rect.bottom - 28,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Thursday, October 1, 2026'), findsOneWidget);
+      expect(find.text('Daily Target'), findsOneWidget);
+      expect(find.text('5'), findsWidgets);
     },
   );
 
