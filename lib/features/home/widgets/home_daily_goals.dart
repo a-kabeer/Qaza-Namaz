@@ -52,7 +52,6 @@ class HomeDailyGoals extends ConsumerWidget {
           data: (period) => _DailyGoalsContent(
             period: period,
           ),
-          ),
         ),
       ),
     );
