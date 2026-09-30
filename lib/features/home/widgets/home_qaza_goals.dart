@@ -55,7 +55,8 @@ class HomeQazaGoals extends ConsumerWidget {
             final scheme = theme.colorScheme;
             final start = period.from;
             final end = period.toExclusive.subtract(const Duration(days: 1));
-            final dailyTarget = period.days.isEmpty ? 0 : period.days.first.target;
+            final dailyTarget =
+                period.days.isEmpty ? 0 : period.days.first.target;
             final weeklyTarget =
                 QazaActivityService.weeklyTargetFromDailyTarget(dailyTarget);
             final weeklyCompleted = period.totalCompleted;
@@ -138,7 +139,9 @@ class HomeQazaGoals extends ConsumerWidget {
   ) {
     final locale = Localizations.localeOf(context).languageCode;
     final sameYear = start.year == end.year;
-    final formatter = sameYear ? DateFormat.MMMd(locale) : DateFormat.yMMMd(locale);
+    final formatter = sameYear
+        ? DateFormat.MMMd(locale)
+        : DateFormat.yMMMd(locale);
     return '${formatter.format(start)} – ${formatter.format(end)}';
   }
 }
