@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_activity.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -111,7 +112,7 @@ void main() {
       expect(header.data, contains('Oct'));
       expect(find.text('Weekly Target'), findsOneWidget);
       expect(find.text('Remaining'), findsOneWidget);
-      expect(find.text('Target To Date'), findsNothing);
+    expect(find.text('Target To Date'), findsNothing);
     },
   );
 
