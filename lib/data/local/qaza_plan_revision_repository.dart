@@ -11,7 +11,7 @@ class SharedPreferencesQazaPlanRevisionRepository
   static const int _maxPerUser = 50;
 
   String _key(String userId, String revisionId) =>
-      '$_prefix\${userId}_\${revisionId}';
+      '$_prefix${userId}_${revisionId}';
 
   @override
   Future<QazaPlanRevision?> latest(String userId) async {
@@ -34,7 +34,7 @@ class SharedPreferencesQazaPlanRevisionRepository
 
   Future<List<QazaPlanRevision>> _list(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final prefix = '$_prefix\${userId}_';
+    final prefix = '$_prefix${userId}_';
     final result = <QazaPlanRevision>[];
     for (final key in prefs.getKeys()) {
       if (!key.startsWith(prefix)) continue;
