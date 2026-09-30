@@ -29,9 +29,12 @@ class HomePendingByPrayer extends ConsumerWidget {
 
     return Card(
       key: const Key('home_pending_by_prayer'),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-        child: Column(
+      child: InkWell(
+        key: const Key('home_pending_by_prayer_tap'),
+        onTap: () => openQazaAll(ref),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -43,11 +46,6 @@ class HomePendingByPrayer extends ConsumerWidget {
                           fontWeight: FontWeight.w700,
                         ),
                   ),
-                ),
-                TextButton(
-                  key: const Key('home_pending_by_prayer_view_all'),
-                  onPressed: () => openQazaAll(ref),
-                  child: Text(l10n.homeViewAll),
                 ),
               ],
             ),
@@ -79,8 +77,9 @@ class HomePendingByPrayer extends ConsumerWidget {
                   onTap: () => openQazaForPrayer(ref, prayer),
                 ),
           ],
-        )
-      )
+        ),
+      ),
+      ),
     );
   }
 }

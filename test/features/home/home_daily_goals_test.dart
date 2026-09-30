@@ -76,6 +76,27 @@ void main() {
     expect(chart.data.barGroups, hasLength(7));
   });
 
+  testWidgets('entire Daily Goals card opens details', (tester) async {
+    var tapped = false;
+    final period = _period(today: today);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeQazaActivityDailyGoalsProvider.overrideWith(
+            (ref) => Future.value(period),
+          ),
+        ],
+        child: _app(child: HomeDailyGoals(onDetails: () => tapped = true)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('home_daily_goals_details')), findsNothing);
+    await tester.tap(find.byKey(const Key('home_daily_goals_tap')));
+    expect(tapped, isTrue);
+  });
+
   testWidgets('uses period target and completed values for each rod',
       (tester) async {
     final period = _period(

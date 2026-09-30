@@ -23,9 +23,12 @@ class HomeOverallProgress extends StatelessWidget {
 
     return Card(
       key: const Key('home_overall_qaza'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: LayoutBuilder(
+      child: InkWell(
+        key: const Key('home_overall_qaza_tap'),
+        onTap: onDetails,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: LayoutBuilder(
           builder: (context, constraints) {
             final stats = Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,27 +41,12 @@ class HomeOverallProgress extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     );
-                    final action = TextButton(
-                      key: const Key('home_overall_view_details'),
-                      onPressed: onDetails,
-                      child: Text(l10n.homeViewDetails),
-                    );
                     if (constraints.maxWidth < 300) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          title,
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: action,
-                          ),
-                        ],
-                      );
+                      return title;
                     }
                     return Row(
                       children: [
                         Expanded(child: title),
-                        action,
                       ],
                     );
                   },
@@ -110,9 +98,10 @@ class HomeOverallProgress extends StatelessWidget {
                 Expanded(child: stats),
               ],
             );
-          },
-        )
-      )
+            },
+          ),
+        ),
+      ),
     );
   }
 }

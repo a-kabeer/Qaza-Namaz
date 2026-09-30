@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/widgets/icon_action_button.dart';
 import '../../../domain/services/qaza_activity_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
@@ -22,9 +21,12 @@ class HomeQazaGoals extends ConsumerWidget {
 
     return Card(
       key: const Key('home_qaza_goals'),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        child: activity.when(
+      child: InkWell(
+        key: const Key('home_qaza_goals_tap'),
+        onTap: onDetails,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: activity.when(
           loading: () => const SizedBox(
             height: 104,
             child: Center(
@@ -78,12 +80,6 @@ class HomeQazaGoals extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    IconActionButton(
-                      key: const Key('home_qaza_goals_details'),
-                      tooltip: l10n.homeViewDetails,
-                      icon: Icons.chevron_right_rounded,
-                      onPressed: onDetails,
-                    ),
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -126,6 +122,7 @@ class HomeQazaGoals extends ConsumerWidget {
               ],
             );
           },
+          ),
         ),
       ),
     );
