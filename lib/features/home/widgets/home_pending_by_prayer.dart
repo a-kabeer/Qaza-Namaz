@@ -77,8 +77,8 @@ class HomePendingByPrayer extends ConsumerWidget {
                   onTap: () => openQazaForPrayer(ref, prayer),
                 ),
           ],
-        )
-      )
+        ),
+      ),
     );
   }
 }
