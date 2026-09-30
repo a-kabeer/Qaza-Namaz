@@ -1478,7 +1478,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeFutureDay => 'آنے والا دن';
 
   @override
-  @override
   String get homeDailyGoalsTitle => 'آپ کے روزانہ کے اہداف';
 
   @override
@@ -1487,6 +1486,7 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get homeGoalsAchieved => 'ہدف حاصل کیا';
 
+  @override
   String get homeWeeklyTarget => 'آپ کا ہفتہ وار ہدف';
 
   @override
