@@ -48,7 +48,7 @@ void main() {
             prayerTimeControllerProvider.overrideWith(() => fakeController),
             offlineCityCatalogProvider.overrideWith((ref) async => catalog),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: const Scaffold(
@@ -130,7 +130,7 @@ void main() {
             prayerTimeControllerProvider.overrideWith(() => fakeController),
             offlineCityCatalogProvider.overrideWith((ref) async => catalog),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: const Scaffold(
