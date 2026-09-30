@@ -641,8 +641,9 @@ class _ActivityBarChart extends StatelessWidget {
             ),
             barTouchData: BarTouchData(
               enabled: onSelectedDay != null,
-              // Keep the interaction forgiving for zero-height bars, especially
-              // future days whose completed value is normally zero.
+              // FL Chart's built-in back-draw touch region keeps zero-height
+              // bars, including future days, selectable without custom hit testing.
+              allowTouchBarBackDraw: true,
               touchExtraThreshold: const EdgeInsets.symmetric(
                 horizontal: 10,
                 vertical: 20,
@@ -669,6 +670,11 @@ class _ActivityBarChart extends StatelessWidget {
                       color: _barColor(context, period.days[index]),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),
+                      ),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: maxY,
+                        color: theme.colorScheme.surface.withAlpha(0),
                       ),
                     ),
                   ],
