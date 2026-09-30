@@ -93,7 +93,7 @@ void main() {
     final result = HijriDateService.addHijriYears(source, 1);
     final resultHijri = HijriDateService.fromGregorian(result);
 
-    expect(resultHijri.year, sourceYear + 1);
+    expect(resultHijri.year, sourceYear! + 1);
     expect(resultHijri.month, month);
     expect(resultHijri.day, 29);
   });
