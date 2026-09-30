@@ -18,7 +18,7 @@ QazaActivityPeriod _period({
   for (var index = 0; index < 7; index++) {
     final dayCompleted = index == 6
         ? remaining
-        : (remaining > 0 ? remaining.clamp(0, dailyTarget + 10) : 0);
+        : (remaining > 0 ? remaining.clamp(0, dailyTarget + 10).toInt() : 0);
     remaining -= dayCompleted;
     days.add(
       QazaDailyActivity(
