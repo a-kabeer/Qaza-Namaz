@@ -27,7 +27,11 @@ import '../domain/repositories/qaza_operation_repository.dart';
 import '../data/repositories/shared_preferences_qaza_operation_repository.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
+import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../domain/services/save_profile_use_case.dart';
 import '../domain/repositories/user_profile_repository.dart';
+import '../domain/repositories/qaza_plan_revision_repository.dart';
+import '../data/local/qaza_plan_revision_repository.dart';
 import '../data/local/user_profile_repository.dart';
 
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
@@ -65,6 +69,29 @@ final enabledPrayerTypesProvider = Provider<List<PrayerType>>((ref) {
 final qazaPlanServiceProvider = Provider<QazaPlanService>(
   (ref) => const QazaPlanService(),
 );
+
+final qazaPlanRevisionRepositoryProvider =
+    Provider<QazaPlanRevisionRepository>(
+  (ref) => SharedPreferencesQazaPlanRevisionRepository(),
+);
+
+final profileQazaPlanReconciliationServiceProvider =
+    Provider<ProfileQazaPlanReconciliationService>((ref) {
+  return ProfileQazaPlanReconciliationService(
+    planService: ref.watch(qazaPlanServiceProvider),
+    qazaService: ref.watch(qazaServiceProvider),
+    operationService: ref.watch(qazaOperationServiceProvider),
+    revisionRepository: ref.watch(qazaPlanRevisionRepositoryProvider),
+  );
+});
+
+final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
+  return SaveProfileUseCase(
+    profileRepository: ref.watch(userProfileRepositoryProvider),
+    reconciliationService:
+        ref.watch(profileQazaPlanReconciliationServiceProvider),
+  );
+});
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
