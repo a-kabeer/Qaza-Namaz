@@ -137,6 +137,7 @@ abstract class QazaLocalStore {
       ..removeWhere((r) =>
           prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..removeWhere((r) => status != null && r.status != status)
+      ..removeWhere((r) => additionId != null && r.additionId != additionId)
       ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
       ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
       ..sort((a, b) {
