@@ -1,13 +1,22 @@
+import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/utils/date_formatters.dart';
+import '../../../core/widgets/icon_action_button.dart';
+import '../../../domain/entities/qaza_activity.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
 
 class HomeQazaGoals extends ConsumerWidget {
-  const HomeQazaGoals({super.key});
+  const HomeQazaGoals({
+    super.key,
+    required this.onDetails,
+  });
+
+  final VoidCallback onDetails;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +29,7 @@ class HomeQazaGoals extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: activity.when(
           loading: () => const SizedBox(
-            height: 94,
+            height: 112,
             child: Center(
               child: SizedBox(
                 width: 22,
@@ -44,44 +53,88 @@ class HomeQazaGoals extends ConsumerWidget {
             ],
           ),
           data: (period) {
+            final theme = Theme.of(context);
+            final scheme = theme.colorScheme;
             final locale = Localizations.localeOf(context).languageCode;
+            final maxY = period.days.fold<double>(
+              1,
+              (current, day) => math.max(
+                current,
+                math.max(day.completed, day.target).toDouble(),
+              ),
+            );
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  l10n.homeGoalsLastSevenDays,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.homeGoalsLastSevenDays,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.homeLastSevenDays,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${l10n.homeActual}: ${DateFormatters.formatCount(period.totalCompleted)}  •  '
-                  '${l10n.homeDailyTarget}: ${DateFormatters.formatCount(period.days.isEmpty ? 0 : period.days.first.target)}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    IconActionButton(
+                      key: const Key('home_qaza_goals_details'),
+                      tooltip: l10n.homeViewDetails,
+                      icon: Icons.chevron_right_rounded,
+                      onPressed: onDetails,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (var index = 0; index < period.days.length; index++)
-                        Padding(
-                          padding: EdgeInsetsDirectional.only(
-                            end: index == period.days.length - 1 ? 0 : 10,
-                          ),
-                          child: _HomeGoalDay(
-                            label: DateFormat.E(locale).format(
-                              period.days[index].date,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: 58,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            period.goalDays.toString() +
+                                '/' +
+                                period.days.length.toString(),
+                            key: const Key('home_qaza_goals_achievement'),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
                             ),
-                            completed: period.days[index].completed,
-                            target: period.days[index].target,
-                            progress: period.days[index].progress,
-                            goalReached: period.days[index].goalReached,
                           ),
-                        ),
-                    ],
-                  ),
+                          const SizedBox(height: 1),
+                          Text(
+                            l10n.homeGoalsAchieved,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _HomeQazaGoalsChart(
+                        key: const Key('home_qaza_goals_chart'),
+                        period: period,
+                        locale: locale,
+                        maxY: maxY,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );
@@ -92,64 +145,84 @@ class HomeQazaGoals extends ConsumerWidget {
   }
 }
 
-class _HomeGoalDay extends StatelessWidget {
-  const _HomeGoalDay({
-    required this.label,
-    required this.completed,
-    required this.target,
-    required this.progress,
-    required this.goalReached,
+class _HomeQazaGoalsChart extends StatelessWidget {
+  const _HomeQazaGoalsChart({
+    super.key,
+    required this.period,
+    required this.locale,
+    required this.maxY,
   });
 
-  final String label;
-  final int completed;
-  final int target;
-  final double progress;
-  final bool goalReached;
+  final QazaActivityPeriod period;
+  final String locale;
+  final double maxY;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     return SizedBox(
-      width: 46,
-      child: Column(
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall,
+      height: 92,
+      child: BarChart(
+        BarChartData(
+          minY: 0,
+          maxY: maxY,
+          alignment: BarChartAlignment.spaceAround,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 20,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= period.days.length) {
+                  return const SizedBox.shrink();
+                }
+
+                return SideTitleWidget(
+                  meta: meta,
+                  child: Text(
+                    DateFormat.E(locale).format(period.days[index].date),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 6),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 34,
-                height: 34,
-                child: CircularProgressIndicator(
-                  value: progress,
-                  strokeWidth: 4,
-                  backgroundColor: scheme.surfaceContainerHighest,
-                ),
-              ),
-              Text(
-                completed.toString(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+          barTouchData: const BarTouchData(enabled: false),
+          barGroups: [
+            for (var index = 0; index < period.days.length; index++)
+              BarChartGroupData(
+                x: index,
+                barRods: [
+                  BarChartRodData(
+                    toY: period.days[index].completed.toDouble(),
+                    width: 10,
+                    color: scheme.primary,
+                    borderRadius: BorderRadius.circular(4),
+                    backDrawRodData: BackgroundBarChartRodData(
+                      show: period.days[index].target > 0,
+                      toY: period.days[index].target.toDouble(),
+                      color: scheme.primary.withAlpha(35),
                     ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            target > 0 ? '$completed/$target' : '$completed',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: goalReached ? scheme.primary : scheme.onSurfaceVariant,
-                  fontWeight: goalReached ? FontWeight.w700 : null,
-                ),
-          ),
-        ],
+          ],
+        ),
+        duration: Duration.zero,
       ),
     );
   }
