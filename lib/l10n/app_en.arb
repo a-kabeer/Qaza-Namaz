@@ -876,6 +876,9 @@
   "homePreviousYear": "Previous year",
   "homeNextYear": "Next year",
   "homeFutureDay": "Future",
+  "homeDailyGoalsTitle": "Your daily goals",
+  "homeLastSevenDays": "Last 7 days",
+  "homeGoalsAchieved": "Achieved",
   "homeWeeklyTarget": "Your weekly target",
   "homeWeeklyTargetProgress": "{completed} of {target}",
   "@homeWeeklyTargetProgress": {
