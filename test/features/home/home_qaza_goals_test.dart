@@ -15,7 +15,7 @@ QazaActivityPeriod _period() {
     for (var index = 0; index < 7; index++)
       QazaDailyActivity(
         date: DateTime(2026, 9, 24 + index),
-        completed: index,
+        completed: index == 6 ? 2 : index,
         byPrayer: const {},
         target: 5,
         isFuture: false,
@@ -65,12 +65,12 @@ void main() {
       );
 
       expect(chart.data.barGroups, hasLength(7));
-      expect(chart.data.barGroups.last.barRods.single.toY, 6);
+      expect(chart.data.barGroups.last.barRods.single.toY, 2);
       expect(
         chart.data.barGroups.last.barRods.single.backDrawRodData?.toY,
         5,
       );
-      expect(chart.data.maxY, 6);
+      expect(chart.data.maxY, 5);
 
       expect(
         find.text(
