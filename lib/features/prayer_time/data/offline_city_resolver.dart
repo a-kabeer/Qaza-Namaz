@@ -74,6 +74,116 @@ class OfflineCityResolver {
   }
 }
 
+String _normalizeSearchText(String value) {
+  final lower = value.trim().toLowerCase();
+  const replacements = <String, String>{
+    'à': 'a',
+    'á': 'a',
+    'â': 'a',
+    'ã': 'a',
+    'ä': 'a',
+    'å': 'a',
+    'ā': 'a',
+    'ă': 'a',
+    'ą': 'a',
+    'ǎ': 'a',
+    'ǟ': 'a',
+    'æ': 'ae',
+    'ç': 'c',
+    'ć': 'c',
+    'ĉ': 'c',
+    'ċ': 'c',
+    'č': 'c',
+    'ď': 'd',
+    'đ': 'd',
+    'ð': 'd',
+    'è': 'e',
+    'é': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'ē': 'e',
+    'ĕ': 'e',
+    'ė': 'e',
+    'ę': 'e',
+    'ě': 'e',
+    'ğ': 'g',
+    'ĝ': 'g',
+    'ġ': 'g',
+    'ģ': 'g',
+    'ĥ': 'h',
+    'ħ': 'h',
+    'ì': 'i',
+    'í': 'i',
+    'î': 'i',
+    'ï': 'i',
+    'ĩ': 'i',
+    'ī': 'i',
+    'ĭ': 'i',
+    'į': 'i',
+    'ı': 'i',
+    'ĳ': 'ij',
+    'ĵ': 'j',
+    'ķ': 'k',
+    'ĺ': 'l',
+    'ļ': 'l',
+    'ľ': 'l',
+    'ŀ': 'l',
+    'ł': 'l',
+    'ñ': 'n',
+    'ń': 'n',
+    'ņ': 'n',
+    'ň': 'n',
+    'ŋ': 'n',
+    'ò': 'o',
+    'ó': 'o',
+    'ô': 'o',
+    'õ': 'o',
+    'ö': 'o',
+    'ø': 'o',
+    'ō': 'o',
+    'ŏ': 'o',
+    'ő': 'o',
+    'œ': 'oe',
+    'ŕ': 'r',
+    'ŗ': 'r',
+    'ř': 'r',
+    'ś': 's',
+    'ŝ': 's',
+    'ş': 's',
+    'š': 's',
+    'ß': 'ss',
+    'ţ': 't',
+    'ť': 't',
+    'ŧ': 't',
+    'ù': 'u',
+    'ú': 'u',
+    'û': 'u',
+    'ü': 'u',
+    'ũ': 'u',
+    'ū': 'u',
+    'ŭ': 'u',
+    'ů': 'u',
+    'ű': 'u',
+    'ų': 'u',
+    'ý': 'y',
+    'ÿ': 'y',
+    'ŷ': 'y',
+    'ž': 'z',
+    'ź': 'z',
+    'ż': 'z',
+  };
+
+  final buffer = StringBuffer();
+  for (final rune in lower.runes) {
+    final character = String.fromCharCode(rune);
+    buffer.write(replacements[character] ?? character);
+  }
+
+  return buffer
+      .toString()
+      .replaceAll(RegExp(r'[\u0300-\u036f]'), '');
+}
+
 class OfflineCityCatalog {
   OfflineCityCatalog({String assetPath = _defaultAssetPath})
       : _assetPath = assetPath;
@@ -171,16 +281,14 @@ class OfflineCityCatalog {
     }
 
     final normalizedCountry = countryCode.toUpperCase();
-    final normalizedQuery = query.trim().toLowerCase();
+    final normalizedQuery = _normalizeSearchText(query);
 
     final result = cities.where((city) {
       if (city.countryCode != normalizedCountry) return false;
       if (normalizedQuery.isEmpty) return true;
 
-      return city.city.toLowerCase().contains(normalizedQuery) ||
-          city.region.toLowerCase().contains(normalizedQuery) ||
-          city.country.toLowerCase().contains(normalizedQuery) ||
-          city.timezoneId.toLowerCase().contains(normalizedQuery);
+      return _normalizeSearchText(city.city).contains(normalizedQuery) ||
+          _normalizeSearchText(city.region).contains(normalizedQuery);
     }).toList(growable: false);
 
     return List.unmodifiable(result);

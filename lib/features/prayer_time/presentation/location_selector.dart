@@ -30,6 +30,7 @@ class LocationSelector extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final refreshing = ref.watch(prayerTimeRefreshProvider);
     return Card(
+      key: const Key('prayer_time_location_selector'),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: refreshing ? null : () => _pick(context, ref),
@@ -138,6 +139,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               itemBuilder: (_, index) {
                 final code = countries[index];
                 return ListTile(
+                  key: Key('prayer_time_country_' + code),
                   leading: const Icon(Icons.public_rounded),
                   title: Text(catalog.countryName(code)),
                   subtitle: Text(code),
@@ -179,6 +181,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                   itemBuilder: (_, index) {
                     final city = cities[index];
                     return ListTile(
+                      key: Key('prayer_time_city_' + city.geonameId.toString()),
                       title: Text(city.city),
                       subtitle: Text(
                         city.region.isEmpty
@@ -235,6 +238,11 @@ class _PickerScaffold extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SearchBar(
+              key: Key(
+                leading == null
+                    ? 'prayer_time_country_search'
+                    : 'prayer_time_city_search',
+              ),
               hintText: searchLabel,
               leading: const Icon(Icons.search_rounded),
               controller: controller,

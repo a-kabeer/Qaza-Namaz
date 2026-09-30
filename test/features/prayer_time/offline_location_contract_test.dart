@@ -88,6 +88,104 @@ void main() {
     }
   });
 
+
+  test('city search is case-insensitive and trims whitespace', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final exact = catalog.citiesForCountry('PK', query: 'Karachi');
+    final lower = catalog.citiesForCountry('PK', query: 'karachi');
+    final mixed = catalog.citiesForCountry('PK', query: 'KaRaChI');
+    final padded = catalog.citiesForCountry('PK', query: '  Karachi  ');
+
+    expect(exact, isNotEmpty);
+    expect(lower, isNotEmpty);
+    expect(mixed, isNotEmpty);
+    expect(padded, isNotEmpty);
+    expect(
+      lower.map((city) => city.geonameId),
+      contains(exact.first.geonameId),
+    );
+    expect(
+      mixed.map((city) => city.geonameId),
+      contains(exact.first.geonameId),
+    );
+    expect(
+      padded.map((city) => city.geonameId),
+      contains(exact.first.geonameId),
+    );
+  });
+
+  test('city-name search does not match shared timezone text', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final results = catalog.citiesForCountry('PK', query: 'Karachi');
+
+    expect(results, isNotEmpty);
+    expect(
+      results.every((city) => city.city == 'Karachi'),
+      isTrue,
+      reason: 'All Pakistani cities must not match just because they share Asia/Karachi.',
+    );
+  });
+
+  test('city search is diacritic-insensitive', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final results = catalog.citiesForCountry('AF', query: 'Herat');
+
+    expect(
+      results.any((city) => city.city == 'Herāt'),
+      isTrue,
+      reason: 'ASCII Herat should match the catalog entry Herāt.',
+    );
+  });
+
+  test('city search matches region while preserving country restriction', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final sindh = catalog.citiesForCountry('PK', query: 'Sindh');
+    final japan = catalog.citiesForCountry('JP', query: 'Sindh');
+    final emptyCountry = catalog.citiesForCountry('PK', query: 'Tokyo');
+
+    expect(sindh, isNotEmpty);
+    expect(sindh.any((city) => city.city == 'Karachi'), isTrue);
+    expect(japan, isEmpty);
+    expect(emptyCountry, isEmpty);
+  });
+
+  test('empty and whitespace-only city queries preserve the initial city list', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    final allCities = catalog.citiesForCountry('PK');
+    final emptyQuery = catalog.citiesForCountry('PK', query: '');
+    final whitespaceQuery = catalog.citiesForCountry('PK', query: '   ');
+
+    expect(allCities, isNotEmpty);
+    expect(
+      emptyQuery.map((city) => city.geonameId),
+      orderedEquals(allCities.map((city) => city.geonameId)),
+    );
+    expect(
+      whitespaceQuery.map((city) => city.geonameId),
+      orderedEquals(allCities.map((city) => city.geonameId)),
+    );
+  });
+
+  test('nonexistent city query returns no results', () async {
+    final catalog = OfflineCityCatalog();
+    await catalog.load();
+
+    expect(
+      catalog.citiesForCountry('PK', query: 'DefinitelyNotACity'),
+      isEmpty,
+    );
+  });
+
   test('reverse GeoNames lookup keeps the actual requested GPS coordinates', () {
     final resolver = OfflineCityResolver(
       geocoder: GeonamesReverseGeocoder.cities15000(),
