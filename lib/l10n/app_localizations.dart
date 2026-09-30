@@ -2516,6 +2516,12 @@ abstract class AppLocalizations {
   /// **'Qaza Goals · Last 7 Days'**
   String get homeGoalsLastSevenDays;
 
+  /// No description provided for @homeGoalsAchieved.
+  ///
+  /// In en, this message translates to:
+  /// **'Achieved'**
+  String get homeGoalsAchieved;
+
   /// No description provided for @homeDayActivityDetails.
   ///
   /// In en, this message translates to:
