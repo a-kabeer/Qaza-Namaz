@@ -1,5 +1,4 @@
 import '../services/qaza_plan_service.dart';
-import '../../core/constants/prayer_types.dart';
 
 enum QazaPlanLedgerDecision {
   applied,
