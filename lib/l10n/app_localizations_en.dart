@@ -58,7 +58,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusPending => 'Pending';
 
   @override
-  String get statusDeleted => 'Recently deleted';
 
   @override
   String get statusCompleted => 'Completed';
@@ -516,7 +515,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String qazaDeleteRecordMessage(Object date, Object prayer) {
-    return 'Move the $prayer Qaza from $date to Recently Deleted? You can restore it for 30 days.';
+    return 'Permanently delete the $prayer Qaza from $date? This cannot be undone.';
   }
 
   @override
