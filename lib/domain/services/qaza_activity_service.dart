@@ -17,8 +17,8 @@ class QazaActivityService {
 
   final QazaActivityRepository repository;
 
-  /// The production provider supplies all prayer types so profile changes
-  /// cannot erase historical activity such as completed Witr records.
+  /// Default prayer types used by existing/current-goal consumers. Historical
+  /// reports can explicitly request all prayer types through [prayerTypes].
   final List<PrayerType> enabledPrayerTypes;
 
   Future<QazaActivityPeriod> buildPeriod({
@@ -66,6 +66,7 @@ class QazaActivityService {
     required DateTime today,
     required int dailyTarget,
     bool targetAvailable = false,
+    Iterable<PrayerType>? prayerTypes,
   }) {
     final normalizedSelectedDate = _dateOnly(selectedDate);
     final from = calendarWeekStartForDate(normalizedSelectedDate);
