@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_activity.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
