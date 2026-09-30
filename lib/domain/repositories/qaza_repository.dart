@@ -14,17 +14,6 @@ class QazaPage {
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
-class QazaHistoryPage {
-  const QazaHistoryPage({required this.records, required this.hasMore});
-
-  final List<QazaRecord> records;
-  final bool hasMore;
-
-  DateTime? get nextOriginalDate =>
-      records.isEmpty ? null : records.last.originalDate;
-  String? get nextId => records.isEmpty ? null : records.last.id;
-}
-
 abstract interface class QazaRepository {
   /// Legacy full-ledger API. New production UI should use [getPage].
   Future<List<QazaRecord>> getRecords({
@@ -48,6 +37,9 @@ abstract interface class QazaRepository {
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+    bool descending = false,
   });
 
   /// Returns the oldest pending record directly from the data source.
@@ -126,18 +118,6 @@ abstract interface class QazaRepository {
 
     return result;
   }
-
-  Future<QazaHistoryPage> getHistoryPage({
-    required String userId,
-    int limit = 50,
-    PrayerType? prayerType,
-    Iterable<PrayerType>? prayerTypes,
-    QazaStatus? status = QazaStatus.completed,
-    DateTime? from,
-    DateTime? to,
-    DateTime? beforeOriginalDate,
-    String? beforeId,
-  });
 
   Future<QazaProgressSummary> getProgressSummary({required String userId});
 
