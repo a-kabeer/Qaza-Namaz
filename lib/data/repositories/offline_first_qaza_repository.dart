@@ -76,6 +76,7 @@ class OfflineFirstQazaRepository
     PrayerType? prayerType,
     Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
+    String? additionId,
     DateTime? from,
     DateTime? to,
     DateTime? afterOriginalDate,
@@ -90,6 +91,7 @@ class OfflineFirstQazaRepository
       limit: limit,
       prayerType: prayerType,
       status: status,
+      additionId: additionId,
       from: from,
       to: to,
       afterOriginalDate: afterOriginalDate,
@@ -235,7 +237,7 @@ class OfflineFirstQazaRepository
   }
 
   @override
-  Future<void> updateRecord({required QazaRecord record}) async {
+  Future<bool> updateRecord({required QazaRecord record}) async {
     final userId = _requireActive();
     if (record.userId != userId || record.id.isEmpty) {
       throw StateError('Cannot update a Qaza record outside the local ledger.');
@@ -253,7 +255,7 @@ class OfflineFirstQazaRepository
       );
     }
 
-    await _localStore.updateRecord(record);
+    return _localStore.updateRecord(record);
   }
 
   @override
