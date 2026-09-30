@@ -51,7 +51,7 @@ void main() {
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const Scaffold(
+            home: Scaffold(
               body: LocationSelector(location: null),
             ),
           ),
@@ -133,7 +133,7 @@ void main() {
           child: const MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const Scaffold(
+            home: Scaffold(
               body: LocationSelector(location: null),
             ),
           ),
