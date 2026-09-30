@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
+import '../../core/time/local_date_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
@@ -66,7 +67,7 @@ class _ProfileFormState extends State<ProfileForm> {
   }
 
   Future<void> _pickDob() async {
-    final now = DateTime.now();
+    final now = LocalDateService.today();
     final initial =
         _profile.dateOfBirth ?? DateTime(now.year - 18, now.month, now.day);
     final picked = await showDatePicker(
@@ -82,7 +83,7 @@ class _ProfileFormState extends State<ProfileForm> {
   }
 
   Future<void> _submit() async {
-    final validation = ProfileRules.validate(_profile, today: DateTime.now());
+    final validation = ProfileRules.validate(_profile, today: LocalDateService.today());
     if (!validation.isValid) {
       setState(() => _error = validation.error);
       return;
@@ -109,7 +110,7 @@ class _ProfileFormState extends State<ProfileForm> {
     final pubertyOptions = ProfileRules.pubertyAgeOptions(gender);
     final currentAge = profile.dateOfBirth == null
         ? null
-        : ProfileRules.currentAge(profile.dateOfBirth!, DateTime.now());
+        : ProfileRules.currentAge(profile.dateOfBirth!, LocalDateService.today());
     final startOptions = currentAge == null || profile.pubertyAge == null
         ? const <int>[]
         : [
