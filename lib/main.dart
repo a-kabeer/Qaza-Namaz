@@ -8,9 +8,9 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
 import 'core/diagnostics/diagnostics.dart';
+import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
-import 'core/time/local_date_service.dart';
 import 'data/migration/user_profile_migration.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
