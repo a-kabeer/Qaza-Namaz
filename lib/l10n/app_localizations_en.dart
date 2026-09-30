@@ -531,7 +531,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Qaza record could not be updated. Please try again.';
 
   @override
-  String get qazaRecordDeleted => 'Qaza moved to Recently Deleted.';
+  String get qazaRecordDeleted => 'Qaza permanently deleted.';
 
   @override
   String get qazaRecordDeleteFailed =>
