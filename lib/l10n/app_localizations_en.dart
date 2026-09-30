@@ -1431,9 +1431,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeProgressHistory => 'Progress History';
 
   @override
-  String get homeLastSevenDays => 'Last 7 Days';
-
-  @override
   String get homeRangeWeekly => 'Weekly';
 
   @override
