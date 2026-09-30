@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
 import '../domain/prayer_location.dart';
-import '../../../l10n/app_localizations.dart';
+
+enum LocationSelectorStyle {
+  card,
+  header,
+}
 
 class LocationSelector extends ConsumerWidget {
   const LocationSelector({
     super.key,
     required this.location,
+    this.style = LocationSelectorStyle.card,
   });
 
   final PrayerLocation? location;
+  final LocationSelectorStyle style;
 
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     final option = await showModalBottomSheet<CityOption>(
@@ -29,51 +36,61 @@ class LocationSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final refreshing = ref.watch(prayerTimeRefreshProvider);
-    return Card(
-      key: const Key('prayer_time_location_selector'),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: refreshing ? null : () => _pick(context, ref),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: location == null
-                    ? Text(l10n.prayerTimeSelectLocation)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+    final scheme = Theme.of(context).colorScheme;
+
+    final content = InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: refreshing ? null : () => _pick(context, ref),
+      child: Padding(
+        padding: style == LocationSelectorStyle.header
+            ? const EdgeInsets.symmetric(vertical: 4)
+            : const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              color: scheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: location == null
+                  ? Text(l10n.prayerTimeSelectLocation)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          location!.primaryLabel,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        if (location!.secondaryLabel.isNotEmpty)
                           Text(
-                            location!.primaryLabel,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            location!.secondaryLabel,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                          if (location!.secondaryLabel.isNotEmpty)
-                            Text(
-                              location!.secondaryLabel,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                        ],
-                      ),
-              ),
-              if (refreshing)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
+                      ],
+                    ),
+            ),
+            if (refreshing)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              const Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
+    );
+
+    if (style == LocationSelectorStyle.header) {
+      return content;
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: content,
     );
   }
 }
@@ -139,7 +156,6 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               itemBuilder: (_, index) {
                 final code = countries[index];
                 return ListTile(
-                  key: Key('prayer_time_country_' + code),
                   leading: const Icon(Icons.public_rounded),
                   title: Text(catalog.countryName(code)),
                   subtitle: Text(code),
@@ -181,7 +197,6 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                   itemBuilder: (_, index) {
                     final city = cities[index];
                     return ListTile(
-                      key: Key('prayer_time_city_' + city.geonameId.toString()),
                       title: Text(city.city),
                       subtitle: Text(
                         city.region.isEmpty
@@ -238,11 +253,6 @@ class _PickerScaffold extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SearchBar(
-              key: Key(
-                leading == null
-                    ? 'prayer_time_country_search'
-                    : 'prayer_time_city_search',
-              ),
               hintText: searchLabel,
               leading: const Icon(Icons.search_rounded),
               controller: controller,
