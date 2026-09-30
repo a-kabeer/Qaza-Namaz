@@ -61,7 +61,10 @@ void main() {
       await tester.pump();
 
       final chart = tester.widget<BarChart>(
-        find.byKey(const Key('home_qaza_goals_chart')),
+        find.descendant(
+          of: find.byKey(const Key('home_qaza_goals_chart')),
+          matching: find.byType(BarChart),
+        ),
       );
 
       expect(chart.data.barGroups, hasLength(7));
