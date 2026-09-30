@@ -45,7 +45,13 @@ class ProfileQazaPlanPreview {
   int get newPlanTotal => newPlan.totalWithWitr;
   bool get hasLedgerChanges =>
       pendingToAdd > 0 || pendingToRemove > 0 || pendingToRestore > 0;
-  bool get requiresReview => pendingToRemove > 0;
+
+  bool get ledgerPlanChanged =>
+      oldRevision == null ||
+      oldRevision!.ledgerPlanFingerprint != planFingerprint(newPlan);
+
+  bool get requiresUserDecision =>
+      calculationChanged && ledgerPlanChanged && hasLedgerChanges;
 }
 
 class ProfileQazaPlanReconciliationResult {
@@ -92,12 +98,12 @@ class ProfileQazaPlanReconciliationService {
     }
 
     final oldRevision = await _revisionRepository.latest(userId);
-    final oldLedgerFingerprint =
-        oldRevision?.ledgerPlanFingerprint ?? 
+    final previousCalculationFingerprint =
+        oldRevision?.planFingerprint ??
         (oldProfilePlan == null ? null : planFingerprint(oldProfilePlan));
     final calculationChanged =
-        oldLedgerFingerprint == null ||
-        oldLedgerFingerprint != planFingerprint(newPlan);
+        previousCalculationFingerprint == null ||
+        previousCalculationFingerprint != planFingerprint(newPlan);
 
     if (!calculationChanged) {
       return ProfileQazaPlanPreview(
