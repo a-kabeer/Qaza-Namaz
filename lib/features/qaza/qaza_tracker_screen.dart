@@ -75,7 +75,7 @@ class QazaTrackerScreen extends ConsumerWidget {
 
 /// Stable header slot above the Qaza workspace content.
 ///
-/// Normal mode shows the Pending/History tabs. Selection mode replaces them
+/// Normal mode uses a fixed-height divider slot. Selection mode replaces it
 /// with a compact context row, but the slot height never changes, so the
 /// tracker content remains vertically stable.
 class _QazaTrackerHeader extends StatelessWidget {
