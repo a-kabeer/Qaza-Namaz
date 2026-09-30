@@ -25,6 +25,9 @@ class PrayerTimelineRow extends StatelessWidget {
     this.restricted = false,
   });
 
+  static const double _countdownWidth = 96;
+  static const double _timeWidth = 82;
+
   final String name;
   final String time;
   final String? countdown;
@@ -49,6 +52,7 @@ class PrayerTimelineRow extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      color: active ? scheme.primaryContainer : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
@@ -64,28 +68,33 @@ class PrayerTimelineRow extends StatelessWidget {
                     ),
               ),
             ),
-            if (countdown != null)
-              Text(
-                countdown!,
+            SizedBox(
+              width: _countdownWidth,
+              child: Text(
+                countdown ?? '',
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: countdownColor,
-                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
               ),
-            const SizedBox(width: 16),
-            Text(
-              time,
-              maxLines: 1,
-              overflow: TextOverflow.clip,
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: timeColor,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+            ),
+            SizedBox(
+              width: _timeWidth,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Text(
+                  time,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: timeColor,
+                      ),
+                ),
+              ),
             ),
           ],
         ),
@@ -97,16 +106,16 @@ class PrayerTimelineRow extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final accent = restricted ? scheme.tertiary : scheme.primary;
     final background = active
-        ? scheme.primaryContainer
-        : Colors.transparent;
-    final iconBackground = active
-        ? scheme.surfaceContainerHighest
-        : scheme.surfaceContainerHighest;
-    final iconColor = active ? scheme.primary : scheme.onSurfaceVariant;
-    final nameColor = active ? scheme.onPrimaryContainer : scheme.onSurface;
-    final timeColor =
-        active ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+        ? (restricted ? scheme.surfaceContainerHighest : scheme.primaryContainer)
+        : null;
+    final nameColor = active && !restricted
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface;
+    final timeColor = active && !restricted
+        ? scheme.onPrimaryContainer
+        : scheme.onSurfaceVariant;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -116,7 +125,7 @@ class PrayerTimelineRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: active
             ? Border.all(
-                color: scheme.primary.withValues(alpha: .18),
+                color: accent.withValues(alpha: .18),
               )
             : null,
       ),
@@ -128,14 +137,14 @@ class PrayerTimelineRow extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: iconBackground,
+                color: scheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Icon(
                 icon,
                 size: 20,
-                color: iconColor,
+                color: accent,
               ),
             ),
             const SizedBox(width: 12),
