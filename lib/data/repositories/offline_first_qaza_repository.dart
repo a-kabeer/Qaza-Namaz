@@ -454,6 +454,24 @@ class OfflineFirstQazaRepository
         deletedAt: deletedAt,
       );
 
+  @override
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) async {
+    _validateActive(userId);
+    return _localStore.softDeletePendingIfUnchanged(
+      userId: userId,
+      recordIds: recordIds,
+      expectedCreatedAt: expectedCreatedAt,
+      deletedAt: deletedAt,
+      operationId: operationId,
+    );
+  }
+
   Future<int> _removeUnchangedPendingFromOperation({
     required String userId,
     required String operationId,

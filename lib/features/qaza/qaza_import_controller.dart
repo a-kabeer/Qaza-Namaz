@@ -23,6 +23,7 @@ class QazaImportTaskState {
   const QazaImportTaskState({
     this.phase = QazaImportTaskPhase.idle,
     this.userId,
+    this.operationId,
     this.processed = 0,
     this.total = 0,
     this.added = 0,
@@ -36,6 +37,7 @@ class QazaImportTaskState {
 
   final QazaImportTaskPhase phase;
   final String? userId;
+  final String? operationId;
   final int processed;
   final int total;
   final int added;
@@ -56,6 +58,7 @@ class QazaImportTaskState {
   QazaImportTaskState copyWith({
     QazaImportTaskPhase? phase,
     String? userId,
+    String? operationId,
     int? processed,
     int? total,
     int? added,
@@ -70,6 +73,7 @@ class QazaImportTaskState {
       QazaImportTaskState(
         phase: phase ?? this.phase,
         userId: userId ?? this.userId,
+        operationId: operationId ?? this.operationId,
         processed: processed ?? this.processed,
         total: total ?? this.total,
         added: added ?? this.added,
@@ -180,6 +184,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
             type: request.operationType,
             inputSnapshot: request.inputSnapshot,
           );
+      state = state.copyWith(operationId: operation.operationId);
       final result = await ref.read(qazaServiceProvider).importQazaForDates(
             userId: request.userId,
             dates: request.dates,

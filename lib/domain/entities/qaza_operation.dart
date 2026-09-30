@@ -19,6 +19,9 @@ enum QazaOperationType {
   bulkDelete,
 
   restore,
+
+  /// Reconciles Qaza generated from a profile calculation change.
+  profileReconciliation,
 }
 
 enum QazaOperationStatus {

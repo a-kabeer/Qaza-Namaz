@@ -1601,6 +1601,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSave => 'Save Changes';
 
   @override
+  String get profileQazaPlanChangedTitle => 'Qaza plan will be updated';
+
+  @override
+  String get profileQazaPlanSummary =>
+      'Your profile change changes the calculated Qaza plan.';
+
+  @override
+  String get profileQazaPreviousTotal => 'Previous plan';
+
+  @override
+  String get profileQazaNewTotal => 'New plan';
+
+  @override
+  String get profileQazaCompletedInPlan => 'Completed in new plan';
+
+  @override
+  String get profileQazaToAdd => 'New Qaza to add';
+
+  @override
+  String get profileQazaRestored => 'Previously removed Qaza to restore';
+
+  @override
+  String get profileQazaUpdatedKeptExisting =>
+      'Profile updated. Your existing Qaza records were kept.';
+
+  @override
+  String get profileQazaNoLongerRequired => 'Pending Qaza no longer required';
+
+  @override
+  String get profileQazaKeepExisting => 'Keep existing Qaza records';
+
+  @override
+  String get profileQazaApply => 'Apply Qaza plan';
+
+  @override
+  String get profileQazaCompletedProtected =>
+      'Completed and manually added Qaza will not be removed.';
+
+  @override
+  String get profileQazaUpdated => 'Profile and Qaza plan updated.';
+
+  @override
+  String get profileQazaUpdatedNoChange =>
+      'Profile updated. Your Qaza plan was unchanged.';
+
+  @override
   String get qazaReviewTitle => 'Review Your Qaza Plan';
 
   @override

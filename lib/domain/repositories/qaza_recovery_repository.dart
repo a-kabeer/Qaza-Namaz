@@ -67,6 +67,22 @@ abstract class QazaRecoveryRepository {
     required DateTime deletedAt,
   });
 
+  /// Soft-deletes only pending records that were created by the expected
+  /// generation operation and have not been edited since creation.
+  ///
+  /// Repositories without conditional mutation support fail explicitly;
+  /// production local storage overrides this atomically.
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  }) =>
+      throw UnsupportedError(
+        'Conditional Qaza deletion is not supported by this repository.',
+      );
+
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
