@@ -297,13 +297,13 @@ class _RecentAdditions extends StatelessWidget {
       MaterialLocalizations.of(context).formatMediumDate(value);
 }
 
-class _DeletedActions extends StatelessWidget {
+class _DeletedActions extends ConsumerWidget {
   const _DeletedActions({required this.state, required this.controller});
   final QazaAdditionHistoryState state;
   final QazaAdditionHistoryController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (state.deleted.isEmpty) {
       return const ListView(
         children: [
