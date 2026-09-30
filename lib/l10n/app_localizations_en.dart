@@ -372,22 +372,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeDailyTarget => 'Daily Target';
 
   @override
-  String get homeWeeklyTargetLabel => 'Weekly Target';
-
-  @override
-  String get homeMonthlyTarget => 'Monthly Target';
-
-
-  @override
-  String get homeProgressLabel => 'Progress';
-
-  @override
-  String get homeActiveDays => 'Active Days';
-
-  @override
-  String get homeActiveMonths => 'Active Months';
-
-  @override
   String homePerDay(int count) {
     return '$count per day';
   }
@@ -1436,6 +1420,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeRangeYearly => 'Yearly';
+
+  @override
+  String get homeWeeklyTargetLabel => 'Weekly Target';
+
+  @override
+  String get homeMonthlyTarget => 'Monthly Target';
+
+  @override
+  String get homeProgressLabel => 'Progress';
+
+  @override
+  String get homeActiveDays => 'Active Days';
+
+  @override
+  String get homeActiveMonths => 'Active Months';
 
   @override
   String get homeGoalReached => 'Goal Reached';

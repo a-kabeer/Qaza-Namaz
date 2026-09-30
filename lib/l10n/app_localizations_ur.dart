@@ -370,22 +370,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homeDailyTarget => 'روزانہ ہدف';
 
   @override
-  String get homeWeeklyTargetLabel => 'ہفتہ وار ہدف';
-
-  @override
-  String get homeMonthlyTarget => 'ماہانہ ہدف';
-
-
-  @override
-  String get homeProgressLabel => 'پیش رفت';
-
-  @override
-  String get homeActiveDays => 'فعال دن';
-
-  @override
-  String get homeActiveMonths => 'فعال مہینے';
-
-  @override
   String homePerDay(int count) {
     return 'روزانہ $count';
   }
@@ -1438,6 +1422,21 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeRangeYearly => 'سالانہ';
+
+  @override
+  String get homeWeeklyTargetLabel => 'ہفتہ وار ہدف';
+
+  @override
+  String get homeMonthlyTarget => 'ماہانہ ہدف';
+
+  @override
+  String get homeProgressLabel => 'پیش رفت';
+
+  @override
+  String get homeActiveDays => 'فعال دن';
+
+  @override
+  String get homeActiveMonths => 'فعال مہینے';
 
   @override
   String get homeGoalReached => 'ہدف مکمل';
