@@ -180,25 +180,28 @@ class _HomeQazaGoalsChart extends StatelessWidget {
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
-            bottomTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 20,
-              getTitlesWidget: (value, meta) {
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                reservedSize: 20,
+                getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index < 0 || index >= period.days.length) {
                   return const SizedBox.shrink();
                 }
 
-                return SideTitleWidget(
-                  meta: meta,
-                  child: Text(
-                    DateFormat.E(locale).format(period.days[index].date),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                );
-              },
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      DateFormat.E(locale).format(period.days[index].date),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           barTouchData: const BarTouchData(enabled: false),
