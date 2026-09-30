@@ -117,7 +117,7 @@ void main() {
       expect(header.data, contains('Oct'));
       expect(find.text('Weekly Target'), findsOneWidget);
       expect(find.text('Remaining'), findsOneWidget);
-    expect(find.text('Target To Date'), findsNothing);
+      expect(find.text('Target To Date'), findsNothing);
     },
   );
 
@@ -161,7 +161,7 @@ void main() {
     expect(find.text('September 2026'), findsOneWidget);
     expect(find.text('Monthly Target'), findsOneWidget);
     expect(find.text('Remaining'), findsOneWidget);
-      expect(find.text('Target To Date'), findsNothing);
+    expect(find.text('Target To Date'), findsNothing);
     expect(find.byKey(const Key('home_activity_month_grid')), findsOneWidget);
   });
 
