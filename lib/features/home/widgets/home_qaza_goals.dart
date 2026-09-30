@@ -186,10 +186,10 @@ class _HomeQazaGoalsChart extends StatelessWidget {
                 interval: 1,
                 reservedSize: 20,
                 getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index < 0 || index >= period.days.length) {
-                  return const SizedBox.shrink();
-                }
+                  final index = value.toInt();
+                  if (index < 0 || index >= period.days.length) {
+                    return const SizedBox.shrink();
+                  }
 
                   return SideTitleWidget(
                     meta: meta,
