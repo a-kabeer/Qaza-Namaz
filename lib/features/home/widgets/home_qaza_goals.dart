@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/widgets/icon_action_button.dart';
 import '../../../domain/services/qaza_activity_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
@@ -26,8 +25,8 @@ class HomeQazaGoals extends ConsumerWidget {
         key: const Key('home_qaza_goals_tap'),
         onTap: onDetails,
         child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        child: activity.when(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: activity.when(
           loading: () => const SizedBox(
             height: 104,
             child: Center(
@@ -123,6 +122,7 @@ class HomeQazaGoals extends ConsumerWidget {
               ],
             );
           },
+          ),
           ),
         ),
       ),
