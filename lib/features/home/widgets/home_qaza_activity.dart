@@ -197,6 +197,15 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 },
               ),
             ),
+            if (_selectedDay != null && _range != _ActivityRange.yearly) ...[
+              const SizedBox(height: 12),
+              _SelectedActivityDayDetails(
+                key: const Key('home_activity_selected_day_details'),
+                range: _range,
+                anchor: anchor,
+                selectedDay: _selectedDay!,
+              ),
+            ],
           ],
         ),
       ),
@@ -241,6 +250,48 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
       case _ActivityRange.yearly:
         return l10n.homeNextYear;
     }
+  }
+}
+
+class _SelectedActivityDayDetails extends ConsumerWidget {
+  const _SelectedActivityDayDetails({
+    super.key,
+    required this.range,
+    required this.anchor,
+    required this.selectedDay,
+  });
+
+  final _ActivityRange range;
+  final DateTime anchor;
+  final DateTime selectedDay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final periodAsync = switch (range) {
+      _ActivityRange.weekly =>
+        ref.watch(homeQazaActivityWeekProvider(anchor)),
+      _ActivityRange.monthly =>
+        ref.watch(homeQazaActivityMonthProvider(anchor)),
+      _ActivityRange.yearly => const AsyncValue<QazaActivityPeriod>.loading(),
+    };
+
+    return periodAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (period) => _ActivityDayDetails(
+        day: period.dayFor(selectedDay),
+        period: period,
+      ),
+    );
   }
 }
 
@@ -332,7 +383,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 key: const Key('home_activity_progress'),
-                value: period.progressToDate,
+                value: period.progress,
                 minHeight: 7,
               ),
             ),
@@ -359,6 +410,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
             key: const Key('home_activity_week_chart'),
             period: period,
             labelsAreDates: true,
+            selectedDay: selectedDay,
             onSelectedDay: onSelectedDay,
           )
         else
@@ -366,14 +418,8 @@ class _ActivityPeriodContent extends ConsumerWidget {
             key: const Key('home_activity_year_chart'),
             period: period,
             labelsAreDates: false,
+            selectedDay: null,
             onSelectedDay: null,
-          ),
-        if (selectedDay != null &&
-            (range == _ActivityRange.weekly ||
-                range == _ActivityRange.monthly))
-          _ActivityDayDetails(
-            day: period.dayFor(selectedDay!),
-            period: period,
           ),
       ],
     );
@@ -408,8 +454,8 @@ class _ActivityTargetSummary extends StatelessWidget {
           value: DateFormatters.formatCount(period.fullTarget ?? 0),
         ),
         _SummaryMetricData(
-          label: l10n.homeTargetToDate,
-          value: DateFormatters.formatCount(period.targetToDate ?? 0),
+          label: l10n.homeRemaining,
+          value: DateFormatters.formatCount(period.remainingTarget ?? 0),
         ),
       ]);
     }
@@ -514,6 +560,7 @@ class _ActivityBarChart extends StatelessWidget {
 
   final QazaActivityPeriod period;
   final bool labelsAreDates;
+  final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
 
   @override
@@ -612,7 +659,7 @@ class _ActivityBarChart extends StatelessWidget {
                     BarChartRodData(
                       toY: period.days[index].completed.toDouble(),
                       width: labelsAreDates ? 20 : 15,
-                      color: theme.colorScheme.primary,
+                      color: _barColor(context, period.days[index]),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),
                       ),
@@ -624,6 +671,17 @@ class _ActivityBarChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _barColor(BuildContext context, QazaDailyActivity day) {
+    final scheme = Theme.of(context).colorScheme;
+    final selected =
+        selectedDay != null && day.date == DateTime(
+          selectedDay!.year,
+          selectedDay!.month,
+          selectedDay!.day,
+        );
+    return selected ? scheme.primary : scheme.primary.withAlpha(120);
   }
 
   String _chartSemantics(BuildContext context) {
@@ -792,34 +850,6 @@ class _ActivityDayDetails extends ConsumerWidget {
 
     if (selected == null) return const SizedBox.shrink();
 
-    if (selected.isFuture) {
-      return Card(
-        key: const Key('home_activity_day_details'),
-        margin: const EdgeInsets.only(top: 12),
-        color: theme.colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Icon(
-                Icons.event_available_rounded,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.homeFutureDay,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     final prayers = isToday
         ? enabledNow
         : PrayerType.values.toList(growable: false);
@@ -846,7 +876,7 @@ class _ActivityDayDetails extends ConsumerWidget {
               label: l10n.homeCompleted,
               value: selected.completed.toString(),
             ),
-            if (isToday && period.targetAvailable) ...[
+            if (period.targetAvailable && selected.target > 0) ...[
               _DetailMetricRow(
                 label: l10n.homeDailyTarget,
                 value: period.dailyTarget.toString(),
