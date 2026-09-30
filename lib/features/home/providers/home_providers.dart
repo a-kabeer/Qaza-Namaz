@@ -63,8 +63,7 @@ final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
   final activityRepository = repository as QazaActivityRepository;
   return QazaActivityService(
     activityRepository,
-    // History is factual; current profile eligibility must not erase it.
-    enabledPrayerTypes: allPrayerTypes,
+    enabledPrayerTypes: ref.watch(enabledPrayerTypesProvider),
   );
 });
 
@@ -128,6 +127,7 @@ final homeQazaActivityWeekProvider =
         today: today,
         dailyTarget: target,
         targetAvailable: targetAvailable,
+        prayerTypes: allPrayerTypes,
       );
 });
 
@@ -159,6 +159,7 @@ final homeQazaActivityMonthProvider =
         today: today,
         dailyTarget: target,
         targetAvailable: targetAvailable,
+        prayerTypes: allPrayerTypes,
       );
 });
 
@@ -183,6 +184,7 @@ final homeQazaActivityYearProvider =
         userId: userId,
         year: normalizedYear,
         today: today,
+        prayerTypes: allPrayerTypes,
       );
 });
 
