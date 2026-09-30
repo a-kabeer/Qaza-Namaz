@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_operation.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/services/qaza_service.dart';
 
@@ -87,8 +86,6 @@ class _QazaImportRequest {
     required this.userId,
     required this.dates,
     required this.prayers,
-    required this.operationType,
-    required this.inputSnapshot,
     this.earliestDate,
     this.today,
     this.witrAllowed = true,
@@ -97,8 +94,6 @@ class _QazaImportRequest {
   final String userId;
   final List<DateTime> dates;
   final Set<PrayerType> prayers;
-  final QazaOperationType operationType;
-  final Map<String, dynamic> inputSnapshot;
   final DateTime? earliestDate;
   final DateTime? today;
   final bool witrAllowed;
@@ -120,8 +115,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayers,
-    required QazaOperationType operationType,
-    required Map<String, dynamic> inputSnapshot,
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
@@ -135,8 +128,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       userId: userId,
       dates: dateList,
       prayers: prayerSet,
-      operationType: operationType,
-      inputSnapshot: Map.unmodifiable(inputSnapshot),
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
@@ -173,19 +164,11 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
   Future<void> _run(_QazaImportRequest request) async {
     final stopwatch = Stopwatch()..start();
-    QazaOperation? operation;
     try {
-      operation = await ref.read(qazaOperationServiceProvider).begin(
-            userId: request.userId,
-            type: request.operationType,
-            inputSnapshot: request.inputSnapshot,
-          );
       final result = await ref.read(qazaServiceProvider).importQazaForDates(
             userId: request.userId,
             dates: request.dates,
             prayerTypes: request.prayers,
-            operationId: operation.operationId,
-            operationCreatedAt: operation.createdAt,
             earliestDate: request.earliestDate,
             today: request.today,
             witrAllowed: request.witrAllowed,
@@ -204,14 +187,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
             },
           );
       stopwatch.stop();
-      await ref.read(qazaOperationServiceProvider).finish(
-            operation,
-            status: result.cancelled
-                ? QazaOperationStatus.partial
-                : QazaOperationStatus.completed,
-            affectedRecordCount: result.added,
-            note: result.cancelled ? 'Cancelled by user.' : null,
-          );
       ref.invalidate(progressSummaryProvider);
       state = state.copyWith(
         phase: result.cancelled
@@ -228,25 +203,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       );
     } catch (error, stack) {
       stopwatch.stop();
-      if (operation != null) {
-        try {
-          await ref.read(qazaOperationServiceProvider).finish(
-                operation,
-                status: state.added > 0
-                    ? QazaOperationStatus.partial
-                    : QazaOperationStatus.failed,
-                affectedRecordCount: state.added,
-                note: error.toString(),
-              );
-        } catch (finishError, finishStack) {
-          ref.read(diagnosticsProvider).recordFailure(
-                DiagnosticArea.importData,
-                'qaza_import_operation_finish_failed',
-                finishError,
-                stack: finishStack,
-              );
-        }
-      }
       ref.invalidate(progressSummaryProvider);
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.importData,
@@ -263,4 +219,5 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       );
     }
   }
+}
 }
