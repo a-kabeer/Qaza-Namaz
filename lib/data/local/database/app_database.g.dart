@@ -192,7 +192,6 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   const QazaRecordRow(
       {required this.id,
       required this.userId,
-      this.operationId,
       required this.prayerType,
       required this.originalDate,
       required this.status,
@@ -243,7 +242,6 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     return QazaRecordRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String>(json['userId']),
-      operationId: serializer.fromJson<String?>(json['operationId']),
       prayerType: serializer.fromJson<String>(json['prayerType']),
       originalDate: serializer.fromJson<DateTime>(json['originalDate']),
       status: serializer.fromJson<String>(json['status']),
@@ -259,7 +257,6 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'userId': serializer.toJson<String>(userId),
-      'operationId': serializer.toJson<String?>(operationId),
       'prayerType': serializer.toJson<String>(prayerType),
       'originalDate': serializer.toJson<DateTime>(originalDate),
       'status': serializer.toJson<String>(status),
@@ -283,7 +280,6 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       QazaRecordRow(
         id: id ?? this.id,
         userId: userId ?? this.userId,
-        operationId: operationId.present ? operationId.value : this.operationId,
         prayerType: prayerType ?? this.prayerType,
         originalDate: originalDate ?? this.originalDate,
         status: status ?? this.status,
@@ -330,7 +326,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, operationId, prayerType,
+  int get hashCode => Object.hash(id, userId, prayerType,
       originalDate, status, completedAt, completionId, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
@@ -338,7 +334,6 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       (other is QazaRecordRow &&
           other.id == this.id &&
           other.userId == this.userId &&
-          other.operationId == this.operationId &&
           other.prayerType == this.prayerType &&
           other.originalDate == this.originalDate &&
           other.status == this.status &&
@@ -362,7 +357,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   const QazaRecordsCompanion({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
-    this.operationId = const Value.absent(),
     this.prayerType = const Value.absent(),
     this.originalDate = const Value.absent(),
     this.status = const Value.absent(),
@@ -375,7 +369,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   QazaRecordsCompanion.insert({
     required String id,
     required String userId,
-    Value<String?> operationId = const Value.absent(),
     required String prayerType,
     required DateTime originalDate,
     required String status,
@@ -386,7 +379,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         userId = Value(userId),
-        operationId = operationId,
         prayerType = Value(prayerType),
         originalDate = Value(originalDate),
         status = Value(status),
@@ -395,7 +387,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   static Insertable<QazaRecordRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
-    Expression<String>? operationId,
     Expression<String>? prayerType,
     Expression<DateTime>? originalDate,
     Expression<String>? status,
@@ -408,7 +399,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (userId != null) 'user_id': userId,
-      if (operationId != null) 'operation_id': operationId,
       if (prayerType != null) 'prayer_type': prayerType,
       if (originalDate != null) 'original_date': originalDate,
       if (status != null) 'status': status,
@@ -423,7 +413,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   QazaRecordsCompanion copyWith(
       {Value<String>? id,
       Value<String>? userId,
-      Value<String?>? operationId,
       Value<String>? prayerType,
       Value<DateTime>? originalDate,
       Value<String>? status,
@@ -435,7 +424,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     return QazaRecordsCompanion(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      operationId: operationId ?? this.operationId,
       prayerType: prayerType ?? this.prayerType,
       originalDate: originalDate ?? this.originalDate,
       status: status ?? this.status,
@@ -488,7 +476,6 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     return (StringBuffer('QazaRecordsCompanion(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
-          ..write('operationId: $operationId, ')
           ..write('prayerType: $prayerType, ')
           ..write('originalDate: $originalDate, ')
           ..write('status: $status, ')
@@ -1055,7 +1042,6 @@ typedef $$QazaRecordsTableUpdateCompanionBuilder = QazaRecordsCompanion
     Function({
   Value<String> id,
   Value<String> userId,
-  Value<String?> operationId,
   Value<String> prayerType,
   Value<DateTime> originalDate,
   Value<String> status,
