@@ -1,5 +1,6 @@
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/utils/qaza_date.dart';
+import 'qaza_record.dart';
 
 enum QazaAdditionMode { single, range, multiple }
 
