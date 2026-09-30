@@ -68,6 +68,8 @@ void main() {
       );
 
       expect(chart.data.barGroups, hasLength(7));
+      expect(chart.data.barGroups.first.x, 0);
+      expect(chart.data.barGroups.last.x, 6);
       expect(chart.data.barGroups.last.barRods.single.toY, 2);
       expect(
         chart.data.barGroups.last.barRods.single.backDrawRodData?.toY,
