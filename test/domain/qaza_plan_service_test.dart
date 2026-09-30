@@ -32,7 +32,8 @@ void main() {
       plan.prayerBreakdown.keys.where((prayer) => prayer != PrayerType.witr),
       hasLength(5),
     );
-  });\n
+  });
+
   test('non-zero Qaza plan remains based on Gregorian milestone dates', () {
     final profile = UserProfile(
       languageCode: 'en',
