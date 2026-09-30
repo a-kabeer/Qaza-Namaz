@@ -12,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'add_qaza_screen.dart';
 import 'qaza_tracker_screen.dart';
+import 'qaza_addition_history_screen.dart';
 
 class QazaAdditionDetailScreen extends ConsumerWidget {
   const QazaAdditionDetailScreen({
