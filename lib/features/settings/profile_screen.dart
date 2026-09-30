@@ -66,7 +66,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (!mounted) return;
 
       ProfileQazaChangeChoice? choice;
-      if (preview.calculationChanged) {
+      if (preview.requiresUserDecision) {
         choice = await showProfileQazaChangeDialog(
           context: context,
           preview: preview,
