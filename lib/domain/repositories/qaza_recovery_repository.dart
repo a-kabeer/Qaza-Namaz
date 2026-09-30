@@ -67,6 +67,16 @@ abstract class QazaRecoveryRepository {
     required DateTime deletedAt,
   });
 
+  /// Soft-deletes only pending records that were created by the expected
+  /// generation operation and have not been edited since creation.
+  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime expectedCreatedAt,
+    required DateTime deletedAt,
+    required String operationId,
+  });
+
   Future<QazaOperationSummary> getOperationSummary({
     required String userId,
     required String operationId,
