@@ -89,7 +89,7 @@ class SaveProfileUseCase {
         keptExistingQaza: result.keptExisting,
         revision: result.revision,
       );
-    } catch (error) {
+    } catch (_) {
       // Restore the previous profile so a failed reconciliation never leaves
       // the profile pointing at a calculation that was not successfully saved.
       try {
