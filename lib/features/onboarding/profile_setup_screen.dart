@@ -43,7 +43,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _draft = profile;
     final repository = ref.read(userProfileRepositoryProvider);
     _saveQueue = _saveQueue.then(
-      (_) => repository.save(profile.copyWith(onboardingCompleted: false)),
+      (_) => ref.read(saveProfileUseCaseProvider).saveDraft(profile),
     );
   }
 
@@ -66,7 +66,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // the optional Witr count, so this is the domain result's exact number
     // of records this onboarding import would generate before duplicates.
     if (plan.totalWithWitr == 0) {
-      await _finishOnboarding(finalizedProfile);
+      await _finishOnboarding(
+        finalizedProfile,
+        plan: plan,
+      );
       return;
     }
 
@@ -90,14 +93,24 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted || action != QazaReviewAction.add) return;
 
-    // QazaReviewDialog only returns the add action after the existing import
-    // task reports completed. Starting the task is not treated as completion.
-    await _finishOnboarding(finalizedProfile);
+    // QazaReviewDialog returns the add action only after the existing import
+    // task has completed, so its operation id is ready for the plan revision.
+    await _finishOnboarding(
+      finalizedProfile,
+      plan: plan,
+      generatedOperationId: ref.read(qazaImportProvider).operationId,
+    );
   }
 
-  Future<void> _finishOnboarding(UserProfile profile) async {
-    await ref.read(userProfileRepositoryProvider).save(
-          profile.copyWith(onboardingCompleted: true),
+  Future<void> _finishOnboarding(
+    UserProfile profile, {
+    required QazaPlan plan,
+    String? generatedOperationId,
+  }) async {
+    await ref.read(saveProfileUseCaseProvider).completeOnboarding(
+          profile: profile.copyWith(onboardingCompleted: true),
+          plan: plan,
+          generatedOperationId: generatedOperationId,
         );
     ref.invalidate(userProfileProvider);
 
@@ -111,7 +124,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Future<bool> _startQazaPlanImport(QazaPlan plan) async {
-    final userId = ref.read(requiredUserIdProvider);
+    final userId = UserProfile.localLedgerUserId;
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
     final inputSnapshot = <String, dynamic>{
@@ -121,6 +134,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       'totalDays': plan.totalDays,
       'includeWitr': plan.includeWitr,
       'prayers': prayers.map((prayer) => prayer.name).toList(growable: false),
+      'profile': {
+        'gender': profile.gender?.name,
+        'madhab': profile.madhab?.name,
+        'dateOfBirth': profile.dateOfBirth?.toIso8601String(),
+        'pubertyAge': profile.pubertyAge,
+        'startPrayingAge': profile.startPrayingAge,
+        'effectiveWitr': ProfileRules.effectiveWitr(profile),
+      },
     };
     return ref.read(qazaImportProvider.notifier).start(
           userId: userId,
