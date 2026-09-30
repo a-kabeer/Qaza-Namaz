@@ -27,6 +27,7 @@ class ProfileQazaPlanPreview {
     required this.existingCompletedInNewPlan,
     required this.pendingToAdd,
     required this.recordsToRemove,
+    required this.recordsToRestore,
   });
 
   final QazaPlan? oldPlan;
@@ -36,10 +37,14 @@ class ProfileQazaPlanPreview {
   final int existingCompletedInNewPlan;
   final int pendingToAdd;
   final List<QazaRecord> recordsToRemove;
+  final List<QazaRecord> recordsToRestore;
 
+  QazaPlan? get previousLedgerPlan => oldRevision?.ledgerPlan ?? oldPlan;
   int get pendingToRemove => recordsToRemove.length;
+  int get pendingToRestore => recordsToRestore.length;
   int get newPlanTotal => newPlan.totalWithWitr;
-  bool get hasLedgerChanges => pendingToAdd > 0 || pendingToRemove > 0;
+  bool get hasLedgerChanges =>
+      pendingToAdd > 0 || pendingToRemove > 0 || pendingToRestore > 0;
   bool get requiresReview => pendingToRemove > 0;
 }
 
@@ -48,12 +53,14 @@ class ProfileQazaPlanReconciliationResult {
     required this.revision,
     required this.added,
     required this.removed,
+    required this.restored,
     required this.keptExisting,
   });
 
   final QazaPlanRevision revision;
   final int added;
   final int removed;
+  final int restored;
   final bool keptExisting;
 }
 
@@ -78,39 +85,48 @@ class ProfileQazaPlanReconciliationService {
     required UserProfile oldProfile,
     required UserProfile newProfile,
   }) async {
-    final oldPlan = _planService.planFor(oldProfile);
+    final oldProfilePlan = _planService.planFor(oldProfile);
     final newPlan = _planService.planFor(newProfile);
     if (newPlan == null) {
       throw StateError('A valid Qaza plan could not be calculated.');
     }
 
     final oldRevision = await _revisionRepository.latest(userId);
+    final oldLedgerFingerprint =
+        oldRevision?.ledgerPlanFingerprint ?? 
+        (oldProfilePlan == null ? null : planFingerprint(oldProfilePlan));
     final calculationChanged =
-        oldPlan == null || planFingerprint(oldPlan) != planFingerprint(newPlan);
+        oldLedgerFingerprint == null ||
+        oldLedgerFingerprint != planFingerprint(newPlan);
 
     if (!calculationChanged) {
       return ProfileQazaPlanPreview(
-        oldPlan: oldPlan,
+        oldPlan: oldProfilePlan,
         newPlan: newPlan,
         oldRevision: oldRevision,
         calculationChanged: false,
         existingCompletedInNewPlan: 0,
         pendingToAdd: 0,
         recordsToRemove: const [],
+        recordsToRestore: const [],
       );
     }
 
     final records = await _loadRecordsForPlan(userId, newPlan);
     final newPlanKeys = _planKeys(userId, newPlan);
+    final existingKeys = <String>{};
 
     var completed = 0;
-    final existingKeys = <String>{};
+    final deletedRecords = <QazaRecord>[];
     for (final record in records) {
       final key = _recordKey(record);
       existingKeys.add(key);
       if (record.status == QazaStatus.completed &&
           newPlanKeys.contains(key)) {
         completed++;
+      }
+      if (record.status == QazaStatus.deleted) {
+        deletedRecords.add(record);
       }
     }
 
@@ -136,14 +152,31 @@ class ProfileQazaPlanReconciliationService {
       }
     }
 
+    final recordsToRestore = await _loadRestorableDeletedRecords(
+      userId: userId,
+      deletedRecords: deletedRecords,
+      generationOperationIds: generationOperationIds,
+      retirementOperationIds:
+          oldRevision?.retirementOperationIds ?? const <String>[],
+    );
+
+    final restorableKeys = {
+      for (final record in recordsToRestore) _recordKey(record),
+    };
+    final pendingToAdd = newPlanKeys
+        .difference(existingKeys)
+        .difference(restorableKeys)
+        .length;
+
     return ProfileQazaPlanPreview(
-      oldPlan: oldPlan,
+      oldPlan: oldProfilePlan,
       newPlan: newPlan,
       oldRevision: oldRevision,
       calculationChanged: true,
       existingCompletedInNewPlan: completed,
-      pendingToAdd: newPlanKeys.difference(existingKeys).length,
+      pendingToAdd: pendingToAdd,
       recordsToRemove: List.unmodifiable(recordsToRemove),
+      recordsToRestore: List.unmodifiable(recordsToRestore),
     );
   }
 
@@ -153,20 +186,30 @@ class ProfileQazaPlanReconciliationService {
     required ProfileQazaPlanPreview preview,
     required ProfileQazaChangeChoice choice,
   }) async {
+    final oldLedgerPlan = preview.oldRevision?.ledgerPlan ??
+        preview.oldPlan ??
+        preview.newPlan;
+    final oldGenerationIds =
+        preview.oldRevision?.generationOperationIds ?? const <String>[];
+    final oldRetirementIds =
+        preview.oldRevision?.retirementOperationIds ?? const <String>[];
+
     if (!preview.calculationChanged) {
       final revision = await _saveRevision(
         userId: userId,
         profile: newProfile,
         plan: preview.newPlan,
+        ledgerPlan: oldLedgerPlan,
         generatedOperationId: null,
-        generationOperationIds:
-            preview.oldRevision?.generationOperationIds ?? const <String>[],
+        generationOperationIds: oldGenerationIds,
+        retirementOperationIds: oldRetirementIds,
         decision: QazaPlanLedgerDecision.applied,
       );
       return ProfileQazaPlanReconciliationResult(
         revision: revision,
         added: 0,
         removed: 0,
+        restored: 0,
         keptExisting: false,
       );
     }
@@ -180,6 +223,7 @@ class ProfileQazaPlanReconciliationService {
         plan: preview.newPlan,
         pendingToAdd: preview.pendingToAdd,
         pendingToRemove: preview.pendingToRemove,
+        pendingToRestore: preview.pendingToRestore,
         choice: choice,
       ),
     );
@@ -196,14 +240,17 @@ class ProfileQazaPlanReconciliationService {
           userId: userId,
           profile: newProfile,
           plan: preview.newPlan,
+          ledgerPlan: oldLedgerPlan,
           generatedOperationId: null,
-          generationOperationIds: const <String>[],
+          generationOperationIds: oldGenerationIds,
+          retirementOperationIds: oldRetirementIds,
           decision: QazaPlanLedgerDecision.keptExisting,
         );
         return ProfileQazaPlanReconciliationResult(
           revision: revision,
           added: 0,
           removed: 0,
+          restored: 0,
           keptExisting: true,
         );
       } catch (error) {
@@ -233,9 +280,47 @@ class ProfileQazaPlanReconciliationService {
     }
 
     final removedRecords = <QazaRecord>[];
+    final restoredRecords = <QazaRecord>[];
     var added = 0;
 
     try {
+      // Restore only records that this app previously retired during profile
+      // reconciliation and whose tombstone timestamp still matches that
+      // retirement operation. Manual deletions remain untouched.
+      final currentRestoreCandidates =
+          await _qazaService.repository.getRecordsByIds(
+        userId: userId,
+        recordIds: [
+          for (final record in preview.recordsToRestore) record.id,
+        ],
+      );
+      final currentById = {
+        for (final record in currentRestoreCandidates) record.id: record,
+      };
+      final safeRestoreIds = <String>[];
+      for (final expected in preview.recordsToRestore) {
+        final current = currentById[expected.id];
+        if (current == null) continue;
+        if (current.status != QazaStatus.deleted) continue;
+        if (!current.updatedAt.isAtSameMomentAs(expected.updatedAt)) continue;
+        safeRestoreIds.add(current.id);
+      }
+      if (safeRestoreIds.isNotEmpty) {
+        restoredRecords.addAll(
+          await recovery.restoreDeletedRecords(
+            userId: userId,
+            recordIds: safeRestoreIds,
+            restoredAt: DateTime.now(),
+            operationId: operation.operationId,
+          ).then(
+            (_) async => _qazaService.repository.getRecordsByIds(
+              userId: userId,
+              ids: safeRestoreIds,
+            ),
+          ),
+        );
+      }
+
       if (preview.pendingToAdd > 0) {
         final importResult = await _qazaService.importQazaForDates(
           userId: userId,
@@ -268,23 +353,27 @@ class ProfileQazaPlanReconciliationService {
             userId: userId,
             recordIds: entry.value,
             expectedCreatedAt: expectedCreatedAt,
-            deletedAt: DateTime.now(),
+            deletedAt: operation.createdAt,
             operationId: operation.operationId,
           ),
         );
       }
 
-      final previousIds =
-          preview.oldRevision?.generationOperationIds ?? const <String>[];
-      final nextGenerationIds = <String>{
-        ...previousIds,
-        if (added > 0) operation.operationId,
-      };
+      final nextGenerationIds = <String>{...oldGenerationIds};
+      if (added > 0) {
+        nextGenerationIds.add(operation.operationId);
+      }
+
+      final nextRetirementIds = <String>{...oldRetirementIds};
+      if (removedRecords.isNotEmpty) {
+        nextRetirementIds.add(operation.operationId);
+      }
 
       await _operationService.finish(
         operation,
         status: QazaOperationStatus.completed,
-        affectedRecordCount: added + removedRecords.length,
+        affectedRecordCount:
+            added + removedRecords.length + restoredRecords.length,
         note: 'Profile Qaza plan reconciled.',
       );
 
@@ -292,8 +381,10 @@ class ProfileQazaPlanReconciliationService {
         userId: userId,
         profile: newProfile,
         plan: preview.newPlan,
+        ledgerPlan: preview.newPlan,
         generatedOperationId: added > 0 ? operation.operationId : null,
         generationOperationIds: nextGenerationIds,
+        retirementOperationIds: nextRetirementIds,
         decision: QazaPlanLedgerDecision.applied,
       );
 
@@ -301,6 +392,7 @@ class ProfileQazaPlanReconciliationService {
         revision: revision,
         added: added,
         removed: removedRecords.length,
+        restored: restoredRecords.length,
         keptExisting: false,
       );
     } catch (error) {
@@ -323,6 +415,16 @@ class ProfileQazaPlanReconciliationService {
             operationId: operation.operationId,
           );
         }
+        if (restoredRecords.isNotEmpty) {
+          await recovery.softDeleteRecords(
+            userId: userId,
+            recordIds: [
+              for (final record in restoredRecords) record.id,
+            ],
+            deletedAt: DateTime.now(),
+            operationId: operation.operationId,
+          );
+        }
       } catch (_) {
         // Preserve the original failure.
       }
@@ -331,7 +433,8 @@ class ProfileQazaPlanReconciliationService {
         await _operationService.finish(
           operation,
           status: QazaOperationStatus.failed,
-          affectedRecordCount: added + removedRecords.length,
+          affectedRecordCount:
+              added + removedRecords.length + restoredRecords.length,
           note: error.toString(),
         );
       } catch (_) {}
@@ -349,10 +452,12 @@ class ProfileQazaPlanReconciliationService {
       userId: userId,
       profile: profile,
       plan: plan,
+      ledgerPlan: plan,
       generatedOperationId: generatedOperationId,
       generationOperationIds: generatedOperationId == null
           ? const <String>[]
           : [generatedOperationId],
+      retirementOperationIds: const <String>[],
       decision: QazaPlanLedgerDecision.applied,
     );
   }
@@ -381,8 +486,10 @@ class ProfileQazaPlanReconciliationService {
     required String userId,
     required UserProfile profile,
     required QazaPlan plan,
+    required QazaPlan ledgerPlan,
     required String? generatedOperationId,
     required Iterable<String> generationOperationIds,
+    required Iterable<String> retirementOperationIds,
     required QazaPlanLedgerDecision decision,
   }) async {
     final now = DateTime.now();
@@ -397,8 +504,11 @@ class ProfileQazaPlanReconciliationService {
       planFingerprint: planFingerprint(plan),
       profileSnapshot: profileSnapshot(profile),
       generationOperationIds: generationOperationIds,
+      retirementOperationIds: retirementOperationIds,
       ledgerDecision: decision,
       generatedOperationId: generatedOperationId,
+      ledgerPlan: ledgerPlan,
+      ledgerPlanFingerprint: planFingerprint(ledgerPlan),
     );
     await _revisionRepository.save(revision);
     return revision;
@@ -493,6 +603,43 @@ class ProfileQazaPlanReconciliationService {
     return records;
   }
 
+  Future<List<QazaRecord>> _loadRestorableDeletedRecords({
+    required String userId,
+    required List<QazaRecord> deletedRecords,
+    required Iterable<String> generationOperationIds,
+    required Iterable<String> retirementOperationIds,
+  }) async {
+    if (deletedRecords.isEmpty ||
+        generationOperationIds.isEmpty ||
+        retirementOperationIds.isEmpty) {
+      return const <QazaRecord>[];
+    }
+
+    final generationIds = generationOperationIds.toSet();
+    final retirementTimes = <int>{};
+    for (final operationId in retirementOperationIds.toSet()) {
+      final operation = await _operationService.repository.get(
+        userId,
+        operationId,
+      );
+      if (operation?.type == QazaOperationType.profileReconciliation) {
+        retirementTimes.add(operation!.createdAt.microsecondsSinceEpoch);
+      }
+    }
+
+    if (retirementTimes.isEmpty) return const <QazaRecord>[];
+
+    return [
+      for (final record in deletedRecords)
+        if (record.operationId != null &&
+            generationIds.contains(record.operationId) &&
+            retirementTimes.contains(
+              record.updatedAt.microsecondsSinceEpoch,
+            ))
+          record,
+    ];
+  }
+
   static DateTime planDateAt(QazaPlan plan, int offset) =>
       plan.startDate.add(Duration(days: offset));
 
@@ -531,12 +678,14 @@ class ProfileQazaPlanReconciliationService {
     required QazaPlan plan,
     required int pendingToAdd,
     required int pendingToRemove,
+    required int pendingToRestore,
     required ProfileQazaChangeChoice choice,
   }) =>
       {
-        'version': 1,
+        'version': 2,
         'choice': choice.name,
         'oldRevisionId': oldRevision?.revisionId,
+        'oldLedgerPlanFingerprint': oldRevision?.ledgerPlanFingerprint,
         'profile': profileSnapshot(profile),
         'plan': {
           'startDate': plan.startDate.toIso8601String(),
@@ -549,5 +698,6 @@ class ProfileQazaPlanReconciliationService {
         },
         'pendingToAdd': pendingToAdd,
         'pendingToRemove': pendingToRemove,
+        'pendingToRestore': pendingToRestore,
       };
 }
