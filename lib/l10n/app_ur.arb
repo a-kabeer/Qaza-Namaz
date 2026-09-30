@@ -489,6 +489,9 @@
   "homePreviousYear": "پچھلا سال",
   "homeNextYear": "اگلا سال",
   "homeFutureDay": "آنے والا دن",
+  "homeDailyGoalsTitle": "آپ کے روزانہ کے اہداف",
+  "homeLastSevenDays": "گزشتہ 7 دن",
+  "homeGoalsAchieved": "ہدف حاصل کیا",
   "homeWeeklyTarget": "آپ کا ہفتہ وار ہدف",
   "homeWeeklyTargetProgress": "{target} میں سے {completed}",
   "@homeWeeklyTargetProgress": {
