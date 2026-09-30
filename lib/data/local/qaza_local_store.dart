@@ -3,7 +3,6 @@ import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../core/utils/qaza_completion_id.dart';
-import '../../domain/repositories/qaza_recovery_repository.dart';
 
 /// Remote operations the outbox can replay.
 ///
@@ -96,58 +95,11 @@ class LocalQazaPage {
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
-class LocalQazaHistoryPage {
-  const LocalQazaHistoryPage({required this.records, required this.hasMore});
-  final List<QazaRecord> records;
-  final bool hasMore;
-  DateTime? get nextOriginalDate =>
-      records.isEmpty ? null : records.last.originalDate;
-  String? get nextId => records.isEmpty ? null : records.last.id;
-}
-
 abstract class QazaLocalStore {
   Future<OfflineCacheSnapshot> load();
   Future<void> saveRecords(String userId, List<QazaRecord> records);
   Future<void> saveOutbox(String userId, List<PendingSyncOp> ops);
   Future<void> saveLastSync(String userId, DateTime? lastSync);
-
-  /// Bounded keyset page for soft-deleted records, ordered by deletion time.
-  Future<LocalQazaHistoryPage> getRecentlyDeletedPage({
-    required String userId,
-    int limit = 50,
-    Iterable<PrayerType>? prayerTypes,
-    DateTime? beforeDeletedAt,
-    String? beforeId,
-  }) async {
-    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((beforeDeletedAt == null) != (beforeId == null)) {
-      throw ArgumentError(
-          'beforeDeletedAt and beforeId must be provided together');
-    }
-    final snapshot = await load();
-    var records = List<QazaRecord>.of(
-        snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
-      ..removeWhere((r) => r.status != QazaStatus.deleted)
-      ..removeWhere((r) =>
-          prayerTypes != null && !prayerTypes.contains(r.prayerType))
-      ..sort((a, b) {
-        final d = b.updatedAt.compareTo(a.updatedAt);
-        return d != 0 ? d : b.id.compareTo(a.id);
-      });
-    if (beforeDeletedAt != null) {
-      records = records
-          .where((r) =>
-              r.updatedAt.isBefore(beforeDeletedAt) ||
-              (r.updatedAt.isAtSameMomentAs(beforeDeletedAt) &&
-                  r.id.compareTo(beforeId!) < 0))
-          .toList();
-    }
-    final hasMore = records.length > limit;
-    return LocalQazaHistoryPage(
-      records: records.take(limit).toList(growable: false),
-      hasMore: hasMore,
-    );
-  }
 
   /// Retires all local records and pending sync operations owned by [userId].
   ///
@@ -167,9 +119,10 @@ abstract class QazaLocalStore {
       DateTime? afterOriginalDate,
       String? afterId}) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null)) {
-      throw ArgumentError(
-          'afterOriginalDate and afterId must be provided together');
+    if ((afterOriginalDate == null) != (afterId == null) ||
+        (beforeOriginalDate == null) != (beforeId == null) ||
+        (afterOriginalDate != null && beforeOriginalDate != null)) {
+      throw ArgumentError('Exactly one complete pagination cursor may be provided');
     }
     if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
@@ -187,8 +140,12 @@ abstract class QazaLocalStore {
       ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
       ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
       ..sort((a, b) {
-        final d = a.originalDate.compareTo(b.originalDate);
-        return d != 0 ? d : a.id.compareTo(b.id);
+        final d = descending
+            ? b.originalDate.compareTo(a.originalDate)
+            : a.originalDate.compareTo(b.originalDate);
+        return d != 0
+            ? d
+            : (descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id));
       });
     if (afterOriginalDate != null) {
       records = records
@@ -197,10 +154,19 @@ abstract class QazaLocalStore {
               (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
                   r.id.compareTo(afterId!) > 0))
           .toList();
+    } else if (beforeOriginalDate != null) {
+      records = records
+          .where((r) =>
+              r.originalDate.isBefore(beforeOriginalDate) ||
+              (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
+                  r.id.compareTo(beforeId!) < 0))
+          .toList();
     }
     final hasMore = records.length > limit;
     return LocalQazaPage(
-        records: records.take(limit).toList(growable: false), hasMore: hasMore);
+      records: records.take(limit).toList(growable: false),
+      hasMore: hasMore,
+    );
   }
 
   Future<QazaRecord?> getOldestPending(
@@ -211,108 +177,6 @@ abstract class QazaLocalStore {
         prayerType: prayerType,
         status: QazaStatus.pending);
     return page.records.isEmpty ? null : page.records.first;
-  }
-
-  Future<LocalQazaHistoryPage> getHistoryPage(
-      {required String userId,
-      int limit = 50,
-      PrayerType? prayerType,
-      Iterable<PrayerType>? prayerTypes,
-      QazaStatus? status = QazaStatus.completed,
-      DateTime? from,
-      DateTime? to,
-      DateTime? beforeOriginalDate,
-      String? beforeId}) async {
-    if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((beforeOriginalDate == null) != (beforeId == null)) {
-      throw ArgumentError(
-          'beforeOriginalDate and beforeId must be provided together');
-    }
-    if (from != null && to != null && from.isAfter(to)) {
-      throw ArgumentError('from must be <= to');
-    }
-    final snapshot = await load();
-    var records = List<QazaRecord>.of(
-        snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
-      ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
-      ..removeWhere((r) =>
-          prayerTypes != null && !prayerTypes.contains(r.prayerType))
-      ..removeWhere((r) => status == QazaStatus.deleted
-          ? r.status != QazaStatus.deleted
-          : r.status == QazaStatus.deleted ||
-              (status != null && r.status != status))
-      ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
-      ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
-      ..sort((a, b) {
-        final d = b.originalDate.compareTo(a.originalDate);
-        return d != 0 ? d : b.id.compareTo(a.id);
-      });
-    if (beforeOriginalDate != null) {
-      records = records
-          .where((r) =>
-              r.originalDate.isBefore(beforeOriginalDate) ||
-              (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
-                  r.id.compareTo(beforeId!) < 0))
-          .toList();
-    }
-    final hasMore = records.length > limit;
-    return LocalQazaHistoryPage(
-        records: records.take(limit).toList(growable: false), hasMore: hasMore);
-  }
-
-  /// Operation-scoped pagination. A null status intentionally includes
-  /// soft-deleted records so Operation Details can show the complete lifecycle.
-  Future<LocalQazaPage> getOperationPage({
-    required String userId,
-    required String operationId,
-    required bool matchLastAction,
-    required DateTime operationAt,
-    QazaStatus? status,
-    Iterable<PrayerType>? prayerTypes,
-    int limit = 50,
-    DateTime? beforeOriginalDate,
-    String? beforeId,
-  }) async {
-    if (limit < 1 || limit > 500) {
-      throw ArgumentError.value(limit, 'limit');
-    }
-    if ((beforeOriginalDate == null) != (beforeId == null)) {
-      throw ArgumentError(
-        'beforeOriginalDate and beforeId must be provided together',
-      );
-    }
-
-    final snapshot = await load();
-    var records = List<QazaRecord>.of(
-      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
-    )
-      ..removeWhere((record) {
-        final actionMatch = matchLastAction
-            ? record.updatedAt.isAtSameMomentAs(operationAt)
-            : record.operationId == operationId;
-        final statusMatch = status == null || record.status == status;
-        final prayerMatch = prayerTypes == null ||
-            prayerTypes.contains(record.prayerType);
-        return !actionMatch || !statusMatch || !prayerMatch;
-      })
-      ..sort((a, b) {
-        final d = b.originalDate.compareTo(a.originalDate);
-        return d != 0 ? d : b.id.compareTo(a.id);
-      });
-
-    if (beforeOriginalDate != null) {
-      records = records.where((record) {
-        return record.originalDate.isBefore(beforeOriginalDate) ||
-            (record.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
-                record.id.compareTo(beforeId!) < 0);
-      }).toList();
-    }
-
-    final hasMore = records.length > limit;
-    return LocalQazaPage(
-      records: records.take(limit).toList(growable: false),
-      hasMore: hasMore,
-    );
   }
 
   Future<List<QazaRecord>> getRecordsByIds({
@@ -390,96 +254,6 @@ abstract class QazaLocalStore {
           record.originalDate.month == originalDate.month &&
           record.originalDate.day == originalDate.day &&
           record.id != excludingRecordId,
-    );
-  }
-
-  /// Safe fallback implementation for non-database stores.
-  /// The Drift implementation performs the predicate atomically in SQLite.
-  Future<List<QazaRecord>> softDeletePendingIfUnchanged({
-    required String userId,
-    required List<String> recordIds,
-    required DateTime expectedCreatedAt,
-    required DateTime deletedAt,
-    required String operationId,
-  }) async {
-    if (recordIds.isEmpty) return const <QazaRecord>[];
-    final snapshot = await load();
-    final records = List<QazaRecord>.of(
-      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
-    );
-    final wanted = recordIds.toSet();
-    final changed = <QazaRecord>[];
-
-    for (var index = 0; index < records.length; index++) {
-      final record = records[index];
-      if (!wanted.contains(record.id) ||
-          record.status != QazaStatus.pending ||
-          !record.createdAt.isAtSameMomentAs(expectedCreatedAt) ||
-          !record.updatedAt.isAtSameMomentAs(expectedCreatedAt)) {
-        continue;
-      }
-      final deleted = record.copyWith(
-        status: QazaStatus.deleted,
-        updatedAt: deletedAt,
-      );
-      records[index] = deleted;
-      changed.add(deleted);
-    }
-
-    if (changed.isEmpty) return const <QazaRecord>[];
-
-    final ops = <PendingSyncOp>[
-      for (final record in changed)
-        PendingSyncOp(
-          id: 'soft_delete_${record.id}_$operationId',
-          type: SyncOpType.update,
-          userId: userId,
-          queuedAt: deletedAt,
-          targetRecordId: record.id,
-          record: record,
-        ),
-    ];
-    await saveRecords(userId, records);
-    final existingOutbox = await loadOutbox(userId);
-    await saveOutbox(userId, [...existingOutbox, ...ops]);
-    return changed;
-  }
-
-  /// Aggregate operation counts for stores without a SQL backend.
-  Future<QazaOperationSummary> getOperationSummary({
-    required String userId,
-    required String operationId,
-    Iterable<PrayerType>? prayerTypes,
-  }) async {
-    final snapshot = await load();
-    final records = snapshot.recordsByUser[userId] ?? const <QazaRecord>[];
-    var pending = 0;
-    var completed = 0;
-    var deleted = 0;
-    var unchangedPending = 0;
-
-    for (final record in records) {
-      if (record.operationId != operationId) continue;
-      if (prayerTypes != null && !prayerTypes.contains(record.prayerType)) {
-        continue;
-      }
-      switch (record.status) {
-        case QazaStatus.pending:
-          pending++;
-          if (record.createdAt.isAtSameMomentAs(record.updatedAt)) {
-            unchangedPending++;
-          }
-        case QazaStatus.completed:
-          completed++;
-        case QazaStatus.deleted:
-          deleted++;
-      }
-    }
-    return QazaOperationSummary(
-      pending: pending,
-      completed: completed,
-      deleted: deleted,
-      unchangedPending: unchangedPending,
     );
   }
 
