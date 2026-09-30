@@ -28,6 +28,7 @@ class QazaActivityService {
     required DateTime today,
     required int dailyTarget,
     bool targetAvailable = true,
+    Iterable<PrayerType>? prayerTypes,
   }) async {
     final normalizedFrom = _dateOnly(from);
     final normalizedTo = _dateOnly(toExclusive);
@@ -37,13 +38,15 @@ class QazaActivityService {
       throw ArgumentError('from must be before toExclusive');
     }
 
-    final rows = enabledPrayerTypes.isEmpty
+    final activityPrayerTypes =
+        List<PrayerType>.unmodifiable(prayerTypes ?? enabledPrayerTypes);
+    final rows = activityPrayerTypes.isEmpty
         ? const <QazaActivityRow>[]
         : await repository.getCompletedActivityRows(
             userId: userId,
             from: normalizedFrom,
             toExclusive: normalizedTo,
-            prayerTypes: enabledPrayerTypes,
+            prayerTypes: activityPrayerTypes,
           );
 
     return buildPeriodFromRows(
@@ -53,7 +56,7 @@ class QazaActivityService {
       today: normalizedToday,
       dailyTarget: dailyTarget,
       targetAvailable: targetAvailable,
-      enabledPrayerTypes: enabledPrayerTypes,
+      enabledPrayerTypes: activityPrayerTypes,
     );
   }
 
@@ -73,6 +76,7 @@ class QazaActivityService {
       today: today,
       dailyTarget: dailyTarget,
       targetAvailable: targetAvailable,
+      prayerTypes: prayerTypes,
     );
   }
 
@@ -117,6 +121,7 @@ class QazaActivityService {
     required DateTime today,
     required int dailyTarget,
     bool targetAvailable = false,
+    Iterable<PrayerType>? prayerTypes,
   }) {
     final normalizedMonth = _dateOnly(month);
     final from = DateTime(normalizedMonth.year, normalizedMonth.month);
@@ -129,6 +134,7 @@ class QazaActivityService {
       today: today,
       dailyTarget: dailyTarget,
       targetAvailable: targetAvailable,
+      prayerTypes: prayerTypes,
     );
   }
 
@@ -136,18 +142,21 @@ class QazaActivityService {
     required String userId,
     required DateTime year,
     required DateTime today,
+    Iterable<PrayerType>? prayerTypes,
   }) async {
     final normalizedYear = DateTime(year.year);
     final from = DateTime(normalizedYear.year, 1, 1);
     final toExclusive = DateTime(normalizedYear.year + 1, 1, 1);
 
-    final rows = enabledPrayerTypes.isEmpty
+    final activityPrayerTypes =
+        List<PrayerType>.unmodifiable(prayerTypes ?? enabledPrayerTypes);
+    final rows = activityPrayerTypes.isEmpty
         ? const <QazaActivityRow>[]
         : await repository.getCompletedActivityRows(
             userId: userId,
             from: from,
             toExclusive: toExclusive,
-            prayerTypes: enabledPrayerTypes,
+            prayerTypes: activityPrayerTypes,
           );
 
     return buildYearFromRows(
@@ -155,7 +164,7 @@ class QazaActivityService {
       from: from,
       toExclusive: toExclusive,
       today: today,
-      enabledPrayerTypes: enabledPrayerTypes,
+      enabledPrayerTypes: activityPrayerTypes,
     );
   }
 
