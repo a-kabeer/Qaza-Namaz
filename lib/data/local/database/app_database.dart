@@ -68,9 +68,6 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await _ensurePerformanceIndexes();
           }
-          if (from < 4) {
-            await m.addColumn(qazaRecords, qazaRecords.operationId);
-          }
           if (from < 5) {
             await m.addColumn(qazaRecords, qazaRecords.completionId);
             await m.addColumn(syncOutbox, syncOutbox.completionId);
