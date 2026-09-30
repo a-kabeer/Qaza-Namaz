@@ -129,7 +129,7 @@ void main() {
     expect(progress.value, 1);
   });
 
-  testWidgets('details action is preserved', (tester) async {
+  testWidgets('entire Weekly Target card opens details', (tester) async {
     var tapped = false;
     final period = _period(completed: 0, dailyTarget: 5);
 
@@ -153,7 +153,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('home_qaza_goals_details')));
+    expect(find.byKey(const Key('home_qaza_goals_details')), findsNothing);
+    await tester.tap(find.byKey(const Key('home_qaza_goals_tap')));
     expect(tapped, isTrue);
   });
 }
