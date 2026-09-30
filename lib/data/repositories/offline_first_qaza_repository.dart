@@ -262,9 +262,21 @@ class OfflineFirstQazaRepository
     required String recordId,
   }) async {
     _validateActive(userId);
-    await _localStore.deleteRecord(
+    if (recordId.isEmpty) return;
+
+    final deletedAt = DateTime.now();
+    final operation = PendingSyncOp(
+      id: 'delete_${recordId}_${deletedAt.microsecondsSinceEpoch}',
+      type: SyncOpType.delete,
+      userId: userId,
+      queuedAt: deletedAt,
+      targetRecordId: recordId,
+    );
+
+    await _localStore.deleteRecordAndOutbox(
       userId: userId,
       recordId: recordId,
+      operation: operation,
     );
   }
 
