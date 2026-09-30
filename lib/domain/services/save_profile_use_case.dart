@@ -65,19 +65,26 @@ class SaveProfileUseCase {
 
     if (!preview.calculationChanged) {
       await _profileRepository.save(newProfile);
-      final revision = await _reconciliationService.apply(
-        userId: UserProfile.localLedgerUserId,
-        newProfile: newProfile,
-        preview: preview,
-        choice: ProfileQazaChangeChoice.apply,
-      );
-      return ProfileSaveResult(
-        qazaPlanChanged: false,
-        qazaRecordsAdded: 0,
-        qazaRecordsRemoved: 0,
-        keptExistingQaza: false,
-        revision: revision.revision,
-      );
+      try {
+        final revision = await _reconciliationService.apply(
+          userId: UserProfile.localLedgerUserId,
+          newProfile: newProfile,
+          preview: preview,
+          choice: ProfileQazaChangeChoice.apply,
+        );
+        return ProfileSaveResult(
+          qazaPlanChanged: false,
+          qazaRecordsAdded: 0,
+          qazaRecordsRemoved: 0,
+          keptExistingQaza: false,
+          revision: revision.revision,
+        );
+      } catch (_) {
+        try {
+          await _profileRepository.save(oldProfile);
+        } catch (_) {}
+        rethrow;
+      }
     }
 
     await _profileRepository.save(newProfile);
