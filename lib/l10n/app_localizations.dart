@@ -2480,18 +2480,6 @@ abstract class AppLocalizations {
   /// **'Last 7 Days'**
   String get homeLastSevenDays;
 
-  /// No description provided for @homeRangeSevenDays.
-  ///
-  /// In en, this message translates to:
-  /// **'7 Days'**
-  String get homeRangeSevenDays;
-
-  /// No description provided for @homeRangeThirtyDays.
-  ///
-  /// In en, this message translates to:
-  /// **'30 Days'**
-  String get homeRangeThirtyDays;
-
   /// No description provided for @homeRangeWeekly.
   ///
   /// In en, this message translates to:
