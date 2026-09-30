@@ -2513,7 +2513,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeGoalsLastSevenDays.
   ///
   /// In en, this message translates to:
-  /// **'Qaza Goals · Last 7 Days'**
+  /// **'Your daily goals'**
   String get homeGoalsLastSevenDays;
 
   /// No description provided for @homeGoalsAchieved.
