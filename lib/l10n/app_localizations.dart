@@ -758,6 +758,42 @@ abstract class AppLocalizations {
   /// **'Daily Target'**
   String get homeDailyTarget;
 
+  /// No description provided for @homeWeeklyTargetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Target'**
+  String get homeWeeklyTargetLabel;
+
+  /// No description provided for @homeMonthlyTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly Target'**
+  String get homeMonthlyTarget;
+
+  /// No description provided for @homeTargetToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Target To Date'**
+  String get homeTargetToDate;
+
+  /// No description provided for @homeProgressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get homeProgressLabel;
+
+  /// No description provided for @homeActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Days'**
+  String get homeActiveDays;
+
+  /// No description provided for @homeActiveMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Months'**
+  String get homeActiveMonths;
+
   /// No description provided for @homePerDay.
   ///
   /// In en, this message translates to:
@@ -2456,11 +2492,23 @@ abstract class AppLocalizations {
   /// **'30 Days'**
   String get homeRangeThirtyDays;
 
+  /// No description provided for @homeRangeWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get homeRangeWeekly;
+
   /// No description provided for @homeRangeMonthly.
   ///
   /// In en, this message translates to:
   /// **'Monthly'**
   String get homeRangeMonthly;
+
+  /// No description provided for @homeRangeYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get homeRangeYearly;
 
   /// No description provided for @homeGoalReached.
   ///
@@ -2492,6 +2540,18 @@ abstract class AppLocalizations {
   /// **'Tap a day to see details.'**
   String get homeSelectDay;
 
+  /// No description provided for @homePreviousWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get homePreviousWeek;
+
+  /// No description provided for @homeNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get homeNextWeek;
+
   /// No description provided for @homePreviousMonth.
   ///
   /// In en, this message translates to:
@@ -2503,6 +2563,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next month'**
   String get homeNextMonth;
+
+  /// No description provided for @homePreviousYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous year'**
+  String get homePreviousYear;
+
+  /// No description provided for @homeNextYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Next year'**
+  String get homeNextYear;
 
   /// No description provided for @homeFutureDay.
   ///
