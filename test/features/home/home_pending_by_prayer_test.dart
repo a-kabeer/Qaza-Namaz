@@ -8,6 +8,7 @@ import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_pending_by_prayer.dart';
 import 'package:qaza_namaz/features/qaza/qaza_navigation.dart';
+import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 QazaProgressSummary _summary() {
