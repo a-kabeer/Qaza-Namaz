@@ -978,7 +978,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaDeleteRecordMessage.
   ///
   /// In en, this message translates to:
-  /// **'Move the {prayer} Qaza from {date} to Recently Deleted? You can restore it for 30 days.'**
+  /// **'Permanently delete the {prayer} Qaza from {date}? This cannot be undone.'**
   String qazaDeleteRecordMessage(Object date, Object prayer);
 
   /// No description provided for @qazaRecordUpdated.
@@ -1002,7 +1002,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaRecordDeleted.
   ///
   /// In en, this message translates to:
-  /// **'Qaza moved to Recently Deleted.'**
+  /// **'Qaza permanently deleted.'**
   String get qazaRecordDeleted;
 
   /// No description provided for @qazaRecordDeleteFailed.
