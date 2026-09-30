@@ -27,7 +27,9 @@ class _FakeActivityRepository implements QazaActivityRepository {
 
 void main() {
   group('QazaActivityService aggregation', () {
-    test('fills missing days and aggregates by prayer using local completion date', () {
+    test(
+      'fills missing days and aggregates by prayer using local completion date',
+      () {
       final completion = DateTime(2026, 9, 28, 23, 30);
       final period = QazaActivityService.buildPeriodFromRows(
         rows: [
@@ -68,7 +70,9 @@ void main() {
       expect(period.days[1].byPrayer[PrayerType.zuhr], 0);
     });
 
-    test('buildRolling keeps the existing rolling seven-day semantics', () async {
+    test(
+      'buildRolling keeps the existing rolling seven-day semantics',
+      () async {
       final repository = _FakeActivityRepository();
       final service = QazaActivityService(
         repository,
@@ -89,7 +93,9 @@ void main() {
       expect(repository.toExclusive, DateTime(2026, 10, 1));
     });
 
-    test('calendar week starts on Sunday for every day Monday through Saturday', () {
+    test(
+      'calendar week starts on Sunday for every day Monday through Saturday',
+      () {
       for (final date in [
         DateTime(2026, 9, 27), // Sunday
         DateTime(2026, 9, 28), // Monday
@@ -116,12 +122,16 @@ void main() {
         DateTime(2026, 10, 4),
       );
       expect(
-        QazaActivityService.calendarWeekEndExclusiveForDate(DateTime(2026, 10, 4)),
+        QazaActivityService.calendarWeekEndExclusiveForDate(
+          DateTime(2026, 10, 4),
+        ),
         DateTime(2026, 10, 11),
       );
     });
 
-    test('calendar week contains exactly seven dates across month boundary', () {
+    test(
+      'calendar week contains exactly seven dates across month boundary',
+      () {
       final repository = _FakeActivityRepository();
       final service = QazaActivityService(
         repository,
@@ -162,7 +172,9 @@ void main() {
       expect(QazaActivityService.weeklyTargetFromDailyTarget(-1), 0);
     });
 
-    test('completed activity counts only records inside Sunday through Saturday', () async {
+    test(
+      'completed activity counts only records inside Sunday through Saturday',
+      () async {
       final repository = _FakeActivityRepository([
         QazaActivityRow(
           completedAt: DateTime(2026, 9, 26, 23, 59),
@@ -200,7 +212,9 @@ void main() {
       expect(repository.toExclusive, DateTime(2026, 10, 4));
     });
 
-    test('future days remain part of the seven-day period for weekly targeting', () {
+    test(
+      'future days remain part of the seven-day period for weekly targeting',
+      () {
       final period = QazaActivityService.buildPeriodFromRows(
         rows: const [],
         from: DateTime(2026, 9, 27),
@@ -217,7 +231,9 @@ void main() {
       expect(QazaActivityService.weeklyTargetFromDailyTarget(5), 35);
     });
 
-    test('filters disabled prayer types without deleting the underlying completion projection', () {
+    test(
+      'filters disabled prayer types without deleting the underlying completion projection',
+      () {
       final period = QazaActivityService.buildPeriodFromRows(
         rows: [
           QazaActivityRow(
