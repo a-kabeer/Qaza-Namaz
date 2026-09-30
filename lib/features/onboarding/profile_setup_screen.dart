@@ -86,7 +86,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        onConfirm: () => _startQazaPlanImport(plan),
+        onConfirm: () => _startQazaPlanImport(
+        plan,
+        profile: finalizedProfile,
+      ),
       ),
     );
 
@@ -122,7 +125,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<bool> _startQazaPlanImport(QazaPlan plan) async {
+  Future<bool> _startQazaPlanImport(
+    QazaPlan plan, {
+    required UserProfile profile,
+  }) async {
     final userId = UserProfile.localLedgerUserId;
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
