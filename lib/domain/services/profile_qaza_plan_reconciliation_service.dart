@@ -281,6 +281,13 @@ class ProfileQazaPlanReconciliationService {
         if (added > 0) operation.operationId,
       };
 
+      await _operationService.finish(
+        operation,
+        status: QazaOperationStatus.completed,
+        affectedRecordCount: added + removedRecords.length,
+        note: 'Profile Qaza plan reconciled.',
+      );
+
       final revision = await _saveRevision(
         userId: userId,
         profile: newProfile,
@@ -288,13 +295,6 @@ class ProfileQazaPlanReconciliationService {
         generatedOperationId: added > 0 ? operation.operationId : null,
         generationOperationIds: nextGenerationIds,
         decision: QazaPlanLedgerDecision.applied,
-      );
-
-      await _operationService.finish(
-        operation,
-        status: QazaOperationStatus.completed,
-        affectedRecordCount: added + removedRecords.length,
-        note: 'Profile Qaza plan reconciled.',
       );
 
       return ProfileQazaPlanReconciliationResult(
