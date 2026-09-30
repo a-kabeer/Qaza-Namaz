@@ -220,4 +220,3 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     }
   }
 }
-}
