@@ -53,6 +53,57 @@ void main() {
     expect(morningParts.month, lessThanOrEqualTo(12));
   });
 
+  test('Hijri year addition preserves the source month/day', () {
+    final source = DateTime(2018, 11, 12);
+    final result = HijriDateService.addHijriYears(source, 5);
+
+    expect(result, DateTime(2023, 9, 19));
+
+    final sourceHijri = HijriDateService.fromGregorian(source);
+    final resultHijri = HijriDateService.fromGregorian(result);
+    expect(resultHijri.year, sourceHijri.year + 5);
+    expect(resultHijri.month, sourceHijri.month);
+    expect(resultHijri.day, sourceHijri.day);
+  });
+
+  test('Hijri year addition clamps day 30 when target month has only 29 days', () {
+    int? sourceYear;
+    int? month;
+
+    for (var year = 1400; year < 1499 && sourceYear == null; year++) {
+      for (var candidateMonth = 1; candidateMonth <= 12; candidateMonth++) {
+        if (HijriDateService.daysInMonth(year: year, month: candidateMonth) == 30 &&
+            HijriDateService.daysInMonth(year: year + 1, month: candidateMonth) ==
+                29) {
+          sourceYear = year;
+          month = candidateMonth;
+          break;
+        }
+      }
+    }
+
+    expect(sourceYear, isNotNull);
+    expect(month, isNotNull);
+
+    final source = HijriDateService.toGregorian(
+      year: sourceYear!,
+      month: month!,
+      day: 30,
+    );
+    final result = HijriDateService.addHijriYears(source, 1);
+    final resultHijri = HijriDateService.fromGregorian(result);
+
+    expect(resultHijri.year, sourceYear! + 1);
+    expect(resultHijri.month, month);
+    expect(resultHijri.day, 29);
+  });
+
+  test('negative Hijri year additions are rejected', () {
+    expect(
+      () => HijriDateService.addHijriYears(DateTime(2018, 11, 12), -1),
+      throwsArgumentError,
+    );
+  });
   test('resolves every Hijri month through localization', () {
     for (var month = 1; month <= 12; month++) {
       expect(

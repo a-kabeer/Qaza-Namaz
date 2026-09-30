@@ -2,11 +2,13 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
 import 'core/diagnostics/diagnostics.dart';
+import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
 import 'data/migration/qaza_database_bootstrap.dart';
 import 'data/migration/user_profile_migration.dart';
@@ -39,6 +41,11 @@ Future<void> main() async {
     );
     return false;
   };
+
+  await _step('timezone', () async {
+    final timezone = await FlutterTimezone.getLocalTimezone();
+    LocalDateService.configureLocalTimezone(timezone.identifier);
+  });
 
   await _step('database', () async {
     final database = AppDatabase();

@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
 import 'profile_rules.dart';
 
@@ -36,7 +37,7 @@ class QazaPlanService {
     final end = ProfileRules.startPrayingDate(profile);
     if (start == null || end == null || end.isBefore(start)) return null;
 
-    final totalDays = end.difference(start).inDays;
+    final totalDays = LocalDateService.calendarDayDifference(start, end);
     final includeWitr = ProfileRules.effectiveWitr(profile);
     final prayerBreakdown = <PrayerType, int>{
       for (final prayer in PrayerType.values)
