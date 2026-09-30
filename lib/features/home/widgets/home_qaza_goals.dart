@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/widgets/icon_action_button.dart';
-import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/services/qaza_activity_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/home_providers.dart';
