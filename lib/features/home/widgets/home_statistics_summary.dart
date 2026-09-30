@@ -63,11 +63,11 @@ class _DetailedStatisticsContent extends StatelessWidget {
         AppSpacing.fabClearance,
       ),
       children: [
+        const HomeQazaActivity(),
+        const SizedBox(height: 12),
         _DetailedOverallStatistics(progress: summary.overall),
         const SizedBox(height: 12),
         _DetailedPrayerBreakdown(summary: summary),
-        const SizedBox(height: 12),
-        const HomeQazaActivity(),
       ],
     );
   }
