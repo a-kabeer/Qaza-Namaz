@@ -123,16 +123,18 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               FilledButton.tonalIcon(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => AddQazaScreen(editAddition: addition),
-                    ),
-                  );
-                  if (context.mounted) {
-                    ref.invalidate(qazaAdditionDetailProvider(addition.id));
-                  }
-                },
+                onPressed: detail.activeCount == 0
+                    ? null
+                    : () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => AddQazaScreen(editAddition: addition),
+                          ),
+                        );
+                        if (context.mounted) {
+                          ref.invalidate(qazaAdditionDetailProvider(addition.id));
+                        }
+                      },
                 icon: const Icon(Icons.edit_rounded),
                 label: const Text('Edit Addition'),
               ),
