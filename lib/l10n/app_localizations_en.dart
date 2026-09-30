@@ -1476,7 +1476,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFutureDay => 'Future';
 
   @override
-  @override
   String get homeDailyGoalsTitle => 'Your daily goals';
 
   @override
@@ -1485,6 +1484,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeGoalsAchieved => 'Achieved';
 
+  @override
   String get homeWeeklyTarget => 'Your weekly target';
 
   @override
