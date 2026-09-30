@@ -69,7 +69,8 @@ ProviderContainer _containerFor({
 
 void main() {
   test(
-    'dashboard invalidation refreshes the current Home calendar-week activity provider',
+    'dashboard invalidation refreshes the current Home calendar-week '
+    'activity provider',
     () async {
       var reads = 0;
       final period = QazaActivityPeriod(
