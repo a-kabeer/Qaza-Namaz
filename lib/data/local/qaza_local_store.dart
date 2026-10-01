@@ -117,6 +117,7 @@ abstract class QazaLocalStore {
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -129,11 +130,28 @@ abstract class QazaLocalStore {
     final originalCursor = afterOriginalDate != null || beforeOriginalDate != null;
     final completedCursor = afterCompletedAt != null || beforeCompletedAt != null;
 
+    if (from != null && to != null && from.isAfter(to)) {
+      throw ArgumentError('from must be <= to');
+    }
+    if (to != null && toExclusive != null) {
+      throw ArgumentError('Provide either to or toExclusive, not both.');
+    }
+    if (toExclusive != null &&
+        (status != QazaStatus.completed ||
+            from == null ||
+            !from.isBefore(toExclusive))) {
+      throw ArgumentError('Invalid Completed date range.');
+    }
+
     if ((afterOriginalDate != null) != (afterId != null) ||
         (beforeOriginalDate != null) != (beforeId != null) ||
         (afterOriginalDate != null && beforeOriginalDate != null) ||
         (afterCompletedAt != null && beforeCompletedAt != null) ||
         (completedCursor && originalCursor) ||
+        ((afterCompletedAt != null) != (afterId != null) &&
+            status == QazaStatus.completed) ||
+        ((beforeCompletedAt != null) != (beforeId != null) &&
+            status == QazaStatus.completed) ||
         (completedCursor && (afterId == null && beforeId == null)) ||
         (completedCursor && status != QazaStatus.completed)) {
       throw ArgumentError('Invalid pagination cursor');
@@ -149,9 +167,21 @@ abstract class QazaLocalStore {
       ..removeWhere((r) =>
           prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..removeWhere((r) => status != null && r.status != status)
-      ..removeWhere((r) => additionId != null && r.additionId != additionId)
-      ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
-      ..removeWhere((r) => to != null && r.originalDate.isAfter(to));
+      ..removeWhere((r) => additionId != null && r.additionId != additionId);
+
+    if (status == QazaStatus.completed) {
+      records = records
+          .where((record) => record.completedAt != null)
+          .where((record) => from == null || !record.completedAt!.isBefore(from))
+          .where((record) =>
+              toExclusive == null || record.completedAt!.isBefore(toExclusive))
+          .toList(growable: false);
+    } else {
+      records = records
+          .where((record) => from == null || !record.originalDate.isBefore(from))
+          .where((record) => to == null || !record.originalDate.isAfter(to))
+          .toList(growable: false);
+    }
 
     if (status == QazaStatus.completed) {
       records.sort((a, b) {
@@ -299,6 +329,41 @@ abstract class QazaLocalStore {
           record.originalDate.day == originalDate.day &&
           record.id != excludingRecordId,
     );
+  }
+
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
+    final snapshot = await load();
+    final records = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+    final changed = <QazaRecord>[];
+
+    for (var index = 0; index < records.length; index++) {
+      final record = records[index];
+      final expected = expectedCompletionIds[record.id];
+      if (expected == null ||
+          record.status != QazaStatus.completed ||
+          record.completionId != expected) {
+        continue;
+      }
+      final next = record.copyWith(
+        status: QazaStatus.pending,
+        clearCompletedAt: true,
+        clearCompletionId: true,
+        recordVersion: record.recordVersion + 1,
+        updatedAt: updatedAt,
+      );
+      records[index] = next;
+      changed.add(next);
+    }
+
+    if (changed.isNotEmpty) await saveRecords(userId, records);
+    return List.unmodifiable(changed);
   }
 
   Future<bool> updateRecord(QazaRecord record) async {
