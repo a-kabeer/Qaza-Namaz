@@ -220,26 +220,18 @@ class _ProfileFormState extends State<ProfileForm> {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<int>(
-          key: const Key('profile_puberty_age'),
-          initialValue: pubertyOptions.contains(profile.pubertyAge)
-              ? profile.pubertyAge
-              : null,
-          items: [
-            for (final age in pubertyOptions)
-              DropdownMenuItem(value: age, child: Text(age.toString())),
-          ],
-          onChanged: gender == null
-              ? null
-              : (value) {
-                  if (value != null) {
-                    _update(_profile.copyWith(pubertyAge: value));
-                  }
-                },
-          decoration: InputDecoration(
-            labelText: l10n.profilePubertyAge,
-            helperText: gender == null ? l10n.profileSelectGenderFirst : null,
-          ),
+        _buildAgeSelector(
+          fieldKey: const Key('profile_puberty_age'),
+          decrementKey: const Key('profile_puberty_age_decrement'),
+          incrementKey: const Key('profile_puberty_age_increment'),
+          value: profile.pubertyAge,
+          options: pubertyOptions,
+          enabled: gender != null,
+          labelText: l10n.profilePubertyAge,
+          helperText: gender == null ? l10n.profileSelectGenderFirst : null,
+          onChanged: (value) {
+            _update(_profile.copyWith(pubertyAge: value));
+          },
         ),
         const SizedBox(height: 20),
         Text(
@@ -247,30 +239,22 @@ class _ProfileFormState extends State<ProfileForm> {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<int>(
-          key: const Key('profile_start_praying_age'),
-          initialValue: startOptions.contains(profile.startPrayingAge)
-              ? profile.startPrayingAge
-              : null,
-          items: [
-            for (final age in startOptions)
-              DropdownMenuItem(value: age, child: Text(age.toString())),
-          ],
-          onChanged: startOptions.isEmpty
-              ? null
-              : (value) {
-                  if (value != null) {
-                    _update(_profile.copyWith(startPrayingAge: value));
-                  }
-                },
-          decoration: InputDecoration(
-            labelText: l10n.profileStartPrayingAge,
-            helperText: profile.pubertyAge == null
-                ? l10n.profileSelectPubertyFirst
-                : currentAge == null
-                    ? l10n.profileSelectDobFirst
-                    : null,
-          ),
+        _buildAgeSelector(
+          fieldKey: const Key('profile_start_praying_age'),
+          decrementKey: const Key('profile_start_praying_age_decrement'),
+          incrementKey: const Key('profile_start_praying_age_increment'),
+          value: profile.startPrayingAge,
+          options: startOptions,
+          enabled: startOptions.isNotEmpty,
+          labelText: l10n.profileStartPrayingAge,
+          helperText: profile.pubertyAge == null
+              ? l10n.profileSelectPubertyFirst
+              : currentAge == null
+                  ? l10n.profileSelectDobFirst
+                  : null,
+          onChanged: (value) {
+            _update(_profile.copyWith(startPrayingAge: value));
+          },
         ),
         if (widget.showDailyQazaTarget) ...[
           const SizedBox(height: 20),
@@ -357,6 +341,76 @@ class _ProfileFormState extends State<ProfileForm> {
             child: Text(l10n.commonCancel),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildAgeSelector({
+    required Key fieldKey,
+    required Key decrementKey,
+    required Key incrementKey,
+    required int? value,
+    required List<int> options,
+    required bool enabled,
+    required String labelText,
+    required String? helperText,
+    required ValueChanged<int> onChanged,
+  }) {
+    final selected = value != null && options.contains(value) ? value : null;
+    final min = options.isEmpty ? null : options.first;
+    final max = options.isEmpty ? null : options.last;
+    final canDecrease = enabled &&
+        selected != null &&
+        min != null &&
+        selected > min;
+    final canIncrease = enabled &&
+        ((selected == null && options.isNotEmpty) ||
+            (selected != null && max != null && selected < max));
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 48,
+          height: 56,
+          child: IconButton(
+            key: decrementKey,
+            tooltip: 'Decrease',
+            onPressed: canDecrease ? () => onChanged(selected! - 1) : null,
+            icon: const Icon(Icons.remove),
+          ),
+        ),
+        Expanded(
+          child: DropdownButtonFormField<int>(
+            key: fieldKey,
+            initialValue: selected,
+            items: [
+              for (final age in options)
+                DropdownMenuItem(value: age, child: Text(age.toString())),
+            ],
+            onChanged: enabled && options.isNotEmpty
+                ? (next) {
+                    if (next != null) onChanged(next);
+                  }
+                : null,
+            decoration: InputDecoration(
+              labelText: labelText,
+              helperText: helperText,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 48,
+          height: 56,
+          child: IconButton(
+            key: incrementKey,
+            tooltip: 'Increase',
+            onPressed: canIncrease
+                ? () => onChanged(selected ?? options.first)
+                : null,
+            icon: const Icon(Icons.add),
+          ),
+        ),
       ],
     );
   }
