@@ -168,9 +168,29 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
               ],
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: _range == _ActivityRange.monthly ? 470 : 430,
-              child: PageView.builder(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final periodAsync = switch (_range) {
+                  _ActivityRange.weekly =>
+                    ref.watch(homeQazaActivityWeekProvider(anchor)),
+                  _ActivityRange.monthly =>
+                    ref.watch(homeQazaActivityMonthProvider(anchor)),
+                  _ActivityRange.yearly =>
+                    ref.watch(homeQazaActivityYearProvider(anchor)),
+                };
+                final period = periodAsync.valueOrNull;
+                final height = _activityViewportHeight(
+                  constraints.maxWidth,
+                  anchor,
+                  period,
+                );
+
+                return AnimatedSize(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: SizedBox(
+                    height: height,
+                    child: PageView.builder(
                 key: ValueKey('home_activity_pager_${_range.name}'),
                 controller: _pageController,
                 itemCount: _pageCount,
@@ -194,8 +214,11 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                         ? (date) => setState(() => _selectedDay = date)
                         : null,
                   );
-                },
+                  },
+                ),
               ),
+            );
+              },
             ),
             if (_selectedDay != null && _range != _ActivityRange.yearly) ...[
               const SizedBox(height: 12),
@@ -210,6 +233,58 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
         ),
       ),
     );
+  }
+
+  double _activityViewportHeight(
+    double width,
+    DateTime anchor,
+    QazaActivityPeriod? period,
+  ) {
+    const chartHeight = 250.0;
+    const listVerticalPadding = 8.0;
+    const contentSpacing = 12.0;
+    final targetAvailable = period?.targetAvailable ??
+        switch (_range) {
+          _ActivityRange.weekly =>
+            QazaActivityService.calendarWeekStartForDate(anchor) ==
+                QazaActivityService.calendarWeekStartForDate(
+                  ref.read(homeLocalDateProvider),
+                ),
+          _ActivityRange.monthly =>
+            DateTime(anchor.year, anchor.month) ==
+                DateTime(
+                  ref.read(homeLocalDateProvider).year,
+                  ref.read(homeLocalDateProvider).month,
+                ),
+          _ActivityRange.yearly => false,
+        };
+    final summaryHeight = targetAvailable ? 56.0 : 42.0;
+    final noActivityHeight =
+        period != null && period.totalCompleted == 0 ? 28.0 : 0.0;
+
+    if (_range == _ActivityRange.monthly) {
+      final daysInMonth = DateTime(anchor.year, anchor.month + 1, 0).day;
+      final first = DateTime(anchor.year, anchor.month);
+      final leading = first.weekday % 7;
+      final rows = (leading + daysInMonth + 6) ~/ 7;
+      final gridWidth = math.max(width - 2, 0).toDouble();
+      final cellWidth = math.max((gridWidth - 36) / 7, 0).toDouble();
+      final gridHeight =
+          rows * cellWidth + math.max(rows - 1, 0).toDouble() * 6;
+      const weekdayHeaderHeight = 24.0;
+      return listVerticalPadding +
+          summaryHeight +
+          contentSpacing +
+          noActivityHeight +
+          weekdayHeaderHeight +
+          gridHeight;
+    }
+
+    return listVerticalPadding +
+        summaryHeight +
+        contentSpacing +
+        noActivityHeight +
+        chartHeight;
   }
 
   String _formatHeader(BuildContext context, DateTime anchor) {
@@ -377,17 +452,6 @@ class _ActivityPeriodContent extends ConsumerWidget {
         if (range == _ActivityRange.weekly ||
             range == _ActivityRange.monthly) ...[
           _ActivityTargetSummary(period: period, range: range),
-          if (period.targetAvailable) ...[
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                key: const Key('home_activity_progress'),
-                value: period.progress,
-                minHeight: 7,
-              ),
-            ),
-          ],
         ] else
           _ActivityYearSummary(period: period),
         const SizedBox(height: 12),
@@ -452,6 +516,8 @@ class _ActivityTargetSummary extends StatelessWidget {
               ? l10n.homeWeeklyTargetLabel
               : l10n.homeMonthlyTarget,
           value: DateFormatters.formatCount(period.fullTarget ?? 0),
+          secondary:
+              '${DateFormatters.formatCount(period.dailyTarget)}/day',
         ),
         _SummaryMetricData(
           label: l10n.homeRemaining,
@@ -470,17 +536,12 @@ class _ActivityTargetSummary extends StatelessWidget {
                 child: _SummaryMetric(
                   label: metric.label,
                   value: metric.value,
+                  secondary: metric.secondary,
                 ),
               ),
           ],
         ),
-        if (period.targetAvailable) ...[
-          const SizedBox(height: 6),
-          Text(
-            '${l10n.homeDailyTarget}: ${DateFormatters.formatCount(period.dailyTarget)}',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
+
       ],
     );
   }
@@ -520,17 +581,27 @@ class _ActivityYearSummary extends StatelessWidget {
 }
 
 class _SummaryMetricData {
-  const _SummaryMetricData({required this.label, required this.value});
+  const _SummaryMetricData({
+    required this.label,
+    required this.value,
+    this.secondary,
+  });
 
   final String label;
   final String value;
+  final String? secondary;
 }
 
 class _SummaryMetric extends StatelessWidget {
-  const _SummaryMetric({required this.label, required this.value});
+  const _SummaryMetric({
+    required this.label,
+    required this.value,
+    this.secondary,
+  });
 
   final String label;
   final String value;
+  final String? secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -545,9 +616,52 @@ class _SummaryMetric extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
+        if (secondary != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            secondary!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
       ],
     );
   }
+}
+
+({double maxY, double interval}) _activityAxisScale(int maxCompleted) {
+  if (maxCompleted <= 0) {
+    return (maxY: 5, interval: 5);
+  }
+
+  final interval = maxCompleted <= 5
+      ? 1.0
+      : maxCompleted <= 15
+          ? 5.0
+          : _niceChartInterval(maxCompleted / 6);
+  var maxY = (maxCompleted / interval).ceil() * interval;
+
+  if (maxY <= maxCompleted) {
+    maxY += interval;
+  }
+
+  return (maxY: maxY, interval: interval);
+}
+
+double _niceChartInterval(double rawInterval) {
+  final safeRaw = math.max(rawInterval, 1.0);
+  final magnitude =
+      math.pow(10, (math.log(safeRaw) / math.ln10).floor()).toDouble();
+  final normalized = safeRaw / magnitude;
+  final niceNormalized = normalized <= 1
+      ? 1.0
+      : normalized <= 2
+          ? 2.0
+          : normalized <= 5
+              ? 5.0
+              : 10.0;
+  return niceNormalized * magnitude;
 }
 
 class _ActivityBarChart extends StatelessWidget {
@@ -572,17 +686,15 @@ class _ActivityBarChart extends StatelessWidget {
       0,
       (maxValue, bucket) => math.max(maxValue, bucket.completed),
     );
-    final maxY = math.max(
-      1,
-      maxCompleted + math.max(1, (maxCompleted * 0.15).ceil()),
-    ).toDouble();
-    final leftInterval = maxY > 10 ? 5.0 : 1.0;
+    final axis = _activityAxisScale(maxCompleted);
+    final maxY = axis.maxY;
+    final leftInterval = axis.interval;
 
     return Semantics(
       container: true,
       label: _chartSemantics(context),
       child: SizedBox(
-        height: 235,
+        height: 250,
         child: BarChart(
           BarChartData(
             maxY: maxY,
@@ -604,7 +716,7 @@ class _ActivityBarChart extends StatelessWidget {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 28,
+                  reservedSize: 36,
                   interval: leftInterval,
                   getTitlesWidget: (value, meta) => SideTitleWidget(
                     meta: meta,
@@ -869,7 +981,6 @@ class _ActivityDayDetails extends ConsumerWidget {
 
     return Card(
       key: const Key('home_activity_day_details'),
-      margin: const EdgeInsets.only(top: 12),
       color: theme.colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
