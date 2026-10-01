@@ -57,6 +57,8 @@ void main() {
   testWidgets(
     'ProfileForm exposes bounded puberty and prayer-start age controls',
     (tester) async {
+      UserProfile? changed;
+
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('en'),
@@ -73,23 +75,37 @@ void main() {
                 startPrayingAge: 15,
                 witrIncluded: true,
               ),
+              onChanged: (profile) => changed = profile,
               onSubmit: (_) async {},
             ),
           ),
         ),
       );
 
-      expect(find.byKey(const Key('profile_puberty_age_decrement')), findsOneWidget);
-      expect(find.byKey(const Key('profile_puberty_age_increment')), findsOneWidget);
-      expect(find.byKey(const Key('profile_start_praying_age_decrement')), findsOneWidget);
-      expect(find.byKey(const Key('profile_start_praying_age_increment')), findsOneWidget);
+      expect(
+        find.byKey(const Key('profile_puberty_age_decrement')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('profile_puberty_age_increment')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('profile_start_praying_age_decrement')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('profile_start_praying_age_increment')),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const Key('profile_puberty_age_increment')));
       await tester.pump();
-      expect(find.text('13'), findsWidgets);
+      expect(changed?.pubertyAge, 13);
 
       await tester.tap(find.byKey(const Key('profile_puberty_age_decrement')));
       await tester.pump();
+      expect(changed?.pubertyAge, 12);
     },
   );
 
