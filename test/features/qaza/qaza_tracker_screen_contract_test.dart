@@ -126,7 +126,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
     final start = source.indexOf(
-      'Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId)',
+      'Future<QazaCompletionBatchReceipt?> completeRecordWithUndo(',
     );
     final end = source.indexOf(
       'Future<int> deleteSelected()',
@@ -270,7 +270,7 @@ void main() {
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
     final start = source.indexOf('Future<void> refresh() async {');
     final end = source.indexOf(
-      '  /// Reads one bounded page in the active sort order.',
+      '  /// Reads a bounded page using the status-specific fixed ordering.',
       start,
     );
 
