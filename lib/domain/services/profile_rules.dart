@@ -226,13 +226,14 @@ class ProfileRules {
     final start = next.startPrayingAge;
     final validGender = next.gender;
     final validPuberty = next.pubertyAge;
-    if (dob != null && validPuberty != null) {
+    if (dob != null &&
+        validGender != null &&
+        validPuberty != null) {
       final today = LocalDateService.today();
       final maxAge = currentAge(dob, today);
       final pubertyDateValue = pubertyDate(next);
       if (pubertyDateValue == null ||
           _compareCalendarDates(pubertyDateValue, today) > 0 ||
-          validGender == null ||
           !isPubertyAgeAllowed(validGender, validPuberty) ||
           validPuberty > maxAge) {
         next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
