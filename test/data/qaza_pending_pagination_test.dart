@@ -9,12 +9,13 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 QazaRecordsCompanion _pendingRow({
   required String id,
+  required PrayerType prayerType,
   required DateTime originalDate,
 }) {
   return QazaRecordsCompanion.insert(
     id: id,
     userId: 'local',
-    prayerType: PrayerType.fajr.name,
+    prayerType: prayerType.name,
     originalDate: originalDate,
     status: QazaStatus.pending.name,
     createdAt: originalDate,
@@ -38,11 +39,31 @@ void main() {
     () async {
       final sameDay = DateTime(2026, 9, 10);
       await database.qazaRecordsDao.insertRecords([
-        _pendingRow(id: 'a', originalDate: sameDay),
-        _pendingRow(id: 'b', originalDate: sameDay),
-        _pendingRow(id: 'c', originalDate: DateTime(2026, 9, 11)),
-        _pendingRow(id: 'd', originalDate: DateTime(2026, 9, 12)),
-        _pendingRow(id: 'e', originalDate: DateTime(2026, 9, 13)),
+        _pendingRow(
+          id: 'a',
+          prayerType: PrayerType.fajr,
+          originalDate: sameDay,
+        ),
+        _pendingRow(
+          id: 'b',
+          prayerType: PrayerType.zuhr,
+          originalDate: sameDay,
+        ),
+        _pendingRow(
+          id: 'c',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 11),
+        ),
+        _pendingRow(
+          id: 'd',
+          prayerType: PrayerType.zuhr,
+          originalDate: DateTime(2026, 9, 12),
+        ),
+        _pendingRow(
+          id: 'e',
+          prayerType: PrayerType.fajr,
+          originalDate: DateTime(2026, 9, 13),
+        ),
       ]);
 
       final first = await database.qazaRecordsDao.getKeysetPage(
