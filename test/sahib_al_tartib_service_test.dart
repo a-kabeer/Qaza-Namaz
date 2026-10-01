@@ -89,13 +89,15 @@ class _FakeRepository implements QazaRepository {
     PrayerType? prayerType,
     Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
+    String? additionId,
     DateTime? from,
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
-    String? additionId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) => throw UnimplementedError();
 
@@ -135,10 +137,11 @@ class _FakeRepository implements QazaRepository {
   }
 
   @override
-  Future<void> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    Map<String, String>? completionIds,
   }) => throw UnimplementedError();
 
   @override
