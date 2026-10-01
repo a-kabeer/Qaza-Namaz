@@ -102,16 +102,31 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     String? afterId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) async {
     _validatePage(limit, 0);
     _validateRange(from, to);
-    if ((afterOriginalDate == null) != (afterId == null) ||
-        (beforeOriginalDate == null) != (beforeId == null) ||
-        (afterOriginalDate != null && beforeOriginalDate != null)) {
-      throw ArgumentError(
-        'Exactly one complete pagination cursor may be provided',
-      );
+
+    final completedMode = status == QazaStatus.completed.name;
+    if (completedMode) {
+      if ((afterOriginalDate != null && beforeOriginalDate != null) ||
+          afterOriginalDate != null ||
+          beforeOriginalDate != null ||
+          ((afterCompletedAt == null) != (afterId == null)) ||
+          ((beforeCompletedAt == null) != (beforeId == null)) ||
+          (afterCompletedAt != null && beforeCompletedAt != null)) {
+        throw ArgumentError('Invalid completed pagination cursor');
+      }
+    } else {
+      if ((afterOriginalDate == null) != (afterId == null) ||
+          (beforeOriginalDate == null) != (beforeId == null) ||
+          (afterCompletedAt != null) ||
+          (beforeCompletedAt != null) ||
+          (afterOriginalDate != null && beforeOriginalDate != null)) {
+        throw ArgumentError('Invalid pending pagination cursor');
+      }
     }
 
     final query = select(qazaRecords)
@@ -135,7 +150,23 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (to != null) {
           predicates.add(row.originalDate.isSmallerOrEqualValue(to));
         }
-        if (afterOriginalDate != null) {
+
+        if (completedMode) {
+          predicates.add(row.completedAt.isNotNull());
+          if (afterCompletedAt != null) {
+            predicates.add(
+              row.completedAt.isSmallerThanValue(afterCompletedAt) |
+                  (row.completedAt.equals(afterCompletedAt) &
+                      row.id.isSmallerThanValue(afterId!)),
+            );
+          } else if (beforeCompletedAt != null) {
+            predicates.add(
+              row.completedAt.isSmallerThanValue(beforeCompletedAt) |
+                  (row.completedAt.equals(beforeCompletedAt) &
+                      row.id.isSmallerThanValue(beforeId!)),
+            );
+          }
+        } else if (afterOriginalDate != null) {
           predicates.add(
             row.originalDate.isBiggerThanValue(afterOriginalDate) |
                 (row.originalDate.equals(afterOriginalDate) &
@@ -148,15 +179,20 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                     row.id.isSmallerThanValue(beforeId!)),
           );
         }
+
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
-        (r) => descending
-            ? OrderingTerm.desc(r.originalDate)
-            : OrderingTerm.asc(r.originalDate),
-        (r) => descending
+        (r) => completedMode
+            ? OrderingTerm.desc(r.completedAt)
+            : (descending
+                ? OrderingTerm.desc(r.originalDate)
+                : OrderingTerm.asc(r.originalDate)),
+        (r) => completedMode
             ? OrderingTerm.desc(r.id)
-            : OrderingTerm.asc(r.id),
+            : (descending
+                ? OrderingTerm.desc(r.id)
+                : OrderingTerm.asc(r.id)),
       ])
       ..limit(limit + 1);
 
@@ -421,55 +457,63 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   /// One statement per id inside a single transaction, scoped by userId and
   /// by pending status, so a record already completed keeps its original
   /// timestamp and no other row in the ledger is touched.
-  Future<List<String>> completeByIds({
+  Future<List<QazaRecord>> completeByIds({
     required String userId,
     required List<String> ids,
     required DateTime completedAt,
-    String? completionId,
+    Map<String, String>? completionIds,
   }) async {
-    if (ids.isEmpty) return const <String>[];
-    if (completionId != null && ids.length != 1) {
-      throw ArgumentError(
-        'A single completion marker can only be used for one record.',
-      );
-    }
+    if (ids.isEmpty) return const <QazaRecord>[];
+
     return transaction(() async {
-      final changed = <String>[];
-      for (final id in ids) {
+      final changed = <QazaRecord>[];
+      for (final id in ids.toSet()) {
         final current = await (select(qazaRecords)
               ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
             .getSingleOrNull();
-        if (current == null) continue;
-        // Pending rows can be completed normally. An already-completed
-        // row may only move to an earlier completion timestamp so offline
-        // devices can still converge deterministically on the earliest
-        // completion. Equal/later stale requests are ignored.
-        if (current.status != QazaStatus.pending.name &&
-            current.status != QazaStatus.completed.name) {
+        if (current == null || current.status != QazaStatus.pending.name) {
           continue;
         }
-        if (current.status == QazaStatus.completed.name &&
-            current.completedAt != null &&
-            !completedAt.isBefore(current.completedAt!)) {
-          continue;
+
+        final marker = completionIds?[id] ?? newQazaCompletionId();
+        if (marker.isEmpty) {
+          throw StateError('A completion marker is required.');
         }
 
         final updated = await (update(qazaRecords)
               ..where((row) =>
                   row.userId.equals(userId) &
                   row.id.equals(id) &
-                  (row.status.equals(QazaStatus.pending.name) |
-                      row.status.equals(QazaStatus.completed.name))))
+                  row.status.equals(QazaStatus.pending.name)))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
-          completionId: Value(completionId ?? newQazaCompletionId()),
+          completionId: Value(marker),
           recordVersion: Value(current.recordVersion + 1),
           updatedAt: Value(completedAt),
         ));
-        if (updated > 0) changed.add(id);
+
+        if (updated > 0) {
+          changed.add(
+            QazaRecord(
+              id: current.id,
+              userId: current.userId,
+              prayerType: PrayerType.values.firstWhere(
+                (value) => value.name == current.prayerType,
+              ),
+              originalDate: current.originalDate,
+              status: QazaStatus.completed,
+              completedAt: completedAt,
+              completionId: marker,
+              additionId: current.additionId,
+              recordVersion: current.recordVersion + 1,
+              createdAt: current.createdAt,
+              updatedAt: completedAt,
+            ),
+          );
+        }
       }
-      return changed;
+      return List.unmodifiable(changed);
     });
   }
 

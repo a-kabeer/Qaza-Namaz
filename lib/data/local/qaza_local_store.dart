@@ -108,29 +108,40 @@ abstract class QazaLocalStore {
   /// guest migration.
   Future<void> retireUserData({required String userId});
 
-  Future<LocalQazaPage> getPage(
-      {required String userId,
-      int limit = 50,
-      PrayerType? prayerType,
-      Iterable<PrayerType>? prayerTypes,
-      QazaStatus? status,
-      String? additionId,
-      DateTime? from,
-      DateTime? to,
-      DateTime? afterOriginalDate,
-      String? afterId,
-      DateTime? beforeOriginalDate,
-      String? beforeId,
-      bool descending = false}) async {
+  Future<LocalQazaPage> getPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    Iterable<PrayerType>? prayerTypes,
+    QazaStatus? status,
+    String? additionId,
+    DateTime? from,
+    DateTime? to,
+    DateTime? afterOriginalDate,
+    String? afterId,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
+    bool descending = false,
+  }) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null) ||
-        (beforeOriginalDate == null) != (beforeId == null) ||
-        (afterOriginalDate != null && beforeOriginalDate != null)) {
-      throw ArgumentError('Exactly one complete pagination cursor may be provided');
+    final originalCursor = afterOriginalDate != null || beforeOriginalDate != null;
+    final completedCursor = afterCompletedAt != null || beforeCompletedAt != null;
+
+    if ((afterOriginalDate != null) != (afterId != null) ||
+        (beforeOriginalDate != null) != (beforeId != null) ||
+        (afterOriginalDate != null && beforeOriginalDate != null) ||
+        (afterCompletedAt != null && beforeCompletedAt != null) ||
+        (completedCursor && originalCursor) ||
+        (completedCursor && (afterId == null && beforeId == null)) ||
+        (completedCursor && status != QazaStatus.completed)) {
+      throw ArgumentError('Invalid pagination cursor');
     }
     if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
     }
+
     final snapshot = await load();
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
@@ -140,8 +151,37 @@ abstract class QazaLocalStore {
       ..removeWhere((r) => status != null && r.status != status)
       ..removeWhere((r) => additionId != null && r.additionId != additionId)
       ..removeWhere((r) => from != null && r.originalDate.isBefore(from))
-      ..removeWhere((r) => to != null && r.originalDate.isAfter(to))
-      ..sort((a, b) {
+      ..removeWhere((r) => to != null && r.originalDate.isAfter(to));
+
+    if (status == QazaStatus.completed) {
+      records.sort((a, b) {
+        final at = a.completedAt;
+        final bt = b.completedAt;
+        if (at == null && bt == null) return b.id.compareTo(a.id);
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        final d = bt.compareTo(at);
+        return d != 0 ? d : b.id.compareTo(a.id);
+      });
+      if (beforeCompletedAt != null) {
+        records = records.where((r) {
+          final value = r.completedAt;
+          if (value == null) return false;
+          return value.isBefore(beforeCompletedAt) ||
+              (value.isAtSameMomentAs(beforeCompletedAt) &&
+                  r.id.compareTo(beforeId!) < 0);
+        }).toList();
+      } else if (afterCompletedAt != null) {
+        records = records.where((r) {
+          final value = r.completedAt;
+          if (value == null) return false;
+          return value.isAfter(afterCompletedAt) ||
+              (value.isAtSameMomentAs(afterCompletedAt) &&
+                  r.id.compareTo(afterId!) > 0);
+        }).toList();
+      }
+    } else {
+      records.sort((a, b) {
         final d = descending
             ? b.originalDate.compareTo(a.originalDate)
             : a.originalDate.compareTo(b.originalDate);
@@ -149,21 +189,23 @@ abstract class QazaLocalStore {
             ? d
             : (descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id));
       });
-    if (afterOriginalDate != null) {
-      records = records
-          .where((r) =>
-              r.originalDate.isAfter(afterOriginalDate) ||
-              (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
-                  r.id.compareTo(afterId!) > 0))
-          .toList();
-    } else if (beforeOriginalDate != null) {
-      records = records
-          .where((r) =>
-              r.originalDate.isBefore(beforeOriginalDate) ||
-              (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
-                  r.id.compareTo(beforeId!) < 0))
-          .toList();
+      if (afterOriginalDate != null) {
+        records = records
+            .where((r) =>
+                r.originalDate.isAfter(afterOriginalDate) ||
+                (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
+                    r.id.compareTo(afterId!) > 0))
+            .toList();
+      } else if (beforeOriginalDate != null) {
+        records = records
+            .where((r) =>
+                r.originalDate.isBefore(beforeOriginalDate) ||
+                (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
+                    r.id.compareTo(beforeId!) < 0))
+            .toList();
+      }
     }
+
     final hasMore = records.length > limit;
     return LocalQazaPage(
       records: records.take(limit).toList(growable: false),
@@ -411,44 +453,43 @@ abstract class QazaLocalStore {
         snapshot.outboxByUser[userId] ?? const <PendingSyncOp>[]);
   }
 
-  /// Marks records completed without touching the rest of the ledger.
-  ///
-  /// Returns the ids actually changed: one already completed is left alone.
-  /// The default implementation is correct but reads the snapshot; stores
-  /// backed by a database override it with a targeted update.
-  Future<List<String>> completeRecords({
+  /// Marks only currently-pending records completed and returns the exact
+  /// records that changed. Each id may carry its own completion marker.
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
-    String? completionId,
+    Map<String, String>? completionIds,
   }) async {
-    if (completionId != null && recordIds.length != 1) {
-      throw ArgumentError(
-        'A single completion marker can only be used for one record.',
-      );
-    }
+    if (recordIds.isEmpty) return const <QazaRecord>[];
     final snapshot = await load();
     final records = List<QazaRecord>.of(
-        snapshot.recordsByUser[userId] ?? const <QazaRecord>[]);
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
     final wanted = recordIds.toSet();
-    final changed = <String>[];
+    final changed = <QazaRecord>[];
+
     for (var index = 0; index < records.length; index++) {
       final record = records[index];
-      if (!wanted.contains(record.id)) continue;
-      if (record.status == QazaStatus.completed &&
-          record.completedAt != null &&
-          !completedAt.isBefore(record.completedAt!)) {
+      if (!wanted.contains(record.id) || record.status != QazaStatus.pending) {
         continue;
       }
-      records[index] = record.copyWith(
-          status: QazaStatus.completed,
-          completedAt: completedAt,
-          completionId: completionId ?? newQazaCompletionId(),
-          updatedAt: completedAt);
-      changed.add(record.id);
+      final marker = completionIds?[record.id] ?? newQazaCompletionId();
+      if (marker.isEmpty) throw StateError('A completion marker is required.');
+
+      final completed = record.copyWith(
+        status: QazaStatus.completed,
+        completedAt: completedAt,
+        completionId: marker,
+        updatedAt: completedAt,
+        recordVersion: record.recordVersion + 1,
+      );
+      records[index] = completed;
+      changed.add(completed);
     }
+
     if (changed.isNotEmpty) await saveRecords(userId, records);
-    return changed;
+    return List.unmodifiable(changed);
   }
 
   /// Reverts only records whose completion marker still matches the active

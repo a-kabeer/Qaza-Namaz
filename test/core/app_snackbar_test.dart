@@ -185,12 +185,14 @@ void main() {
     test('expiry is independent of visual Snackbar lifetime', () {
       final expiry = DateTime(2026, 9, 26, 11, 0, 5);
       final batch = QazaUndoBatch(
+        sessionId: 'session-1',
         entries: [
           QazaUndoEntry(
             recordId: 'record-1',
             completionId: 'completion-1',
             prayerType: PrayerType.fajr,
             originalDate: DateTime(2026, 9, 1),
+            completedAt: DateTime(2026, 9, 26, 11, 0),
           ),
         ],
         expiresAt: expiry,
@@ -206,18 +208,20 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final expiry = DateTime(2026, 9, 26, 10, 59, 59);
       final batch = QazaUndoBatch(
+        sessionId: 'session-1',
         entries: [
           QazaUndoEntry(
             recordId: 'record-1',
             completionId: 'completion-1',
             prayerType: PrayerType.fajr,
             originalDate: DateTime(2026, 9, 1),
+            completedAt: DateTime(2026, 9, 26, 11, 0),
           ),
         ],
         expiresAt: expiry,
       );
       await prefs.setString(
-        'qaza_undo_v2_local',
+        'qaza_undo_v3_local',
         jsonEncode(batch.toJson()),
       );
 

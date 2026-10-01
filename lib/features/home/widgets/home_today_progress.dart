@@ -127,20 +127,21 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         );
       }
 
-      final completedRecord = record.copyWith(
-        status: QazaStatus.completed,
-        completedAt: completedAt,
-        completionId: completionId,
-        updatedAt: completedAt,
-      );
-
       if (!mounted) return;
 
       await showQazaUndoFeedback(
         context: context,
         ref: ref,
         userId: userId,
-        records: [completedRecord],
+        entries: [
+          QazaCompletionEntry(
+            recordId: record.id,
+            completionId: completionId,
+            prayerType: record.prayerType,
+            originalDate: record.originalDate,
+            completedAt: completedAt,
+          ),
+        ],
         onUndone: () async {
           ref.read(homeControllerProvider).afterUndo();
         },

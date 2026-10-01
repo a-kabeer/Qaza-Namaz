@@ -11,42 +11,63 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
   @override
   QazaCompletionState build() => const QazaCompletionState();
 
-  Future<QazaCompletionReceipt> completeRecordWithReceipt({
+  Future<QazaCompletionBatchReceipt> completeRecordsWithReceipt({
     required String userId,
-    required String recordId,
+    required List<String> recordIds,
     required DateTime completedAt,
   }) async {
     if (state.isWorking) {
       throw StateError('Qaza completion is already in progress.');
     }
     if (ref.read(qazaCompletionRestrictedProvider)) {
-      return const QazaCompletionReceipt(
+      return const QazaCompletionBatchReceipt(
         result: QazaCompletionResult.blockedByRestrictedTime,
+        entries: [],
       );
     }
 
     final diagnostics = ref.read(diagnosticsProvider);
-    diagnostics.recordEvent(DiagnosticArea.qazaCompletion, 'completion_start');
+    diagnostics.recordEvent(
+      DiagnosticArea.qazaCompletion,
+      'completion_batch_start',
+    );
 
     state = state.copyWith(isWorking: true);
     try {
       final receipt = await ref
           .read(qazaCompletionServiceProvider)
-          .completeRecordWithReceipt(
+          .completeRecordsWithReceipt(
             userId: userId,
-            recordId: recordId,
+            recordIds: recordIds,
             completedAt: completedAt,
           );
       if (receipt.result == QazaCompletionResult.completed) {
         diagnostics.recordEvent(
           DiagnosticArea.qazaCompletion,
-          'completion_succeeded',
+          'completion_batch_succeeded',
         );
       }
       return receipt;
     } finally {
       state = state.copyWith(isWorking: false);
     }
+  }
+
+  Future<QazaCompletionReceipt> completeRecordWithReceipt({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    final batch = await completeRecordsWithReceipt(
+      userId: userId,
+      recordIds: [recordId],
+      completedAt: completedAt,
+    );
+    return QazaCompletionReceipt(
+      result: batch.result,
+      completionId:
+          batch.entries.isEmpty ? null : batch.entries.single.completionId,
+    );
   }
 
   Future<QazaCompletionResult> completeRecord({

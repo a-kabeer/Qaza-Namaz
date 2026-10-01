@@ -56,7 +56,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +80,14 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(qazaRecords, qazaRecords.additionId);
             await m.addColumn(qazaRecords, qazaRecords.recordVersion);
             await _ensureQazaAdditionSchema();
+          }
+          if (from < 8) {
+            // Keep legacy completed rows visible in the permanent Completed
+            // workspace even when older data lacks completedAt.
+            await customStatement(
+              "UPDATE qaza_records SET completed_at = updated_at "
+              "WHERE status = 'completed' AND completed_at IS NULL",
+            );
           }
           await _ensurePerformanceIndexes();
         },
@@ -201,6 +209,10 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_idx '
       'ON qaza_records (user_id, status, completed_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_id_idx '
+      'ON qaza_records (user_id, status, completed_at, id)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_date_idx '

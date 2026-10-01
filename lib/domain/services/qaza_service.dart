@@ -134,33 +134,40 @@ class QazaService {
           QazaStatus? status}) =>
       repository.getRecords(
           userId: userId, prayerType: prayerType, status: status);
-  Future<QazaPage> getPage(
-          {required String userId,
-          int limit = 50,
-          PrayerType? prayerType,
-          QazaStatus? status,
-          String? additionId,
-          DateTime? from,
-          DateTime? to,
-          DateTime? afterOriginalDate,
-          String? afterId,
-          DateTime? beforeOriginalDate,
-          String? beforeId,
-          bool descending = false}) =>
+  Future<QazaPage> getPage({
+    required String userId,
+    int limit = 50,
+    PrayerType? prayerType,
+    QazaStatus? status,
+    String? additionId,
+    DateTime? from,
+    DateTime? to,
+    DateTime? afterOriginalDate,
+    String? afterId,
+    DateTime? beforeOriginalDate,
+    String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
+    bool descending = false,
+  }) =>
       repository.getPage(
-          userId: userId,
-          limit: limit,
-          prayerType: prayerType,
-          prayerTypes: _enabledPrayerTypes,
-          status: status,
-          additionId: additionId,
-          from: from,
-          to: to,
-          afterOriginalDate: afterOriginalDate,
-          afterId: afterId,
-          beforeOriginalDate: beforeOriginalDate,
-          beforeId: beforeId,
-          descending: descending);
+        userId: userId,
+        limit: limit,
+        prayerType: prayerType,
+        prayerTypes: _enabledPrayerTypes,
+        status: status,
+        additionId: additionId,
+        from: from,
+        to: to,
+        afterOriginalDate: afterOriginalDate,
+        afterId: afterId,
+        beforeOriginalDate: beforeOriginalDate,
+        beforeId: beforeId,
+        afterCompletedAt: afterCompletedAt,
+        beforeCompletedAt: beforeCompletedAt,
+        descending: descending,
+      );
+
   Future<QazaRecord?> oldestPending({
     required String userId,
     required PrayerType prayerType,
@@ -463,7 +470,6 @@ class QazaService {
     return receipt.result;
   }
 
-  /// Completes one record and returns the exact marker persisted for it.
   Future<QazaCompletionReceipt> completeRecordWithReceipt({
     required String userId,
     required String recordId,
@@ -471,64 +477,147 @@ class QazaService {
     DateTime? currentDate,
     PrayerType? currentPrayer,
   }) async {
-    final completionId = newQazaCompletionId();
-    await _ensureCompletionAllowed(
+    final batch = await completeRecordsWithReceipt(
       userId: userId,
-      recordId: recordId,
+      recordIds: [recordId],
+      completedAt: completedAt,
       currentDate: currentDate,
       currentPrayer: currentPrayer,
     );
-    final result = await repository.completeRecord(
-      userId: userId,
-      recordId: recordId,
-      completedAt: completedAt,
-      completionId: completionId,
-    );
     return QazaCompletionReceipt(
-      result: result,
+      result: batch.result,
       completionId:
-          result == QazaCompletionResult.completed ? completionId : null,
+          batch.entries.isEmpty ? null : batch.entries.single.completionId,
     );
   }
 
-  Future<void> completeRecords({
+  /// The single interactive completion pipeline used by Home, Qaza swipe and
+  /// Qaza batch completion.
+  Future<QazaCompletionBatchReceipt> completeRecordsWithReceipt({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
     DateTime? currentDate,
     PrayerType? currentPrayer,
   }) async {
-    if (recordIds.isEmpty) return;
-    final state = await tartib.evaluate(
+    final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
+    if (ids.isEmpty) {
+      return const QazaCompletionBatchReceipt(
+        result: QazaCompletionResult.notFound,
+        entries: [],
+      );
+    }
+
+    final pending = await repository.getPendingRecordsByIds(
+      userId: userId,
+      recordIds: ids,
+    );
+
+    if (pending.isEmpty) {
+      final current = await repository.getRecordsByIds(
+        userId: userId,
+        recordIds: ids,
+      );
+      return QazaCompletionBatchReceipt(
+        result: current.any((record) => record.status == QazaStatus.completed)
+            ? QazaCompletionResult.alreadyCompleted
+            : QazaCompletionResult.notFound,
+        entries: const [],
+      );
+    }
+
+    final pendingIds = pending.map((record) => record.id).toList(growable: false);
+    final tartibState = await tartib.evaluate(
       userId: userId,
       currentDate: currentDate,
       currentPrayer: currentPrayer,
     );
-    if (state.requiresOrder &&
-        !(await tartib.canCompleteRecordIds(
-          userId: userId,
-          recordIds: recordIds,
-          currentDate: currentDate,
-          currentPrayer: currentPrayer,
-          evaluatedState: state,
-        ))) {
+    if (tartibState.requiresOrder &&
+        !tartib.canCompletePendingRecords(
+          pendingRecords: pending,
+          recordIds: pendingIds,
+          evaluatedState: tartibState,
+        )) {
       throw QazaTartibViolationException(
-        requiredPrayer: state.nextPrayer!,
-        pendingFarzCount: state.pendingFarzCount,
+        requiredPrayer: tartibState.nextPending!.prayerType,
+        pendingFarzCount: tartibState.pendingFarzCount,
       );
     }
-    await repository.completeRecords(
+
+    final completionIds = <String, String>{
+      for (final id in pendingIds) id: newQazaCompletionId(),
+    };
+    final changed = await repository.completeRecords(
+      userId: userId,
+      recordIds: pendingIds,
+      completedAt: completedAt,
+      completionIds: completionIds,
+    );
+
+    final entries = <QazaCompletionEntry>[
+      for (final record in changed)
+        if (record.completedAt != null && record.completionId != null)
+          QazaCompletionEntry(
+            recordId: record.id,
+            completionId: record.completionId!,
+            prayerType: record.prayerType,
+            originalDate: record.originalDate,
+            completedAt: record.completedAt!,
+          ),
+    ];
+
+    return QazaCompletionBatchReceipt(
+      result: entries.isEmpty
+          ? QazaCompletionResult.notFound
+          : QazaCompletionResult.completed,
+      entries: List.unmodifiable(entries),
+    );
+  }
+
+  /// Legacy count-returning wrapper retained for older callers/tests.
+  Future<int> completeSelected({
+    required String userId,
+    required List<String> recordIds,
+    DateTime? completedAt,
+  }) async {
+    final receipt = await completeRecordsWithReceipt(
       userId: userId,
       recordIds: recordIds,
-      completedAt: completedAt,
+      completedAt: completedAt ?? DateTime.now(),
     );
+    return receipt.count;
+  }
+
+  /// Permanently corrects one completed record after the temporary Undo
+  /// window has expired. This is a historical correction, so completion-time
+  /// Tartib/restricted-time rules are intentionally not re-applied.
+  Future<bool> markCompletedAsPending({
+    required String userId,
+    required String recordId,
+  }) async {
+    final current = await repository.getRecordsByIds(
+      userId: userId,
+      recordIds: [recordId],
+    );
+    if (current.isEmpty || current.first.status != QazaStatus.completed) {
+      return false;
+    }
+
+    final record = current.first.copyWith(
+      status: QazaStatus.pending,
+      clearCompletedAt: true,
+      clearCompletionId: true,
+      updatedAt: DateTime.now(),
+      recordVersion: current.first.recordVersion + 1,
+    );
+    return repository.updateRecord(record: record);
   }
 
   /// Reverts only the completions captured by an active undo window.
   ///
   /// The persistence layer re-checks the exact completion marker so an old
   /// undo can never overwrite a later completion or conflict resolution.
-  Future<int> undoCompletions({
+  Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
@@ -757,37 +846,6 @@ class QazaService {
       afterId = page.nextId;
     }
     return result;
-  }
-
-  Future<int> completeSelected(
-      {required String userId,
-      required List<String> recordIds,
-      DateTime? completedAt}) async {
-    final remaining = recordIds.toSet();
-    if (remaining.isEmpty) return 0;
-    final valid = <String>[];
-    DateTime? afterDate;
-    String? afterId;
-    while (remaining.isNotEmpty) {
-      final page = await repository.getPage(
-          userId: userId,
-          limit: 500,
-          status: QazaStatus.pending,
-          afterOriginalDate: afterDate,
-          afterId: afterId);
-      for (final record in page.records) {
-        if (remaining.remove(record.id)) valid.add(record.id);
-      }
-      if (!page.hasMore) break;
-      afterDate = page.nextOriginalDate;
-      afterId = page.nextId;
-    }
-    if (valid.isEmpty) return 0;
-    await completeRecords(
-        userId: userId,
-        recordIds: valid,
-        completedAt: completedAt ?? DateTime.now());
-    return valid.length;
   }
 
   Future<QazaProgress> overallProgress(String userId) async =>

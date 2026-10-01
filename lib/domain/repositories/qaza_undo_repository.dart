@@ -6,7 +6,7 @@
 abstract interface class QazaUndoRepository {
   /// Reverts only completions that still carry the exact completion marker
   /// captured when the undo window was created.
-  Future<int> undoCompletions({
+  Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,

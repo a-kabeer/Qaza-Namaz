@@ -83,6 +83,8 @@ class OfflineFirstQazaRepository
     String? afterId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) async {
     _validateActive(userId);
@@ -98,6 +100,8 @@ class OfflineFirstQazaRepository
       afterId: afterId,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
+      afterCompletedAt: afterCompletedAt,
+      beforeCompletedAt: beforeCompletedAt,
       descending: descending,
     );
     return QazaPage(records: page.records, hasMore: page.hasMore);
@@ -283,7 +287,9 @@ class OfflineFirstQazaRepository
       userId: userId,
       recordIds: [recordId],
       completedAt: completedAt,
-      completionId: completionId,
+      completionIds: completionId == null
+          ? null
+          : <String, String>{recordId: completionId},
     );
 
     if (changed.isNotEmpty) {
@@ -307,34 +313,36 @@ class OfflineFirstQazaRepository
   }
 
   @override
-  Future<void> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    Map<String, String>? completionIds,
   }) async {
     _validateActive(userId);
-    if (recordIds.isEmpty) return;
-    await _localStore.completeRecords(
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+    return _localStore.completeRecords(
       userId: userId,
       recordIds: recordIds.toSet().toList(growable: false),
       completedAt: completedAt,
+      completionIds: completionIds,
     );
   }
 
   @override
-  Future<int> undoCompletions({
+  Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
     _validateActive(userId);
-    if (expectedCompletionIds.isEmpty) return 0;
+    if (expectedCompletionIds.isEmpty) return const <String>[];
     final changed = await _localStore.undoCompletions(
       userId: userId,
       expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
-    return changed.length;
+    return changed.map((record) => record.id).toList(growable: false);
   }
 
   @override

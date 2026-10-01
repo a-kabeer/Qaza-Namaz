@@ -89,13 +89,15 @@ class _FakeRepository implements QazaRepository {
     PrayerType? prayerType,
     Iterable<PrayerType>? prayerTypes,
     QazaStatus? status,
+    String? additionId,
     DateTime? from,
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
-    String? additionId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) => throw UnimplementedError();
 
@@ -135,11 +137,36 @@ class _FakeRepository implements QazaRepository {
   }
 
   @override
-  Future<void> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
-  }) => throw UnimplementedError();
+    Map<String, String>? completionIds,
+  }) async {
+    final changed = <QazaRecord>[];
+    for (final id in recordIds) {
+      final index = records.indexWhere(
+        (record) =>
+            record.userId == userId &&
+            record.id == id &&
+            record.status == QazaStatus.pending,
+      );
+      if (index < 0) continue;
+      final current = records[index];
+      final marker = completionIds?[id];
+      receivedCompletionId ??= marker;
+      final completed = current.copyWith(
+        status: QazaStatus.completed,
+        completedAt: completedAt,
+        completionId: marker,
+        updatedAt: completedAt,
+        recordVersion: current.recordVersion + 1,
+      );
+      records[index] = completed;
+      changed.add(completed);
+    }
+    return changed;
+  }
 
   @override
   Future<void> resetUserRecords({required String userId}) =>
