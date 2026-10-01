@@ -538,7 +538,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     prayer: prayer,
                     restricted: restricted,
                     completionWorking: widget.working,
-                    refreshing: false,
+                    refreshing: state.isRefreshing,
                     onComplete: widget.onComplete,
                   );
                 },
