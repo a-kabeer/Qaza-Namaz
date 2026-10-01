@@ -20,6 +20,7 @@ class ProfileQazaPlanPreview {
     required this.oldPlan,
     required this.newPlan,
     required this.oldRevision,
+    required this.previousProfileSnapshot,
     required this.calculationChanged,
     required this.existingCompletedInNewPlan,
     required this.pendingToAdd,
@@ -28,6 +29,7 @@ class ProfileQazaPlanPreview {
   final QazaPlan? oldPlan;
   final QazaPlan newPlan;
   final QazaPlanRevision? oldRevision;
+  final Map<String, dynamic> previousProfileSnapshot;
   final bool calculationChanged;
   final int existingCompletedInNewPlan;
   final int pendingToAdd;
@@ -98,6 +100,7 @@ class ProfileQazaPlanReconciliationService {
         oldPlan: oldProfilePlan,
         newPlan: newPlan,
         oldRevision: oldRevision,
+        previousProfileSnapshot: profileSnapshot(oldProfile),
         calculationChanged: false,
         existingCompletedInNewPlan: 0,
         pendingToAdd: 0,
@@ -122,6 +125,7 @@ class ProfileQazaPlanReconciliationService {
       oldPlan: oldProfilePlan,
       newPlan: newPlan,
       oldRevision: oldRevision,
+      previousProfileSnapshot: profileSnapshot(oldProfile),
       calculationChanged: true,
       existingCompletedInNewPlan: completed,
       pendingToAdd: newPlanKeys.difference(existingKeys).length,
@@ -141,9 +145,16 @@ class ProfileQazaPlanReconciliationService {
       final revision = await _saveRevision(
         userId: userId,
         profile: newProfile,
+        previousProfileSnapshot: preview.previousProfileSnapshot,
         plan: preview.newPlan,
         ledgerPlan: oldLedgerPlan,
         decision: QazaPlanLedgerDecision.keptExisting,
+        addedRecords: 0,
+        removedRecords: 0,
+        changedFields: changedProfileFields(
+          preview.previousProfileSnapshot,
+          profileSnapshot(newProfile),
+        ),
       );
       return ProfileQazaPlanReconciliationResult(
         revision: revision,
@@ -173,12 +184,19 @@ class ProfileQazaPlanReconciliationService {
             : preview.newPlan;
     final revision = await _saveRevision(
       userId: userId,
+      previousProfileSnapshot: preview.previousProfileSnapshot,
       profile: newProfile,
       plan: preview.newPlan,
       ledgerPlan: ledgerPlan,
       decision: choice == ProfileQazaChangeChoice.keepExisting
           ? QazaPlanLedgerDecision.keptExisting
           : QazaPlanLedgerDecision.applied,
+      addedRecords: added,
+      removedRecords: 0,
+      changedFields: changedProfileFields(
+        preview.previousProfileSnapshot,
+        profileSnapshot(newProfile),
+      ),
     );
 
     return ProfileQazaPlanReconciliationResult(
@@ -196,19 +214,27 @@ class ProfileQazaPlanReconciliationService {
   }) {
     return _saveRevision(
       userId: userId,
+      previousProfileSnapshot: const {},
       profile: profile,
       plan: plan,
       ledgerPlan: plan,
       decision: QazaPlanLedgerDecision.applied,
+      addedRecords: 0,
+      removedRecords: 0,
+      changedFields: const [],
     );
   }
 
   Future<QazaPlanRevision> _saveRevision({
     required String userId,
     required UserProfile profile,
+    required Map<String, dynamic> previousProfileSnapshot,
     required QazaPlan plan,
     required QazaPlan ledgerPlan,
     required QazaPlanLedgerDecision decision,
+    required int addedRecords,
+    required int removedRecords,
+    required List<String> changedFields,
   }) async {
     final now = DateTime.now();
     final revisionId =
@@ -220,6 +246,10 @@ class ProfileQazaPlanReconciliationService {
       plan: plan,
       planFingerprint: planFingerprint(plan),
       profileSnapshot: profileSnapshot(profile),
+      previousProfileSnapshot: previousProfileSnapshot,
+      changedFields: changedFields,
+      addedRecords: addedRecords,
+      removedRecords: removedRecords,
       ledgerDecision: decision,
       ledgerPlan: ledgerPlan,
       ledgerPlanFingerprint: planFingerprint(ledgerPlan),
@@ -312,6 +342,24 @@ class ProfileQazaPlanReconciliationService {
       plan.includeWitr,
       plan.totalWithWitr,
     ].join('|');
+  }
+
+  static List<String> changedProfileFields(
+    Map<String, dynamic> previous,
+    Map<String, dynamic> next,
+  ) {
+    const keys = [
+      'gender',
+      'madhab',
+      'dateOfBirth',
+      'pubertyAge',
+      'startPrayingAge',
+      'effectiveWitr',
+    ];
+    return [
+      for (final key in keys)
+        if (previous[key] != next[key]) key,
+    ];
   }
 
   static Map<String, dynamic> profileSnapshot(UserProfile profile) => {
