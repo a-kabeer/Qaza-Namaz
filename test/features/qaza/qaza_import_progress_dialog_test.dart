@@ -62,6 +62,7 @@ Future<void> _open(WidgetTester tester) async {
 void main() {
   testWidgets('shows real import progress and counts', (tester) async {
     final controller = _TestImportController();
+    await tester.pumpWidget(_app(controller));
     controller.emit(const QazaImportTaskState(
       phase: QazaImportTaskPhase.importing,
       processed: 4000,
@@ -69,8 +70,7 @@ void main() {
       added: 3950,
       skipped: 50,
     ));
-
-    await tester.pumpWidget(_app(controller));
+    await tester.pump();
     await _open(tester);
 
     expect(find.text('50%'), findsOneWidget);
@@ -85,11 +85,11 @@ void main() {
 
   testWidgets('shows preparing state without a fake percentage', (tester) async {
     final controller = _TestImportController();
+    await tester.pumpWidget(_app(controller));
     controller.emit(const QazaImportTaskState(
       phase: QazaImportTaskPhase.preparing,
     ));
-
-    await tester.pumpWidget(_app(controller));
+    await tester.pump();
     await _open(tester);
 
     expect(find.text('50%'), findsNothing);
@@ -99,13 +99,13 @@ void main() {
 
   testWidgets('handles zero-total importing state safely', (tester) async {
     final controller = _TestImportController();
+    await tester.pumpWidget(_app(controller));
     controller.emit(const QazaImportTaskState(
       phase: QazaImportTaskPhase.importing,
       processed: 0,
       total: 0,
     ));
-
-    await tester.pumpWidget(_app(controller));
+    await tester.pump();
     await _open(tester);
 
     expect(find.text('Checking your ledger...'), findsOneWidget);
@@ -114,11 +114,11 @@ void main() {
 
   testWidgets('keeps failure open and retries in place', (tester) async {
     final controller = _TestImportController();
+    await tester.pumpWidget(_app(controller));
     controller.emit(const QazaImportTaskState(
       phase: QazaImportTaskPhase.failed,
     ));
-
-    await tester.pumpWidget(_app(controller));
+    await tester.pump();
     await _open(tester);
 
     expect(find.text('Retry'), findsOneWidget);
@@ -131,13 +131,13 @@ void main() {
 
   testWidgets('closes when import completes', (tester) async {
     final controller = _TestImportController();
+    await tester.pumpWidget(_app(controller));
     controller.emit(const QazaImportTaskState(
       phase: QazaImportTaskPhase.importing,
       processed: 0,
       total: 8000,
     ));
-
-    await tester.pumpWidget(_app(controller));
+    await tester.pump();
     await _open(tester);
     expect(find.text('Adding Qaza...'), findsOneWidget);
 
