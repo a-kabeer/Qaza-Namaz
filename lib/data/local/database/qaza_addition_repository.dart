@@ -118,9 +118,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
          FROM qaza_additions a
          LEFT JOIN qaza_records r
            ON r.user_id = a.user_id AND r.addition_id = a.id
-         WHERE ''' +
-          where.toString() +
-          '''
+         WHERE ${where.toString()}
          GROUP BY a.id
          HAVING COUNT(r.id) > 0
          ORDER BY a.created_at DESC, a.id DESC
@@ -182,9 +180,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
          FROM qaza_deletion_actions a
          LEFT JOIN qaza_deletion_action_record_snapshots s
            ON s.deletion_action_id = a.id
-         WHERE ''' +
-          where.toString() +
-          '''
+         WHERE ${where.toString()}
          GROUP BY a.id
          HAVING COUNT(s.record_id) > 0
          ORDER BY a.created_at DESC, a.id DESC

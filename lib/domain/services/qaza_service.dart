@@ -91,12 +91,11 @@ class QazaService {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
     this.witrInclusionResolver,
-    DiagnosticsService diagnostics = const NoopDiagnostics(),
+    DiagnosticsService? diagnostics,
   })  : availability = availability ?? const QazaAvailabilityService(),
-        tartib = tartib ?? SahibAlTartibService(repository),
-        _diagnostics = diagnostics;
+        tartib = tartib ?? SahibAlTartibService(repository);
+
   final QazaRepository repository;
-  final DiagnosticsService _diagnostics;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
   final bool Function()? witrInclusionResolver;
@@ -172,7 +171,9 @@ class QazaService {
     required String userId,
     required PrayerType prayerType,
   }) {
-    if (prayerType == PrayerType.witr && !_witrAllowed) return Future.value(null);
+    if (prayerType == PrayerType.witr && !_witrAllowed) {
+      return Future.value(null);
+    }
     return repository.getOldestPending(
       userId: userId,
       prayerType: prayerType,
@@ -225,49 +226,6 @@ class QazaService {
         currentDate: currentDate,
         currentPrayer: currentPrayer,
       );
-
-  Future<void> _ensureCompletionAllowed({
-    required String userId,
-    required String recordId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-  }) async {
-    final SahibAlTartibState state;
-    final bool allowed;
-    try {
-      state = await tartib.evaluate(
-        userId: userId,
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-      );
-      if (!state.requiresOrder || state.nextPending == null) return;
-      allowed = await tartib.canCompleteRecordIds(
-        userId: userId,
-        recordIds: [recordId],
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-        evaluatedState: state,
-      );
-    } catch (error, stack) {
-      // The ordering rule could not be read. That is not a violation and not
-      // a persistence failure; it is reported and rethrown so the caller can
-      // say which of the two it was.
-      _diagnostics.recordFailure(
-        DiagnosticArea.qazaCompletion,
-        'tartib_check_failed',
-        error,
-        stack: stack,
-      );
-      rethrow;
-    }
-    if (allowed) {
-      return;
-    }
-    throw QazaTartibViolationException(
-      requiredPrayer: state.nextPending!.prayerType,
-      pendingFarzCount: state.pendingFarzCount,
-    );
-  }
 
   Future<int> countCompletedBetween({
     required String userId,

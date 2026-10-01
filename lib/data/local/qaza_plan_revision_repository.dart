@@ -11,7 +11,7 @@ class SharedPreferencesQazaPlanRevisionRepository
   static const int _maxPerUser = 50;
 
   String _key(String userId, String revisionId) =>
-      '$_prefix${userId}_${revisionId}';
+      '$_prefix${userId}_$revisionId';
 
   @override
   Future<QazaPlanRevision?> latest(String userId) async {

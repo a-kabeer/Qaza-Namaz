@@ -23,8 +23,6 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
     return AlertDialog(
       title: Text(l10n.profileQazaPlanChangedTitle),
       content: SingleChildScrollView(
