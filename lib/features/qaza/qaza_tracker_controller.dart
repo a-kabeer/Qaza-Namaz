@@ -587,22 +587,22 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-  /// Completes the selected records and returns the batch metadata needed
-  /// for a safe, completion-marker-bound Undo action.
-  Future<QazaCompletionBatch?> completeSelectedWithUndo() async {
-    final selectedIds = state.selected.toList(growable: false);
+  Future<QazaCompletionBatchReceipt?> completeRecordWithUndo(
+    String recordId,
+  ) async {
+    return _completeRecordIdsWithUndo([recordId]);
+  }
+
+  Future<QazaCompletionBatchReceipt?> completeSelectedWithUndo() async {
     return _completeRecordIdsWithUndo(
-      selectedIds,
+      state.selected.toList(growable: false),
       exitSelectionModeOnSuccess: true,
     );
   }
 
-  /// Shared durable completion pipeline for both single-row swipe and bulk
-  /// selection. The caller controls whether successful completion exits the
-  /// user-visible selection mode.
-  Future<QazaCompletionBatch?> _completeRecordIdsWithUndo(
+  Future<QazaCompletionBatchReceipt?> _completeRecordIdsWithUndo(
     List<String> selectedIds, {
-    required bool exitSelectionModeOnSuccess,
+    bool exitSelectionModeOnSuccess = false,
   }) async {
     if (ref.read(qazaCompletionRestrictedProvider)) return null;
     final userId = ref.read(activeUserIdProvider);
@@ -610,38 +610,22 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       return null;
     }
 
-    final service = ref.read(qazaServiceProvider);
-    final selectedRecords = await service.resolvePendingRecordsByIds(
-      userId: userId,
-      recordIds: selectedIds,
-    );
-    if (selectedRecords.length != selectedIds.length) {
-      if (exitSelectionModeOnSuccess) {
-        state = state.copyWith(
-          selected: {for (final r in selectedRecords) r.id},
-          error: 'Some selected Qaza records are no longer pending.',
-        );
-      }
-      return null;
-    }
-
-    if (!await service.tartib.canCompleteRecordIds(
-      userId: userId,
-      recordIds: selectedIds,
-    )) {
-      state = state.copyWith(clearError: true);
-      ref.invalidate(sahibAlTartibProvider);
-      return null;
-    }
-
-    final completedAt = DateTime.now();
     state = state.copyWith(completing: true, clearError: true);
     try {
-      final completed = await service.completeSelected(
-        userId: userId,
-        recordIds: selectedIds,
-        completedAt: completedAt,
-      );
+      final receipt = await ref
+          .read(qazaCompletionControllerProvider.notifier)
+          .completeRecordsWithReceipt(
+            userId: userId,
+            recordIds: selectedIds,
+            completedAt: DateTime.now(),
+          );
+
+      if (receipt.result == QazaCompletionResult.blockedByRestrictedTime ||
+          receipt.entries.isEmpty) {
+        state = state.copyWith(completing: false);
+        return null;
+      }
+
       state = state.copyWith(
         completing: false,
         selectionMode:
@@ -651,53 +635,22 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       );
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
+      for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+        ref.invalidate(oldestPendingProvider(prayer));
+      }
       await refresh();
-      if (completed == 0) return null;
-
-      List<QazaRecord> undoableRecords;
-      try {
-        final completedRecords = await service.getRecordsByIds(
-          userId: userId,
-          recordIds: selectedIds,
-        );
-        undoableRecords = completedRecords
-            .where(
-              (record) =>
-                  record.status == QazaStatus.completed &&
-                  record.completionId != null &&
-                  record.completionId!.isNotEmpty,
-            )
-            .toList(growable: false);
-      } catch (error, stack) {
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.qazaCompletion,
-              'completion_marker_lookup_failed',
-              error,
-              stack: stack,
-            );
-        undoableRecords = const <QazaRecord>[];
-      }
-
-      if (undoableRecords.isEmpty) {
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.qazaCompletion,
-              'completion_marker_lookup_empty',
-              StateError('No completion marker was returned after completion.'),
-              stack: StackTrace.current,
-            );
-        return null;
-      }
-
-      return QazaCompletionBatch(
-        completedRecords: undoableRecords,
-        completedAt: completedAt,
-        count: undoableRecords.length,
-      );
+      return receipt;
     } on QazaTartibViolationException {
       state = state.copyWith(completing: false, clearError: true);
       ref.invalidate(sahibAlTartibProvider);
       return null;
-    } catch (error) {
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'tracker_completion_failed',
+            error,
+            stack: stack,
+          );
       state = state.copyWith(
         completing: false,
         error: error.toString(),
@@ -706,12 +659,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-  /// Legacy count-returning wrapper kept for existing controller callers/tests.
+  /// Legacy count-returning wrapper kept for older callers/tests.
   Future<int> completeSelected() async {
     final batch = await completeSelectedWithUndo();
     return batch?.count ?? 0;
   }
-}
 
 final qazaTrackerControllerProvider =
     AutoDisposeNotifierProviderFamily<QazaTrackerController, QazaTrackerState, String?>(
