@@ -195,6 +195,7 @@ class SahibAlTartibService {
     DateTime? currentDate,
     PrayerType? currentPrayer,
     SahibAlTartibState? evaluatedState,
+    Iterable<QazaRecord>? pendingRecords,
   }) async {
     final ids = recordIds.toSet();
     if (ids.isEmpty) return true;
@@ -207,10 +208,16 @@ class SahibAlTartibService {
         );
     if (!state.requiresOrder || state.nextPending == null) return true;
 
-    final witrIds = await _findPendingWitrIds(
-      userId: userId,
-      requestedIds: ids,
-    );
+    final witrIds = pendingRecords == null
+        ? await _findPendingWitrIds(
+            userId: userId,
+            requestedIds: ids,
+          )
+        : {
+            for (final record in pendingRecords)
+              if (ids.contains(record.id) && record.prayerType == PrayerType.witr)
+                record.id,
+          };
 
     return ids.every(
       (id) => id == state.nextPending!.id || witrIds.contains(id),
