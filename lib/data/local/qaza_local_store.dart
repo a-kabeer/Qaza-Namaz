@@ -126,13 +126,17 @@ abstract class QazaLocalStore {
     bool descending = false,
   }) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    if ((afterOriginalDate == null) != (afterId == null) ||
-        (beforeOriginalDate == null) != (beforeId == null) ||
+    final originalCursor = afterOriginalDate != null || beforeOriginalDate != null;
+    final completedCursor = afterCompletedAt != null || beforeCompletedAt != null;
+
+    if ((afterOriginalDate != null) != (afterId != null) ||
+        (beforeOriginalDate != null) != (beforeId != null) ||
+        (afterOriginalDate != null && beforeOriginalDate != null) ||
         (afterCompletedAt != null && beforeCompletedAt != null) ||
-        (afterCompletedAt != null && beforeId == null) ||
-        (beforeCompletedAt != null && beforeId == null) ||
-        (afterOriginalDate != null && beforeOriginalDate != null)) {
-      throw ArgumentError('Exactly one complete pagination cursor may be provided');
+        (completedCursor && originalCursor) ||
+        (completedCursor && (afterId == null && beforeId == null)) ||
+        (completedCursor && status != QazaStatus.completed)) {
+      throw ArgumentError('Invalid pagination cursor');
     }
     if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
@@ -159,21 +163,21 @@ abstract class QazaLocalStore {
         final d = bt.compareTo(at);
         return d != 0 ? d : b.id.compareTo(a.id);
       });
-      if (afterCompletedAt != null) {
-        records = records.where((r) {
-          final value = r.completedAt;
-          if (value == null) return false;
-          return value.isBefore(afterCompletedAt) ||
-              (value.isAtSameMomentAs(afterCompletedAt) &&
-                  r.id.compareTo(afterId!) < 0);
-        }).toList();
-      } else if (beforeCompletedAt != null) {
+      if (beforeCompletedAt != null) {
         records = records.where((r) {
           final value = r.completedAt;
           if (value == null) return false;
           return value.isBefore(beforeCompletedAt) ||
               (value.isAtSameMomentAs(beforeCompletedAt) &&
                   r.id.compareTo(beforeId!) < 0);
+        }).toList();
+      } else if (afterCompletedAt != null) {
+        records = records.where((r) {
+          final value = r.completedAt;
+          if (value == null) return false;
+          return value.isAfter(afterCompletedAt) ||
+              (value.isAtSameMomentAs(afterCompletedAt) &&
+                  r.id.compareTo(afterId!) > 0);
         }).toList();
       }
     } else {
