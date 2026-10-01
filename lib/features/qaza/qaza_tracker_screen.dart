@@ -91,65 +91,6 @@ class QazaTrackerScreen extends ConsumerWidget {
 
 /// Stable header slot above the Qaza workspace content.
 class _QazaTrackerHeader extends StatelessWidget {
-  const _QazaTrackerHeader({required this.selectionMode});
-
-  static const double _headerContentHeight = kTextTabBarHeight;
-
-  final bool selectionMode;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          height: _headerContentHeight,
-          child: selectionMode
-              ? const _SelectionContextHeader()
-              : const Divider(height: 1),
-        ),
-      ],
-    );
-  }
-}
-
-class _SelectionContextHeader extends StatelessWidget {
-  const _SelectionContextHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Expanded(
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.checklist_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  l10n.addQazaSelectionLabel,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const Divider(height: 1),
-      ],
-    );
-  }
-}
-
-class _QazaTrackerHeader extends StatelessWidget {
   const _QazaTrackerHeader({
     required this.selectionMode,
     required this.statusFilter,
