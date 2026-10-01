@@ -7,7 +7,6 @@ import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/qaza_completion_result.dart';
-import '../../domain/services/qaza_service.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
@@ -337,7 +336,7 @@ class _QazaUndoSelectionSheetState
                 ? (Localizations.localeOf(context).languageCode == 'ur'
                     ? 'واپس کرنے کا وقت ختم ہو گیا۔'
                     : 'The Undo window has expired.')
-                : _batch.entries.length.toString() + ' Qaza',
+                : '\${_batch.entries.length} Qaza',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
