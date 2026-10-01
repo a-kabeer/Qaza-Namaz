@@ -8,6 +8,7 @@ import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_service.dart';
 import 'completion/qaza_completion_controller.dart';
+import '../home/home_controller.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
@@ -497,6 +498,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         selected:
             exitSelectionModeOnSuccess ? const <String>{} : state.selected,
       );
+      ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       for (final prayer in ref.read(enabledPrayerTypesProvider)) {
@@ -537,6 +539,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
             recordId: recordId,
           );
       if (changed) {
+        ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         for (final prayer in ref.read(enabledPrayerTypesProvider)) {
           ref.invalidate(oldestPendingProvider(prayer));
