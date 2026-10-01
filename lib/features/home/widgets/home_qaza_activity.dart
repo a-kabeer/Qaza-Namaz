@@ -694,7 +694,7 @@ class _ActivityBarChart extends StatelessWidget {
       container: true,
       label: _chartSemantics(context),
       child: SizedBox(
-        height: 235,
+        height: 250,
         child: BarChart(
           BarChartData(
             maxY: maxY,
