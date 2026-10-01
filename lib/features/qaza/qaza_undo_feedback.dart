@@ -62,17 +62,60 @@ Future<void> _undoFromSnack({
     return;
   }
 
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    useSafeArea: true,
-    builder: (_) => _QazaUndoSelectionSheet(
+  final manager = ref.read(qazaUndoManagerProvider);
+  late final QazaUndoBatch activeBatch;
+  try {
+    activeBatch = await manager.beginSelection(
       userId: userId,
-      initialBatch: batch,
-      onUndone: onUndone,
-    ),
-  );
+      expectedBatch: batch,
+    );
+  } on QazaUndoException catch (error, stack) {
+    ref.read(diagnosticsProvider).recordFailure(
+      DiagnosticArea.qazaCompletion,
+      'batch_undo_start_failed',
+      error.cause ?? error,
+      stack: stack,
+    );
+    if (!context.mounted) return;
+    ref.read(appSnackbarServiceProvider).error(
+      qazaUndoFailureMessage(context, error.reason),
+    );
+    return;
+  } catch (error, stack) {
+    ref.read(diagnosticsProvider).recordFailure(
+      DiagnosticArea.qazaCompletion,
+      'batch_undo_start_failed',
+      error,
+      stack: stack,
+    );
+    if (!context.mounted) return;
+    ref.read(appSnackbarServiceProvider).error(
+      qazaUndoFailureMessage(
+        context,
+        QazaUndoFailureReason.failed,
+      ),
+    );
+    return;
+  }
+
+  try {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (_) => _QazaUndoSelectionSheet(
+        userId: userId,
+        initialBatch: activeBatch,
+        onUndone: onUndone,
+      ),
+    );
+  } finally {
+    await manager.cancelSelection(
+      userId: userId,
+      expectedBatch: activeBatch,
+    );
+  }
 }
 
 Future<void> _undoAll({
@@ -153,31 +196,8 @@ class _QazaUndoSelectionSheetState
     extends ConsumerState<_QazaUndoSelectionSheet> {
   late QazaUndoBatch _batch = widget.initialBatch;
   final Set<String> _selected = <String>{};
-  Timer? _expiryTimer;
   bool _working = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _expiryTimer = Timer.periodic(
-      const Duration(milliseconds: 250),
-      (_) {
-        if (!mounted) return;
-        if (_batch.isExpired(DateTime.now())) {
-          setState(_selected.clear);
-          _expiryTimer?.cancel();
-        } else {
-          setState(() {});
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _expiryTimer?.cancel();
-    super.dispose();
-  }
 
   String _title(BuildContext context) {
     return Localizations.localeOf(context).languageCode == 'ur'
@@ -198,7 +218,7 @@ class _QazaUndoSelectionSheetState
   }
 
   Future<void> _undoSelected() async {
-    if (_selected.isEmpty || _working || _batch.isExpired(DateTime.now())) {
+    if (_selected.isEmpty || _working) {
       return;
     }
     setState(() => _working = true);
@@ -254,7 +274,7 @@ class _QazaUndoSelectionSheetState
   }
 
   Future<void> _undoAll() async {
-    if (_working || _batch.isExpired(DateTime.now())) return;
+    if (_working) return;
     setState(() => _working = true);
     try {
       final result = await ref.read(qazaUndoManagerProvider).undo(
@@ -315,7 +335,6 @@ class _QazaUndoSelectionSheetState
 
   @override
   Widget build(BuildContext context) {
-    final expired = _batch.isExpired(DateTime.now());
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
 
@@ -332,11 +351,7 @@ class _QazaUndoSelectionSheetState
           ),
           const SizedBox(height: 8),
           Text(
-            expired
-                ? (Localizations.localeOf(context).languageCode == 'ur'
-                    ? 'واپس کرنے کا وقت ختم ہو گیا۔'
-                    : 'The Undo window has expired.')
-                : '${_batch.entries.length} Qaza',
+            '${_batch.entries.length} Qaza',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
@@ -351,7 +366,7 @@ class _QazaUndoSelectionSheetState
                   value: selected,
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: expired || _working
+                  onChanged: _working
                       ? null
                       : (value) {
                           setState(() {
@@ -375,14 +390,14 @@ class _QazaUndoSelectionSheetState
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: expired || _working ? null : _undoAll,
+                  onPressed: _working ? null : _undoAll,
                   child: Text(_undoAllLabel(context)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: expired || _working || _selected.isEmpty
+                  onPressed: _working || _selected.isEmpty
                       ? null
                       : _undoSelected,
                   child: Text(_undoSelectedLabel(context)),
