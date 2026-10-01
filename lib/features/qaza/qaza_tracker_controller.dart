@@ -271,6 +271,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         refreshing: false,
       );
     } catch (error) {
+      if (generation != _queryGeneration) return;
       state = state.copyWith(
         loading: false,
         refreshing: false,
@@ -307,6 +308,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
           beforeOriginalDate: completed ? null : after?.originalDate,
           beforeId: completed ? null : after?.id,
           beforeCompletedAt: completed ? after?.completedAt : null,
+          beforeId: completed ? after?.id : null,
           afterCompletedAt: null,
           descending: false,
         );
@@ -329,6 +331,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         loadingMore: false,
       );
     } catch (error) {
+      if (generation != _queryGeneration) return;
       state = state.copyWith(
         loadingMore: false,
         error: error.toString(),
@@ -411,6 +414,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   void toggleSelection(String recordId) {
+    if (state.selectionScope != QazaSelectionScope.pending) return;
     final next = Set<String>.of(state.selected);
     if (!next.remove(recordId)) next.add(recordId);
     state = state.copyWith(selectionMode: true, selected: next);
@@ -432,7 +436,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     state = state.copyWith(selectionMode: true, selected: next);
   }
 
-  void exitSelectionMode() => state.copyWith(
+  void exitSelectionMode() => state = state.copyWith(
         selectionMode: false,
         selected: const <String>{},
         clearSelectionScope: true,
@@ -441,6 +445,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   /// Selection is bounded to the records actually loaded, never the ledger.
   void selectAllLoaded() => state = state.copyWith(
         selectionMode: true,
+        selectionScope: QazaSelectionScope.pending,
         selected: {for (final record in state.selectableRecords) record.id},
       );
 
