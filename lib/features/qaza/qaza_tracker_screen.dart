@@ -5,6 +5,7 @@ import '../prayer_time/application/prayer_time_providers.dart';
 import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
@@ -542,6 +543,8 @@ class _PendingTrackerBody extends StatelessWidget {
             ),
           ),
         ),
+        if (state.selected.isNotEmpty)
+          _BulkCompletionBar(state: state, controller: controller),
       ],
     );
   }
@@ -906,6 +909,98 @@ class _FilterSheet extends ConsumerWidget {
               child: Text(l10n.commonReset),
             ),
         ],
+      ),
+    );
+  }
+}
+
+
+class _BulkCompletionBar extends ConsumerWidget {
+  const _BulkCompletionBar({
+    required this.state,
+    required this.controller,
+  });
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  Future<void> _complete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final count = state.selected.length;
+    if (count == 0 || state.completing) return;
+
+    if (state.selectionNeedsConfirmation) {
+      final confirmed = await confirmDestructive(
+        context,
+        title: l10n.qazaConfirmBulkTitle('$count'),
+        message: l10n.qazaConfirmBulkMessage('$count'),
+        confirmLabel: l10n.qazaConfirmBulkAction,
+      );
+      if (!confirmed || !context.mounted) return;
+    }
+
+    final batch = await controller.completeSelectedWithUndo();
+    if (!context.mounted) return;
+    if (batch == null) {
+      final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
+      if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+        ref.read(appSnackbarServiceProvider).warning(
+              l10n.qazaTartibBlocked(
+                tartib!.nextPrayer!.localizedLabel(l10n),
+              ),
+            );
+      }
+      return;
+    }
+
+    await showQazaUndoFeedback(
+      context: context,
+      ref: ref,
+      userId: ref.read(requiredUserIdProvider),
+      entries: batch.entries,
+      onUndone: controller.refresh,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final busy = state.completing || state.recordMutating;
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
+    final count = state.selected.length;
+
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              TextButton(
+                key: const Key('qaza_tracker_clear_selection'),
+                onPressed: busy ? null : controller.exitSelectionMode,
+                child: Text(l10n.commonClear),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton(
+                  key: const Key('qaza_tracker_complete_selected'),
+                  onPressed:
+                      busy || restricted || count == 0
+                          ? null
+                          : () => _complete(context, ref),
+                  child: Text(l10n.qazaCompleteCount(count)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
