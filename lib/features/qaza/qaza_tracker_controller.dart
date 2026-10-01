@@ -218,11 +218,17 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         ? state.copyWith(
             statusFilter: status,
             clearPrayerFilter: true,
-            selected: const <String>{})
+            selected: const <String>{},
+            selectionMode: false,
+            clearSelectionScope: true,
+          )
         : state.copyWith(
             statusFilter: status,
             prayerFilter: request.prayer,
-            selected: const <String>{});
+            selected: const <String>{},
+            selectionMode: false,
+            clearSelectionScope: true,
+          );
     refresh();
   }
 

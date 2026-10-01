@@ -6,12 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_today_progress.dart';
+import 'package:qaza_namaz/features/qaza/completion/qaza_completion_controller.dart';
+import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/features/home/widgets/home_skeleton.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -24,6 +28,19 @@ class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
 
   @override
   HomePrayerSelectionState build() => initial;
+}
+
+class _TestQazaCompletionController extends QazaCompletionController {
+  @override
+  Future<QazaCompletionReceipt> completeRecordWithReceipt({
+    required String userId,
+    required String recordId,
+    required DateTime completedAt,
+  }) async {
+    return const QazaCompletionReceipt(
+      result: QazaCompletionResult.alreadyCompleted,
+    );
+  }
 }
 
 QazaRecord _pendingRecord({
@@ -49,6 +66,9 @@ Future<ProviderContainer> _containerFor({
   required void Function() onDailyProgressRead,
   Future<HomeDailyProgress> Function()? dailyProgress,
   bool useFixedTargetResolution = false,
+  bool includeActiveUser = false,
+  bool useTestCompletionController = false,
+  Future<QazaRecord?> Function()? oldestPendingOverride,
 }) async {
   return ProviderContainer(
     overrides: [
@@ -67,8 +87,13 @@ Future<ProviderContainer> _containerFor({
         (ref) => targetRecord.prayerType,
       ),
       oldestPendingProvider(targetRecord.prayerType).overrideWith(
-        (ref) async => targetRecord,
+        (ref) => oldestPendingOverride?.call() ?? Future.value(targetRecord),
       ),
+      if (includeActiveUser) activeUserIdProvider.overrideWithValue('u1'),
+      if (useTestCompletionController)
+        qazaCompletionControllerProvider.overrideWith(
+          _TestQazaCompletionController.new,
+        ),
       if (useFixedTargetResolution)
         homeSelectedPrayerProvider.overrideWith(
           (ref) => HomeSelectedPrayerState(
@@ -225,6 +250,117 @@ void main() {
     expect(find.byKey(const Key('home_today_date')), findsNothing);
     expect(find.byKey(const Key('home_today_date_hijri')), findsNothing);
     expect(dailyReads, 1);
+  });
+
+  testWidgets('tapping Today Progress opens Completed Qaza workspace',
+      (tester) async {
+    final record = _pendingRecord(
+      id: 'fajr',
+      prayer: PrayerType.fajr,
+      date: DateTime(2026, 9, 20),
+    );
+    final container = await _containerFor(
+      selection: const HomePrayerSelectionState(),
+      targetRecord: record,
+      onDailyProgressRead: () {},
+    );
+    addTearDown(container.dispose);
+
+    await _pumpHomeTodayProgress(tester, container, record);
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.home,
+    );
+
+    await tester.tap(find.byKey(const Key('home_today_progress_header')));
+    await tester.pump();
+
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.qaza,
+    );
+    expect(
+      container.read(qazaTrackerFilterRequestProvider)?.status,
+      QazaStatusFilter.completed,
+    );
+  });
+
+  testWidgets(
+      'Today Progress child controls do not trigger workspace navigation',
+      (tester) async {
+    final record = _pendingRecord(
+      id: 'fajr',
+      prayer: PrayerType.fajr,
+      date: DateTime(2026, 9, 20),
+    );
+    final container = await _containerFor(
+      selection: const HomePrayerSelectionState(),
+      targetRecord: record,
+      onDailyProgressRead: () {},
+      includeActiveUser: true,
+      useTestCompletionController: true,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpHomeTodayProgress(tester, container, record);
+
+    await tester.tap(find.byKey(const Key('home_qaza_prayer_selector')));
+    await tester.pump();
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.home,
+    );
+    expect(
+      container.read(qazaTrackerFilterRequestProvider),
+      isNull,
+    );
+    Navigator.of(tester.element(find.byKey(const Key('home_today_progress'))))
+        .pop();
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+    await tester.pump();
+    expect(
+      container.read(workspaceDestinationProvider),
+      WorkspaceDestination.home,
+    );
+  });
+
+  testWidgets('Qaza refresh keeps the cached Next Qaza footprint stable',
+      (tester) async {
+    final record = _pendingRecord(
+      id: 'fajr',
+      prayer: PrayerType.fajr,
+      date: DateTime(2026, 9, 20),
+    );
+    var refreshing = false;
+    final refreshCompleter = Completer<QazaRecord?>();
+    final container = await _containerFor(
+      selection: const HomePrayerSelectionState(),
+      targetRecord: record,
+      onDailyProgressRead: () {},
+      oldestPendingOverride: () =>
+          refreshing ? refreshCompleter.future : Future.value(record),
+    );
+    addTearDown(container.dispose);
+
+    await _pumpHomeTodayProgress(tester, container, record);
+    final before = tester.getSize(
+      find.byKey(const Key('home_today_progress')),
+    );
+
+    refreshing = true;
+    container.invalidate(oldestPendingProvider(record.prayerType));
+    await tester.pump();
+
+    final after = tester.getSize(
+      find.byKey(const Key('home_today_progress')),
+    );
+    expect(after.height, closeTo(before.height, 0.1));
+    expect(find.byType(HomeNextQazaSkeleton), findsNothing);
+
+    refreshCompleter.complete(record);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('daily progress loading never hides Next Qaza', (tester) async {

@@ -18,6 +18,7 @@ import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../../prayer_time/presentation/prayer_timeline_row.dart';
 import '../../qaza/qaza_undo_feedback.dart';
+import '../../qaza/qaza_navigation.dart';
 import '../home_controller.dart';
 import '../providers/home_providers.dart';
 import 'home_qaza_target_sheet.dart';
@@ -164,20 +165,25 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
     return Card(
       key: const Key('home_today_progress'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _TodayProgressSection(summary: widget.summary),
-            const SizedBox(height: 18),
-            _NextQazaPanel(
-              summary: widget.summary,
-              selected: selected,
-              working: working,
-              onComplete: _complete,
-            ),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const Key('home_today_progress_tap_target'),
+        onTap: () => openQazaCompleted(ref),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _TodayProgressSection(summary: widget.summary),
+              const SizedBox(height: 18),
+              _NextQazaPanel(
+                summary: widget.summary,
+                selected: selected,
+                working: working,
+                onComplete: _complete,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -394,6 +400,9 @@ class _TartibUnavailable extends StatelessWidget {
 
 /// Prayer target is driven by the selected Home completion mode, while Sahib al-Tartib remains authoritative.
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
+  QazaRecord? _cachedRecord;
+  PrayerType? _cachedPrayer;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -463,8 +472,6 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           ],
         ),
         const SizedBox(height: 10),
-        // Until Sahib al-Tartib has resolved, no Fard prayer may be offered.
-        // Witr is unaffected and stays reachable from the prayer menu.
         if (widget.selected.source ==
             HomePrayerSelectionSource.tartibUnavailable)
           _TartibUnavailable(
@@ -492,8 +499,23 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                           HomePrayerSelectionSource.sahibAlTartib
                       ? ref.watch(homeFallbackPendingProvider)
                       : ref.watch(oldestPendingProvider(prayer));
+
               return state.when(
-                loading: () => const HomeNextQazaSkeleton(),
+                loading: () {
+                  final cached = _cachedRecord;
+                  final cachedPrayer = _cachedPrayer;
+                  if (cached != null && cachedPrayer != null) {
+                    return _HomeNextQazaRecord(
+                      record: cached,
+                      prayer: cachedPrayer,
+                      restricted: restricted,
+                      completionWorking: widget.working,
+                      refreshing: true,
+                      onComplete: widget.onComplete,
+                    );
+                  }
+                  return const HomeNextQazaSkeleton();
+                },
                 error: (_, __) => ErrorState(
                   key: const Key('home_oldest_qaza_error'),
                   message: l10n.completeLoadError,
@@ -501,156 +523,152 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                 ),
                 data: (record) {
                   if (record == null) {
+                    _cachedRecord = null;
+                    _cachedPrayer = null;
                     return Text(
                       l10n.completeNoPendingTitle,
                       key: const Key('home_oldest_qaza_empty'),
                     );
                   }
 
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final details = Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 26,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.errorContainer,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.onErrorContainer,
-                            child: Icon(_prayerIcon(prayer)),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  prayer.localizedLabel(l10n),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                Text(
-                                  DateFormatters.formatGregorianDatePadded(
-                                    record.originalDate,
-                                  ),
-                                  key: const Key('home_oldest_qaza_date'),
-                                ),
-                                Text(
-                                  l10n.formatHijriDate(
-                                      record.originalDate),
-                                  key: const Key('home_oldest_qaza_date_hijri'),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          StatusChip(
-                            l10n.homeOldestPending,
-                            tone: StatusChipTone.pending,
-                          ),
-                        ],
-                      );
-
-                      final complete = FilledButton.icon(
-                        key: const Key('home_complete_oldest_qaza'),
-                        onPressed: restricted || widget.working
-                            ? null
-                            : () => widget.onComplete(record, prayer),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(
-                          widget.working
-                              ? l10n.completeInProgress
-                              : l10n.homeCompleteQaza,
-                        ),
-                      );
-                      if (constraints.maxWidth < 340) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(
-                                  radius: 26,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .errorContainer,
-                                  foregroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer,
-                                  child: Icon(_prayerIcon(prayer)),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        prayer.localizedLabel(l10n),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                      Text(
-                                        DateFormatters
-                                            .formatGregorianDatePadded(
-                                          record.originalDate,
-                                        ),
-                                        key: const Key('home_oldest_qaza_date'),
-                                      ),
-                                      Text(
-                                        l10n.formatHijriDate(
-                                          record.originalDate,
-                                        ),
-                                        key: const Key(
-                                          'home_oldest_qaza_date_hijri',
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: StatusChip(
-                                l10n.homeOldestPending,
-                                tone: StatusChipTone.pending,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            complete,
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          details,
-                          const SizedBox(height: 12),
-                          complete,
-                        ],
-                      );
-                    },
+                  _cachedRecord = record;
+                  _cachedPrayer = prayer;
+                  return _HomeNextQazaRecord(
+                    record: record,
+                    prayer: prayer,
+                    restricted: restricted,
+                    completionWorking: widget.working,
+                    refreshing: state.isLoading || state.isRefreshing,
+                    onComplete: widget.onComplete,
                   );
                 },
               );
             },
           ),
       ],
+    );
+  }
+}
+
+class _HomeNextQazaRecord extends StatelessWidget {
+  const _HomeNextQazaRecord({
+    required this.record,
+    required this.prayer,
+    required this.restricted,
+    required this.completionWorking,
+    required this.refreshing,
+    required this.onComplete,
+  });
+
+  final QazaRecord record;
+  final PrayerType prayer;
+  final bool restricted;
+  final bool completionWorking;
+  final bool refreshing;
+  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final completeEnabled = !restricted &&
+            !completionWorking &&
+            !refreshing;
+
+        final complete = SizedBox(
+          height: 48,
+          child: FilledButton.icon(
+            key: const Key('home_complete_oldest_qaza'),
+            onPressed: completeEnabled
+                ? () => onComplete(record, prayer)
+                : null,
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(
+              completionWorking
+                  ? l10n.completeInProgress
+                  : l10n.homeCompleteQaza,
+            ),
+          ),
+        );
+
+        final details = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: theme.colorScheme.errorContainer,
+              foregroundColor: theme.colorScheme.onErrorContainer,
+              child: Icon(_prayerIcon(prayer)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    prayer.localizedLabel(l10n),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    DateFormatters.formatGregorianDatePadded(
+                      record.originalDate,
+                    ),
+                    key: const Key('home_oldest_qaza_date'),
+                  ),
+                  Text(
+                    l10n.formatHijriDate(record.originalDate),
+                    key: const Key('home_oldest_qaza_date_hijri'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+
+        if (constraints.maxWidth < 340) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              details,
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: StatusChip(
+                  l10n.homeOldestPending,
+                  tone: StatusChipTone.pending,
+                ),
+              ),
+              const SizedBox(height: 12),
+              complete,
+            ],
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: details),
+                const SizedBox(width: 8),
+                StatusChip(
+                  l10n.homeOldestPending,
+                  tone: StatusChipTone.pending,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            complete,
+          ],
+        );
+      },
     );
   }
 }
