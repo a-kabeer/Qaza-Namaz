@@ -112,6 +112,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (to != null && toExclusive != null) {
       throw ArgumentError('Provide either to or toExclusive, not both.');
     }
+    if (completedMode && to != null) {
+      throw ArgumentError('Completed pages require toExclusive.');
+    }
     if (!completedMode && toExclusive != null) {
       throw ArgumentError('toExclusive is only valid for Completed pages.');
     }
