@@ -55,7 +55,7 @@ void openQazaAll(WidgetRef ref) {
       WorkspaceDestination.qaza;
 }
 
-/// Opens the Qaza workspace with Completed selected.
+/// Opens the existing Qaza workspace with Completed selected.
 void openQazaCompleted(WidgetRef ref) {
   ref.read(qazaTrackerFilterRequestProvider.notifier).state =
       const QazaTrackerFilterRequest(
@@ -64,7 +64,6 @@ void openQazaCompleted(WidgetRef ref) {
   ref.read(workspaceDestinationProvider.notifier).state =
       WorkspaceDestination.qaza;
 }
-
 
 Future<void> openQazaAdditionHistory(BuildContext context) async {
   await Navigator.of(context).push<void>(
