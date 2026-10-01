@@ -53,4 +53,44 @@ void main() {
     expect(find.byKey(const Key('profile_daily_qaza_target')), findsOneWidget);
   },
   );
+
+  testWidgets(
+    'ProfileForm exposes bounded puberty and prayer-start age controls',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                gender: Gender.male,
+                madhab: Madhab.hanafi,
+                dateOfBirth: DateTime(2000, 1, 1),
+                pubertyAge: 12,
+                startPrayingAge: 15,
+                witrIncluded: true,
+              ),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byKey(const Key('profile_puberty_age_decrement')), findsOneWidget);
+      expect(find.byKey(const Key('profile_puberty_age_increment')), findsOneWidget);
+      expect(find.byKey(const Key('profile_start_praying_age_decrement')), findsOneWidget);
+      expect(find.byKey(const Key('profile_start_praying_age_increment')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('profile_puberty_age_increment')));
+      await tester.pump();
+      expect(find.text('13'), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('profile_puberty_age_decrement')));
+      await tester.pump();
+    },
+  );
+
 }
