@@ -4,8 +4,10 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_date.dart';
+import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_service.dart';
+import 'completion/qaza_completion_controller.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
@@ -26,30 +28,14 @@ extension QazaStatusFilterX on QazaStatusFilter {
       };
 }
 
-/// Bounded, filterable page of the Qaza ledger plus the current selection.
-///
-/// The full ledger is never held here: [records] only ever contains the pages
-/// that have actually been requested.
-/// Which end of the ledger the tracker reads from.
-///
-/// Both directions are keyset queries over the same `(originalDate, id)` index,
-/// so paging stays bounded and the tie-breaker keeps the order total: two
-/// records on the same day can never swap places between pages.
-enum QazaSortOrder {
-  /// Ascending by date. The order a Qaza debt is owed in.
-  oldestFirst,
-
-  /// Descending by date. What was missed most recently.
-  newestFirst;
-
-  bool get isOldestFirst => this == QazaSortOrder.oldestFirst;
-}
+/// The tracker always uses fixed status-specific ordering.
+/// Pending: originalDate ASC, id ASC.
+/// Completed: completedAt DESC, id DESC.
 
 class QazaTrackerState {
   const QazaTrackerState({
     this.statusFilter = QazaStatusFilter.pending,
     this.selectionMode = false,
-    this.sortOrder = QazaSortOrder.oldestFirst,
     this.selectingAll = false,
     this.prayerFilter,
     this.from,
@@ -68,10 +54,6 @@ class QazaTrackerState {
 
   final QazaStatusFilter statusFilter;
   final bool selectionMode;
-
-  /// Which end of the ledger is read first. Oldest by default,
-  /// because that is the order Qaza is owed in.
-  final QazaSortOrder sortOrder;
 
   /// True while the whole filtered ledger is being gathered for selection.
   final bool selectingAll;
@@ -126,7 +108,6 @@ class QazaTrackerState {
 
   QazaTrackerState copyWith({
     QazaStatusFilter? statusFilter,
-    QazaSortOrder? sortOrder,
     bool? selectingAll,
     PrayerType? prayerFilter,
     DateTime? from,
@@ -149,7 +130,6 @@ class QazaTrackerState {
       QazaTrackerState(
         statusFilter: statusFilter ?? this.statusFilter,
         selectionMode: selectionMode ?? this.selectionMode,
-        sortOrder: sortOrder ?? this.sortOrder,
         selectingAll: selectingAll ?? this.selectingAll,
         prayerFilter:
             clearPrayerFilter ? null : prayerFilter ?? this.prayerFilter,
@@ -184,25 +164,6 @@ class QazaTrackerFilterRequest {
 final qazaTrackerFilterRequestProvider =
     StateProvider<QazaTrackerFilterRequest?>((ref) => null);
 
-/// Result of one completion action, including the exact completed records
-/// whose completion markers make its Undo safe.
-class QazaCompletionBatch {
-  const QazaCompletionBatch({
-    required this.completedRecords,
-    required this.completedAt,
-    required this.count,
-  });
-
-  final List<QazaRecord> completedRecords;
-  final DateTime completedAt;
-  final int count;
-
-  List<String> get recordIds =>
-      completedRecords.map((record) => record.id).toList(growable: false);
-}
-
-/// Owns the Qaza workspace: filters, bounded paging, selection and bulk
-/// completion. Every read goes through [QazaService] with a page limit.
 class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, String?> {
   static const int pageSize = 50;
 
@@ -307,43 +268,26 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-  /// Reads one bounded page in the active sort order.
-  ///
-  /// Ascending and descending are two different keyset queries — `after` for
-  /// one, `before` for the other — so the direction is resolved here rather
-  /// than at each call site.
+  /// Reads a bounded page using the status-specific fixed ordering.
   Future<QazaPage> _readPage({
     required String userId,
     QazaRecord? after,
-  }) =>
-      ref.read(qazaServiceProvider).getPage(
-        userId: userId,
-        limit: pageSize,
-        prayerType: state.prayerFilter,
-        status: state.statusFilter.status,
-        from: state.from,
-        to: state.to,
-        additionId: _additionId,
-        beforeOriginalDate:
-            state.sortOrder.isOldestFirst ? null : after?.originalDate,
-        beforeId: state.sortOrder.isOldestFirst ? null : after?.id,
-        afterOriginalDate:
-            state.sortOrder.isOldestFirst ? after?.originalDate : null,
-        afterId: state.sortOrder.isOldestFirst ? after?.id : null,
-        descending: !state.sortOrder.isOldestFirst,
-      );
-
-  /// Switches the order and reloads from the top. Paging state cannot be
-  /// carried across a direction change, so the selection is dropped with it.
-  void setSortOrder(QazaSortOrder order) {
-    if (order == state.sortOrder) return;
-    state = state.copyWith(
-      sortOrder: order,
-      records: const <QazaRecord>[],
-      hasMore: false,
-      selected: const <String>{},
-    );
-    refresh();
+  }) {
+    final completed = state.statusFilter == QazaStatusFilter.completed;
+    return ref.read(qazaServiceProvider).getPage(
+          userId: userId,
+          limit: pageSize,
+          prayerType: state.prayerFilter,
+          status: state.statusFilter.status,
+          from: state.from,
+          to: state.to,
+          additionId: _additionId,
+          beforeOriginalDate: completed ? null : after?.originalDate,
+          beforeId: completed ? null : after?.id,
+          beforeCompletedAt: completed ? after?.completedAt : null,
+          afterCompletedAt: null,
+          descending: false,
+        );
   }
 
   Future<void> loadMore() async {
@@ -370,15 +314,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
 
   void setStatusFilter(QazaStatusFilter filter) {
     if (filter == state.statusFilter) return;
-    state = state.copyWith(statusFilter: filter);
-    refresh();
-  }
-
-  void setPrayerFilter(PrayerType? prayer) {
-    if (prayer == state.prayerFilter) return;
-    state = prayer == null
-        ? state.copyWith(clearPrayerFilter: true)
-        : state.copyWith(prayerFilter: prayer);
+    state = state.copyWith(
+      statusFilter: filter,
+      records: const <QazaRecord>[],
+      hasMore: false,
+      selectionMode: false,
+      selected: const <String>{},
+      clearError: true,
+    );
     refresh();
   }
 
@@ -394,9 +337,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
 
   void clearFilters() {
     state = state.copyWith(
-      statusFilter: QazaStatusFilter.pending,
       clearPrayerFilter: true,
       clearDates: true,
+      clearError: true,
+      selected: const <String>{},
+      selectionMode: false,
     );
     refresh();
   }
@@ -507,21 +452,76 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-  Future<QazaCompletionBatch?> completeRecordWithUndo(String recordId) async {
-    if (state.completing || state.recordMutating) return null;
-    final index = state.records.indexWhere((record) => record.id == recordId);
-    if (index < 0 || state.records[index].status != QazaStatus.pending) {
+  Future<QazaCompletionBatchReceipt?> completeRecordWithUndo(
+    String recordId,
+  ) async {
+    return _completeRecordIdsWithUndo([recordId]);
+  }
+
+  Future<QazaCompletionBatchReceipt?> completeSelectedWithUndo() async {
+    return _completeRecordIdsWithUndo(
+      state.selected.toList(growable: false),
+      exitSelectionModeOnSuccess: true,
+    );
+  }
+
+  Future<QazaCompletionBatchReceipt?> _completeRecordIdsWithUndo(
+    List<String> selectedIds, {
+    bool exitSelectionModeOnSuccess = false,
+  }) async {
+    if (ref.read(qazaCompletionRestrictedProvider)) return null;
+    final userId = ref.read(activeUserIdProvider);
+    if (userId == null || selectedIds.isEmpty || state.completing) {
       return null;
     }
 
-    // Single-row swipe completion must not enter selection mode. The same
-    // completion pipeline is reused so business rules, Tartib validation,
-    // persistence, refresh, and completion Undo metadata remain identical
-    // to bulk completion.
-    return _completeRecordIdsWithUndo(
-      <String>[recordId],
-      exitSelectionModeOnSuccess: false,
-    );
+    state = state.copyWith(completing: true, clearError: true);
+    try {
+      final receipt = await ref
+          .read(qazaCompletionControllerProvider.notifier)
+          .completeRecordsWithReceipt(
+            userId: userId,
+            recordIds: selectedIds,
+            completedAt: DateTime.now(),
+          );
+
+      if (receipt.result == QazaCompletionResult.blockedByRestrictedTime ||
+          receipt.entries.isEmpty) {
+        state = state.copyWith(completing: false);
+        return null;
+      }
+
+      state = state.copyWith(
+        completing: false,
+        selectionMode:
+            exitSelectionModeOnSuccess ? false : state.selectionMode,
+        selected:
+            exitSelectionModeOnSuccess ? const <String>{} : state.selected,
+      );
+      ref.invalidate(sahibAlTartibProvider);
+      ref.invalidate(progressSummaryProvider);
+      for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+        ref.invalidate(oldestPendingProvider(prayer));
+      }
+      await refresh();
+      return receipt;
+    } on QazaTartibViolationException {
+      state = state.copyWith(completing: false, clearError: true);
+      ref.invalidate(sahibAlTartibProvider);
+      return null;
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'tracker_completion_failed',
+            error,
+            stack: stack,
+          );
+      state = state.copyWith(
+        completing: false,
+        error: error.toString(),
+      );
+      return null;
+    }
   }
 
   Future<int> deleteSelected() async {
