@@ -292,6 +292,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   /// Reads a bounded page using the status-specific fixed ordering.
+  /// Pending advances with an ascending (originalDate, id) cursor; Completed
+  /// continues backward with a descending (completedAt, id) cursor.
   Future<QazaPage> _readPage({
     required String userId,
     QazaRecord? after,
@@ -314,10 +316,10 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
               ? QazaDate.normalize(state.to!).add(const Duration(days: 1))
               : null,
           additionId: state.additionId,
-          beforeOriginalDate: completed ? null : after?.originalDate,
+          afterOriginalDate: completed ? after?.originalDate : null,
+          afterId: completed ? after?.id : null,
           beforeCompletedAt: completed ? after?.completedAt : null,
-          beforeId: after?.id,
-          afterCompletedAt: null,
+          beforeId: completed ? after?.id : null,
           descending: false,
         );
   }
