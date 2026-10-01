@@ -82,7 +82,6 @@ class QazaTrackerState {
   /// True when the user has narrowed the ledger, which distinguishes an empty
   /// ledger from an empty filter result.
   bool get isFiltered =>
-      statusFilter != QazaStatusFilter.pending ||
       prayerFilter != null ||
       from != null ||
       to != null ||
@@ -521,6 +520,42 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         error: error.toString(),
       );
       return null;
+    }
+  }
+
+  Future<bool> markCompletedAsPending(String recordId) async {
+    if (recordId.isEmpty || state.recordMutating) return false;
+    final index = state.records.indexWhere((record) => record.id == recordId);
+    if (index < 0 || state.records[index].status != QazaStatus.completed) {
+      return false;
+    }
+
+    state = state.copyWith(recordMutating: true, clearError: true);
+    try {
+      final changed = await ref.read(qazaServiceProvider).markCompletedAsPending(
+            userId: ref.read(requiredUserIdProvider),
+            recordId: recordId,
+          );
+      if (changed) {
+        ref.invalidate(progressSummaryProvider);
+        for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+          ref.invalidate(oldestPendingProvider(prayer));
+        }
+        ref.invalidate(sahibAlTartibProvider);
+        await refresh();
+      }
+      return changed;
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'mark_completed_pending_failed',
+            error,
+            stack: stack,
+          );
+      state = state.copyWith(error: error.toString());
+      return false;
+    } finally {
+      state = state.copyWith(recordMutating: false);
     }
   }
 
