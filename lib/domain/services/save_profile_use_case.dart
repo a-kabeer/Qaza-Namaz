@@ -64,27 +64,16 @@ class SaveProfileUseCase {
     }
 
     if (!preview.calculationChanged) {
+      // Non-calculation profile edits (for example language or the daily
+      // target) do not create a Qaza-plan revision. Revisions are an audit
+      // trail for changes to the calculated Qaza scope, not every profile edit.
       await _profileRepository.save(newProfile);
-      try {
-        final revision = await _reconciliationService.apply(
-          userId: UserProfile.localLedgerUserId,
-          newProfile: newProfile,
-          preview: preview,
-          choice: ProfileQazaChangeChoice.apply,
-        );
-        return ProfileSaveResult(
-          qazaPlanChanged: false,
-          qazaRecordsAdded: 0,
-          qazaRecordsRemoved: 0,
-          keptExistingQaza: false,
-          revision: revision.revision,
-        );
-      } catch (_) {
-        try {
-          await _profileRepository.save(oldProfile);
-        } catch (_) {}
-        rethrow;
-      }
+      return const ProfileSaveResult(
+        qazaPlanChanged: false,
+        qazaRecordsAdded: 0,
+        qazaRecordsRemoved: 0,
+        keptExistingQaza: false,
+      );
     }
 
     await _profileRepository.save(newProfile);
