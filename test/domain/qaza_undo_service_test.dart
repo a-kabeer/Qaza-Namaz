@@ -584,7 +584,7 @@ class _NoopTartibService extends SahibAlTartibService {
     required String userId,
     required Iterable<String> recordIds,
     DateTime? currentDate,
-    DateTime? currentPrayer,
+    PrayerType? currentPrayer,
     SahibAlTartibState? evaluatedState,
   }) =>
       Future.value(true);
