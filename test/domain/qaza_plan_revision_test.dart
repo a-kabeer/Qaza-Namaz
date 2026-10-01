@@ -46,6 +46,49 @@ void main() {
     expect(restored.ledgerPlanFingerprint, revision.ledgerPlanFingerprint);
   });
 
+  test('revision preserves profile-change audit metadata', () {
+    final profile = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1994, 12, 31),
+      pubertyAge: 12,
+      startPrayingAge: 15,
+      witrIncluded: true,
+      onboardingCompleted: true,
+    );
+    final previous = {
+      ...ProfileQazaPlanReconciliationService.profileSnapshot(profile),
+      'startPrayingAge': 14,
+    };
+    final plan = planService.planFor(profile)!;
+
+    final revision = QazaPlanRevision.fromPlan(
+      revisionId: 'rev_audit',
+      userId: UserProfile.localLedgerUserId,
+      createdAt: DateTime(2026, 10, 1, 12),
+      plan: plan,
+      planFingerprint:
+          ProfileQazaPlanReconciliationService.planFingerprint(plan),
+      profileSnapshot:
+          ProfileQazaPlanReconciliationService.profileSnapshot(profile),
+      previousProfileSnapshot: previous,
+      changedFields: const ['startPrayingAge'],
+      addedRecords: 25,
+      removedRecords: 0,
+      ledgerDecision: QazaPlanLedgerDecision.applied,
+      ledgerPlan: plan,
+      ledgerPlanFingerprint:
+          ProfileQazaPlanReconciliationService.planFingerprint(plan),
+    );
+
+    final restored = QazaPlanRevision.fromJson(revision.toJson());
+
+    expect(restored.previousProfileSnapshot['startPrayingAge'], 14);
+    expect(restored.changedFields, ['startPrayingAge']);
+    expect(restored.addedRecords, 25);
+    expect(restored.removedRecords, 0);
+  });
+
   test('plan fingerprint represents the effective calculated plan', () {
     final hanafi = UserProfile(
       gender: Gender.male,
