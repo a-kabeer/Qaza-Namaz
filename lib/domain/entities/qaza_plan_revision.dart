@@ -27,6 +27,10 @@ class QazaPlanRevision {
     required this.ledgerPlanFingerprint,
     required this.profileSnapshot,
     required this.ledgerDecision,
+    this.previousProfileSnapshot = const {},
+    this.changedFields = const [],
+    this.addedRecords = 0,
+    this.removedRecords = 0,
   });
 
   final String revisionId;
@@ -56,6 +60,25 @@ class QazaPlanRevision {
   final Map<String, dynamic> profileSnapshot;
   final QazaPlanLedgerDecision ledgerDecision;
 
+  /// Immutable snapshot of the profile before this revision was applied.
+  ///
+  /// Empty for the initial plan because there is no previous profile.
+  final Map<String, dynamic> previousProfileSnapshot;
+
+  /// Profile fields that changed between [previousProfileSnapshot] and
+  /// [profileSnapshot]. This is audit metadata only; it never drives ledger
+  /// reconciliation.
+  final List<String> changedFields;
+
+  /// Number of Qaza records actually inserted by this revision.
+  final int addedRecords;
+
+  /// Number of Qaza records actually removed by this revision.
+  ///
+  /// Safe profile reconciliation currently never removes existing records,
+  /// so this remains zero for normal profile edits.
+  final int removedRecords;
+
   factory QazaPlanRevision.fromPlan({
     required String revisionId,
     required String userId,
@@ -66,6 +89,10 @@ class QazaPlanRevision {
     required QazaPlanLedgerDecision ledgerDecision,
     required QazaPlan ledgerPlan,
     required String ledgerPlanFingerprint,
+    Map<String, dynamic>? previousProfileSnapshot,
+    List<String> changedFields = const [],
+    int addedRecords = 0,
+    int removedRecords = 0,
   }) {
     return QazaPlanRevision(
       revisionId: revisionId,
@@ -90,6 +117,13 @@ class QazaPlanRevision {
           entry.key: _freeze(entry.value),
       }),
       ledgerDecision: ledgerDecision,
+      previousProfileSnapshot: Map.unmodifiable({
+        for (final entry in (previousProfileSnapshot ?? const <String, dynamic>{}).entries)
+          entry.key: _freeze(entry.value),
+      }),
+      changedFields: List.unmodifiable(changedFields),
+      addedRecords: addedRecords,
+      removedRecords: removedRecords,
     );
   }
 
@@ -112,6 +146,10 @@ class QazaPlanRevision {
         'ledgerTotalWithWitr': ledgerTotalWithWitr,
         'ledgerPlanFingerprint': ledgerPlanFingerprint,
         'profileSnapshot': profileSnapshot,
+        'previousProfileSnapshot': previousProfileSnapshot,
+        'changedFields': changedFields,
+        'addedRecords': addedRecords,
+        'removedRecords': removedRecords,
         'ledgerDecision': ledgerDecision.name,
       };
 
@@ -152,6 +190,18 @@ class QazaPlanRevision {
       profileSnapshot: rawSnapshot is Map
           ? Map.unmodifiable(Map<String, dynamic>.from(rawSnapshot))
           : const {},
+      previousProfileSnapshot: json['previousProfileSnapshot'] is Map
+          ? Map.unmodifiable(
+              Map<String, dynamic>.from(json['previousProfileSnapshot'] as Map),
+            )
+          : const {},
+      changedFields: json['changedFields'] is List
+          ? List<String>.unmodifiable(
+              (json['changedFields'] as List).whereType<String>(),
+            )
+          : const [],
+      addedRecords: (json['addedRecords'] as num?)?.toInt() ?? 0,
+      removedRecords: (json['removedRecords'] as num?)?.toInt() ?? 0,
       ledgerDecision: QazaPlanLedgerDecision.values.firstWhere(
         (value) => value.name == json['ledgerDecision'],
         orElse: () => QazaPlanLedgerDecision.applied,
