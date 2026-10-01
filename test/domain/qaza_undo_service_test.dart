@@ -657,4 +657,4 @@ class _NeverCalledRepository implements QazaRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => _fail();
-
+}
