@@ -5,7 +5,7 @@ import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 
 void main() {
   test('Reset clears filters while preserving the current status workspace', () {
-    const state = QazaTrackerState(
+    final state = QazaTrackerState(
       statusFilter: QazaStatusFilter.completed,
       prayerFilter: PrayerType.fajr,
       from: DateTime(2026, 9, 10),
