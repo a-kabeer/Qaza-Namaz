@@ -406,7 +406,7 @@ class _ProfileFormState extends State<ProfileForm> {
             key: incrementKey,
             tooltip: '$labelText +',
             onPressed: canIncrease
-                ? () => onChanged(selected ?? options.first)
+                ? () => onChanged(selected == null ? options.first : selected + 1)
                 : null,
             icon: const Icon(Icons.add),
           ),
