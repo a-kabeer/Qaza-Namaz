@@ -258,7 +258,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 ),
           _ActivityRange.yearly => false,
         };
-    final summaryHeight = targetAvailable ? 64.0 : 42.0;
+    final summaryHeight = targetAvailable ? 56.0 : 42.0;
     final noActivityHeight =
         period != null && period.totalCompleted == 0 ? 28.0 : 0.0;
 
