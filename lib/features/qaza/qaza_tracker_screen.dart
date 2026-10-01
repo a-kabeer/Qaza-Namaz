@@ -571,6 +571,188 @@ class _TrackerSkeleton extends StatelessWidget {
   }
 }
 
+class _TrackerSkeletonRow extends StatelessWidget {
+  const _TrackerSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            SkeletonCircle(size: 40),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonText(width: 120, height: 16),
+                  SizedBox(height: 8),
+                  SkeletonText(width: 180, height: 12),
+                ],
+              ),
+            ),
+            SizedBox(width: 12),
+            SkeletonText(
+                width: 64,
+                height: 28,
+                borderRadius: BorderRadius.all(Radius.circular(999))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecordRow extends StatelessWidget {
+  const _RecordRow({
+    super.key,
+    required this.record,
+    required this.selected,
+    required this.selectionMode,
+    required this.onTap,
+    required this.onLongPress,
+    required this.busy,
+    required this.canAct,
+    this.onSwipeComplete,
+  });
+
+  static const double _rowHeight = 68;
+  static const double _selectionControlWidth = 48;
+
+  final QazaRecord record;
+  final bool selected;
+  final bool selectionMode;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool busy;
+  final bool canAct;
+  final Future<bool> Function()? onSwipeComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final originalDate =
+        DateFormatters.formatGregorianDatePadded(record.originalDate);
+    final hijriDate = l10n.formatHijriDate(record.originalDate);
+    final selectable =
+        record.status == QazaStatus.pending && onTap != null && !busy;
+
+    final tile = Semantics(
+      selected: selected,
+      button: false,
+      label:
+          '${record.prayerType.localizedLabel(l10n)}, $originalDate, $hijriDate',
+      hint: record.status == QazaStatus.pending
+          ? (selectionMode
+              ? 'Tap to select or unselect.'
+              : 'Swipe left or right to complete. Long press to select.')
+          : null,
+      child: SizedBox(
+        height: _rowHeight,
+        child: ListTile(
+          key: Key('qaza_record_${record.id}'),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+          minVerticalPadding: 8,
+          title: Text(
+            record.prayerType.localizedLabel(l10n),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            '$originalDate · $hijriDate',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall,
+          ),
+          trailing: SizedBox(
+            width: _selectionControlWidth,
+            height: _selectionControlWidth,
+            child: selectionMode && record.status == QazaStatus.pending
+                ? Checkbox(
+                    value: selected,
+                    onChanged: selectable ? (_) => onTap!() : null,
+                  )
+                : canAct
+                    ? const SizedBox.shrink()
+                    : Icon(
+                        Icons.lock_clock_rounded,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+          ),
+          onTap: onTap,
+          onLongPress: onLongPress,
+        ),
+      ),
+    );
+
+    final canSwipe = !selectionMode &&
+        record.status == QazaStatus.pending &&
+        canAct &&
+        !busy &&
+        onSwipeComplete != null;
+
+    if (!canSwipe) return tile;
+
+    return Dismissible(
+      key: Key('qaza_record_swipe_${record.id}'),
+      direction: DismissDirection.horizontal,
+      dismissThresholds: const {
+        DismissDirection.startToEnd: 0.32,
+        DismissDirection.endToStart: 0.32,
+      },
+      resizeDuration: const Duration(milliseconds: 120),
+      background: const _CompletionSwipeBackground(
+        alignment: AlignmentDirectional.centerStart,
+      ),
+      secondaryBackground: const _CompletionSwipeBackground(
+        alignment: AlignmentDirectional.centerEnd,
+      ),
+      confirmDismiss: (_) => onSwipeComplete!(),
+      child: tile,
+    );
+  }
+}
+
+class _CompletionSwipeBackground extends StatelessWidget {
+  const _CompletionSwipeBackground({required this.alignment});
+
+  final AlignmentDirectional alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_rounded, color: scheme.onPrimaryContainer),
+          const SizedBox(width: 8),
+          Text(
+            l10n.qazaCompleteCount(1),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CompletedTrackerBody extends StatelessWidget {
   const _CompletedTrackerBody({
     required this.state,
