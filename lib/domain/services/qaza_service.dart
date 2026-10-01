@@ -619,7 +619,7 @@ class QazaService {
   ///
   /// The persistence layer re-checks the exact completion marker so an old
   /// undo can never overwrite a later completion or conflict resolution.
-  Future<int> undoCompletions({
+  Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
