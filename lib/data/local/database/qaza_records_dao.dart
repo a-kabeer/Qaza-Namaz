@@ -535,6 +535,68 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// Marks completed records as pending only when the selected
+  /// completion marker still matches the current row. The transition and
+  /// version increment happen atomically inside one transaction.
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
+
+    return transaction(() async {
+      final changed = <QazaRecord>[];
+      for (final entry in expectedCompletionIds.entries) {
+        final current = await (select(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(entry.key)))
+            .getSingleOrNull();
+        if (current == null ||
+            current.status != QazaStatus.completed.name ||
+            current.completionId != entry.value) {
+          continue;
+        }
+
+        final nextVersion = current.recordVersion + 1;
+        final updated = await (update(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) &
+                  row.id.equals(entry.key) &
+                  row.status.equals(QazaStatus.completed.name) &
+                  row.completionId.equals(entry.value)))
+            .write(QazaRecordsCompanion(
+          status: const Value(QazaStatus.pending.name),
+          completedAt: const Value(null),
+          completionId: const Value(null),
+          recordVersion: Value(nextVersion),
+          updatedAt: Value(updatedAt),
+        ));
+
+        if (updated > 0) {
+          changed.add(
+            QazaRecord(
+              id: current.id,
+              userId: current.userId,
+              prayerType: PrayerType.values.firstWhere(
+                (value) => value.name == current.prayerType,
+              ),
+              originalDate: current.originalDate,
+              status: QazaStatus.pending,
+              completedAt: null,
+              completionId: null,
+              additionId: current.additionId,
+              recordVersion: nextVersion,
+              createdAt: current.createdAt,
+              updatedAt: updatedAt,
+            ),
+          );
+        }
+      }
+      return List.unmodifiable(changed);
+    });
+  }
+
   Future<List<QazaRecord>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
