@@ -24,7 +24,7 @@ class QazaRecordKey {
   final PrayerType prayerType;
 
   String get stable =>
-      '${QazaDate.normalize(date).millisecondsSinceEpoch}:$prayerType.name';
+      '${QazaDate.normalize(date).millisecondsSinceEpoch}:${prayerType.name}';
 
   @override
   bool operator ==(Object other) =>
