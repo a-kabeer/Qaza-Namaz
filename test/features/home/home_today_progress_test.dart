@@ -38,8 +38,7 @@ class _TestQazaCompletionController extends QazaCompletionController {
     required DateTime completedAt,
   }) async {
     return const QazaCompletionReceipt(
-      result: QazaCompletionResult.completed,
-      completionId: 'completion-1',
+      result: QazaCompletionResult.alreadyCompleted,
     );
   }
 }
