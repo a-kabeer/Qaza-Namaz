@@ -40,6 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// when the day turns underneath it the whole dashboard is stale until
   /// something says so.
   DateTime? _renderedDate;
+  QazaProgressSummary? _lastSummary;
   Timer? _midnightTimer;
 
   @override
@@ -179,8 +180,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     AsyncValue<QazaProgressSummary> summaryAsync,
     QazaImportTaskState importState,
   ) {
+    final currentSummary = summaryAsync.valueOrNull;
+    if (currentSummary != null) {
+      _lastSummary = currentSummary;
+    }
+
+    final retainedSummary = currentSummary ?? _lastSummary;
+
     Widget base = summaryAsync.when(
-      loading: () => const HomeSkeleton(),
+      skipLoadingOnRefresh: true,
+      loading: () => retainedSummary == null
+          ? const HomeSkeleton()
+          : RefreshIndicator(
+              onRefresh: () => ref.read(homeControllerProvider).refresh(),
+              child: _buildContent(context, ref, retainedSummary),
+            ),
       error: (_, __) => HomeError(
         onRetry: () => ref.read(homeControllerProvider).refresh(),
       ),
