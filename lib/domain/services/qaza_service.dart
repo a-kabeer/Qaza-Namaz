@@ -850,37 +850,6 @@ class QazaService {
     return result;
   }
 
-  Future<int> completeSelected(
-      {required String userId,
-      required List<String> recordIds,
-      DateTime? completedAt}) async {
-    final remaining = recordIds.toSet();
-    if (remaining.isEmpty) return 0;
-    final valid = <String>[];
-    DateTime? afterDate;
-    String? afterId;
-    while (remaining.isNotEmpty) {
-      final page = await repository.getPage(
-          userId: userId,
-          limit: 500,
-          status: QazaStatus.pending,
-          afterOriginalDate: afterDate,
-          afterId: afterId);
-      for (final record in page.records) {
-        if (remaining.remove(record.id)) valid.add(record.id);
-      }
-      if (!page.hasMore) break;
-      afterDate = page.nextOriginalDate;
-      afterId = page.nextId;
-    }
-    if (valid.isEmpty) return 0;
-    await completeRecords(
-        userId: userId,
-        recordIds: valid,
-        completedAt: completedAt ?? DateTime.now());
-    return valid.length;
-  }
-
   Future<QazaProgress> overallProgress(String userId) async =>
       (await getProgressSummary(userId: userId)).overall;
   Future<PrayerProgress> prayerProgress(
