@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/widgets/app_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import 'qaza_import_controller.dart';
 
@@ -93,42 +92,51 @@ class _QazaImportProgressDialogState
               const SizedBox(height: 12),
               const LinearProgressIndicator(),
             ] else if (state.phase == QazaImportTaskPhase.importing) ...[
-              Semantics(
-                label: l10n.addQazaInProgress,
-                value: state.progress == null
-                    ? null
-                    : '${(state.progress! * 100).round()}%',
-                child: Text(
-                  '${(state.progress! * 100).round()}%',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
+              if (state.progress == null) ...[
+                Text(
+                  l10n.addQazaChecking,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-              ),
-              const SizedBox(height: 12),
-              LinearProgressIndicator(value: state.progress),
-              const SizedBox(height: 12),
-              Text('${state.processed} / ${state.total}'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _ImportStat(
-                      label: l10n.qazaImportAdded,
-                      value: state.added,
-                    ),
+                const SizedBox(height: 12),
+                const LinearProgressIndicator(),
+                const SizedBox(height: 12),
+                Text('${state.processed} / ${state.total}'),
+              ] else ...[
+                Semantics(
+                  label: l10n.addQazaInProgress,
+                  value: '${(state.progress! * 100).round()}%',
+                  child: Text(
+                    '${(state.progress! * 100).round()}%',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _ImportStat(
-                      label: l10n.qazaImportSkipped,
-                      value: state.skipped,
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(value: state.progress),
+                const SizedBox(height: 12),
+                Text('${state.processed} / ${state.total}'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ImportStat(
+                        label: l10n.qazaImportAdded,
+                        value: state.added,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ] else ...[
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _ImportStat(
+                        label: l10n.qazaImportSkipped,
+                        value: state.skipped,
+                      ),
+                    ),
+                  ],
+                ),
+              ],            ] else ...[
               const LinearProgressIndicator(),
             ],
           ],
