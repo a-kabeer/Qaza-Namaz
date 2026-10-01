@@ -143,21 +143,22 @@ abstract class QazaLocalStore {
       throw ArgumentError('Invalid Completed date range.');
     }
 
-    if ((afterOriginalDate != null) != (afterId != null) ||
-        (beforeOriginalDate != null) != (beforeId != null) ||
-        (afterOriginalDate != null && beforeOriginalDate != null) ||
-        (afterCompletedAt != null && beforeCompletedAt != null) ||
-        (completedCursor && originalCursor) ||
-        ((afterCompletedAt != null) != (afterId != null) &&
-            status == QazaStatus.completed) ||
-        ((beforeCompletedAt != null) != (beforeId != null) &&
-            status == QazaStatus.completed) ||
-        (completedCursor && (afterId == null && beforeId == null)) ||
-        (completedCursor && status != QazaStatus.completed)) {
-      throw ArgumentError('Invalid pagination cursor');
-    }
-    if (from != null && to != null && from.isAfter(to)) {
-      throw ArgumentError('from must be <= to');
+    if (status == QazaStatus.completed) {
+      if ((afterCompletedAt == null) != (afterId == null) ||
+          (beforeCompletedAt == null) != (beforeId == null) ||
+          (afterCompletedAt != null && beforeCompletedAt != null) ||
+          afterOriginalDate != null ||
+          beforeOriginalDate != null) {
+        throw ArgumentError('Invalid completed pagination cursor');
+      }
+    } else {
+      if ((afterOriginalDate == null) != (afterId == null) ||
+          (beforeOriginalDate == null) != (beforeId == null) ||
+          afterCompletedAt != null ||
+          beforeCompletedAt != null ||
+          (afterOriginalDate != null && beforeOriginalDate != null)) {
+        throw ArgumentError('Invalid pending pagination cursor');
+      }
     }
 
     final snapshot = await load();
