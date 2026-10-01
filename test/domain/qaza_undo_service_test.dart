@@ -586,6 +586,40 @@ void main() {
     expect(records['fajr']!.completionId, isNull);
     expect(records['fajr']!.recordVersion, 2);
   });
+  test('stale Completed correction marker is ignored and version increments once',
+      () async {
+    final completed = _completedRecord(
+      id: 'fajr',
+      prayerType: PrayerType.fajr,
+      originalDate: DateTime(2026, 9, 1),
+    );
+    final records = {'fajr': completed};
+    final service = QazaService(
+      _FakeQazaRepository(records),
+      tartib: _NoopTartibService(),
+    );
+
+    final stale = await service.markCompletedRecordsAsPending(
+      userId: 'local',
+      expectedCompletionIds: const {'fajr': 'stale-completion'},
+    );
+    expect(stale, isEmpty);
+    expect(records['fajr']!.status, QazaStatus.completed);
+    expect(records['fajr']!.recordVersion, 1);
+
+    final changed = await service.markCompletedRecordsAsPending(
+      userId: 'local',
+      expectedCompletionIds: {
+        'fajr': completed.completionId!,
+      },
+    );
+    expect(changed, hasLength(1));
+    expect(records['fajr']!.status, QazaStatus.pending);
+    expect(records['fajr']!.completedAt, isNull);
+    expect(records['fajr']!.completionId, isNull);
+    expect(records['fajr']!.recordVersion, 2);
+  });
+
 }
 
 /// This test-only tartib stub is never used for Undo itself; it keeps the
@@ -624,38 +658,3 @@ class _NeverCalledRepository implements QazaRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) => _fail();
 
-test('stale Completed correction marker is ignored and version increments once',
-    () async {
-  final completed = _completedRecord(
-    id: 'fajr',
-    prayerType: PrayerType.fajr,
-    originalDate: DateTime(2026, 9, 1),
-  );
-  final records = {'fajr': completed};
-  final service = QazaService(
-    _FakeQazaRepository(records),
-    tartib: _NoopTartibService(),
-  );
-
-  final stale = await service.markCompletedRecordsAsPending(
-    userId: 'local',
-    expectedCompletionIds: const {'fajr': 'stale-completion'},
-  );
-  expect(stale, isEmpty);
-  expect(records['fajr']!.status, QazaStatus.completed);
-  expect(records['fajr']!.recordVersion, 1);
-
-  final changed = await service.markCompletedRecordsAsPending(
-    userId: 'local',
-    expectedCompletionIds: {
-      'fajr': completed.completionId!,
-    },
-  );
-  expect(changed, hasLength(1));
-  expect(records['fajr']!.status, QazaStatus.pending);
-  expect(records['fajr']!.completedAt, isNull);
-  expect(records['fajr']!.completionId, isNull);
-  expect(records['fajr']!.recordVersion, 2);
-});
-
-}
