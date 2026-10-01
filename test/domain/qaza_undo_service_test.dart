@@ -7,6 +7,7 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
+import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 
 class _MemoryUndoStore extends QazaUndoStore {
