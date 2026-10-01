@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
@@ -13,7 +14,8 @@ import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_today_progress.dart';
 import 'package:qaza_namaz/features/qaza/completion/qaza_completion_controller.dart';
-import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
+import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/features/home/widgets/home_skeleton.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -284,7 +286,8 @@ void main() {
     );
   });
 
-  testWidgets('Today Progress child controls do not trigger workspace navigation',
+  testWidgets(
+      'Today Progress child controls do not trigger workspace navigation',
       (tester) async {
     final record = _pendingRecord(
       id: 'fajr',
