@@ -5,7 +5,6 @@ import '../prayer_time/application/prayer_time_providers.dart';
 import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 import '../../app/providers.dart';
-import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
