@@ -224,11 +224,11 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
     expect(source, contains('class _FilterSheet extends ConsumerWidget {'));
-    expect(source, contains('_FilterSheet(additionId: additionId)'));
+    expect(source, contains('_FilterSheet(additionId: state.additionId)'));
     expect(
       source,
       contains(
-        'builder: (context) => _FilterSheet(additionId: additionId),',
+        'builder: (context) => _FilterSheet(additionId: state.additionId),',
       ),
     );
     expect(
@@ -382,6 +382,8 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final service =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();
+    final dao =
+        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
     final controller =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
 
@@ -389,8 +391,8 @@ void main() {
     expect(source, contains('confirmDestructive'));
     expect(controller, contains('markCompletedAsPending'));
     expect(service, contains('Future<bool> markCompletedAsPending'));
-    expect(service, contains('clearCompletedAt: true'));
-    expect(service, contains('clearCompletionId: true'));
+    expect(dao, contains('completedAt: const Value(null)'));
+    expect(dao, contains('completionId: const Value(null)'));
   });
 
   test('Home and tracker both depend on the shared completion controller', () {
@@ -417,4 +419,79 @@ void main() {
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
     expect(service, contains('Never clear the store here'));
   });
+  test('Completed paging uses both completion timestamp and id cursor', () {
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final dao =
+        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
+
+    expect(
+      controller,
+      contains('beforeCompletedAt: completed ? after?.completedAt : null'),
+    );
+    expect(
+      controller,
+      contains('beforeId: after?.id'),
+    );
+    expect(
+      controller,
+      contains('toExclusive: state.statusFilter == QazaStatusFilter.completed'),
+    );
+    expect(dao, contains('row.completedAt.isSmallerThanValue(toExclusive)'));
+    expect(dao, contains('row.id.isSmallerThanValue(beforeId!)'));
+  });
+
+  test('Reset clears the actual contextual addition query state', () {
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(controller, contains('clearAdditionId: true'));
+    expect(controller, contains('additionId: state.additionId'));
+    expect(controller, isNot(contains('late String? _additionId')));
+  });
+
+  test('Completed selection is separate from Pending completion selection', () {
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final screen =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(controller, contains('enum QazaSelectionScope { pending, completed }'));
+    expect(controller, contains('enterCompletedSelectionMode'));
+    expect(controller, contains('toggleCompletedSelection'));
+    expect(controller, contains('markSelectedCompletedAsPending'));
+    expect(screen, contains("qaza_completed_mark_pending"));
+    expect(screen, contains('Mark as Pending'));
+    expect(screen, contains('key: const Key(\'qaza_completed_batch_action_bar\')'));
+  });
+
+  test('Completed selection action bar overlays the list instead of reflowing it', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    final bodyStart = source.indexOf(
+      'class _CompletedTrackerBody extends StatelessWidget {',
+    );
+    final detailsStart = source.indexOf(
+      'class _CompletedRecordDetails extends ConsumerWidget {',
+      bodyStart,
+    );
+    expect(bodyStart, greaterThanOrEqualTo(0));
+    expect(detailsStart, greaterThan(bodyStart));
+
+    final body = source.substring(bodyStart, detailsStart);
+    expect(body, contains('return Stack('));
+    expect(body, contains('Positioned.fill('));
+    expect(body, contains('Positioned('));
+    expect(body, contains('qaza_completed_batch_action_bar'));
+  });
+
+  test('Date filter explicitly identifies Pending and Completed semantics', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(source, contains("? 'Completed Date'"));
+    expect(source, contains(": 'Qaza Date'"));
+  });
+
 }

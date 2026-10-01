@@ -141,6 +141,7 @@ class QazaService {
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -158,6 +159,7 @@ class QazaService {
         additionId: additionId,
         from: from,
         to: to,
+        toExclusive: toExclusive,
         afterOriginalDate: afterOriginalDate,
         afterId: afterId,
         beforeOriginalDate: beforeOriginalDate,
@@ -546,9 +548,26 @@ class QazaService {
     return receipt.count;
   }
 
+  /// Permanently corrects completed records after the temporary Undo
+  /// window has expired. The persistence layer guards each selected row by
+  /// its completion marker so a stale selection cannot overwrite newer state.
+  Future<List<QazaRecord>> markCompletedRecordsAsPending({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+  }) {
+    if (expectedCompletionIds.isEmpty) {
+      return Future.value(const <QazaRecord>[]);
+    }
+    return repository.markCompletedAsPendingBatch(
+      userId: userId,
+      expectedCompletionIds: Map.unmodifiable(expectedCompletionIds),
+      updatedAt: DateTime.now(),
+    );
+  }
+
   /// Permanently corrects one completed record after the temporary Undo
-  /// window has expired. This is a historical correction, so completion-time
-  /// Tartib/restricted-time rules are intentionally not re-applied.
+  /// window has expired. It re-reads the current completion marker before the
+  /// guarded transition, so an old selection cannot move a newer completion.
   Future<bool> markCompletedAsPending({
     required String userId,
     required String recordId,
@@ -557,18 +576,19 @@ class QazaService {
       userId: userId,
       recordIds: [recordId],
     );
-    if (current.isEmpty || current.first.status != QazaStatus.completed) {
+    if (current.isEmpty ||
+        current.first.status != QazaStatus.completed ||
+        current.first.completionId == null) {
       return false;
     }
 
-    final record = current.first.copyWith(
-      status: QazaStatus.pending,
-      clearCompletedAt: true,
-      clearCompletionId: true,
-      updatedAt: DateTime.now(),
-      recordVersion: current.first.recordVersion + 1,
+    final changed = await markCompletedRecordsAsPending(
+      userId: userId,
+      expectedCompletionIds: {
+        recordId: current.first.completionId!,
+      },
     );
-    return repository.updateRecord(record: record);
+    return changed.isNotEmpty;
   }
 
   /// Reverts only the completions captured by an active undo window.

@@ -98,6 +98,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -107,23 +108,33 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     bool descending = false,
   }) async {
     _validatePage(limit, 0);
-    _validateRange(from, to);
-
     final completedMode = status == QazaStatus.completed.name;
+    if (to != null && toExclusive != null) {
+      throw ArgumentError('Provide either to or toExclusive, not both.');
+    }
+    if (completedMode && to != null) {
+      throw ArgumentError('Completed pages require toExclusive.');
+    }
+    if (!completedMode && toExclusive != null) {
+      throw ArgumentError('toExclusive is only valid for Completed pages.');
+    }
+    _validateRange(from, to);
+    if (toExclusive != null && (from == null || !from.isBefore(toExclusive))) {
+      throw ArgumentError('from must be before toExclusive');
+    }
     if (completedMode) {
-      if ((afterOriginalDate != null && beforeOriginalDate != null) ||
+      if ((afterCompletedAt == null) != (afterId == null) ||
+          (beforeCompletedAt == null) != (beforeId == null) ||
+          (afterCompletedAt != null && beforeCompletedAt != null) ||
           afterOriginalDate != null ||
-          beforeOriginalDate != null ||
-          ((afterCompletedAt == null) != (afterId == null)) ||
-          ((beforeCompletedAt == null) != (beforeId == null)) ||
-          (afterCompletedAt != null && beforeCompletedAt != null)) {
+          beforeOriginalDate != null) {
         throw ArgumentError('Invalid completed pagination cursor');
       }
     } else {
       if ((afterOriginalDate == null) != (afterId == null) ||
           (beforeOriginalDate == null) != (beforeId == null) ||
-          (afterCompletedAt != null) ||
-          (beforeCompletedAt != null) ||
+          afterCompletedAt != null ||
+          beforeCompletedAt != null ||
           (afterOriginalDate != null && beforeOriginalDate != null)) {
         throw ArgumentError('Invalid pending pagination cursor');
       }
@@ -144,15 +155,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (additionId != null) {
           predicates.add(row.additionId.equals(additionId));
         }
-        if (from != null) {
-          predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        }
-        if (to != null) {
-          predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (completedMode) {
+          predicates.add(row.completedAt.isNotNull());
+          if (from != null) {
+            predicates.add(row.completedAt.isBiggerOrEqualValue(from));
+          }
+          if (toExclusive != null) {
+            predicates.add(row.completedAt.isSmallerThanValue(toExclusive));
+          }
+        } else {
+          if (from != null) {
+            predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+          }
+          if (to != null) {
+            predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+          }
         }
 
         if (completedMode) {
-          predicates.add(row.completedAt.isNotNull());
           if (afterCompletedAt != null) {
             predicates.add(
               row.completedAt.isSmallerThanValue(afterCompletedAt) |
@@ -244,9 +264,20 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       String? prayerType,
       String? status,
       DateTime? from,
-      DateTime? to}) async {
+      DateTime? to,
+      DateTime? toExclusive}) async {
     _validatePage(limit, offset);
+    final completedMode = status == QazaStatus.completed.name;
+    if (completedMode && to != null) {
+      throw ArgumentError('Completed pages require toExclusive.');
+    }
+    if (!completedMode && toExclusive != null) {
+      throw ArgumentError('toExclusive is only valid for Completed pages.');
+    }
     _validateRange(from, to);
+    if (toExclusive != null && (from == null || !from.isBefore(toExclusive))) {
+      throw ArgumentError('from must be before toExclusive');
+    }
     final query = select(qazaRecords)
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
@@ -256,11 +287,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (status != null) {
           predicates.add(row.status.equals(status));
         }
-        if (from != null) {
-          predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        }
-        if (to != null) {
-          predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (completedMode) {
+          predicates.add(row.completedAt.isNotNull());
+          if (from != null) {
+            predicates.add(row.completedAt.isBiggerOrEqualValue(from));
+          }
+          if (toExclusive != null) {
+            predicates.add(row.completedAt.isSmallerThanValue(toExclusive));
+          }
+        } else {
+          if (from != null) {
+            predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+          }
+          if (to != null) {
+            predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+          }
         }
         return predicates.reduce((a, b) => a & b);
       })
@@ -509,6 +550,68 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
               recordVersion: current.recordVersion + 1,
               createdAt: current.createdAt,
               updatedAt: completedAt,
+            ),
+          );
+        }
+      }
+      return List.unmodifiable(changed);
+    });
+  }
+
+  /// Marks completed records as pending only when the selected
+  /// completion marker still matches the current row. The transition and
+  /// version increment happen atomically inside one transaction.
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
+  }) async {
+    if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
+
+    return transaction(() async {
+      final changed = <QazaRecord>[];
+      for (final entry in expectedCompletionIds.entries) {
+        final current = await (select(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) & row.id.equals(entry.key)))
+            .getSingleOrNull();
+        if (current == null ||
+            current.status != QazaStatus.completed.name ||
+            current.completionId != entry.value) {
+          continue;
+        }
+
+        final nextVersion = current.recordVersion + 1;
+        final updated = await (update(qazaRecords)
+              ..where((row) =>
+                  row.userId.equals(userId) &
+                  row.id.equals(entry.key) &
+                  row.status.equals(QazaStatus.completed.name) &
+                  row.completionId.equals(entry.value)))
+            .write(QazaRecordsCompanion(
+          status: Value(QazaStatus.pending.name),
+          completedAt: const Value(null),
+          completionId: const Value(null),
+          recordVersion: Value(nextVersion),
+          updatedAt: Value(updatedAt),
+        ));
+
+        if (updated > 0) {
+          changed.add(
+            QazaRecord(
+              id: current.id,
+              userId: current.userId,
+              prayerType: PrayerType.values.firstWhere(
+                (value) => value.name == current.prayerType,
+              ),
+              originalDate: current.originalDate,
+              status: QazaStatus.pending,
+              completedAt: null,
+              completionId: null,
+              additionId: current.additionId,
+              recordVersion: nextVersion,
+              createdAt: current.createdAt,
+              updatedAt: updatedAt,
             ),
           );
         }

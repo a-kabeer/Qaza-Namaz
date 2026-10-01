@@ -55,6 +55,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -72,6 +73,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
       additionId: additionId,
       from: from,
       to: to,
+      toExclusive: toExclusive,
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
       beforeOriginalDate: beforeOriginalDate,
@@ -417,6 +419,18 @@ class DriftQazaLocalStore extends QazaLocalStore {
         ids: recordIds,
         completedAt: completedAt,
         completionIds: completionIds,
+      );
+
+  @override
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
+  }) =>
+      _database.qazaRecordsDao.markCompletedAsPendingBatch(
+        userId: userId,
+        expectedCompletionIds: expectedCompletionIds,
+        updatedAt: updatedAt,
       );
 
   @override

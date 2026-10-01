@@ -79,6 +79,7 @@ class OfflineFirstQazaRepository
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -96,6 +97,7 @@ class OfflineFirstQazaRepository
       additionId: additionId,
       from: from,
       to: to,
+      toExclusive: toExclusive,
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
       beforeOriginalDate: beforeOriginalDate,
@@ -343,6 +345,20 @@ class OfflineFirstQazaRepository
       undoneAt: undoneAt,
     );
     return changed.map((record) => record.id).toList(growable: false);
+  }
+
+  @override
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
+  }) async {
+    _validateActive(userId);
+    return _localStore.markCompletedAsPendingBatch(
+      userId: userId,
+      expectedCompletionIds: expectedCompletionIds,
+      updatedAt: updatedAt,
+    );
   }
 
   @override
