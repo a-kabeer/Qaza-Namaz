@@ -539,6 +539,7 @@ class QazaService {
           currentDate: currentDate,
           currentPrayer: currentPrayer,
           evaluatedState: tartibState,
+          pendingRecords: pending,
         ))) {
       throw QazaTartibViolationException(
         requiredPrayer: tartibState.nextPending!.prayerType,
