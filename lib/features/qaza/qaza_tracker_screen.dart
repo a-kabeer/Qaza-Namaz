@@ -359,7 +359,7 @@ class _CompletedHeader extends ConsumerWidget {
             ),
           ),
           Text(
-            DateFormatters.formatCount(count) + ' Qaza completed',
+            '\${DateFormatters.formatCount(count)} Qaza completed',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -942,7 +942,7 @@ class _CompletedRecordRow extends StatelessWidget {
         ],
       ),
       subtitle: Text(
-        originalDate + ' · ' + hijriDate,
+        '\$originalDate · \$hijriDate',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodySmall,
@@ -1012,9 +1012,7 @@ class _CompletedRecordDetails extends ConsumerWidget {
           if (completedAt != null) ...[
             Text('Completed', style: theme.textTheme.labelMedium),
             Text(
-              DateFormatters.formatGregorianDatePadded(completedAt) +
-                  ' · ' +
-                  DateFormatters.formatClockTime(completedAt),
+              '\${DateFormatters.formatGregorianDatePadded(completedAt)} · \${DateFormatters.formatClockTime(completedAt)}',
             ),
           ],
           const SizedBox(height: 20),
