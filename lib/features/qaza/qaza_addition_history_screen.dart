@@ -239,9 +239,9 @@ class _RecentAdditions extends StatelessWidget {
   Widget build(BuildContext context) {
     if (state.additions.isEmpty) {
       return ListView(
-        children: [
-          const SizedBox(height: 120),
-          const Center(child: Text('No Qaza additions yet.'))
+        children: const [
+          SizedBox(height: 120),
+          Center(child: Text('No Qaza additions yet.')),
         ],
       );
     }
