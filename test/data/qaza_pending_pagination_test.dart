@@ -102,5 +102,5 @@ void main() {
       ),
       throwsArgumentError,
     );
-  );
+  });
 }
