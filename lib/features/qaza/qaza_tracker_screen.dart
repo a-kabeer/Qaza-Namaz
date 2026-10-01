@@ -368,7 +368,7 @@ class _CompletedHeader extends ConsumerWidget {
   }
 }
 
-class _PendingTrackerBody extends StatelessWidget {
+class _PendingTrackerBody extends ConsumerWidget {
   const _PendingTrackerBody({
     required this.state,
     required this.controller,
@@ -377,10 +377,10 @@ class _PendingTrackerBody extends StatelessWidget {
   final QazaTrackerState state;
   final QazaTrackerController controller;
 
-  Future<void> _completeSingle(
+  Future<bool> _completeSingle(
       BuildContext context, WidgetRef ref, QazaRecord record) async {
     final batch = await controller.completeRecordWithUndo(record.id);
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     final l10n = AppLocalizations.of(context);
     if (batch != null) {
       await showQazaUndoFeedback(
@@ -390,7 +390,7 @@ class _PendingTrackerBody extends StatelessWidget {
         entries: batch.entries,
         onUndone: controller.refresh,
       );
-      return;
+      return true;
     }
     final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
     if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
@@ -400,10 +400,11 @@ class _PendingTrackerBody extends StatelessWidget {
             ),
           );
     }
+    return false;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
