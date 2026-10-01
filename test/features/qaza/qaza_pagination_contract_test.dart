@@ -61,5 +61,13 @@ void main() {
         'beforeId: completed ? after?.id : null,',
       ),
     );
+    expect(
+      source,
+      isNot(
+        contains(
+          'beforeOriginalDate: completed ? null : after?.originalDate,',
+        ),
+      ),
+    );
   });
 }
