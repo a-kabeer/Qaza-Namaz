@@ -5,24 +5,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
-import '../../domain/entities/qaza_record.dart';
+import '../../core/utils/date_formatters.dart';
+import '../../domain/entities/qaza_completion_result.dart';
+import '../../domain/services/qaza_service.dart';
 import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../../l10n/prayer_type_l10n.dart';
 import '../home/home_controller.dart';
 import 'qaza_completion_feedback.dart';
 
-/// Registers the latest completion as the single active Qaza Undo action and
-/// presents that action through the application-wide Snackbar service.
 Future<void> showQazaUndoFeedback({
   required BuildContext context,
   required WidgetRef ref,
   required String userId,
-  required Iterable<QazaRecord> records,
+  required Iterable<QazaCompletionEntry> entries,
   Future<void> Function()? onUndone,
 }) async {
-  final batch = await ref.read(qazaUndoManagerProvider).register(
+  final batch = await ref.read(qazaUndoManagerProvider).registerEntries(
         userId: userId,
-        records: records,
+        entries: entries,
       );
   if (batch == null || !context.mounted) return;
 
@@ -51,6 +52,37 @@ Future<void> _undoFromSnack({
   required QazaUndoBatch batch,
   Future<void> Function()? onUndone,
 }) async {
+  if (batch.entries.length == 1) {
+    await _undoAll(
+      context: context,
+      ref: ref,
+      userId: userId,
+      batch: batch,
+      onUndone: onUndone,
+    );
+    return;
+  }
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (_) => _QazaUndoSelectionSheet(
+      userId: userId,
+      initialBatch: batch,
+      onUndone: onUndone,
+    ),
+  );
+}
+
+Future<void> _undoAll({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String userId,
+  required QazaUndoBatch batch,
+  Future<void> Function()? onUndone,
+}) async {
   final diagnostics = ref.read(diagnosticsProvider);
   try {
     final result = await ref.read(qazaUndoManagerProvider).undo(
@@ -58,8 +90,6 @@ Future<void> _undoFromSnack({
           service: ref.read(qazaServiceProvider),
           expectedBatch: batch,
         );
-    if (!context.mounted) return;
-
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
@@ -73,19 +103,17 @@ Future<void> _undoFromSnack({
       );
     }
     if (!context.mounted) return;
-
     ref.read(appSnackbarServiceProvider).success(
           qazaUndoSuccessMessage(context, result.batch, result.count),
         );
   } on QazaUndoException catch (error, stack) {
     diagnostics.recordFailure(
       DiagnosticArea.qazaCompletion,
-      'undo_failed_${error.reason.name}',
+      'undo_failed',
       error.cause ?? error,
       stack: stack,
     );
     if (!context.mounted) return;
-
     ref.read(appSnackbarServiceProvider).error(
           qazaUndoFailureMessage(context, error.reason),
         );
@@ -97,12 +125,274 @@ Future<void> _undoFromSnack({
       stack: stack,
     );
     if (!context.mounted) return;
-
     ref.read(appSnackbarServiceProvider).error(
           qazaUndoFailureMessage(
             context,
             QazaUndoFailureReason.failed,
           ),
         );
+  }
+}
+
+class _QazaUndoSelectionSheet extends ConsumerStatefulWidget {
+  const _QazaUndoSelectionSheet({
+    required this.userId,
+    required this.initialBatch,
+    this.onUndone,
+  });
+
+  final String userId;
+  final QazaUndoBatch initialBatch;
+  final Future<void> Function()? onUndone;
+
+  @override
+  ConsumerState<_QazaUndoSelectionSheet> createState() =>
+      _QazaUndoSelectionSheetState();
+}
+
+class _QazaUndoSelectionSheetState
+    extends ConsumerState<_QazaUndoSelectionSheet> {
+  late QazaUndoBatch _batch = widget.initialBatch;
+  final Set<String> _selected = <String>{};
+  Timer? _expiryTimer;
+  bool _working = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _expiryTimer = Timer.periodic(
+      const Duration(milliseconds: 250),
+      (_) {
+        if (!mounted) return;
+        if (_batch.isExpired(DateTime.now())) {
+          setState(_selected.clear);
+          _expiryTimer?.cancel();
+        } else {
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
+  }
+
+  String _title(BuildContext context) {
+    return Localizations.localeOf(context).languageCode == 'ur'
+        ? 'مکمل کی گئی نمازیں واپس کریں'
+        : 'Undo completions';
+  }
+
+  String _undoSelectedLabel(BuildContext context) {
+    return Localizations.localeOf(context).languageCode == 'ur'
+        ? 'منتخب واپس کریں'
+        : 'Undo Selected';
+  }
+
+  String _undoAllLabel(BuildContext context) {
+    return Localizations.localeOf(context).languageCode == 'ur'
+        ? 'سب واپس کریں'
+        : 'Undo All';
+  }
+
+  Future<void> _undoSelected() async {
+    if (_selected.isEmpty || _working || _batch.isExpired(DateTime.now())) {
+      return;
+    }
+    setState(() => _working = true);
+    try {
+      final result = await ref.read(qazaUndoManagerProvider).undoSelected(
+            userId: widget.userId,
+            service: ref.read(qazaServiceProvider),
+            expectedBatch: _batch,
+            selectedIds: Set<String>.of(_selected),
+          );
+      _selected.clear();
+      await _refreshAfterUndo();
+      if (!mounted) return;
+
+      final remaining = result.remainingBatch;
+      if (remaining == null || remaining.entries.isEmpty) {
+        Navigator.of(context).pop();
+        ref.read(appSnackbarServiceProvider).success(
+              qazaUndoSuccessMessage(context, result.batch, result.count),
+            );
+      } else {
+        setState(() {
+          _batch = remaining;
+          _working = false;
+        });
+        ref.read(appSnackbarServiceProvider).success(
+              qazaUndoSuccessMessage(context, result.batch, result.count),
+            );
+      }
+    } on QazaUndoException catch (error) {
+      await _recoverCurrentBatch();
+      if (!mounted) return;
+      setState(() => _working = false);
+      ref.read(appSnackbarServiceProvider).error(
+            qazaUndoFailureMessage(context, error.reason),
+          );
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'undo_selected_failed',
+            error,
+            stack: stack,
+          );
+      if (!mounted) return;
+      setState(() => _working = false);
+      ref.read(appSnackbarServiceProvider).error(
+            qazaUndoFailureMessage(
+              context,
+              QazaUndoFailureReason.failed,
+            ),
+          );
+    }
+  }
+
+  Future<void> _undoAll() async {
+    if (_working || _batch.isExpired(DateTime.now())) return;
+    setState(() => _working = true);
+    try {
+      final result = await ref.read(qazaUndoManagerProvider).undo(
+            userId: widget.userId,
+            service: ref.read(qazaServiceProvider),
+            expectedBatch: _batch,
+          );
+      await _refreshAfterUndo();
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ref.read(appSnackbarServiceProvider).success(
+            qazaUndoSuccessMessage(context, result.batch, result.count),
+          );
+    } on QazaUndoException catch (error) {
+      await _recoverCurrentBatch();
+      if (!mounted) return;
+      setState(() => _working = false);
+      ref.read(appSnackbarServiceProvider).error(
+            qazaUndoFailureMessage(context, error.reason),
+          );
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'undo_all_failed',
+            error,
+            stack: stack,
+          );
+      if (!mounted) return;
+      setState(() => _working = false);
+      ref.read(appSnackbarServiceProvider).error(
+            qazaUndoFailureMessage(
+              context,
+              QazaUndoFailureReason.failed,
+            ),
+          );
+    }
+  }
+
+  Future<void> _refreshAfterUndo() async {
+    ref.read(homeControllerProvider).invalidateDashboard();
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(sahibAlTartibProvider);
+    await widget.onUndone?.call();
+  }
+
+  Future<void> _recoverCurrentBatch() async {
+    final current = await ref
+        .read(qazaUndoManagerProvider)
+        .restore(userId: widget.userId);
+    if (!mounted || current == null) return;
+    setState(() {
+      _batch = current;
+      _selected.removeWhere(
+        (id) => !_batch.entries.any((entry) => entry.recordId == id),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final expired = _batch.isExpired(DateTime.now());
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _title(context),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            expired
+                ? (Localizations.localeOf(context).languageCode == 'ur'
+                    ? 'واپس کرنے کا وقت ختم ہو گیا۔'
+                    : 'The Undo window has expired.')
+                : _batch.entries.length.toString() + ' Qaza',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _batch.entries.length,
+              itemBuilder: (context, index) {
+                final entry = _batch.entries[index];
+                final selected = _selected.contains(entry.recordId);
+                return CheckboxListTile(
+                  value: selected,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: expired || _working
+                      ? null
+                      : (value) {
+                          setState(() {
+                            if (value == true) {
+                              _selected.add(entry.recordId);
+                            } else {
+                              _selected.remove(entry.recordId);
+                            }
+                          });
+                        },
+                  title: Text(entry.prayerType.localizedLabel(l10n)),
+                  subtitle: Text(
+                    DateFormatters.formatGregorianDatePadded(entry.originalDate),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: expired || _working ? null : _undoAll,
+                  child: Text(_undoAllLabel(context)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: expired || _working || _selected.isEmpty
+                      ? null
+                      : _undoSelected,
+                  child: Text(_undoSelectedLabel(context)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
