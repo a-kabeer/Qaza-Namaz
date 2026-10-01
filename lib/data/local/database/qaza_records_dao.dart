@@ -184,12 +184,12 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       })
       ..orderBy([
         (r) => completedMode
-            ? OrderingTerm.desc(qazaRecords.completedAt)
+            ? OrderingTerm.desc(r.completedAt)
             : (descending
                 ? OrderingTerm.desc(r.originalDate)
                 : OrderingTerm.asc(r.originalDate)),
         (r) => completedMode
-            ? OrderingTerm.desc(qazaRecords.id)
+            ? OrderingTerm.desc(r.id)
             : (descending
                 ? OrderingTerm.desc(r.id)
                 : OrderingTerm.asc(r.id)),
