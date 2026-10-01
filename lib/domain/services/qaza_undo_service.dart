@@ -444,12 +444,15 @@ class QazaUndoManager {
             );
 
       if (useActiveSelection) {
+        // The active session is in memory only. Clear the persisted discovery
+        // batch as soon as an Undo operation succeeds, without touching a
+        // newer discovery session that may have replaced it.
+        await _clearPersistedIfSameSession(
+          userId: userId,
+          expectedBatch: batch,
+        );
         if (remainingBatch == null) {
           _activeSelectionSessions.remove(userId);
-          await _clearPersistedIfMatches(
-            userId: userId,
-            expectedBatch: batch,
-          );
         } else {
           _activeSelectionSessions[userId] = remainingBatch;
         }
@@ -494,12 +497,12 @@ class QazaUndoManager {
     await _store.clear(userId: userId);
   }
 
-  Future<void> _clearPersistedIfMatches({
+  Future<void> _clearPersistedIfSameSession({
     required String userId,
     required QazaUndoBatch expectedBatch,
   }) async {
     final latest = await _store.load(userId: userId, now: _now());
-    if (latest != null && latest.matches(expectedBatch)) {
+    if (latest != null && latest.sessionId == expectedBatch.sessionId) {
       await _store.clear(userId: userId);
     }
   }
