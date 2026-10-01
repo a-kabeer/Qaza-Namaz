@@ -10,6 +10,7 @@ import '../../../core/utils/date_formatters.dart';
 import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
+import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
@@ -127,20 +128,21 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
         );
       }
 
-      final completedRecord = record.copyWith(
-        status: QazaStatus.completed,
-        completedAt: completedAt,
-        completionId: completionId,
-        updatedAt: completedAt,
-      );
-
       if (!mounted) return;
 
       await showQazaUndoFeedback(
         context: context,
         ref: ref,
         userId: userId,
-        records: [completedRecord],
+        entries: [
+          QazaCompletionEntry(
+            recordId: record.id,
+            completionId: completionId,
+            prayerType: record.prayerType,
+            originalDate: record.originalDate,
+            completedAt: completedAt,
+          ),
+        ],
         onUndone: () async {
           ref.read(homeControllerProvider).afterUndo();
         },
