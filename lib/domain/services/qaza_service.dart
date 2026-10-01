@@ -1,4 +1,5 @@
 import '../../core/constants/prayer_types.dart';
+import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_completion_id.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
@@ -90,6 +91,7 @@ class QazaService {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
     this.witrInclusionResolver,
+    DiagnosticsService? diagnostics,
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository);
 
