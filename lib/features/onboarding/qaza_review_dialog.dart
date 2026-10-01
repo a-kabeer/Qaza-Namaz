@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
@@ -11,7 +9,7 @@ enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
 
-class QazaReviewDialog extends ConsumerStatefulWidget {
+class QazaReviewDialog extends StatefulWidget {
   const QazaReviewDialog({
     super.key,
     required this.profile,
@@ -24,10 +22,10 @@ class QazaReviewDialog extends ConsumerStatefulWidget {
   final QazaReviewConfirm onConfirm;
 
   @override
-  ConsumerState<QazaReviewDialog> createState() => _QazaReviewDialogState();
+  State<QazaReviewDialog> createState() => _QazaReviewDialogState();
 }
 
-class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
+class _QazaReviewDialogState extends State<QazaReviewDialog> {
   bool _starting = false;
   String? _error;
 
