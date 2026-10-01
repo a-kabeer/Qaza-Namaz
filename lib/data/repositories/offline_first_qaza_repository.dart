@@ -83,6 +83,8 @@ class OfflineFirstQazaRepository
     String? afterId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) async {
     _validateActive(userId);
@@ -98,6 +100,8 @@ class OfflineFirstQazaRepository
       afterId: afterId,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
+      afterCompletedAt: afterCompletedAt,
+      beforeCompletedAt: beforeCompletedAt,
       descending: descending,
     );
     return QazaPage(records: page.records, hasMore: page.hasMore);
@@ -307,17 +311,19 @@ class OfflineFirstQazaRepository
   }
 
   @override
-  Future<void> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    Map<String, String>? completionIds,
   }) async {
     _validateActive(userId);
-    if (recordIds.isEmpty) return;
-    await _localStore.completeRecords(
+    if (recordIds.isEmpty) return const <QazaRecord>[];
+    return _localStore.completeRecords(
       userId: userId,
       recordIds: recordIds.toSet().toList(growable: false),
       completedAt: completedAt,
+      completionIds: completionIds,
     );
   }
 
