@@ -463,7 +463,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             variables: [
               Variable(actionId),
-              Variable(record.id),
+              Variable(record.recordId),
               Variable(record.userId),
               Variable(record.additionId),
               Variable(record.prayerType.name),
@@ -567,7 +567,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           }
 
           final inserted = await database.qazaRecordsDao.insertRecord(
-            _recordCompanion(record),
+            _recordCompanion(record.toRecord()),
           );
           if (inserted > 0) {
             restored++;

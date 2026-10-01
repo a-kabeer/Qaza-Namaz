@@ -93,6 +93,7 @@ class _FakeRepository implements QazaRepository {
     DateTime? to,
     DateTime? afterOriginalDate,
     String? afterId,
+    String? additionId,
     DateTime? beforeOriginalDate,
     String? beforeId,
     bool descending = false,
@@ -114,8 +115,7 @@ class _FakeRepository implements QazaRepository {
       throw UnimplementedError();
 
   @override
-  Future<void> updateRecord({required QazaRecord record}) =>
-      throw UnimplementedError();
+  Future<bool> updateRecord({required QazaRecord record}) async => true;
 
   @override
   Future<void> deleteRecord({

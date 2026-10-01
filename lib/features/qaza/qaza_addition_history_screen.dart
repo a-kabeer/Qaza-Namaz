@@ -242,7 +242,7 @@ class _RecentAdditions extends StatelessWidget {
       return const ListView(
         children: [
           SizedBox(height: 120),
-          Center(child: Text('No Qaza additions yet.')),
+          const Center(child: Text('No Qaza additions yet.'))
         ],
       );
     }
@@ -308,7 +308,7 @@ class _DeletedActions extends ConsumerWidget {
       return const ListView(
         children: [
           SizedBox(height: 120),
-          Center(child: Text('No recently deleted Qaza.')),
+          const Center(child: Text('No recently deleted Qaza.'))
         ],
       );
     }

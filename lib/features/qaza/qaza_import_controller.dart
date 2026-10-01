@@ -291,34 +291,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
         }
       }
       stopwatch.stop();
-
-      if (result.cancelled) {
-        state = state.copyWith(
-          phase: QazaImportTaskPhase.cancelled,
-          cancelRequested: false,
-          completedAt: DateTime.now(),
-          elapsed: stopwatch.elapsed,
-          clearError: true,
-        );
-        return;
-      }
-
-      ref.invalidate(progressSummaryProvider);
-      state = state.copyWith(
-        phase: QazaImportTaskPhase.completed,
-        cancelRequested: false,
-        processed: result.addedCount + result.skippedCount,
-        total: result.addedCount + result.skippedCount,
-        added: result.addedCount,
-        skipped: result.skippedCount,
-        removed: result.removedCount,
-        protected: result.protectedCount,
-        additionId: result.additionId,
-        revision: result.revision,
-        completedAt: DateTime.now(),
-        elapsed: stopwatch.elapsed,
-        clearError: true,
-      );
     } catch (error, stack) {
       stopwatch.stop();
       ref.invalidate(progressSummaryProvider);
