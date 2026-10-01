@@ -336,7 +336,7 @@ class _QazaUndoSelectionSheetState
                 ? (Localizations.localeOf(context).languageCode == 'ur'
                     ? 'واپس کرنے کا وقت ختم ہو گیا۔'
                     : 'The Undo window has expired.')
-                : '\${_batch.entries.length} Qaza',
+                : '${_batch.entries.length} Qaza',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
