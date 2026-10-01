@@ -198,7 +198,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const QazaImportProgressDialog()
+      builder: (_) => const QazaImportProgressDialog(),
     );
 
     if (!mounted) return;
