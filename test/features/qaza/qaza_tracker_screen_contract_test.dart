@@ -137,8 +137,8 @@ void main() {
     expect(end, greaterThan(start));
 
     final method = source.substring(start, end);
-    expect(method, contains('_completeRecordIdsWithUndo('));
-    expect(method, contains('exitSelectionModeOnSuccess: false'));
+    expect(method, contains('_completeRecordIdsWithUndo([recordId])'));
+    expect(method, isNot(contains('selectionMode: true')));
     expect(method, isNot(contains('selectionMode: true')));
     expect(method, isNot(contains('selected: <String>{recordId}')));
   });
