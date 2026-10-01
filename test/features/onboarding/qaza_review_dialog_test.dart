@@ -56,11 +56,11 @@ void main() {
   testWidgets('review actions remain usable in Urdu RTL', (tester) async {
     await _pumpReview(tester, const Locale('ur'));
 
-    final edit = tester.renderObject(find.byKey(const Key('qaza_review_edit')));
-    final add = tester.renderObject(find.byKey(const Key('qaza_review_add')));
+    final edit = tester.getSize(find.byKey(const Key('qaza_review_edit')));
+    final add = tester.getSize(find.byKey(const Key('qaza_review_add')));
 
-    expect(edit.size.width, add.size.width);
-    expect(edit.size.height, add.size.height);
+    expect(edit.width, add.width);
+    expect(edit.height, add.height);
     expect(find.text('اپنی تفصیلات میں ترمیم کریں'), findsOneWidget);
     expect(find.text('قضا کو میرے ٹریکر میں شامل کریں'), findsOneWidget);
   });
