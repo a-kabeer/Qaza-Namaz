@@ -3,7 +3,6 @@ import 'package:qaza_namaz/core/utils/qaza_completion_id.dart';
 import 'package:qaza_namaz/core/utils/qaza_date.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_addition_repository.dart';
 
