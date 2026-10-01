@@ -407,6 +407,22 @@ void main() {
     expect(home, contains('QazaCompletionReceipt'));
   });
 
+  test('Batch Undo selection is not tied to the five-second Snackbar timer', () {
+    final source =
+        File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
+
+    expect(source, contains('beginSelection('));
+    expect(source, contains('cancelSelection('));
+    expect(source, contains('initialBatch: activeBatch'));
+    expect(source, isNot(contains('Timer.periodic')));
+    expect(source, isNot(contains('_batch.isExpired(DateTime.now())')));
+    expect(service, contains('activeSelection({required String userId})'));
+    expect(service, contains('_activeSelectionSessions'));
+    expect(service, contains('useActiveSelection'));
+  });
+
   test('Undo feedback supports selected and all restoration', () {
     final source =
         File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();

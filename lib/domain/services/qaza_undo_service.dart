@@ -237,8 +237,61 @@ class QazaUndoManager {
   final QazaUndoStore _store;
   final DateTime Function() _now;
 
+  // Batch Undo selection is an in-memory session. The persisted batch keeps
+  // its original five-second discovery deadline, but once selection starts
+  // this session is no longer governed by that deadline.
+  final Map<String, QazaUndoBatch> _activeSelectionSessions =
+      <String, QazaUndoBatch>{};
+
   Future<QazaUndoBatch?> restore({required String userId}) =>
       _store.load(userId: userId, now: _now());
+
+  QazaUndoBatch? activeSelection({required String userId}) =>
+      _activeSelectionSessions[userId];
+
+  /// Starts the active portion of batch Undo after the Snackbar action.
+  Future<QazaUndoBatch> beginSelection({
+    required String userId,
+    required QazaUndoBatch expectedBatch,
+  }) async {
+    final active = _activeSelectionSessions[userId];
+    if (active != null) {
+      if (active.matches(expectedBatch)) return active;
+      throw const QazaUndoException(
+        reason: QazaUndoFailureReason.staleBatch,
+      );
+    }
+
+    final batch = await restore(userId: userId);
+    if (batch == null) {
+      throw const QazaUndoException(
+        reason: QazaUndoFailureReason.expired,
+      );
+    }
+    if (!batch.matches(expectedBatch)) {
+      throw const QazaUndoException(
+        reason: QazaUndoFailureReason.staleBatch,
+      );
+    }
+
+    _activeSelectionSessions[userId] = batch;
+    return batch;
+  }
+
+  /// Cancels an active selection session without affecting a newer session.
+  Future<void> cancelSelection({
+    required String userId,
+    required QazaUndoBatch expectedBatch,
+  }) async {
+    final active = _activeSelectionSessions[userId];
+    if (active == null || !active.matches(expectedBatch)) return;
+
+    _activeSelectionSessions.remove(userId);
+    await _clearPersistedIfSameSession(
+      userId: userId,
+      expectedBatch: active,
+    );
+  }
 
   /// Compatibility entry point for callers that still have QazaRecord objects.
   Future<QazaUndoBatch?> register({
@@ -267,7 +320,12 @@ class QazaUndoManager {
     required Iterable<QazaCompletionEntry> entries,
   }) async {
     final now = _now();
-    final existing = await _store.load(userId: userId, now: now);
+    // An active selection session owns the currently open sheet. New
+    // completions therefore start a fresh discovery batch instead of being
+    // merged into the sheet that is already in use.
+    final existing = _activeSelectionSessions.containsKey(userId)
+        ? null
+        : await _store.load(userId: userId, now: now);
     final combined = <QazaUndoEntry>[
       ...?existing?.entries,
     ];
@@ -333,7 +391,13 @@ class QazaUndoManager {
     required Set<String>? selectedIds,
   }) async {
     try {
-      final batch = await restore(userId: userId);
+      final active = _activeSelectionSessions[userId];
+      final useActiveSelection = active != null &&
+          (expectedBatch == null || active.matches(expectedBatch));
+
+      final batch = useActiveSelection
+          ? active!
+          : await restore(userId: userId);
       if (batch == null) {
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.expired,
@@ -371,7 +435,6 @@ class QazaUndoManager {
           .where((entry) => !changedSet.contains(entry.recordId))
           .toList(growable: false);
 
-      final latest = await _store.load(userId: userId, now: _now());
       QazaUndoBatch? remainingBatch = remainingEntries.isEmpty
           ? null
           : QazaUndoBatch(
@@ -380,16 +443,32 @@ class QazaUndoManager {
               expiresAt: batch.expiresAt,
             );
 
-      if (latest != null && latest.matches(batch)) {
-        if (remainingBatch == null || remainingBatch.isExpired(_now())) {
-          await _store.clear(userId: userId);
-          remainingBatch = null;
+      if (useActiveSelection) {
+        // The active session is in memory only. Clear the persisted discovery
+        // batch as soon as an Undo operation succeeds, without touching a
+        // newer discovery session that may have replaced it.
+        await _clearPersistedIfSameSession(
+          userId: userId,
+          expectedBatch: batch,
+        );
+        if (remainingBatch == null) {
+          _activeSelectionSessions.remove(userId);
         } else {
-          await _store.save(userId: userId, batch: remainingBatch);
+          _activeSelectionSessions[userId] = remainingBatch;
         }
-      } else if (latest != null) {
-        // A newer session won the race; never overwrite it.
-        remainingBatch = latest;
+      } else {
+        final latest = await _store.load(userId: userId, now: _now());
+        if (latest != null && latest.matches(batch)) {
+          if (remainingBatch == null || remainingBatch.isExpired(_now())) {
+            await _store.clear(userId: userId);
+            remainingBatch = null;
+          } else {
+            await _store.save(userId: userId, batch: remainingBatch);
+          }
+        } else if (latest != null) {
+          // A newer session won the race; never overwrite it.
+          remainingBatch = latest;
+        }
       }
 
       if (changedIds.isEmpty) {
@@ -413,5 +492,18 @@ class QazaUndoManager {
     }
   }
 
-  Future<void> clear({required String userId}) => _store.clear(userId: userId);
+  Future<void> clear({required String userId}) async {
+    _activeSelectionSessions.remove(userId);
+    await _store.clear(userId: userId);
+  }
+
+  Future<void> _clearPersistedIfSameSession({
+    required String userId,
+    required QazaUndoBatch expectedBatch,
+  }) async {
+    final latest = await _store.load(userId: userId, now: _now());
+    if (latest != null && latest.sessionId == expectedBatch.sessionId) {
+      await _store.clear(userId: userId);
+    }
+  }
 }
