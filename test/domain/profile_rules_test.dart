@@ -165,19 +165,26 @@ void main() {
   test('profile validation uses Hijri current age for start-praying age', () {
     final dob = DateTime(2018, 11, 12);
     final age12Birthday = ProfileRules.anniversaryDate(dob, 12);
+    final age13Birthday = ProfileRules.anniversaryDate(dob, 13);
     final profile = makeProfile(
       dob: dob,
       pubertyAge: 12,
-      startPrayingAge: 12,
+      startPrayingAge: 13,
     );
 
-    final before = ProfileRules.validate(
+    final beforeStartBirthday = ProfileRules.validate(
       profile,
-      today: age12Birthday.subtract(const Duration(days: 1)),
+      today: age12Birthday.add(const Duration(days: 1)),
     );
-    expect(before.error, ProfileValidationError.startPrayingAgeInvalid);
+    expect(
+      beforeStartBirthday.error,
+      ProfileValidationError.startPrayingAgeInvalid,
+    );
 
-    final on = ProfileRules.validate(profile, today: age12Birthday);
-    expect(on.isValid, isTrue);
+    final onStartBirthday = ProfileRules.validate(
+      profile,
+      today: age13Birthday,
+    );
+    expect(onStartBirthday.isValid, isTrue);
   });
 }
