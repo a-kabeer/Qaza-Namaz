@@ -15,6 +15,7 @@ import '../calendar/calendar_picker.dart';
 import '../home/home_controller.dart';
 import 'add_qaza_controller.dart';
 import 'qaza_import_controller.dart';
+import 'qaza_import_progress_dialog.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_navigation.dart';
 
@@ -197,7 +198,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const _AddQazaProgressDialog(),
+      builder: (_) => const QazaImportProgressDialog()
     );
 
     if (!mounted) return;
@@ -950,83 +951,3 @@ String _prayerLabel(AppLocalizations l10n, PrayerType prayer) =>
       PrayerType.isha => l10n.prayerIsha,
       PrayerType.witr => l10n.prayerWitr,
     };
-
-class _AddQazaProgressDialog extends ConsumerStatefulWidget {
-  const _AddQazaProgressDialog();
-
-  @override
-  ConsumerState<_AddQazaProgressDialog> createState() =>
-      _AddQazaProgressDialogState();
-}
-
-class _AddQazaProgressDialogState
-    extends ConsumerState<_AddQazaProgressDialog> {
-  ProviderSubscription<QazaImportTaskState>? _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _subscription = ref.listenManual<QazaImportTaskState>(
-      qazaImportProvider,
-      (_, next) {
-        if (next.isActive) return;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) Navigator.of(context).pop();
-        });
-      },
-    );
-    if (!ref.read(qazaImportProvider).isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).pop();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _subscription?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final state = ref.watch(qazaImportProvider);
-    final progress = state.progress;
-
-    return AlertDialog(
-      title: Text(l10n.addQazaInProgress),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (progress == null)
-            const LinearProgressIndicator()
-          else ...[
-            Text(
-              '${(progress * 100).round()}%',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            LinearProgressIndicator(value: progress),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              '${state.processed} / ${state.total}',
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: state.isActive && !state.cancelRequested
-              ? () => ref.read(qazaImportProvider.notifier).cancel()
-              : null,
-          child: Text(
-            state.cancelRequested
-                ? l10n.commonLoading
-                : l10n.commonCancel,
-          ),
-        ),
-      ],
-    );
-  }
-}
