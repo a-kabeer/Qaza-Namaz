@@ -204,17 +204,28 @@ void main() {
     expect(controller, contains('expectedRevision'));
   });
 
-  test('Add Qaza progress has real cancellation and determinate progress', () {
+  test('Add Qaza uses shared determinate import progress without a cancel action', () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final progress = File(
+      'lib/features/qaza/qaza_import_progress_dialog.dart',
+    ).readAsStringSync();
 
-    expect(source, contains('qazaImportProvider.notifier).cancel()'));
-    expect(source, contains('LinearProgressIndicator(value: progress)'));
+    expect(source, contains('QazaImportProgressDialog('));
+    expect(source, isNot(contains('qazaImportProvider.notifier).cancel()')));
+    expect(
+      progress,
+      contains('LinearProgressIndicator(value: state.progress)'),
+    );
+    expect(progress, contains('qazaImportAdded'));
+    expect(progress, contains('qazaImportSkipped'));
+    expect(progress, isNot(contains('commonCancel')));
 
     final controller =
         File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
     expect(controller, contains('bool cancel()'));
     expect(controller, contains('QazaImportTaskPhase.cancelled'));
+    expect(controller, contains('_cancelRequested = false;'));
 
     final service =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();

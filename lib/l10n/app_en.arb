@@ -624,6 +624,8 @@
   "addQazaCancelledMessage": "The addition was cancelled. Any records already saved were kept.",
   "addQazaNewQazaLabel": "New Qaza records",
   "addQazaInProgress": "Adding Qaza...",
+  "qazaImportAdded": "Added",
+  "qazaImportSkipped": "Skipped",
   "addQazaCreatedTitle": "Qaza records created",
   "addQazaSelectedCount": "{count, plural, =1{1 day selected • Which prayers did you miss?} other{{count} days selected • Which prayers did you miss?}}",
   "@addQazaSelectedCount": {

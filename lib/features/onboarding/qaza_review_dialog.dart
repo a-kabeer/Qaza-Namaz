@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
-import '../qaza/qaza_import_controller.dart';
 
 enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
 
-class QazaReviewDialog extends ConsumerStatefulWidget {
+class QazaReviewDialog extends StatefulWidget {
   const QazaReviewDialog({
     super.key,
     required this.profile,
@@ -25,13 +22,11 @@ class QazaReviewDialog extends ConsumerStatefulWidget {
   final QazaReviewConfirm onConfirm;
 
   @override
-  ConsumerState<QazaReviewDialog> createState() => _QazaReviewDialogState();
+  State<QazaReviewDialog> createState() => _QazaReviewDialogState();
 }
 
-class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
+class _QazaReviewDialogState extends State<QazaReviewDialog> {
   bool _starting = false;
-  bool _watchingImport = false;
-  bool _didComplete = false;
   String? _error;
 
   Future<void> _confirm() async {
@@ -49,25 +44,9 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
         });
         return;
       }
-      setState(() {
-        _watchingImport = true;
-      });
+      Navigator.of(context).pop(QazaReviewAction.add);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _starting = false;
-        _error = AppLocalizations.of(context).qazaReviewError;
-      });
-    }
-  }
-
-  Future<void> _retry() async {
-    setState(() {
-      _starting = true;
-      _error = null;
-    });
-    final started = ref.read(qazaImportProvider.notifier).retry();
-    if (!started && mounted) {
       setState(() {
         _starting = false;
         _error = AppLocalizations.of(context).qazaReviewError;
@@ -78,22 +57,7 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final importState = ref.watch(qazaImportProvider);
-    final importIsActive = importState.isActive;
-    final importFailed =
-        _watchingImport && importState.phase == QazaImportTaskPhase.failed;
-
-    if (_watchingImport &&
-        importState.phase == QazaImportTaskPhase.completed &&
-        !_didComplete) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _didComplete) return;
-        _didComplete = true;
-        Navigator.of(context).pop(QazaReviewAction.add);
-      });
-    }
-
-    final actionsBusy = _starting || importIsActive;
+    final actionsBusy = _starting;
 
     return PopScope(
       canPop: false,
@@ -130,10 +94,6 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
                   l10n.qazaReviewNote,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                if (_watchingImport && (importIsActive || importFailed)) ...[
-                  const SizedBox(height: 12),
-                  _buildImportStatus(context, l10n, importState),
-                ],
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(
@@ -149,9 +109,12 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
         ),
         actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         actions: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
+              SizedBox(
+                width: double.infinity,
                 child: TextButton(
                   key: const Key('qaza_review_edit'),
                   onPressed: actionsBusy
@@ -160,19 +123,14 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
                   child: Text(l10n.qazaReviewEdit),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
                 child: FilledButton(
                   key: const Key('qaza_review_add'),
-                  onPressed: importFailed
-                      ? _retry
-                      : (actionsBusy ? null : _confirm),
+                  onPressed: actionsBusy ? null : _confirm,
                   child: Text(
-                    importFailed
-                        ? l10n.commonRetry
-                        : (actionsBusy
-                            ? l10n.qazaReviewAdding
-                            : l10n.qazaReviewAdd),
+                    actionsBusy ? l10n.qazaReviewAdding : l10n.qazaReviewAdd,
                   ),
                 ),
               ),
@@ -182,33 +140,6 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
       ),
     );
   }
-
-  Widget _buildImportStatus(
-    BuildContext context,
-    AppLocalizations l10n,
-    QazaImportTaskState importState,
-  ) {
-    final progress = importState.progress;
-    final failed = importState.phase == QazaImportTaskPhase.failed;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          failed ? l10n.qazaReviewError : l10n.qazaReviewAdding,
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(value: progress),
-        if (progress != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            '${importState.processed} / ${importState.total}',
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildTotal(BuildContext context, AppLocalizations l10n) {
     return Card(
       child: Padding(

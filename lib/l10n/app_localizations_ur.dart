@@ -919,6 +919,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaInProgress => 'قضا شامل ہو رہی ہے...';
 
   @override
+  String get qazaImportAdded => 'شامل';
+
+  @override
+  String get qazaImportSkipped => 'چھوڑے گئے';
+
+  @override
   String get addQazaCreatedTitle => 'قضا ریکارڈ بن گئے';
 
   @override
