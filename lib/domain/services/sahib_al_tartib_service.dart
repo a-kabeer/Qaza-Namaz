@@ -195,7 +195,6 @@ class SahibAlTartibService {
     DateTime? currentDate,
     PrayerType? currentPrayer,
     SahibAlTartibState? evaluatedState,
-    Iterable<QazaRecord>? pendingRecords,
   }) async {
     final ids = recordIds.toSet();
     if (ids.isEmpty) return true;
@@ -208,19 +207,39 @@ class SahibAlTartibService {
         );
     if (!state.requiresOrder || state.nextPending == null) return true;
 
-    final witrIds = pendingRecords == null
-        ? await _findPendingWitrIds(
-            userId: userId,
-            requestedIds: ids,
-          )
-        : {
-            for (final record in pendingRecords)
-              if (ids.contains(record.id) && record.prayerType == PrayerType.witr)
-                record.id,
-          };
+    final witrIds = await _findPendingWitrIds(
+      userId: userId,
+      requestedIds: ids,
+    );
 
     return ids.every(
       (id) => id == state.nextPending!.id || witrIds.contains(id),
+    );
+  }
+
+  /// Validates explicitly resolved pending records under a previously evaluated
+  /// Tartib state without performing another repository lookup.
+  bool canCompletePendingRecords({
+    required Iterable<QazaRecord> pendingRecords,
+    required Iterable<String> recordIds,
+    required SahibAlTartibState evaluatedState,
+  }) {
+    final ids = recordIds.toSet();
+    if (ids.isEmpty ||
+        !evaluatedState.requiresOrder ||
+        evaluatedState.nextPending == null) {
+      return true;
+    }
+
+    final witrIds = {
+      for (final record in pendingRecords)
+        if (ids.contains(record.id) && record.prayerType == PrayerType.witr)
+          record.id,
+    };
+
+    return ids.every(
+      (id) =>
+          id == evaluatedState.nextPending!.id || witrIds.contains(id),
     );
   }
 
