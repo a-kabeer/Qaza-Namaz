@@ -918,6 +918,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaInProgress => 'Adding Qaza...';
 
   @override
+  String get qazaImportAdded => 'Added';
+
+  @override
+  String get qazaImportSkipped => 'Skipped';
+
+  @override
   String get addQazaCreatedTitle => 'Qaza records created';
 
   @override
