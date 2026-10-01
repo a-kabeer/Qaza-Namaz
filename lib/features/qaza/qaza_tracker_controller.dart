@@ -488,7 +488,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         cursor = page.records.last;
       }
       state = state.copyWith(
-          selectionMode: true, selected: ids, selectingAll: false);
+        selectionMode: true,
+        selectionScope: QazaSelectionScope.pending,
+        selected: ids,
+        selectingAll: false,
+      );
     } catch (error) {
       state = state.copyWith(
         selectingAll: false,
