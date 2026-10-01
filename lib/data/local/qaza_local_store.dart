@@ -127,9 +127,6 @@ abstract class QazaLocalStore {
     bool descending = false,
   }) async {
     if (limit < 1 || limit > 500) throw ArgumentError.value(limit, 'limit');
-    final originalCursor = afterOriginalDate != null || beforeOriginalDate != null;
-    final completedCursor = afterCompletedAt != null || beforeCompletedAt != null;
-
     if (from != null && to != null && from.isAfter(to)) {
       throw ArgumentError('from must be <= to');
     }
