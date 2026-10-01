@@ -287,7 +287,7 @@ class QazaUndoManager {
     if (active == null || !active.matches(expectedBatch)) return;
 
     _activeSelectionSessions.remove(userId);
-    await _clearPersistedIfMatches(
+    await _clearPersistedIfSameSession(
       userId: userId,
       expectedBatch: active,
     );
