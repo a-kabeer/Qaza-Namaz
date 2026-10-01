@@ -538,7 +538,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     prayer: prayer,
                     restricted: restricted,
                     completionWorking: widget.working,
-                    refreshing: state.isRefreshing,
+                    refreshing: state.isLoading || state.isRefreshing,
                     onComplete: widget.onComplete,
                   );
                 },
@@ -574,8 +574,9 @@ class _HomeNextQazaRecord extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final completeEnabled =
-            !restricted && !completionWorking && !refreshing;
+        final completeEnabled = !restricted &&
+            !completionWorking &&
+            !refreshing;
 
         final complete = SizedBox(
           height: 48,
