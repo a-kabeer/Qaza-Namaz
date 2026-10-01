@@ -366,12 +366,15 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-    expect(source, contains('class _CompletedRecordRow'));
-    expect(source, contains('DateFormatters.formatClockTime(completedAt)'));
-    expect(source, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
-    expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
-    expect(source, contains("Icons.check_circle_rounded"));
-    expect(source, isNot(contains('Card(')));
+    final start = source.indexOf('class _CompletedRecordRow');
+    final end = source.indexOf('class _CompletedRecordDetails', start);
+    final row = source.substring(start, end);
+
+    expect(row, contains('DateFormatters.formatClockTime(completedAt)'));
+    expect(row, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
+    expect(row, contains('l10n.formatHijriDate(record.originalDate)'));
+    expect(row, contains("Icons.check_circle_rounded"));
+    expect(row, isNot(contains('Card(')));
   });
 
   test('Completed detail provides permanent Mark as Pending correction', () {
