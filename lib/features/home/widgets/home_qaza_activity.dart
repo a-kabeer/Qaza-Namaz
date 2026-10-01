@@ -652,7 +652,7 @@ class _SummaryMetric extends StatelessWidget {
 double _niceChartInterval(double rawInterval) {
   final safeRaw = math.max(rawInterval, 1.0);
   final magnitude =
-      math.pow(10, math.floor(math.log(safeRaw) / math.ln10)).toDouble();
+      math.pow(10, (math.log(safeRaw) / math.ln10).floor()).toDouble();
   final normalized = safeRaw / magnitude;
   final niceNormalized = normalized <= 1
       ? 1.0
