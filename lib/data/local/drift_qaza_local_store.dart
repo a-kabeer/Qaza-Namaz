@@ -59,6 +59,8 @@ class DriftQazaLocalStore extends QazaLocalStore {
     String? afterId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   }) async {
     final page = await _database.qazaRecordsDao.getKeysetPage(
@@ -74,6 +76,8 @@ class DriftQazaLocalStore extends QazaLocalStore {
       afterId: afterId,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
+      afterCompletedAt: afterCompletedAt,
+      beforeCompletedAt: beforeCompletedAt,
       descending: descending,
     );
     return LocalQazaPage(records: page.records, hasMore: page.hasMore);
@@ -402,17 +406,17 @@ class DriftQazaLocalStore extends QazaLocalStore {
   /// One indexed UPDATE per id in a single transaction: no snapshot read and
   /// no rewrite of the user's rows.
   @override
-  Future<List<String>> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
-    String? completionId,
+    Map<String, String>? completionIds,
   }) =>
       _database.qazaRecordsDao.completeByIds(
         userId: userId,
         ids: recordIds,
         completedAt: completedAt,
-        completionId: completionId,
+        completionIds: completionIds,
       );
 
   @override
