@@ -226,49 +226,6 @@ class QazaService {
         currentPrayer: currentPrayer,
       );
 
-  Future<void> _ensureCompletionAllowed({
-    required String userId,
-    required String recordId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-  }) async {
-    final SahibAlTartibState state;
-    final bool allowed;
-    try {
-      state = await tartib.evaluate(
-        userId: userId,
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-      );
-      if (!state.requiresOrder || state.nextPending == null) return;
-      allowed = await tartib.canCompleteRecordIds(
-        userId: userId,
-        recordIds: [recordId],
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-        evaluatedState: state,
-      );
-    } catch (error, stack) {
-      // The ordering rule could not be read. That is not a violation and not
-      // a persistence failure; it is reported and rethrown so the caller can
-      // say which of the two it was.
-      _diagnostics.recordFailure(
-        DiagnosticArea.qazaCompletion,
-        'tartib_check_failed',
-        error,
-        stack: stack,
-      );
-      rethrow;
-    }
-    if (allowed) {
-      return;
-    }
-    throw QazaTartibViolationException(
-      requiredPrayer: state.nextPending!.prayerType,
-      pendingFarzCount: state.pendingFarzCount,
-    );
-  }
-
   Future<int> countCompletedBetween({
     required String userId,
     required DateTime from,
