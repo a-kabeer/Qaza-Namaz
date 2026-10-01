@@ -136,7 +136,8 @@ class _QazaImportProgressDialogState
                     ),
                   ],
                 ),
-              ],            ] else ...[
+              ],
+            ] else ...[
               const LinearProgressIndicator(),
             ],
           ],
