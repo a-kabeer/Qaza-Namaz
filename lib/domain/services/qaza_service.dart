@@ -91,7 +91,7 @@ class QazaService {
     SahibAlTartibService? tartib,
     this.witrInclusionResolver,
   })  : availability = availability ?? const QazaAvailabilityService(),
-        tartib = tartib ?? SahibAlTartibService(repository),
+        tartib = tartib ?? SahibAlTartibService(repository);
 
   final QazaRepository repository;
   final QazaAvailabilityService availability;
