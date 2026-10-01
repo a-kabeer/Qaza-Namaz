@@ -177,12 +177,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     // while this controller is already built and build() never runs again for
     // it. Listening covers those; the read below covers the first one, which
     // is already waiting before this listener exists.
-    if (additionId == null) ref.listen<QazaTrackerFilterRequest?>(
-      qazaTrackerFilterRequestProvider,
-      (_, next) {
-        if (next != null) _applyRequest(next);
-      },
-    );
+    if (additionId == null) {
+      ref.listen<QazaTrackerFilterRequest?>(
+        qazaTrackerFilterRequestProvider,
+        (_, next) {
+          if (next != null) _applyRequest(next);
+        },
+      );
+    }
 
     final request = additionId == null
         ? ref.read(qazaTrackerFilterRequestProvider)
