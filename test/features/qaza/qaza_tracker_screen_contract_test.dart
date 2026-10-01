@@ -357,8 +357,8 @@ void main() {
 
     expect(source, contains('beforeCompletedAt: completed ? after?.completedAt : null'));
     expect(source, contains('status: state.statusFilter.status'));
-    expect(dao, contains('OrderingTerm.desc(qazaRecords.completedAt)'));
-    expect(dao, contains('OrderingTerm.desc(qazaRecords.id)'));
+    expect(dao, contains('OrderingTerm.desc(r.completedAt)'));
+    expect(dao, contains('OrderingTerm.desc(r.id)'));
     expect(dao, contains('row.completedAt.isNotNull()'));
   });
 
