@@ -24,11 +24,12 @@ abstract interface class QazaRepository {
     QazaStatus? status,
   });
 
-  /// Bounded ascending keyset page for scalable ledger screens.
+  /// Bounded keyset page for scalable ledger screens.
   ///
-  /// [from] and [to] bound the original Qaza date inclusively, so status,
-  /// prayer and date filtering all happen in the data source rather than in
-  /// Dart over a materialized ledger.
+  /// Pending pages use [from]/[to] as an inclusive original-Qaza-date range.
+  /// Completed pages use [from]/[toExclusive] against [completedAt], keeping
+  /// the selected calendar end date inclusive without losing completion times
+  /// later on that day.
   Future<QazaPage> getPage({
     required String userId,
     int limit = 50,
@@ -38,6 +39,7 @@ abstract interface class QazaRepository {
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -168,6 +170,14 @@ abstract interface class QazaRepository {
     required List<String> recordIds,
     required DateTime completedAt,
     Map<String, String>? completionIds,
+  });
+
+  /// Safely moves selected completed records back to pending when each
+  /// completion marker still matches the selected state.
+  Future<List<QazaRecord>> markCompletedAsPendingBatch({
+    required String userId,
+    required Map<String, String> expectedCompletionIds,
+    required DateTime updatedAt,
   });
 
   /// Permanently deletes every Qaza record belonging to [userId], resetting
