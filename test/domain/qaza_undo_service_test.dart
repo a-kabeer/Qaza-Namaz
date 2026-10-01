@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
+import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 
 class _MemoryUndoStore extends QazaUndoStore {
@@ -35,25 +40,6 @@ class _MemoryUndoStore extends QazaUndoStore {
   }
 }
 
-QazaRecord _completedRecord({
-  required String id,
-  required PrayerType prayerType,
-  required DateTime originalDate,
-}) {
-  final timestamp = DateTime(2026, 9, 26, 11, 0);
-  return QazaRecord(
-    id: id,
-    userId: 'local',
-    prayerType: prayerType,
-    originalDate: originalDate,
-    status: QazaStatus.completed,
-    completedAt: timestamp,
-    completionId: 'completion-$id',
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  );
-}
-
 class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
   _FakeQazaRepository(this.records);
 
@@ -64,12 +50,16 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
     required String userId,
     PrayerType? prayerType,
     QazaStatus? status,
-  }) async =>
-      records.values.where((record) =>
-        record.userId == userId &&
-        (prayerType == null || record.prayerType == prayerType) &&
-        (status == null || record.status == status),
-      ).toList();
+  }) async {
+    return records.values
+        .where(
+          (record) =>
+              record.userId == userId &&
+              (prayerType == null || record.prayerType == prayerType) &&
+              (status == null || record.status == status),
+        )
+        .toList(growable: false);
+  }
 
   @override
   Future<QazaPage> getPage({
@@ -95,7 +85,7 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
       status: status,
     );
     return QazaPage(
-      records: values.take(limit).toList(),
+      records: values.take(limit).toList(growable: false),
       hasMore: values.length > limit,
     );
   }
@@ -104,47 +94,55 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
-  }) async =>
-      records.values
-          .where((record) =>
-              record.userId == userId &&
-              record.prayerType == prayerType &&
-              record.status == QazaStatus.pending)
-          .fold<QazaRecord?>(null, (oldest, record) {
-        if (oldest == null ||
-            record.originalDate.isBefore(oldest.originalDate)) {
-          return record;
-        }
-        return oldest;
-      });
+  }) async {
+    final pending = records.values.where(
+      (record) =>
+          record.userId == userId &&
+          record.prayerType == prayerType &&
+          record.status == QazaStatus.pending,
+    );
+    QazaRecord? oldest;
+    for (final record in pending) {
+      if (oldest == null || record.originalDate.isBefore(oldest.originalDate)) {
+        oldest = record;
+      }
+    }
+    return oldest;
+  }
 
   @override
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
-  }) async =>
-      recordIds
-          .map((id) => records[id])
-          .whereType<QazaRecord>()
-          .where((record) => record.userId == userId)
-          .toList();
+  }) async {
+    return recordIds
+        .map((id) => records[id])
+        .whereType<QazaRecord>()
+        .where((record) => record.userId == userId)
+        .toList(growable: false);
+  }
 
   @override
   Future<List<QazaRecord>> getPendingRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
-  }) async =>
-      (await getRecordsByIds(userId: userId, recordIds: recordIds))
-          .where((record) => record.status == QazaStatus.pending)
-          .toList();
+  }) async {
+    return (await getRecordsByIds(
+      userId: userId,
+      recordIds: recordIds,
+    ))
+        .where((record) => record.status == QazaStatus.pending)
+        .toList(growable: false);
+  }
 
   @override
-  Future<QazaProgressSummary> getProgressSummary({required String userId}) =>
-      Future.value(
-        QazaProgressSummary.fromRecords(
-          records.values.where((record) => record.userId == userId),
-        ),
-      );
+  Future<QazaProgressSummary> getProgressSummary({
+    required String userId,
+  }) async {
+    return QazaProgressSummary.fromRecords(
+      records.values.where((record) => record.userId == userId),
+    );
+  }
 
   @override
   Future<int> countCompletedBetween({
@@ -152,18 +150,27 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
     required DateTime from,
     required DateTime to,
     Iterable<PrayerType>? prayerTypes,
-  }) async =>
-      (await getRecords(userId: userId, status: QazaStatus.completed))
-          .where((record) =>
+  }) async {
+    final values = await getRecords(
+      userId: userId,
+      status: QazaStatus.completed,
+    );
+    return values
+        .where(
+          (record) =>
               record.completedAt != null &&
               !record.completedAt!.isBefore(from) &&
               record.completedAt!.isBefore(to) &&
               (prayerTypes == null ||
-                  prayerTypes.contains(record.prayerType)))
-          .length;
+                  prayerTypes.contains(record.prayerType)),
+        )
+        .length;
+  }
 
   @override
-  Future<void> addRecord(QazaRecord record) async => records[record.id] = record;
+  Future<void> addRecord(QazaRecord record) async {
+    records[record.id] = record;
+  }
 
   @override
   Future<void> addRecords(List<QazaRecord> values) async {
@@ -195,7 +202,9 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
     String? completionId,
   }) async {
     final record = records[recordId];
-    if (record == null) return QazaCompletionResult.notFound;
+    if (record == null || record.userId != userId) {
+      return QazaCompletionResult.notFound;
+    }
     if (record.status == QazaStatus.completed) {
       return QazaCompletionResult.alreadyCompleted;
     }
@@ -204,6 +213,7 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
       completedAt: completedAt,
       completionId: completionId,
       updatedAt: completedAt,
+      recordVersion: record.recordVersion + 1,
     );
     records[recordId] = completed;
     return QazaCompletionResult.completed;
@@ -219,12 +229,17 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
     final changed = <QazaRecord>[];
     for (final id in recordIds) {
       final record = records[id];
-      if (record == null || record.status != QazaStatus.pending) continue;
+      if (record == null ||
+          record.userId != userId ||
+          record.status != QazaStatus.pending) {
+        continue;
+      }
       final completed = record.copyWith(
         status: QazaStatus.completed,
         completedAt: completedAt,
         completionId: completionIds?[id],
         updatedAt: completedAt,
+        recordVersion: record.recordVersion + 1,
       );
       records[id] = completed;
       changed.add(completed);
@@ -238,15 +253,6 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
   }
 
   @override
-  Future<List<QazaActivityRow>> getCompletedActivityRows({
-    required String userId,
-    required DateTime from,
-    required DateTime toExclusive,
-    Iterable<PrayerType>? prayerTypes,
-  }) async =>
-      const [];
-
-  @override
   Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
@@ -256,6 +262,7 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
     for (final entry in expectedCompletionIds.entries) {
       final record = records[entry.key];
       if (record == null ||
+          record.userId != userId ||
           record.status != QazaStatus.completed ||
           record.completionId != entry.value) {
         continue;
@@ -273,8 +280,28 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
   }
 }
 
+QazaRecord _completedRecord({
+  required String id,
+  required PrayerType prayerType,
+  required DateTime originalDate,
+}) {
+  final timestamp = DateTime(2026, 9, 26, 11, 0);
+  return QazaRecord(
+    id: id,
+    userId: 'local',
+    prayerType: prayerType,
+    originalDate: originalDate,
+    status: QazaStatus.completed,
+    completedAt: timestamp,
+    completionId: 'completion-$id',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  );
+}
+
 void main() {
-  test('consecutive registrations aggregate into one active Undo batch', () async {
+  test('consecutive registrations aggregate into one active Undo batch',
+      () async {
     final store = _MemoryUndoStore();
     var now = DateTime(2026, 9, 26, 11, 0);
     final manager = QazaUndoManager(
@@ -311,7 +338,8 @@ void main() {
     expect(store.current, same(second));
   });
 
-  test('register does not duplicate a record already in the active batch', () async {
+  test('register does not duplicate a record already in the active batch',
+      () async {
     final store = _MemoryUndoStore();
     final now = DateTime(2026, 9, 26, 11, 0);
     final manager = QazaUndoManager(store: store, now: () => now);
@@ -326,7 +354,10 @@ void main() {
 
     expect(batch!.entries, hasLength(1));
     expect(batch.entries.single.recordId, 'fajr');
-    test('partial Undo restores only selected entries and preserves the rest', () async {
+  });
+
+  test('partial Undo restores only selected entries and preserves the rest',
+      () async {
     final records = <String, QazaRecord>{
       for (final prayer in PrayerType.values.take(5))
         prayer.name: _completedRecord(
@@ -359,7 +390,9 @@ void main() {
     expect(result.remainingBatch!.entries, hasLength(4));
     expect(records[selectedId]!.status, QazaStatus.pending);
     expect(
-      records.values.where((record) => record.status == QazaStatus.completed),
+      records.values.where(
+        (record) => record.status == QazaStatus.completed,
+      ),
       hasLength(4),
     );
 
@@ -372,12 +405,15 @@ void main() {
     expect(remaining.count, 4);
     expect(store.current, isNull);
     expect(
-      records.values.where((record) => record.status == QazaStatus.pending),
+      records.values.where(
+        (record) => record.status == QazaStatus.pending,
+      ),
       hasLength(5),
     );
   });
 
-  test('expired Undo is unavailable while completed records remain completed', () async {
+  test('expired Undo is unavailable while the record remains completed',
+      () async {
     final record = _completedRecord(
       id: 'fajr',
       prayerType: PrayerType.fajr,
@@ -424,7 +460,7 @@ void main() {
       prayerType: PrayerType.zuhr,
       originalDate: DateTime(2026, 9, 2),
     );
-    final records = {
+    final records = <String, QazaRecord>{
       firstRecord.id: firstRecord,
       secondRecord.id: secondRecord,
     };
@@ -460,5 +496,102 @@ void main() {
     expect(store.current, same(second));
   });
 
-});
+  test('shared service assigns one completion marker per changed record',
+      () async {
+    final timestamp = DateTime(2026, 9, 26, 11);
+    final records = <String, QazaRecord>{
+      for (final prayer in PrayerType.values.take(2))
+        prayer.name: QazaRecord(
+          id: prayer.name,
+          userId: 'local',
+          prayerType: prayer,
+          originalDate: DateTime(2026, 9, 1),
+          status: QazaStatus.pending,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        ),
+    };
+    final repository = _FakeQazaRepository(records);
+    final service = QazaService(
+      repository,
+      tartib: _NoopTartibService(),
+    );
 
+    final receipt = await service.completeRecordsWithReceipt(
+      userId: 'local',
+      recordIds: records.keys.toList(),
+      completedAt: timestamp,
+    );
+
+    expect(receipt.entries, hasLength(2));
+    expect(
+      receipt.entries.map((entry) => entry.recordId).toSet(),
+      hasLength(2),
+    );
+    expect(
+      receipt.entries.map((entry) => entry.completionId).toSet(),
+      hasLength(2),
+    );
+  });
+
+  test('Mark as Pending clears completion state permanently', () async {
+    final record = _completedRecord(
+      id: 'fajr',
+      prayerType: PrayerType.fajr,
+      originalDate: DateTime(2026, 9, 1),
+    );
+    final records = {'fajr': record};
+    final service = QazaService(
+      _FakeQazaRepository(records),
+      tartib: _NoopTartibService(),
+    );
+
+    final changed = await service.markCompletedAsPending(
+      userId: 'local',
+      recordId: 'fajr',
+    );
+
+    expect(changed, isTrue);
+    expect(records['fajr']!.status, QazaStatus.pending);
+    expect(records['fajr']!.completedAt, isNull);
+    expect(records['fajr']!.completionId, isNull);
+    expect(records['fajr']!.recordVersion, 2);
+  });
+}
+
+/// This test-only tartib stub is never used for Undo itself; it keeps the
+/// shared completion service focused on persistence/receipt behavior.
+class _NoopTartibService extends SahibAlTartibService {
+  _NoopTartibService() : super(_NeverCalledRepository());
+
+  @override
+  Future<SahibAlTartibState> evaluate({
+    required String userId,
+    DateTime? currentDate,
+    PrayerType? currentPrayer,
+  }) =>
+      Future.value(
+        const SahibAlTartibState(
+          pendingFarzCount: 6,
+          requiresOrder: false,
+          nextPending: null,
+        ),
+      );
+
+  @override
+  Future<bool> canCompleteRecordIds({
+    required String userId,
+    required Iterable<String> recordIds,
+    DateTime? currentDate,
+    DateTime? currentPrayer,
+    SahibAlTartibState? evaluatedState,
+  }) =>
+      Future.value(true);
+}
+
+class _NeverCalledRepository implements QazaRepository {
+  Never _fail() => throw StateError('Should not be called');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => _fail();
+}
