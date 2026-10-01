@@ -263,4 +263,89 @@ void main() {
       drift.records.map((record) => record.id),
     );
   });
+  test('Completed to Pending batch changes only matching current completions',
+      () async {
+    final timestamp = DateTime(2026, 9, 10, 12);
+    await database.qazaRecordsDao.insertRecords([
+      _row(
+        id: 'valid',
+        userId: 'local',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2026, 1, 1),
+        status: QazaStatus.completed,
+        completedAt: timestamp,
+      ),
+      _row(
+        id: 'stale',
+        userId: 'local',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2026, 1, 2),
+        status: QazaStatus.completed,
+        completedAt: timestamp,
+      ),
+    ]);
+
+    final changed =
+        await database.qazaRecordsDao.markCompletedAsPendingBatch(
+      userId: 'local',
+      expectedCompletionIds: const {
+        'valid': 'completion-valid',
+        'stale': 'wrong-marker',
+      },
+      updatedAt: DateTime(2026, 9, 10, 13),
+    );
+
+    expect(changed.map((record) => record.id), ['valid']);
+    expect(changed.single.recordVersion, 2);
+
+    final rows = await database.qazaRecordsDao.getRowsByIds(
+      userId: 'local',
+      ids: const ['valid', 'stale'],
+    );
+    final valid = rows.singleWhere((row) => row.id == 'valid');
+    final stale = rows.singleWhere((row) => row.id == 'stale');
+
+    expect(valid.status, QazaStatus.pending.name);
+    expect(valid.completedAt, isNull);
+    expect(valid.completionId, isNull);
+    expect(valid.recordVersion, 2);
+    expect(stale.status, QazaStatus.completed.name);
+    expect(stale.completionId, 'completion-stale');
+    expect(stale.recordVersion, 1);
+  });
+
+  test('in-memory Completed to Pending batch follows the same guard', () async {
+    final timestamp = DateTime(2026, 9, 10, 12);
+    final store = _MemoryQazaStore({
+      'local': [
+        _record(
+          id: 'valid',
+          status: QazaStatus.completed,
+          originalDate: DateTime(2026, 1, 1),
+          completedAt: timestamp,
+        ),
+        _record(
+          id: 'stale',
+          status: QazaStatus.completed,
+          originalDate: DateTime(2026, 1, 2),
+          completedAt: timestamp,
+        ),
+      ],
+    });
+
+    final changed = await store.markCompletedAsPendingBatch(
+      userId: 'local',
+      expectedCompletionIds: const {
+        'valid': 'completion-valid',
+        'stale': 'wrong-marker',
+      },
+      updatedAt: DateTime(2026, 9, 10, 13),
+    );
+
+    expect(changed.map((record) => record.id), ['valid']);
+    expect(store.records['local']![0].status, QazaStatus.pending);
+    expect(store.records['local']![0].recordVersion, 2);
+    expect(store.records['local']![1].status, QazaStatus.completed);
+  });
+
 }
