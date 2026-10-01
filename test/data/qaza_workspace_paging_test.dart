@@ -172,12 +172,12 @@ void main() {
     const ids = ['1', '2', '3', '4'];
     final timestamp = DateTime(2026, 9, 10, 12);
     await database.qazaRecordsDao.insertRecords([
-      for (final id in ids)
+      for (var index = 0; index < ids.length; index++)
         _row(
-          id: id,
+          id: ids[index],
           userId: 'local',
           prayerType: PrayerType.fajr,
-          originalDate: DateTime(2026, 1, 1),
+          originalDate: DateTime(2026, 1, index + 1),
           status: QazaStatus.completed,
           completedAt: timestamp,
         ),
