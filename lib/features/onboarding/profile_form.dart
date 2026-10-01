@@ -375,7 +375,7 @@ class _ProfileFormState extends State<ProfileForm> {
           height: 56,
           child: IconButton(
             key: decrementKey,
-            tooltip: 'Decrease',
+            tooltip: '$labelText −',
             onPressed: canDecrease ? () => onChanged(selected! - 1) : null,
             icon: const Icon(Icons.remove),
           ),
@@ -404,7 +404,7 @@ class _ProfileFormState extends State<ProfileForm> {
           height: 56,
           child: IconButton(
             key: incrementKey,
-            tooltip: 'Increase',
+            tooltip: '$labelText +',
             onPressed: canIncrease
                 ? () => onChanged(selected ?? options.first)
                 : null,
