@@ -151,6 +151,8 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     if (userId.isEmpty || dateList.isEmpty || prayerSet.isEmpty) return false;
     if (additionId != null && expectedRevision == null) return false;
 
+    _cancelRequested = false;
+
     final request = _QazaImportRequest(
       userId: userId,
       dates: dateList,
