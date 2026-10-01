@@ -264,9 +264,20 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       String? prayerType,
       String? status,
       DateTime? from,
-      DateTime? to}) async {
+      DateTime? to,
+      DateTime? toExclusive}) async {
     _validatePage(limit, offset);
+    final completedMode = status == QazaStatus.completed.name;
+    if (completedMode && to != null) {
+      throw ArgumentError('Completed pages require toExclusive.');
+    }
+    if (!completedMode && toExclusive != null) {
+      throw ArgumentError('toExclusive is only valid for Completed pages.');
+    }
     _validateRange(from, to);
+    if (toExclusive != null && (from == null || !from.isBefore(toExclusive))) {
+      throw ArgumentError('from must be before toExclusive');
+    }
     final query = select(qazaRecords)
       ..where((row) {
         final predicates = <Expression<bool>>[row.userId.equals(userId)];
@@ -276,11 +287,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (status != null) {
           predicates.add(row.status.equals(status));
         }
-        if (from != null) {
-          predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        }
-        if (to != null) {
-          predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (completedMode) {
+          predicates.add(row.completedAt.isNotNull());
+          if (from != null) {
+            predicates.add(row.completedAt.isBiggerOrEqualValue(from));
+          }
+          if (toExclusive != null) {
+            predicates.add(row.completedAt.isSmallerThanValue(toExclusive));
+          }
+        } else {
+          if (from != null) {
+            predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+          }
+          if (to != null) {
+            predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+          }
         }
         return predicates.reduce((a, b) => a & b);
       })
