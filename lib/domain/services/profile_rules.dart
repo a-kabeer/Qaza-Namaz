@@ -163,6 +163,18 @@ class ProfileRules {
           error: ProfileValidationError.pubertyInvalid);
     }
 
+    // Integer age and calculated Gregorian milestone date must agree. This
+    // protects the domain against a future Hijri birthday (for example when
+    // a user edits DOB after selecting an age) rather than relying only on
+    // the UI's available options.
+    final pubertyDateValue = pubertyDate(profile);
+    if (pubertyDateValue == null ||
+        _compareCalendarDates(pubertyDateValue, today) > 0) {
+      return const ProfileValidation(
+        error: ProfileValidationError.pubertyInvalid,
+      );
+    }
+
     final startAge = profile.startPrayingAge;
     if (startAge == null) {
       return const ProfileValidation(
@@ -171,7 +183,12 @@ class ProfileRules {
     }
 
     final currentAgeValue = currentAge(dob, today);
-    if (startAge < puberty || startAge > currentAgeValue) {
+    final startDateValue = startPrayingDate(profile);
+    if (startDateValue == null ||
+        startAge < puberty ||
+        startAge > currentAgeValue ||
+        _compareCalendarDates(startDateValue, pubertyDateValue) < 0 ||
+        _compareCalendarDates(startDateValue, today) > 0) {
       return const ProfileValidation(
         error: ProfileValidationError.startPrayingAgeInvalid,
       );
@@ -210,11 +227,35 @@ class ProfileRules {
     final validGender = next.gender;
     final validPuberty = next.pubertyAge;
     if (dob != null &&
-        start != null &&
         validGender != null &&
         validPuberty != null) {
-      final maxStart = currentAge(dob, LocalDateService.today());
-      if (start < validPuberty || start > maxStart) {
+      final today = LocalDateService.today();
+      final maxAge = currentAge(dob, today);
+      final pubertyDateValue = pubertyDate(next);
+      if (pubertyDateValue == null ||
+          _compareCalendarDates(pubertyDateValue, today) > 0 ||
+          !isPubertyAgeAllowed(validGender, validPuberty) ||
+          validPuberty > maxAge) {
+        next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
+      }
+    }
+
+    final normalizedDob = next.dateOfBirth;
+    final normalizedStart = next.startPrayingAge;
+    final normalizedPuberty = next.pubertyAge;
+    if (normalizedDob != null &&
+        normalizedStart != null &&
+        normalizedPuberty != null) {
+      final today = LocalDateService.today();
+      final maxStart = currentAge(normalizedDob, today);
+      final pubertyDateValue = pubertyDate(next);
+      final startDateValue = startPrayingDate(next);
+      if (startDateValue == null ||
+          pubertyDateValue == null ||
+          normalizedStart < normalizedPuberty ||
+          normalizedStart > maxStart ||
+          _compareCalendarDates(startDateValue, pubertyDateValue) < 0 ||
+          _compareCalendarDates(startDateValue, today) > 0) {
         next = next.copyWith(clearStartPrayingAge: true);
       }
     }

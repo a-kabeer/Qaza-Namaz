@@ -33,11 +33,21 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
             const SizedBox(height: 20),
             _StatRow(
               label: l10n.profileQazaPreviousTotal,
-              value: (preview.previousLedgerPlan?.totalWithWitr ?? 0).toString(),
+              value: _totalWithRange(
+                context,
+                preview.previousLedgerPlan?.totalWithWitr ?? 0,
+                preview.previousLedgerPlan?.startDate,
+                preview.previousLedgerPlan?.endDate,
+              ),
             ),
             _StatRow(
               label: l10n.profileQazaNewTotal,
-              value: preview.newPlanTotal.toString(),
+              value: _totalWithRange(
+                context,
+                preview.newPlanTotal,
+                preview.newPlan.startDate,
+                preview.newPlan.endDate,
+              ),
             ),
             _StatRow(
               label: l10n.profileQazaCompletedInPlan,
@@ -78,6 +88,19 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+String _totalWithRange(
+  BuildContext context,
+  int total,
+  DateTime? start,
+  DateTime? end,
+) {
+  if (start == null || end == null) return total.toString();
+  final localizations = MaterialLocalizations.of(context);
+  final startText = localizations.formatMediumDate(start);
+  final endText = localizations.formatMediumDate(end);
+  return '$total\\n$startText – $endText';
 }
 
 class _StatRow extends StatelessWidget {

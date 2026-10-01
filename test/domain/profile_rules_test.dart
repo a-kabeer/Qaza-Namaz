@@ -84,6 +84,35 @@ void main() {
     expect(ProfileRules.currentAge(dob, DateTime(2023, 10, 1)), 5);
   });
 
+  test('Ramadan 30th birthday clamps to Ramadan 29th when the next Ramadan is 29 days', () {
+    int? sourceYear;
+    for (var year = 1400; year < 1499; year++) {
+      if (HijriDateService.daysInMonth(year: year, month: 9) == 30 &&
+          HijriDateService.daysInMonth(year: year + 1, month: 9) == 29) {
+        sourceYear = year;
+        break;
+      }
+    }
+
+    expect(sourceYear, isNotNull);
+    final resolvedYear = sourceYear;
+    if (resolvedYear == null) {
+      fail('Could not find a Ramadan 30-to-29 transition.');
+    }
+
+    final dob = HijriDateService.toGregorian(
+      year: resolvedYear,
+      month: 9,
+      day: 30,
+    );
+    final anniversary = ProfileRules.anniversaryDate(dob, 1);
+    final hijri = HijriDateService.fromGregorian(anniversary);
+
+    expect(hijri.year, resolvedYear + 1);
+    expect(hijri.month, 9);
+    expect(hijri.day, 29);
+  });
+
   test('currentAge handles a Hijri 30th birthday clamped to a 29-day month', () {
     int? sourceYear;
     int? month;
@@ -136,19 +165,26 @@ void main() {
   test('profile validation uses Hijri current age for start-praying age', () {
     final dob = DateTime(2018, 11, 12);
     final age12Birthday = ProfileRules.anniversaryDate(dob, 12);
+    final age13Birthday = ProfileRules.anniversaryDate(dob, 13);
     final profile = makeProfile(
       dob: dob,
       pubertyAge: 12,
-      startPrayingAge: 12,
+      startPrayingAge: 13,
     );
 
-    final before = ProfileRules.validate(
+    final beforeStartBirthday = ProfileRules.validate(
       profile,
-      today: age12Birthday.subtract(const Duration(days: 1)),
+      today: age12Birthday.add(const Duration(days: 1)),
     );
-    expect(before.error, ProfileValidationError.startPrayingAgeInvalid);
+    expect(
+      beforeStartBirthday.error,
+      ProfileValidationError.startPrayingAgeInvalid,
+    );
 
-    final on = ProfileRules.validate(profile, today: age12Birthday);
-    expect(on.isValid, isTrue);
+    final onStartBirthday = ProfileRules.validate(
+      profile,
+      today: age13Birthday,
+    );
+    expect(onStartBirthday.isValid, isTrue);
   });
 }
