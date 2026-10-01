@@ -183,17 +183,16 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
-        if (completedMode) ...[
-          OrderingTerm.desc(qazaRecords.completedAt),
-          OrderingTerm.desc(qazaRecords.id),
-        ] else ...[
-          descending
-              ? OrderingTerm.desc(qazaRecords.originalDate)
-              : OrderingTerm.asc(qazaRecords.originalDate),
-          descending
-              ? OrderingTerm.desc(qazaRecords.id)
-              : OrderingTerm.asc(qazaRecords.id),
-        ],
+        (r) => completedMode
+            ? OrderingTerm.desc(r.completedAt)
+            : (descending
+                ? OrderingTerm.desc(r.originalDate)
+                : OrderingTerm.asc(r.originalDate)),
+        (r) => completedMode
+            ? OrderingTerm.desc(r.id)
+            : (descending
+                ? OrderingTerm.desc(r.id)
+                : OrderingTerm.asc(r.id)),
       ])
       ..limit(limit + 1);
 
@@ -487,7 +486,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                   row.id.equals(id) &
                   row.status.equals(QazaStatus.pending.name)))
             .write(QazaRecordsCompanion(
-          status: const Value(QazaStatus.completed.name),
+          status: Value(QazaStatus.completed.name),
           completedAt: Value(completedAt),
           completionId: Value(marker),
           recordVersion: Value(current.recordVersion + 1),
