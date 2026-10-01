@@ -260,6 +260,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       refreshing: !initial,
       clearError: true,
       selected: const <String>{},
+      selectionMode: false,
+      clearSelectionScope: true,
     );
     try {
       final page = await _readPage(userId: userId);
@@ -664,9 +666,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       state = state.copyWith(error: error.toString());
       return 0;
     } finally {
-      if (generation == _queryGeneration) {
-        state = state.copyWith(recordMutating: false);
-      }
+      state = state.copyWith(recordMutating: false);
     }
   }
 
