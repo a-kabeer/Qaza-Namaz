@@ -441,6 +441,181 @@ void main() {
     );
   });
 
+  test('active batch selection remains usable after discovery expiry',
+      () async {
+    final records = <String, QazaRecord>{
+      'fajr': _completedRecord(
+        id: 'fajr',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2026, 9, 1),
+      ),
+      'zuhr': _completedRecord(
+        id: 'zuhr',
+        prayerType: PrayerType.zuhr,
+        originalDate: DateTime(2026, 9, 2),
+      ),
+    };
+    final repository = _FakeQazaRepository(records);
+    final service = QazaService(repository);
+    final store = _MemoryUndoStore();
+    var now = DateTime(2026, 9, 26, 11);
+    final manager = QazaUndoManager(store: store, now: () => now);
+
+    final batch = await manager.register(
+      userId: 'local',
+      records: records.values,
+    );
+    final active = await manager.beginSelection(
+      userId: 'local',
+      expectedBatch: batch!,
+    );
+
+    now = now.add(const Duration(seconds: 6));
+    final result = await manager.undo(
+      userId: 'local',
+      service: service,
+      expectedBatch: active,
+    );
+
+    expect(result.count, 2);
+    expect(manager.activeSelection(userId: 'local'), isNull);
+    expect(store.current, isNull);
+    expect(
+      records.values.every((record) => record.status == QazaStatus.pending),
+      isTrue,
+    );
+  });
+
+  test('active partial selection remains usable after discovery expiry',
+      () async {
+    final records = <String, QazaRecord>{
+      for (final prayer in PrayerType.values.take(3))
+        prayer.name: _completedRecord(
+          id: prayer.name,
+          prayerType: prayer,
+          originalDate: DateTime(2026, 9, 1),
+        ),
+    };
+    final service = QazaService(_FakeQazaRepository(records));
+    final store = _MemoryUndoStore();
+    var now = DateTime(2026, 9, 26, 11);
+    final manager = QazaUndoManager(store: store, now: () => now);
+
+    final batch = await manager.register(
+      userId: 'local',
+      records: records.values,
+    );
+    final active = await manager.beginSelection(
+      userId: 'local',
+      expectedBatch: batch!,
+    );
+    final selectedId = active.entries.first.recordId;
+
+    now = now.add(const Duration(seconds: 6));
+    final partial = await manager.undoSelected(
+      userId: 'local',
+      service: service,
+      expectedBatch: active,
+      selectedIds: {selectedId},
+    );
+
+    expect(partial.count, 1);
+    expect(partial.remainingBatch, isNotNull);
+    expect(manager.activeSelection(userId: 'local'), same(partial.remainingBatch));
+
+    now = now.add(const Duration(minutes: 1));
+    final remainder = await manager.undo(
+      userId: 'local',
+      service: service,
+      expectedBatch: partial.remainingBatch,
+    );
+
+    expect(remainder.count, 2);
+    expect(manager.activeSelection(userId: 'local'), isNull);
+    expect(store.current, isNull);
+  });
+
+  test('starting batch Undo after discovery expiry is rejected', () async {
+    final record = _completedRecord(
+      id: 'fajr',
+      prayerType: PrayerType.fajr,
+      originalDate: DateTime(2026, 9, 1),
+    );
+    final store = _MemoryUndoStore();
+    var now = DateTime(2026, 9, 26, 11);
+    final manager = QazaUndoManager(store: store, now: () => now);
+    final batch = await manager.register(
+      userId: 'local',
+      records: [record],
+    );
+
+    now = now.add(QazaUndoStore.window);
+    await expectLater(
+      manager.beginSelection(
+        userId: 'local',
+        expectedBatch: batch!,
+      ),
+      throwsA(
+        isA<QazaUndoException>().having(
+          (error) => error.reason,
+          'reason',
+          QazaUndoFailureReason.expired,
+        ),
+      ),
+    );
+    expect(manager.activeSelection(userId: 'local'), isNull);
+    expect(store.current, isNull);
+  });
+
+  test('dismissing active selection cancels only that temporary session',
+      () async {
+    final firstRecord = _completedRecord(
+      id: 'fajr',
+      prayerType: PrayerType.fajr,
+      originalDate: DateTime(2026, 9, 1),
+    );
+    final secondRecord = _completedRecord(
+      id: 'zuhr',
+      prayerType: PrayerType.zuhr,
+      originalDate: DateTime(2026, 9, 2),
+    );
+    final records = <String, QazaRecord>{
+      firstRecord.id: firstRecord,
+      secondRecord.id: secondRecord,
+    };
+    final store = _MemoryUndoStore();
+    var now = DateTime(2026, 9, 26, 11);
+    final manager = QazaUndoManager(store: store, now: () => now);
+
+    final first = await manager.register(
+      userId: 'local',
+      records: [firstRecord],
+    );
+    final active = await manager.beginSelection(
+      userId: 'local',
+      expectedBatch: first!,
+    );
+
+    now = now.add(const Duration(seconds: 1));
+    final second = await manager.register(
+      userId: 'local',
+      records: [secondRecord],
+    );
+
+    expect(second!.entries, hasLength(1));
+    expect(second.entries.single.recordId, 'zuhr');
+    expect(manager.activeSelection(userId: 'local'), same(active));
+    expect(store.current, same(second));
+
+    await manager.cancelSelection(
+      userId: 'local',
+      expectedBatch: active,
+    );
+
+    expect(manager.activeSelection(userId: 'local'), isNull);
+    expect(store.current, same(second));
+  });
+
   test('expired Undo is unavailable while the record remains completed',
       () async {
     final record = _completedRecord(
