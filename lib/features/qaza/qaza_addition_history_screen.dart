@@ -305,10 +305,10 @@ class _DeletedActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (state.deleted.isEmpty) {
-      return const ListView(
-        children: [
+      return ListView(
+        children: const [
           SizedBox(height: 120),
-          const Center(child: Text('No recently deleted Qaza.'))
+          Center(child: Text('No recently deleted Qaza.')),
         ],
       );
     }
