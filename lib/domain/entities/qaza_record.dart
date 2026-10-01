@@ -11,6 +11,8 @@ class QazaRecord {
     this.status = QazaStatus.pending,
     this.completedAt,
     this.completionId,
+    this.additionId,
+    this.recordVersion = 1,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +26,13 @@ class QazaRecord {
 
   /// Stable marker identifying the specific completion event.
   final String? completionId;
+
+  /// Logical Add Qaza provenance. Non-Add-Qaza records remain null.
+  final String? additionId;
+
+  /// Incremented on every user-visible record mutation.
+  final int recordVersion;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -35,9 +44,12 @@ class QazaRecord {
     QazaStatus? status,
     DateTime? completedAt,
     String? completionId,
+    String? additionId,
+    int? recordVersion,
     DateTime? createdAt,
     bool clearCompletedAt = false,
     bool clearCompletionId = false,
+    bool clearAdditionId = false,
     DateTime? updatedAt,
   }) {
     return QazaRecord(
@@ -49,6 +61,8 @@ class QazaRecord {
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
       completionId:
           clearCompletionId ? null : completionId ?? this.completionId,
+      additionId: clearAdditionId ? null : additionId ?? this.additionId,
+      recordVersion: recordVersion ?? this.recordVersion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -65,6 +79,8 @@ class QazaRecord {
         'status': status.name,
         'completedAt': completedAt?.toIso8601String(),
         'completionId': completionId,
+        'additionId': additionId,
+        'recordVersion': recordVersion,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -82,6 +98,8 @@ class QazaRecord {
             ? null
             : DateTime.parse(json['completedAt'] as String),
         completionId: json['completionId'] as String?,
+        additionId: json['additionId'] as String?,
+        recordVersion: (json['recordVersion'] as num?)?.toInt() ?? 1,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );

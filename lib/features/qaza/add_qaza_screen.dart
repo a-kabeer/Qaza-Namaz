@@ -8,6 +8,7 @@ import '../../core/utils/qaza_date.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_selection_grid.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../domain/entities/qaza_addition.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
@@ -16,9 +17,12 @@ import '../home/home_controller.dart';
 import 'add_qaza_controller.dart';
 import 'qaza_import_controller.dart';
 import 'qaza_tracker_controller.dart';
+import 'qaza_navigation.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
-  const AddQazaScreen({super.key});
+  const AddQazaScreen({super.key, this.editAddition});
+
+  final QazaAddition? editAddition;
 
   @override
   ConsumerState<AddQazaScreen> createState() => _AddQazaScreenState();
@@ -26,6 +30,20 @@ class AddQazaScreen extends ConsumerStatefulWidget {
 
 class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int _lastExistingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final addition = widget.editAddition;
+    if (addition != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(addQazaControllerProvider.notifier)
+            .restoreFromSnapshot(addition.currentInputSnapshot);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,10 +169,18 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) return null;
 
+      final additionMode = switch (current.mode) {
+        DateSelectionMode.single => QazaAdditionMode.single,
+        DateSelectionMode.range => QazaAdditionMode.range,
+        DateSelectionMode.multiple => QazaAdditionMode.multiple,
+      };
       final started = ref.read(qazaImportProvider.notifier).start(
             userId: ref.read(requiredUserIdProvider),
             dates: current.selectedDates,
             prayers: current.selectedPrayers,
+            mode: additionMode,
+            additionId: widget.editAddition?.id,
+            expectedRevision: widget.editAddition?.revision,
             earliestDate: controller.startPrayingDate,
             today: controller.today,
             witrAllowed: ProfileRules.effectiveWitr(profile),
@@ -180,10 +206,36 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
 
     if (result.phase == QazaImportTaskPhase.completed) {
       ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaTrackerControllerProvider);
+      ref.invalidate(qazaTrackerControllerProvider(null));
       ref.read(homeControllerProvider).invalidateDashboard();
 
-      final existing = _lastExistingCount + result.skipped;
+      if (widget.editAddition != null) {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            icon: Icon(
+              Icons.check_circle_outline_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: const Text('Qaza addition updated'),
+            content: Text(
+              '${result.added} added • ${result.removed} removed • '
+              '${result.protected} protected',
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(AppLocalizations.of(context).commonDone),
+              ),
+            ],
+          ),
+        );
+        if (mounted) Navigator.of(context).pop();
+        return;
+      }
+
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -201,27 +253,43 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
                     .addQazaCreatedMessage(result.added),
                 textAlign: TextAlign.center,
               ),
-              if (existing > 0) ...[
+              if (_lastExistingCount + result.skipped > 0) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  '$existing ${AppLocalizations.of(context).addQazaAlreadyAddedLabel}',
+                  '${_lastExistingCount + result.skipped} '
+                  '${AppLocalizations.of(context).addQazaAlreadyAddedLabel}',
                   textAlign: TextAlign.center,
                 ),
               ],
             ],
           ),
           actions: [
+            TextButton(
+              onPressed: result.additionId == null
+                  ? null
+                  : () async {
+                      Navigator.of(context).pop();
+                      if (!mounted) return;
+                      Navigator.of(context).pop();
+                      await openQazaAdditionDetail(
+                        context,
+                        result.additionId!,
+                      );
+                    },
+              child: const Text('Manage this addition'),
+            ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (mounted) Navigator.of(context).pop();
+              },
               child: Text(AppLocalizations.of(context).commonDone),
             ),
           ],
         ),
       );
-      if (mounted) Navigator.of(context).pop();
       return;
     }
-
     if (result.phase == QazaImportTaskPhase.cancelled) {
       await showDialog<void>(
         context: context,

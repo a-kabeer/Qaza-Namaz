@@ -24,16 +24,18 @@ import 'qaza_navigation.dart';
 /// The canonical Qaza workspace: progress, bounded paging, status/prayer/date
 /// filters, and bulk completion. The full ledger is never loaded.
 class QazaTrackerScreen extends ConsumerWidget {
-  const QazaTrackerScreen({super.key});
+  const QazaTrackerScreen({super.key, this.additionId});
+
+  final String? additionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(qazaTrackerControllerProvider);
-    final controller = ref.read(qazaTrackerControllerProvider.notifier);
+    final state = ref.watch(qazaTrackerControllerProvider(additionId));
+    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
         ? '${state.selected.length} selected'
-        : l10n.qazaTitle;
+        : additionId == null ? l10n.qazaTitle : 'Addition Records';
 
     return PopScope(
       canPop: !state.selectionMode,
@@ -45,6 +47,12 @@ class QazaTrackerScreen extends ConsumerWidget {
       child: AppScaffold(
         title: title,
         actions: [
+          if (!state.selectionMode && additionId == null)
+            IconButton(
+              tooltip: 'Qaza History',
+              onPressed: () => openQazaAdditionHistory(context),
+              icon: const Icon(Icons.history_rounded),
+            ),
           if (state.selectionMode)
             IconButton(
               key: const Key('qaza_tracker_exit_selection'),
@@ -63,6 +71,7 @@ class QazaTrackerScreen extends ConsumerWidget {
                 child: _PendingTrackerContent(
                   state: state,
                   controller: controller,
+                  additionId: additionId,
                 ),
               ),
             ],
@@ -139,79 +148,121 @@ class _SelectionContextHeader extends StatelessWidget {
 
 /// Aggregate progress. Reads the database summary, never the record list.
 class _ProgressHeader extends ConsumerWidget {
-  const _ProgressHeader();
+  const _ProgressHeader({this.additionId});
+
+  final String? additionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final summaryAsync = ref.watch(progressSummaryProvider);
-    return summaryAsync.when(
+    if (additionId != null) {
+      final detailAsync = ref.watch(qazaAdditionDetailProvider(additionId!));
+      return detailAsync.when(
+        loading: () =>
+            const SizedBox(height: 3, child: LinearProgressIndicator()),
+        error: (_, __) => const SizedBox.shrink(),
+        data: (detail) {
+          if (detail == null) return const SizedBox.shrink();
+          final total = detail.pendingCount + detail.completedCount;
+          final percentage =
+              total == 0 ? 0.0 : detail.completedCount / total;
+          return _buildProgress(
+            context,
+            label: 'Addition progress',
+            percentage: percentage,
+            completed: detail.completedCount,
+            pending: detail.pendingCount,
+          );
+        },
+      );
+    }
+
+    return ref.watch(progressSummaryProvider).when(
       loading: () =>
           const SizedBox(height: 3, child: LinearProgressIndicator()),
       error: (_, __) => const SizedBox.shrink(),
-      data: (summary) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.sm,
-        ),
-        child: Column(
-          key: const Key('qaza_tracker_progress'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.qazaProgressLabel,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
+      data: (summary) => _buildProgress(
+        context,
+        label: AppLocalizations.of(context).qazaProgressLabel,
+        percentage: summary.overall.percentage,
+        completed: summary.overall.completed,
+        pending: summary.overall.pending,
+      ),
+    );
+  }
+
+  Widget _buildProgress(
+    BuildContext context, {
+    required String label,
+    required double percentage,
+    required int completed,
+    required int pending,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Column(
+        key: const Key('qaza_tracker_progress'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge,
                 ),
-                Text(
-                  '${(summary.overall.percentage * 100).round()}%',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              child: LinearProgressIndicator(
-                value: summary.overall.percentage,
-                minHeight: 10,
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.progressCompletedPending(
-                DateFormatters.formatCount(summary.overall.completed),
-                DateFormatters.formatCount(summary.overall.pending),
+              Text(
+                '${(percentage * 100).round()}%',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: LinearProgressIndicator(
+              value: percentage,
+              minHeight: 10,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.progressCompletedPending(
+              DateFormatters.formatCount(completed),
+              DateFormatters.formatCount(pending),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+
 class _PendingTrackerContent extends StatelessWidget {
   const _PendingTrackerContent({
     required this.state,
     required this.controller,
+    this.additionId,
   });
 
   final QazaTrackerState state;
   final QazaTrackerController controller;
+  final String? additionId;
 
   Future<void> _openFilters(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => const _FilterSheet(),
+      builder: (context) => _FilterSheet(additionId: additionId),
     );
   }
 
@@ -220,7 +271,7 @@ class _PendingTrackerContent extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        const _ProgressHeader(),
+        _ProgressHeader(additionId: additionId),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
@@ -272,11 +323,13 @@ class _PendingTrackerContent extends StatelessWidget {
 }
 
 class _FilterSheet extends ConsumerWidget {
-  const _FilterSheet();
+  const _FilterSheet({this.additionId});
+
+  final String? additionId;
 
   Future<void> _pickRange(BuildContext context, WidgetRef ref) async {
-    final state = ref.read(qazaTrackerControllerProvider);
-    final controller = ref.read(qazaTrackerControllerProvider.notifier);
+    final state = ref.read(qazaTrackerControllerProvider(additionId));
+    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
@@ -295,8 +348,8 @@ class _FilterSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(qazaTrackerControllerProvider);
-    final controller = ref.read(qazaTrackerControllerProvider.notifier);
+    final state = ref.watch(qazaTrackerControllerProvider(additionId));
+    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
     final l10n = AppLocalizations.of(context);
     return SafeArea(

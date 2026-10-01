@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import '../../domain/entities/qaza_addition.dart';
 import '../../domain/services/qaza_service.dart';
 
 enum QazaImportTaskPhase {
@@ -26,6 +27,10 @@ class QazaImportTaskState {
     this.total = 0,
     this.added = 0,
     this.skipped = 0,
+    this.removed = 0,
+    this.protected = 0,
+    this.additionId,
+    this.revision,
     this.cancelRequested = false,
     this.startedAt,
     this.completedAt,
@@ -39,6 +44,10 @@ class QazaImportTaskState {
   final int total;
   final int added;
   final int skipped;
+  final int removed;
+  final int protected;
+  final String? additionId;
+  final int? revision;
   final bool cancelRequested;
   final DateTime? startedAt;
   final DateTime? completedAt;
@@ -59,6 +68,10 @@ class QazaImportTaskState {
     int? total,
     int? added,
     int? skipped,
+    int? removed,
+    int? protected,
+    String? additionId,
+    int? revision,
     bool? cancelRequested,
     DateTime? startedAt,
     DateTime? completedAt,
@@ -73,6 +86,10 @@ class QazaImportTaskState {
         total: total ?? this.total,
         added: added ?? this.added,
         skipped: skipped ?? this.skipped,
+        removed: removed ?? this.removed,
+        protected: protected ?? this.protected,
+        additionId: additionId ?? this.additionId,
+        revision: revision ?? this.revision,
         cancelRequested: cancelRequested ?? this.cancelRequested,
         startedAt: startedAt ?? this.startedAt,
         completedAt: completedAt ?? this.completedAt,
@@ -86,6 +103,9 @@ class _QazaImportRequest {
     required this.userId,
     required this.dates,
     required this.prayers,
+    this.mode,
+    this.additionId,
+    this.expectedRevision,
     this.earliestDate,
     this.today,
     this.witrAllowed = true,
@@ -94,6 +114,9 @@ class _QazaImportRequest {
   final String userId;
   final List<DateTime> dates;
   final Set<PrayerType> prayers;
+  final QazaAdditionMode? mode;
+  final String? additionId;
+  final int? expectedRevision;
   final DateTime? earliestDate;
   final DateTime? today;
   final bool witrAllowed;
@@ -115,6 +138,9 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     required String userId,
     required Iterable<DateTime> dates,
     required Iterable<PrayerType> prayers,
+    QazaAdditionMode? mode,
+    String? additionId,
+    int? expectedRevision,
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
@@ -123,11 +149,15 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     final dateList = dates.toList(growable: false);
     final prayerSet = prayers.toSet();
     if (userId.isEmpty || dateList.isEmpty || prayerSet.isEmpty) return false;
+    if (additionId != null && expectedRevision == null) return false;
 
     final request = _QazaImportRequest(
       userId: userId,
       dates: dateList,
       prayers: prayerSet,
+      mode: mode,
+      additionId: additionId,
+      expectedRevision: expectedRevision,
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
@@ -165,48 +195,108 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   Future<void> _run(_QazaImportRequest request) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final result = await ref.read(qazaServiceProvider).importQazaForDates(
-            userId: request.userId,
-            dates: request.dates,
-            prayerTypes: request.prayers,
-            earliestDate: request.earliestDate,
-            today: request.today,
-            witrAllowed: request.witrAllowed,
-            isCancellationRequested: () => _cancelRequested,
-            onProgress: (progress) {
-              if (!state.isActive || state.userId != request.userId) return;
-              state = state.copyWith(
-                phase: progress.phase == QazaImportPhase.preparing
-                    ? QazaImportTaskPhase.preparing
-                    : QazaImportTaskPhase.importing,
-                processed: progress.processed,
-                total: progress.total,
-                added: progress.added,
-                skipped: progress.skipped,
-              );
-            },
+      if (request.mode == null) {
+        final legacy = await ref.read(qazaServiceProvider).importQazaForDates(
+              userId: request.userId,
+              dates: request.dates,
+              prayerTypes: request.prayers,
+              earliestDate: request.earliestDate,
+              today: request.today,
+              witrAllowed: request.witrAllowed,
+              isCancellationRequested: () => _cancelRequested,
+              onProgress: (progress) {
+                if (!state.isActive || state.userId != request.userId) return;
+                state = state.copyWith(
+                  phase: progress.phase == QazaImportPhase.preparing
+                      ? QazaImportTaskPhase.preparing
+                      : QazaImportTaskPhase.importing,
+                  processed: progress.processed,
+                  total: progress.total,
+                  added: progress.added,
+                  skipped: progress.skipped,
+                );
+              },
+            );
+        if (legacy.cancelled) {
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.cancelled,
+            cancelRequested: false,
+            completedAt: DateTime.now(),
+            clearError: true,
           );
+        } else {
+          ref.invalidate(progressSummaryProvider);
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.completed,
+            cancelRequested: false,
+            processed: legacy.processed,
+            total: legacy.total,
+            added: legacy.added,
+            skipped: legacy.skipped,
+            completedAt: DateTime.now(),
+            clearError: true,
+          );
+        }
+      } else {
+        final result =
+            await ref.read(qazaAdditionServiceProvider).createOrEdit(
+                  userId: request.userId,
+                  mode: request.mode!,
+                  selectedDates: request.dates,
+                  selectedPrayers: request.prayers,
+                  additionId: request.additionId,
+                  expectedRevision: request.expectedRevision,
+                  earliestDate: request.earliestDate,
+                  today: request.today,
+                  witrAllowed: request.witrAllowed,
+                  isCancellationRequested: () => _cancelRequested,
+                  onProgress: (processed, total, added) {
+                    if (!state.isActive || state.userId != request.userId) {
+                      return;
+                    }
+                    state = state.copyWith(
+                      phase: QazaImportTaskPhase.importing,
+                      processed: processed,
+                      total: total,
+                      added: added,
+                      skipped: processed - added,
+                    );
+                  },
+                );
+
+        if (result.cancelled) {
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.cancelled,
+            cancelRequested: false,
+            completedAt: DateTime.now(),
+            clearError: true,
+          );
+        } else {
+          ref.invalidate(progressSummaryProvider);
+          state = state.copyWith(
+            phase: QazaImportTaskPhase.completed,
+            cancelRequested: false,
+            processed: result.addedCount + result.skippedCount,
+            total: result.addedCount + result.skippedCount,
+            added: result.addedCount,
+            skipped: result.skippedCount,
+            removed: result.removedCount,
+            protected: result.protectedCount,
+            additionId: result.additionId,
+            revision: result.revision,
+            completedAt: DateTime.now(),
+            elapsed: stopwatch.elapsed,
+            clearError: true,
+          );
+        }
+      }
       stopwatch.stop();
-      ref.invalidate(progressSummaryProvider);
-      state = state.copyWith(
-        phase: result.cancelled
-            ? QazaImportTaskPhase.cancelled
-            : QazaImportTaskPhase.completed,
-        cancelRequested: false,
-        processed: result.processed,
-        total: result.total,
-        added: result.added,
-        skipped: result.skipped,
-        completedAt: DateTime.now(),
-        elapsed: stopwatch.elapsed,
-        clearError: true,
-      );
     } catch (error, stack) {
       stopwatch.stop();
       ref.invalidate(progressSummaryProvider);
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.importData,
-            'qaza_import_failed',
+            'qaza_addition_failed',
             error,
             stack: stack,
           );

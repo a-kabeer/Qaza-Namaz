@@ -169,5 +169,15 @@ class CalendarController extends Notifier<CalendarSelectionState> {
     }
   }
 
+  void restoreSelection({
+    required DateSelectionMode mode,
+    required List<DateTime> dates,
+  }) {
+    state = CalendarSelectionState(
+      selectionMode: mode,
+      selectedDates: dates.map(_dateOnly).toList(growable: false),
+    );
+  }
+
   void clear() => state = state.copyWith(selectedDates: const []);
 }

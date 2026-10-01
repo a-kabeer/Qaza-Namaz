@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/qaza_addition.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_availability_service.dart';
 import '../../domain/services/qaza_service.dart';
@@ -197,6 +200,34 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     });
 
     return const AddQazaState();
+  }
+
+  void restoreFromSnapshot(QazaAdditionInputSnapshot snapshot) {
+    final mode = switch (snapshot.mode) {
+      QazaAdditionMode.single => DateSelectionMode.single,
+      QazaAdditionMode.range => DateSelectionMode.range,
+      QazaAdditionMode.multiple => DateSelectionMode.multiple,
+    };
+
+    state = state.copyWith(
+      mode: mode,
+      selectedDates: List.unmodifiable(
+        snapshot.selectedDates.map(QazaDate.normalize),
+      ),
+      selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet()),
+      analysis: AddQazaAnalysis.empty,
+      clearError: true,
+    );
+
+    ref.read(calendarControllerProvider.notifier).restoreSelection(
+          mode: mode,
+          dates: snapshot.selectedDates,
+        );
+    if (snapshot.selectedDates.isNotEmpty) {
+      final first = QazaDate.normalize(snapshot.selectedDates.first);
+      unawaited(refreshCalendarMonth(first));
+    }
+    unawaited(_refreshPrayerAvailability());
   }
 
   void setMode(DateSelectionMode mode) {

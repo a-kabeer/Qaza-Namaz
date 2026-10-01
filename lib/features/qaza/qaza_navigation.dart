@@ -6,6 +6,8 @@ import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'add_qaza_screen.dart';
 import 'qaza_tracker_controller.dart';
+import 'qaza_addition_detail_screen.dart';
+import 'qaza_addition_history_screen.dart';
 
 /// Opens the Add Qaza flow from any workspace entry point.
 Future<void> openAddQaza(BuildContext context) async {
@@ -51,4 +53,23 @@ void openQazaAll(WidgetRef ref) {
   ref.read(qazaTrackerFilterRequestProvider.notifier).state = null;
   ref.read(workspaceDestinationProvider.notifier).state =
       WorkspaceDestination.qaza;
+}
+
+Future<void> openQazaAdditionHistory(BuildContext context) async {
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => const QazaAdditionHistoryScreen(),
+    ),
+  );
+}
+
+Future<void> openQazaAdditionDetail(
+  BuildContext context,
+  String additionId,
+) async {
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => QazaAdditionDetailScreen(additionId: additionId),
+    ),
+  );
 }

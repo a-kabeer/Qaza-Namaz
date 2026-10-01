@@ -19,6 +19,10 @@ export 'qaza_availability_service.dart'
 export 'sahib_al_tartib_service.dart'
     show QazaTartibViolationException, SahibAlTartibState;
 
+class QazaRecordMutationConflictException implements Exception {
+  const QazaRecordMutationConflictException();
+}
+
 class QazaWitrNotIncludedException implements Exception {
   const QazaWitrNotIncludedException();
 
@@ -135,6 +139,7 @@ class QazaService {
           int limit = 50,
           PrayerType? prayerType,
           QazaStatus? status,
+          String? additionId,
           DateTime? from,
           DateTime? to,
           DateTime? afterOriginalDate,
@@ -148,6 +153,7 @@ class QazaService {
           prayerType: prayerType,
           prayerTypes: _enabledPrayerTypes,
           status: status,
+          additionId: additionId,
           from: from,
           to: to,
           afterOriginalDate: afterOriginalDate,
@@ -386,7 +392,16 @@ class QazaService {
       throw ArgumentError('Invalid Qaza record update.');
     }
 
+    final currentRecords = await repository.getRecordsByIds(
+      userId: userId,
+      recordIds: [record.id],
+    );
+    if (currentRecords.isEmpty) {
+      throw const QazaRecordMutationConflictException();
+    }
+    final current = currentRecords.first;
     final normalizedDate = QazaDate.normalize(record.originalDate);
+
     final existing = await repository.getPage(
       userId: userId,
       limit: 2,
@@ -399,21 +414,15 @@ class QazaService {
       throw const QazaDuplicateRecordException();
     }
 
-    var recordToUpdate = record.copyWith(
+    var recordToUpdate = current.copyWith(
+      prayerType: record.prayerType,
       originalDate: normalizedDate,
       updatedAt: DateTime.now(),
     );
 
-    // An explicit local edit to an already-completed Qaza starts a new
-    // completion version. This invalidates an older Undo action while leaving
-    // server-only timestamp reconciliation marker-stable.
-    final current = (await repository.getRecordsByIds(
-      userId: userId,
-      recordIds: [record.id],
-    ))
-        .firstOrNull;
-    if (current != null &&
-        current.status == QazaStatus.completed &&
+    // An explicit edit to a completed row invalidates the old completion
+    // marker, so a stale Undo action can never move a newer state backwards.
+    if (current.status == QazaStatus.completed &&
         recordToUpdate.status == QazaStatus.completed &&
         current.completionId != null &&
         recordToUpdate.completionId == current.completionId) {
@@ -422,7 +431,8 @@ class QazaService {
       );
     }
 
-    await repository.updateRecord(record: recordToUpdate);
+    final updated = await repository.updateRecord(record: recordToUpdate);
+    if (!updated) throw const QazaRecordMutationConflictException();
   }
 
   Future<void> deleteRecord({

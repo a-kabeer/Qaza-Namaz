@@ -54,6 +54,7 @@ class QazaTrackerState {
     this.prayerFilter,
     this.from,
     this.to,
+    this.additionId,
     this.records = const <QazaRecord>[],
     this.hasMore = false,
     this.loading = true,
@@ -77,6 +78,7 @@ class QazaTrackerState {
   final PrayerType? prayerFilter;
   final DateTime? from;
   final DateTime? to;
+  final String? additionId;
   final List<QazaRecord> records;
   final bool hasMore;
 
@@ -101,7 +103,8 @@ class QazaTrackerState {
       statusFilter != QazaStatusFilter.pending ||
       prayerFilter != null ||
       from != null ||
-      to != null;
+      to != null ||
+      additionId != null;
 
   bool get hasDateFilter => from != null || to != null;
 
@@ -128,6 +131,7 @@ class QazaTrackerState {
     PrayerType? prayerFilter,
     DateTime? from,
     DateTime? to,
+    String? additionId,
     List<QazaRecord>? records,
     bool? hasMore,
     bool? loading,
@@ -151,6 +155,7 @@ class QazaTrackerState {
             clearPrayerFilter ? null : prayerFilter ?? this.prayerFilter,
         from: clearDates ? null : from ?? this.from,
         to: clearDates ? null : to ?? this.to,
+        additionId: additionId ?? this.additionId,
         records: records ?? this.records,
         hasMore: hasMore ?? this.hasMore,
         loading: loading ?? this.loading,
@@ -198,30 +203,36 @@ class QazaCompletionBatch {
 
 /// Owns the Qaza workspace: filters, bounded paging, selection and bulk
 /// completion. Every read goes through [QazaService] with a page limit.
-class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
+class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, String?> {
   static const int pageSize = 50;
 
+  late String? _additionId;
+
   @override
-  QazaTrackerState build() {
+  QazaTrackerState build(String? additionId) {
+    _additionId = additionId;
     ref.watch(activeUserIdProvider);
     // The Qaza tab stays mounted once visited, so a second hand-off arrives
     // while this controller is already built and build() never runs again for
     // it. Listening covers those; the read below covers the first one, which
     // is already waiting before this listener exists.
-    ref.listen<QazaTrackerFilterRequest?>(
+    if (additionId == null) ref.listen<QazaTrackerFilterRequest?>(
       qazaTrackerFilterRequestProvider,
       (_, next) {
         if (next != null) _applyRequest(next);
       },
     );
 
-    final request = ref.read(qazaTrackerFilterRequestProvider);
+    final request = additionId == null
+        ? ref.read(qazaTrackerFilterRequestProvider)
+        : null;
     Future.microtask(refresh);
-    if (request == null) return const QazaTrackerState();
+    if (request == null) return QazaTrackerState(additionId: additionId);
     _consumeRequest(request);
     return QazaTrackerState(
       statusFilter: request.status ?? QazaStatusFilter.pending,
       prayerFilter: request.prayer,
+      additionId: additionId,
     );
   }
 
@@ -312,6 +323,7 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
         status: state.statusFilter.status,
         from: state.from,
         to: state.to,
+        additionId: _additionId,
         beforeOriginalDate:
             state.sortOrder.isOldestFirst ? null : after?.originalDate,
         beforeId: state.sortOrder.isOldestFirst ? null : after?.id,
@@ -667,6 +679,6 @@ class QazaTrackerController extends AutoDisposeNotifier<QazaTrackerState> {
 }
 
 final qazaTrackerControllerProvider =
-    AutoDisposeNotifierProvider<QazaTrackerController, QazaTrackerState>(
+    AutoDisposeNotifierProviderFamily<QazaTrackerController, QazaTrackerState, String?>(
   QazaTrackerController.new,
 );

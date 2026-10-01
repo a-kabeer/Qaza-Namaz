@@ -56,12 +56,13 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+          await _ensureQazaAdditionSchema();
           await _ensurePerformanceIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -75,6 +76,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await _removeLegacyQazaHistorySchema();
           }
+          if (from < 7) {
+            await m.addColumn(qazaRecords, qazaRecords.additionId);
+            await m.addColumn(qazaRecords, qazaRecords.recordVersion);
+            await _ensureQazaAdditionSchema();
+          }
+          await _ensurePerformanceIndexes();
         },
       );
 
@@ -138,6 +145,45 @@ class AppDatabase extends _$AppDatabase {
     await _ensurePerformanceIndexes();
   }
 
+  Future<void> _ensureQazaAdditionSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_additions (
+        id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        mode TEXT NOT NULL,
+        input_snapshot TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_deletion_actions (
+        id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        addition_id TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_deletion_action_record_snapshots (
+        deletion_action_id TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        addition_id TEXT NOT NULL,
+        prayer_type TEXT NOT NULL,
+        original_date TEXT NOT NULL,
+        status TEXT NOT NULL,
+        completed_at TEXT,
+        completion_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        record_version INTEGER NOT NULL,
+        PRIMARY KEY (deletion_action_id, record_id)
+      )
+    ''');
+  }
+
   Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
@@ -155,6 +201,26 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_idx '
       'ON qaza_records (user_id, status, completed_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_date_idx '
+      'ON qaza_records (user_id, addition_id, original_date, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_status_idx '
+      'ON qaza_records (user_id, addition_id, status, record_version)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_additions_user_created_idx '
+      'ON qaza_additions (user_id, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_actions_user_created_idx '
+      'ON qaza_deletion_actions (user_id, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_snapshots_action_idx '
+      'ON qaza_deletion_action_record_snapshots (deletion_action_id, record_id)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS sync_outbox_user_queued_idx '

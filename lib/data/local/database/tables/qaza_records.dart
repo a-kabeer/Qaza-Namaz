@@ -19,6 +19,9 @@ class QazaRecords extends Table {
   DateTimeColumn get completedAt => dateTime().nullable()();
 
   TextColumn get completionId => text().nullable()();
+  TextColumn get additionId => text().nullable()();
+  IntColumn get recordVersion =>
+      integer().withDefault(const Constant(1))();
 
   DateTimeColumn get createdAt => dateTime()();
 
