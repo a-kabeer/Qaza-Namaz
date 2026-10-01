@@ -431,7 +431,7 @@ void main() {
     );
     expect(
       controller,
-      contains('beforeId: completed ? after?.id : null'),
+      contains('beforeId: after?.id'),
     );
     expect(
       controller,
