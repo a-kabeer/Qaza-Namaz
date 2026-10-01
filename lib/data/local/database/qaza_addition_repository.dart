@@ -463,7 +463,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             variables: [
               Variable(actionId),
-              Variable(record.recordId),
+              Variable(record.id),
               Variable(record.userId),
               Variable(record.additionId),
               Variable(record.prayerType.name),
@@ -556,7 +556,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
                LIMIT 1''',
             variables: [
               Variable(userId),
-              Variable(record.id),
+              Variable(record.recordId),
               Variable(record.prayerType.name),
               Variable(record.originalDate),
             ],

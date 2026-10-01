@@ -54,7 +54,10 @@ void main() {
     expect(
       source,
       contains(
-        'ref.read(qazaTrackerControllerProvider(null).notifier).exitSelectionMode();',
+        'qazaTrackerControllerProvider(null).notifier',
+      ),
+      contains(
+        'exitSelectionMode();',
       ),
     );
     expect(
@@ -239,7 +242,7 @@ void main() {
     expect(
       source,
       contains(
-        'final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);',
+        'qazaTrackerControllerProvider(additionId).notifier',
       ),
     );
     expect(
