@@ -31,11 +31,14 @@ class QazaTrackerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(qazaTrackerControllerProvider(additionId));
-    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
+    final controller =
+        ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
         ? '${state.selected.length} selected'
-        : additionId == null ? l10n.qazaTitle : 'Addition Records';
+        : additionId == null
+            ? l10n.qazaTitle
+            : 'Addition Records';
 
     return PopScope(
       canPop: !state.selectionMode,
@@ -66,9 +69,13 @@ class QazaTrackerScreen extends ConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              _QazaTrackerHeader(selectionMode: state.selectionMode),
+              _QazaTrackerHeader(
+                selectionMode: state.selectionMode,
+                statusFilter: state.statusFilter,
+                controller: controller,
+              ),
               Expanded(
-                child: _PendingTrackerContent(
+                child: _TrackerContent(
                   state: state,
                   controller: controller,
                   additionId: additionId,
@@ -83,10 +90,6 @@ class QazaTrackerScreen extends ConsumerWidget {
 }
 
 /// Stable header slot above the Qaza workspace content.
-///
-/// Normal mode uses a fixed-height divider slot. Selection mode replaces it
-/// with a compact context row, but the slot height never changes, so the
-/// tracker content remains vertically stable.
 class _QazaTrackerHeader extends StatelessWidget {
   const _QazaTrackerHeader({required this.selectionMode});
 
@@ -104,6 +107,93 @@ class _QazaTrackerHeader extends StatelessWidget {
           child: selectionMode
               ? const _SelectionContextHeader()
               : const Divider(height: 1),
+        ),
+      ],
+    );
+  }
+}
+
+class _SelectionContextHeader extends StatelessWidget {
+  const _SelectionContextHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.checklist_rounded,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  l10n.addQazaSelectionLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+      ],
+    );
+  }
+}
+
+class _QazaTrackerHeader extends StatelessWidget {
+  const _QazaTrackerHeader({
+    required this.selectionMode,
+    required this.statusFilter,
+    required this.controller,
+  });
+
+  static const double _headerContentHeight = kTextTabBarHeight;
+
+  final bool selectionMode;
+  final QazaStatusFilter statusFilter;
+  final QazaTrackerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          height: _headerContentHeight,
+          child: selectionMode
+              ? const _SelectionContextHeader()
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SegmentedButton<QazaStatusFilter>(
+                    key: const Key('qaza_status_switch'),
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: QazaStatusFilter.pending,
+                        label: Text('Pending'),
+                      ),
+                      ButtonSegment(
+                        value: QazaStatusFilter.completed,
+                        label: Text('Completed'),
+                      ),
+                    ],
+                    selected: {statusFilter},
+                    onSelectionChanged: (value) {
+                      if (value.isNotEmpty) {
+                        controller.setStatusFilter(value.first);
+                      }
+                    },
+                  ),
+                ),
         ),
       ],
     );
@@ -247,8 +337,8 @@ class _ProgressHeader extends ConsumerWidget {
 }
 
 
-class _PendingTrackerContent extends StatelessWidget {
-  const _PendingTrackerContent({
+class _TrackerContent extends StatelessWidget {
+  const _TrackerContent({
     required this.state,
     required this.controller,
     this.additionId,
@@ -268,10 +358,12 @@ class _PendingTrackerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        _ProgressHeader(additionId: additionId),
+        if (state.statusFilter == QazaStatusFilter.completed)
+          const _CompletedHeader()
+        else
+          _ProgressHeader(additionId: additionId),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
@@ -279,45 +371,516 @@ class _PendingTrackerContent extends StatelessWidget {
             AppSpacing.lg,
             AppSpacing.sm,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: const Key('qaza_tracker_filter_button'),
-                  onPressed: () => _openFilters(context),
-                  icon: const Icon(Icons.filter_list_rounded),
-                  label: Text(
-                    state.isFiltered ? 'Filters active' : 'Filter',
-                  ),
-                ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              key: const Key('qaza_tracker_filter_button'),
+              onPressed: () => _openFilters(context),
+              icon: const Icon(Icons.filter_list_rounded),
+              label: Text(
+                state.isFiltered ? 'Filters active' : 'Filter',
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: SegmentedButton<QazaSortOrder>(
-                  key: const Key('qaza_tracker_sort'),
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(
-                      value: QazaSortOrder.oldestFirst,
-                      label: Text(l10n.qazaSortOldestFirst),
-                    ),
-                    ButtonSegment(
-                      value: QazaSortOrder.newestFirst,
-                      label: Text(l10n.qazaSortNewestFirst),
-                    ),
-                  ],
-                  selected: {state.sortOrder},
-                  onSelectionChanged: (value) =>
-                      controller.setSortOrder(value.first),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-        Expanded(child: _TrackerBody(state: state, controller: controller)),
-        if (state.selected.isNotEmpty)
-          _BulkCompletionBar(state: state, controller: controller),
+        Expanded(
+          child: state.statusFilter == QazaStatusFilter.completed
+              ? _CompletedTrackerBody(state: state, controller: controller)
+              : _PendingTrackerBody(state: state, controller: controller),
+        ),
       ],
+    );
+  }
+}
+
+class _CompletedHeader extends ConsumerWidget {
+  const _CompletedHeader();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final completed = ref.watch(progressSummaryProvider).valueOrNull?.overall.completed;
+    final count = completed ?? 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Completed',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          Text(
+            DateFormatters.formatCount(count) + ' Qaza completed',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PendingTrackerBody extends StatelessWidget {
+  const _PendingTrackerBody({
+    required this.state,
+    required this.controller,
+  });
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  Future<void> _completeSingle(
+      BuildContext context, WidgetRef ref, QazaRecord record) async {
+    final batch = await controller.completeRecordWithUndo(record.id);
+    if (!context.mounted) return;
+    final l10n = AppLocalizations.of(context);
+    if (batch != null) {
+      await showQazaUndoFeedback(
+        context: context,
+        ref: ref,
+        userId: ref.read(requiredUserIdProvider),
+        entries: batch.entries,
+        onUndone: controller.refresh,
+      );
+      return;
+    }
+    final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
+    if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+      ref.read(appSnackbarServiceProvider).warning(
+            l10n.qazaTartibBlocked(
+              tartib!.nextPrayer!.localizedLabel(l10n),
+            ),
+          );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
+    final lockedRecordId =
+        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
+
+    if (state.loading && state.records.isEmpty) {
+      return const _TrackerSkeleton();
+    }
+    if (state.error != null) {
+      final failure = AppError.from(state.error!);
+      return ErrorState(
+        key: const Key('qaza_tracker_error'),
+        message: failure.message(context),
+        onRetry: failure.isRetryable ? controller.refresh : null,
+      );
+    }
+    if (state.records.isEmpty) {
+      return state.isFiltered
+          ? EmptyState(
+              key: const Key('qaza_tracker_filtered_empty'),
+              title: l10n.qazaFilteredEmptyTitle,
+              message: l10n.qazaFilteredEmptyMessage,
+              child: TextButton(
+                onPressed: controller.clearFilters,
+                child: Text(l10n.qazaResetFilters),
+              ),
+            )
+          : EmptyState(
+              key: const Key('qaza_tracker_empty'),
+              title: l10n.qazaEmptyTitle,
+              message: l10n.qazaEmptyMessage,
+            );
+    }
+
+    return Column(
+      children: [
+        if (restricted)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: RestrictedTimeTimelineRow(),
+          ),
+        if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                l10n.qazaTartibRequiredMessage(
+                  tartib!.pendingFarzCount,
+                  tartib.nextPrayer!.localizedLabel(l10n),
+                ),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.refresh,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320) {
+                  controller.loadMore();
+                }
+                return false;
+              },
+              child: ListView.builder(
+                key: const Key('qaza_tracker_list'),
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.fabClearance,
+                ),
+                itemCount: state.records.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (_, index) {
+                  if (index >= state.records.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Column(
+                        children: [
+                          _TrackerSkeletonRow(),
+                          _TrackerSkeletonRow(),
+                        ],
+                      ),
+                    );
+                  }
+                  final record = state.records[index];
+                  final canAct = record.status == QazaStatus.pending &&
+                      !restricted &&
+                      (lockedRecordId == null ||
+                          record.id == lockedRecordId ||
+                          record.prayerType == PrayerType.witr);
+                  return _RecordRow(
+                    key: Key('qaza_record_row_${record.id}'),
+                    record: record,
+                    selected: state.selected.contains(record.id),
+                    selectionMode: state.selectionMode,
+                    busy: state.completing || state.recordMutating,
+                    canAct: canAct,
+                    onTap: state.selectionMode
+                        ? (record.status == QazaStatus.pending && !restricted
+                            ? () => controller.toggleSelection(record.id)
+                            : null)
+                        : null,
+                    onLongPress: record.status == QazaStatus.pending &&
+                            !restricted &&
+                            (lockedRecordId == null ||
+                                record.id == lockedRecordId ||
+                                record.prayerType == PrayerType.witr)
+                        ? () => controller.enterSelectionMode(record.id)
+                        : null,
+                    onSwipeComplete: state.selectionMode ||
+                            record.status != QazaStatus.pending ||
+                            !canAct ||
+                            state.completing ||
+                            state.recordMutating
+                        ? null
+                        : () => _completeSingle(context, ref, record),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CompletedTrackerBody extends StatelessWidget {
+  const _CompletedTrackerBody({
+    required this.state,
+    required this.controller,
+  });
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  Future<void> _openDetails(
+    BuildContext context,
+    QazaRecord record,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (_) => _CompletedRecordDetails(
+        record: record,
+        controller: controller,
+      ),
+    );
+  }
+
+  String _groupLabel(DateTime completedAt) {
+    final date = completedAt.toLocal();
+    final today = DateTime.now();
+    final todayKey = DateTime(today.year, today.month, today.day);
+    final dateKey = DateTime(date.year, date.month, date.day);
+    if (dateKey == todayKey) return 'Today';
+    if (dateKey == todayKey.subtract(const Duration(days: 1))) {
+      return 'Yesterday';
+    }
+    return DateFormatters.formatGregorianDatePadded(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (state.loading && state.records.isEmpty) {
+      return const _TrackerSkeleton();
+    }
+    if (state.error != null) {
+      final failure = AppError.from(state.error!);
+      return ErrorState(
+        key: const Key('qaza_completed_error'),
+        message: failure.message(context),
+        onRetry: failure.isRetryable ? controller.refresh : null,
+      );
+    }
+    if (state.records.isEmpty) {
+      return state.isFiltered
+          ? EmptyState(
+              key: const Key('qaza_completed_filtered_empty'),
+              title: l10n.qazaFilteredEmptyTitle,
+              message: l10n.qazaFilteredEmptyMessage,
+              child: TextButton(
+                onPressed: controller.clearFilters,
+                child: Text(l10n.qazaResetFilters),
+              ),
+            )
+          : const EmptyState(
+              key: Key('qaza_completed_empty'),
+              title: 'No completed Qaza',
+              message: 'Completed Qaza will appear here.',
+            );
+    }
+
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.extentAfter < 320) {
+            controller.loadMore();
+          }
+          return false;
+        },
+        child: ListView.builder(
+          key: const Key('qaza_completed_list'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.fabClearance,
+          ),
+          itemCount: state.records.length + (state.hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= state.records.length) {
+              return const Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: CircularProgressIndicator(),
+              );
+            }
+            final record = state.records[index];
+            final completedAt = record.completedAt;
+            if (completedAt == null) return const SizedBox.shrink();
+            final showGroup = index == 0 ||
+                state.records[index - 1].completedAt == null ||
+                state.records[index - 1].completedAt!.toLocal().year !=
+                    completedAt.toLocal().year ||
+                state.records[index - 1].completedAt!.toLocal().month !=
+                    completedAt.toLocal().month ||
+                state.records[index - 1].completedAt!.toLocal().day !=
+                    completedAt.toLocal().day;
+            return Column(
+              children: [
+                if (showGroup)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      4,
+                      index == 0 ? AppSpacing.xs : AppSpacing.md,
+                      4,
+                      AppSpacing.xs,
+                    ),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        _groupLabel(completedAt),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
+                  ),
+                _CompletedRecordRow(
+                  record: record,
+                  onTap: () => _openDetails(context, record),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedRecordRow extends StatelessWidget {
+  const _CompletedRecordRow({
+    required this.record,
+    required this.onTap,
+  });
+
+  final QazaRecord record;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final completedAt = record.completedAt!.toLocal();
+    final originalDate =
+        DateFormatters.formatGregorianDatePadded(record.originalDate);
+    final hijriDate = l10n.formatHijriDate(record.originalDate);
+
+    return ListTile(
+      key: Key('qaza_completed_record_${record.id}'),
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      minVerticalPadding: 4,
+      leading: Icon(
+        Icons.check_circle_rounded,
+        size: 20,
+        color: theme.colorScheme.primary,
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              record.prayerType.localizedLabel(l10n),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            DateFormatters.formatClockTime(completedAt),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Text(
+        originalDate + ' · ' + hijriDate,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall,
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+class _CompletedRecordDetails extends ConsumerWidget {
+  const _CompletedRecordDetails({
+    required this.record,
+    required this.controller,
+  });
+
+  final QazaRecord record;
+  final QazaTrackerController controller;
+
+  Future<void> _markPending(BuildContext context, WidgetRef ref) async {
+    final confirmed = await confirmDestructive(
+      context,
+      title: 'Mark as Pending?',
+      message:
+          'This Qaza will return to Pending and will no longer count as completed.',
+      confirmLabel: 'Mark as Pending',
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final changed = await controller.markCompletedAsPending(record.id);
+    if (!context.mounted) return;
+    if (!changed) {
+      ref.read(appSnackbarServiceProvider).error(
+            'This Qaza could not be corrected because it has changed.',
+          );
+      return;
+    }
+
+    Navigator.of(context).pop();
+    ref.read(appSnackbarServiceProvider).success(
+          'Qaza returned to Pending.',
+        );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final completedAt = record.completedAt?.toLocal();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            record.prayerType.localizedLabel(l10n),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text('Qaza Date', style: theme.textTheme.labelMedium),
+          Text(DateFormatters.formatGregorianDatePadded(record.originalDate)),
+          Text(l10n.formatHijriDate(record.originalDate)),
+          const SizedBox(height: 12),
+          if (completedAt != null) ...[
+            Text('Completed', style: theme.textTheme.labelMedium),
+            Text(
+              DateFormatters.formatGregorianDatePadded(completedAt) +
+                  ' · ' +
+                  DateFormatters.formatClockTime(completedAt),
+            ),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => _markPending(context, ref),
+              child: const Text('Mark as Pending'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -807,7 +1370,7 @@ class _BulkCompletionBarState extends ConsumerState<_BulkCompletionBar> {
       context: context,
       ref: ref,
       userId: ref.read(requiredUserIdProvider),
-      records: batch.completedRecords,
+      entries: batch.entries,
       onUndone: widget.controller.refresh,
     );
   }
