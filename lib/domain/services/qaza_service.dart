@@ -533,14 +533,11 @@ class QazaService {
       currentPrayer: currentPrayer,
     );
     if (tartibState.requiresOrder &&
-        !(await tartib.canCompleteRecordIds(
-          userId: userId,
-          recordIds: pendingIds,
-          currentDate: currentDate,
-          currentPrayer: currentPrayer,
-          evaluatedState: tartibState,
+        !tartib.canCompletePendingRecords(
           pendingRecords: pending,
-        ))) {
+          recordIds: pendingIds,
+          evaluatedState: tartibState,
+        )) {
       throw QazaTartibViolationException(
         requiredPrayer: tartibState.nextPending!.prayerType,
         pendingFarzCount: tartibState.pendingFarzCount,
