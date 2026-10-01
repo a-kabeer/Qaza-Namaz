@@ -1,8 +1,6 @@
+import '../../core/constants/prayer_types.dart';
+
 /// Outcome of attempting to complete one Qaza record.
-///
-/// Technical failures remain exceptions; these values describe expected
-/// persistence outcomes so callers can distinguish a real completion from a
-/// stale or unavailable record.
 enum QazaCompletionResult {
   completed,
   alreadyCompleted,
@@ -10,11 +8,7 @@ enum QazaCompletionResult {
   blockedByRestrictedTime,
 }
 
-
 /// Persistence receipt for a completed Qaza.
-///
-/// Carries the exact completion marker generated for the durable write so
-/// callers can register Undo without a second record lookup.
 class QazaCompletionReceipt {
   const QazaCompletionReceipt({
     required this.result,
@@ -23,4 +17,38 @@ class QazaCompletionReceipt {
 
   final QazaCompletionResult result;
   final String? completionId;
+}
+
+/// Exact durable identity returned for one successful completion.
+class QazaCompletionEntry {
+  const QazaCompletionEntry({
+    required this.recordId,
+    required this.completionId,
+    required this.prayerType,
+    required this.originalDate,
+    required this.completedAt,
+  });
+
+  final String recordId;
+  final String completionId;
+  final PrayerType prayerType;
+  final DateTime originalDate;
+  final DateTime completedAt;
+}
+
+/// Result of one shared completion operation. Every successful record has its
+/// own completion marker and remains independently undoable/correctable.
+class QazaCompletionBatchReceipt {
+  const QazaCompletionBatchReceipt({
+    required this.result,
+    required this.entries,
+  });
+
+  final QazaCompletionResult result;
+  final List<QazaCompletionEntry> entries;
+
+  int get count => entries.length;
+  bool get isEmpty => entries.isEmpty;
+  DateTime? get completedAt =>
+      entries.isEmpty ? null : entries.first.completedAt;
 }
