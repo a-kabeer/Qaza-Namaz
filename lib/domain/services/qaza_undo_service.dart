@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_record.dart';
+import '../../core/utils/qaza_completion_id.dart';
+import '../entities/qaza_completion_result.dart';
+import '../entities/qaza_record.dart';
 import 'qaza_service.dart';
 
 enum QazaUndoFailureReason {
@@ -23,8 +25,7 @@ class QazaUndoException implements Exception {
   final Object? cause;
 
   @override
-  String toString() =>
-      'QazaUndoException(reason: $reason${cause == null ? '' : ', cause: $cause'})';
+  String toString() => 'QazaUndoException(reason: $reason, cause: $cause)';
 }
 
 /// One completion captured by the active undo window.
@@ -34,18 +35,21 @@ class QazaUndoEntry {
     required this.completionId,
     required this.prayerType,
     required this.originalDate,
+    required this.completedAt,
   });
 
   final String recordId;
   final String completionId;
   final PrayerType prayerType;
   final DateTime originalDate;
+  final DateTime completedAt;
 
   Map<String, dynamic> toJson() => {
         'recordId': recordId,
         'completionId': completionId,
         'prayerType': prayerType.name,
         'originalDate': originalDate.toIso8601String(),
+        'completedAt': completedAt.toIso8601String(),
       };
 
   factory QazaUndoEntry.fromJson(Map<String, dynamic> json) {
@@ -53,12 +57,14 @@ class QazaUndoEntry {
     final completionId = json['completionId'] as String?;
     final prayerName = json['prayerType'] as String?;
     final originalDate = json['originalDate'] as String?;
+    final completedAt = json['completedAt'] as String?;
     if (recordId == null ||
         recordId.isEmpty ||
         completionId == null ||
         completionId.isEmpty ||
         prayerName == null ||
-        originalDate == null) {
+        originalDate == null ||
+        completedAt == null) {
       throw const FormatException('Invalid persisted Qaza undo entry.');
     }
 
@@ -72,17 +78,23 @@ class QazaUndoEntry {
         ),
       ),
       originalDate: DateTime.parse(originalDate),
+      completedAt: DateTime.parse(completedAt),
     );
   }
 }
 
 /// Persisted metadata for the one active completion Undo window.
+///
+/// The session groups recent completions only for temporary Undo convenience;
+/// each entry remains independently identifiable and reversible.
 class QazaUndoBatch {
   const QazaUndoBatch({
+    required this.sessionId,
     required this.entries,
     required this.expiresAt,
   });
 
+  final String sessionId;
   final List<QazaUndoEntry> entries;
   final DateTime expiresAt;
 
@@ -96,7 +108,8 @@ class QazaUndoBatch {
   bool isExpired(DateTime now) => !now.isBefore(expiresAt);
 
   bool matches(QazaUndoBatch other) {
-    if (!expiresAt.isAtSameMomentAs(other.expiresAt) ||
+    if (sessionId != other.sessionId ||
+        !expiresAt.isAtSameMomentAs(other.expiresAt) ||
         entries.length != other.entries.length) {
       return false;
     }
@@ -107,7 +120,8 @@ class QazaUndoBatch {
       if (left.recordId != right.recordId ||
           left.completionId != right.completionId ||
           left.prayerType != right.prayerType ||
-          !left.originalDate.isAtSameMomentAs(right.originalDate)) {
+          !left.originalDate.isAtSameMomentAs(right.originalDate) ||
+          !left.completedAt.isAtSameMomentAs(right.completedAt)) {
         return false;
       }
     }
@@ -115,14 +129,19 @@ class QazaUndoBatch {
   }
 
   Map<String, dynamic> toJson() => {
+        'sessionId': sessionId,
         'entries': entries.map((entry) => entry.toJson()).toList(),
         'expiresAt': expiresAt.toIso8601String(),
       };
 
   factory QazaUndoBatch.fromJson(Map<String, dynamic> json) {
+    final rawSessionId = json['sessionId'];
     final rawEntries = json['entries'];
     final rawExpiresAt = json['expiresAt'];
-    if (rawEntries is! List || rawExpiresAt is! String) {
+    if (rawSessionId is! String ||
+        rawSessionId.isEmpty ||
+        rawEntries is! List ||
+        rawExpiresAt is! String) {
       throw const FormatException('Invalid persisted Qaza undo batch.');
     }
 
@@ -145,18 +164,18 @@ class QazaUndoBatch {
     }
 
     return QazaUndoBatch(
+      sessionId: rawSessionId,
       entries: List.unmodifiable(entries),
       expiresAt: expiresAt,
     );
   }
 }
 
-/// Small durable store for the currently active undo window.
 class QazaUndoStore {
   const QazaUndoStore();
 
   static const Duration window = Duration(seconds: 5);
-  static const String _keyPrefix = 'qaza_undo_v2_';
+  static const String _keyPrefix = 'qaza_undo_v3_';
 
   String _key(String userId) => '$_keyPrefix$userId';
 
@@ -200,13 +219,14 @@ class QazaUndoResult {
   const QazaUndoResult({
     required this.batch,
     required this.count,
+    required this.remainingBatch,
   });
 
   final QazaUndoBatch batch;
   final int count;
+  final QazaUndoBatch? remainingBatch;
 }
 
-/// Coordinates persistence and conditional completion rollback.
 class QazaUndoManager {
   QazaUndoManager({
     QazaUndoStore? store,
@@ -220,42 +240,61 @@ class QazaUndoManager {
   Future<QazaUndoBatch?> restore({required String userId}) =>
       _store.load(userId: userId, now: _now());
 
+  /// Compatibility entry point for callers that still have QazaRecord objects.
   Future<QazaUndoBatch?> register({
     required String userId,
     required Iterable<QazaRecord> records,
+  }) {
+    final entries = [
+      for (final record in records)
+        if (record.status == QazaStatus.completed &&
+            record.completionId != null &&
+            record.completionId!.isNotEmpty &&
+            record.completedAt != null)
+          QazaCompletionEntry(
+            recordId: record.id,
+            completionId: record.completionId!,
+            prayerType: record.prayerType,
+            originalDate: record.originalDate,
+            completedAt: record.completedAt!,
+          ),
+    ];
+    return registerEntries(userId: userId, entries: entries);
+  }
+
+  Future<QazaUndoBatch?> registerEntries({
+    required String userId,
+    required Iterable<QazaCompletionEntry> entries,
   }) async {
     final now = _now();
     final existing = await _store.load(userId: userId, now: now);
-    final entries = <QazaUndoEntry>[
+    final combined = <QazaUndoEntry>[
       ...?existing?.entries,
     ];
-    final seen = entries.map((entry) => entry.recordId).toSet();
+    final seen = combined.map((entry) => entry.recordId).toSet();
 
-    for (final record in records) {
-      final completionId = record.completionId;
-      if (record.id.isEmpty ||
-          record.status != QazaStatus.completed ||
-          completionId == null ||
-          completionId.isEmpty ||
-          !seen.add(record.id)) {
+    for (final entry in entries) {
+      if (entry.recordId.isEmpty ||
+          entry.completionId.isEmpty ||
+          !seen.add(entry.recordId)) {
         continue;
       }
-      entries.add(
+      combined.add(
         QazaUndoEntry(
-          recordId: record.id,
-          completionId: completionId,
-          prayerType: record.prayerType,
-          originalDate: record.originalDate,
+          recordId: entry.recordId,
+          completionId: entry.completionId,
+          prayerType: entry.prayerType,
+          originalDate: entry.originalDate,
+          completedAt: entry.completedAt,
         ),
       );
     }
 
-    if (entries.isEmpty) return existing;
+    if (combined.isEmpty) return existing;
 
-    // Consecutive completions extend the same temporary Undo session.
-    // The active batch therefore matches the aggregated completion feedback.
     final batch = QazaUndoBatch(
-      entries: List.unmodifiable(entries),
+      sessionId: existing?.sessionId ?? newQazaCompletionId(),
+      entries: List.unmodifiable(combined),
       expiresAt: now.add(QazaUndoStore.window),
     );
     await _store.save(userId: userId, batch: batch);
@@ -266,6 +305,32 @@ class QazaUndoManager {
     required String userId,
     required QazaService service,
     QazaUndoBatch? expectedBatch,
+  }) =>
+      _undoEntries(
+        userId: userId,
+        service: service,
+        expectedBatch: expectedBatch,
+        selectedIds: null,
+      );
+
+  Future<QazaUndoResult> undoSelected({
+    required String userId,
+    required QazaService service,
+    required QazaUndoBatch expectedBatch,
+    required Set<String> selectedIds,
+  }) =>
+      _undoEntries(
+        userId: userId,
+        service: service,
+        expectedBatch: expectedBatch,
+        selectedIds: selectedIds,
+      );
+
+  Future<QazaUndoResult> _undoEntries({
+    required String userId,
+    required QazaService service,
+    required QazaUndoBatch? expectedBatch,
+    required Set<String>? selectedIds,
   }) async {
     try {
       final batch = await restore(userId: userId);
@@ -275,42 +340,71 @@ class QazaUndoManager {
         );
       }
       if (expectedBatch != null && !batch.matches(expectedBatch)) {
-        await _store.clear(userId: userId);
+        // Never clear the store here: it may contain a newer session.
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.staleBatch,
         );
       }
 
-      // Once the active action has been accepted for this tap, consume it
-      // before the persistence call. Any target change, zero-count result, or
-      // exception must remove the stale Undo action rather than leaving a
-      // misleading retryable action behind.
-      await _store.clear(userId: userId);
-
-      final count = await service.undoCompletions(
-        userId: userId,
-        expectedCompletionIds: batch.completionIds,
-        undoneAt: _now(),
-      );
-
-      await _store.clear(userId: userId);
-
-      if (count == 0) {
+      final targetEntries = selectedIds == null
+          ? batch.entries
+          : batch.entries
+              .where((entry) => selectedIds.contains(entry.recordId))
+              .toList(growable: false);
+      if (targetEntries.isEmpty) {
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.targetChanged,
         );
       }
 
-      return QazaUndoResult(batch: batch, count: count);
+      final changedIds = await service.undoCompletions(
+        userId: userId,
+        expectedCompletionIds: {
+          for (final entry in targetEntries)
+            entry.recordId: entry.completionId,
+        },
+        undoneAt: _now(),
+      );
+
+      final changedSet = changedIds.toSet();
+      final remainingEntries = batch.entries
+          .where((entry) => !changedSet.contains(entry.recordId))
+          .toList(growable: false);
+
+      final latest = await _store.load(userId: userId, now: _now());
+      QazaUndoBatch? remainingBatch = remainingEntries.isEmpty
+          ? null
+          : QazaUndoBatch(
+              sessionId: batch.sessionId,
+              entries: List.unmodifiable(remainingEntries),
+              expiresAt: batch.expiresAt,
+            );
+
+      if (latest != null && latest.matches(batch)) {
+        if (remainingBatch == null || remainingBatch.isExpired(_now())) {
+          await _store.clear(userId: userId);
+          remainingBatch = null;
+        } else {
+          await _store.save(userId: userId, batch: remainingBatch);
+        }
+      } else if (latest != null) {
+        // A newer session won the race; never overwrite it.
+        remainingBatch = latest;
+      }
+
+      if (changedIds.isEmpty) {
+        throw const QazaUndoException(
+          reason: QazaUndoFailureReason.targetChanged,
+        );
+      }
+
+      return QazaUndoResult(
+        batch: batch,
+        count: changedIds.length,
+        remainingBatch: remainingBatch,
+      );
     } catch (error, stack) {
-      // Clearing the stale/consumed action is best-effort and must never mask
-      // the original failure or its stack trace.
-      try {
-        await _store.clear(userId: userId);
-      } catch (_) {}
-
       if (error is QazaUndoException) rethrow;
-
       final wrapped = QazaUndoException(
         reason: QazaUndoFailureReason.failed,
         cause: error,
