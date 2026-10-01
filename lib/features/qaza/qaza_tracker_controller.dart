@@ -15,6 +15,8 @@ import '../prayer_time/application/prayer_time_providers.dart';
 /// so the database returns both pending and completed records.
 enum QazaStatusFilter { all, pending, completed }
 
+enum QazaSelectionScope { pending, completed }
+
 extension QazaStatusFilterX on QazaStatusFilter {
   QazaStatus? get status => switch (this) {
         QazaStatusFilter.all => null,
@@ -37,6 +39,7 @@ class QazaTrackerState {
   const QazaTrackerState({
     this.statusFilter = QazaStatusFilter.pending,
     this.selectionMode = false,
+    this.selectionScope,
     this.selectingAll = false,
     this.prayerFilter,
     this.from,
@@ -55,6 +58,7 @@ class QazaTrackerState {
 
   final QazaStatusFilter statusFilter;
   final bool selectionMode;
+  final QazaSelectionScope? selectionScope;
 
   /// True while the whole filtered ledger is being gathered for selection.
   final bool selectingAll;
@@ -123,19 +127,25 @@ class QazaTrackerState {
     String? error,
     Set<String>? selected,
     bool? selectionMode,
+    QazaSelectionScope? selectionScope,
     bool clearPrayerFilter = false,
     bool clearDates = false,
+    bool clearAdditionId = false,
+    bool clearSelectionScope = false,
     bool clearError = false,
   }) =>
       QazaTrackerState(
         statusFilter: statusFilter ?? this.statusFilter,
         selectionMode: selectionMode ?? this.selectionMode,
+        selectionScope:
+            clearSelectionScope ? null : selectionScope ?? this.selectionScope,
         selectingAll: selectingAll ?? this.selectingAll,
         prayerFilter:
             clearPrayerFilter ? null : prayerFilter ?? this.prayerFilter,
         from: clearDates ? null : from ?? this.from,
         to: clearDates ? null : to ?? this.to,
-        additionId: additionId ?? this.additionId,
+        additionId:
+            clearAdditionId ? null : additionId ?? this.additionId,
         records: records ?? this.records,
         hasMore: hasMore ?? this.hasMore,
         loading: loading ?? this.loading,
@@ -167,11 +177,10 @@ final qazaTrackerFilterRequestProvider =
 class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, String?> {
   static const int pageSize = 50;
 
-  late String? _additionId;
+  int _queryGeneration = 0;
 
   @override
   QazaTrackerState build(String? additionId) {
-    _additionId = additionId;
     ref.watch(activeUserIdProvider);
     // The Qaza tab stays mounted once visited, so a second hand-off arrives
     // while this controller is already built and build() never runs again for
@@ -229,6 +238,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   Future<void> refresh() async {
+    final generation = ++_queryGeneration;
     ref.invalidate(sahibAlTartibProvider);
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) {
@@ -253,6 +263,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     );
     try {
       final page = await _readPage(userId: userId);
+      if (generation != _queryGeneration) return;
       state = state.copyWith(
         records: page.records,
         hasMore: page.hasMore,
@@ -281,9 +292,18 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
           limit: pageSize,
           prayerType: state.prayerFilter,
           status: state.statusFilter.status,
-          from: state.from,
-          to: state.to,
-          additionId: _additionId,
+          from: state.statusFilter == QazaStatusFilter.completed &&
+                  state.from != null
+              ? QazaDate.normalize(state.from!)
+              : state.from,
+          to: state.statusFilter == QazaStatusFilter.completed
+              ? null
+              : state.to,
+          toExclusive: state.statusFilter == QazaStatusFilter.completed &&
+                  state.to != null
+              ? QazaDate.normalize(state.to!).add(const Duration(days: 1))
+              : null,
+          additionId: state.additionId,
           beforeOriginalDate: completed ? null : after?.originalDate,
           beforeId: completed ? null : after?.id,
           beforeCompletedAt: completed ? after?.completedAt : null,
@@ -298,9 +318,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     final last = state.records.isEmpty ? null : state.records.last;
     if (userId == null || last == null) return;
 
+    final generation = _queryGeneration;
     state = state.copyWith(loadingMore: true, clearError: true);
     try {
       final page = await _readPage(userId: userId, after: last);
+      if (generation != _queryGeneration) return;
       state = state.copyWith(
         records: [...state.records, ...page.records],
         hasMore: page.hasMore,
@@ -322,6 +344,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       hasMore: false,
       selectionMode: false,
       selected: const <String>{},
+      clearSelectionScope: true,
       clearError: true,
     );
     refresh();
@@ -349,9 +372,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     state = state.copyWith(
       clearPrayerFilter: true,
       clearDates: true,
+      clearAdditionId: true,
       clearError: true,
       selected: const <String>{},
       selectionMode: false,
+      clearSelectionScope: true,
     );
     refresh();
   }
@@ -362,7 +387,27 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     final record = index < 0 ? null : state.records[index];
     if (record == null || record.status != QazaStatus.pending) return;
     final next = Set<String>.of(state.selected)..add(recordId);
-    state = state.copyWith(selectionMode: true, selected: next);
+    state = state.copyWith(
+      selectionMode: true,
+      selectionScope: QazaSelectionScope.pending,
+      selected: next,
+    );
+  }
+
+  void enterCompletedSelectionMode(String recordId) {
+    if (state.statusFilter != QazaStatusFilter.completed) return;
+    final matches = state.records.where((record) => record.id == recordId);
+    if (matches.isEmpty) return;
+    final record = matches.single;
+    if (record.status != QazaStatus.completed ||
+        record.completionId == null) {
+      return;
+    }
+    state = state.copyWith(
+      selectionMode: true,
+      selectionScope: QazaSelectionScope.completed,
+      selected: {recordId},
+    );
   }
 
   void toggleSelection(String recordId) {
@@ -371,9 +416,26 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     state = state.copyWith(selectionMode: true, selected: next);
   }
 
-  void exitSelectionMode() => state = state.copyWith(
+  void toggleCompletedSelection(String recordId) {
+    if (state.statusFilter != QazaStatusFilter.completed ||
+        state.selectionScope != QazaSelectionScope.completed) {
+      return;
+    }
+    final matches = state.records.where((record) => record.id == recordId);
+    if (matches.isEmpty || matches.single.status != QazaStatus.completed) return;
+    final record = matches.single;
+    final next = Set<String>.of(state.selected);
+    if (!next.remove(recordId)) {
+      if (record.completionId == null) return;
+      next.add(recordId);
+    }
+    state = state.copyWith(selectionMode: true, selected: next);
+  }
+
+  void exitSelectionMode() => state.copyWith(
         selectionMode: false,
         selected: const <String>{},
+        clearSelectionScope: true,
       );
 
   /// Selection is bounded to the records actually loaded, never the ledger.
@@ -532,6 +594,74 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         error: error.toString(),
       );
       return null;
+    }
+  }
+
+  Future<int> markSelectedCompletedAsPending() async {
+    if (state.statusFilter != QazaStatusFilter.completed ||
+        state.selectionScope != QazaSelectionScope.completed ||
+        state.selected.isEmpty ||
+        state.recordMutating) {
+      return 0;
+    }
+
+    final expected = <String, String>{};
+    for (final id in state.selected) {
+      for (final record in state.records.where((candidate) => candidate.id == id)) {
+        if (record.status == QazaStatus.completed &&
+            record.completionId != null) {
+          expected[id] = record.completionId!;
+        }
+      }
+    }
+    if (expected.isEmpty) {
+      exitSelectionMode();
+      return 0;
+    }
+
+    final generation = _queryGeneration;
+    final userId = ref.read(requiredUserIdProvider);
+    state = state.copyWith(recordMutating: true, clearError: true);
+    try {
+      final changed =
+          await ref.read(qazaServiceProvider).markCompletedRecordsAsPending(
+                userId: userId,
+                expectedCompletionIds: expected,
+              );
+      if (generation != _queryGeneration) return 0;
+
+      final changedIds = changed.map((record) => record.id).toSet();
+      state = state.copyWith(
+        records: state.records
+            .where((record) => !changedIds.contains(record.id))
+            .toList(growable: false),
+        selected: const <String>{},
+        selectionMode: false,
+        clearSelectionScope: true,
+      );
+
+      if (changedIds.isNotEmpty) {
+        ref.read(homeControllerProvider).invalidateDashboard();
+        ref.invalidate(progressSummaryProvider);
+        ref.invalidate(sahibAlTartibProvider);
+        for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+          ref.invalidate(oldestPendingProvider(prayer));
+        }
+      }
+      return changedIds.length;
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'batch_mark_completed_pending_failed',
+            error,
+            stack: stack,
+          );
+      state = state.copyWith(error: error.toString());
+      return 0;
+    } finally {
+      if (generation == _queryGeneration) {
+        state = state.copyWith(recordMutating: false);
+      }
     }
   }
 
