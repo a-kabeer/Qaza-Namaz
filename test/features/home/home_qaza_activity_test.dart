@@ -120,6 +120,32 @@ void main() {
       expect(find.text('Weekly Target'), findsOneWidget);
       expect(find.text('Remaining'), findsOneWidget);
       expect(find.text('Target To Date'), findsNothing);
+      expect(find.byKey(const Key('home_activity_progress')), findsNothing);
+      expect(find.text('5/day'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'dynamic weekly chart scale keeps Y-axis labels sparse', (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 108,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+
+      expect(chart.data.maxY, 120);
+      expect(
+        chart.data.titlesData.leftTitles.sideTitles.interval,
+        20,
+      );
     },
   );
 
@@ -282,6 +308,13 @@ void main() {
         find.descendant(of: detail, matching: find.text('2')),
         findsOneWidget,
       );
+
+      final chartRect = tester.getRect(
+        find.byKey(const Key('home_activity_week_chart')),
+      );
+      final detailRect = tester.getRect(detail);
+      final gap = detailRect.top - chartRect.bottom;
+      expect(gap, inInclusiveRange(12.0, 16.0));
     },
   );
 
