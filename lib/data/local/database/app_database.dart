@@ -90,12 +90,20 @@ class AppDatabase extends _$AppDatabase {
             );
           }
           if (from < 9) {
-            // Deletion actions are permanent history records. The nullable
-            // resolution timestamp hides restored actions without deleting
-            // their audit trail.
-            await customStatement(
-              'ALTER TABLE qaza_deletion_actions ADD COLUMN resolved_at TEXT',
+            // The deletion-action table was introduced during the schema 7
+            // migration. Check the actual table shape so an older upgrade
+            // does not attempt to add the column twice.
+            final columns = await customSelect(
+              'PRAGMA table_info(qaza_deletion_actions)',
+            ).get();
+            final hasResolvedAt = columns.any(
+              (row) => row.read<String>('name') == 'resolved_at',
             );
+            if (!hasResolvedAt) {
+              await customStatement(
+                'ALTER TABLE qaza_deletion_actions ADD COLUMN resolved_at TEXT',
+              );
+            }
           }
           await _ensurePerformanceIndexes();
         },
