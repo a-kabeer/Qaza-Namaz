@@ -208,7 +208,7 @@ void main() {
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
 
     final persistIndex = source.indexOf(
-      'final completed = await service.completeSelected(',
+      'completeRecordsWithReceipt(',
     );
     final refreshIndex = source.indexOf(
       'await refresh();',
@@ -333,4 +333,85 @@ void main() {
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 
+
+  test('Qaza workspace exposes a Pending/Completed switch and no sorting control', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(source, contains("key: const Key('qaza_status_switch')"));
+    expect(source, contains('QazaStatusFilter.pending'));
+    expect(source, contains('QazaStatusFilter.completed'));
+    expect(source, isNot(contains('QazaSortOrder')));
+    expect(source, isNot(contains('SegmentedButton<QazaSortOrder>')));
+    expect(controller, isNot(contains('setSortOrder')));
+    expect(controller, isNot(contains('QazaSortOrder')));
+  });
+
+  test('Completed workspace uses completion-time keyset paging and fixed newest-first order', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final dao =
+        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
+
+    expect(source, contains('beforeCompletedAt: completed ? after?.completedAt : null'));
+    expect(source, contains('status: state.statusFilter.status'));
+    expect(dao, contains('OrderingTerm.desc(qazaRecords.completedAt)'));
+    expect(dao, contains('OrderingTerm.desc(qazaRecords.id)'));
+    expect(dao, contains('row.completedAt.isNotNull()'));
+  });
+
+  test('Completed rows remain compact and expose required dates and completion time', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(source, contains('class _CompletedRecordRow'));
+    expect(source, contains('DateFormatters.formatClockTime(completedAt)'));
+    expect(source, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
+    expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
+    expect(source, contains("Icons.check_circle_rounded"));
+    expect(source, isNot(contains('Card(')));
+  });
+
+  test('Completed detail provides permanent Mark as Pending correction', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_service.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(source, contains('Mark as Pending'));
+    expect(source, contains('confirmDestructive'));
+    expect(controller, contains('markCompletedAsPending'));
+    expect(service, contains('Future<bool> markCompletedAsPending'));
+    expect(service, contains('clearCompletedAt: true'));
+    expect(service, contains('clearCompletionId: true'));
+  });
+
+  test('Home and tracker both depend on the shared completion controller', () {
+    final home =
+        File('lib/features/home/widgets/home_today_progress.dart').readAsStringSync();
+    final tracker =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(home, contains('qazaCompletionControllerProvider.notifier'));
+    expect(tracker, contains('qazaCompletionControllerProvider.notifier'));
+    expect(tracker, contains('completeRecordsWithReceipt('));
+    expect(home, contains('QazaCompletionReceipt'));
+  });
+
+  test('Undo feedback supports selected and all restoration', () {
+    final source =
+        File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
+
+    expect(source, contains('Undo Selected'));
+    expect(source, contains('Undo All'));
+    expect(source, contains('undoSelected('));
+    expect(service, contains('Future<QazaUndoResult> undoSelected('));
+    expect(service, contains('Never clear the store here'));
+  });
 }
