@@ -1,5 +1,4 @@
 import '../../core/constants/prayer_types.dart';
-import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_completion_id.dart';
 import '../../core/utils/qaza_date.dart';
 import '../entities/qaza_progress.dart';
@@ -91,12 +90,10 @@ class QazaService {
     QazaAvailabilityService? availability,
     SahibAlTartibService? tartib,
     this.witrInclusionResolver,
-    DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : availability = availability ?? const QazaAvailabilityService(),
         tartib = tartib ?? SahibAlTartibService(repository),
-        _diagnostics = diagnostics;
+
   final QazaRepository repository;
-  final DiagnosticsService _diagnostics;
   final QazaAvailabilityService availability;
   final SahibAlTartibService tartib;
   final bool Function()? witrInclusionResolver;
@@ -172,7 +169,9 @@ class QazaService {
     required String userId,
     required PrayerType prayerType,
   }) {
-    if (prayerType == PrayerType.witr && !_witrAllowed) return Future.value(null);
+    if (prayerType == PrayerType.witr && !_witrAllowed) {
+      return Future.value(null);
+    }
     return repository.getOldestPending(
       userId: userId,
       prayerType: prayerType,
