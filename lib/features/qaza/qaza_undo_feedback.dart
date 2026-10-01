@@ -321,9 +321,8 @@ class _QazaUndoSelectionSheetState
   }
 
   Future<void> _recoverCurrentBatch() async {
-    final current = await ref
-        .read(qazaUndoManagerProvider)
-        .restore(userId: widget.userId);
+    final manager = ref.read(qazaUndoManagerProvider);
+    final current = manager.activeSelection(userId: widget.userId);
     if (!mounted || current == null) return;
     setState(() {
       _batch = current;
