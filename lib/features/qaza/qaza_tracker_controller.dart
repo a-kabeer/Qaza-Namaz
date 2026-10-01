@@ -325,6 +325,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     refresh();
   }
 
+  void setPrayerFilter(PrayerType? prayer) {
+    if (prayer == state.prayerFilter) return;
+    state = prayer == null
+        ? state.copyWith(clearPrayerFilter: true)
+        : state.copyWith(prayerFilter: prayer);
+    refresh();
+  }
+
   void setDateRange(DateTime? from, DateTime? to) {
     state = from == null && to == null
         ? state.copyWith(clearDates: true)
