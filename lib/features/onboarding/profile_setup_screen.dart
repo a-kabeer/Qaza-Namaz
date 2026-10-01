@@ -9,6 +9,7 @@ import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
+import '../qaza/qaza_import_progress_dialog.dart';
 import 'profile_form.dart';
 import 'qaza_review_dialog.dart';
 import 'startup_gate.dart';
@@ -89,9 +90,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted || action != QazaReviewAction.add) return;
 
-    // QazaReviewDialog only returns the add action after the existing import
-    // task reports completed. Starting the task is not treated as completion.
-    await _finishOnboarding(finalizedProfile);
+    await _showImportProgress();
+
+    if (!mounted) return;
+    if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
+      await _finishOnboarding(finalizedProfile);
+    }
+  }
+
+  Future<void> _showImportProgress() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const QazaImportProgressDialog(),
+    );
   }
 
   Future<void> _finishOnboarding(UserProfile profile) async {
