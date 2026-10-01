@@ -627,11 +627,6 @@ class _HomeNextQazaRecord extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            StatusChip(
-              l10n.homeOldestPending,
-              tone: StatusChipTone.pending,
-            ),
           ],
         );
 
@@ -657,7 +652,17 @@ class _HomeNextQazaRecord extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            details,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: details),
+                const SizedBox(width: 8),
+                StatusChip(
+                  l10n.homeOldestPending,
+                  tone: StatusChipTone.pending,
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             complete,
           ],
