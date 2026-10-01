@@ -56,7 +56,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,22 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE qaza_records SET completed_at = updated_at "
               "WHERE status = 'completed' AND completed_at IS NULL",
             );
+          }
+          if (from < 9) {
+            // The deletion-action table was introduced during the schema 7
+            // migration. Check the actual table shape so an older upgrade
+            // does not attempt to add the column twice.
+            final columns = await customSelect(
+              'PRAGMA table_info(qaza_deletion_actions)',
+            ).get();
+            final hasResolvedAt = columns.any(
+              (row) => row.read<String>('name') == 'resolved_at',
+            );
+            if (!hasResolvedAt) {
+              await customStatement(
+                'ALTER TABLE qaza_deletion_actions ADD COLUMN resolved_at TEXT',
+              );
+            }
           }
           await _ensurePerformanceIndexes();
         },
@@ -170,7 +186,8 @@ class AppDatabase extends _$AppDatabase {
         id TEXT NOT NULL PRIMARY KEY,
         user_id TEXT NOT NULL,
         addition_id TEXT NOT NULL,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        resolved_at TEXT
       )
     ''');
     await customStatement('''
@@ -229,6 +246,11 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_deletion_actions_user_created_idx '
       'ON qaza_deletion_actions (user_id, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_actions_user_resolved_created_idx '
+      'ON qaza_deletion_actions '
+      '(user_id, resolved_at, created_at DESC, id DESC)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_deletion_snapshots_action_idx '

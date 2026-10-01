@@ -287,9 +287,11 @@ class QazaRestoreResult {
     required this.deletionActionId,
     this.restoredCount = 0,
     this.conflictCount = 0,
+    this.alreadyResolved = false,
   });
 
   final String deletionActionId;
   final int restoredCount;
   final int conflictCount;
+  final bool alreadyResolved;
 }

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -88,16 +89,94 @@ void main() {
       deletionActionId: deleted.deletionActionId!,
     );
     expect(restored.restoredCount, 1);
+    expect(restored.alreadyResolved, isFalse);
     final rows = await repo.getRecordsForAddition(userId: 'u', additionId: 'a3');
     expect(rows.single.id, 'r3');
     expect(rows.single.additionId, 'a3');
+
+    final deletedAfterRestore = await repo.getRecentDeletionActions(userId: 'u');
+    expect(deletedAfterRestore.items, isEmpty);
 
     final again = await repo.restoreDeletionAction(
       userId: 'u',
       deletionActionId: deleted.deletionActionId!,
     );
     expect(again.restoredCount, 0);
-    expect(again.conflictCount, 1);
+    expect(again.conflictCount, 0);
+    expect(again.alreadyResolved, isTrue);
+
+    final deletedAgain = await repo.deleteAddition(
+      userId: 'u',
+      additionId: 'a3',
+    );
+    expect(deletedAgain.deletedCount, 1);
+    expect(deletedAgain.deletionActionId, isNot(deleted.deletionActionId));
+
+    final recentDeleted = await repo.getRecentDeletionActions(userId: 'u');
+    expect(recentDeleted.items, hasLength(1));
+    expect(recentDeleted.items.single.id, deletedAgain.deletionActionId);
+
+    final restoredAgain = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deletedAgain.deletionActionId!,
+    );
+    expect(restoredAgain.restoredCount, 1);
+    expect(
+      (await repo.getRecentDeletionActions(userId: 'u')).items,
+      isEmpty,
+    );
+  });
+
+  test('partial restore resolves the deletion action after conflicts', () async {
+    final date1 = DateTime(2026, 9, 6);
+    final date2 = DateTime(2026, 9, 7);
+    final a = addition('a5', date1);
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r6', a.id, date1),
+        record('r7', a.id, date2),
+      ],
+    );
+
+    final deleted = await repo.deleteAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+
+    final insertedConflict = await db.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'replacement-r6',
+        userId: 'u',
+        prayerType: PrayerType.fajr.name,
+        originalDate: date1,
+        status: QazaStatus.pending.name,
+        additionId: Value(a.id),
+        recordVersion: const Value(1),
+        createdAt: date1,
+        updatedAt: date1,
+      ),
+    );
+    expect(insertedConflict, 1);
+
+    final restored = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deleted.deletionActionId!,
+    );
+    expect(restored.restoredCount, 1);
+    expect(restored.conflictCount, 1);
+    expect(
+      (await repo.getRecentDeletionActions(userId: 'u')).items,
+      isEmpty,
+    );
+
+    final secondAttempt = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deleted.deletionActionId!,
+    );
+    expect(secondAttempt.alreadyResolved, isTrue);
+    expect(secondAttempt.restoredCount, 0);
+    expect(secondAttempt.conflictCount, 0);
   });
 
   test('edit removes only unchanged pending linked records', () async {

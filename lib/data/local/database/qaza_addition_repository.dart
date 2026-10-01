@@ -153,7 +153,9 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
       throw ArgumentError('A complete deletion cursor is required.');
     }
 
-    final where = StringBuffer('a.user_id = ?');
+    final where = StringBuffer(
+      'a.user_id = ? AND a.resolved_at IS NULL',
+    );
     final variables = <Variable<Object>>[Variable(userId)];
 
     if (afterCreatedAt != null) {
@@ -440,8 +442,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         final createdAt = DateTime.now();
         await database.customInsert(
           '''INSERT INTO qaza_deletion_actions
-             (id, user_id, addition_id, created_at)
-             VALUES (?, ?, ?, ?)''',
+             (id, user_id, addition_id, created_at, resolved_at)
+             VALUES (?, ?, ?, ?, NULL)''',
           variables: [
             Variable(actionId),
             Variable(userId),
@@ -517,7 +519,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
   }) =>
       database.transaction(() async {
         final actions = await database.customSelect(
-          '''SELECT id
+          '''SELECT id, resolved_at
              FROM qaza_deletion_actions
              WHERE user_id = ? AND id = ?
              LIMIT 1''',
@@ -525,6 +527,12 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         ).get();
         if (actions.isEmpty) {
           throw StateError('Deleted Qaza action was not found.');
+        }
+        if (actions.first.read<String?>('resolved_at') != null) {
+          return QazaRestoreResult(
+            deletionActionId: deletionActionId,
+            alreadyResolved: true,
+          );
         }
 
         final rows = await database.customSelect(
@@ -570,6 +578,22 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           } else {
             conflicts++;
           }
+        }
+
+        if (rows.isNotEmpty) {
+          // Every snapshot is now either restored or already represented by a
+          // conflicting live record, so this deletion event is no longer
+          // actionable. Keep the action row for permanent history.
+          await database.customUpdate(
+            '''UPDATE qaza_deletion_actions
+               SET resolved_at = ?
+               WHERE user_id = ? AND id = ? AND resolved_at IS NULL''',
+            variables: [
+              Variable(DateTime.now().toIso8601String()),
+              Variable(userId),
+              Variable(deletionActionId),
+            ],
+          );
         }
 
         return QazaRestoreResult(
