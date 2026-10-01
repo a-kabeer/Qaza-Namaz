@@ -11,6 +11,8 @@ class QazaPage {
 
   DateTime? get nextOriginalDate =>
       records.isEmpty ? null : records.last.originalDate;
+  DateTime? get nextCompletedAt =>
+      records.isEmpty ? null : records.last.completedAt;
   String? get nextId => records.isEmpty ? null : records.last.id;
 }
 
@@ -40,6 +42,8 @@ abstract interface class QazaRepository {
     String? afterId,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    DateTime? afterCompletedAt,
+    DateTime? beforeCompletedAt,
     bool descending = false,
   });
 
@@ -159,10 +163,11 @@ abstract interface class QazaRepository {
     String? completionId,
   });
 
-  Future<void> completeRecords({
+  Future<List<QazaRecord>> completeRecords({
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
+    Map<String, String>? completionIds,
   });
 
   /// Permanently deletes every Qaza record belonging to [userId], resetting
