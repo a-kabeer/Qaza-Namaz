@@ -292,6 +292,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   /// Reads a bounded page using the status-specific fixed ordering.
+  /// Pending advances with an ascending (originalDate, id) cursor; Completed
+  /// continues backward with a descending (completedAt, id) cursor.
   Future<QazaPage> _readPage({
     required String userId,
     QazaRecord? after,
