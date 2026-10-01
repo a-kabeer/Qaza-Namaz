@@ -328,6 +328,8 @@
   "addQazaCancelledMessage": "اضافہ منسوخ کر دیا گیا۔ جو ریکارڈ پہلے ہی محفوظ ہو چکے ہیں وہ برقرار ہیں",
   "addQazaNewQazaLabel": "نئے قضا ریکارڈ",
   "addQazaInProgress": "قضا شامل ہو رہی ہے...",
+  "qazaImportAdded": "شامل",
+  "qazaImportSkipped": "چھوڑے گئے",
   "addQazaCreatedTitle": "قضا ریکارڈ بن گئے",
   "addQazaSelectedCount": "{count, plural, =1{1 دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟} other{{count} دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟}}",
   "addQazaDateCount": "{count, plural, =1{1 تاریخ} other{{count} تاریخیں}}",
