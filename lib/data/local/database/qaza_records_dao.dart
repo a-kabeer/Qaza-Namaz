@@ -98,6 +98,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     String? additionId,
     DateTime? from,
     DateTime? to,
+    DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
     DateTime? beforeOriginalDate,
@@ -107,9 +108,17 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     bool descending = false,
   }) async {
     _validatePage(limit, 0);
-    _validateRange(from, to);
-
     final completedMode = status == QazaStatus.completed.name;
+    if (to != null && toExclusive != null) {
+      throw ArgumentError('Provide either to or toExclusive, not both.');
+    }
+    if (!completedMode && toExclusive != null) {
+      throw ArgumentError('toExclusive is only valid for Completed pages.');
+    }
+    _validateRange(from, to);
+    if (toExclusive != null && (from == null || !from.isBefore(toExclusive))) {
+      throw ArgumentError('from must be before toExclusive');
+    }
     if (completedMode) {
       if ((afterOriginalDate != null && beforeOriginalDate != null) ||
           afterOriginalDate != null ||
@@ -144,15 +153,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (additionId != null) {
           predicates.add(row.additionId.equals(additionId));
         }
-        if (from != null) {
-          predicates.add(row.originalDate.isBiggerOrEqualValue(from));
-        }
-        if (to != null) {
-          predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+        if (completedMode) {
+          predicates.add(row.completedAt.isNotNull());
+          if (from != null) {
+            predicates.add(row.completedAt.isBiggerOrEqualValue(from));
+          }
+          if (toExclusive != null) {
+            predicates.add(row.completedAt.isSmallerThanValue(toExclusive));
+          }
+        } else {
+          if (from != null) {
+            predicates.add(row.originalDate.isBiggerOrEqualValue(from));
+          }
+          if (to != null) {
+            predicates.add(row.originalDate.isSmallerOrEqualValue(to));
+          }
         }
 
         if (completedMode) {
-          predicates.add(row.completedAt.isNotNull());
           if (afterCompletedAt != null) {
             predicates.add(
               row.completedAt.isSmallerThanValue(afterCompletedAt) |
