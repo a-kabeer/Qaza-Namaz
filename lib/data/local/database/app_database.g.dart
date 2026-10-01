@@ -48,6 +48,20 @@ class $QazaRecordsTable extends QazaRecords
   late final GeneratedColumn<String> completionId = GeneratedColumn<String>(
       'completion_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _additionIdMeta =
+      const VerificationMeta('additionId');
+  @override
+  late final GeneratedColumn<String> additionId = GeneratedColumn<String>(
+      'addition_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _recordVersionMeta =
+      const VerificationMeta('recordVersion');
+  @override
+  late final GeneratedColumn<int> recordVersion = GeneratedColumn<int>(
+      'record_version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -69,6 +83,8 @@ class $QazaRecordsTable extends QazaRecords
         status,
         completedAt,
         completionId,
+        additionId,
+        recordVersion,
         createdAt,
         updatedAt
       ];
@@ -127,6 +143,18 @@ class $QazaRecordsTable extends QazaRecords
           completionId.isAcceptableOrUnknown(
               data['completion_id']!, _completionIdMeta));
     }
+    if (data.containsKey('addition_id')) {
+      context.handle(
+          _additionIdMeta,
+          additionId.isAcceptableOrUnknown(
+              data['addition_id']!, _additionIdMeta));
+    }
+    if (data.containsKey('record_version')) {
+      context.handle(
+          _recordVersionMeta,
+          recordVersion.isAcceptableOrUnknown(
+              data['record_version']!, _recordVersionMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -166,6 +194,10 @@ class $QazaRecordsTable extends QazaRecords
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
       completionId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}completion_id']),
+      additionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}addition_id']),
+      recordVersion: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}record_version'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -187,6 +219,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   final String status;
   final DateTime? completedAt;
   final String? completionId;
+  final String? additionId;
+  final int recordVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
   const QazaRecordRow(
@@ -197,6 +231,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       required this.status,
       this.completedAt,
       this.completionId,
+      this.additionId,
+      required this.recordVersion,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -213,6 +249,10 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
     if (!nullToAbsent || completionId != null) {
       map['completion_id'] = Variable<String>(completionId);
     }
+    if (!nullToAbsent || additionId != null) {
+      map['addition_id'] = Variable<String>(additionId);
+    }
+    map['record_version'] = Variable<int>(recordVersion);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -231,6 +271,10 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       completionId: completionId == null && nullToAbsent
           ? const Value.absent()
           : Value(completionId),
+      additionId: additionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionId),
+      recordVersion: Value(recordVersion),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -247,6 +291,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       status: serializer.fromJson<String>(json['status']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
       completionId: serializer.fromJson<String?>(json['completionId']),
+      additionId: serializer.fromJson<String?>(json['additionId']),
+      recordVersion: serializer.fromJson<int>(json['recordVersion']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -262,6 +308,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       'status': serializer.toJson<String>(status),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
       'completionId': serializer.toJson<String?>(completionId),
+      'additionId': serializer.toJson<String?>(additionId),
+      'recordVersion': serializer.toJson<int>(recordVersion),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -275,6 +323,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           String? status,
           Value<DateTime?> completedAt = const Value.absent(),
           Value<String?> completionId = const Value.absent(),
+          Value<String?> additionId = const Value.absent(),
+          Value<int> recordVersion = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       QazaRecordRow(
@@ -286,6 +336,9 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
         completionId:
             completionId.present ? completionId.value : this.completionId,
+        additionId: additionId.present ? additionId.value : this.additionId,
+        recordVersion:
+            recordVersion.present ? recordVersion.value : this.recordVersion,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -304,6 +357,11 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
       completionId: data.completionId.present
           ? data.completionId.value
           : this.completionId,
+      additionId:
+          data.additionId.present ? data.additionId.value : this.additionId,
+      recordVersion: data.recordVersion.present
+          ? data.recordVersion.value
+          : this.recordVersion,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -319,6 +377,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           ..write('status: $status, ')
           ..write('completedAt: $completedAt, ')
           ..write('completionId: $completionId, ')
+          ..write('additionId: $additionId, ')
+          ..write('recordVersion: $recordVersion, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -326,8 +386,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, prayerType,
-      originalDate, status, completedAt, completionId, createdAt, updatedAt);
+  int get hashCode => Object.hash(id, userId, prayerType, originalDate, status,
+      completedAt, completionId, additionId, recordVersion, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -339,6 +399,8 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
           other.status == this.status &&
           other.completedAt == this.completedAt &&
           other.completionId == this.completionId &&
+          other.additionId == this.additionId &&
+          other.recordVersion == this.recordVersion &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -351,6 +413,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
   final Value<String> status;
   final Value<DateTime?> completedAt;
   final Value<String?> completionId;
+  final Value<String?> additionId;
+  final Value<int> recordVersion;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -362,6 +426,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     this.status = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.completionId = const Value.absent(),
+    this.additionId = const Value.absent(),
+    this.recordVersion = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -374,6 +440,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     required String status,
     this.completedAt = const Value.absent(),
     this.completionId = const Value.absent(),
+    this.additionId = const Value.absent(),
+    this.recordVersion = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -392,6 +460,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     Expression<String>? status,
     Expression<DateTime>? completedAt,
     Expression<String>? completionId,
+    Expression<String>? additionId,
+    Expression<int>? recordVersion,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -404,6 +474,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       if (status != null) 'status': status,
       if (completedAt != null) 'completed_at': completedAt,
       if (completionId != null) 'completion_id': completionId,
+      if (additionId != null) 'addition_id': additionId,
+      if (recordVersion != null) 'record_version': recordVersion,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -418,6 +490,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       Value<String>? status,
       Value<DateTime?>? completedAt,
       Value<String?>? completionId,
+      Value<String?>? additionId,
+      Value<int>? recordVersion,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -429,6 +503,8 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
       status: status ?? this.status,
       completedAt: completedAt ?? this.completedAt,
       completionId: completionId ?? this.completionId,
+      additionId: additionId ?? this.additionId,
+      recordVersion: recordVersion ?? this.recordVersion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -459,6 +535,12 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
     if (completionId.present) {
       map['completion_id'] = Variable<String>(completionId.value);
     }
+    if (additionId.present) {
+      map['addition_id'] = Variable<String>(additionId.value);
+    }
+    if (recordVersion.present) {
+      map['record_version'] = Variable<int>(recordVersion.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -480,6 +562,9 @@ class QazaRecordsCompanion extends UpdateCompanion<QazaRecordRow> {
           ..write('originalDate: $originalDate, ')
           ..write('status: $status, ')
           ..write('completedAt: $completedAt, ')
+          ..write('completionId: $completionId, ')
+          ..write('additionId: $additionId, ')
+          ..write('recordVersion: $recordVersion, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
