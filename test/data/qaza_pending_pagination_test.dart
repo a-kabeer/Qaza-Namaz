@@ -85,8 +85,8 @@ void main() {
   );
 
   test('Pending keyset cursor requires the date/id pair', () async {
-    expect(
-      () => database.qazaRecordsDao.getKeysetPage(
+    await expectLater(
+      database.qazaRecordsDao.getKeysetPage(
         userId: 'local',
         status: QazaStatus.pending.name,
         afterOriginalDate: DateTime(2026, 9, 10),
@@ -94,8 +94,8 @@ void main() {
       throwsArgumentError,
     );
 
-    expect(
-      () => database.qazaRecordsDao.getKeysetPage(
+    await expectLater(
+      database.qazaRecordsDao.getKeysetPage(
         userId: 'local',
         status: QazaStatus.pending.name,
         afterId: 'a',
