@@ -287,7 +287,9 @@ class OfflineFirstQazaRepository
       userId: userId,
       recordIds: [recordId],
       completedAt: completedAt,
-      completionId: completionId,
+      completionIds: completionId == null
+          ? null
+          : <String, String>{recordId: completionId},
     );
 
     if (changed.isNotEmpty) {
