@@ -667,6 +667,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     final batch = await completeSelectedWithUndo();
     return batch?.count ?? 0;
   }
+}
 
 final qazaTrackerControllerProvider =
     AutoDisposeNotifierProviderFamily<QazaTrackerController, QazaTrackerState, String?>(
