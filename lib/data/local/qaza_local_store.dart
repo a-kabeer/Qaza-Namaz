@@ -133,6 +133,9 @@ abstract class QazaLocalStore {
     if (to != null && toExclusive != null) {
       throw ArgumentError('Provide either to or toExclusive, not both.');
     }
+    if (status == QazaStatus.completed && to != null) {
+      throw ArgumentError('Completed pages require toExclusive.');
+    }
     if (toExclusive != null &&
         (status != QazaStatus.completed ||
             from == null ||
