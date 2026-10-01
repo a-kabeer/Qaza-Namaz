@@ -224,11 +224,11 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
     expect(source, contains('class _FilterSheet extends ConsumerWidget {'));
-    expect(source, contains('_FilterSheet(additionId: additionId)'));
+    expect(source, contains('_FilterSheet(additionId: state.additionId)'));
     expect(
       source,
       contains(
-        'builder: (context) => _FilterSheet(additionId: additionId),',
+        'builder: (context) => _FilterSheet(additionId: state.additionId),',
       ),
     );
     expect(
@@ -382,6 +382,8 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final service =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();
+    final dao =
+        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
     final controller =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
 
@@ -389,8 +391,8 @@ void main() {
     expect(source, contains('confirmDestructive'));
     expect(controller, contains('markCompletedAsPending'));
     expect(service, contains('Future<bool> markCompletedAsPending'));
-    expect(service, contains('clearCompletedAt: true'));
-    expect(service, contains('clearCompletionId: true'));
+    expect(dao, contains('completedAt: const Value(null)'));
+    expect(dao, contains('completionId: const Value(null)'));
   });
 
   test('Home and tracker both depend on the shared completion controller', () {
