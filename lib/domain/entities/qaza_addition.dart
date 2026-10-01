@@ -9,7 +9,7 @@ extension QazaAdditionModeX on QazaAdditionMode {
       QazaAdditionMode.values.firstWhere(
         (value) => value.name == name,
         orElse: () => throw StateError(
-          'Unknown Qaza addition mode "' + name + '".',
+          'Unknown Qaza addition mode "$name".',
         ),
       );
 }
@@ -24,9 +24,7 @@ class QazaRecordKey {
   final PrayerType prayerType;
 
   String get stable =>
-      QazaDate.normalize(date).millisecondsSinceEpoch.toString() +
-      ':' +
-      prayerType.name;
+      '${QazaDate.normalize(date).millisecondsSinceEpoch}:$prayerType.name';
 
   @override
   bool operator ==(Object other) =>
