@@ -1190,11 +1190,9 @@ class _FilterSheet extends ConsumerWidget {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         children: [
-          Text(
-            state.statusFilter == QazaStatusFilter.completed
-                ? 'Completed Date'
-                : 'Qaza Date',
-            style: Theme.of(context).textTheme.titleMedium,
+          const Text(
+            'Prayer',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Wrap(
