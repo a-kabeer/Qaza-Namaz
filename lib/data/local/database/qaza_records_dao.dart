@@ -541,8 +541,25 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
 
-  Future<int> insertRecord(QazaRecordsCompanion record) =>
-      into(qazaRecords).insert(record, mode: InsertMode.insertOrIgnore);
+  Future<bool> _insertIfAbsent(QazaRecordsCompanion record) async {
+    final existing = await (select(qazaRecords)
+          ..where(
+            (row) =>
+                row.id.equals(record.id.value) |
+                (row.userId.equals(record.userId.value) &
+                    row.prayerType.equals(record.prayerType.value) &
+                    row.originalDate.equals(record.originalDate.value)),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+    if (existing != null) return false;
+
+    await into(qazaRecords).insert(record);
+    return true;
+  }
+
+  Future<int> insertRecord(QazaRecordsCompanion record) async =>
+      (await _insertIfAbsent(record)) ? 1 : 0;
 
   Future<void> upsertRecords(List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return;
@@ -562,9 +579,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (records.isEmpty) return const <String>[];
     final insertedIds = <String>[];
     for (final record in records) {
-      final result = await into(qazaRecords)
-          .insert(record, mode: InsertMode.insertOrIgnore);
-      if (result > 0) insertedIds.add(record.id.value);
+      if (await _insertIfAbsent(record)) {
+        insertedIds.add(record.id.value);
+      }
     }
     return insertedIds;
   }
@@ -577,9 +594,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return transaction(() async {
       var inserted = 0;
       for (final record in records) {
-        final result = await into(qazaRecords)
-            .insert(record, mode: InsertMode.insertOrIgnore);
-        if (result > 0) inserted++;
+        if (await _insertIfAbsent(record)) inserted++;
       }
       return inserted;
     });

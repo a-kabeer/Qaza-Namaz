@@ -56,10 +56,8 @@ void main() {
       contains(
         'qazaTrackerControllerProvider(null).notifier',
       ),
-      contains(
-        'exitSelectionMode();',
-      ),
     );
+    expect(source, contains('exitSelectionMode();'));
     expect(
       source,
       contains('WorkspaceDestination.home;'),
