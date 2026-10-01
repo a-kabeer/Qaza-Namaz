@@ -1645,6 +1645,8 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adding Qaza...'**
   String get addQazaInProgress;
+  String get qazaImportAdded;
+  String get qazaImportSkipped;
 
   /// No description provided for @addQazaCreatedTitle.
   ///
