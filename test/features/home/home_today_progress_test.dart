@@ -357,10 +357,7 @@ void main() {
       find.byKey(const Key('home_today_progress')),
     );
     expect(after.height, closeTo(before.height, 0.1));
-    final complete = tester.widget<FilledButton>(
-      find.byKey(const Key('home_complete_oldest_qaza')),
-    );
-    expect(complete.onPressed, isNull);
+    expect(find.byType(HomeNextQazaSkeleton), findsNothing);
 
     refreshCompleter.complete(record);
     await tester.pumpAndSettle();
