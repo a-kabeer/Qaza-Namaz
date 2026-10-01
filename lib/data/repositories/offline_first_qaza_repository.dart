@@ -328,19 +328,19 @@ class OfflineFirstQazaRepository
   }
 
   @override
-  Future<int> undoCompletions({
+  Future<List<String>> undoCompletions({
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) async {
     _validateActive(userId);
-    if (expectedCompletionIds.isEmpty) return 0;
+    if (expectedCompletionIds.isEmpty) return const <String>[];
     final changed = await _localStore.undoCompletions(
       userId: userId,
       expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
-    return changed.length;
+    return changed.map((record) => record.id).toList(growable: false);
   }
 
   @override
