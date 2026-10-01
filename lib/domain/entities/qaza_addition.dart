@@ -95,7 +95,7 @@ class QazaAdditionInputSnapshot {
         (rawPrayers is List ? rawPrayers : const <dynamic>[]).map(
           (value) => PrayerType.values.firstWhere(
             (prayer) => prayer.name == value,
-            orElse: () => throw StateError('Unknown prayer type "' + value.toString() + '".'),
+            orElse: () => throw StateError('Unknown prayer type "$value".'),
           ),
         ),
       ),
