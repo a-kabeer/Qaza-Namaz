@@ -32,6 +32,18 @@ class QazaCompletionService {
       completedAt: completedAt,
     );
   }
+
+  Future<QazaCompletionBatchReceipt> completeRecordsWithReceipt({
+    required String userId,
+    required List<String> recordIds,
+    required DateTime completedAt,
+  }) {
+    return _qazaService.completeRecordsWithReceipt(
+      userId: userId,
+      recordIds: recordIds,
+      completedAt: completedAt,
+    );
+  }
 }
 
 final qazaCompletionServiceProvider = Provider<QazaCompletionService>(
