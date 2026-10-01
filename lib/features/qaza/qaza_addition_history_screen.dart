@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/widgets/app_scaffold.dart';
-import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_addition.dart';
 import 'qaza_navigation.dart';
@@ -241,7 +240,7 @@ class _RecentAdditions extends StatelessWidget {
     if (state.additions.isEmpty) {
       return ListView(
         children: [
-          SizedBox(height: 120),
+          const SizedBox(height: 120),
           const Center(child: Text('No Qaza additions yet.'))
         ],
       );
