@@ -120,19 +120,18 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       throw ArgumentError('from must be before toExclusive');
     }
     if (completedMode) {
-      if ((afterOriginalDate != null && beforeOriginalDate != null) ||
+      if ((afterCompletedAt == null) != (afterId == null) ||
+          (beforeCompletedAt == null) != (beforeId == null) ||
+          (afterCompletedAt != null && beforeCompletedAt != null) ||
           afterOriginalDate != null ||
-          beforeOriginalDate != null ||
-          ((afterCompletedAt == null) != (afterId == null)) ||
-          ((beforeCompletedAt == null) != (beforeId == null)) ||
-          (afterCompletedAt != null && beforeCompletedAt != null)) {
+          beforeOriginalDate != null) {
         throw ArgumentError('Invalid completed pagination cursor');
       }
     } else {
       if ((afterOriginalDate == null) != (afterId == null) ||
           (beforeOriginalDate == null) != (beforeId == null) ||
-          (afterCompletedAt != null) ||
-          (beforeCompletedAt != null) ||
+          afterCompletedAt != null ||
+          beforeCompletedAt != null ||
           (afterOriginalDate != null && beforeOriginalDate != null)) {
         throw ArgumentError('Invalid pending pagination cursor');
       }
