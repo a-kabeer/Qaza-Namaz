@@ -208,12 +208,14 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       final expiry = DateTime(2026, 9, 26, 10, 59, 59);
       final batch = QazaUndoBatch(
+        sessionId: 'session-1',
         entries: [
           QazaUndoEntry(
             recordId: 'record-1',
             completionId: 'completion-1',
             prayerType: PrayerType.fajr,
             originalDate: DateTime(2026, 9, 1),
+            completedAt: DateTime(2026, 9, 26, 11, 0),
           ),
         ],
         expiresAt: expiry,
