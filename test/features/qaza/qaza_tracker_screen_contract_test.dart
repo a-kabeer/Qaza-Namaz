@@ -344,6 +344,77 @@ void main() {
     expect(controller, isNot(contains('deleteSelectedWithRecovery')));
   });
 
+  test('Pending pagination loading rows are rendered only while load-more is active', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        'itemCount: state.records.length + (state.loadingMore ? 1 : 0),',
+      ),
+    );
+    expect(
+      source,
+      isNot(
+        contains(
+          'itemCount: state.records.length + (state.hasMore ? 1 : 0),',
+        ),
+      ),
+    );
+  });
+
+  test('Pending pagination does not start while refresh or mutation is active', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    final start = source.indexOf('Future<void> loadMore() async {');
+    final end = source.indexOf(
+      '  void setStatusFilter(QazaStatusFilter filter) {',
+      start,
+    );
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final method = source.substring(start, end);
+    expect(method, contains('state.refreshing'));
+    expect(method, contains('state.completing'));
+    expect(method, contains('state.recordMutating'));
+  });
+
+  test('Batch Undo cleans the temporary selection before dismissing the sheet', () {
+    final source =
+        File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
+
+    final selectedStart = source.indexOf('Future<void> _undoSelected() async {');
+    final selectedEnd = source.indexOf(
+      '  Future<void> _undoAll() async {',
+      selectedStart,
+    );
+    expect(selectedStart, greaterThanOrEqualTo(0));
+    expect(selectedEnd, greaterThan(selectedStart));
+
+    final selected = source.substring(selectedStart, selectedEnd);
+    expect(
+      selected.indexOf('cancelSelection('),
+      lessThan(selected.indexOf('Navigator.of(context).pop();')),
+    );
+
+    final allStart = source.indexOf('Future<void> _undoAll() async {', selectedEnd);
+    final allEnd = source.indexOf(
+      '  Future<void> _refreshAfterUndo() async {',
+      allStart,
+    );
+    expect(allStart, greaterThanOrEqualTo(0));
+    expect(allEnd, greaterThan(allStart));
+
+    final all = source.substring(allStart, allEnd);
+    expect(
+      all.indexOf('cancelSelection('),
+      lessThan(all.indexOf('Navigator.of(context).pop();')),
+    );
+  });
+
   test('Qaza Undo feedback uses the global Undo Snackbar service', () {
     final source =
         File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
