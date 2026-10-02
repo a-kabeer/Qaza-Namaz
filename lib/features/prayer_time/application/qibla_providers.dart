@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geomag/geomag.dart';
 
 import '../data/device_compass_service.dart';
-import '../domain/prayer_time.dart';
 import '../domain/qibla_direction_service.dart';
 import 'prayer_time_providers.dart';
 
