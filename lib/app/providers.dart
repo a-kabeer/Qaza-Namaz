@@ -127,7 +127,7 @@ final qazaProfilePlanMutationRepositoryProvider =
       'The active Qaza repository does not support profile-plan mutations.',
     );
   }
-  return repository;
+  return repository as QazaProfilePlanMutationRepository;
 });
 
 final diagnosticsProvider = Provider<DiagnosticsService>(
