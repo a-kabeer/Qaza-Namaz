@@ -44,7 +44,7 @@ class MemoryQazaRepository implements QazaRepository {
   String key(QazaRecord record) => QazaPrayerKey.fromRecord(record).value;
 
   @override
-  Future<List<QazaRecord>> getRecords({String? userId, PrayerType? prayerType, QazaStatus? status, required String userId}) async => records.where((r) => r.userId == userId && (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status)).toList();
+  Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async => records.where((r) => r.userId == userId && (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status)).toList();
 
   @override
   Future<QazaPage> getPage({required String userId, int limit = 50, PrayerType? prayerType, Iterable<PrayerType>? prayerTypes, QazaStatus? status, String? additionId, DateTime? from, DateTime? to, DateTime? toExclusive, DateTime? afterOriginalDate, String? afterId, DateTime? beforeOriginalDate, String? beforeId, DateTime? afterCompletedAt, DateTime? beforeCompletedAt, bool descending = false}) async {
