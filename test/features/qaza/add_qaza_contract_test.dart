@@ -268,6 +268,21 @@ void main() {
     expect(timeline, contains('onTap: onTap'));
   });
 
+  test('Restricted Time navigation does not mutate Qaza data', () {
+    final source =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _RestrictedTimeAddQazaRow');
+    final end = source.indexOf('class _ModeSelector', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final row = source.substring(start, end);
+    expect(row, contains('openPrayerTimeFromRoute(context, ref)'));
+    expect(row, isNot(contains('addQazaControllerProvider.notifier')));
+    expect(row, isNot(contains('qazaImportProvider')));
+    expect(row, isNot(contains('qazaServiceProvider')));
+  });
+
   test('AppScaffold supports reusable bottom actions', () {
     final source =
         File('lib/core/widgets/app_scaffold.dart').readAsStringSync();
