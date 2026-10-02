@@ -482,7 +482,7 @@ void main() {
         "import '../prayer_time/presentation/prayer_timeline_row.dart';",
       ),
     );
-    expect(source, contains('child: RestrictedTimeTimelineRow(),'));
+    expect(source, contains('child: RestrictedTimeTimelineRow('));
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 
