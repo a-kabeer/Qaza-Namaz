@@ -338,6 +338,24 @@ List<Widget> _dateWidgets(
     ];
   }
 
+  if (snapshot.mode == QazaAdditionMode.single &&
+      snapshot.selectedDates.length == 1) {
+    final date = snapshot.selectedDates.first;
+    return [
+      Text(
+        _gregorianDate(context, date),
+        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        HijriDateService.format(date, l10n),
+        style: textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ];
+  }
+
   return snapshot.selectedDates
       .map(
         (date) => Padding(
