@@ -629,14 +629,15 @@ class _PrayerTimeFocusCard extends StatelessWidget {
             width: double.infinity,
             child: FittedBox(
               fit: BoxFit.scaleDown,
-            alignment: Alignment.center,
-            child: Text(
-              countdown,
-              maxLines: 1,
-              softWrap: false,
-              textAlign: TextAlign.center,
-              style: AppTheme.numericLarge.copyWith(
-                color: scheme.onPrimaryContainer,
+              alignment: Alignment.center,
+              child: Text(
+                countdown,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
+                style: AppTheme.numericLarge.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
               ),
             ),
           ),
