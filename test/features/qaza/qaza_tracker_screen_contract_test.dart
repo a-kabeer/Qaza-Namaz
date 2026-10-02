@@ -270,7 +270,7 @@ void main() {
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
     final start = source.indexOf('Future<void> refresh() async {');
     final end = source.indexOf(
-      '  /// Reads a bounded page using the status-specific fixed ordering.',
+      'Future<QazaPage> _readPage({',
       start,
     );
 
@@ -334,7 +334,7 @@ void main() {
   });
 
 
-  test('Qaza workspace exposes a Pending/Completed switch and no sorting control', () {
+  test('Qaza workspace exposes shared Pending/Completed sorting', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final controller =
@@ -343,22 +343,28 @@ void main() {
     expect(source, contains("key: const Key('qaza_status_switch')"));
     expect(source, contains('QazaStatusFilter.pending'));
     expect(source, contains('QazaStatusFilter.completed'));
-    expect(source, isNot(contains('QazaSortOrder')));
-    expect(source, isNot(contains('SegmentedButton<QazaSortOrder>')));
-    expect(controller, isNot(contains('setSortOrder')));
-    expect(controller, isNot(contains('QazaSortOrder')));
+    expect(source, contains('SegmentedButton<QazaSortOrder>'));
+    expect(source, contains('l10n.qazaSortOldestFirst'));
+    expect(source, contains('l10n.qazaSortNewestFirst'));
+    expect(controller, contains('setSortOrder'));
+    expect(controller, contains('QazaSortOrder'));
   });
 
-  test('Completed workspace uses completion-time keyset paging and fixed newest-first order', () {
+  test('Completed workspace sorts by completion time in either direction', () {
     final source =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
     final dao =
         File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
 
-    expect(source, contains('beforeCompletedAt: completed ? after?.completedAt : null'));
-    expect(source, contains('status: state.statusFilter.status'));
+    expect(source, contains('afterCompletedAt:'));
+    expect(source, contains('beforeCompletedAt:'));
+    expect(source, contains('completed && oldestFirst'));
+    expect(source, contains('completed && !oldestFirst'));
+    expect(source, contains('descending: !oldestFirst'));
     expect(dao, contains('OrderingTerm.desc(r.completedAt)'));
+    expect(dao, contains('OrderingTerm.asc(r.completedAt)'));
     expect(dao, contains('OrderingTerm.desc(r.id)'));
+    expect(dao, contains('OrderingTerm.asc(r.id)'));
     expect(dao, contains('row.completedAt.isNotNull()'));
   });
 
@@ -435,7 +441,7 @@ void main() {
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
     expect(service, contains('Never clear the store here'));
   });
-  test('Completed paging uses both completion timestamp and id cursor', () {
+  test('Completed paging uses completion timestamp and id in newest-first mode', () {
     final controller =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
     final dao =
@@ -443,17 +449,17 @@ void main() {
 
     expect(
       controller,
-      contains('beforeCompletedAt: completed ? after?.completedAt : null'),
+      contains('beforeCompletedAt:'),
     );
     expect(
       controller,
-      contains('beforeId: completed ? after?.id : null'),
+      contains('beforeId: oldestFirst ? null : after?.id'),
     );
     expect(
       controller,
-      contains('toExclusive: state.statusFilter == QazaStatusFilter.completed'),
+      contains('toExclusive: completed && state.to != null'),
     );
-    expect(dao, contains('row.completedAt.isSmallerThanValue(toExclusive)'));
+    expect(dao, contains('row.completedAt.isSmallerThanValue(beforeCompletedAt)'));
     expect(dao, contains('row.id.isSmallerThanValue(beforeId!)'));
   });
 
