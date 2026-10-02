@@ -238,6 +238,67 @@ void main() {
     expect(qaza.records, isEmpty);
   });
 
+  test('explicit Qaza record identity edits detach profile provenance', () async {
+    final qaza = MemoryQazaRepository();
+    final service = QazaService(qaza);
+    final record = profileRecord(
+      id: 'editable',
+      prayer: PrayerType.fajr,
+      date: DateTime(2020, 1, 1),
+      revision: 'revision',
+      fingerprint: 'qazaPlanV2Fixed360|start|end',
+    );
+    await qaza.addRecord(record);
+
+    await service.updateRecord(
+      userId: UserProfile.localLedgerUserId,
+      record: record.copyWith(originalDate: DateTime(2020, 1, 2)),
+    );
+
+    expect(qaza.records.single.profilePlanRevisionId, isNull);
+    expect(qaza.records.single.profilePlanFingerprint, isNull);
+  });
+
+  test('Drift removal queues an idempotent delete outbox operation', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final store = DriftQazaLocalStore(database: database);
+    final record = profileRecord(
+      id: 'removable',
+      prayer: PrayerType.fajr,
+      date: DateTime(2020, 1, 1),
+      revision: 'revision',
+      fingerprint: 'qazaPlanV2Fixed360|start|end',
+    );
+    await store.appendRecords(UserProfile.localLedgerUserId, [record]);
+
+    final first = await store.applyProfilePlanChanges(
+      userId: UserProfile.localLedgerUserId,
+      additions: const [],
+      removalIds: const ['removable'],
+      newPlanKeys: const {},
+      expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
+    );
+    expect(first.removed, hasLength(1));
+
+    final second = await store.applyProfilePlanChanges(
+      userId: UserProfile.localLedgerUserId,
+      additions: const [],
+      removalIds: const ['removable'],
+      newPlanKeys: const {},
+      expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
+    );
+    expect(second.removed, isEmpty);
+
+    final outbox = await store.loadOutbox(UserProfile.localLedgerUserId);
+    final deletes = outbox.where(
+      (operation) =>
+          operation.type == SyncOpType.delete &&
+          operation.targetRecordId == 'removable',
+    );
+    expect(deletes, hasLength(1));
+    await database.close();
+  });
+
   test('provenance survives JSON and Drift persistence reload', () async {
     final record = profileRecord(id: 'persisted', prayer: PrayerType.fajr, date: DateTime(2020, 1, 1), revision: 'revision', fingerprint: 'qazaPlanV2Fixed360|start|end');
     final restored = QazaRecord.fromJson(record.toJson());
