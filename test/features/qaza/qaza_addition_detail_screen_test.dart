@@ -144,8 +144,13 @@ void main() {
     for (var i = 1; i < positions.length; i++) {
       expect(_isAfter(positions[i - 1], positions[i]), isTrue);
     }
+    final context = tester.element(find.byType(QazaAdditionDetailScreen));
+    final l10n = AppLocalizations.of(context);
     expect(find.text('Witr'), findsOneWidget);
-    expect(find.text('4 prayers'), findsOneWidget);
+    expect(
+      find.text('4 ${l10n.addQazaPrayersLabel}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Urdu locale uses localized prayer names', (tester) async {
