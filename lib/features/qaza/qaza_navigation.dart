@@ -64,6 +64,13 @@ void openPrayerTime(WidgetRef ref) {
       WorkspaceDestination.prayerTime;
 }
 
+/// Closes a pushed Qaza route and returns to the existing Prayer Time workspace.
+void openPrayerTimeFromRoute(BuildContext context, WidgetRef ref) {
+  final navigator = Navigator.of(context);
+  if (navigator.canPop()) navigator.pop();
+  openPrayerTime(ref);
+}
+
 /// Opens the existing Qaza workspace with Completed selected.
 void openQazaCompleted(WidgetRef ref) {
   ref.read(qazaTrackerFilterRequestProvider.notifier).state =
