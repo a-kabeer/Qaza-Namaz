@@ -137,11 +137,9 @@ void main() {
     expect(screen, contains('l10n.qazaSortNewestFirst'));
     expect(screen, contains("key: const Key('qaza_tracker_sort')"));
     expect(screen, contains('EdgeInsetsDirectional.only'));
-    expect(
-      screen,
-      contains(
-        '_FilterSortBar(state: state, controller: controller,',
-      ),
-    );
+    expect(screen, contains('_FilterSortBar('));
+    expect(screen, contains('state: state'));
+    expect(screen, contains('controller: controller'));
+    expect(screen, contains('onFilterTap: () => _openFilters(context)'));
   });
 }
