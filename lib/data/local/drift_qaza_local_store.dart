@@ -202,6 +202,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     return _database.transaction(() async {
       final changed = await _database.qazaRecordsDao.updateRecord(record);
       if (!changed) return false;
+      await _syncProfilePlanProvenance(record);
       await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
       return true;
     });
@@ -222,6 +223,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
         id: recordId,
       );
       if (deleted == 0) return false;
+      await _deleteProfilePlanProvenance(userId, [recordId]);
       await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
       return true;
     });
@@ -259,6 +261,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
         userId: userId,
         records: records.map(_toCompanion).toList(growable: false),
       );
+      await _replaceProfilePlanProvenance(userId, records);
       await _database.syncOutboxDao.removeAll(userId: userId);
       await _database.syncOutboxDao.putAll(
         ops.map(_toOpCompanion).toList(growable: false),
