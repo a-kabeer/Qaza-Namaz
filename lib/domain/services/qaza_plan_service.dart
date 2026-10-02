@@ -50,11 +50,6 @@ class QazaPlanService {
       pubertyAge: pubertyAge,
       startPrayingAge: startPrayingAge,
     );
-    if (totalDays == 0) {
-      // Keep [endDate] equal to [startDate] for an empty [startDate, endDate)
-      // plan.
-    }
-
     final end = LocalDateService.addCalendarDays(start, totalDays);
     if (end != startPrayingDate ||
         LocalDateService.compareCalendarDates(end, start) < 0) {
