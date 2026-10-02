@@ -1088,6 +1088,57 @@ class _CompletedRecordRow extends StatelessWidget {
   }
 }
 
+class _CompletedBatchActionBar extends ConsumerWidget {
+  const _CompletedBatchActionBar({
+    required this.selectedCount,
+    required this.busy,
+    required this.onMarkPending,
+    required this.onClear,
+  });
+
+  final int selectedCount;
+  final bool busy;
+  final Future<void> Function(WidgetRef ref) onMarkPending;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Material(
+      key: const Key('qaza_completed_batch_action_bar'),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+      elevation: 3,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              TextButton(
+                key: const Key('qaza_completed_clear_selection'),
+                onPressed: busy ? null : onClear,
+                child: const Text('Clear'),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton(
+                  key: const Key('qaza_completed_mark_pending'),
+                  onPressed: busy ? null : () => onMarkPending(ref),
+                  child: Text('Mark as Pending ($selectedCount)'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CompletedRecordDetails extends ConsumerWidget {
   const _CompletedRecordDetails({
     required this.record,
