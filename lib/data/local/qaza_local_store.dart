@@ -2,6 +2,8 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
+import '../../domain/services/qaza_availability_service.dart';
 import '../../core/utils/qaza_completion_id.dart';
 
 /// Remote operations the outbox can replay.
