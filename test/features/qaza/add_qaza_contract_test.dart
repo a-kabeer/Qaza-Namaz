@@ -249,6 +249,23 @@ void main() {
     expect(tracker, contains('state.selectionMode ? null : const AddQazaFab()'));
   });
 
+  test('Add Qaza exposes the shared Restricted Time row and Prayer Time navigation', () {
+    final source =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final navigation =
+        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
+    final timeline =
+        File('lib/features/prayer_time/presentation/prayer_timeline_row.dart')
+            .readAsStringSync();
+
+    expect(source, contains('qazaCompletionRestrictedProvider'));
+    expect(source, contains('_RestrictedTimeAddQazaRow'));
+    expect(source, contains('RestrictedTimeTimelineRow('));
+    expect(source, contains('onTap: () => openPrayerTime(ref)'));
+    expect(navigation, contains('WorkspaceDestination.prayerTime'));
+    expect(timeline, contains('onTap: onTap'));
+  });
+
   test('AppScaffold supports reusable bottom actions', () {
     final source =
         File('lib/core/widgets/app_scaffold.dart').readAsStringSync();
