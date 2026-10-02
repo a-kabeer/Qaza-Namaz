@@ -14,6 +14,8 @@ class QazaPage {
   DateTime? get nextCompletedAt =>
       records.isEmpty ? null : records.last.completedAt;
   String? get nextId => records.isEmpty ? null : records.last.id;
+  PrayerType? get nextPrayerType =>
+      records.isEmpty ? null : records.last.prayerType;
 }
 
 abstract interface class QazaRepository {
@@ -42,8 +44,10 @@ abstract interface class QazaRepository {
     DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
+    PrayerType? afterPrayerType,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    PrayerType? beforePrayerType,
     DateTime? afterCompletedAt,
     DateTime? beforeCompletedAt,
     bool descending = false,
@@ -68,6 +72,7 @@ abstract interface class QazaRepository {
 
     final result = <QazaRecord>[];
     DateTime? afterDate;
+    PrayerType? afterPrayerType;
     String? afterId;
     while (remaining.isNotEmpty) {
       final page = await getPage(
@@ -76,6 +81,7 @@ abstract interface class QazaRepository {
         status: null,
         afterOriginalDate: afterDate,
         afterId: afterId,
+        afterPrayerType: afterPrayerType,
       );
       if (page.records.isEmpty) break;
       for (final record in page.records) {
@@ -84,6 +90,7 @@ abstract interface class QazaRepository {
       if (!page.hasMore) break;
       afterDate = page.nextOriginalDate;
       afterId = page.nextId;
+      afterPrayerType = page.nextPrayerType;
     }
     return result;
   }
@@ -102,6 +109,7 @@ abstract interface class QazaRepository {
 
     final result = <QazaRecord>[];
     DateTime? afterDate;
+    PrayerType? afterPrayerType;
     String? afterId;
 
     while (remaining.isNotEmpty) {
@@ -111,6 +119,7 @@ abstract interface class QazaRepository {
         status: QazaStatus.pending,
         afterOriginalDate: afterDate,
         afterId: afterId,
+        afterPrayerType: afterPrayerType,
       );
       if (page.records.isEmpty) break;
 
@@ -121,6 +130,7 @@ abstract interface class QazaRepository {
       if (!page.hasMore) break;
       afterDate = page.nextOriginalDate;
       afterId = page.nextId;
+      afterPrayerType = page.nextPrayerType;
     }
 
     return result;
