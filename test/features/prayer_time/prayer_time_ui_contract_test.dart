@@ -32,6 +32,7 @@ void main() {
     expect(source, contains('QiblaDialPainter('));
     expect(source, contains("Key('qibla_summary_compass')"));
     expect(source, contains('showRelativeQibla: live'));
+    expect(source, contains('showCardinals: live'));
   });
 
   test('Qibla dial contains a Kaaba marker and supports static and live modes', () {
@@ -42,6 +43,7 @@ void main() {
     expect(source, contains('class QiblaDialPainter extends CustomPainter {'));
     expect(source, contains('_drawKaaba('));
     expect(source, contains('showRelativeQibla'));
+    expect(source, contains('showCardinals'));
     expect(source, contains('canvas.rotate(-heading * math.pi / 180)'));
     expect(source, contains('markerCenter'));
   });
