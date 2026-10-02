@@ -342,7 +342,7 @@ class _RestrictedTimeAddQazaRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return RestrictedTimeTimelineRow(
-      onTap: () => openPrayerTime(ref),
+      onTap: () => openPrayerTimeFromRoute(context, ref),
     );
   }
 }
