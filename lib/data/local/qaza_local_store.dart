@@ -674,4 +674,139 @@ abstract class QazaLocalStore {
     await saveRecords(userId, records);
     await saveOutbox(userId, ops);
   }
+
+  /// Conservative fallback for lightweight local stores and tests. Production
+  /// Drift storage overrides this with a single SQLite transaction.
+  Future<QazaProfilePlanMutationResult> applyProfilePlanChanges({
+    required String userId,
+    required List<QazaRecord> additions,
+    required List<String> removalIds,
+    required Set<String> newPlanKeys,
+    required String expectedPreviousPlanFingerprint,
+  }) async {
+    if (expectedPreviousPlanFingerprint.isEmpty) {
+      throw ArgumentError.value(
+        expectedPreviousPlanFingerprint,
+        'expectedPreviousPlanFingerprint',
+      );
+    }
+
+    final snapshot = await load();
+    final current = List<QazaRecord>.of(
+      snapshot.recordsByUser[userId] ?? const <QazaRecord>[],
+    );
+    final byId = <String, QazaRecord>{
+      for (final record in current) record.id: record,
+    };
+    final byKey = <String, QazaRecord>{
+      for (final record in current)
+        QazaPrayerKey.fromRecord(record).value: record,
+    };
+
+    final removed = <QazaRecord>[];
+    for (final id in removalIds.toSet()) {
+      final record = byId[id];
+      if (record == null ||
+          record.status != QazaStatus.pending ||
+          record.profilePlanRevisionId == null ||
+          record.profilePlanFingerprint == null) {
+        continue;
+      }
+      final key = QazaPrayerKey.fromRecord(record).value;
+      if (newPlanKeys.contains(key)) continue;
+      removed.add(record);
+      byId.remove(id);
+      byKey.remove(key);
+    }
+
+    final added = <QazaRecord>[];
+    for (final record in additions) {
+      final key = QazaPrayerKey.fromRecord(record).value;
+      if (byId.containsKey(record.id) || byKey.containsKey(key)) continue;
+      if (record.profilePlanRevisionId == null ||
+          record.profilePlanFingerprint == null) {
+        throw StateError('Profile-generated additions require provenance.');
+      }
+      added.add(record);
+      byId[record.id] = record;
+      byKey[key] = record;
+    }
+
+    final now = DateTime.now();
+    final operations = <PendingSyncOp>[
+      for (final record in added)
+        PendingSyncOp(
+          id: 'profile_add_${record.profilePlanRevisionId}_${record.id}',
+          type: SyncOpType.add,
+          userId: userId,
+          queuedAt: now,
+          record: record,
+          targetRecordId: record.id,
+        ),
+      for (final record in removed)
+        PendingSyncOp(
+          id: 'profile_delete_${record.profilePlanRevisionId}_${record.id}',
+          type: SyncOpType.delete,
+          userId: userId,
+          queuedAt: now,
+          record: record,
+          targetRecordId: record.id,
+        ),
+    ];
+
+    await saveRecordsAndOutbox(
+      userId,
+      byId.values.toList(growable: false),
+      [
+        ...snapshot.outboxByUser[userId] ?? const <PendingSyncOp>[],
+        ...operations,
+      ],
+    );
+
+    return QazaProfilePlanMutationResult(
+      userId: userId,
+      added: List.unmodifiable(added),
+      removed: List.unmodifiable(removed),
+      operationIds: List.unmodifiable(
+        operations.map((operation) => operation.id),
+      ),
+    );
+  }
+
+  Future<void> rollbackProfilePlanChanges(
+    QazaProfilePlanMutationResult mutation,
+  ) async {
+    final snapshot = await load();
+    final current = List<QazaRecord>.of(
+      snapshot.recordsByUser[mutation.userId] ?? const <QazaRecord>[],
+    );
+    final byId = <String, QazaRecord>{
+      for (final record in current) record.id: record,
+    };
+
+    for (final record in mutation.added) {
+      final existing = byId[record.id];
+      if (existing != null &&
+          existing.profilePlanRevisionId == record.profilePlanRevisionId &&
+          existing.profilePlanFingerprint == record.profilePlanFingerprint) {
+        byId.remove(record.id);
+      }
+    }
+    for (final record in mutation.removed) {
+      byId[record.id] = record;
+    }
+
+    final operationIds = mutation.operationIds.toSet();
+    final outbox = (snapshot.outboxByUser[mutation.userId] ??
+            const <PendingSyncOp>[])
+        .where((operation) => !operationIds.contains(operation.id))
+        .toList(growable: false);
+
+    await saveRecordsAndOutbox(
+      mutation.userId,
+      byId.values.toList(growable: false),
+      outbox,
+    );
+  }
+
 }
