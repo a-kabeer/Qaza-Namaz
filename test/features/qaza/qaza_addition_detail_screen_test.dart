@@ -36,11 +36,13 @@ void main() {
     expect(find.byType(Card), findsOneWidget);
     expect(find.text('24 Records'), findsOneWidget);
     expect(find.text('18 Pending · 6 Completed'), findsOneWidget);
-    expect(
-      find.text(MaterialLocalizations.of(context).formatMediumDate(date)),
-      findsOneWidget,
+    final gregorian = find.text(
+      MaterialLocalizations.of(context).formatMediumDate(date),
     );
-    expect(find.text(HijriDateService.format(date, l10n)), findsOneWidget);
+    final hijri = find.text(HijriDateService.format(date, l10n));
+    expect(gregorian, findsOneWidget);
+    expect(hijri, findsOneWidget);
+    expect(tester.getTopLeft(gregorian).dy, lessThan(tester.getTopLeft(hijri).dy));
     expect(find.text('1 day'), findsOneWidget);
     expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
     expect(find.text('Revision'), findsNothing);
