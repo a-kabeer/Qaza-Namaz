@@ -104,12 +104,14 @@ class SaveProfileUseCase {
   Future<void> completeOnboarding({
     required UserProfile profile,
     required QazaPlan plan,
+    String? revisionId,
   }) async {
     await _profileRepository.save(profile);
     await _reconciliationService.recordInitialPlan(
       userId: UserProfile.localLedgerUserId,
       profile: profile,
       plan: plan,
+      revisionId: revisionId,
     );
   }
 }
