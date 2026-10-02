@@ -290,6 +290,7 @@ class _StaticCompass extends StatelessWidget {
               qiblaBearing: bearing,
               heading: 0,
               showRelativeQibla: false,
+              showCardinals: false,
               surfaceColor: scheme.surfaceContainerLow,
               outlineColor: scheme.outlineVariant,
               onSurfaceColor: scheme.onSurface,
