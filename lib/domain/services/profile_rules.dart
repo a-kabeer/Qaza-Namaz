@@ -123,13 +123,17 @@ class ProfileRules {
       ];
 
   /// Returns the deterministic Gregorian projection of a fixed-arithmetic
-  /// birth milestone. The name is retained for compatibility with existing
-  /// callers; this is not a real Hijri anniversary.
-  static DateTime anniversaryDate(DateTime dob, int age) =>
+  /// birth milestone. This is not a real Hijri calendar anniversary.
+  static DateTime fixedMilestoneDate(DateTime dob, int age) =>
       FixedHijriArithmeticService.projectFromBirth(
         dob: dob,
         fixedDayOffset: age * FixedHijriArithmeticService.daysPerYear,
       );
+
+  /// Backward-compatible alias retained for existing callers.
+  @Deprecated('Use fixedMilestoneDate instead.')
+  static DateTime anniversaryDate(DateTime dob, int age) =>
+      fixedMilestoneDate(dob, age);
 
   /// Returns completed age from the fixed Hijri arithmetic day index.
   static int currentAge(DateTime dob, DateTime today) =>
@@ -139,7 +143,7 @@ class ProfileRules {
     final dob = profile.dateOfBirth;
     final age = profile.pubertyAge;
     if (dob == null || age == null) return null;
-    return anniversaryDate(dob, age);
+    return fixedMilestoneDate(dob, age);
   }
 
   static DateTime? startPrayingDate(UserProfile profile) {
@@ -301,8 +305,7 @@ class ProfileRules {
         birthIndex + age * FixedHijriArithmeticService.daysPerYear;
     if (milestoneIndex > todayIndex) return false;
 
-    final projected =
-        anniversaryDate(dob, age);
+    final projected = fixedMilestoneDate(dob, age);
     return _compareCalendarDates(projected, today) <= 0;
   }
 
