@@ -7,5 +7,8 @@ export 'domain/prayer_location.dart';
 export 'domain/prayer_settings.dart';
 export 'domain/prayer_time.dart';
 export 'domain/prayer_time_calculator.dart';
+export 'domain/qibla_direction_service.dart';
 export 'domain/restricted_time.dart';
 export 'presentation/prayer_time_page.dart';
+export 'presentation/qibla_screen.dart';
+export 'presentation/qibla_summary_card.dart';
