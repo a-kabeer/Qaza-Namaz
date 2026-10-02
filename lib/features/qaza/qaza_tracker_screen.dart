@@ -1220,8 +1220,8 @@ class _FilterSortBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(
-        start: AppSpacing.lg,
-        end: AppSpacing.lg,
+        start: AppSpacing.md,
+        end: AppSpacing.md,
         bottom: AppSpacing.sm,
       ),
       child: Row(
