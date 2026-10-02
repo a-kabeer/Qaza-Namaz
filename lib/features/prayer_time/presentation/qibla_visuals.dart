@@ -56,7 +56,7 @@ class QiblaDialPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    final inset = size.shortestSide >= 160 ? 34.0 : 20.0;
+    final inset = size.shortestSide >= 160 ? 34.0 : 18.0;
     _drawCardinal(
       canvas,
       textPainter,
@@ -91,7 +91,7 @@ class QiblaDialPainter extends CustomPainter {
     );
 
     final qiblaAngle = qiblaBearing * math.pi / 180 - math.pi / 2;
-    final markerDistance = radius - (size.shortestSide >= 160 ? 42 : 24);
+    final markerDistance = radius - (size.shortestSide >= 160 ? 42 : 8);
     final markerCenter = Offset(
       center.dx + math.cos(qiblaAngle) * markerDistance,
       center.dy + math.sin(qiblaAngle) * markerDistance,
