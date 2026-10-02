@@ -59,8 +59,8 @@ class PrayerTimelineRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
           children: [
             Expanded(
               child: Text(
@@ -101,10 +101,10 @@ class PrayerTimelineRow extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
