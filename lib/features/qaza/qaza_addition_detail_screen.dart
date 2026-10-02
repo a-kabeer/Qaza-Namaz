@@ -102,41 +102,29 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       _DetailSection(
-                        label: l10n.addQazaPrayersLabel,
+                        label: orderedPrayers.isEmpty
+                            ? l10n.addQazaPrayersLabel
+                            : '${orderedPrayers.length} ${l10n.addQazaPrayersLabel}',
                         child: orderedPrayers.isEmpty
                             ? Text(
                                 'No prayers',
                                 style: theme.textTheme.bodyMedium,
                               )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${orderedPrayers.length} '
-                                    '${l10n.addQazaPrayersLabel}',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 6,
-                                    children: orderedPrayers
-                                        .map(
-                                          (prayer) => Chip(
-                                            label: Text(
-                                              prayer.localizedLabel(l10n),
-                                            ),
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize.shrinkWrap,
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                          ),
-                                        )
-                                        .toList(growable: false),
-                                  ),
-                                ],
+                            : Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: orderedPrayers
+                                    .map(
+                                      (prayer) => Chip(
+                                        label: Text(
+                                          prayer.localizedLabel(l10n),
+                                        ),
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    )
+                                    .toList(growable: false),
                               ),
                       ),
                       if (requestedSlots > 0) ...[
