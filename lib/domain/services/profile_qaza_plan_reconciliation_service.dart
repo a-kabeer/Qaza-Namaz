@@ -97,6 +97,7 @@ class ProfileQazaPlanReconciliationService {
 
     final oldRevision = await _revisionRepository.latest(userId);
     final previousCalculationFingerprint =
+        oldRevision?.ledgerPlanFingerprint ??
         oldRevision?.planFingerprint ??
         (oldPlan == null ? null : planFingerprint(oldPlan));
     final calculationChanged =
@@ -206,9 +207,10 @@ class ProfileQazaPlanReconciliationService {
     ];
 
     final previousLedgerFingerprint =
-        preview.previousLedgerPlan == null
+        preview.oldRevision?.ledgerPlanFingerprint ??
+        (preview.oldPlan == null
             ? newFingerprint
-            : planFingerprint(preview.previousLedgerPlan!);
+            : planFingerprint(preview.oldPlan!));
 
     final mutation = await _mutationRepository.applyProfilePlanChanges(
       userId: userId,
