@@ -6,6 +6,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
+import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_undo_feedback.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -16,6 +17,8 @@ class _FakeQazaUndoManager extends QazaUndoManager {
   final QazaUndoBatch batch;
   bool beganSelection = false;
   bool cancelled = false;
+  int undoAllCalls = 0;
+  int undoSelectedCalls = 0;
 
   @override
   Future<QazaUndoBatch?> registerEntries({
@@ -40,6 +43,35 @@ class _FakeQazaUndoManager extends QazaUndoManager {
     required QazaUndoBatch expectedBatch,
   }) async {
     cancelled = true;
+  }
+
+  @override
+  Future<QazaUndoResult> undo({
+    required String userId,
+    required QazaService service,
+    QazaUndoBatch? expectedBatch,
+  }) async {
+    undoAllCalls++;
+    return QazaUndoResult(
+      batch: batch,
+      count: batch.entries.length,
+      remainingBatch: null,
+    );
+  }
+
+  @override
+  Future<QazaUndoResult> undoSelected({
+    required String userId,
+    required QazaService service,
+    required QazaUndoBatch expectedBatch,
+    required Set<String> selectedIds,
+  }) async {
+    undoSelectedCalls++;
+    return QazaUndoResult(
+      batch: batch,
+      count: selectedIds.length,
+      remainingBatch: null,
+    );
   }
 }
 
@@ -150,4 +182,93 @@ void main() {
       expect(manager.cancelled, isTrue);
     },
   );
+
+  testWidgets(
+    'Batch Undo All automatically closes the selection sheet after success',
+    (tester) async {
+      final batch = _batch();
+      final manager = _FakeQazaUndoManager(batch);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            qazaUndoManagerProvider.overrideWithValue(manager),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: AppScaffoldMessenger(
+              key: appScaffoldMessengerKey,
+              child: Scaffold(
+                body: _FeedbackHarness(batch: batch),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      snackBar.action!.onPressed();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Undo completions'), findsOneWidget);
+      await tester.tap(find.text('Undo All'));
+      await tester.pumpAndSettle();
+
+      expect(manager.undoAllCalls, 1);
+      expect(find.text('Undo completions'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Batch Undo Selected automatically closes the selection sheet after success',
+    (tester) async {
+      final batch = _batch();
+      final manager = _FakeQazaUndoManager(batch);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            qazaUndoManagerProvider.overrideWithValue(manager),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: AppScaffoldMessenger(
+              key: appScaffoldMessengerKey,
+              child: Scaffold(
+                body: _FeedbackHarness(batch: batch),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      snackBar.action!.onPressed();
+      await tester.pumpAndSettle();
+
+      final checkboxes = find.byType(CheckboxListTile);
+      expect(checkboxes, findsNWidgets(2));
+      await tester.tap(checkboxes.at(0));
+      await tester.tap(checkboxes.at(1));
+      await tester.pump();
+
+      await tester.tap(find.text('Undo Selected'));
+      await tester.pumpAndSettle();
+
+      expect(manager.undoSelectedCalls, 1);
+      expect(manager.cancelled, isTrue);
+      expect(find.text('Undo completions'), findsNothing);
+    },
+  );
+
 }
