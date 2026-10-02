@@ -121,8 +121,10 @@ void main() {
       5 * FixedHijriArithmeticService.daysPerYear,
     );
 
-    final startHijri = HijriDateService.fromGregorian(plan.startDate);
-    expect(startHijri.day, isNot(29));
+    expect(
+      plan.startDate,
+      ProfileRules.pubertyDate(profile),
+    );
   });
 
   test('Qaza duration is fixed 360-day arithmetic, not Gregorian elapsed years', () {
