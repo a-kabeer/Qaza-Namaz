@@ -68,6 +68,17 @@ void openPrayerTimeFromRoute(BuildContext context, WidgetRef ref) {
   openPrayerTime(ref);
 }
 
+/// Opens the existing Qaza workspace filtered to one addition's pending records.
+void openQazaForAddition(WidgetRef ref, String additionId) {
+  ref.read(qazaTrackerFilterRequestProvider.notifier).state =
+      QazaTrackerFilterRequest(
+    additionId: additionId,
+    status: QazaStatusFilter.pending,
+  );
+  ref.read(workspaceDestinationProvider.notifier).state =
+      WorkspaceDestination.qaza;
+}
+
 /// Opens the existing Qaza workspace with Completed selected.
 void openQazaCompleted(WidgetRef ref) {
   ref.read(qazaTrackerFilterRequestProvider.notifier).state =
