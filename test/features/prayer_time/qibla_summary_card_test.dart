@@ -18,23 +18,24 @@ void main() {
       ],
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: Scaffold(
-        body: SizedBox(
-          width: 160,
-          height: 190,
-          child: QiblaSummaryCard(
-            bearing: 267.741,
-            onTap: onTap,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SizedBox(
+            width: 160,
+            height: 190,
+            child: QiblaSummaryCard(
+              bearing: 267.741,
+              onTap: onTap,
+            ),
           ),
-        ),
         ),
       ),
     );
   }
 
-  testWidgets('renders bearing and invokes tap callback', (tester) async {
+  testWidgets('renders compact static compass and invokes tap callback',
+      (tester) async {
     var tapped = false;
 
     await tester.pumpWidget(
