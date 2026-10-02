@@ -144,7 +144,8 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
       expect(find.text('Undo completions'), findsOneWidget);
 
-      await tester.pageBack();
+      final sheetContext = tester.element(find.text('Undo completions'));
+      Navigator.of(sheetContext).pop();
       await tester.pumpAndSettle();
       expect(manager.cancelled, isTrue);
     },
