@@ -29,7 +29,7 @@ class QiblaSummaryCard extends ConsumerWidget {
     final value = bearing;
     final sensorState = ref.watch(compassSensorAvailableProvider);
     final reading = ref.watch(compassReadingProvider).valueOrNull;
-    final declination = ref.watch(magneticDeclinationProvider).valueOrNull;
+    final declination = ref.watch(magneticDeclinationProvider);
 
     double? trueHeading;
     if (value != null &&
