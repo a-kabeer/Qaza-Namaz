@@ -43,9 +43,8 @@ extension QazaStatusFilterX on QazaStatusFilter {
       };
 }
 
-/// The tracker always uses fixed status-specific ordering.
-/// Pending: originalDate ASC, id ASC.
-/// Completed: completedAt DESC, id DESC.
+/// Sort state shared by Pending and Completed. The controller maps the
+/// direction to the correct date field and keyset cursor for the active status.
 
 class QazaTrackerState {
   const QazaTrackerState({
