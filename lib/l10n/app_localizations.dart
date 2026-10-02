@@ -506,6 +506,18 @@ abstract class AppLocalizations {
   /// **'Loading...'**
   String get commonLoading;
 
+  /// No description provided for @commonToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get commonToday;
+
+  /// No description provided for @commonYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get commonYesterday;
+
   /// Secondary Hijri date line; Gregorian remains primary
   ///
   /// In en, this message translates to:
