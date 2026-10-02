@@ -187,6 +187,7 @@ void main() {
       userId: 'local',
       status: QazaStatus.completed.name,
       limit: 2,
+      descending: true,
     );
     expect(first.records.map((record) => record.id), ['4', '3']);
     expect(first.hasMore, isTrue);
@@ -197,6 +198,7 @@ void main() {
       limit: 2,
       beforeCompletedAt: first.records.last.completedAt,
       beforeId: first.records.last.id,
+      descending: true,
     );
 
     expect(second.records.map((record) => record.id), ['2', '1']);
