@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/qibla_providers.dart';
 import 'qibla_visuals.dart';
