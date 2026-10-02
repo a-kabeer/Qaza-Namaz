@@ -54,7 +54,8 @@ class QiblaSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Expanded(
+                SizedBox(
+                  height: 58,
                   child: Center(
                     child: Text(
                       valueText,
