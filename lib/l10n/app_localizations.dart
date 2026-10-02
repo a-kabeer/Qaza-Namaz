@@ -2800,6 +2800,18 @@ abstract class AppLocalizations {
   /// **'Your profile change changes the calculated Qaza plan.'**
   String get profileQazaPlanSummary;
 
+  /// No description provided for @profileQazaImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact'**
+  String get profileQazaImpact;
+
+  /// No description provided for @profileQazaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza'**
+  String profileQazaCount(String count);
+
   /// No description provided for @profileQazaPreviousTotal.
   ///
   /// In en, this message translates to:
