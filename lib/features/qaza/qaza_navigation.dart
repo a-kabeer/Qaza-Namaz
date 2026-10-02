@@ -48,11 +48,20 @@ void openQazaForPrayer(WidgetRef ref, PrayerType prayer) {
       WorkspaceDestination.qaza;
 }
 
-/// Opens the unfiltered Qaza tracker tab without pushing a duplicate screen.
+/// Opens the unfiltered Pending Qaza tracker without pushing a duplicate screen.
 void openQazaAll(WidgetRef ref) {
-  ref.read(qazaTrackerFilterRequestProvider.notifier).state = null;
+  ref.read(qazaTrackerFilterRequestProvider.notifier).state =
+      const QazaTrackerFilterRequest(
+    status: QazaStatusFilter.pending,
+  );
   ref.read(workspaceDestinationProvider.notifier).state =
       WorkspaceDestination.qaza;
+}
+
+/// Opens the existing Prayer Time workspace.
+void openPrayerTime(WidgetRef ref) {
+  ref.read(workspaceDestinationProvider.notifier).state =
+      WorkspaceDestination.prayerTime;
 }
 
 /// Opens the existing Qaza workspace with Completed selected.
