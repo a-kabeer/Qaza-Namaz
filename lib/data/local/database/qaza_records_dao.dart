@@ -137,7 +137,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           (beforeCompletedAt == null) != (beforeId == null) ||
           (afterCompletedAt != null && beforeCompletedAt != null) ||
           afterOriginalDate != null ||
-          beforeOriginalDate != null) {
+          beforeOriginalDate != null ||
+          afterPrayerType != null ||
+          beforePrayerType != null) {
         throw ArgumentError('Invalid completed pagination cursor');
       }
     } else {
