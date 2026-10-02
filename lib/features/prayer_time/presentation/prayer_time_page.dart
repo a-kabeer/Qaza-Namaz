@@ -413,26 +413,27 @@ class _PrayerTimeContent extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                Expanded(
-                  child: _PrayerTimeFocusCard(
-                    name: focusName,
-                    time: focusTime,
-                    icon: focusIcon,
-                    countdown: focusCountdown,
+                  Expanded(
+                    child: _PrayerTimeFocusCard(
+                      name: focusName,
+                      time: focusTime,
+                      icon: focusIcon,
+                      countdown: focusCountdown,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: QiblaSummaryCard(
-                    bearing: qiblaBearing,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const QiblaDirectionScreen(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: QiblaSummaryCard(
+                      bearing: qiblaBearing,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const QiblaDirectionScreen(),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 12),
