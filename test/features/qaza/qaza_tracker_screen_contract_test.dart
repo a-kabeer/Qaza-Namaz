@@ -223,7 +223,7 @@ void main() {
     final bar = source.substring(start);
     expect(bar, contains('final VoidCallback onComplete;'));
     expect(bar, contains('required this.onComplete'));
-    expect(bar, contains('onPressed: onComplete'));
+    expect(bar, contains(': onComplete,'));
     expect(bar, isNot(contains('BuildContext workspaceContext')));
     expect(bar, isNot(contains('showQazaUndoFeedback(')));
     expect(bar, isNot(contains('completeSelectedWithUndo(')));
