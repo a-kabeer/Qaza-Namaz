@@ -175,7 +175,32 @@ void main() {
     final old = profile(startAge: 13);
     final oldPlan = const QazaPlanService().planFor(old)!;
     await saveRevision(revisions, oldPlan, old);
-    final preview = await service(qaza, revisions).preview(userId: UserProfile.localLedgerUserId, oldProfile: old, newProfile: profile(startAge: 14));
+    final oldFingerprint =
+        ProfileQazaPlanReconciliationService.planFingerprint(oldPlan);
+    for (final date in QazaPlanService.datesFor(oldPlan)) {
+      for (final prayer in const [
+        PrayerType.fajr,
+        PrayerType.zuhr,
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.isha,
+      ]) {
+        qaza.records.add(
+          profileRecord(
+            id: 'old_${prayer.name}_${date.millisecondsSinceEpoch}',
+            prayer: prayer,
+            date: date,
+            revision: 'old',
+            fingerprint: oldFingerprint,
+          ),
+        );
+      }
+    }
+    final preview = await service(qaza, revisions).preview(
+      userId: UserProfile.localLedgerUserId,
+      oldProfile: old,
+      newProfile: profile(startAge: 14),
+    );
     expect(preview.pendingToAdd, 5 * 360);
     expect(preview.pendingToRemove, 0);
     expect(preview.requiresUserDecision, isTrue);
