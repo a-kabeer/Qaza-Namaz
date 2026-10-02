@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_service.dart';
+import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
 import '../../domain/entities/qaza_addition.dart';
@@ -35,81 +37,119 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
               child: Text('This Qaza addition could not be found.'),
             );
           }
+
           final addition = detail.addition;
           final snapshot = addition.currentInputSnapshot;
+          final l10n = AppLocalizations.of(context);
+          final theme = Theme.of(context);
+          final orderedPrayers = _orderedPrayers(snapshot.selectedPrayers);
+          final dateCount = _dateCount(snapshot);
+          final requestedSlots = dateCount * orderedPrayers.length;
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${detail.activeCount}',
-                        style: Theme.of(context).textTheme.displaySmall,
+                      Semantics(
+                        header: true,
+                        label: '${detail.activeCount} Records',
+                        child: Text(
+                          '${detail.activeCount} Records',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      const Text('Current active Qaza'),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _Stat(
-                              label: 'Pending',
-                              value: detail.pendingCount,
-                            ),
-                          ),
-                          Expanded(
-                            child: _Stat(
-                              label: 'Completed',
-                              value: detail.completedCount,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        '${detail.pendingCount} ${l10n.statusPending} · '
+                        '${detail.completedCount} ${l10n.statusCompleted}',
+                        style: theme.textTheme.bodyMedium,
                       ),
+                      const SizedBox(height: 20),
+                      _DetailSection(
+                        label: 'Mode',
+                        child: Text(
+                          _modeLabel(snapshot.mode, l10n),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _DetailSection(
+                        label: l10n.addQazaDatesLabel,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ..._dateWidgets(
+                              context,
+                              snapshot,
+                              l10n,
+                              theme.textTheme,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _dateCountLabel(snapshot, dateCount),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _DetailSection(
+                        label: orderedPrayers.isEmpty
+                            ? l10n.addQazaPrayersLabel
+                            : '${orderedPrayers.length} ${l10n.addQazaPrayersLabel}',
+                        child: orderedPrayers.isEmpty
+                            ? Text(
+                                'No prayers',
+                                style: theme.textTheme.bodyMedium,
+                              )
+                            : Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: orderedPrayers
+                                    .map(
+                                      (prayer) => Chip(
+                                        label: Text(
+                                          prayer.localizedLabel(l10n),
+                                        ),
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    )
+                                    .toList(growable: false),
+                              ),
+                      ),
+                      if (requestedSlots > 0) ...[
+                        const SizedBox(height: 16),
+                        _DetailSection(
+                          label: 'Requested',
+                          child: Text(
+                            '${requestedSlots} requested slots',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      title: const Text('Mode'),
-                      subtitle: Text(_modeLabel(snapshot.mode)),
-                    ),
-                    ListTile(
-                      title: const Text('Dates'),
-                      subtitle: Text(_dateSummary(context, snapshot)),
-                    ),
-                    ListTile(
-                      title: const Text('Prayers'),
-                      subtitle: Text(
-                        snapshot.selectedPrayers
-                            .map((prayer) => prayer.localizedLabel(
-                                  AppLocalizations.of(context),
-                                ))
-                            .join(', '),
-                      ),
-                    ),
-                    ListTile(
-                      title: const Text('Created'),
-                      subtitle: Text(
-                        MaterialLocalizations.of(context)
-                            .formatMediumDate(addition.createdAt),
-                      ),
-                    ),
-                    ListTile(
-                      title: const Text('Revision'),
-                      subtitle: Text('${addition.revision}'),
-                    ),
-                  ],
-                ),
+              Text(
+                'Created ${MaterialLocalizations.of(context).formatMediumDate(addition.createdAt)}',
+                style: theme.textTheme.bodySmall,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: () {
                   openQazaForAddition(ref, addition.id);
@@ -120,25 +160,34 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
               ),
               if (detail.pendingCount > 0) ...[
                 const SizedBox(height: 8),
-                FilledButton.tonalIcon(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => AddQazaScreen(editAddition: addition),
-                      ),
-                    );
-                    if (context.mounted) {
-                      ref.invalidate(qazaAdditionDetailProvider(addition.id));
-                    }
-                  },
-                  icon: const Icon(Icons.edit_rounded),
-                  label: const Text('Edit Addition'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => _delete(context, ref, addition.id),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  label: const Text('Delete Addition'),
+                OverflowBar(
+                  spacing: 8,
+                  overflowSpacing: 8,
+                  alignment: MainAxisAlignment.end,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                AddQazaScreen(editAddition: addition),
+                          ),
+                        );
+                        if (context.mounted) {
+                          ref.invalidate(
+                            qazaAdditionDetailProvider(addition.id),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.edit_rounded),
+                      label: const Text('Edit Addition'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _delete(context, ref, addition.id),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: const Text('Delete Addition'),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -223,49 +272,135 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
       ref.read(appSnackbarServiceProvider).error(error.toString());
     }
   }
-
-  String _modeLabel(QazaAdditionMode mode) => switch (mode) {
-        QazaAdditionMode.single => 'Single',
-        QazaAdditionMode.range => 'Range',
-        QazaAdditionMode.multiple => 'Multiple',
-      };
-
-  String _dateSummary(
-    BuildContext context,
-    QazaAdditionInputSnapshot snapshot,
-  ) {
-    if (snapshot.selectedDates.isEmpty) return 'No dates';
-    if (snapshot.mode == QazaAdditionMode.range &&
-        snapshot.selectedDates.length == 2) {
-      return '${MaterialLocalizations.of(context).formatMediumDate(snapshot.selectedDates.first)} – '
-          '${MaterialLocalizations.of(context).formatMediumDate(snapshot.selectedDates.last)}';
-    }
-    return snapshot.selectedDates
-        .map(
-          (date) =>
-              MaterialLocalizations.of(context).formatMediumDate(date),
-        )
-        .join(', ');
-  }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({
+class _DetailSection extends StatelessWidget {
+  const _DetailSection({
     required this.label,
-    required this.value,
+    required this.child,
   });
 
   final String label;
-  final int value;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Text(
-            '$value',
-            style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
           ),
-          Text(label),
-        ],
-      );
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
 }
+
+List<Widget> _dateWidgets(
+  BuildContext context,
+  QazaAdditionInputSnapshot snapshot,
+  AppLocalizations l10n,
+  TextTheme textTheme,
+) {
+  if (snapshot.selectedDates.isEmpty) {
+    return [
+      Text(
+        'No dates',
+        style: textTheme.bodyMedium,
+      ),
+    ];
+  }
+
+  if (snapshot.mode == QazaAdditionMode.range &&
+      snapshot.selectedDates.length == 2) {
+    final start = snapshot.selectedDates.first;
+    final end = snapshot.selectedDates.last;
+    return [
+      Text(
+        '${_gregorianDate(context, start)} → ${_gregorianDate(context, end)}',
+        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        '${HijriDateService.format(start, l10n)} → '
+        '${HijriDateService.format(end, l10n)}',
+        style: textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ];
+  }
+
+  if (snapshot.mode == QazaAdditionMode.single &&
+      snapshot.selectedDates.length == 1) {
+    final date = snapshot.selectedDates.first;
+    return [
+      Text(
+        _gregorianDate(context, date),
+        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        HijriDateService.format(date, l10n),
+        style: textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ];
+  }
+
+  return snapshot.selectedDates
+      .map(
+        (date) => Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            '${_gregorianDate(context, date)} · '
+            '${HijriDateService.format(date, l10n)}',
+            style: textTheme.bodyMedium,
+          ),
+        ),
+      )
+      .toList(growable: false);
+}
+
+List<PrayerType> _orderedPrayers(List<PrayerType> prayers) {
+  final ordered = prayers.toList(growable: false)
+    ..sort(
+      (a, b) => a.qazaSequenceIndex.compareTo(b.qazaSequenceIndex),
+    );
+  return ordered;
+}
+
+int _dateCount(QazaAdditionInputSnapshot snapshot) {
+  if (snapshot.mode == QazaAdditionMode.range) {
+    return snapshot.expandedDates.length;
+  }
+  return snapshot.selectedDates.length;
+}
+
+String _dateCountLabel(
+  QazaAdditionInputSnapshot snapshot,
+  int count,
+) {
+  if (snapshot.mode == QazaAdditionMode.multiple) {
+    return '$count dates';
+  }
+  return count == 1 ? '1 day' : '$count days';
+}
+
+String _modeLabel(QazaAdditionMode mode, AppLocalizations l10n) =>
+    switch (mode) {
+      QazaAdditionMode.single => l10n.addQazaModeSingle,
+      QazaAdditionMode.range => l10n.addQazaModeRange,
+      QazaAdditionMode.multiple => l10n.addQazaModeMultiple,
+    };
+
+String _gregorianDate(BuildContext context, DateTime date) =>
+    MaterialLocalizations.of(context).formatMediumDate(date);
