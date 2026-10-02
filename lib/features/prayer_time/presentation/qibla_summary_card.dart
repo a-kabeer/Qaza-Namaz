@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
+import '../application/qibla_providers.dart';
+import 'qibla_visuals.dart';
 
-class QiblaSummaryCard extends StatelessWidget {
+class QiblaSummaryCard extends ConsumerWidget {
   const QiblaSummaryCard({
     super.key,
     required this.bearing,
@@ -20,15 +23,36 @@ class QiblaSummaryCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
+    final value = bearing;
+    final sensorState = ref.watch(compassSensorAvailableProvider);
+    final reading = ref.watch(compassReadingProvider).valueOrNull;
+    final declination = ref.watch(magneticDeclinationProvider).valueOrNull;
+
+    double? trueHeading;
+    if (value != null &&
+        value.isFinite &&
+        sensorState.valueOrNull == true &&
+        reading?.heading != null &&
+        declination != null) {
+      trueHeading = ref
+          .read(qiblaDirectionServiceProvider)
+          .trueHeadingFromMagnetic(
+            magneticHeading: reading!.heading!,
+            declination: declination,
+          );
+    }
+
+    final live = trueHeading != null;
+    final semanticState = live ? 'live compass' : 'static direction';
     final valueText = _bearingText();
 
     return Semantics(
       button: true,
-      label: '$valueText, ${l10n.qiblaDirection}',
+      label: '${valueText}, ${l10n.qiblaDirection}, ${semanticState}',
       child: Card(
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -53,20 +77,35 @@ class QiblaSummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
-                SizedBox(
-                  height: 58,
+                const SizedBox(height: 2),
+                Expanded(
                   child: Center(
-                    child: Text(
-                      valueText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.numericLarge.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
+                    child: value == null || !value.isFinite
+                        ? Icon(
+                            Icons.explore_off_rounded,
+                            size: 40,
+                            color: scheme.onSurfaceVariant,
+                          )
+                        : SizedBox.square(
+                            key: const Key('qibla_summary_compass'),
+                            dimension: 86,
+                            child: CustomPaint(
+                              painter: QiblaDialPainter(
+                                qiblaBearing: value,
+                                heading: trueHeading ?? 0,
+                                showRelativeQibla: live,
+                                surfaceColor: scheme.surfaceContainerLow,
+                                outlineColor: scheme.outlineVariant,
+                                onSurfaceColor: scheme.onSurface,
+                                onSurfaceVariantColor:
+                                    scheme.onSurfaceVariant,
+                                primaryColor: scheme.primary,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Expanded(
