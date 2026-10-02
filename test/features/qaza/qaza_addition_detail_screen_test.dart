@@ -142,7 +142,7 @@ void main() {
 
     final positions = [fajr, zuhr, asr, witr];
     for (var i = 1; i < positions.length; i++) {
-      expect(_isAfter(positions[i - 1], positions[i]), isFalse);
+      expect(_isAfter(positions[i - 1], positions[i]), isTrue);
     }
     expect(find.text('Witr'), findsOneWidget);
     expect(find.text('4 prayers'), findsOneWidget);
