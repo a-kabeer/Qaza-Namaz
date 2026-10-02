@@ -488,8 +488,8 @@ class _PendingTrackerBody extends ConsumerWidget {
     return Column(
       children: [
         if (restricted)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
               AppSpacing.sm,
               AppSpacing.lg,
