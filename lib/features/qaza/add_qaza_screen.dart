@@ -18,6 +18,8 @@ import 'qaza_import_controller.dart';
 import 'qaza_import_progress_dialog.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_navigation.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
+import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
   const AddQazaScreen({super.key, this.editAddition});
@@ -50,6 +52,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     final l10n = AppLocalizations.of(context);
     final profile = ref.watch(userProfileProvider).valueOrNull;
     final state = ref.watch(addQazaControllerProvider);
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
 
     if (profile == null) {
       return AppScaffold(
@@ -73,7 +76,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               l10n.addQazaAvailabilityNote,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: AppSpacing.md),
+            if (restricted)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
+                child: _RestrictedTimeAddQazaRow(),
+              ),
             _ModeSelector(
               mode: state.mode,
               onChanged: (mode) => ref
@@ -326,6 +333,17 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         ),
       );
     }
+  }
+}
+
+class _RestrictedTimeAddQazaRow extends ConsumerWidget {
+  const _RestrictedTimeAddQazaRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RestrictedTimeTimelineRow(
+      onTap: () => openPrayerTime(ref),
+    );
   }
 }
 
