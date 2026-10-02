@@ -49,7 +49,7 @@ class MemoryQazaRepository implements QazaRepository {
   Future<List<QazaRecord>> getRecords({required String userId, PrayerType? prayerType, QazaStatus? status}) async => records.where((r) => r.userId == userId && (prayerType == null || r.prayerType == prayerType) && (status == null || r.status == status)).toList();
 
   @override
-  Future<QazaPage> getPage({required String userId, int limit = 50, PrayerType? prayerType, Iterable<PrayerType>? prayerTypes, QazaStatus? status, String? additionId, DateTime? from, DateTime? to, DateTime? toExclusive, DateTime? afterOriginalDate, String? afterId, DateTime? beforeOriginalDate, String? beforeId, DateTime? afterCompletedAt, DateTime? beforeCompletedAt, bool descending = false}) async {
+  Future<QazaPage> getPage({required String userId, int limit = 50, PrayerType? prayerType, Iterable<PrayerType>? prayerTypes, QazaStatus? status, String? additionId, DateTime? from, DateTime? to, DateTime? toExclusive, DateTime? afterOriginalDate, String? afterId, PrayerType? afterPrayerType, DateTime? beforeOriginalDate, String? beforeId, PrayerType? beforePrayerType, DateTime? afterCompletedAt, DateTime? beforeCompletedAt, bool descending = false}) async {
     var values = records.where((r) => r.userId == userId).toList();
     if (prayerType != null) values = values.where((r) => r.prayerType == prayerType).toList();
     if (prayerTypes != null) values = values.where((r) => prayerTypes.contains(r.prayerType)).toList();
