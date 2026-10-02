@@ -67,15 +67,15 @@ class QiblaDirectionScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: surfaceColor,
+                          color: scheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: outlineColor),
+                          border: Border.all(color: scheme.outlineVariant),
                         ),
                         child: Text(
                           l10n.qiblaCompassBody,
                           textAlign: TextAlign.center,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: onSurfaceVariantColor,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -93,7 +93,7 @@ class QiblaDirectionScreen extends ConsumerWidget {
                           l10n.qiblaSensorUnavailableBody,
                           textAlign: TextAlign.center,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: onSurfaceColorVariant,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -124,7 +124,7 @@ class _BearingSummary extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      color: primaryColorContainer,
+      color: scheme.primaryContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
@@ -397,13 +397,13 @@ class _QiblaDialPainter extends CustomPainter {
     final radius = size.shortestSide / 2 - 14;
     final circlePaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = scheme.surfaceContainerLow;
+      ..color = surfaceColor;
     canvas.drawCircle(center, radius, circlePaint);
 
     final outlinePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = scheme.outlineVariant;
+      ..color = outlineColor;
     canvas.drawCircle(center, radius, outlinePaint);
 
     canvas.save();
@@ -422,14 +422,14 @@ class _QiblaDialPainter extends CustomPainter {
       textPainter,
       'N',
       Offset(center.dx, center.dy - radius + 34),
-      scheme.onSurface,
+      onSurfaceColor,
     );
     _drawCardinal(
       canvas,
       textPainter,
       'E',
       Offset(center.dx + radius - 34, center.dy),
-      scheme.onSurfaceVariant,
+      onSurfaceVariantColor,
     );
     _drawCardinal(
       canvas,
@@ -453,7 +453,7 @@ class _QiblaDialPainter extends CustomPainter {
     );
 
     final arrowPaint = Paint()
-      ..color = scheme.primary
+      ..color = primaryColor
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(center, end, arrowPaint);
@@ -470,7 +470,7 @@ class _QiblaDialPainter extends CustomPainter {
         ..lineTo(left.dx, left.dy)
         ..lineTo(right.dx, right.dy)
         ..close();
-      canvas.drawPath(path, Paint()..color = scheme.primary);
+      canvas.drawPath(path, Paint()..color = primaryColor);
     }
 
     canvas.drawCircle(
