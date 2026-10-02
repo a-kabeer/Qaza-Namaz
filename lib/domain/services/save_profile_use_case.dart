@@ -88,7 +88,7 @@ class SaveProfileUseCase {
         qazaPlanChanged: true,
         qazaRecordsAdded: result.added,
         qazaRecordsRemoved: result.removed,
-        keptExistingQaza: result.keptExisting,
+        keptExistingQaza: false,
         revision: result.revision,
       );
     } catch (_) {
