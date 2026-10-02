@@ -641,6 +641,8 @@ class QazaService {
     DateTime? earliestDate,
     DateTime? today,
     bool? witrAllowed,
+    String? profilePlanRevisionId,
+    String? profilePlanFingerprint,
     bool Function()? isCancellationRequested,
   }) async {
     if (batchSize < 1) throw ArgumentError.value(batchSize, 'batchSize');
@@ -734,6 +736,8 @@ class QazaService {
             prayerType: candidate.prayerType,
             originalDate: candidate.date,
             status: QazaStatus.pending,
+            profilePlanRevisionId: profilePlanRevisionId,
+            profilePlanFingerprint: profilePlanFingerprint,
             createdAt: now,
             updatedAt: now,
           ),
