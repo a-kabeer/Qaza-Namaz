@@ -16,6 +16,8 @@ class QazaRecordsPage {
   DateTime? get nextOriginalDate =>
       records.isEmpty ? null : records.last.originalDate;
   String? get nextId => records.isEmpty ? null : records.last.id;
+  PrayerType? get nextPrayerType =>
+      records.isEmpty ? null : records.last.prayerType;
 }
 
 @DriftAccessor(tables: [QazaRecords])
@@ -65,6 +67,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           )
           ..orderBy([
             (row) => OrderingTerm.asc(row.originalDate),
+            (row) => OrderingTerm(
+                  expression: _qazaPrayerRankExpression(),
+                ),
             (row) => OrderingTerm.asc(row.id),
           ]))
         .get();
@@ -75,17 +80,20 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final records = <QazaRecord>[];
     DateTime? cursorDate;
     String? cursorId;
+    PrayerType? cursorPrayerType;
     while (true) {
       final page = await getKeysetPage(
         userId: userId,
         limit: maxPageSize,
         afterOriginalDate: cursorDate,
         afterId: cursorId,
+        afterPrayerType: cursorPrayerType?.name,
       );
       records.addAll(page.records);
       if (!page.hasMore) return records;
       cursorDate = page.nextOriginalDate!;
       cursorId = page.nextId!;
+      cursorPrayerType = page.nextPrayerType!;
     }
   }
 
@@ -101,8 +109,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
+    String? afterPrayerType,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    String? beforePrayerType,
     DateTime? afterCompletedAt,
     DateTime? beforeCompletedAt,
     bool descending = false,
@@ -132,13 +142,23 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       }
     } else {
       if ((afterOriginalDate == null) != (afterId == null) ||
+          (afterOriginalDate == null) != (afterPrayerType == null) ||
           (beforeOriginalDate == null) != (beforeId == null) ||
+          (beforeOriginalDate == null) != (beforePrayerType == null) ||
           afterCompletedAt != null ||
           beforeCompletedAt != null ||
           (afterOriginalDate != null && beforeOriginalDate != null)) {
         throw ArgumentError('Invalid pending pagination cursor');
       }
     }
+
+    final qazaPrayerRank = _qazaPrayerRankExpression();
+    final afterPrayerRank = afterPrayerType == null
+        ? null
+        : _qazaPrayerRankForName(afterPrayerType);
+    final beforePrayerRank = beforePrayerType == null
+        ? null
+        : _qazaPrayerRankForName(beforePrayerType);
 
     final query = select(qazaRecords)
       ..where((row) {
@@ -190,13 +210,17 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           predicates.add(
             row.originalDate.isBiggerThanValue(afterOriginalDate) |
                 (row.originalDate.equals(afterOriginalDate) &
-                    row.id.isBiggerThanValue(afterId!)),
+                    (qazaPrayerRank.isBiggerThanValue(afterPrayerRank!) |
+                        (qazaPrayerRank.equals(afterPrayerRank!) &
+                            row.id.isBiggerThanValue(afterId!)))),
           );
         } else if (beforeOriginalDate != null) {
           predicates.add(
             row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                 (row.originalDate.equals(beforeOriginalDate) &
-                    row.id.isSmallerThanValue(beforeId!)),
+                    (qazaPrayerRank.isSmallerThanValue(beforePrayerRank!) |
+                        (qazaPrayerRank.equals(beforePrayerRank!) &
+                            row.id.isSmallerThanValue(beforeId!)))),
           );
         }
 
@@ -210,13 +234,19 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             : (descending
                 ? OrderingTerm.desc(r.originalDate)
                 : OrderingTerm.asc(r.originalDate)),
-        (r) => completedMode
-            ? (descending
-                ? OrderingTerm.desc(r.id)
-                : OrderingTerm.asc(r.id))
-            : (descending
-                ? OrderingTerm.desc(r.id)
-                : OrderingTerm.asc(r.id)),
+        if (completedMode)
+          (r) => descending
+              ? OrderingTerm.desc(r.id)
+              : OrderingTerm.asc(r.id)
+        else
+          (r) => OrderingTerm(
+                expression: qazaPrayerRank,
+                mode: descending ? OrderingMode.desc : OrderingMode.asc,
+              ),
+        if (!completedMode)
+          (r) => descending
+              ? OrderingTerm.desc(r.id)
+              : OrderingTerm.asc(r.id),
       ])
       ..limit(limit + 1);
 
@@ -310,8 +340,18 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         return predicates.reduce((a, b) => a & b);
       })
       ..orderBy([
-        (r) => OrderingTerm.asc(r.originalDate),
-        (r) => OrderingTerm.asc(r.id)
+        if (completedMode)
+          (r) => OrderingTerm.asc(r.completedAt)
+        else
+          (r) => OrderingTerm.asc(r.originalDate),
+        if (!completedMode)
+          (r) => OrderingTerm(
+                expression: _qazaPrayerRankExpression(),
+              )
+        else
+          (r) => OrderingTerm.asc(r.id),
+        if (!completedMode)
+          (r) => OrderingTerm.asc(r.id),
       ])
       ..limit(limit, offset: offset);
     final rows = await query.get();
@@ -773,6 +813,26 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
           .go();
 
+  int _qazaPrayerRankForName(String name) {
+    final index =
+        PrayerTypeX.qazaSequence.indexWhere((prayer) => prayer.name == name);
+    if (index < 0) {
+      throw ArgumentError('Unknown Qaza prayer type "$name" in cursor.');
+    }
+    return index;
+  }
+
+  CustomExpression<int> _qazaPrayerRankExpression() {
+    final cases = PrayerTypeX.qazaSequence
+        .asMap()
+        .entries
+        .map((entry) => "WHEN '${entry.value.name}' THEN ${entry.key}")
+        .join(' ');
+    return CustomExpression<int>(
+      'CASE qaza_records.prayer_type $cases '
+      'ELSE ${PrayerTypeX.qazaSequence.length} END',
+    );
+  }
   QazaRecord _toDomain(QazaRecordRow row) => QazaRecord(
         id: row.id,
         userId: row.userId,
