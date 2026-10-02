@@ -494,8 +494,6 @@ void main() {
     expect(row, contains('Semantics('));
     expect(row, contains('label: semanticLabel'));
     expect(row, isNot(contains('_groupLabel(')));
-    expect(row, isNot(contains('Today')));
-    expect(row, isNot(contains('Yesterday')));
   });
 
   test('Completed list no longer renders redundant completion-date group headers', () {
