@@ -110,18 +110,21 @@ class _ProfileFormState extends State<ProfileForm> {
     final profile = _profile;
     final gender = profile.gender;
     final madhab = profile.madhab;
-    final pubertyOptions = ProfileRules.pubertyAgeOptions(gender);
+    final today = LocalDateService.today();
+    final pubertyOptions = ProfileRules.availablePubertyAgeOptions(
+      profile,
+      today: today,
+    );
     final currentAge = profile.dateOfBirth == null
         ? null
         : ProfileRules.currentAge(
             profile.dateOfBirth!,
             LocalDateService.today(),
           );
-    final startOptions = currentAge == null || profile.pubertyAge == null
-        ? const <int>[]
-        : [
-            for (var age = profile.pubertyAge!; age <= currentAge; age++) age,
-          ];
+    final startOptions = ProfileRules.startPrayingAgeOptions(
+      profile,
+      today: today,
+    );
     final canEditWitr = ProfileRules.isWitrEditable(madhab);
     final errorText = _errorText(l10n, _error);
 
