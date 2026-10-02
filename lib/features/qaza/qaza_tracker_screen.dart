@@ -546,7 +546,11 @@ class _PendingTrackerBody extends ConsumerWidget {
           ),
         ),
         if (state.selected.isNotEmpty)
-          _BulkCompletionBar(state: state, controller: controller),
+          _BulkCompletionBar(
+            state: state,
+            controller: controller,
+            workspaceContext: context,
+          ),
       ],
     );
   }
@@ -1310,10 +1314,17 @@ class _BulkCompletionBar extends ConsumerWidget {
   const _BulkCompletionBar({
     required this.state,
     required this.controller,
+    required this.workspaceContext,
   });
 
   final QazaTrackerState state;
   final QazaTrackerController controller;
+
+  /// Context owned by the stable Pending workspace body, not by this
+  /// transient bulk-action bar. Selection completion clears this bar after
+  /// persistence, so its own BuildContext may be disposed before Undo
+  /// feedback is registered.
+  final BuildContext workspaceContext;
 
   Future<void> _complete(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
@@ -1330,8 +1341,12 @@ class _BulkCompletionBar extends ConsumerWidget {
       if (!confirmed || !context.mounted) return;
     }
 
+    // Capture the stable workspace context before completion mutates
+    // selection state and disposes this bulk-action bar.
+    final feedbackContext = workspaceContext;
     final batch = await controller.completeSelectedWithUndo();
-    if (!context.mounted) return;
+
+    if (!feedbackContext.mounted) return;
     if (batch == null) {
       final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
       if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
@@ -1345,7 +1360,7 @@ class _BulkCompletionBar extends ConsumerWidget {
     }
 
     await showQazaUndoFeedback(
-      context: context,
+      context: feedbackContext,
       ref: ref,
       userId: ref.read(requiredUserIdProvider),
       entries: batch.entries,
