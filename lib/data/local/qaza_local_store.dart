@@ -709,7 +709,8 @@ abstract class QazaLocalStore {
       if (record == null ||
           record.status != QazaStatus.pending ||
           record.profilePlanRevisionId == null ||
-          record.profilePlanFingerprint == null) {
+          record.profilePlanFingerprint == null ||
+          record.profilePlanFingerprint != expectedPreviousPlanFingerprint) {
         continue;
       }
       final key = QazaPrayerKey.fromRecord(record).value;
