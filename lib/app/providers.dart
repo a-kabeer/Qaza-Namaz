@@ -83,6 +83,7 @@ final profileQazaPlanReconciliationServiceProvider =
     planService: ref.watch(qazaPlanServiceProvider),
     qazaService: ref.watch(qazaServiceProvider),
     revisionRepository: ref.watch(qazaPlanRevisionRepositoryProvider),
+    mutationRepository: ref.watch(qazaProfilePlanMutationRepositoryProvider),
   );
 });
 
