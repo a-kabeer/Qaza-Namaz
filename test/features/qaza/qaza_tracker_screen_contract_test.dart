@@ -461,7 +461,7 @@ void main() {
     expect(dao, contains('row.completedAt.isNotNull()'));
   });
 
-  test('Completed rows remain compact and expose required dates and completion time', () {
+  test('Completed rows use contextual completion date and preserve two-line history', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -469,11 +469,64 @@ void main() {
     final end = source.indexOf('class _CompletedRecordDetails', start);
     final row = source.substring(start, end);
 
+    expect(source, contains("import '../../core/time/local_date_service.dart';"));
+    expect(row, contains('completedAt.toLocal()'));
+    expect(row, contains('LocalDateService.today()'));
+    expect(row, contains('LocalDateService.compareCalendarDates'));
+    expect(row, contains('LocalDateService.addCalendarDays(today, -1)'));
+    expect(row, contains('l10n.commonToday'));
+    expect(row, contains('l10n.commonYesterday'));
+    expect(row, contains('DateFormatters.formatGregorianDatePadded(date)'));
     expect(row, contains('DateFormatters.formatClockTime(completedAt)'));
     expect(row, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
     expect(row, contains('l10n.formatHijriDate(record.originalDate)'));
-    expect(row, contains("Icons.check_circle_rounded"));
-    expect(row, isNot(contains('Card(')));
+    expect(row, contains('title: Row('));
+    expect(row, contains('subtitle: Row('));
+    expect(row, contains('Flexible('));
+    expect(row, contains('fit: FlexFit.loose'));
+    expect(row, contains('textAlign: TextAlign.end'));
+    expect(row, contains('maxLines: 1'));
+    expect(row, contains('overflow: TextOverflow.ellipsis'));
+    expect(row, contains('trailing: selectionMode'));
+    expect(row, contains('Checkbox('));
+    expect(row, contains('selected: selected'));
+    expect(row, contains('onLongPress: onLongPress'));
+    expect(row, contains('Semantics('));
+    expect(row, contains('label: semanticLabel'));
+    expect(row, isNot(contains('_groupLabel(')));
+    expect(row, isNot(contains('Today'));
+    expect(row, isNot(contains('Yesterday'));
+  });
+
+  test('Completed list no longer renders redundant completion-date group headers', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(source, isNot(contains('final showGroup =')));
+    expect(source, isNot(contains('_groupLabel(completedAt)')));
+    expect(source, contains('return _CompletedRecordRow('));
+  });
+
+  test('Completed date labels are localized in English and Urdu', () {
+    final en = File('lib/l10n/app_en.arb').readAsStringSync();
+    final ur = File('lib/l10n/app_ur.arb').readAsStringSync();
+    final base =
+        File('lib/l10n/app_localizations.dart').readAsStringSync();
+    final enGenerated =
+        File('lib/l10n/app_localizations_en.dart').readAsStringSync();
+    final urGenerated =
+        File('lib/l10n/app_localizations_ur.dart').readAsStringSync();
+
+    expect(en, contains('"commonToday": "Today"'));
+    expect(en, contains('"commonYesterday": "Yesterday"'));
+    expect(ur, contains('"commonToday": "آج"'));
+    expect(ur, contains('"commonYesterday": "کل"'));
+    expect(base, contains('String get commonToday;'));
+    expect(base, contains('String get commonYesterday;'));
+    expect(enGenerated, contains("String get commonToday => 'Today';"));
+    expect(enGenerated, contains("String get commonYesterday => 'Yesterday';"));
+    expect(urGenerated, contains("String get commonToday => 'آج';"));
+    expect(urGenerated, contains("String get commonYesterday => 'کل';"));
   });
 
   test('Completed detail provides permanent Mark as Pending correction', () {
