@@ -8,6 +8,7 @@ import '../../../app/providers.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/services/qaza_activity_service.dart';
@@ -19,7 +20,12 @@ import 'home_prayer_icon.dart';
 enum _ActivityRange { weekly, monthly, yearly }
 
 class HomeQazaActivity extends ConsumerStatefulWidget {
-  const HomeQazaActivity({super.key});
+  const HomeQazaActivity({
+    super.key,
+    this.initialMonth,
+  });
+
+  final DateTime? initialMonth;
 
   @override
   ConsumerState<HomeQazaActivity> createState() => _HomeQazaActivityState();
@@ -27,9 +33,9 @@ class HomeQazaActivity extends ConsumerStatefulWidget {
 
 class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
   static const _basePage = 10000;
-  static const _pageCount = _basePage + 1;
 
   late final PageController _pageController;
+  late final int _maxPage;
   var _range = _ActivityRange.weekly;
   var _pageIndex = _basePage;
   DateTime? _selectedDay;
@@ -37,8 +43,28 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _basePage);
+
+    final initialMonth = widget.initialMonth;
+    if (initialMonth == null) {
+      _maxPage = _basePage;
+      _pageController = PageController(initialPage: _basePage);
+      return;
+    }
+
+    _range = _ActivityRange.monthly;
+    final today = ref.read(homeLocalDateProvider);
+    final initialOffset = _monthDifference(
+      DateTime(today.year, today.month),
+      DateTime(initialMonth.year, initialMonth.month),
+    );
+
+    _pageIndex = _basePage + initialOffset;
+    _maxPage = _basePage + math.max(initialOffset, 0);
+    _pageController = PageController(initialPage: _pageIndex);
   }
+
+  static int _monthDifference(DateTime from, DateTime to) =>
+      (to.year - from.year) * 12 + (to.month - from.month);
 
   @override
   void dispose() {
@@ -76,7 +102,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page >= _pageCount) return;
+    if (page < 0 || page > _maxPage) return;
     _pageController.animateToPage(
       page,
       duration: const Duration(milliseconds: 220),
@@ -90,28 +116,30 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     final today = ref.watch(homeLocalDateProvider);
     final anchor = _anchorForOffset(today, _periodOffset);
     final canPrevious = _pageIndex > 0;
-    final canNext = _pageIndex < _basePage;
+    final canNext = _pageIndex < _maxPage;
+    final standalone = widget.initialMonth != null;
 
-    return Card(
+    final content = Card(
       key: const Key('home_qaza_activity'),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n.homeQazaActivity,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              l10n.homeProgressHistory,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 14),
-            SegmentedButton<_ActivityRange>(
+            if (!standalone) ...[
+              Text(
+                l10n.homeQazaActivity,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                l10n.homeProgressHistory,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 14),
+              SegmentedButton<_ActivityRange>(
               key: const Key('home_activity_range_selector'),
               segments: [
                 ButtonSegment(
@@ -131,8 +159,9 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
               onSelectionChanged: (selected) {
                 if (selected.isNotEmpty) _selectRange(selected.first);
               },
-            ),
-            const SizedBox(height: 14),
+              ),
+              const SizedBox(height: 14),
+            ],
             Row(
               key: const Key('home_activity_period_header'),
               children: [
@@ -193,7 +222,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                     child: PageView.builder(
                 key: ValueKey('home_activity_pager_${_range.name}'),
                 controller: _pageController,
-                itemCount: _pageCount,
+                itemCount: _maxPage + 1,
                 onPageChanged: (index) {
                   setState(() {
                     _pageIndex = index;
@@ -230,6 +259,27 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
               ),
             ],
           ],
+        ),
+      ),
+    );
+
+    if (!standalone) return content;
+
+    final locale = Localizations.localeOf(context).languageCode;
+    final monthTitle = DateFormat.yMMMM(locale).format(anchor);
+
+    return AppScaffold(
+      key: const Key('home_activity_month_drilldown'),
+      title: monthTitle,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppSpacing.fabClearance,
+          ),
+          child: content,
         ),
       ),
     );
@@ -411,6 +461,18 @@ class _ActivityPeriodPage extends ConsumerWidget {
         range: range,
         selectedDay: selectedDay,
         onSelectedDay: onSelectedDay,
+        onSelectedMonth: range == _ActivityRange.yearly
+            ? (month) => _openMonthlyDrilldown(context, month)
+            : null,
+      ),
+    );
+  }
+
+  void _openMonthlyDrilldown(BuildContext context, DateTime month) {
+    final target = DateTime(month.year, month.month);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => HomeQazaActivity(initialMonth: target),
       ),
     );
   }
@@ -433,12 +495,14 @@ class _ActivityPeriodContent extends ConsumerWidget {
     required this.range,
     required this.selectedDay,
     required this.onSelectedDay,
+    required this.onSelectedMonth,
   });
 
   final QazaActivityPeriod period;
   final _ActivityRange range;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
+  final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -484,6 +548,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
             labelsAreDates: false,
             selectedDay: null,
             onSelectedDay: null,
+            onSelectedMonth: onSelectedMonth,
           ),
       ],
     );
@@ -671,12 +736,14 @@ class _ActivityBarChart extends StatelessWidget {
     required this.labelsAreDates,
     required this.selectedDay,
     required this.onSelectedDay,
+    this.onSelectedMonth,
   });
 
   final QazaActivityPeriod period;
   final bool labelsAreDates;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
+  final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
   Widget build(BuildContext context) {
@@ -752,7 +819,7 @@ class _ActivityBarChart extends StatelessWidget {
               ),
             ),
             barTouchData: BarTouchData(
-              enabled: onSelectedDay != null,
+              enabled: onSelectedDay != null || onSelectedMonth != null,
               // FL Chart's built-in back-draw touch region keeps zero-height
               // bars, including future days, selectable without custom hit testing.
               allowTouchBarBackDraw: true,
@@ -761,14 +828,22 @@ class _ActivityBarChart extends StatelessWidget {
                 vertical: 20,
               ),
               touchCallback: (event, response) {
-                if (onSelectedDay == null || event is! FlTapUpEvent) return;
+                if ((onSelectedDay == null && onSelectedMonth == null) ||
+                    event is! FlTapUpEvent) {
+                  return;
+                }
                 final index = response?.spot?.touchedBarGroupIndex;
                 if (index == null ||
                     index < 0 ||
                     index >= period.days.length) {
                   return;
                 }
-                onSelectedDay!(period.days[index].date);
+                final date = period.days[index].date;
+                if (onSelectedMonth != null) {
+                  onSelectedMonth!(date);
+                } else {
+                  onSelectedDay!(date);
+                }
               },
             ),
             barGroups: [
