@@ -24,6 +24,7 @@ import '../domain/entities/qaza_record.dart';
 import '../domain/entities/qaza_addition.dart';
 import '../domain/entities/user_profile.dart';
 import '../domain/repositories/qaza_plan_revision_repository.dart';
+import '../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
@@ -114,6 +115,17 @@ final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
     fireImmediately: true,
   );
   ref.onDispose(repository.dispose);
+  return repository;
+});
+
+final qazaProfilePlanMutationRepositoryProvider =
+    Provider<QazaProfilePlanMutationRepository>((ref) {
+  final repository = ref.watch(qazaRepositoryProvider);
+  if (repository is! QazaProfilePlanMutationRepository) {
+    throw StateError(
+      'The active Qaza repository does not support profile-plan mutations.',
+    );
+  }
   return repository;
 });
 
