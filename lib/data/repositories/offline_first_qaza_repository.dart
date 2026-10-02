@@ -52,28 +52,36 @@ class OfflineFirstQazaRepository
   }) async {
     _validateActive(userId);
     final records = <QazaRecord>[];
-    DateTime? cursorDate;
-    String? cursorId;
-    PrayerType? cursorPrayerType;
+    DateTime? cursorOriginalDate;
+    String? cursorOriginalId;
+    PrayerType? cursorOriginalPrayerType;
+    DateTime? cursorCompletedAt;
+    String? cursorCompletedId;
 
     while (true) {
+      final completed = status == QazaStatus.completed;
       final page = await _localStore.getPage(
         userId: userId,
         limit: 500,
         prayerType: prayerType,
         status: status,
-        afterOriginalDate: cursorDate,
-        afterId: cursorId,
-        afterPrayerType: cursorPrayerType,
+        afterOriginalDate: completed ? null : cursorOriginalDate,
+        afterPrayerType: completed ? null : cursorOriginalPrayerType,
+        afterId: completed ? cursorCompletedId : cursorOriginalId,
+        afterCompletedAt: completed ? cursorCompletedAt : null,
       );
       records.addAll(page.records);
       if (!page.hasMore) return records;
-      cursorDate = page.nextOriginalDate;
-      cursorId = page.nextId;
-      cursorPrayerType = page.nextPrayerType;
+      if (completed) {
+        cursorCompletedAt = page.nextCompletedAt;
+        cursorCompletedId = page.nextId;
+      } else {
+        cursorOriginalDate = page.nextOriginalDate;
+        cursorOriginalId = page.nextId;
+        cursorOriginalPrayerType = page.nextPrayerType;
+      }
     }
   }
-
   @override
   Future<QazaPage> getPage({
     required String userId,
