@@ -61,7 +61,7 @@ class PrayerTimelineRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
-          children: [
+            children: [
             Expanded(
               child: Text(
                 name,
