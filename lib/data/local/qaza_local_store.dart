@@ -94,6 +94,8 @@ class LocalQazaPage {
   final bool hasMore;
   DateTime? get nextOriginalDate =>
       records.isEmpty ? null : records.last.originalDate;
+  DateTime? get nextCompletedAt =>
+      records.isEmpty ? null : records.last.completedAt;
   String? get nextId => records.isEmpty ? null : records.last.id;
   PrayerType? get nextPrayerType =>
       records.isEmpty ? null : records.last.prayerType;
