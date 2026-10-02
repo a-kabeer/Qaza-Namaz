@@ -166,9 +166,11 @@ void main() {
       startPrayingAge: 2,
     );
 
-    final start = ProfileRules.startPrayingDate(profile)!;
-    final beforeStart = start.subtract(const Duration(days: 1));
-    final onStart = start;
+    final beforeStart =
+        firstGregorianDateAtOrAfterFixedAge(dob, 2).subtract(
+      const Duration(days: 1),
+    );
+    final onStart = firstGregorianDateAtOrAfterFixedAge(dob, 2);
 
     expect(
       FixedHijriArithmeticService.dayIndexForGregorian(beforeStart) -
