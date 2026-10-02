@@ -1045,4 +1045,18 @@
   "prayerTimeAsr": "Asr",
   "prayerTimeMaghrib": "Maghrib",
   "prayerTimeIsha": "Isha"
+,
+  "qiblaTitle": "Qibla",
+  "qiblaDirection": "Qibla Direction",
+  "qiblaBearing": "Qibla bearing",
+  "qiblaFromTrueNorth": "From True North",
+  "qiblaUnavailable": "Qibla unavailable",
+  "qiblaLocationRequired": "Select or save a location to calculate Qibla.",
+  "qiblaCompassBody": "Rotate your phone; the arrow points toward Qibla.",
+  "qiblaSensorUnavailableBody": "This device has no usable compass sensor, so a static Qibla bearing is shown.",
+  "qiblaHeadingUnavailable": "Compass heading is temporarily unavailable.",
+  "qiblaTurnToDirection": "Rotate your phone in this direction.",
+  "qiblaCompassAccuracy": "Compass accuracy ±{degrees}°",
+  "@qiblaCompassAccuracy": { "placeholders": { "degrees": { "type": "String" } } },
+  "qiblaCalibrationHint": "Compass accuracy is low. Move the phone in a figure-eight to recalibrate."
 }
