@@ -22,6 +22,22 @@ UserProfile _profile({
       witrIncluded: true,
     );
 
+DateTime firstGregorianDateAtOrAfterFixedAge(
+  DateTime dob,
+  int age,
+) {
+  final target = age * FixedHijriArithmeticService.daysPerYear;
+  for (var offset = 0; offset <= 6000; offset++) {
+    final candidate = dob.add(Duration(days: offset));
+    if (FixedHijriArithmeticService.dayIndexForGregorian(candidate) -
+            FixedHijriArithmeticService.dayIndexForGregorian(dob) >=
+        target) {
+      return candidate;
+    }
+  }
+  throw StateError('Could not find a fixed arithmetic age boundary.');
+}
+
 void main() {
   test('fixed arithmetic uses 30-day months and 360-day years', () {
     expect(
@@ -103,8 +119,8 @@ void main() {
     );
     final profile = _profile(
       dob: dob,
-      pubertyAge: 1,
-      startPrayingAge: 2,
+      pubertyAge: 12,
+      startPrayingAge: 13,
     );
 
     expect(ProfileRules.pubertyDate(profile), isNotNull);
@@ -167,7 +183,7 @@ void main() {
     );
 
     final beforeStart =
-        firstGregorianDateAtOrAfterFixedAge(dob, 2).subtract(
+        firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
       const Duration(days: 1),
     );
     final onStart = firstGregorianDateAtOrAfterFixedAge(dob, 2);
