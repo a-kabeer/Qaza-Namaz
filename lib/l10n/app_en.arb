@@ -941,6 +941,15 @@
   "profileSave": "Save Changes",
   "profileQazaPlanChangedTitle": "Qaza plan will be updated",
   "profileQazaPlanSummary": "Your profile change changes the calculated Qaza plan.",
+  "profileQazaImpact": "Impact",
+  "profileQazaCount": "{count} Qaza",
+  "@profileQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "profileQazaPreviousTotal": "Previous plan",
   "profileQazaNewTotal": "New plan",
   "profileQazaCompletedInPlan": "Completed in new plan",
