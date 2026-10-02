@@ -324,6 +324,7 @@ class _TrackerContent extends StatelessWidget {
             ),
           ),
         ),
+        _SortBar(state: state, controller: controller),
         Expanded(
           child: state.statusFilter == QazaStatusFilter.completed
               ? _CompletedTrackerBody(state: state, controller: controller)
@@ -1147,6 +1148,63 @@ class _CompletedRecordDetails extends ConsumerWidget {
             child: FilledButton(
               onPressed: () => _markPending(context, ref),
               child: const Text('Mark as Pending'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shared Material 3 sorting control for both tracker workspaces.
+///
+/// Pending is ordered by Qaza date ([QazaRecord.originalDate]); Completed is
+/// ordered by completion timestamp ([QazaRecord.completedAt]). The same
+/// controller/state is reused for both workspaces.
+class _SortBar extends StatelessWidget {
+  const _SortBar({
+    required this.state,
+    required this.controller,
+  });
+
+  final QazaTrackerState state;
+  final QazaTrackerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: AppSpacing.lg,
+        end: AppSpacing.lg,
+        bottom: AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Text(
+            l10n.qazaSortLabel,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: SegmentedButton<QazaSortOrder>(
+              key: const Key('qaza_tracker_sort'),
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(
+                  value: QazaSortOrder.oldestFirst,
+                  label: Text(l10n.qazaSortOldestFirst),
+                ),
+                ButtonSegment(
+                  value: QazaSortOrder.newestFirst,
+                  label: Text(l10n.qazaSortNewestFirst),
+                ),
+              ],
+              selected: {state.sortOrder},
+              onSelectionChanged: (value) {
+                if (value.isEmpty) return;
+                controller.setSortOrder(value.first);
+              },
             ),
           ),
         ],

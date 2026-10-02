@@ -17,6 +17,18 @@ enum QazaStatusFilter { all, pending, completed }
 
 enum QazaSelectionScope { pending, completed }
 
+/// Sort direction used by both tracker workspaces.
+///
+/// Pending orders by the Qaza's [QazaRecord.originalDate]. Completed orders by
+/// the completion timestamp [QazaRecord.completedAt]. The controller maps the
+/// direction to the matching keyset cursor so pagination stays bounded.
+enum QazaSortOrder {
+  oldestFirst,
+  newestFirst;
+
+  bool get isOldestFirst => this == QazaSortOrder.oldestFirst;
+}
+
 extension QazaStatusFilterX on QazaStatusFilter {
   QazaStatus? get status => switch (this) {
         QazaStatusFilter.all => null,
@@ -31,13 +43,13 @@ extension QazaStatusFilterX on QazaStatusFilter {
       };
 }
 
-/// The tracker always uses fixed status-specific ordering.
-/// Pending: originalDate ASC, id ASC.
-/// Completed: completedAt DESC, id DESC.
+/// Sort state shared by Pending and Completed. The controller maps the
+/// direction to the correct date field and keyset cursor for the active status.
 
 class QazaTrackerState {
   const QazaTrackerState({
     this.statusFilter = QazaStatusFilter.pending,
+    this.sortOrder = QazaSortOrder.oldestFirst,
     this.selectionMode = false,
     this.selectionScope,
     this.selectingAll = false,
@@ -57,6 +69,7 @@ class QazaTrackerState {
   });
 
   final QazaStatusFilter statusFilter;
+  final QazaSortOrder sortOrder;
   final bool selectionMode;
   final QazaSelectionScope? selectionScope;
 
@@ -112,6 +125,7 @@ class QazaTrackerState {
 
   QazaTrackerState copyWith({
     QazaStatusFilter? statusFilter,
+    QazaSortOrder? sortOrder,
     bool? selectingAll,
     PrayerType? prayerFilter,
     DateTime? from,
@@ -136,6 +150,7 @@ class QazaTrackerState {
   }) =>
       QazaTrackerState(
         statusFilter: statusFilter ?? this.statusFilter,
+        sortOrder: sortOrder ?? this.sortOrder,
         selectionMode: selectionMode ?? this.selectionMode,
         selectionScope:
             clearSelectionScope ? null : selectionScope ?? this.selectionScope,
@@ -291,37 +306,60 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-  /// Reads a bounded page using the status-specific fixed ordering.
-  /// Pending advances with an ascending (originalDate, id) cursor; Completed
-  /// continues backward with a descending (completedAt, id) cursor.
+  /// Reads one bounded page in the active status-specific sort order.
+  ///
+  /// Pending uses [originalDate] and Completed uses [completedAt]. The cursor
+  /// always matches the visible ordering direction, while the other date
+  /// field remains completely out of the pagination query.
   Future<QazaPage> _readPage({
     required String userId,
     QazaRecord? after,
   }) {
     final completed = state.statusFilter == QazaStatusFilter.completed;
+    final oldestFirst = state.sortOrder.isOldestFirst;
+
     return ref.read(qazaServiceProvider).getPage(
           userId: userId,
           limit: pageSize,
           prayerType: state.prayerFilter,
           status: state.statusFilter.status,
-          from: state.statusFilter == QazaStatusFilter.completed &&
-                  state.from != null
+          from: completed && state.from != null
               ? QazaDate.normalize(state.from!)
               : state.from,
-          to: state.statusFilter == QazaStatusFilter.completed
-              ? null
-              : state.to,
-          toExclusive: state.statusFilter == QazaStatusFilter.completed &&
-                  state.to != null
+          to: completed ? null : state.to,
+          toExclusive: completed && state.to != null
               ? QazaDate.normalize(state.to!).add(const Duration(days: 1))
               : null,
           additionId: state.additionId,
-          afterOriginalDate: completed ? after?.originalDate : null,
-          afterId: completed ? after?.id : null,
-          beforeCompletedAt: completed ? after?.completedAt : null,
-          beforeId: completed ? after?.id : null,
-          descending: false,
+          afterOriginalDate:
+              !completed && oldestFirst ? after?.originalDate : null,
+          beforeOriginalDate:
+              !completed && !oldestFirst ? after?.originalDate : null,
+          afterCompletedAt:
+              completed && oldestFirst ? after?.completedAt : null,
+          beforeCompletedAt:
+              completed && !oldestFirst ? after?.completedAt : null,
+          afterId: oldestFirst ? after?.id : null,
+          beforeId: oldestFirst ? null : after?.id,
+          descending: !oldestFirst,
         );
+  }
+
+  /// Changes direction from the top. Existing records and keyset cursors are
+  /// discarded because they belong to the previous ordering.
+  void setSortOrder(QazaSortOrder order) {
+    if (order == state.sortOrder) return;
+    state = state.copyWith(
+      sortOrder: order,
+      records: const <QazaRecord>[],
+      hasMore: false,
+      loadingMore: false,
+      selectionMode: false,
+      selected: const <String>{},
+      clearSelectionScope: true,
+      clearError: true,
+    );
+    refresh();
   }
 
   Future<void> loadMore() async {

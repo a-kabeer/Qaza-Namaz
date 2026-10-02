@@ -188,11 +188,15 @@ abstract class QazaLocalStore {
       records.sort((a, b) {
         final at = a.completedAt;
         final bt = b.completedAt;
-        if (at == null && bt == null) return b.id.compareTo(a.id);
+        if (at == null && bt == null) {
+          return descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id);
+        }
         if (at == null) return 1;
         if (bt == null) return -1;
-        final d = bt.compareTo(at);
-        return d != 0 ? d : b.id.compareTo(a.id);
+        final d = descending ? bt.compareTo(at) : at.compareTo(bt);
+        return d != 0
+            ? d
+            : (descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id));
       });
       if (beforeCompletedAt != null) {
         records = records.where((r) {

@@ -35,4 +35,14 @@ void main() {
     expect(reset.selectionScope, isNull);
     expect(reset.selected, isEmpty);
   });
+  test('Sort direction is part of shared tracker state', () {
+    const initial = QazaTrackerState();
+    expect(initial.sortOrder, QazaSortOrder.oldestFirst);
+
+    final newest = initial.copyWith(
+      sortOrder: QazaSortOrder.newestFirst,
+    );
+    expect(newest.sortOrder, QazaSortOrder.newestFirst);
+  });
+
 }
