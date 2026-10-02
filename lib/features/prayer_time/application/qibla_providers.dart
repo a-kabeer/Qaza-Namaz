@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geomag/geomag.dart';
 
 import '../data/device_compass_service.dart';
+import '../domain/prayer_location.dart';
 import '../domain/qibla_direction_service.dart';
 import 'prayer_time_providers.dart';
 
@@ -13,9 +14,11 @@ final magneticDeclinationServiceProvider = Provider<MagneticDeclinationService>(
   (ref) => MagneticDeclinationService(),
 );
 
+final qiblaLocationProvider = Provider<PrayerLocation?>((ref) =>
+    ref.watch(prayerTimeControllerProvider).valueOrNull?.location);
+
 final qiblaBearingProvider = Provider<double?>((ref) {
-  final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
-  final location = snapshot?.location;
+  final location = ref.watch(qiblaLocationProvider);
   if (location == null) return null;
 
   try {
@@ -29,8 +32,7 @@ final qiblaBearingProvider = Provider<double?>((ref) {
 });
 
 final magneticDeclinationProvider = Provider<double?>((ref) {
-  final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
-  final location = snapshot?.location;
+  final location = ref.watch(qiblaLocationProvider);
   if (location == null) return null;
 
   try {
