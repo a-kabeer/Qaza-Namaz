@@ -409,9 +409,10 @@ class _PrayerTimeContent extends ConsumerWidget {
               focusIcon != null &&
               focusCountdown != null) ...[
             const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 Expanded(
                   child: _PrayerTimeFocusCard(
                     name: focusName,
