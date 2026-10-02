@@ -22,7 +22,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
 
   final String additionId;
 
-  $override
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncDetail = ref.watch(qazaAdditionDetailProvider(additionId));
     return AppScaffold(
@@ -294,7 +294,7 @@ class _DetailSection extends StatelessWidget {
   final String label;
   final Widget child;
 
-  $override
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
