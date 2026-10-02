@@ -187,7 +187,7 @@ void main() {
       pubertyAge: 1,
       startPrayingAge: 2,
     );
-    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 1)
+    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 2)
         .subtract(const Duration(days: 1));
 
     final validation = ProfileRules.validate(
