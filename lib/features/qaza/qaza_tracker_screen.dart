@@ -304,26 +304,11 @@ class _TrackerContent extends StatelessWidget {
           const _CompletedHeader()
         else
           _ProgressHeader(additionId: additionId),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.sm,
-          ),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: OutlinedButton.icon(
-              key: const Key('qaza_tracker_filter_button'),
-              onPressed: () => _openFilters(context),
-              icon: const Icon(Icons.filter_list_rounded),
-              label: Text(
-                state.isFiltered ? 'Filters active' : 'Filter',
-              ),
-            ),
-          ),
+        _FilterSortBar(
+          state: state,
+          controller: controller,
+          onFilterTap: () => _openFilters(context),
         ),
-        _SortBar(state: state, controller: controller),
         Expanded(
           child: state.statusFilter == QazaStatusFilter.completed
               ? _CompletedTrackerBody(state: state, controller: controller)
@@ -1025,61 +1010,57 @@ class _CompletedRecordRow extends StatelessWidget {
           size: 20,
           color: theme.colorScheme.primary,
         ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                record.prayerType.localizedLabel(l10n),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              fit: FlexFit.loose,
-              child: Text(
-                completionDate,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+        title: Text(
+          record.prayerType.localizedLabel(l10n),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        subtitle: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '$originalDate · $hijriDate',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              completionTime,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        subtitle: Text(
+          '$originalDate · $hijriDate',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall,
         ),
-        trailing: selectionMode
-            ? Checkbox(
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  completionDate,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  completionTime,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            if (selectionMode) ...[
+              const SizedBox(width: 8),
+              Checkbox(
                 value: selected,
                 onChanged: (_) => onTap(),
-              )
-            : null,
+              ),
+            ],
+          ],
+        ),
         selected: selected,
         onTap: onTap,
         onLongPress: onLongPress,
@@ -1216,48 +1197,84 @@ class _CompletedRecordDetails extends ConsumerWidget {
   }
 }
 
-/// Shared Material 3 sorting control for both tracker workspaces.
+/// Shared Material 3 filter + sorting control for both tracker workspaces.
 ///
 /// Pending is ordered by Qaza date ([QazaRecord.originalDate]); Completed is
 /// ordered by completion timestamp ([QazaRecord.completedAt]). The same
 /// controller/state is reused for both workspaces.
-class _SortBar extends StatelessWidget {
-  const _SortBar({
+class _FilterSortBar extends StatelessWidget {
+  const _FilterSortBar({
     required this.state,
     required this.controller,
+    required this.onFilterTap,
   });
 
   final QazaTrackerState state;
   final QazaTrackerController controller;
+  final VoidCallback onFilterTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsetsDirectional.only(
-        start: AppSpacing.lg,
-        end: AppSpacing.lg,
+        start: AppSpacing.md,
+        end: AppSpacing.md,
         bottom: AppSpacing.sm,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            l10n.qazaSortLabel,
-            style: Theme.of(context).textTheme.bodySmall,
+          Flexible(
+            fit: FlexFit.loose,
+            child: OutlinedButton.icon(
+              key: const Key('qaza_tracker_filter_button'),
+              onPressed: onFilterTap,
+              icon: const Icon(Icons.filter_list_rounded),
+              label: Text(
+                state.isFiltered ? 'Filters active' : 'Filter',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Expanded(
+          Flexible(
+            fit: FlexFit.loose,
             child: SegmentedButton<QazaSortOrder>(
               key: const Key('qaza_tracker_sort'),
               showSelectedIcon: false,
+              style: ButtonStyle(
+                minimumSize: const WidgetStatePropertyAll(
+                  Size(0, 40),
+                ),
+                padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 6),
+                ),
+                visualDensity: const VisualDensity(
+                  horizontal: -2,
+                  vertical: 0,
+                ),
+                textStyle: WidgetStatePropertyAll(theme.textTheme.labelMedium),
+              ),
               segments: [
                 ButtonSegment(
                   value: QazaSortOrder.oldestFirst,
-                  label: Text(l10n.qazaSortOldestFirst),
+                  label: Text(
+                    l10n.qazaSortOldestFirst,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
                 ),
                 ButtonSegment(
                   value: QazaSortOrder.newestFirst,
-                  label: Text(l10n.qazaSortNewestFirst),
+                  label: Text(
+                    l10n.qazaSortNewestFirst,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
                 ),
               ],
               selected: {state.sortOrder},

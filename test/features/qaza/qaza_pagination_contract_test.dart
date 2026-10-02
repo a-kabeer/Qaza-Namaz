@@ -130,13 +130,16 @@ void main() {
             .replaceAll('\r\n', '\n')
             .replaceAll('\r', '\n');
 
-    expect(screen, contains('class _SortBar extends StatelessWidget'));
+    expect(screen, contains('class _FilterSortBar extends StatelessWidget'));
     expect(screen, contains('SegmentedButton<QazaSortOrder>'));
-    expect(screen, contains('l10n.qazaSortLabel'));
+    expect(screen, isNot(contains('l10n.qazaSortLabel')));
     expect(screen, contains('l10n.qazaSortOldestFirst'));
     expect(screen, contains('l10n.qazaSortNewestFirst'));
     expect(screen, contains("key: const Key('qaza_tracker_sort')"));
     expect(screen, contains('EdgeInsetsDirectional.only'));
-    expect(screen, contains('_SortBar(state: state, controller: controller)'));
+    expect(screen, contains('_FilterSortBar('));
+    expect(screen, contains('state: state'));
+    expect(screen, contains('controller: controller'));
+    expect(screen, contains('onFilterTap: () => _openFilters(context)'));
   });
 }

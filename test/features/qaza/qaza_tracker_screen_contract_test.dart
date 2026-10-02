@@ -540,14 +540,15 @@ void main() {
     expect(row, contains('DateFormatters.formatClockTime(completedAt)'));
     expect(row, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
     expect(row, contains('l10n.formatHijriDate(record.originalDate)'));
-    expect(row, contains('title: Row('));
-    expect(row, contains('subtitle: Row('));
-    expect(row, contains('Flexible('));
-    expect(row, contains('fit: FlexFit.loose'));
+    expect(row, contains('title: Text('));
+    expect(row, contains('subtitle: Text('));
+    expect(row, contains('trailing: Row('));
+    expect(row, contains('mainAxisSize: MainAxisSize.min'));
+    expect(row, contains('crossAxisAlignment: CrossAxisAlignment.end'));
     expect(row, contains('textAlign: TextAlign.end'));
     expect(row, contains('maxLines: 1'));
     expect(row, contains('overflow: TextOverflow.ellipsis'));
-    expect(row, contains('trailing: selectionMode'));
+    expect(row, contains('if (selectionMode)'));
     expect(row, contains('Checkbox('));
     expect(row, contains('selected: selected'));
     expect(row, contains('onLongPress: onLongPress'));
@@ -772,4 +773,70 @@ void main() {
     expect(controller, contains('additionId: request.additionId'));
     expect(controller, contains('additionId: state.additionId'));
   });
+
+  test('Filter and Sort use one shared compact horizontal row', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final contentStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final contentEnd = source.indexOf('class _CompletedHeader extends ConsumerWidget {', contentStart);
+    final trackerContent = source.substring(contentStart, contentEnd);
+
+    expect(trackerContent, contains('_FilterSortBar('));
+    expect(trackerContent, isNot(contains('_SortBar(')));
+    expect(trackerContent, isNot(contains('OutlinedButton.icon(')));
+    expect(trackerContent, contains('onFilterTap: () => _openFilters(context)'));
+
+    final barStart = source.indexOf('class _FilterSortBar extends StatelessWidget {');
+    final barEnd = source.indexOf('class _FilterSheet extends ConsumerWidget {', barStart);
+    final bar = source.substring(barStart, barEnd);
+
+    expect(bar, contains("Key('qaza_tracker_filter_button')"));
+    expect(bar, contains("Key('qaza_tracker_sort')"));
+    expect(bar, contains('Row('));
+    expect(bar, contains('Flexible('));
+    expect(bar, contains('fit: FlexFit.loose'));
+    expect(bar, contains('SegmentedButton<QazaSortOrder>'));
+    expect(bar, contains('QazaSortOrder.oldestFirst'));
+    expect(bar, contains('QazaSortOrder.newestFirst'));
+    expect(bar, contains('StatePropertyAll'));
+    expect(bar, isNot(contains('qazaSortLabel')));
+    expect(bar, contains('maxLines: 1'));
+    expect(bar, contains('softWrap: false'));
+  });
+
+  test('Completed row keeps date and time in one right-aligned trailing metadata block', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+    final end = source.indexOf('class _CompletedBatchActionBar extends ConsumerWidget {', start);
+    final row = source.substring(start, end);
+
+    expect(row, contains('trailing: Row('));
+    expect(row, contains('mainAxisSize: MainAxisSize.min'));
+    expect(row, contains('Column('));
+    expect(row, contains('crossAxisAlignment: CrossAxisAlignment.end'));
+    expect(row, contains('completionDate'));
+    expect(row, contains('completionTime'));
+    expect(row, contains('const SizedBox(height: 2)'));
+    expect(row, contains('textAlign: TextAlign.end'));
+    expect(row, contains('dense: true'));
+    expect(row, contains('minVerticalPadding: 4'));
+    expect(row, isNot(contains('title: Row(')));
+    expect(row, isNot(contains('subtitle: Row(')));
+  });
+
+  test('Qaza workspace uses the shared compact row for Pending, Completed, and addition-filtered state', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final trackerStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final trackerEnd = source.indexOf('class _CompletedHeader extends ConsumerWidget {', trackerStart);
+    final tracker = source.substring(trackerStart, trackerEnd);
+
+    expect(tracker, contains('_FilterSortBar('));
+    expect(source, contains('final String? additionId;'));
+    expect(source, contains('_FilterSheet(additionId: state.additionId)'));
+    expect(source, contains('qazaTrackerControllerProvider(additionId)'));
+    expect(source, contains('qaza_tracker_sort'));
+  });
+
 }
