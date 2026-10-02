@@ -54,6 +54,7 @@ class OfflineFirstQazaRepository
     final records = <QazaRecord>[];
     DateTime? cursorDate;
     String? cursorId;
+    PrayerType? cursorPrayerType;
 
     while (true) {
       final page = await _localStore.getPage(
@@ -63,11 +64,13 @@ class OfflineFirstQazaRepository
         status: status,
         afterOriginalDate: cursorDate,
         afterId: cursorId,
+        afterPrayerType: cursorPrayerType,
       );
       records.addAll(page.records);
       if (!page.hasMore) return records;
       cursorDate = page.nextOriginalDate;
       cursorId = page.nextId;
+      cursorPrayerType = page.nextPrayerType;
     }
   }
 
@@ -84,8 +87,10 @@ class OfflineFirstQazaRepository
     DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
+    PrayerType? afterPrayerType,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    PrayerType? beforePrayerType,
     DateTime? afterCompletedAt,
     DateTime? beforeCompletedAt,
     bool descending = false,
@@ -102,8 +107,10 @@ class OfflineFirstQazaRepository
       toExclusive: toExclusive,
       afterOriginalDate: afterOriginalDate,
       afterId: afterId,
+      afterPrayerType: afterPrayerType,
       beforeOriginalDate: beforeOriginalDate,
       beforeId: beforeId,
+      beforePrayerType: beforePrayerType,
       afterCompletedAt: afterCompletedAt,
       beforeCompletedAt: beforeCompletedAt,
       descending: descending,
