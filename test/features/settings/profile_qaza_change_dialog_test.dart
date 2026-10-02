@@ -85,8 +85,16 @@ void main() {
       expect(find.text('23 Aug 2026 – 25 Aug 2026'), findsOneWidget);
       expect(
         find.text(
-          '\${HijriDateService.format(oldPlan.startDate, l10n)} – '
-          '\${HijriDateService.format(oldPlan.endDate.subtract(const Duration(days: 1)), l10n)}',
+          HijriDateService.format(oldPlan.startDate, l10n),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          HijriDateService.format(
+            oldPlan.endDate.subtract(const Duration(days: 1)),
+            l10n,
+          ),
         ),
         findsOneWidget,
       );
