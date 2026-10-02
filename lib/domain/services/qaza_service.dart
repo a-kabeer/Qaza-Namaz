@@ -822,6 +822,7 @@ class QazaService {
     final result = <QazaRecord>[];
     DateTime? afterDate;
     String? afterId;
+    PrayerType? afterPrayerType;
     while (remaining.isNotEmpty) {
       final page = await repository.getPage(
         userId: userId,
@@ -829,6 +830,7 @@ class QazaService {
         status: QazaStatus.pending,
         afterOriginalDate: afterDate,
         afterId: afterId,
+        afterPrayerType: afterPrayerType,
       );
       if (page.records.isEmpty) break;
       for (final record in page.records) {
@@ -837,6 +839,7 @@ class QazaService {
       if (!page.hasMore) break;
       afterDate = page.nextOriginalDate;
       afterId = page.nextId;
+      afterPrayerType = page.nextPrayerType;
     }
     return result;
   }
