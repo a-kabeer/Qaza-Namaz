@@ -10,7 +10,7 @@ import '../../domain/entities/qaza_addition.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'add_qaza_screen.dart';
-import 'qaza_tracker_screen.dart';
+import 'qaza_navigation.dart';
 import 'qaza_addition_history_screen.dart';
 
 class QazaAdditionDetailScreen extends ConsumerWidget {
@@ -111,38 +111,36 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        QazaTrackerScreen(additionId: addition.id),
-                  ),
-                ),
+                onPressed: () {
+                  openQazaForAddition(ref, addition.id);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
                 icon: const Icon(Icons.view_list_rounded),
                 label: const Text('View Records'),
               ),
-              const SizedBox(height: 8),
-              FilledButton.tonalIcon(
-                onPressed: detail.activeCount == 0
-                    ? null
-                    : () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => AddQazaScreen(editAddition: addition),
-                          ),
-                        );
-                        if (context.mounted) {
-                          ref.invalidate(qazaAdditionDetailProvider(addition.id));
-                        }
-                      },
-                icon: const Icon(Icons.edit_rounded),
-                label: const Text('Edit Addition'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => _delete(context, ref, addition.id),
-                icon: const Icon(Icons.delete_outline_rounded),
-                label: const Text('Delete Addition'),
-              ),
+              if (detail.pendingCount > 0) ...[
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AddQazaScreen(editAddition: addition),
+                      ),
+                    );
+                    if (context.mounted) {
+                      ref.invalidate(qazaAdditionDetailProvider(addition.id));
+                    }
+                  },
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('Edit Addition'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _delete(context, ref, addition.id),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text('Delete Addition'),
+                ),
+              ],
             ],
           );
         },
