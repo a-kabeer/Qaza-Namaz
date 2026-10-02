@@ -61,29 +61,29 @@ class QiblaDialPainter extends CustomPainter {
     final inset = size.shortestSide >= 160 ? 34.0 : 18.0;
     if (showCardinals) {
       _drawCardinal(
-      canvas,
-      textPainter,
-      'N',
-      Offset(center.dx, center.dy - radius + inset),
-      onSurfaceColor,
-      size.shortestSide >= 160 ? 18 : 11,
-    );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'E',
-      Offset(center.dx + radius - inset, center.dy),
-      onSurfaceVariantColor,
-      size.shortestSide >= 160 ? 18 : 11,
-    );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'S',
-      Offset(center.dx, center.dy + radius - inset),
-      onSurfaceVariantColor,
-      size.shortestSide >= 160 ? 18 : 11,
-    );
+        canvas,
+        textPainter,
+        'N',
+        Offset(center.dx, center.dy - radius + inset),
+        onSurfaceColor,
+        size.shortestSide >= 160 ? 18 : 11,
+      );
+      _drawCardinal(
+        canvas,
+        textPainter,
+        'E',
+        Offset(center.dx + radius - inset, center.dy),
+        onSurfaceVariantColor,
+        size.shortestSide >= 160 ? 18 : 11,
+      );
+      _drawCardinal(
+        canvas,
+        textPainter,
+        'S',
+        Offset(center.dx, center.dy + radius - inset),
+        onSurfaceVariantColor,
+        size.shortestSide >= 160 ? 18 : 11,
+      );
       _drawCardinal(
         canvas,
         textPainter,
