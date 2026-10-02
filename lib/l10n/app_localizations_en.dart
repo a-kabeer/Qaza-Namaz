@@ -233,6 +233,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonLoading => 'Loading...';
 
   @override
+  String get commonToday => 'Today';
+
+  @override
+  String get commonYesterday => 'Yesterday';
+
+  @override
   String hijriDate(Object day, Object month, Object year) {
     return '$day $month $year AH';
   }

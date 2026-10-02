@@ -68,6 +68,8 @@
   "commonBack": "واپس",
   "commonContinue": "جاری رکھیں",
   "commonLoading": "لوڈ ہو رہا ہے...",
+  "commonToday": "آج",
+  "commonYesterday": "کل",
   "hijriDate": "{day} {month} {year} ھ",
   "hijriMonthYear": "{month} {year} ھ",
   "@hijriMonthYear": {

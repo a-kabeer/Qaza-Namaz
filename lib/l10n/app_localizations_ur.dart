@@ -231,6 +231,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get commonLoading => 'لوڈ ہو رہا ہے...';
 
   @override
+  String get commonToday => 'آج';
+
+  @override
+  String get commonYesterday => 'کل';
+
+  @override
   String hijriDate(Object day, Object month, Object year) {
     return '$day $month $year ھ';
   }
