@@ -658,4 +658,18 @@
   "prayerTimeAsr": "عصر",
   "prayerTimeMaghrib": "مغرب",
   "prayerTimeIsha": "عشاء"
+,
+  "qiblaTitle": "قبلہ",
+  "qiblaDirection": "قبلہ کی سمت",
+  "qiblaBearing": "قبلہ کا زاویہ",
+  "qiblaFromTrueNorth": "حقیقی شمال سے",
+  "qiblaUnavailable": "قبلہ دستیاب نہیں",
+  "qiblaLocationRequired": "قبلہ معلوم کرنے کے لیے مقام منتخب یا محفوظ کریں۔",
+  "qiblaCompassBody": "فون گھمائیں؛ تیر قبلہ کی طرف رہنمائی کرے گا۔",
+  "qiblaSensorUnavailableBody": "اس آلے میں کمپاس سینسر دستیاب نہیں، اس لیے جامد قبلہ سمت دکھائی جا رہی ہے۔",
+  "qiblaHeadingUnavailable": "کمپاس کی سمت عارضی طور پر دستیاب نہیں۔",
+  "qiblaTurnToDirection": "فون کو اس سمت گھمائیں۔",
+  "qiblaCompassAccuracy": "کمپاس کی درستگی ±{degrees}°",
+  "@qiblaCompassAccuracy": { "placeholders": { "degrees": { "type": "String" } } },
+  "qiblaCalibrationHint": "کمپاس کی درستگی کم ہے۔ فون کو 8 کی شکل میں حرکت دے کر دوبارہ کیلیبریٹ کریں۔"
 }

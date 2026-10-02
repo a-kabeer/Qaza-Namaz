@@ -10,11 +10,14 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/prayer_visuals.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
+import '../application/qibla_providers.dart';
 import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'location_selector.dart';
 import 'prayer_timeline_row.dart';
+import 'qibla_screen.dart';
+import 'qibla_summary_card.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
@@ -278,6 +281,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final current = ref.watch(currentPrayerStateProvider);
     final restricted = ref.watch(restrictedTimeStateProvider);
     final refreshing = ref.watch(prayerTimeRefreshProvider);
+    final qiblaBearing = ref.watch(qiblaBearingProvider);
     if (snapshot == null || now == null) return const SizedBox.shrink();
 
     final location = tz.getLocation(snapshot.location.timezoneId);
@@ -405,11 +409,31 @@ class _PrayerTimeContent extends ConsumerWidget {
               focusIcon != null &&
               focusCountdown != null) ...[
             const SizedBox(height: 12),
-            _PrayerTimeFocusCard(
-              name: focusName,
-              time: focusTime,
-              icon: focusIcon,
-              countdown: focusCountdown,
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _PrayerTimeFocusCard(
+                      name: focusName,
+                      time: focusTime,
+                      icon: focusIcon,
+                      countdown: focusCountdown,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: QiblaSummaryCard(
+                      bearing: qiblaBearing,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const QiblaDirectionScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -559,7 +583,7 @@ class _PrayerTimeFocusCard extends StatelessWidget {
 
     return Container(
       key: const Key('prayer_time_focus_card'),
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(24),
