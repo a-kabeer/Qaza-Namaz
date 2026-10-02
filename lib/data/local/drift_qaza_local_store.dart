@@ -759,6 +759,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
     ];
   }
 
+  String _sqlStringLiteral(String value) =>
+      "'${value.replaceAll("'", "''")}'";
+
   Future<void> _upsertProfilePlanProvenance(
     Iterable<QazaRecord> records,
   ) async {
@@ -769,17 +772,14 @@ class DriftQazaLocalStore extends QazaLocalStore {
       await _database.customStatement(
         'INSERT INTO qaza_profile_plan_provenance '
         '(record_id, user_id, plan_revision_id, plan_fingerprint) '
-        'VALUES (?, ?, ?, ?) '
+        'VALUES (${_sqlStringLiteral(record.id)}, '
+        '${_sqlStringLiteral(record.userId)}, '
+        '${_sqlStringLiteral(revisionId)}, '
+        '${_sqlStringLiteral(fingerprint)}) '
         'ON CONFLICT(record_id) DO UPDATE SET '
         'user_id = excluded.user_id, '
         'plan_revision_id = excluded.plan_revision_id, '
         'plan_fingerprint = excluded.plan_fingerprint',
-        variables: [
-          Variable.withString(record.id),
-          Variable.withString(record.userId),
-          Variable.withString(revisionId),
-          Variable.withString(fingerprint),
-        ],
       );
     }
   }
@@ -792,22 +792,20 @@ class DriftQazaLocalStore extends QazaLocalStore {
     if (ids.isEmpty) return;
     for (var start = 0; start < ids.length; start += 400) {
       final chunk = ids.skip(start).take(400).toList(growable: false);
-      final placeholders = List.filled(chunk.length, '?').join(', ');
+      final placeholders =
+          chunk.map(_sqlStringLiteral).join(', ');
       await _database.customStatement(
         'DELETE FROM qaza_profile_plan_provenance '
-        'WHERE user_id = ? AND record_id IN ($placeholders)',
-        variables: [
-          Variable.withString(userId),
-          ...chunk.map(Variable.withString),
-        ],
+        'WHERE user_id = ${_sqlStringLiteral(userId)} '
+        'AND record_id IN ($placeholders)',
       );
     }
   }
 
   Future<void> _deleteAllProfilePlanProvenance(String userId) =>
       _database.customStatement(
-        'DELETE FROM qaza_profile_plan_provenance WHERE user_id = ?',
-        variables: [Variable.withString(userId)],
+        'DELETE FROM qaza_profile_plan_provenance '
+        'WHERE user_id = ${_sqlStringLiteral(userId)}',
       );
 
   Future<void> _replaceProfilePlanProvenance(
