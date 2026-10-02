@@ -95,6 +95,8 @@ class LocalQazaPage {
   DateTime? get nextOriginalDate =>
       records.isEmpty ? null : records.last.originalDate;
   String? get nextId => records.isEmpty ? null : records.last.id;
+  PrayerType? get nextPrayerType =>
+      records.isEmpty ? null : records.last.prayerType;
 }
 
 abstract class QazaLocalStore {
@@ -122,8 +124,10 @@ abstract class QazaLocalStore {
     DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
+    PrayerType? afterPrayerType,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    PrayerType? beforePrayerType,
     DateTime? afterCompletedAt,
     DateTime? beforeCompletedAt,
     bool descending = false,
@@ -155,7 +159,9 @@ abstract class QazaLocalStore {
       }
     } else {
       if ((afterOriginalDate == null) != (afterId == null) ||
+          (afterOriginalDate == null) != (afterPrayerType == null) ||
           (beforeOriginalDate == null) != (beforeId == null) ||
+          (beforeOriginalDate == null) != (beforePrayerType == null) ||
           afterCompletedAt != null ||
           beforeCompletedAt != null ||
           (afterOriginalDate != null && beforeOriginalDate != null)) {
@@ -218,27 +224,42 @@ abstract class QazaLocalStore {
         }).toList();
       }
     } else {
-      records.sort((a, b) {
-        final d = descending
+      int comparePending(QazaRecord a, QazaRecord b) {
+        final date = descending
             ? b.originalDate.compareTo(a.originalDate)
             : a.originalDate.compareTo(b.originalDate);
-        return d != 0
-            ? d
-            : (descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id));
-      });
+        if (date != 0) return date;
+
+        final prayer = descending
+            ? b.prayerType.qazaSequenceIndex
+                .compareTo(a.prayerType.qazaSequenceIndex)
+            : a.prayerType.qazaSequenceIndex
+                .compareTo(b.prayerType.qazaSequenceIndex);
+        if (prayer != 0) return prayer;
+
+        return descending ? b.id.compareTo(a.id) : a.id.compareTo(b.id);
+      }
+
+      records.sort(comparePending);
       if (afterOriginalDate != null) {
+        final cursorPrayerRank = afterPrayerType!.qazaSequenceIndex;
         records = records
             .where((r) =>
                 r.originalDate.isAfter(afterOriginalDate) ||
                 (r.originalDate.isAtSameMomentAs(afterOriginalDate) &&
-                    r.id.compareTo(afterId!) > 0))
+                    (r.prayerType.qazaSequenceIndex > cursorPrayerRank ||
+                        (r.prayerType.qazaSequenceIndex == cursorPrayerRank &&
+                            r.id.compareTo(afterId!) > 0))))
             .toList();
       } else if (beforeOriginalDate != null) {
+        final cursorPrayerRank = beforePrayerType!.qazaSequenceIndex;
         records = records
             .where((r) =>
                 r.originalDate.isBefore(beforeOriginalDate) ||
                 (r.originalDate.isAtSameMomentAs(beforeOriginalDate) &&
-                    r.id.compareTo(beforeId!) < 0))
+                    (r.prayerType.qazaSequenceIndex < cursorPrayerRank ||
+                        (r.prayerType.qazaSequenceIndex == cursorPrayerRank &&
+                            r.id.compareTo(beforeId!) < 0))))
             .toList();
       }
     }
