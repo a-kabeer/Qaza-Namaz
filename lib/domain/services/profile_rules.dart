@@ -1,4 +1,4 @@
-import '../../core/calendar/hijri_date_service.dart';
+import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
@@ -43,6 +43,51 @@ class ProfileRules {
     return List<int>.generate(max - min + 1, (index) => min + index);
   }
 
+  /// Returns puberty ages that have both been reached by [today] under the
+  /// fixed arithmetic model and can be materialized as non-future Gregorian
+  /// ledger boundaries.
+  static List<int> availablePubertyAgeOptions(
+    UserProfile profile, {
+    required DateTime today,
+  }) {
+    final options = pubertyAgeOptions(profile.gender);
+    final dob = profile.dateOfBirth;
+    if (dob == null) return options;
+    return [
+      for (final age in options)
+        if (_milestoneReachedAndMaterialized(
+          dob: dob,
+          age: age,
+          today: today,
+        ))
+          age,
+    ];
+  }
+
+  /// Returns start-praying ages that remain mutually consistent with the
+  /// selected puberty age and today's fixed arithmetic age.
+  static List<int> startPrayingAgeOptions(
+    UserProfile profile, {
+    required DateTime today,
+  }) {
+    final dob = profile.dateOfBirth;
+    final puberty = profile.pubertyAge;
+    if (dob == null || puberty == null) return const <int>[];
+
+    final maxAge = currentAge(dob, today);
+    if (maxAge < puberty) return const <int>[];
+
+    return [
+      for (var age = puberty; age <= maxAge; age++)
+        if (_milestoneReachedAndMaterialized(
+          dob: dob,
+          age: age,
+          today: today,
+        ))
+          age,
+    ];
+  }
+
   static bool isWitrEditable(Madhab? madhab) => madhab == Madhab.other;
 
   static bool effectiveWitr(UserProfile profile) {
@@ -77,42 +122,18 @@ class ProfileRules {
         if (witrEnabled) PrayerType.witr,
       ];
 
-  /// Returns the Gregorian date on which [age] whole Hijri calendar years
-  /// have elapsed from the supplied Gregorian DOB.
+  /// Returns the deterministic Gregorian projection of a fixed-arithmetic
+  /// birth milestone. The name is retained for compatibility with existing
+  /// callers; this is not a real Hijri anniversary.
   static DateTime anniversaryDate(DateTime dob, int age) =>
-      HijriDateService.addHijriYears(dob, age);
+      FixedHijriArithmeticService.projectFromBirth(
+        dob: dob,
+        fixedDayOffset: age * FixedHijriArithmeticService.daysPerYear,
+      );
 
-  /// Returns completed age measured in Hijri calendar years.
-  ///
-  /// The current year's anniversary is calculated with the same Hijri
-  /// month/day preservation and target-month clamping used by [anniversaryDate].
-  static int currentAge(DateTime dob, DateTime today) {
-    final birth = HijriDateService.fromGregorian(dob);
-    final now = LocalDateService.dateOnly(today);
-    final nowHijri = HijriDateService.fromGregorian(now);
-
-    var age = nowHijri.year - birth.year;
-    if (age < 0) return age;
-
-    final anniversary = HijriDateService.toGregorian(
-      year: nowHijri.year,
-      month: birth.month,
-      day: birth.day
-          .clamp(
-            1,
-            HijriDateService.daysInMonth(
-              year: nowHijri.year,
-              month: birth.month,
-            ),
-          )
-          .toInt(),
-    );
-
-    if (LocalDateService.compareCalendarDates(anniversary, now) > 0) {
-      age--;
-    }
-    return age;
-  }
+  /// Returns completed age from the fixed Hijri arithmetic day index.
+  static int currentAge(DateTime dob, DateTime today) =>
+      FixedHijriArithmeticService.currentAge(dob, today);
 
   static DateTime? pubertyDate(UserProfile profile) {
     final dob = profile.dateOfBirth;
@@ -163,13 +184,13 @@ class ProfileRules {
           error: ProfileValidationError.pubertyInvalid);
     }
 
-    // Integer age and calculated Gregorian milestone date must agree. This
-    // protects the domain against a future Hijri birthday (for example when
-    // a user edits DOB after selecting an age) rather than relying only on
-    // the UI's available options.
     final pubertyDateValue = pubertyDate(profile);
     if (pubertyDateValue == null ||
-        _compareCalendarDates(pubertyDateValue, today) > 0) {
+        !_milestoneReachedAndMaterialized(
+          dob: dob,
+          age: puberty,
+          today: today,
+        )) {
       return const ProfileValidation(
         error: ProfileValidationError.pubertyInvalid,
       );
@@ -187,8 +208,12 @@ class ProfileRules {
     if (startDateValue == null ||
         startAge < puberty ||
         startAge > currentAgeValue ||
-        _compareCalendarDates(startDateValue, pubertyDateValue) < 0 ||
-        _compareCalendarDates(startDateValue, today) > 0) {
+        !_milestoneReachedAndMaterialized(
+          dob: dob,
+          age: startAge,
+          today: today,
+        ) ||
+        _compareCalendarDates(startDateValue, pubertyDateValue) < 0) {
       return const ProfileValidation(
         error: ProfileValidationError.startPrayingAgeInvalid,
       );
@@ -231,11 +256,13 @@ class ProfileRules {
         validPuberty != null) {
       final today = LocalDateService.today();
       final maxAge = currentAge(dob, today);
-      final pubertyDateValue = pubertyDate(next);
-      if (pubertyDateValue == null ||
-          _compareCalendarDates(pubertyDateValue, today) > 0 ||
-          !isPubertyAgeAllowed(validGender, validPuberty) ||
-          validPuberty > maxAge) {
+      if (!isPubertyAgeAllowed(validGender, validPuberty) ||
+          validPuberty > maxAge ||
+          !_milestoneReachedAndMaterialized(
+            dob: dob,
+            age: validPuberty,
+            today: today,
+          )) {
         next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
       }
     }
@@ -248,19 +275,35 @@ class ProfileRules {
         normalizedPuberty != null) {
       final today = LocalDateService.today();
       final maxStart = currentAge(normalizedDob, today);
-      final pubertyDateValue = pubertyDate(next);
-      final startDateValue = startPrayingDate(next);
-      if (startDateValue == null ||
-          pubertyDateValue == null ||
-          normalizedStart < normalizedPuberty ||
+      if (normalizedStart < normalizedPuberty ||
           normalizedStart > maxStart ||
-          _compareCalendarDates(startDateValue, pubertyDateValue) < 0 ||
-          _compareCalendarDates(startDateValue, today) > 0) {
+          !_milestoneReachedAndMaterialized(
+            dob: normalizedDob,
+            age: normalizedStart,
+            today: today,
+          )) {
         next = next.copyWith(clearStartPrayingAge: true);
       }
     }
 
     return next;
+  }
+
+  static bool _milestoneReachedAndMaterialized({
+    required DateTime dob,
+    required int age,
+    required DateTime today,
+  }) {
+    final birthIndex = FixedHijriArithmeticService.dayIndexForGregorian(dob);
+    final todayIndex =
+        FixedHijriArithmeticService.dayIndexForGregorian(today);
+    final milestoneIndex =
+        birthIndex + age * FixedHijriArithmeticService.daysPerYear;
+    if (milestoneIndex > todayIndex) return false;
+
+    final projected =
+        anniversaryDate(dob, age);
+    return _compareCalendarDates(projected, today) <= 0;
   }
 
   static int _compareCalendarDates(DateTime a, DateTime b) =>
