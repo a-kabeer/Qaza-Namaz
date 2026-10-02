@@ -12,6 +12,7 @@ class QiblaDialPainter extends CustomPainter {
     required this.qiblaBearing,
     required this.heading,
     required this.showRelativeQibla,
+    this.showCardinals = true,
     required this.surfaceColor,
     required this.outlineColor,
     required this.onSurfaceColor,
@@ -22,6 +23,7 @@ class QiblaDialPainter extends CustomPainter {
   final double qiblaBearing;
   final double heading;
   final bool showRelativeQibla;
+  final bool showCardinals;
   final Color surfaceColor;
   final Color outlineColor;
   final Color onSurfaceColor;
@@ -57,7 +59,8 @@ class QiblaDialPainter extends CustomPainter {
     );
 
     final inset = size.shortestSide >= 160 ? 34.0 : 18.0;
-    _drawCardinal(
+    if (showCardinals) {
+      _drawCardinal(
       canvas,
       textPainter,
       'N',
@@ -81,14 +84,15 @@ class QiblaDialPainter extends CustomPainter {
       onSurfaceVariantColor,
       size.shortestSide >= 160 ? 18 : 11,
     );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'W',
-      Offset(center.dx - radius + inset, center.dy),
-      onSurfaceVariantColor,
-      size.shortestSide >= 160 ? 18 : 11,
-    );
+      _drawCardinal(
+        canvas,
+        textPainter,
+        'W',
+        Offset(center.dx - radius + inset, center.dy),
+        onSurfaceVariantColor,
+        size.shortestSide >= 160 ? 18 : 11,
+      );
+    }
 
     final qiblaAngle = qiblaBearing * math.pi / 180 - math.pi / 2;
     final markerDistance = radius - (size.shortestSide >= 160 ? 42 : 8);
@@ -205,6 +209,7 @@ class QiblaDialPainter extends CustomPainter {
       oldDelegate.qiblaBearing != qiblaBearing ||
       oldDelegate.heading != heading ||
       oldDelegate.showRelativeQibla != showRelativeQibla ||
+      oldDelegate.showCardinals != showCardinals ||
       oldDelegate.surfaceColor != surfaceColor ||
       oldDelegate.outlineColor != outlineColor ||
       oldDelegate.onSurfaceColor != onSurfaceColor ||
