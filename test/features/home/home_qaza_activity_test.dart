@@ -211,6 +211,149 @@ void main() {
   );
 
   testWidgets(
+    'each yearly month bar is tappable and opens the exact month',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      final chartFinder = find.byKey(const Key('home_activity_year_chart'));
+      final chartWidget = tester.widget<BarChart>(
+        find.descendant(of: chartFinder, matching: find.byType(BarChart)),
+      );
+      final callback = chartWidget.data.barTouchData.touchCallback;
+
+      expect(chartWidget.data.barGroups, hasLength(12));
+      expect(chartWidget.data.barTouchData.enabled, isTrue);
+      expect(callback, isNotNull);
+
+      const expectedMonths = <String>[
+        'January 2026',
+        'February 2026',
+        'March 2026',
+        'April 2026',
+        'May 2026',
+        'June 2026',
+        'July 2026',
+        'August 2026',
+        'September 2026',
+        'October 2026',
+        'November 2026',
+        'December 2026',
+      ];
+
+      for (var index = 0; index < expectedMonths.length; index++) {
+        final group = chartWidget.data.barGroups[index];
+        final rod = group.barRods.first;
+        final spot = BarTouchedSpot(
+          group,
+          index,
+          rod,
+          0,
+          null,
+          -1,
+          FlSpot(group.x.toDouble(), rod.toY),
+          Offset.zero,
+        );
+
+        callback!(
+          FlTapUpEvent(
+            TapUpDetails(kind: PointerDeviceKind.touch),
+          ),
+          BarTouchResponse(
+            touchLocation: Offset.zero,
+            touchChartCoordinate: Offset.zero,
+            spot: spot,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<Text>(
+            find.byKey(const Key('home_activity_date_header')),
+          ).data,
+          expectedMonths[index],
+        );
+        expect(
+          find.byKey(const Key('home_activity_month_drilldown')),
+          findsOneWidget,
+        );
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+      }
+    },
+  );
+
+  testWidgets(
+    'yearly drilldown preserves a cross-year month and returns to the same year',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('home_activity_previous')));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_date_header')),
+        ).data,
+        '2025',
+      );
+
+      final chartFinder = find.byKey(const Key('home_activity_year_chart'));
+      final chartWidget = tester.widget<BarChart>(
+        find.descendant(of: chartFinder, matching: find.byType(BarChart)),
+      );
+      final callback = chartWidget.data.barTouchData.touchCallback;
+      final group = chartWidget.data.barGroups[11];
+      final rod = group.barRods.first;
+      final spot = BarTouchedSpot(
+        group,
+        11,
+        rod,
+        0,
+        null,
+        -1,
+        FlSpot(group.x.toDouble(), rod.toY),
+        Offset.zero,
+      );
+
+      callback!(
+        FlTapUpEvent(
+          TapUpDetails(kind: PointerDeviceKind.touch),
+        ),
+        BarTouchResponse(
+          touchLocation: Offset.zero,
+          touchChartCoordinate: Offset.zero,
+          spot: spot,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_date_header')),
+        ).data,
+        'December 2025',
+      );
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_date_header')),
+        ).data,
+        '2025',
+      );
+    },
+  );
+
+  testWidgets(
     'FL Chart callback maps all seven weekly groups to their dates',
     (tester) async {
       final period = activityPeriod(
