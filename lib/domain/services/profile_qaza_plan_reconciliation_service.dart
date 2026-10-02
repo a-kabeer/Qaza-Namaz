@@ -330,6 +330,10 @@ class ProfileQazaPlanReconciliationService {
       '${record.userId}_${record.prayerType.name}_'
       '${QazaDate.key(record.originalDate)}';
 
+  /// Versioned fingerprint for the active fixed 30/360 calculation scheme.
+  ///
+  /// Legacy V1 fingerprints intentionally remain distinct so an existing
+  /// real-calendar revision cannot be mistaken for a fixed-arithmetic plan.
   static String planFingerprint(QazaPlan plan) {
     return [
       'qazaPlanV2Fixed360',
