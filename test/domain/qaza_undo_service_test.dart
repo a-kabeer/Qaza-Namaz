@@ -655,6 +655,62 @@ void main() {
     expect(store.current, isNull);
   });
 
+  test(
+    'successful batch Undo clears its temporary session before the next batch',
+    () async {
+      final firstRecord = _completedRecord(
+        id: 'fajr',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2026, 9, 1),
+      );
+      final secondRecord = _completedRecord(
+        id: 'zuhr',
+        prayerType: PrayerType.zuhr,
+        originalDate: DateTime(2026, 9, 2),
+      );
+      final records = <String, QazaRecord>{
+        firstRecord.id: firstRecord,
+        secondRecord.id: secondRecord,
+      };
+      final manager = QazaUndoManager(
+        store: _MemoryUndoStore(),
+        now: () => DateTime(2026, 9, 26, 11),
+      );
+      final service = QazaService(_FakeQazaRepository(records));
+
+      final first = await manager.register(
+        userId: 'local',
+        records: [firstRecord],
+      );
+      final active = await manager.beginSelection(
+        userId: 'local',
+        expectedBatch: first!,
+      );
+
+      final result = await manager.undo(
+        userId: 'local',
+        service: service,
+        expectedBatch: active,
+      );
+
+      expect(result.count, 1);
+      expect(manager.activeSelection(userId: 'local'), isNull);
+
+      final second = await manager.register(
+        userId: 'local',
+        records: [secondRecord],
+      );
+      expect(second!.entries.single.recordId, 'zuhr');
+      expect(second.sessionId, isNot(active.sessionId));
+
+      final secondActive = await manager.beginSelection(
+        userId: 'local',
+        expectedBatch: second,
+      );
+      expect(secondActive.entries.single.recordId, 'zuhr');
+    },
+  );
+
   test('stale Undo callback never clears a newer active session', () async {
     final firstRecord = _completedRecord(
       id: 'fajr',
