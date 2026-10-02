@@ -166,17 +166,22 @@ void main() {
       startPrayingAge: 2,
     );
 
-    final beforeStart = ProfileRules.currentAge(
-      dob,
-      ProfileRules.startPrayingDate(profile)!.subtract(const Duration(days: 1)),
-    );
-    final onStart = ProfileRules.currentAge(
-      dob,
-      ProfileRules.startPrayingDate(profile)!,
-    );
+    final start = ProfileRules.startPrayingDate(profile)!;
+    final beforeStart = start.subtract(const Duration(days: 1));
+    final onStart = start;
 
-    expect(beforeStart, lessThan(2));
-    expect(onStart, greaterThanOrEqualTo(2));
+    expect(
+      FixedHijriArithmeticService.dayIndexForGregorian(beforeStart) -
+          FixedHijriArithmeticService.dayIndexForGregorian(dob),
+      lessThan(2 * 360),
+    );
+    expect(
+      FixedHijriArithmeticService.dayIndexForGregorian(onStart) -
+          FixedHijriArithmeticService.dayIndexForGregorian(dob),
+      greaterThanOrEqualTo(2 * 360),
+    );
+    expect(ProfileRules.currentAge(dob, beforeStart), lessThan(2));
+    expect(ProfileRules.currentAge(dob, onStart), greaterThanOrEqualTo(2));
   });
 
   test('changing DOB, puberty age, or start-praying age recalculates consistently', () {
@@ -218,11 +223,10 @@ void main() {
 
     expect(plan.totalDays, 360);
     for (final prayer in PrayerType.values) {
-      final expected = prayer == PrayerType.witr
-          ? plan.witrCount
-          : plan.totalDays;
+      final expected = prayer == PrayerType.witr ? 0 : plan.totalDays;
       expect(plan.prayerBreakdown[prayer] ?? 0, expected);
     }
+    expect(plan.witrCount, plan.totalDays);
     expect(plan.totalWithWitr, plan.totalDays * 6);
   });
 }
