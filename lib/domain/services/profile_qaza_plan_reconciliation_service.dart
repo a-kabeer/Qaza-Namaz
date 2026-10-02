@@ -125,7 +125,14 @@ class ProfileQazaPlanReconciliationService {
     );
 
     final newPlanKeys = _planKeys(userId, newPlan);
+    final currentLedgerFingerprint =
+        oldRevision?.ledgerPlanFingerprint ??
+        (oldPlan == null ? null : planFingerprint(oldPlan));
     final removalIds = <String>[];
+
+    // A legacy/non-fixed ledger revision cannot authorize automatic removal.
+    final canRemove =
+        currentLedgerFingerprint?.startsWith('qazaPlanV2Fixed360|') ?? false;
 
     DateTime? cursorDate;
     String? cursorId;
@@ -138,8 +145,10 @@ class ProfileQazaPlanReconciliationService {
         afterId: cursorId,
       );
       for (final record in page.records) {
-        if (record.profilePlanRevisionId == null ||
-            record.profilePlanFingerprint == null) {
+        if (!canRemove ||
+            record.profilePlanRevisionId == null ||
+            record.profilePlanFingerprint == null ||
+            record.profilePlanFingerprint != currentLedgerFingerprint) {
           continue;
         }
         if (!newPlanKeys.contains(_recordKey(record))) {
