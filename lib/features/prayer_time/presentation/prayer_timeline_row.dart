@@ -23,6 +23,7 @@ class PrayerTimelineRow extends StatelessWidget {
     this.icon,
     this.variant = PrayerTimelineRowVariant.card,
     this.restricted = false,
+    this.onTap,
   });
 
   static const double _countdownWidth = 96;
@@ -35,6 +36,7 @@ class PrayerTimelineRow extends StatelessWidget {
   final IconData? icon;
   final PrayerTimelineRowVariant variant;
   final bool restricted;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +55,10 @@ class PrayerTimelineRow extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       color: active ? scheme.primaryContainer : null,
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
@@ -99,6 +104,7 @@ class PrayerTimelineRow extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -179,7 +185,12 @@ class PrayerTimelineRow extends StatelessWidget {
 }
 
 class RestrictedTimeTimelineRow extends ConsumerWidget {
-  const RestrictedTimeTimelineRow({super.key});
+  const RestrictedTimeTimelineRow({
+    super.key,
+    this.onTap,
+  });
+
+  final VoidCallback? onTap;
 
   String _label(AppLocalizations l10n, RestrictedTimeType type) =>
       switch (type) {
@@ -227,6 +238,7 @@ class RestrictedTimeTimelineRow extends ConsumerWidget {
       ),
       countdown: DateFormatters.formatDurationHhMmSs(remaining),
       active: true,
+      onTap: onTap,
     );
   }
 }
