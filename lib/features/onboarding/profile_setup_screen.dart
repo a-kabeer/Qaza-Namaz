@@ -66,11 +66,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // the optional Witr count, so this is the domain result's exact number
     // of records this onboarding import would generate before duplicates.
     if (plan.totalWithWitr == 0) {
-      await _finishOnboarding(
-        finalizedProfile,
-        plan: plan,
-        revisionId: revisionId,
-      );
+      await _finishOnboarding(finalizedProfile);
       return;
     }
 
@@ -103,7 +99,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted) return;
     if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
-      await _finishOnboarding(finalizedProfile);
+      await _finishOnboarding(
+        finalizedProfile,
+        plan: plan,
+        revisionId: revisionId,
+      );
     }
   }
 
