@@ -112,10 +112,16 @@ void main() {
     final same = planService.planFor(other)!;
     final changed = planService.planFor(withoutWitr)!;
 
+    final firstFingerprint =
+        ProfileQazaPlanReconciliationService.planFingerprint(first);
+    final legacyFingerprint =
+        firstFingerprint.replaceFirst('qazaPlanV2Fixed360', 'qazaPlanV1');
+    expect(firstFingerprint, startsWith('qazaPlanV2Fixed360|'));
     expect(
-      ProfileQazaPlanReconciliationService.planFingerprint(first),
+      firstFingerprint,
       ProfileQazaPlanReconciliationService.planFingerprint(same),
     );
+    expect(firstFingerprint, isNot(legacyFingerprint));
     expect(
       ProfileQazaPlanReconciliationService.planFingerprint(first),
       isNot(ProfileQazaPlanReconciliationService.planFingerprint(changed)),
