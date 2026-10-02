@@ -376,7 +376,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   Future<void> loadMore() async {
-    if (state.loading || state.loadingMore || !state.hasMore) return;
+    if (state.loading ||
+        state.refreshing ||
+        state.loadingMore ||
+        state.completing ||
+        state.recordMutating ||
+        !state.hasMore) {
+      return;
+    }
     final userId = ref.read(activeUserIdProvider);
     final last = state.records.isEmpty ? null : state.records.last;
     if (userId == null || last == null) return;
