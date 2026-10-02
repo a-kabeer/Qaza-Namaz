@@ -433,7 +433,7 @@ class _QiblaDialPainter extends CustomPainter {
       textPainter,
       'S',
       Offset(center.dx, center.dy + radius - 34),
-      scheme.onSurfaceVariant,
+      onSurfaceVariantColor,
     );
     _drawCardinal(
       canvas,
