@@ -660,4 +660,56 @@ void main() {
     expect(source, contains(": 'Qaza Date'"));
   });
 
+  test('Recent Addition View Records uses the canonical workspace handoff', () {
+    final detail =
+        File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
+    final navigation =
+        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
+    final tracker =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(detail, contains('openQazaForAddition(ref, addition.id);'));
+    expect(
+      detail,
+      contains(
+        'Navigator.of(context).popUntil((route) => route.isFirst);',
+      ),
+    );
+    expect(detail, isNot(contains('QazaTrackerScreen(additionId: addition.id)')));
+    expect(
+      navigation,
+      contains('void openQazaForAddition(WidgetRef ref, String additionId)'),
+    );
+    expect(navigation, contains('additionId: additionId'));
+    expect(navigation, contains('status: QazaStatusFilter.pending'));
+    expect(tracker, isNot(contains("'Addition Records'")));
+    expect(controller, contains('final String? additionId;'));
+    expect(controller, contains('additionId: request.additionId'));
+    expect(controller, contains('clearAdditionId: true'));
+  });
+
+  test('Recent Addition management actions disappear when nothing is pending', () {
+    final detail =
+        File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
+    expect(detail, contains('if (detail.pendingCount > 0) ...['));
+    expect(detail, contains('Edit Addition'));
+    expect(detail, contains('Delete Addition'));
+  });
+
+  test('Addition filter survives Pending/Completed status switching', () {
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final start = controller.indexOf('void setStatusFilter(QazaStatusFilter filter) {');
+    final end = controller.indexOf('  void setPrayerFilter(PrayerType? prayer) {', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final statusMethod = controller.substring(start, end);
+    expect(statusMethod, isNot(contains('clearAdditionId: true')));
+    expect(statusMethod, isNot(contains('additionId: null')));
+    expect(controller, contains('additionId: request.additionId'));
+    expect(controller, contains('additionId: state.additionId'));
+  });
 }
