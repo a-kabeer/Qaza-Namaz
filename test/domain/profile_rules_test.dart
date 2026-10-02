@@ -184,8 +184,8 @@ void main() {
     final dob = DateTime(2018, 11, 12);
     final profile = makeProfile(
       dob: dob,
-      pubertyAge: 1,
-      startPrayingAge: 2,
+      pubertyAge: 12,
+      startPrayingAge: 13,
     );
     final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 13)
         .subtract(const Duration(days: 1));
