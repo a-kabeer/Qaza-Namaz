@@ -35,7 +35,7 @@ void main() {
   });
 
   test(
-    'Pending keyset pagination advances with originalDate/id cursor',
+    'Pending keyset pagination advances with originalDate/prayer/id cursor',
     () async {
       final sameDay = DateTime(2026, 9, 10);
       await database.qazaRecordsDao.insertRecords([
@@ -80,6 +80,7 @@ void main() {
         status: QazaStatus.pending.name,
         limit: 2,
         afterOriginalDate: first.records.last.originalDate,
+        afterPrayerType: first.records.last.prayerType.name,
         afterId: first.records.last.id,
       );
 
@@ -97,6 +98,7 @@ void main() {
         status: QazaStatus.pending.name,
         limit: 2,
         afterOriginalDate: second.records.last.originalDate,
+        afterPrayerType: second.records.last.prayerType.name,
         afterId: second.records.last.id,
       );
 
@@ -105,12 +107,14 @@ void main() {
     },
   );
 
-  test('Pending keyset cursor requires the date/id pair', () async {
+  test('Pending keyset cursor requires the date/prayer/id triple',
+      () async {
     await expectLater(
       database.qazaRecordsDao.getKeysetPage(
         userId: 'local',
         status: QazaStatus.pending.name,
         afterOriginalDate: DateTime(2026, 9, 10),
+        afterId: 'a',
       ),
       throwsArgumentError,
     );
@@ -119,6 +123,17 @@ void main() {
       database.qazaRecordsDao.getKeysetPage(
         userId: 'local',
         status: QazaStatus.pending.name,
+        afterOriginalDate: DateTime(2026, 9, 10),
+        afterPrayerType: PrayerType.fajr.name,
+      ),
+      throwsArgumentError,
+    );
+
+    await expectLater(
+      database.qazaRecordsDao.getKeysetPage(
+        userId: 'local',
+        status: QazaStatus.pending.name,
+        afterPrayerType: PrayerType.fajr.name,
         afterId: 'a',
       ),
       throwsArgumentError,

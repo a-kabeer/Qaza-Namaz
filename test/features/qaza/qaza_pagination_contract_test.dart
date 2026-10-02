@@ -57,6 +57,14 @@ void main() {
     );
     expect(
       readPage,
+      contains('afterPrayerType:'),
+    );
+    expect(
+      readPage,
+      contains('beforePrayerType:'),
+    );
+    expect(
+      readPage,
       contains('afterCompletedAt:'),
     );
     expect(
@@ -75,6 +83,18 @@ void main() {
       readPage,
       contains(
         '!completed && !oldestFirst ? after?.originalDate : null',
+      ),
+    );
+    expect(
+      readPage,
+      contains(
+        '!completed && oldestFirst ? after?.prayerType : null',
+      ),
+    );
+    expect(
+      readPage,
+      contains(
+        '!completed && !oldestFirst ? after?.prayerType : null',
       ),
     );
     expect(

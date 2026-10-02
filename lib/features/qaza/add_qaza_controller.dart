@@ -368,7 +368,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       ]..sort((a, b) {
           final dateCompare = a.key.date.compareTo(b.key.date);
           if (dateCompare != 0) return dateCompare;
-          return a.key.prayerType.index.compareTo(b.key.prayerType.index);
+          return a.key.prayerType.qazaSequenceIndex
+              .compareTo(b.key.prayerType.qazaSequenceIndex);
         });
 
       final analysis = AddQazaAnalysis(

@@ -333,8 +333,12 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
           additionId: state.additionId,
           afterOriginalDate:
               !completed && oldestFirst ? after?.originalDate : null,
+          afterPrayerType:
+              !completed && oldestFirst ? after?.prayerType : null,
           beforeOriginalDate:
               !completed && !oldestFirst ? after?.originalDate : null,
+          beforePrayerType:
+              !completed && !oldestFirst ? after?.prayerType : null,
           afterCompletedAt:
               completed && oldestFirst ? after?.completedAt : null,
           beforeCompletedAt:

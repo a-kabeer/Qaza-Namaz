@@ -144,8 +144,10 @@ class QazaService {
     DateTime? toExclusive,
     DateTime? afterOriginalDate,
     String? afterId,
+    PrayerType? afterPrayerType,
     DateTime? beforeOriginalDate,
     String? beforeId,
+    PrayerType? beforePrayerType,
     DateTime? afterCompletedAt,
     DateTime? beforeCompletedAt,
     bool descending = false,
@@ -162,8 +164,10 @@ class QazaService {
         toExclusive: toExclusive,
         afterOriginalDate: afterOriginalDate,
         afterId: afterId,
+        afterPrayerType: afterPrayerType,
         beforeOriginalDate: beforeOriginalDate,
         beforeId: beforeId,
+        beforePrayerType: beforePrayerType,
         afterCompletedAt: afterCompletedAt,
         beforeCompletedAt: beforeCompletedAt,
         descending: descending,
@@ -283,6 +287,7 @@ class QazaService {
     for (final prayer in selectedPrayers) {
       DateTime? afterDate;
       String? afterId;
+      PrayerType? afterPrayerType;
       while (true) {
         final page = await repository.getPage(
           userId: userId,
@@ -293,11 +298,13 @@ class QazaService {
           to: sortedDates.last,
           afterOriginalDate: afterDate,
           afterId: afterId,
+          afterPrayerType: afterPrayerType,
         );
         result.addAll(page.records);
         if (!page.hasMore) break;
         afterDate = page.nextOriginalDate;
         afterId = page.nextId;
+        afterPrayerType = page.nextPrayerType;
       }
     }
     return result;
@@ -815,6 +822,7 @@ class QazaService {
     final result = <QazaRecord>[];
     DateTime? afterDate;
     String? afterId;
+    PrayerType? afterPrayerType;
     while (remaining.isNotEmpty) {
       final page = await repository.getPage(
         userId: userId,
@@ -822,6 +830,7 @@ class QazaService {
         status: QazaStatus.pending,
         afterOriginalDate: afterDate,
         afterId: afterId,
+        afterPrayerType: afterPrayerType,
       );
       if (page.records.isEmpty) break;
       for (final record in page.records) {
@@ -830,6 +839,7 @@ class QazaService {
       if (!page.hasMore) break;
       afterDate = page.nextOriginalDate;
       afterId = page.nextId;
+      afterPrayerType = page.nextPrayerType;
     }
     return result;
   }
