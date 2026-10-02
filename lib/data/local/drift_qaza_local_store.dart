@@ -282,10 +282,11 @@ class DriftQazaLocalStore extends QazaLocalStore {
     }
 
     return _database.transaction(() async {
-      final current = await _database.qazaRecordsDao.getByIds(
+      final rawCurrent = await _database.qazaRecordsDao.getByIds(
         userId: userId,
         ids: removalIds,
       );
+      final current = await _withProfilePlanProvenance(userId, rawCurrent);
       final byId = {for (final record in current) record.id: record};
       final removed = <QazaRecord>[];
 
@@ -389,9 +390,13 @@ class DriftQazaLocalStore extends QazaLocalStore {
   ) {
     return _database.transaction(() async {
       for (final record in mutation.added) {
-        final current = await _database.qazaRecordsDao.getByIds(
+        final rawCurrent = await _database.qazaRecordsDao.getByIds(
           userId: mutation.userId,
           ids: [record.id],
+        );
+        final current = await _withProfilePlanProvenance(
+          mutation.userId,
+          rawCurrent,
         );
         if (current.length != 1) continue;
         final existing = current.single;
