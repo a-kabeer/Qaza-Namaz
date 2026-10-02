@@ -554,6 +554,15 @@
   "profileSave": "تبدیلیاں محفوظ کریں",
   "profileQazaPlanChangedTitle": "قضا پلان اپ ڈیٹ ہوگا",
   "profileQazaPlanSummary": "آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔",
+  "profileQazaImpact": "اثر",
+  "profileQazaCount": "{count} قضا",
+  "@profileQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "profileQazaPreviousTotal": "پچھلا پلان",
   "profileQazaNewTotal": "نیا پلان",
   "profileQazaCompletedInPlan": "نئے پلان میں مکمل شدہ",

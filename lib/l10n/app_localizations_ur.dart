@@ -1613,6 +1613,14 @@ class AppLocalizationsUr extends AppLocalizations {
       'آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔';
 
   @override
+  String get profileQazaImpact => 'اثر';
+
+  @override
+  String profileQazaCount(String count) {
+    return '$count قضا';
+  }
+
+  @override
   String get profileQazaPreviousTotal => 'پچھلا پلان';
 
   @override

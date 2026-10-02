@@ -1611,6 +1611,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your profile change changes the calculated Qaza plan.';
 
   @override
+  String get profileQazaImpact => 'Impact';
+
+  @override
+  String profileQazaCount(String count) {
+    return '$count Qaza';
+  }
+
+  @override
   String get profileQazaPreviousTotal => 'Previous plan';
 
   @override
