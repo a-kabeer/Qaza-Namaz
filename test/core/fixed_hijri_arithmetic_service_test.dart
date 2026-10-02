@@ -178,28 +178,28 @@ void main() {
 
     final profile = _profile(
       dob: dob,
-      pubertyAge: 1,
-      startPrayingAge: 2,
+      pubertyAge: 12,
+      startPrayingAge: 13,
     );
 
     final beforeStart =
         firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
       const Duration(days: 1),
     );
-    final onStart = firstGregorianDateAtOrAfterFixedAge(dob, 2);
+    final onStart = firstGregorianDateAtOrAfterFixedAge(dob, 13);
 
     expect(
       FixedHijriArithmeticService.dayIndexForGregorian(beforeStart) -
           FixedHijriArithmeticService.dayIndexForGregorian(dob),
-      lessThan(2 * 360),
+      lessThan(13 * 360),
     );
     expect(
       FixedHijriArithmeticService.dayIndexForGregorian(onStart) -
           FixedHijriArithmeticService.dayIndexForGregorian(dob),
-      greaterThanOrEqualTo(2 * 360),
+      greaterThanOrEqualTo(13 * 360),
     );
-    expect(ProfileRules.currentAge(dob, beforeStart), lessThan(2));
-    expect(ProfileRules.currentAge(dob, onStart), greaterThanOrEqualTo(2));
+    expect(ProfileRules.currentAge(dob, beforeStart), lessThan(13));
+    expect(ProfileRules.currentAge(dob, onStart), greaterThanOrEqualTo(13));
   });
 
   test('changing DOB, puberty age, or start-praying age recalculates consistently', () {
