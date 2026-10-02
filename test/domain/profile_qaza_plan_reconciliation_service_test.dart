@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
+import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_plan_revision_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_profile_plan_mutation_repository.dart';
@@ -67,6 +69,15 @@ class MemoryQazaRepository implements QazaRepository {
     final page = await getPage(userId: userId, prayerType: prayerType, status: QazaStatus.pending, limit: 1);
     return page.records.isEmpty ? null : page.records.first;
   }
+
+  @override
+  Future<List<QazaRecord>> getPendingRecordsByIds({
+    required String userId,
+    required Iterable<String> recordIds,
+  }) async =>
+      (await getRecordsByIds(userId: userId, recordIds: recordIds))
+          .where((record) => record.status == QazaStatus.pending)
+          .toList();
 
   @override
   Future<List<QazaRecord>> getRecordsByIds({required String userId, required Iterable<String> recordIds}) async {
