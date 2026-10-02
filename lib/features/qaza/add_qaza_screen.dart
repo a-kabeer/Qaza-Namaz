@@ -13,13 +13,13 @@ import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_picker.dart';
 import '../home/home_controller.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
+import '../prayer_time/presentation/prayer_timeline_row.dart';
 import 'add_qaza_controller.dart';
 import 'qaza_import_controller.dart';
 import 'qaza_import_progress_dialog.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_navigation.dart';
-import '../prayer_time/application/prayer_time_providers.dart';
-import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
   const AddQazaScreen({super.key, this.editAddition});
