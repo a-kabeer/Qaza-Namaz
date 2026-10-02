@@ -89,6 +89,42 @@ void main() {
     expect(restored.removedRecords, 0);
   });
 
+  test('legacy ledger fingerprint remains distinguishable for history safety', () {
+    final profile = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1994, 12, 31),
+      pubertyAge: 12,
+      startPrayingAge: 15,
+      witrIncluded: true,
+      onboardingCompleted: true,
+    );
+    final plan = planService.planFor(profile)!;
+    final fixedFingerprint =
+        ProfileQazaPlanReconciliationService.planFingerprint(plan);
+    final legacyFingerprint =
+        fixedFingerprint.replaceFirst('qazaPlanV2Fixed360', 'qazaPlanV1');
+
+    final revision = QazaPlanRevision.fromPlan(
+      revisionId: 'rev_legacy_history',
+      userId: UserProfile.localLedgerUserId,
+      createdAt: DateTime(2026, 10, 2, 12),
+      plan: plan,
+      planFingerprint: fixedFingerprint,
+      profileSnapshot:
+          ProfileQazaPlanReconciliationService.profileSnapshot(profile),
+      ledgerDecision: QazaPlanLedgerDecision.keptExisting,
+      ledgerPlan: plan,
+      ledgerPlanFingerprint: legacyFingerprint,
+    );
+
+    final restored = QazaPlanRevision.fromJson(revision.toJson());
+
+    expect(restored.planFingerprint, fixedFingerprint);
+    expect(restored.ledgerPlanFingerprint, legacyFingerprint);
+    expect(restored.ledgerPlanFingerprint, isNot(fixedFingerprint));
+  });
+
   test('plan fingerprint represents the effective calculated plan', () {
     final hanafi = UserProfile(
       gender: Gender.male,
@@ -112,10 +148,16 @@ void main() {
     final same = planService.planFor(other)!;
     final changed = planService.planFor(withoutWitr)!;
 
+    final firstFingerprint =
+        ProfileQazaPlanReconciliationService.planFingerprint(first);
+    final legacyFingerprint =
+        firstFingerprint.replaceFirst('qazaPlanV2Fixed360', 'qazaPlanV1');
+    expect(firstFingerprint, startsWith('qazaPlanV2Fixed360|'));
     expect(
-      ProfileQazaPlanReconciliationService.planFingerprint(first),
+      firstFingerprint,
       ProfileQazaPlanReconciliationService.planFingerprint(same),
     );
+    expect(firstFingerprint, isNot(legacyFingerprint));
     expect(
       ProfileQazaPlanReconciliationService.planFingerprint(first),
       isNot(ProfileQazaPlanReconciliationService.planFingerprint(changed)),

@@ -1,3 +1,4 @@
+import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
@@ -34,10 +35,27 @@ class QazaPlanService {
 
   QazaPlan? planFor(UserProfile profile) {
     final start = ProfileRules.pubertyDate(profile);
-    final end = ProfileRules.startPrayingDate(profile);
-    if (start == null || end == null || end.isBefore(start)) return null;
+    final startPrayingDate = ProfileRules.startPrayingDate(profile);
+    final pubertyAge = profile.pubertyAge;
+    final startPrayingAge = profile.startPrayingAge;
+    if (start == null ||
+        startPrayingDate == null ||
+        pubertyAge == null ||
+        startPrayingAge == null ||
+        startPrayingAge < pubertyAge) {
+      return null;
+    }
 
-    final totalDays = LocalDateService.calendarDayDifference(start, end);
+    final totalDays = FixedHijriArithmeticService.durationForAges(
+      pubertyAge: pubertyAge,
+      startPrayingAge: startPrayingAge,
+    );
+    final end = LocalDateService.addCalendarDays(start, totalDays);
+    if (end != startPrayingDate ||
+        LocalDateService.compareCalendarDates(end, start) < 0) {
+      return null;
+    }
+
     final includeWitr = ProfileRules.effectiveWitr(profile);
     final prayerBreakdown = <PrayerType, int>{
       for (final prayer in PrayerType.values)
@@ -52,5 +70,23 @@ class QazaPlanService {
       totalPrayers: totalDays * 5,
       prayerBreakdown: prayerBreakdown,
     );
+  }
+
+  /// Returns the canonical Gregorian ledger date for [offset] within [plan].
+  ///
+  /// Qaza plans use [startDate, endDate) semantics, so valid offsets are
+  /// 0 through totalDays - 1.
+  static DateTime planDateAt(QazaPlan plan, int offset) {
+    if (offset < 0 || offset >= plan.totalDays) {
+      throw RangeError.range(offset, 0, plan.totalDays - 1, 'offset');
+    }
+    return LocalDateService.addCalendarDays(plan.startDate, offset);
+  }
+
+  /// Enumerates exactly [QazaPlan.totalDays] consecutive Gregorian dates.
+  static Iterable<DateTime> datesFor(QazaPlan plan) sync* {
+    for (var offset = 0; offset < plan.totalDays; offset++) {
+      yield planDateAt(plan, offset);
+    }
   }
 }

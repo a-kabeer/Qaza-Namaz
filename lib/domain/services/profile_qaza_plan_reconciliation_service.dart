@@ -299,13 +299,10 @@ class ProfileQazaPlanReconciliationService {
   }
 
   static DateTime planDateAt(QazaPlan plan, int offset) =>
-      plan.startDate.add(Duration(days: offset));
+      QazaPlanService.planDateAt(plan, offset);
 
-  static Iterable<DateTime> _planDates(QazaPlan plan) sync* {
-    for (var offset = 0; offset < plan.totalDays; offset++) {
-      yield planDateAt(plan, offset);
-    }
-  }
+  static Iterable<DateTime> _planDates(QazaPlan plan) =>
+      QazaPlanService.datesFor(plan);
 
   static List<PrayerType> _planPrayerTypes(QazaPlan plan) => [
         PrayerType.fajr,
@@ -319,7 +316,7 @@ class ProfileQazaPlanReconciliationService {
   static Set<String> _planKeys(String userId, QazaPlan plan) {
     final result = <String>{};
     for (var offset = 0; offset < plan.totalDays; offset++) {
-      final date = planDateAt(plan, offset);
+      final date = QazaPlanService.planDateAt(plan, offset);
       for (final prayer in _planPrayerTypes(plan)) {
         result.add(
           '${userId}_${prayer.name}_${QazaDate.key(date)}',
@@ -333,9 +330,13 @@ class ProfileQazaPlanReconciliationService {
       '${record.userId}_${record.prayerType.name}_'
       '${QazaDate.key(record.originalDate)}';
 
+  /// Versioned fingerprint for the active fixed 30/360 calculation scheme.
+  ///
+  /// Legacy V1 fingerprints intentionally remain distinct so an existing
+  /// real-calendar revision cannot be mistaken for a fixed-arithmetic plan.
   static String planFingerprint(QazaPlan plan) {
     return [
-      'qazaPlanV1',
+      'qazaPlanV2Fixed360',
       QazaDate.key(plan.startDate),
       QazaDate.key(plan.endDate),
       plan.totalDays,

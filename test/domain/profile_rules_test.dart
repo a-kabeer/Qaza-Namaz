@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/core/calendar/fixed_hijri_arithmetic_service.dart';
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/profile_rules.dart';
@@ -8,7 +9,8 @@ UserProfile makeProfile({
   required DateTime dob,
   required int pubertyAge,
   required int startPrayingAge,
-}) => UserProfile(
+}) =>
+    UserProfile(
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.hanafi,
@@ -18,26 +20,46 @@ UserProfile makeProfile({
       witrIncluded: true,
     );
 
+DateTime firstGregorianDateAtOrAfterFixedAge(
+  DateTime dob,
+  int age,
+) {
+  final target =
+      age * FixedHijriArithmeticService.daysPerYear;
+  for (var offset = 0; offset <= 6000; offset++) {
+    final candidate = dob.add(Duration(days: offset));
+    if (FixedHijriArithmeticService.dayIndexForGregorian(candidate) -
+            FixedHijriArithmeticService.dayIndexForGregorian(dob) >=
+        target) {
+      return candidate;
+    }
+  }
+  throw StateError('Could not find a fixed arithmetic age boundary.');
+}
+
 void main() {
-  test('anniversaryDate follows Hijri years rather than Gregorian years', () {
+  test('fixedMilestoneDate is a fixed Gregorian projection, not a Hijri anniversary', () {
     final dob = DateTime(2018, 11, 12);
+    final projected = ProfileRules.fixedMilestoneDate(dob, 5);
 
-    expect(HijriDateService.fromGregorian(dob).year, 1440);
-    expect(HijriDateService.fromGregorian(dob).month, 3);
-    expect(HijriDateService.fromGregorian(dob).day, 4);
-
-    final anniversary = ProfileRules.anniversaryDate(dob, 5);
-
-    expect(anniversary, DateTime(2023, 9, 19));
-    expect(anniversary, isNot(DateTime(2023, 11, 12)));
-
-    final anniversaryHijri = HijriDateService.fromGregorian(anniversary);
-    expect(anniversaryHijri.year, 1445);
-    expect(anniversaryHijri.month, 3);
-    expect(anniversaryHijri.day, 4);
+    expect(
+      projected,
+      FixedHijriArithmeticService.projectFromBirth(
+        dob: dob,
+        fixedDayOffset: 5 * FixedHijriArithmeticService.daysPerYear,
+      ),
+    );
+    expect(
+      projected,
+      DateTime(
+        dob.year,
+        dob.month,
+        dob.day,
+      ).add(const Duration(days: 1800)),
+    );
   });
 
-  test('pubertyDate and startPrayingDate share Hijri anniversary logic', () {
+  test('pubertyDate and startPrayingDate use the same fixed arithmetic projection', () {
     final profile = makeProfile(
       dob: DateTime(2018, 11, 12),
       pubertyAge: 5,
@@ -46,45 +68,38 @@ void main() {
 
     expect(
       ProfileRules.pubertyDate(profile),
-      ProfileRules.anniversaryDate(profile.dateOfBirth!, 5),
+      FixedHijriArithmeticService.projectFromBirth(
+        dob: profile.dateOfBirth!,
+        fixedDayOffset: 5 * 360,
+      ),
     );
     expect(
       ProfileRules.startPrayingDate(profile),
-      ProfileRules.anniversaryDate(profile.dateOfBirth!, 6),
+      FixedHijriArithmeticService.projectFromBirth(
+        dob: profile.dateOfBirth!,
+        fixedDayOffset: 6 * 360,
+      ),
     );
-
-    final pubertyHijri =
-        HijriDateService.fromGregorian(ProfileRules.pubertyDate(profile)!);
-    final dobHijri = HijriDateService.fromGregorian(profile.dateOfBirth!);
-    expect(pubertyHijri.year, dobHijri.year + profile.pubertyAge!);
-    expect(pubertyHijri.month, dobHijri.month);
-    expect(pubertyHijri.day, dobHijri.day);
   });
 
-  test('currentAge changes on the Hijri birthday, not the Gregorian birthday', () {
+  test('currentAge follows the fixed Hijri arithmetic day index', () {
     final dob = DateTime(2018, 11, 12);
-    final hijriBirthday = ProfileRules.anniversaryDate(dob, 5);
+    final birthIndex = FixedHijriArithmeticService.dayIndexForGregorian(dob);
+    final boundary = firstGregorianDateAtOrAfterFixedAge(dob, 5);
 
-    expect(
-      ProfileRules.currentAge(
-        dob,
-        hijriBirthday.subtract(const Duration(days: 1)),
-      ),
-      4,
-    );
-    expect(ProfileRules.currentAge(dob, hijriBirthday), 5);
-    expect(
-      ProfileRules.currentAge(
-        dob,
-        hijriBirthday.add(const Duration(days: 1)),
-      ),
-      5,
-    );
+    final boundaryIndex =
+        FixedHijriArithmeticService.dayIndexForGregorian(boundary);
+    final previous = boundary.subtract(const Duration(days: 1));
+    final previousIndex =
+        FixedHijriArithmeticService.dayIndexForGregorian(previous);
 
-    expect(ProfileRules.currentAge(dob, DateTime(2023, 10, 1)), 5);
+    expect(boundaryIndex - birthIndex, greaterThanOrEqualTo(5 * 360));
+    expect(previousIndex - birthIndex, lessThan(5 * 360));
+    expect(ProfileRules.currentAge(dob, previous), 4);
+    expect(ProfileRules.currentAge(dob, boundary), 5);
   });
 
-  test('Ramadan 30th birthday clamps to Ramadan 29th when the next Ramadan is 29 days', () {
+  test('real Hijri month length changes do not affect fixed age', () {
     int? sourceYear;
     for (var year = 1400; year < 1499; year++) {
       if (HijriDateService.daysInMonth(year: year, month: 9) == 30 &&
@@ -95,96 +110,129 @@ void main() {
     }
 
     expect(sourceYear, isNotNull);
-    final resolvedYear = sourceYear;
-    if (resolvedYear == null) {
-      fail('Could not find a Ramadan 30-to-29 transition.');
-    }
-
     final dob = HijriDateService.toGregorian(
-      year: resolvedYear,
+      year: sourceYear!,
       month: 9,
       day: 30,
     );
-    final anniversary = ProfileRules.anniversaryDate(dob, 1);
-    final hijri = HijriDateService.fromGregorian(anniversary);
+    final clampedBirthday = HijriDateService.toGregorian(
+      year: sourceYear + 1,
+      month: 9,
+      day: 29,
+    );
 
-    expect(hijri.year, resolvedYear + 1);
-    expect(hijri.month, 9);
-    expect(hijri.day, 29);
+    expect(ProfileRules.currentAge(dob, clampedBirthday), 0);
+    expect(
+      ProfileRules.currentAge(
+        dob,
+        clampedBirthday.add(const Duration(days: 1)),
+      ),
+      1,
+    );
   });
 
-  test('currentAge handles a Hijri 30th birthday clamped to a 29-day month', () {
+  test('30th Hijri DOB stays valid without target-month clamping changing Qaza age', () {
     int? sourceYear;
-    int? month;
-
-    for (var year = 1400; year < 1499 && sourceYear == null; year++) {
-      for (var candidateMonth = 1; candidateMonth <= 12; candidateMonth++) {
-        if (HijriDateService.daysInMonth(year: year, month: candidateMonth) == 30 &&
-            HijriDateService.daysInMonth(
-                  year: year + 1,
-                  month: candidateMonth,
-                ) ==
-                29) {
-          sourceYear = year;
-          month = candidateMonth;
-          break;
-        }
+    for (var year = 1400; year < 1499; year++) {
+      if (HijriDateService.daysInMonth(year: year, month: 9) == 30 &&
+          HijriDateService.daysInMonth(year: year + 1, month: 9) == 29) {
+        sourceYear = year;
+        break;
       }
     }
 
     expect(sourceYear, isNotNull);
-    expect(month, isNotNull);
-
-    final resolvedSourceYear = sourceYear;
-    final resolvedMonth = month;
-    if (resolvedSourceYear == null || resolvedMonth == null) {
-      fail('Could not find a Hijri 30-to-29 month transition.');
-    }
-
     final dob = HijriDateService.toGregorian(
-      year: resolvedSourceYear,
-      month: resolvedMonth,
+      year: sourceYear!,
+      month: 9,
       day: 30,
     );
-    final clampedBirthday = HijriDateService.toGregorian(
-      year: resolvedSourceYear + 1,
-      month: resolvedMonth,
-      day: 29,
-    );
-
-    expect(ProfileRules.currentAge(dob, clampedBirthday), 1);
-    expect(
-      ProfileRules.currentAge(
-        dob,
-        clampedBirthday.subtract(const Duration(days: 1)),
-      ),
-      0,
-    );
-  });
-
-  test('profile validation uses Hijri current age for start-praying age', () {
-    final dob = DateTime(2018, 11, 12);
-    final age12Birthday = ProfileRules.anniversaryDate(dob, 12);
-    final age13Birthday = ProfileRules.anniversaryDate(dob, 13);
     final profile = makeProfile(
       dob: dob,
       pubertyAge: 12,
       startPrayingAge: 13,
     );
 
-    final beforeStartBirthday = ProfileRules.validate(
-      profile,
-      today: age12Birthday.add(const Duration(days: 1)),
-    );
+    expect(ProfileRules.fixedMilestoneDate(dob, 1), isNot(dob));
+    expect(ProfileRules.pubertyDate(profile), isNotNull);
+    expect(ProfileRules.startPrayingDate(profile), isNotNull);
     expect(
-      beforeStartBirthday.error,
-      ProfileValidationError.startPrayingAgeInvalid,
+      ProfileRules.startPrayingDate(profile),
+      ProfileRules.pubertyDate(profile)!.add(const Duration(days: 360)),
+    );
+  });
+
+  test('integer ages map to exactly (startAge - pubertyAge) × 360 days', () {
+    for (final ages in const [
+      (12, 12),
+      (12, 13),
+      (12, 15),
+      (9, 18),
+    ]) {
+      final duration = FixedHijriArithmeticService.durationForAges(
+        pubertyAge: ages.$1,
+        startPrayingAge: ages.$2,
+      );
+      expect(
+        duration,
+        (ages.$2 - ages.$1) * FixedHijriArithmeticService.daysPerYear,
+      );
+    }
+  });
+
+  test('profile validation rejects a start-praying age before fixed current age is reached', () {
+    final dob = DateTime(2018, 11, 12);
+    final profile = makeProfile(
+      dob: dob,
+      pubertyAge: 12,
+      startPrayingAge: 13,
+    );
+    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 13)
+        .subtract(const Duration(days: 1));
+
+    final validation = ProfileRules.validate(
+      profile,
+      today: beforeStart,
     );
 
-    final onStartBirthday = ProfileRules.validate(
-      profile,
-      today: age13Birthday,
+    expect(
+      validation.error,
+      ProfileValidationError.startPrayingAgeInvalid,
     );
-    expect(onStartBirthday.isValid, isTrue);
+  });
+
+  test('available age controls only expose reached, materializable milestones', () {
+    final today = DateTime(2026, 10, 1);
+    final dob = DateTime(2000, 1, 1);
+    final profile = makeProfile(
+      dob: dob,
+      pubertyAge: 12,
+      startPrayingAge: 15,
+    );
+
+    expect(
+      ProfileRules.availablePubertyAgeOptions(profile, today: today),
+      isNotEmpty,
+    );
+    expect(
+      ProfileRules.startPrayingAgeOptions(profile, today: today),
+      contains(15),
+    );
+    expect(
+      ProfileRules.startPrayingAgeOptions(profile, today: today),
+      everyElement(isA<int>()),
+    );
+  });
+
+  test('normalization clears invalid fixed-arithmetic milestone ages', () {
+    final profile = makeProfile(
+      dob: DateTime(2026, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 15,
+    );
+
+    final normalized = ProfileRules.normalize(profile);
+    expect(normalized.pubertyAge, isNull);
+    expect(normalized.startPrayingAge, isNull);
   });
 }
