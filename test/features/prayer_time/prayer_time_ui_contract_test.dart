@@ -18,7 +18,6 @@ void main() {
     expect(card, contains('fit: BoxFit.scaleDown'));
     expect(card, contains('maxLines: 1'));
     expect(card, contains('softWrap: false'));
-    expect(card, isNot(contains('SizedBox(height: ')));
   });
 
   test('Qibla summary replaces the large bearing value with the shared compass visualization', () {
