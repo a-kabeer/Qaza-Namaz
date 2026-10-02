@@ -8,12 +8,9 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/qibla_providers.dart';
-import '../domain/qibla_direction_service.dart';
 
 class QiblaDirectionScreen extends ConsumerWidget {
   const QiblaDirectionScreen({super.key});
-
-  String _bearingText(double bearing) => '${bearing.round()}°';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -443,7 +440,7 @@ class _QiblaDialPainter extends CustomPainter {
       textPainter,
       'W',
       Offset(center.dx - radius + 34, center.dy),
-      scheme.onSurfaceVariant,
+      onSurfaceVariantColor,
     );
 
     final qiblaAngle = qiblaBearing * math.pi / 180 - math.pi / 2;
@@ -476,7 +473,7 @@ class _QiblaDialPainter extends CustomPainter {
     canvas.drawCircle(
       center,
       7,
-      Paint()..color = scheme.primary,
+      Paint()..color = primaryColor,
     );
     canvas.restore();
   }
