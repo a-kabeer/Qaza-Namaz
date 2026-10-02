@@ -46,12 +46,11 @@ class QiblaSummaryCard extends ConsumerWidget {
     }
 
     final live = trueHeading != null;
-    final semanticState = live ? 'live compass' : 'static direction';
     final valueText = _bearingText();
 
     return Semantics(
       button: true,
-      label: '${valueText}, ${l10n.qiblaDirection}, ${semanticState}',
+      label: '${valueText}, ${l10n.qiblaDirection}',
       child: Card(
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
