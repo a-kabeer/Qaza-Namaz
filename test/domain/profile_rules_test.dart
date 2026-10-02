@@ -38,9 +38,9 @@ DateTime firstGregorianDateAtOrAfterFixedAge(
 }
 
 void main() {
-  test('anniversaryDate is a fixed Gregorian projection, not a Hijri anniversary', () {
+  test('fixedMilestoneDate is a fixed Gregorian projection, not a Hijri anniversary', () {
     final dob = DateTime(2018, 11, 12);
-    final projected = ProfileRules.anniversaryDate(dob, 5);
+    final projected = ProfileRules.fixedMilestoneDate(dob, 5);
 
     expect(
       projected,
@@ -153,7 +153,7 @@ void main() {
       startPrayingAge: 2,
     );
 
-    expect(ProfileRules.anniversaryDate(dob, 1), isNot(dob));
+    expect(ProfileRules.fixedMilestoneDate(dob, 1), isNot(dob));
     expect(ProfileRules.pubertyDate(profile), isNotNull);
     expect(ProfileRules.startPrayingDate(profile), isNotNull);
     expect(
