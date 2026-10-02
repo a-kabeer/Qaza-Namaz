@@ -1,8 +1,10 @@
 export 'application/prayer_time_controller.dart';
 export 'application/prayer_time_providers.dart';
+export 'application/qibla_providers.dart';
 export 'data/offline_city_resolver.dart';
 export 'data/prayer_location_repository.dart';
 export 'data/prayer_time_cache.dart';
+export 'data/device_compass_service.dart';
 export 'domain/prayer_location.dart';
 export 'domain/prayer_settings.dart';
 export 'domain/prayer_time.dart';
