@@ -157,9 +157,7 @@ class ProfileQazaPlanReconciliationService {
       oldRevision: oldRevision,
       previousProfileSnapshot: profileSnapshot(oldProfile),
       calculationChanged: true,
-      existingCompletedInNewPlan: analysis.existingCandidates
-          .where((key) => analysis.completedKeys.contains(key))
-          .length,
+      existingCompletedInNewPlan: analysis.alreadyCompleted,
       pendingToAdd: analysis.newCandidates.length,
       pendingToRemove: removalIds.length,
       pendingAdditionKeys: List.unmodifiable(analysis.newCandidates),
