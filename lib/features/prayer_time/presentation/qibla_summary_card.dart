@@ -94,6 +94,7 @@ class QiblaSummaryCard extends ConsumerWidget {
                                 qiblaBearing: value,
                                 heading: trueHeading ?? 0,
                                 showRelativeQibla: live,
+                                showCardinals: live,
                                 surfaceColor: scheme.surfaceContainerLow,
                                 outlineColor: scheme.outlineVariant,
                                 onSurfaceColor: scheme.onSurface,
