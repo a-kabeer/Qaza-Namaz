@@ -30,6 +30,8 @@ dependencies:
   geolocator: ^14.0.3
   flutter_timezone: ^5.1.0
   geonames_offline: ^0.1.0
+  flutter_device_compass: ^2.2.0
+  geomag: ^0.3.0
 
 dev_dependencies:
   flutter_test:
