@@ -495,7 +495,9 @@ class _PendingTrackerBody extends ConsumerWidget {
               AppSpacing.lg,
               AppSpacing.xs,
             ),
-            child: RestrictedTimeTimelineRow(),
+            child: RestrictedTimeTimelineRow(
+              onTap: () => openPrayerTime(ref),
+            ),
           ),
         if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
           Padding(
