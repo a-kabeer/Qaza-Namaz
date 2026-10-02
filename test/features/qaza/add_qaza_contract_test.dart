@@ -261,8 +261,10 @@ void main() {
     expect(source, contains('qazaCompletionRestrictedProvider'));
     expect(source, contains('_RestrictedTimeAddQazaRow'));
     expect(source, contains('RestrictedTimeTimelineRow('));
-    expect(source, contains('onTap: () => openPrayerTime(ref)'));
+    expect(source, contains('onTap: () => openPrayerTimeFromRoute(context, ref)'));
     expect(navigation, contains('WorkspaceDestination.prayerTime'));
+    expect(navigation, contains('openPrayerTimeFromRoute'));
+    expect(navigation, contains('if (navigator.canPop()) navigator.pop();'));
     expect(timeline, contains('onTap: onTap'));
   });
 
