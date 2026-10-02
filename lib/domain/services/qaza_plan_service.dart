@@ -1,6 +1,6 @@
+import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
-import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../entities/user_profile.dart';
 import 'profile_rules.dart';
 
