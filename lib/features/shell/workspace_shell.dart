@@ -56,8 +56,24 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   final Set<int> _mounted = {0};
 
   void _selectDestination(int value) {
-    ref.read(workspaceDestinationProvider.notifier).state =
-        _barDestinations[value];
+    final current = ref.read(workspaceDestinationProvider);
+    final next = _barDestinations[value];
+
+    // Re-tapping the active workspace is an in-workspace action, so it must
+    // not reset Qaza's current Pending/Completed tab or filters.
+    if (current == next) return;
+
+    // A normal primary-navigation entry into Qaza starts from Pending. Explicit
+    // navigation helpers set a filter request first, so never overwrite one.
+    if (next == WorkspaceDestination.qaza &&
+        ref.read(qazaTrackerFilterRequestProvider) == null) {
+      ref.read(qazaTrackerFilterRequestProvider.notifier).state =
+          const QazaTrackerFilterRequest(
+        status: QazaStatusFilter.pending,
+      );
+    }
+
+    ref.read(workspaceDestinationProvider.notifier).state = next;
   }
 
   void _handleBack() {

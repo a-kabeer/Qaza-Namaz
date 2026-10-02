@@ -64,6 +64,66 @@ void main() {
     );
   });
 
+  test('primary Qaza navigation defaults to Pending only on workspace re-entry', () {
+    final source =
+        File('lib/features/shell/workspace_shell.dart').readAsStringSync();
+
+    expect(source, contains('final current = ref.read(workspaceDestinationProvider);'));
+    expect(source, contains('final next = _barDestinations[value];'));
+    expect(source, contains('if (current == next) return;'));
+    expect(source, contains('next == WorkspaceDestination.qaza'));
+    expect(source, contains('ref.read(qazaTrackerFilterRequestProvider) == null'));
+    expect(source, contains('QazaStatusFilter.pending'));
+  });
+
+  test('explicit Qaza navigation requests keep precedence over primary defaults', () {
+    final navigation =
+        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(
+      navigation,
+      contains(
+        'prayer: prayer,\n    status: QazaStatusFilter.pending',
+      ),
+    );
+    expect(
+      navigation,
+      contains(
+        'status: QazaStatusFilter.completed',
+      ),
+    );
+    expect(navigation, contains('WorkspaceDestination.qaza;'));
+    expect(controller, contains('_consumeRequest(request);'));
+    expect(
+      controller,
+      contains('if (identical(notifier.state, request)) notifier.state = null;'),
+    );
+  });
+
+  test('Qaza restricted-time row navigates to the existing Prayer Time workspace', () {
+    final tracker =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final navigation =
+        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
+    final timeline =
+        File('lib/features/prayer_time/presentation/prayer_timeline_row.dart')
+            .readAsStringSync();
+
+    expect(tracker, contains('RestrictedTimeTimelineRow('));
+    expect(tracker, contains('onTap: () => openPrayerTime(ref)'));
+    expect(
+      navigation,
+      contains(
+        'ref.read(workspaceDestinationProvider.notifier).state =\n      WorkspaceDestination.prayerTime;',
+      ),
+    );
+    expect(timeline, contains('this.onTap'));
+    expect(timeline, contains('onTap: onTap'));
+  });
+
+
   test('selection mode preserves the shared tracker header slot', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
@@ -422,7 +482,7 @@ void main() {
         "import '../prayer_time/presentation/prayer_timeline_row.dart';",
       ),
     );
-    expect(source, contains('child: RestrictedTimeTimelineRow(),'));
+    expect(source, contains('child: RestrictedTimeTimelineRow('));
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 

@@ -249,6 +249,40 @@ void main() {
     expect(tracker, contains('state.selectionMode ? null : const AddQazaFab()'));
   });
 
+  test('Add Qaza exposes the shared Restricted Time row and Prayer Time navigation', () {
+    final source =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final navigation =
+        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
+    final timeline =
+        File('lib/features/prayer_time/presentation/prayer_timeline_row.dart')
+            .readAsStringSync();
+
+    expect(source, contains('qazaCompletionRestrictedProvider'));
+    expect(source, contains('_RestrictedTimeAddQazaRow'));
+    expect(source, contains('RestrictedTimeTimelineRow('));
+    expect(source, contains('onTap: () => openPrayerTimeFromRoute(context, ref)'));
+    expect(navigation, contains('WorkspaceDestination.prayerTime'));
+    expect(navigation, contains('openPrayerTimeFromRoute'));
+    expect(navigation, contains('if (navigator.canPop()) navigator.pop();'));
+    expect(timeline, contains('onTap: onTap'));
+  });
+
+  test('Restricted Time navigation does not mutate Qaza data', () {
+    final source =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _RestrictedTimeAddQazaRow');
+    final end = source.indexOf('class _ModeSelector', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final row = source.substring(start, end);
+    expect(row, contains('openPrayerTimeFromRoute(context, ref)'));
+    expect(row, isNot(contains('addQazaControllerProvider.notifier')));
+    expect(row, isNot(contains('qazaImportProvider')));
+    expect(row, isNot(contains('qazaServiceProvider')));
+  });
+
   test('AppScaffold supports reusable bottom actions', () {
     final source =
         File('lib/core/widgets/app_scaffold.dart').readAsStringSync();
