@@ -99,6 +99,8 @@
   "commonBack": "Back",
   "commonContinue": "Continue",
   "commonLoading": "Loading...",
+  "commonToday": "Today",
+  "commonYesterday": "Yesterday",
   "hijriDate": "{day} {month} {year} AH",
   "@hijriDate": {
     "description": "Secondary Hijri date line; Gregorian remains primary",
