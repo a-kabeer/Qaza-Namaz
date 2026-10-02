@@ -26,7 +26,7 @@ DateTime firstGregorianDateAtOrAfterFixedAge(
 ) {
   final target =
       age * FixedHijriArithmeticService.daysPerYear;
-  for (var offset = 0; offset <= 450; offset++) {
+  for (var offset = 0; offset <= 2500; offset++) {
     final candidate = dob.add(Duration(days: offset));
     if (FixedHijriArithmeticService.dayIndexForGregorian(candidate) -
             FixedHijriArithmeticService.dayIndexForGregorian(dob) >=
