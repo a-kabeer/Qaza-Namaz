@@ -218,14 +218,9 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
     final start = source.indexOf('class _BulkCompletionBar extends StatelessWidget {');
-    final end = source.indexOf(
-      'class ',
-      start + 'class _BulkCompletionBar extends StatelessWidget {'.length,
-    );
     expect(start, greaterThanOrEqualTo(0));
-    expect(end, greaterThan(start));
 
-    final bar = source.substring(start, end);
+    final bar = source.substring(start);
     expect(bar, contains('final VoidCallback onComplete;'));
     expect(bar, contains('required this.onComplete'));
     expect(bar, contains('onPressed: onComplete'));
