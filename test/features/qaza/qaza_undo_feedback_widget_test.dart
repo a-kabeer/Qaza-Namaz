@@ -115,13 +115,13 @@ void main() {
           overrides: [
             qazaUndoManagerProvider.overrideWithValue(manager),
           ],
-          child: AppScaffoldMessenger(
-            key: appScaffoldMessengerKey,
-            child: MaterialApp(
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              locale: const Locale('en'),
-              home: Scaffold(
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            home: AppScaffoldMessenger(
+              key: appScaffoldMessengerKey,
+              child: Scaffold(
                 body: _FeedbackHarness(batch: batch),
               ),
             ),
