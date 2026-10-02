@@ -381,9 +381,13 @@ class QazaService {
       throw const QazaDuplicateRecordException();
     }
 
+    final identityChanged =
+        current.prayerType != record.prayerType ||
+        QazaDate.key(current.originalDate) != QazaDate.key(normalizedDate);
     var recordToUpdate = current.copyWith(
       prayerType: record.prayerType,
       originalDate: normalizedDate,
+      clearProfilePlanProvenance: identityChanged,
       updatedAt: DateTime.now(),
     );
 
