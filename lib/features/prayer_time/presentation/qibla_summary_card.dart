@@ -77,7 +77,8 @@ class QiblaSummaryCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Expanded(
+                SizedBox(
+                  height: 86,
                   child: Center(
                     child: value == null || !value.isFinite
                         ? Icon(
