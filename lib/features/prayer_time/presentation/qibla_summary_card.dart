@@ -65,6 +65,7 @@ class QiblaSummaryCard extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
