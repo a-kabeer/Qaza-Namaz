@@ -1726,6 +1726,49 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get prayerTimeTitle => 'نماز کے اوقات';
+  @override
+  String get qiblaTitle => 'قبلہ';
+
+  @override
+  String get qiblaDirection => 'قبلہ کی سمت';
+
+  @override
+  String get qiblaBearing => 'قبلہ کا زاویہ';
+
+  @override
+  String get qiblaFromTrueNorth => 'حقیقی شمال سے';
+
+  @override
+  String get qiblaUnavailable => 'قبلہ دستیاب نہیں';
+
+  @override
+  String get qiblaLocationRequired =>
+      'قبلہ معلوم کرنے کے لیے مقام منتخب یا محفوظ کریں۔';
+
+  @override
+  String get qiblaCompassBody =>
+      'فون گھمائیں؛ تیر قبلہ کی طرف رہنمائی کرے گا۔';
+
+  @override
+  String get qiblaSensorUnavailableBody =>
+      'اس آلے میں کمپاس سینسر دستیاب نہیں، اس لیے جامد قبلہ سمت دکھائی جا رہی ہے۔';
+
+  @override
+  String get qiblaHeadingUnavailable =>
+      'کمپاس کی سمت عارضی طور پر دستیاب نہیں۔';
+
+  @override
+  String get qiblaTurnToDirection => 'فون کو اس سمت گھمائیں۔';
+
+  @override
+  String qiblaCompassAccuracy(String degrees) {
+    return 'کمپاس کی درستگی ±$degrees°';
+  }
+
+  @override
+  String get qiblaCalibrationHint =>
+      'کمپاس کی درستگی کم ہے۔ فون کو 8 کی شکل میں حرکت دے کر دوبارہ کیلیبریٹ کریں۔';
+
 
   @override
   String get prayerTimeLocation => 'مقام';
