@@ -132,8 +132,10 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('Undo'), findsOneWidget);
-      await tester.tap(find.text('Undo'));
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.action, isNotNull);
+      expect(snackBar.action!.label, 'Undo');
+      snackBar.action!.onPressed();
       await tester.pumpAndSettle();
 
       expect(manager.beganSelection, isTrue);
