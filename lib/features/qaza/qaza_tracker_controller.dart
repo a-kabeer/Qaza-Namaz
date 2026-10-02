@@ -180,10 +180,15 @@ class QazaTrackerState {
 /// here instead and applied by [QazaTrackerController.build], which makes the
 /// hand-off independent of when each screen builds.
 class QazaTrackerFilterRequest {
-  const QazaTrackerFilterRequest({this.prayer, this.status});
+  const QazaTrackerFilterRequest({
+    this.prayer,
+    this.status,
+    this.additionId,
+  });
 
   final PrayerType? prayer;
   final QazaStatusFilter? status;
+  final String? additionId;
 }
 
 final qazaTrackerFilterRequestProvider =
@@ -219,7 +224,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     return QazaTrackerState(
       statusFilter: request.status ?? QazaStatusFilter.pending,
       prayerFilter: request.prayer,
-      additionId: additionId,
+      additionId: request.additionId,
     );
   }
 
@@ -227,23 +232,27 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   void _applyRequest(QazaTrackerFilterRequest request) {
     _consumeRequest(request);
     final status = request.status ?? state.statusFilter;
-    // A new prayer means a new list, so any selection made under the previous
-    // filter is dropped rather than carried across.
-    state = request.prayer == null
-        ? state.copyWith(
-            statusFilter: status,
-            clearPrayerFilter: true,
-            selected: const <String>{},
-            selectionMode: false,
-            clearSelectionScope: true,
-          )
-        : state.copyWith(
-            statusFilter: status,
-            prayerFilter: request.prayer,
-            selected: const <String>{},
-            selectionMode: false,
-            clearSelectionScope: true,
-          );
+
+    // Every cross-screen hand-off represents a complete filter context.
+    // Clear the previous context first, then apply only the filters supplied
+    // by the new request.
+    state = state.copyWith(
+      statusFilter: status,
+      clearPrayerFilter: true,
+      clearDates: true,
+      clearAdditionId: true,
+      selected: const <String>{},
+      selectionMode: false,
+      clearSelectionScope: true,
+    );
+
+    if (request.prayer != null || request.additionId != null) {
+      state = state.copyWith(
+        prayerFilter: request.prayer,
+        additionId: request.additionId,
+      );
+    }
+
     refresh();
   }
 
