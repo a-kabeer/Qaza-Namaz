@@ -404,6 +404,49 @@ class _PendingTrackerBody extends ConsumerWidget {
     return false;
   }
 
+  Future<void> _completeSelected(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final count = state.selected.length;
+    if (count == 0 || state.completing) return;
+
+    if (state.selectionNeedsConfirmation) {
+      final confirmed = await confirmDestructive(
+        context,
+        title: l10n.qazaConfirmBulkTitle('$count'),
+        message: l10n.qazaConfirmBulkMessage('$count'),
+        confirmLabel: l10n.qazaConfirmBulkAction,
+      );
+      if (!confirmed || !context.mounted) return;
+    }
+
+    // This context belongs to the stable Pending workspace body. The
+    // transient bulk-action bar may disappear when completion clears
+    // selection mode, so Undo feedback must not depend on that child context.
+    final feedbackContext = context;
+    final batch = await controller.completeSelectedWithUndo();
+
+    if (!feedbackContext.mounted) return;
+    if (batch == null) {
+      final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
+      if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
+        ref.read(appSnackbarServiceProvider).warning(
+              l10n.qazaTartibBlocked(
+                tartib!.nextPrayer!.localizedLabel(l10n),
+              ),
+            );
+      }
+      return;
+    }
+
+    await showQazaUndoFeedback(
+      context: feedbackContext,
+      ref: ref,
+      userId: ref.read(requiredUserIdProvider),
+      entries: batch.entries,
+      onUndone: controller.refresh,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -546,7 +589,13 @@ class _PendingTrackerBody extends ConsumerWidget {
           ),
         ),
         if (state.selected.isNotEmpty)
-          _BulkCompletionBar(state: state, controller: controller),
+          _BulkCompletionBar(
+            selectedCount: state.selected.length,
+            busy: state.completing || state.recordMutating,
+            restricted: restricted,
+            onComplete: () => _completeSelected(context, ref),
+            onClear: controller.exitSelectionMode,
+          ),
       ],
     );
   }
@@ -1306,59 +1355,24 @@ class _FilterSheet extends ConsumerWidget {
 }
 
 
-class _BulkCompletionBar extends ConsumerWidget {
+class _BulkCompletionBar extends StatelessWidget {
   const _BulkCompletionBar({
-    required this.state,
-    required this.controller,
+    required this.selectedCount,
+    required this.busy,
+    required this.restricted,
+    required this.onComplete,
+    required this.onClear,
   });
 
-  final QazaTrackerState state;
-  final QazaTrackerController controller;
-
-  Future<void> _complete(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final count = state.selected.length;
-    if (count == 0 || state.completing) return;
-
-    if (state.selectionNeedsConfirmation) {
-      final confirmed = await confirmDestructive(
-        context,
-        title: l10n.qazaConfirmBulkTitle('$count'),
-        message: l10n.qazaConfirmBulkMessage('$count'),
-        confirmLabel: l10n.qazaConfirmBulkAction,
-      );
-      if (!confirmed || !context.mounted) return;
-    }
-
-    final batch = await controller.completeSelectedWithUndo();
-    if (!context.mounted) return;
-    if (batch == null) {
-      final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
-      if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-        ref.read(appSnackbarServiceProvider).warning(
-              l10n.qazaTartibBlocked(
-                tartib!.nextPrayer!.localizedLabel(l10n),
-              ),
-            );
-      }
-      return;
-    }
-
-    await showQazaUndoFeedback(
-      context: context,
-      ref: ref,
-      userId: ref.read(requiredUserIdProvider),
-      entries: batch.entries,
-      onUndone: controller.refresh,
-    );
-  }
+  final int selectedCount;
+  final bool busy;
+  final bool restricted;
+  final VoidCallback onComplete;
+  final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final busy = state.completing || state.recordMutating;
-    final restricted = ref.watch(qazaCompletionRestrictedProvider);
-    final count = state.selected.length;
 
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -1375,7 +1389,7 @@ class _BulkCompletionBar extends ConsumerWidget {
             children: [
               TextButton(
                 key: const Key('qaza_tracker_clear_selection'),
-                onPressed: busy ? null : controller.exitSelectionMode,
+                onPressed: busy ? null : onClear,
                 child: Text(l10n.commonClear),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1383,10 +1397,10 @@ class _BulkCompletionBar extends ConsumerWidget {
                 child: FilledButton(
                   key: const Key('qaza_tracker_complete_selected'),
                   onPressed:
-                      busy || restricted || count == 0
+                      busy || restricted || selectedCount == 0
                           ? null
-                          : () => _complete(context, ref),
-                  child: Text(l10n.qazaCompleteCount(count)),
+                          : onComplete,
+                  child: Text(l10n.qazaCompleteCount(selectedCount)),
                 ),
               ),
             ],

@@ -177,6 +177,99 @@ void main() {
   });
 
 
+  test('Pending bulk completion uses the stable workspace callback for Undo feedback', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    final start = source.indexOf(
+      'Future<void> _completeSelected(BuildContext context, WidgetRef ref) async {',
+    );
+    final end = source.indexOf(
+      '  @override\n  Widget build(BuildContext context, WidgetRef ref) {',
+      start,
+    );
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final method = source.substring(start, end);
+    final completionIndex =
+        method.indexOf('await controller.completeSelectedWithUndo()');
+    final feedbackContextIndex =
+        method.indexOf('final feedbackContext = context;');
+    final feedbackIndex =
+        method.indexOf('await showQazaUndoFeedback(', completionIndex);
+
+    expect(feedbackContextIndex, greaterThanOrEqualTo(0));
+    expect(completionIndex, greaterThan(feedbackContextIndex));
+    expect(feedbackIndex, greaterThan(completionIndex));
+    expect(method, contains('context: feedbackContext'));
+    expect(
+      method,
+      isNot(
+        contains(
+          'if (!context.mounted) return;\n    if (batch == null)',
+        ),
+      ),
+    );
+  });
+
+  test('Pending bulk action bar delegates completion instead of owning lifecycle context', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    final start = source.indexOf('class _BulkCompletionBar extends StatelessWidget {');
+    expect(start, greaterThanOrEqualTo(0));
+
+    final bar = source.substring(start);
+    expect(bar, contains('final VoidCallback onComplete;'));
+    expect(bar, contains('required this.onComplete'));
+    expect(bar, contains(': onComplete,'));
+    expect(bar, isNot(contains('BuildContext workspaceContext')));
+    expect(bar, isNot(contains('showQazaUndoFeedback(')));
+    expect(bar, isNot(contains('completeSelectedWithUndo(')));
+  });
+
+  test('Pending bulk completion keeps shared refresh and Undo registration after selection clears', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+
+    expect(source, contains('onComplete: () => _completeSelected(context, ref),'));
+    expect(
+      source,
+      contains(
+        'onUndone: controller.refresh,',
+      ),
+    );
+    expect(
+      controller,
+      contains(
+        'exitSelectionModeOnSuccess: true',
+      ),
+    );
+    expect(
+      controller,
+      contains(
+        'await refresh();',
+      ),
+    );
+  });
+
+  test('Batch Undo opening remains based on the shared active Undo session', () {
+    final source =
+        File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
+
+    expect(source, contains('manager.beginSelection('));
+    expect(source, contains('builder: (_) => _QazaUndoSelectionSheet('));
+    expect(source, contains('activeBatch'));
+    expect(service, contains('_activeSelectionSessions'));
+    expect(service, contains('useActiveSelection'));
+    expect(service, contains('cancelSelection('));
+  });
+
   test('Qaza tracker has no dedicated History tab or operation subsystem', () {
     final screen =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
