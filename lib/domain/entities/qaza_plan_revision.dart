@@ -73,10 +73,9 @@ class QazaPlanRevision {
   /// Number of Qaza records actually inserted by this revision.
   final int addedRecords;
 
-  /// Number of Qaza records actually removed by this revision.
-  ///
-  /// Safe profile reconciliation currently never removes existing records,
-  /// so this remains zero for normal profile edits.
+  /// Number of pending profile-generated Qaza records actually removed by
+  /// this revision. Protected completed, manual/Add-Qaza, and unattributed
+  /// records are never included.
   final int removedRecords;
 
   factory QazaPlanRevision.fromPlan({
