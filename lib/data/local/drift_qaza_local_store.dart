@@ -305,11 +305,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
 
       final removedIds = removed.map((record) => record.id).toSet();
       if (removedIds.isNotEmpty) {
-        await _database.qazaRecordsDao.deleteByIds(
-          userId: userId,
-          ids: removedIds.toList(growable: false),
-          requirePending: true,
-        );
+        for (final id in removedIds) {
+          await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
+        }
         await _deleteProfilePlanProvenance(
           userId,
           removedIds.toList(growable: false),
@@ -401,10 +399,9 @@ class DriftQazaLocalStore extends QazaLocalStore {
             existing.profilePlanFingerprint != record.profilePlanFingerprint) {
           continue;
         }
-        await _database.qazaRecordsDao.deleteByIds(
+        await _database.qazaRecordsDao.deleteById(
           userId: mutation.userId,
-          ids: [record.id],
-          requirePending: true,
+          id: record.id,
         );
         await _deleteProfilePlanProvenance(
           mutation.userId,
