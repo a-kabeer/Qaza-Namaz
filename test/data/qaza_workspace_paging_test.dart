@@ -36,13 +36,14 @@ QazaRecord _record({
   required String id,
   required QazaStatus status,
   required DateTime originalDate,
+  PrayerType prayerType = PrayerType.fajr,
   DateTime? completedAt,
 }) {
   final at = completedAt ?? originalDate;
   return QazaRecord(
     id: id,
     userId: 'local',
-    prayerType: PrayerType.fajr,
+    prayerType: prayerType,
     originalDate: originalDate,
     status: status,
     completedAt: completedAt,
@@ -122,6 +123,96 @@ void main() {
     );
 
     expect(page.records.map((record) => record.id), ['pending-in-range']);
+  });
+
+  test('Drift and in-memory Pending pages use canonical prayer order', () async {
+    final date = DateTime(2026, 9, 10);
+    final pending = [
+      _record(
+        id: 'z-asr',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.asr,
+      ),
+      _record(
+        id: 'a-fajr',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.fajr,
+      ),
+      _record(
+        id: 'z-isha',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.isha,
+      ),
+      _record(
+        id: 'a-zuhr',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.zuhr,
+      ),
+      _record(
+        id: 'z-maghrib',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.maghrib,
+      ),
+      _record(
+        id: 'a-witr',
+        status: QazaStatus.pending,
+        originalDate: date,
+        prayerType: PrayerType.witr,
+      ),
+    ];
+
+    await database.qazaRecordsDao.insertRecords([
+      for (final record in pending)
+        QazaRecordsCompanion.insert(
+          id: record.id,
+          userId: record.userId,
+          prayerType: record.prayerType.name,
+          originalDate: record.originalDate,
+          status: record.status.name,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+        ),
+    ]);
+
+    final store = _MemoryQazaStore({'local': pending});
+    final drift = await database.qazaRecordsDao.getKeysetPage(
+      userId: 'local',
+      status: QazaStatus.pending.name,
+      limit: 3,
+    );
+    final memory = await store.getPage(
+      userId: 'local',
+      status: QazaStatus.pending,
+      limit: 3,
+    );
+
+    final expected = [
+      PrayerType.fajr,
+      PrayerType.zuhr,
+      PrayerType.asr,
+    ];
+    expect(drift.records.map((record) => record.prayerType), expected);
+    expect(memory.records.map((record) => record.prayerType), expected);
+    expect(memory.hasMore, isTrue);
+
+    final memoryNext = await store.getPage(
+      userId: 'local',
+      status: QazaStatus.pending,
+      limit: 3,
+      afterOriginalDate: memory.nextOriginalDate,
+      afterPrayerType: memory.nextPrayerType,
+      afterId: memory.nextId,
+    );
+    expect(
+      memoryNext.records.map((record) => record.prayerType),
+      [PrayerType.maghrib, PrayerType.isha, PrayerType.witr],
+    );
+    expect(memoryNext.hasMore, isFalse);
   });
 
   test('Completed date range uses completedAt with an exclusive next-day bound',
