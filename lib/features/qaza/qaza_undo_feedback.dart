@@ -233,21 +233,20 @@ class _QazaUndoSelectionSheetState
       await _refreshAfterUndo();
       if (!mounted) return;
 
+      // End this sheet's temporary selection session before the route is
+      // dismissed. This prevents the next Undo action from seeing the
+      // previous session while this sheet's finally block is still running.
       final remaining = result.remainingBatch;
-      if (remaining == null || remaining.entries.isEmpty) {
-        Navigator.of(context).pop();
-        ref.read(appSnackbarServiceProvider).success(
-              qazaUndoSuccessMessage(context, result.batch, result.count),
-            );
-      } else {
-        setState(() {
-          _batch = remaining;
-          _working = false;
-        });
-        ref.read(appSnackbarServiceProvider).success(
-              qazaUndoSuccessMessage(context, result.batch, result.count),
-            );
-      }
+      await ref.read(qazaUndoManagerProvider).cancelSelection(
+            userId: widget.userId,
+            expectedBatch: remaining ?? _batch,
+          );
+      if (!mounted) return;
+
+      Navigator.of(context).pop();
+      ref.read(appSnackbarServiceProvider).success(
+            qazaUndoSuccessMessage(context, result.batch, result.count),
+          );
     } on QazaUndoException catch (error) {
       await _recoverCurrentBatch();
       if (!mounted) return;
@@ -284,6 +283,15 @@ class _QazaUndoSelectionSheetState
           );
       await _refreshAfterUndo();
       if (!mounted) return;
+
+      // End this sheet's temporary selection session before the route is
+      // dismissed so a new batch cannot race the old session cleanup.
+      await ref.read(qazaUndoManagerProvider).cancelSelection(
+            userId: widget.userId,
+            expectedBatch: _batch,
+          );
+      if (!mounted) return;
+
       Navigator.of(context).pop();
       ref.read(appSnackbarServiceProvider).success(
             qazaUndoSuccessMessage(context, result.batch, result.count),
