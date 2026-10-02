@@ -8,6 +8,7 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/qibla_providers.dart';
+import 'qibla_visuals.dart';
 
 class QiblaDirectionScreen extends ConsumerWidget {
   const QiblaDirectionScreen({super.key});
@@ -219,7 +220,7 @@ class _LiveCompass extends ConsumerWidget {
         SizedBox.square(
           dimension: 290,
           child: CustomPaint(
-            painter: _QiblaDialPainter(
+            painter: QiblaDialPainter(
               qiblaBearing: bearing,
               heading: trueHeading,
               showRelativeQibla: true,
@@ -287,7 +288,7 @@ class _StaticCompass extends StatelessWidget {
         SizedBox.square(
           dimension: 290,
           child: CustomPaint(
-            painter: _QiblaDialPainter(
+            painter: QiblaDialPainter(
               qiblaBearing: bearing,
               heading: 0,
               showRelativeQibla: false,
@@ -366,144 +367,3 @@ class _UnavailableState extends StatelessWidget {
     );
   }
 }
-
-class _QiblaDialPainter extends CustomPainter {
-  const _QiblaDialPainter({
-    required this.qiblaBearing,
-    required this.heading,
-    required this.showRelativeQibla,
-    required this.surfaceColor,
-    required this.outlineColor,
-    required this.onSurfaceColor,
-    required this.onSurfaceVariantColor,
-    required this.primaryColor,
-  });
-
-  final double qiblaBearing;
-  final double heading;
-  final bool showRelativeQibla;
-  final Color surfaceColor;
-  final Color outlineColor;
-  final Color onSurfaceColor;
-  final Color onSurfaceVariantColor;
-  final Color primaryColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = size.shortestSide / 2 - 14;
-    final circlePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = surfaceColor;
-    canvas.drawCircle(center, radius, circlePaint);
-
-    final outlinePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = outlineColor;
-    canvas.drawCircle(center, radius, outlinePaint);
-
-    canvas.save();
-    if (showRelativeQibla) {
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(-heading * math.pi / 180);
-      canvas.translate(-center.dx, -center.dy);
-    }
-
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
-
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'N',
-      Offset(center.dx, center.dy - radius + 34),
-      onSurfaceColor,
-    );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'E',
-      Offset(center.dx + radius - 34, center.dy),
-      onSurfaceVariantColor,
-    );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'S',
-      Offset(center.dx, center.dy + radius - 34),
-      onSurfaceVariantColor,
-    );
-    _drawCardinal(
-      canvas,
-      textPainter,
-      'W',
-      Offset(center.dx - radius + 34, center.dy),
-      onSurfaceVariantColor,
-    );
-
-    final qiblaAngle = qiblaBearing * math.pi / 180 - math.pi / 2;
-    final end = Offset(
-      center.dx + math.cos(qiblaAngle) * (radius - 42),
-      center.dy + math.sin(qiblaAngle) * (radius - 42),
-    );
-
-    final arrowPaint = Paint()
-      ..color = primaryColor
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(center, end, arrowPaint);
-
-    final direction = (end - center);
-    final length = direction.distance;
-    if (length > 0) {
-      final unit = direction / length;
-      final perpendicular = Offset(-unit.dy, unit.dx);
-      final left = end - unit * 22 + perpendicular * 11;
-      final right = end - unit * 22 - perpendicular * 11;
-      final path = Path()
-        ..moveTo(end.dx, end.dy)
-        ..lineTo(left.dx, left.dy)
-        ..lineTo(right.dx, right.dy)
-        ..close();
-      canvas.drawPath(path, Paint()..color = primaryColor);
-    }
-
-    canvas.drawCircle(
-      center,
-      7,
-      Paint()..color = primaryColor,
-    );
-    canvas.restore();
-  }
-
-  void _drawCardinal(
-    Canvas canvas,
-    TextPainter painter,
-    String label,
-    Offset center,
-    Color color,
-  ) {
-    painter.text = TextSpan(
-      text: label,
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: color,
-      ),
-    );
-    painter.layout();
-    painter.paint(
-      canvas,
-      center - Offset(painter.width / 2, painter.height / 2),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _QiblaDialPainter oldDelegate) =>
-      oldDelegate.qiblaBearing != qiblaBearing ||
-      oldDelegate.heading != heading ||
-      oldDelegate.showRelativeQibla != showRelativeQibla;
-}
-
