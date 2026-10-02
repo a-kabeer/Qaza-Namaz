@@ -9,6 +9,7 @@ import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
+import '../../core/time/local_date_service.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -858,18 +859,6 @@ class _CompletedTrackerBody extends StatelessWidget {
     }
   }
 
-  String _groupLabel(DateTime completedAt) {
-    final date = completedAt.toLocal();
-    final today = DateTime.now();
-    final todayKey = DateTime(today.year, today.month, today.day);
-    final dateKey = DateTime(date.year, date.month, date.day);
-    if (dateKey == todayKey) return 'Today';
-    if (dateKey == todayKey.subtract(const Duration(days: 1))) {
-      return 'Yesterday';
-    }
-    return DateFormatters.formatGregorianDatePadded(date);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -935,50 +924,18 @@ class _CompletedTrackerBody extends StatelessWidget {
                   final completedAt = record.completedAt;
                   if (completedAt == null) return const SizedBox.shrink();
 
-                  final showGroup = index == 0 ||
-                      state.records[index - 1].completedAt == null ||
-                      state.records[index - 1].completedAt!.toLocal().year !=
-                          completedAt.toLocal().year ||
-                      state.records[index - 1].completedAt!.toLocal().month !=
-                          completedAt.toLocal().month ||
-                      state.records[index - 1].completedAt!.toLocal().day !=
-                          completedAt.toLocal().day;
-
                   final selecting =
                       state.selectionScope == QazaSelectionScope.completed;
-                  return Column(
-                    children: [
-                      if (showGroup)
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            4,
-                            index == 0 ? AppSpacing.xs : AppSpacing.md,
-                            4,
-                            AppSpacing.xs,
-                          ),
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              _groupLabel(completedAt),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ),
-                      _CompletedRecordRow(
-                        record: record,
-                        selected: state.selected.contains(record.id),
-                        selectionMode: selecting,
-                        onTap: selecting
-                            ? () =>
-                                controller.toggleCompletedSelection(record.id)
-                            : () => _openDetails(context, record),
-                        onLongPress: () =>
-                            controller.enterCompletedSelectionMode(record.id),
-                      ),
-                    ],
+                  return _CompletedRecordRow(
+                    record: record,
+                    selected: state.selected.contains(record.id),
+                    selectionMode: selecting,
+                    onTap: selecting
+                        ? () =>
+                            controller.toggleCompletedSelection(record.id)
+                        : () => _openDetails(context, record),
+                    onLongPress: () =>
+                        controller.enterCompletedSelectionMode(record.id),
                   );
                 },
               ),
@@ -1018,111 +975,114 @@ class _CompletedRecordRow extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
+  String _completionDateLabel(
+    BuildContext context,
+    DateTime completedAt,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final date = completedAt.toLocal();
+    final today = LocalDateService.today();
+
+    if (LocalDateService.compareCalendarDates(date, today) == 0) {
+      return l10n.commonToday;
+    }
+
+    final yesterday = LocalDateService.addCalendarDays(today, -1);
+    if (LocalDateService.compareCalendarDates(date, yesterday) == 0) {
+      return l10n.commonYesterday;
+    }
+
+    return DateFormatters.formatGregorianDatePadded(date);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final completedAt = record.completedAt!.toLocal();
+    final completionDate = _completionDateLabel(context, completedAt);
+    final completionTime = DateFormatters.formatClockTime(completedAt);
     final originalDate =
         DateFormatters.formatGregorianDatePadded(record.originalDate);
     final hijriDate = l10n.formatHijriDate(record.originalDate);
 
-    return ListTile(
-      key: Key('qaza_completed_record_${record.id}'),
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      minVerticalPadding: 4,
-      leading: Icon(
-        Icons.check_circle_rounded,
-        size: 20,
-        color: theme.colorScheme.primary,
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              record.prayerType.localizedLabel(l10n),
+    final semanticLabel =
+        '${record.prayerType.localizedLabel(l10n)}, '
+        '$completionDate, $completionTime, '
+        '$originalDate, $hijriDate';
+
+    return Semantics(
+      selected: selected,
+      button: false,
+      label: semanticLabel,
+      child: ListTile(
+        key: Key('qaza_completed_record_${record.id}'),
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+        minVerticalPadding: 4,
+        leading: Icon(
+          Icons.check_circle_rounded,
+          size: 20,
+          color: theme.colorScheme.primary,
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                record.prayerType.localizedLabel(l10n),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              fit: FlexFit.loose,
+              child: Text(
+                completionDate,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$originalDate · $hijriDate',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              completionTime,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleSmall?.copyWith(
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            DateFormatters.formatClockTime(completedAt),
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-      subtitle: Text(
-        '$originalDate · $hijriDate',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall,
-      ),
-      trailing: selectionMode
-          ? Checkbox(
-              value: selected,
-              onChanged: (_) => onTap(),
-            )
-          : null,
-      selected: selected,
-      onTap: onTap,
-      onLongPress: onLongPress,
-    );
-  }
-}
-
-class _CompletedBatchActionBar extends ConsumerWidget {
-  const _CompletedBatchActionBar({
-    required this.selectedCount,
-    required this.busy,
-    required this.onMarkPending,
-    required this.onClear,
-  });
-
-  final int selectedCount;
-  final bool busy;
-  final Future<void> Function(WidgetRef ref) onMarkPending;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Material(
-      key: const Key('qaza_completed_batch_action_bar'),
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      elevation: 3,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
-          child: Row(
-            children: [
-              TextButton(
-                key: const Key('qaza_completed_clear_selection'),
-                onPressed: busy ? null : onClear,
-                child: const Text('Clear'),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: FilledButton(
-                  key: const Key('qaza_completed_mark_pending'),
-                  onPressed: busy ? null : () => onMarkPending(ref),
-                  child: Text('Mark as Pending ($selectedCount)'),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
+        trailing: selectionMode
+            ? Checkbox(
+                value: selected,
+                onChanged: (_) => onTap(),
+              )
+            : null,
+        selected: selected,
+        onTap: onTap,
+        onLongPress: onLongPress,
       ),
     );
   }
