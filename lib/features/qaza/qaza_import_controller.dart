@@ -109,6 +109,8 @@ class _QazaImportRequest {
     this.earliestDate,
     this.today,
     this.witrAllowed = true,
+    this.profilePlanRevisionId,
+    this.profilePlanFingerprint,
   });
 
   final String userId;
@@ -120,6 +122,8 @@ class _QazaImportRequest {
   final DateTime? earliestDate;
   final DateTime? today;
   final bool witrAllowed;
+  final String? profilePlanRevisionId;
+  final String? profilePlanFingerprint;
 }
 
 final qazaImportProvider =
@@ -144,6 +148,8 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    String? profilePlanRevisionId,
+    String? profilePlanFingerprint,
   }) {
     if (state.isActive) return false;
     final dateList = dates.toList(growable: false);
@@ -163,6 +169,8 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
+      profilePlanRevisionId: profilePlanRevisionId,
+      profilePlanFingerprint: profilePlanFingerprint,
     );
     _lastRequest = request;
     state = QazaImportTaskState(
@@ -205,6 +213,8 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
               earliestDate: request.earliestDate,
               today: request.today,
               witrAllowed: request.witrAllowed,
+              profilePlanRevisionId: request.profilePlanRevisionId,
+              profilePlanFingerprint: request.profilePlanFingerprint,
               isCancellationRequested: () => _cancelRequested,
               onProgress: (progress) {
                 if (!state.isActive || state.userId != request.userId) return;

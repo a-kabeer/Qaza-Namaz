@@ -88,13 +88,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       if (!mounted) return;
 
-      snackbar.success(
-        result.keptExistingQaza
-            ? l10n.profileQazaUpdatedKeptExisting
-            : result.qazaPlanChanged
-                ? l10n.profileQazaUpdated
-                : l10n.profileQazaUpdatedNoChange,
-      );
+      final message = result.qazaPlanChanged
+          ? '\${l10n.profileQazaUpdated} '
+              '\${l10n.profileQazaToAdd}: \${result.qazaRecordsAdded}; '
+              '\${l10n.profileQazaNoLongerRequired}: \${result.qazaRecordsRemoved}'
+          : l10n.profileQazaUpdatedNoChange;
+      snackbar.success(message);
       Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;

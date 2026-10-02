@@ -86,6 +86,8 @@ class _CompletingImportController extends QazaImportController {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    String? profilePlanRevisionId,
+    String? profilePlanFingerprint,
   }) {
     startCount++;
     startedUserId = userId;

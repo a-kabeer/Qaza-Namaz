@@ -88,7 +88,7 @@ class SaveProfileUseCase {
         qazaPlanChanged: true,
         qazaRecordsAdded: result.added,
         qazaRecordsRemoved: result.removed,
-        keptExistingQaza: result.keptExisting,
+        keptExistingQaza: false,
         revision: result.revision,
       );
     } catch (_) {
@@ -104,12 +104,14 @@ class SaveProfileUseCase {
   Future<void> completeOnboarding({
     required UserProfile profile,
     required QazaPlan plan,
+    String? revisionId,
   }) async {
     await _profileRepository.save(profile);
     await _reconciliationService.recordInitialPlan(
       userId: UserProfile.localLedgerUserId,
       profile: profile,
       plan: plan,
+      revisionId: revisionId,
     );
   }
 }

@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
@@ -69,6 +70,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       return;
     }
 
+    final revisionId = ProfileQazaPlanReconciliationService.newRevisionId();
+
     // The onboarding profile was created/updated locally above, but the
     // shared provider may still hold the pre-onboarding cached value. Refresh
     // it before the Qaza import so the local repository activates the ledger.
@@ -83,7 +86,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        onConfirm: () => _startQazaPlanImport(plan),
+        onConfirm: () => _startQazaPlanImport(
+          plan,
+          revisionId: revisionId,
+        ),
       ),
     );
 
@@ -93,7 +99,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted) return;
     if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
-      await _finishOnboarding(finalizedProfile);
+      await _finishOnboarding(
+        finalizedProfile,
+        plan: plan,
+        revisionId: revisionId,
+      );
     }
   }
 
@@ -105,10 +115,21 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<void> _finishOnboarding(UserProfile profile) async {
-    await ref.read(userProfileRepositoryProvider).save(
-          profile.copyWith(onboardingCompleted: true),
-        );
+  Future<void> _finishOnboarding(
+    UserProfile profile, {
+    QazaPlan? plan,
+    String? revisionId,
+  }) async {
+    final completedProfile = profile.copyWith(onboardingCompleted: true);
+    if (plan == null || revisionId == null) {
+      await ref.read(userProfileRepositoryProvider).save(completedProfile);
+    } else {
+      await ref.read(saveProfileUseCaseProvider).completeOnboarding(
+            profile: completedProfile,
+            plan: plan,
+            revisionId: revisionId,
+          );
+    }
     ref.invalidate(userProfileProvider);
 
     if (!mounted) return;
@@ -120,7 +141,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<bool> _startQazaPlanImport(QazaPlan plan) async {
+  Future<bool> _startQazaPlanImport(
+    QazaPlan plan, {
+    String? revisionId,
+  }) async {
     final userId = ref.read(requiredUserIdProvider);
     final dates = _planDates(plan).toList(growable: false);
     final prayers = _planPrayerTypes(plan).toSet();
@@ -128,6 +152,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           userId: userId,
           dates: dates,
           prayers: prayers,
+          profilePlanRevisionId: revisionId,
+          profilePlanFingerprint:
+              ProfileQazaPlanReconciliationService.planFingerprint(plan),
         );
   }
 
