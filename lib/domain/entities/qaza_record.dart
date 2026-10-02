@@ -62,6 +62,9 @@ class QazaRecord {
     bool clearCompletedAt = false,
     bool clearCompletionId = false,
     bool clearAdditionId = false,
+    String? profilePlanRevisionId,
+    String? profilePlanFingerprint,
+    bool clearProfilePlanProvenance = false,
     DateTime? updatedAt,
   }) {
     return QazaRecord(
