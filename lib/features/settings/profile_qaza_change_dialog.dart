@@ -57,6 +57,10 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
               label: l10n.profileQazaToAdd,
               value: preview.pendingToAdd.toString(),
             ),
+            _StatRow(
+              label: l10n.profileQazaNoLongerRequired,
+              value: preview.pendingToRemove.toString(),
+            ),
             const SizedBox(height: 12),
             Text(
               l10n.profileQazaCompletedProtected,
@@ -66,13 +70,6 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(
-          key: const Key('profile_qaza_keep_existing'),
-          onPressed: () => Navigator.of(context).pop(
-            ProfileQazaChangeChoice.keepExisting,
-          ),
-          child: Text(l10n.profileQazaKeepExisting),
-        ),
         TextButton(
           key: const Key('profile_qaza_cancel'),
           onPressed: () => Navigator.of(context).pop(),
@@ -100,7 +97,7 @@ String _totalWithRange(
   final localizations = MaterialLocalizations.of(context);
   final startText = localizations.formatMediumDate(start);
   final endText = localizations.formatMediumDate(end);
-  return '$total\\n$startText – $endText';
+  return '$total\n$startText – $endText';
 }
 
 class _StatRow extends StatelessWidget {
