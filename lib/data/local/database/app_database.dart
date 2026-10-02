@@ -56,13 +56,14 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
           await _ensureQazaAdditionSchema();
+          await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -104,6 +105,9 @@ class AppDatabase extends _$AppDatabase {
                 'ALTER TABLE qaza_deletion_actions ADD COLUMN resolved_at TEXT',
               );
             }
+          }
+          if (from < 10) {
+            await _ensureQazaProfilePlanProvenanceSchema();
           }
           await _ensurePerformanceIndexes();
         },
@@ -209,6 +213,17 @@ class AppDatabase extends _$AppDatabase {
     ''');
   }
 
+  Future<void> _ensureQazaProfilePlanProvenanceSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_profile_plan_provenance (
+        record_id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        plan_revision_id TEXT NOT NULL,
+        plan_fingerprint TEXT NOT NULL
+      )
+    ''');
+  }
+
   Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
@@ -238,6 +253,10 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_status_idx '
       'ON qaza_records (user_id, addition_id, status, record_version)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_profile_plan_provenance_user_idx '
+      'ON qaza_profile_plan_provenance (user_id, plan_revision_id, record_id)',
     );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_additions_user_created_idx '
