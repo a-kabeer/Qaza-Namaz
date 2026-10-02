@@ -26,7 +26,7 @@ DateTime firstGregorianDateAtOrAfterFixedAge(
 ) {
   final target =
       age * FixedHijriArithmeticService.daysPerYear;
-  for (var offset = 0; offset <= 2500; offset++) {
+  for (var offset = 0; offset <= 6000; offset++) {
     final candidate = dob.add(Duration(days: offset));
     if (FixedHijriArithmeticService.dayIndexForGregorian(candidate) -
             FixedHijriArithmeticService.dayIndexForGregorian(dob) >=
@@ -149,8 +149,8 @@ void main() {
     );
     final profile = makeProfile(
       dob: dob,
-      pubertyAge: 1,
-      startPrayingAge: 2,
+      pubertyAge: 12,
+      startPrayingAge: 13,
     );
 
     expect(ProfileRules.fixedMilestoneDate(dob, 1), isNot(dob));
@@ -187,7 +187,7 @@ void main() {
       pubertyAge: 1,
       startPrayingAge: 2,
     );
-    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 2)
+    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 13)
         .subtract(const Duration(days: 1));
 
     final validation = ProfileRules.validate(
