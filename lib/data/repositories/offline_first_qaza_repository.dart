@@ -6,6 +6,7 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../../domain/repositories/qaza_bulk_write_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
 import '../local/qaza_local_store.dart';
@@ -19,6 +20,7 @@ import '../local/qaza_local_store.dart';
 class OfflineFirstQazaRepository
     implements
         QazaRepository,
+        QazaProfilePlanMutationRepository,
         QazaBulkWriteRepository,
         QazaUndoRepository,
         QazaActivityRepository {
@@ -359,6 +361,32 @@ class OfflineFirstQazaRepository
       expectedCompletionIds: expectedCompletionIds,
       updatedAt: updatedAt,
     );
+  }
+
+  @override
+  Future<QazaProfilePlanMutationResult> applyProfilePlanChanges({
+    required String userId,
+    required List<QazaRecord> additions,
+    required List<String> removalIds,
+    required Set<String> newPlanKeys,
+    required String expectedPreviousPlanFingerprint,
+  }) async {
+    _validateActive(userId);
+    return _localStore.applyProfilePlanChanges(
+      userId: userId,
+      additions: additions,
+      removalIds: removalIds,
+      newPlanKeys: newPlanKeys,
+      expectedPreviousPlanFingerprint: expectedPreviousPlanFingerprint,
+    );
+  }
+
+  @override
+  Future<void> rollbackProfilePlanChanges(
+    QazaProfilePlanMutationResult mutation,
+  ) async {
+    _validateActive(mutation.userId);
+    return _localStore.rollbackProfilePlanChanges(mutation);
   }
 
   @override
