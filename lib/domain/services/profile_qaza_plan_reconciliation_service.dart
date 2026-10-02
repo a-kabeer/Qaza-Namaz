@@ -6,13 +6,13 @@ import '../entities/qaza_plan_revision.dart';
 import '../entities/qaza_record.dart';
 import '../entities/user_profile.dart';
 import '../repositories/qaza_plan_revision_repository.dart';
+import '../repositories/qaza_profile_plan_mutation_repository.dart';
 import 'profile_rules.dart';
 import 'qaza_plan_service.dart';
 import 'qaza_service.dart';
 
 enum ProfileQazaChangeChoice {
   apply,
-  keepExisting,
 }
 
 class ProfileQazaPlanPreview {
@@ -24,6 +24,9 @@ class ProfileQazaPlanPreview {
     required this.calculationChanged,
     required this.existingCompletedInNewPlan,
     required this.pendingToAdd,
+    required this.pendingToRemove,
+    required this.pendingAdditionKeys,
+    required this.removalRecordIds,
   });
 
   final QazaPlan? oldPlan;
@@ -33,20 +36,24 @@ class ProfileQazaPlanPreview {
   final bool calculationChanged;
   final int existingCompletedInNewPlan;
   final int pendingToAdd;
+  final int pendingToRemove;
+  final List<QazaPrayerKey> pendingAdditionKeys;
+  final List<String> removalRecordIds;
 
   QazaPlan? get previousLedgerPlan => oldRevision?.ledgerPlan ?? oldPlan;
   int get newPlanTotal => newPlan.totalWithWitr;
-
-  /// Profile edits never silently delete existing Qaza records. Applying a
-  /// changed plan only adds missing records for the new plan.
-  bool get hasLedgerChanges => pendingToAdd > 0;
+  bool get hasLedgerChanges => pendingToAdd > 0 || pendingToRemove > 0;
 
   bool get ledgerPlanChanged =>
-      oldRevision == null ||
-      oldRevision!.ledgerPlanFingerprint !=
+      previousLedgerPlan == null ||
+      ProfileQazaPlanReconciliationService.planFingerprint(
+            previousLedgerPlan!,
+          ) !=
           ProfileQazaPlanReconciliationService.planFingerprint(newPlan);
 
-  bool get requiresUserDecision => calculationChanged && hasLedgerChanges;
+  /// Every calculated-plan change requires the user to explicitly apply or
+  /// cancel, including decrease-only and mixed changes.
+  bool get requiresUserDecision => calculationChanged;
 }
 
 class ProfileQazaPlanReconciliationResult {
@@ -54,13 +61,11 @@ class ProfileQazaPlanReconciliationResult {
     required this.revision,
     required this.added,
     required this.removed,
-    required this.keptExisting,
   });
 
   final QazaPlanRevision revision;
   final int added;
   final int removed;
-  final bool keptExisting;
 }
 
 class ProfileQazaPlanReconciliationService {
@@ -68,20 +73,23 @@ class ProfileQazaPlanReconciliationService {
     required QazaPlanService planService,
     required QazaService qazaService,
     required QazaPlanRevisionRepository revisionRepository,
+    required QazaProfilePlanMutationRepository mutationRepository,
   })  : _planService = planService,
         _qazaService = qazaService,
-        _revisionRepository = revisionRepository;
+        _revisionRepository = revisionRepository,
+        _mutationRepository = mutationRepository;
 
   final QazaPlanService _planService;
   final QazaService _qazaService;
   final QazaPlanRevisionRepository _revisionRepository;
+  final QazaProfilePlanMutationRepository _mutationRepository;
 
   Future<ProfileQazaPlanPreview> preview({
     required String userId,
     required UserProfile oldProfile,
     required UserProfile newProfile,
   }) async {
-    final oldProfilePlan = _planService.planFor(oldProfile);
+    final oldPlan = _planService.planFor(oldProfile);
     final newPlan = _planService.planFor(newProfile);
     if (newPlan == null) {
       throw StateError('A valid Qaza plan could not be calculated.');
@@ -90,45 +98,72 @@ class ProfileQazaPlanReconciliationService {
     final oldRevision = await _revisionRepository.latest(userId);
     final previousCalculationFingerprint =
         oldRevision?.planFingerprint ??
-        (oldProfilePlan == null ? null : planFingerprint(oldProfilePlan));
+        (oldPlan == null ? null : planFingerprint(oldPlan));
     final calculationChanged =
         previousCalculationFingerprint == null ||
         previousCalculationFingerprint != planFingerprint(newPlan);
 
     if (!calculationChanged) {
       return ProfileQazaPlanPreview(
-        oldPlan: oldProfilePlan,
+        oldPlan: oldPlan,
         newPlan: newPlan,
         oldRevision: oldRevision,
         previousProfileSnapshot: profileSnapshot(oldProfile),
         calculationChanged: false,
         existingCompletedInNewPlan: 0,
         pendingToAdd: 0,
+        pendingToRemove: 0,
+        pendingAdditionKeys: const [],
+        removalRecordIds: const [],
       );
     }
 
-    final records = await _loadRecordsForPlan(userId, newPlan);
-    final newPlanKeys = _planKeys(userId, newPlan);
-    final existingKeys = <String>{};
-    var completed = 0;
+    final analysis = await _qazaService.analyzeAvailability(
+      userId: userId,
+      dates: QazaPlanService.datesFor(newPlan),
+      prayerTypes: _planPrayerTypes(newPlan),
+    );
 
-    for (final record in records) {
-      final key = _recordKey(record);
-      existingKeys.add(key);
-      if (record.status == QazaStatus.completed &&
-          newPlanKeys.contains(key)) {
-        completed++;
+    final newPlanKeys = _planKeys(userId, newPlan);
+    final removalIds = <String>[];
+
+    DateTime? cursorDate;
+    String? cursorId;
+    while (true) {
+      final page = await _qazaService.repository.getPage(
+        userId: userId,
+        limit: 500,
+        status: QazaStatus.pending,
+        afterOriginalDate: cursorDate,
+        afterId: cursorId,
+      );
+      for (final record in page.records) {
+        if (record.profilePlanRevisionId == null ||
+            record.profilePlanFingerprint == null) {
+          continue;
+        }
+        if (!newPlanKeys.contains(_recordKey(record))) {
+          removalIds.add(record.id);
+        }
       }
+      if (!page.hasMore) break;
+      cursorDate = page.nextOriginalDate;
+      cursorId = page.nextId;
     }
 
     return ProfileQazaPlanPreview(
-      oldPlan: oldProfilePlan,
+      oldPlan: oldPlan,
       newPlan: newPlan,
       oldRevision: oldRevision,
       previousProfileSnapshot: profileSnapshot(oldProfile),
       calculationChanged: true,
-      existingCompletedInNewPlan: completed,
-      pendingToAdd: newPlanKeys.difference(existingKeys).length,
+      existingCompletedInNewPlan: analysis.existingCandidates
+          .where((key) => analysis.completedKeys.contains(key))
+          .length,
+      pendingToAdd: analysis.newCandidates.length,
+      pendingToRemove: removalIds.length,
+      pendingAdditionKeys: List.unmodifiable(analysis.newCandidates),
+      removalRecordIds: List.unmodifiable(removalIds),
     );
   }
 
@@ -138,81 +173,80 @@ class ProfileQazaPlanReconciliationService {
     required ProfileQazaPlanPreview preview,
     required ProfileQazaChangeChoice choice,
   }) async {
-    final oldLedgerPlan = preview.previousLedgerPlan ?? preview.newPlan;
+    if (choice != ProfileQazaChangeChoice.apply) {
+      throw StateError('A changed Qaza plan must be explicitly applied.');
+    }
+    if (!preview.calculationChanged) {
+      throw StateError('There is no calculated Qaza plan change to apply.');
+    }
 
-    if (choice == ProfileQazaChangeChoice.keepExisting &&
-        preview.hasLedgerChanges) {
+    final revisionId = newRevisionId();
+    final newFingerprint = planFingerprint(preview.newPlan);
+    final now = DateTime.now();
+    final additions = [
+      for (final key in preview.pendingAdditionKeys)
+        QazaRecord(
+          id: key.value,
+          userId: userId,
+          prayerType: key.prayerType,
+          originalDate: QazaDate.normalize(key.date),
+          status: QazaStatus.pending,
+          profilePlanRevisionId: revisionId,
+          profilePlanFingerprint: newFingerprint,
+          createdAt: now,
+          updatedAt: now,
+        ),
+    ];
+
+    final previousLedgerFingerprint =
+        preview.previousLedgerPlan == null
+            ? newFingerprint
+            : planFingerprint(preview.previousLedgerPlan!);
+
+    final mutation = await _mutationRepository.applyProfilePlanChanges(
+      userId: userId,
+      additions: additions,
+      removalIds: preview.removalRecordIds,
+      newPlanKeys: _planKeys(userId, preview.newPlan),
+      expectedPreviousPlanFingerprint: previousLedgerFingerprint,
+    );
+
+    try {
       final revision = await _saveRevision(
+        revisionId: revisionId,
         userId: userId,
-        profile: newProfile,
         previousProfileSnapshot: preview.previousProfileSnapshot,
+        profile: newProfile,
         plan: preview.newPlan,
-        ledgerPlan: oldLedgerPlan,
-        decision: QazaPlanLedgerDecision.keptExisting,
-        addedRecords: 0,
-        removedRecords: 0,
+        ledgerPlan: preview.newPlan,
+        decision: QazaPlanLedgerDecision.applied,
+        addedRecords: mutation.addedCount,
+        removedRecords: mutation.removedCount,
         changedFields: changedProfileFields(
           preview.previousProfileSnapshot,
           profileSnapshot(newProfile),
         ),
       );
+
       return ProfileQazaPlanReconciliationResult(
         revision: revision,
-        added: 0,
-        removed: 0,
-        keptExisting: true,
+        added: mutation.addedCount,
+        removed: mutation.removedCount,
       );
+    } catch (_) {
+      await _mutationRepository.rollbackProfilePlanChanges(mutation);
+      rethrow;
     }
-
-    var added = 0;
-    if (choice == ProfileQazaChangeChoice.apply && preview.pendingToAdd > 0) {
-      final importResult = await _qazaService.importQazaForDates(
-        userId: userId,
-        dates: _planDates(preview.newPlan),
-        prayerTypes: _planPrayerTypes(preview.newPlan),
-        witrAllowed: preview.newPlan.includeWitr,
-      );
-      if (importResult.cancelled) {
-        throw StateError('Qaza plan update was cancelled.');
-      }
-      added = importResult.added;
-    }
-
-    final ledgerPlan =
-        choice == ProfileQazaChangeChoice.keepExisting
-            ? oldLedgerPlan
-            : preview.newPlan;
-    final revision = await _saveRevision(
-      userId: userId,
-      previousProfileSnapshot: preview.previousProfileSnapshot,
-      profile: newProfile,
-      plan: preview.newPlan,
-      ledgerPlan: ledgerPlan,
-      decision: choice == ProfileQazaChangeChoice.keepExisting
-          ? QazaPlanLedgerDecision.keptExisting
-          : QazaPlanLedgerDecision.applied,
-      addedRecords: added,
-      removedRecords: 0,
-      changedFields: changedProfileFields(
-        preview.previousProfileSnapshot,
-        profileSnapshot(newProfile),
-      ),
-    );
-
-    return ProfileQazaPlanReconciliationResult(
-      revision: revision,
-      added: added,
-      removed: 0,
-      keptExisting: choice == ProfileQazaChangeChoice.keepExisting,
-    );
   }
 
   Future<QazaPlanRevision> recordInitialPlan({
     required String userId,
     required UserProfile profile,
     required QazaPlan plan,
+    String? revisionId,
   }) {
     return _saveRevision(
+      revisionId: revisionId ?? newRevisionId(),
       userId: userId,
       previousProfileSnapshot: const {},
       profile: profile,
@@ -226,6 +260,7 @@ class ProfileQazaPlanReconciliationService {
   }
 
   Future<QazaPlanRevision> _saveRevision({
+    required String revisionId,
     required String userId,
     required UserProfile profile,
     required Map<String, dynamic> previousProfileSnapshot,
@@ -236,13 +271,10 @@ class ProfileQazaPlanReconciliationService {
     required int removedRecords,
     required List<String> changedFields,
   }) async {
-    final now = DateTime.now();
-    final revisionId =
-        'rev_${now.microsecondsSinceEpoch}_${Random().nextInt(1 << 30).toRadixString(36)}';
     final revision = QazaPlanRevision.fromPlan(
       revisionId: revisionId,
       userId: userId,
-      createdAt: now,
+      createdAt: DateTime.now(),
       plan: plan,
       planFingerprint: planFingerprint(plan),
       profileSnapshot: profileSnapshot(profile),
@@ -258,51 +290,15 @@ class ProfileQazaPlanReconciliationService {
     return revision;
   }
 
-  Future<List<QazaRecord>> _loadRecordsForPlan(
-    String userId,
-    QazaPlan plan,
-  ) async {
-    if (plan.totalDays <= 0) return const <QazaRecord>[];
-    final lastDate = planDateAt(plan, plan.totalDays - 1);
-    return _loadPagedRecords(
-      userId: userId,
-      from: plan.startDate,
-      to: lastDate,
-    );
+  static String newRevisionId() {
+    final now = DateTime.now();
+    return 'rev_${now.microsecondsSinceEpoch}_'
+        '${Random().nextInt(1 << 30).toRadixString(36)}';
   }
 
-  Future<List<QazaRecord>> _loadPagedRecords({
-    required String userId,
-    required DateTime from,
-    required DateTime to,
-    QazaStatus? status,
-  }) async {
-    final records = <QazaRecord>[];
-    DateTime? cursorDate;
-    String? cursorId;
-    while (true) {
-      final page = await _qazaService.repository.getPage(
-        userId: userId,
-        limit: 500,
-        status: status,
-        from: from,
-        to: to,
-        afterOriginalDate: cursorDate,
-        afterId: cursorId,
-      );
-      records.addAll(page.records);
-      if (!page.hasMore) break;
-      cursorDate = page.nextOriginalDate;
-      cursorId = page.nextId;
-    }
-    return records;
-  }
-
-  static DateTime planDateAt(QazaPlan plan, int offset) =>
-      QazaPlanService.planDateAt(plan, offset);
-
-  static Iterable<DateTime> _planDates(QazaPlan plan) =>
-      QazaPlanService.datesFor(plan);
+  static String _recordKey(QazaRecord record) =>
+      '${record.userId}_${record.prayerType.name}_'
+      '${QazaDate.key(record.originalDate)}';
 
   static List<PrayerType> _planPrayerTypes(QazaPlan plan) => [
         PrayerType.fajr,
@@ -326,14 +322,10 @@ class ProfileQazaPlanReconciliationService {
     return result;
   }
 
-  static String _recordKey(QazaRecord record) =>
-      '${record.userId}_${record.prayerType.name}_'
-      '${QazaDate.key(record.originalDate)}';
-
   /// Versioned fingerprint for the active fixed 30/360 calculation scheme.
   ///
   /// Legacy V1 fingerprints intentionally remain distinct so an existing
-  /// real-calendar revision cannot be mistaken for a fixed-arithmetic plan.
+  /// real-calendar revision cannot be authorized for automatic deletion.
   static String planFingerprint(QazaPlan plan) {
     return [
       'qazaPlanV2Fixed360',
