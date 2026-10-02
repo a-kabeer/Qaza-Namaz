@@ -67,15 +67,15 @@ class QiblaDirectionScreen extends ConsumerWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: scheme.surfaceContainerLow,
+                          color: surfaceColor,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: scheme.outlineVariant),
+                          border: Border.all(color: outlineColor),
                         ),
                         child: Text(
                           l10n.qiblaCompassBody,
                           textAlign: TextAlign.center,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                            color: onSurfaceVariantColor,
                           ),
                         ),
                       ),
@@ -93,7 +93,7 @@ class QiblaDirectionScreen extends ConsumerWidget {
                           l10n.qiblaSensorUnavailableBody,
                           textAlign: TextAlign.center,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                            color: onSurfaceColorVariant,
                           ),
                         ),
                       ),
@@ -124,7 +124,7 @@ class _BearingSummary extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
-      color: scheme.primaryContainer,
+      color: primaryColorContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
@@ -226,6 +226,11 @@ class _LiveCompass extends ConsumerWidget {
               qiblaBearing: bearing,
               heading: trueHeading,
               showRelativeQibla: true,
+              surfaceColor: scheme.surfaceContainerLow,
+              outlineColor: scheme.outlineVariant,
+              onSurfaceColor: scheme.onSurface,
+              onSurfaceVariantColor: scheme.onSurfaceVariant,
+              primaryColor: scheme.primary,
             ),
           ),
         ),
@@ -289,6 +294,11 @@ class _StaticCompass extends StatelessWidget {
               qiblaBearing: bearing,
               heading: 0,
               showRelativeQibla: false,
+              surfaceColor: scheme.surfaceContainerLow,
+              outlineColor: scheme.outlineVariant,
+              onSurfaceColor: scheme.onSurface,
+              onSurfaceVariantColor: scheme.onSurfaceVariant,
+              primaryColor: scheme.primary,
             ),
           ),
         ),
@@ -365,18 +375,26 @@ class _QiblaDialPainter extends CustomPainter {
     required this.qiblaBearing,
     required this.heading,
     required this.showRelativeQibla,
+    required this.surfaceColor,
+    required this.outlineColor,
+    required this.onSurfaceColor,
+    required this.onSurfaceVariantColor,
+    required this.primaryColor,
   });
 
   final double qiblaBearing;
   final double heading;
   final bool showRelativeQibla;
+  final Color surfaceColor;
+  final Color outlineColor;
+  final Color onSurfaceColor;
+  final Color onSurfaceVariantColor;
+  final Color primaryColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide / 2 - 14;
-    final scheme = _paintScheme;
-
     final circlePaint = Paint()
       ..style = PaintingStyle.fill
       ..color = scheme.surfaceContainerLow;
@@ -485,8 +503,6 @@ class _QiblaDialPainter extends CustomPainter {
     );
   }
 
-  late final QiblaPaintScheme _paintScheme = QiblaPaintScheme();
-
   @override
   bool shouldRepaint(covariant _QiblaDialPainter oldDelegate) =>
       oldDelegate.qiblaBearing != qiblaBearing ||
@@ -494,12 +510,3 @@ class _QiblaDialPainter extends CustomPainter {
       oldDelegate.showRelativeQibla != showRelativeQibla;
 }
 
-class QiblaPaintScheme {
-  Color get surfaceContainerLow => const Color(0xFFF9F9F9);
-  Color get outlineVariant => const Color(0xFF777777);
-  Color get onSurface => const Color(0xFF202124);
-  Color get onSurfaceVariant => const Color(0xFF5F6368);
-  Color get primary => const Color(0xFF4F5D2F);
-}
-
-extension on BuildContext {}
