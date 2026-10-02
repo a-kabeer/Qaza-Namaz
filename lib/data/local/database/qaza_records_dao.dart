@@ -175,9 +175,9 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         if (completedMode) {
           if (afterCompletedAt != null) {
             predicates.add(
-              row.completedAt.isSmallerThanValue(afterCompletedAt) |
+              row.completedAt.isBiggerThanValue(afterCompletedAt) |
                   (row.completedAt.equals(afterCompletedAt) &
-                      row.id.isSmallerThanValue(afterId!)),
+                      row.id.isBiggerThanValue(afterId!)),
             );
           } else if (beforeCompletedAt != null) {
             predicates.add(
@@ -204,12 +204,16 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       })
       ..orderBy([
         (r) => completedMode
-            ? OrderingTerm.desc(r.completedAt)
+            ? (descending
+                ? OrderingTerm.desc(r.completedAt)
+                : OrderingTerm.asc(r.completedAt))
             : (descending
                 ? OrderingTerm.desc(r.originalDate)
                 : OrderingTerm.asc(r.originalDate)),
         (r) => completedMode
-            ? OrderingTerm.desc(r.id)
+            ? (descending
+                ? OrderingTerm.desc(r.id)
+                : OrderingTerm.asc(r.id))
             : (descending
                 ? OrderingTerm.desc(r.id)
                 : OrderingTerm.asc(r.id)),
