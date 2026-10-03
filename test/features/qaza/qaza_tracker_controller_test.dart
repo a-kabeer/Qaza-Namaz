@@ -106,4 +106,56 @@ void main() {
     controller.setStatusFilter(QazaStatusFilter.pending);
     expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
   });
+
+  test('Status-changing filter request resets to the target workspace default',
+      () async {
+    final container = ProviderContainer(
+      overrides: [
+        activeUserIdProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final provider = qazaTrackerControllerProvider(null);
+    final controller = container.read(provider.notifier);
+
+    controller.setSortOrder(QazaSortOrder.newestFirst);
+    expect(container.read(provider).sortOrder, QazaSortOrder.newestFirst);
+
+    container.read(qazaTrackerFilterRequestProvider.notifier).state =
+        const QazaTrackerFilterRequest(
+      status: QazaStatusFilter.completed,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(provider).statusFilter, QazaStatusFilter.completed);
+    expect(container.read(provider).sortOrder, QazaSortOrder.newestFirst);
+  });
+
+  test('Same-status filter request preserves explicit sort selection', () async {
+    final container = ProviderContainer(
+      overrides: [
+        activeUserIdProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final provider = qazaTrackerControllerProvider(null);
+    final controller = container.read(provider.notifier);
+
+    controller.setStatusFilter(QazaStatusFilter.completed);
+    controller.setSortOrder(QazaSortOrder.oldestFirst);
+    expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
+
+    container.read(qazaTrackerFilterRequestProvider.notifier).state =
+        const QazaTrackerFilterRequest(
+      status: QazaStatusFilter.completed,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(provider).statusFilter, QazaStatusFilter.completed);
+    expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
+  });
 }
