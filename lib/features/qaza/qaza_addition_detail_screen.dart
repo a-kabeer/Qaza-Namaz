@@ -14,6 +14,7 @@ import '../../l10n/prayer_type_l10n.dart';
 import 'add_qaza_screen.dart';
 import 'qaza_addition_history_screen.dart';
 import 'qaza_tracker_screen.dart';
+import 'widgets/qaza_addition_date_summary.dart';
 
 class QazaAdditionDetailScreen extends ConsumerWidget {
   const QazaAdditionDetailScreen({
@@ -319,68 +320,66 @@ List<Widget> _dateWidgets(
   AppLocalizations l10n,
   TextTheme textTheme,
 ) {
-  if (snapshot.selectedDates.isEmpty) {
+  final summary = QazaAdditionDateSummary(snapshot);
+  if (summary.selectedDates.isEmpty) {
     return [
       Text(
-        'No dates',
+        l10n.qazaHistoryNoDates,
         style: textTheme.bodyMedium,
       ),
     ];
   }
 
-  if (snapshot.mode == QazaAdditionMode.range &&
-      snapshot.selectedDates.length == 2) {
-    final start = snapshot.selectedDates.first;
-    final end = snapshot.selectedDates.last;
-    return [
-      Text(
-        '${_gregorianDate(context, start)} → ${_gregorianDate(context, end)}',
-        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        '${HijriDateService.format(start, l10n)} → '
-        '${HijriDateService.format(end, l10n)}',
-        style: textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+  switch (snapshot.mode) {
+    case QazaAdditionMode.range:
+      return [
+        Text(
+          '${summary.formatGregorian(context, snapshot.selectedDates.first)} → '
+          '${summary.formatGregorian(context, snapshot.selectedDates.last)}',
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
-      ),
-    ];
-  }
-
-  if (snapshot.mode == QazaAdditionMode.single &&
-      snapshot.selectedDates.length == 1) {
-    final date = snapshot.selectedDates.first;
-    return [
-      Text(
-        _gregorianDate(context, date),
-        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        HijriDateService.format(date, l10n),
-        style: textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    ];
-  }
-
-  return snapshot.selectedDates
-      .map(
-        (date) => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            '${_gregorianDate(context, date)} · '
-            '${HijriDateService.format(date, l10n)}',
-            style: textTheme.bodyMedium,
+        const SizedBox(height: 2),
+        Text(
+          '${summary.formatHijri(l10n, snapshot.selectedDates.first)} → '
+          '${summary.formatHijri(l10n, snapshot.selectedDates.last)}',
+          style: textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-      )
-      .toList(growable: false);
+      ];
+    case QazaAdditionMode.single:
+      final date = snapshot.selectedDates.first;
+      return [
+        Text(
+          summary.formatGregorian(context, date),
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          summary.formatHijri(l10n, date),
+          style: textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ];
+    case QazaAdditionMode.multiple:
+      return snapshot.selectedDates
+          .map(
+            (date) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '${summary.formatGregorian(context, date)} · '
+                '${summary.formatHijri(l10n, date)}',
+                style: textTheme.bodyMedium,
+              ),
+            ),
+          )
+          .toList(growable: false);
+  }
 }
 
 List<PrayerType> _orderedPrayers(List<PrayerType> prayers) {
+
   final ordered = prayers.toList(growable: false)
     ..sort(
       (a, b) => a.qazaSequenceIndex.compareTo(b.qazaSequenceIndex),
@@ -388,12 +387,8 @@ List<PrayerType> _orderedPrayers(List<PrayerType> prayers) {
   return ordered;
 }
 
-int _dateCount(QazaAdditionInputSnapshot snapshot) {
-  if (snapshot.mode == QazaAdditionMode.range) {
-    return snapshot.expandedDates.length;
-  }
-  return snapshot.selectedDates.length;
-}
+int _dateCount(QazaAdditionInputSnapshot snapshot) =>
+    QazaAdditionDateSummary(snapshot).dayCount;
 
 String _dateCountLabel(
   QazaAdditionInputSnapshot snapshot,
