@@ -447,7 +447,7 @@ class _PrayerSelection extends StatelessWidget {
                   ? null
                   : (prayer) => timeBlockedPrayers.contains(prayer)
                       ? l10n.addQazaTimeBlocked
-                      : l10n.addQazaAlreadyAddedLabel,
+                      : l10n.addQazaUnavailableLabel,
               onPrayerSelected: onToggle,
             ),
             if (availabilityLoading) ...[
