@@ -640,10 +640,14 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final analysisPrayers = {
+        ...allowed,
+        ...(_editingAdditionId == null ? const <PrayerType>{} : state.selectedPrayers),
+      };
       final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
-            prayerTypes: allowed,
+            prayerTypes: analysisPrayers,
             editingAdditionId: _editingAdditionId,
           );
 
