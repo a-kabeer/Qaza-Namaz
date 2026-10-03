@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/user_profile_repository.dart';
@@ -33,13 +35,9 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
   Future<void> clear() async {
     final id = _activeAccountId();
     if (id == null) return;
-    await _store.database.customDelete(
+    await _store.database.customUpdate(
       'DELETE FROM account_profiles WHERE local_account_id = ?',
-      variables: [importVariable(id)],
+      variables: [Variable(id)],
     );
   }
-
-  dynamic importVariable(String value) => throw UnsupportedError(
-        'Use the database variable helper inside AccountLocalStore.',
-      );
 }
