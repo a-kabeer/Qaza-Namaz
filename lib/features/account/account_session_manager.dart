@@ -399,9 +399,7 @@ class AccountSessionManager extends ChangeNotifier {
 
   void _setState(AccountSessionState value) {
     _state = value;
-    onActiveLocalAccountChanged?.call(
-      value.activeLocalAccountId ?? UserProfile.localLedgerUserId,
-    );
+    onActiveLocalAccountChanged?.call(value.activeLocalAccountId);
     notifyListeners();
   }
 }
