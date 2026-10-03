@@ -142,16 +142,15 @@ void main() {
     );
 
     final fajr = tester.getTopLeft(find.text('Fajr 1'));
-    final zuhr = tester.getTopLeft(find.text('Zuhr'));
-    final asr = tester.getTopLeft(find.text('Asr'));
-    final witr = tester.getTopLeft(find.text('Witr'));
+    final zuhr = tester.getTopLeft(find.text('Zuhr 1'));
+    final asr = tester.getTopLeft(find.text('Asr 1'));
+    final witr = tester.getTopLeft(find.text('Witr 1'));
 
     final positions = [fajr, zuhr, asr, witr];
     for (var i = 1; i < positions.length; i++) {
       expect(_isAfter(positions[i - 1], positions[i]), isTrue);
     }
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
-    final l10n = AppLocalizations.of(context);
     expect(find.text('Witr 1'), findsOneWidget);
     expect(find.text('Fajr 1'), findsOneWidget);
     expect(find.text('Witr 1'), findsOneWidget);
