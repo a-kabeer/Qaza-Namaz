@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,9 +13,11 @@ class QazaImportProgressDialog extends ConsumerStatefulWidget {
   const QazaImportProgressDialog({
     super.key,
     this.title,
+    this.onStart,
   });
 
   final String? title;
+  final Future<void> Function()? onStart;
 
   @override
   ConsumerState<QazaImportProgressDialog> createState() =>
@@ -37,6 +41,13 @@ class _QazaImportProgressDialogState
         });
       },
     );
+
+    if (widget.onStart != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(widget.onStart!());
+      });
+      return;
+    }
 
     final current = ref.read(qazaImportProvider);
     if (current.phase != QazaImportTaskPhase.failed && !current.isActive) {
