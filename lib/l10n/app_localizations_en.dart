@@ -953,6 +953,52 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+  @override
+  String qazaHistorySelectedDates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected dates',
+      one: '1 selected date',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaHistorySelectionScope(int prayers, int days) {
+    return '$prayers prayers · $days days';
+  }
+
+  @override
+  String qazaHistoryProgressPercentage(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String qazaHistoryTrackedRecords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tracked records',
+      one: '1 tracked record',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaHistoryAdded(String date) {
+    return 'Added $date';
+  }
+
+  @override
+  String get qazaHistoryShowAllDates => 'Show all dates';
+
+  @override
+  String get qazaHistoryHideDates => 'Hide dates';
+
+  @override
+  String get qazaHistoryNoDates => 'No dates';
+
 
   @override
   String addQazaCreatedMessage(int count) {

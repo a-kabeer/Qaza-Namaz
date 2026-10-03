@@ -20,6 +20,7 @@ import 'qaza_import_controller.dart';
 import 'qaza_import_progress_dialog.dart';
 import 'qaza_tracker_controller.dart';
 import 'qaza_navigation.dart';
+import 'widgets/qaza_addition_date_summary.dart';
 
 class AddQazaScreen extends ConsumerStatefulWidget {
   const AddQazaScreen({super.key, this.editAddition});
@@ -451,73 +452,73 @@ class _SelectionSummary extends StatelessWidget {
   final DateSelectionMode mode;
   final List<DateTime> dates;
 
-  String _modeLabel(AppLocalizations l10n) => switch (mode) {
-        DateSelectionMode.single => l10n.addQazaModeSingleTitle,
-        DateSelectionMode.range => l10n.addQazaModeRangeTitle,
-        DateSelectionMode.multiple => l10n.addQazaModeMultipleTitle,
-      };
-
-  bool _isContiguous(List<DateTime> values) {
-    if (values.length < 2) return true;
-    for (var index = 1; index < values.length; index++) {
-      final previous = values[index - 1];
-      final expected = DateTime(
-        previous.year,
-        previous.month,
-        previous.day + 1,
+  QazaAdditionInputSnapshot get _snapshot => QazaAdditionInputSnapshot(
+        schemaVersion: 1,
+        mode: switch (mode) {
+          DateSelectionMode.single => QazaAdditionMode.single,
+          DateSelectionMode.range => QazaAdditionMode.range,
+          DateSelectionMode.multiple => QazaAdditionMode.multiple,
+        },
+        selectedDates: dates,
+        selectedPrayers: const <PrayerType>[],
       );
-      if (values[index] != expected) return false;
-    }
-    return true;
-  }
 
-  List<List<DateTime>> _groupConsecutiveDates() {
-    if (dates.isEmpty) return const <List<DateTime>>[];
-    final sorted = List<DateTime>.of(dates)..sort();
-    final groups = <List<DateTime>>[];
-    var group = <DateTime>[sorted.first];
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final summary = QazaAdditionDateSummary(_snapshot);
 
-    for (var index = 1; index < sorted.length; index++) {
-      final previous = group.last;
-      final current = sorted[index];
-      final expected = DateTime(
-        previous.year,
-        previous.month,
-        previous.day + 1,
-      );
-      if (current == expected) {
-        group.add(current);
-      } else {
-        groups.add(group);
-        group = <DateTime>[current];
-      }
-    }
-
-    groups.add(group);
-    return groups;
-  }
-
-  String _rangeLabel(
-    BuildContext context,
-    AppLocalizations l10n,
-    List<DateTime> group,
-  ) {
-    final materialL10n = MaterialLocalizations.of(context);
-    final from = materialL10n.formatMediumDate(group.first);
-    if (group.length == 1) return from;
-    return l10n.qazaDateFilterRange(
-      from,
-      materialL10n.formatMediumDate(group.last),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.addQazaSelectionLabel,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                Text(
+                  summary.modeLabel(l10n),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (dates.isEmpty)
+              Text(
+                switch (mode) {
+                  DateSelectionMode.single => l10n.addQazaChooseSingle,
+                  DateSelectionMode.range => l10n.addQazaChooseRange,
+                  DateSelectionMode.multiple => l10n.addQazaChooseMultiple,
+                },
+                style: Theme.of(context).textTheme.titleSmall,
+              )
+            else ...[
+              _compactDateSummary(context, summary, l10n),
+              if (_showDateDetails(summary)) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _dateDetails(context, summary, l10n),
+              ],
+            ],
+          ],
+        ),
+      ),
     );
   }
 
-  bool get _showDateDetails =>
+  bool _showDateDetails(QazaAdditionDateSummary summary) =>
       dates.length > 1 &&
       (mode == DateSelectionMode.multiple ||
-          (mode == DateSelectionMode.range && !_isContiguous(dates)));
+          (mode == DateSelectionMode.range && !summary.isContiguous));
 
   Widget _dateDetails(
     BuildContext context,
+    QazaAdditionDateSummary summary,
     AppLocalizations l10n,
   ) {
     return ExpansionTile(
@@ -535,10 +536,8 @@ class _SelectionSummary extends StatelessWidget {
               return ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
-                title: Text(
-                  MaterialLocalizations.of(context).formatMediumDate(date),
-                ),
-                subtitle: Text(HijriDateService.format(date, l10n)),
+                title: Text(summary.formatGregorian(context, date)),
+                subtitle: Text(summary.formatHijri(l10n, date)),
               );
             },
           ),
@@ -549,16 +548,23 @@ class _SelectionSummary extends StatelessWidget {
 
   Widget _compactDateSummary(
     BuildContext context,
+    QazaAdditionDateSummary summary,
     AppLocalizations l10n,
   ) {
-    final groups = _groupConsecutiveDates();
+    final groups = summary.consecutiveGroups;
     final visibleGroups = groups.length > 6 ? groups.take(6) : groups;
     final labels = visibleGroups
-        .map((group) => _rangeLabel(context, l10n, group))
+        .map(
+          (group) => summary.formatConsecutiveRange(
+            context,
+            l10n,
+            group,
+          ),
+        )
         .join(' · ');
     final suffix = groups.length > visibleGroups.length ? ' …' : '';
 
-    if (mode == DateSelectionMode.multiple || !_isContiguous(dates)) {
+    if (mode == DateSelectionMode.multiple || !summary.isContiguous) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -575,9 +581,8 @@ class _SelectionSummary extends StatelessWidget {
       );
     }
 
-    final materialL10n = MaterialLocalizations.of(context);
-    final first = materialL10n.formatMediumDate(dates.first);
-    final last = materialL10n.formatMediumDate(dates.last);
+    final first = summary.formatGregorian(context, dates.first);
+    final last = summary.formatGregorian(context, dates.last);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -589,10 +594,10 @@ class _SelectionSummary extends StatelessWidget {
         ),
         Text(
           dates.length == 1
-              ? HijriDateService.format(dates.first, l10n)
+              ? summary.formatHijri(l10n, dates.first)
               : l10n.qazaDateFilterRange(
-                  HijriDateService.format(dates.first, l10n),
-                  HijriDateService.format(dates.last, l10n),
+                  summary.formatHijri(l10n, dates.first),
+                  summary.formatHijri(l10n, dates.last),
                 ),
           style: Theme.of(context).textTheme.bodySmall,
         ),
@@ -602,53 +607,6 @@ class _SelectionSummary extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
       ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.addQazaSelectionLabel,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                Text(
-                  _modeLabel(l10n),
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (dates.isEmpty)
-              Text(
-                switch (mode) {
-                  DateSelectionMode.single => l10n.addQazaChooseSingle,
-                  DateSelectionMode.range => l10n.addQazaChooseRange,
-                  DateSelectionMode.multiple => l10n.addQazaChooseMultiple,
-                },
-                style: Theme.of(context).textTheme.titleSmall,
-              )
-            else ...[
-              _compactDateSummary(context, l10n),
-              if (_showDateDetails) ...[
-                const SizedBox(height: AppSpacing.xs),
-                _dateDetails(context, l10n),
-              ],
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

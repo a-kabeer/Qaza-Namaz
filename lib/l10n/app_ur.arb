@@ -334,6 +334,52 @@
   "qazaImportSkipped": "چھوڑے گئے",
   "addQazaCreatedTitle": "قضا ریکارڈ بن گئے",
   "addQazaSelectedCount": "{count, plural, =1{1 دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟} other{{count} دن منتخب • آپ کی کون سی نمازیں چھوٹیں؟}}",
+  "qazaHistorySelectedDates": "{count, plural, =1{1 منتخب تاریخ} other{{count} منتخب تاریخیں}}",
+  "@qazaHistorySelectedDates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistorySelectionScope": "{prayers} نمازیں · {days} دن",
+  "@qazaHistorySelectionScope": {
+    "placeholders": {
+      "prayers": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryProgressPercentage": "{percent}%",
+  "@qazaHistoryProgressPercentage": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryTrackedRecords": "{count} زیرِ نگرانی ریکارڈ",
+  "@qazaHistoryTrackedRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryAdded": "{date} کو شامل کیا گیا",
+  "@qazaHistoryAdded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaHistoryShowAllDates": "تمام تاریخیں دکھائیں",
+  "qazaHistoryHideDates": "تاریخیں چھپائیں",
+  "qazaHistoryNoDates": "کوئی تاریخ نہیں",
   "addQazaDateCount": "{count, plural, =1{1 تاریخ} other{{count} تاریخیں}}",
   "addQazaCreatedMessage": "{count, plural, =1{1 ریکارڈ آپ کے کھاتے میں شامل ہو گیا۔} other{{count} ریکارڈ آپ کے کھاتے میں شامل ہو گئے۔}}",
   "addQazaUnavailablePrayer": "{rakats} • ہر منتخب تاریخ پر پہلے سے درج، ادا شدہ، یا نماز کا وقت ابھی ختم نہیں ہوا",

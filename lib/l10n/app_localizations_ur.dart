@@ -954,6 +954,46 @@ class AppLocalizationsUr extends AppLocalizations {
     );
     return '$_temp0';
   }
+  @override
+  String qazaHistorySelectedDates(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منتخب تاریخیں',
+      one: '1 منتخب تاریخ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String qazaHistorySelectionScope(int prayers, int days) {
+    return '$prayers نمازیں · $days دن';
+  }
+
+  @override
+  String qazaHistoryProgressPercentage(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String qazaHistoryTrackedRecords(int count) {
+    return '$count زیرِ نگرانی ریکارڈ';
+  }
+
+  @override
+  String qazaHistoryAdded(String date) {
+    return '$date کو شامل کیا گیا';
+  }
+
+  @override
+  String get qazaHistoryShowAllDates => 'تمام تاریخیں دکھائیں';
+
+  @override
+  String get qazaHistoryHideDates => 'تاریخیں چھپائیں';
+
+  @override
+  String get qazaHistoryNoDates => 'کوئی تاریخ نہیں';
+
 
   @override
   String addQazaCreatedMessage(int count) {
