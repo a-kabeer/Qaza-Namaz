@@ -220,7 +220,9 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       final onProgress = (int processed, int progressTotal) {
         if (state.phase != QazaImportTaskPhase.applyingProfile) return;
         state = state.copyWith(
-          processed: progressTotal <= 0 ? 0 : processed.clamp(0, progressTotal),
+          processed: progressTotal <= 0
+              ? 0
+              : processed.clamp(0, progressTotal).toInt(),
           total: progressTotal,
         );
       };
