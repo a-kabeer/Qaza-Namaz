@@ -157,7 +157,111 @@ void main() {
       expect(sunsetWindow.displayAt, sunsetWindow.endsAt);
     });
 
-    test('reports the next restricted window when none is active', () {
+    test('shows Sunrise during Fajr before the restricted window begins', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 26, 23, 30),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, hasLength(1));
+      expect(windows.single.type, RestrictedTimeType.sunrise);
+    });
+
+    test('switches to Zawal after the Sunrise restriction expires', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 1, 41),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, hasLength(1));
+      expect(windows.single.type, RestrictedTimeType.zawal);
+    });
+
+    test('hides the row after Zuhr plus five minutes', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 7, 22),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, isEmpty);
+    });
+
+    test('shows Sunset throughout Asr until Maghrib', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 11, 30),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, hasLength(1));
+      expect(windows.single.type, RestrictedTimeType.sunset);
+    });
+
+    test('hides the row at Maghrib', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 13, 16),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, isEmpty);
+    });
+
+    test('shows all three rows when the toggle is on', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 4, 0),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+        showAll: true,
+      );
+
+      expect(
+        windows.map((window) => window.type),
+        [
+          RestrictedTimeType.sunrise,
+          RestrictedTimeType.zawal,
+          RestrictedTimeType.sunset,
+        ],
+      );
+    });
+
+    test('displays Zawal at astronomical solar noon', () {
+      const calculator = RestrictedTimeCalculator();
+      final zawal = calculator
+          .forSchedule(schedule, location)
+          .firstWhere((window) => window.type == RestrictedTimeType.zawal);
+
+      expect(zawal.displayAt, tz.TZDateTime.from(solarNoon, location));
+    });
+
+    test('reports the next restricted window when none is active', {
       final now = tz.TZDateTime.from(
         DateTime.utc(2026, 9, 27, 4, 0),
         location,
