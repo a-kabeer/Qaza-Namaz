@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/prayer_types.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' show Variable;
 
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/conflict_resolver.dart';
