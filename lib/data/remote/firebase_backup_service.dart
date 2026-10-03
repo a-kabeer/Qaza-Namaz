@@ -96,6 +96,199 @@ class FirebaseBackupService {
     }, SetOptions(merge: true));
   }
 
+
+  Future<void> deleteCloudData({
+    required String uid,
+    required int expectedGeneration,
+    required int newGeneration,
+  }) async {
+    if (!await _firebase.initialize()) {
+      throw StateError('Firebase is unavailable.');
+    }
+
+    final rootRef = _firebase.firestore.collection('users').doc(uid);
+    final root = await rootRef.get();
+    if (root.exists) {
+      final data = root.data() ?? const <String, dynamic>{};
+      final current =
+          (data['cloudGeneration'] as num?)?.toInt() ?? expectedGeneration;
+      final state = data['datasetState'] as String? ?? 'empty';
+      if (state == 'deleted' && current == newGeneration) return;
+      if (state == 'deleting' && current == newGeneration) {
+        // Resume an interrupted deletion.
+      } else {
+        if (current != expectedGeneration) {
+          throw StateError(
+            'Cloud generation mismatch during deletion: '
+            'expected=$expectedGeneration actual=$current.',
+          );
+        }
+        if (newGeneration <= expectedGeneration) {
+          throw StateError('New cloud generation must be greater.');
+        }
+        await _firebase.firestore.runTransaction((transaction) async {
+          final snap = await transaction.get(rootRef);
+          final data = snap.data() ?? const <String, dynamic>{};
+          final current =
+              (data['cloudGeneration'] as num?)?.toInt() ?? expectedGeneration;
+          final state = data['datasetState'] as String? ?? 'empty';
+          if (state == 'deleted' && current == newGeneration) return;
+          if (current != expectedGeneration ||
+              (state != 'empty' &&
+                  state != 'ready' &&
+                  state != 'initializing')) {
+            throw StateError('Cloud dataset changed before deletion.');
+          }
+          transaction.set(
+            rootRef,
+            {
+              'schemaVersion': cloudSchemaVersion,
+              'cloudGeneration': newGeneration,
+              'datasetState': 'deleting',
+              'updatedAt': FieldValue.serverTimestamp(),
+              'bootstrapComplete': false,
+            },
+            SetOptions(merge: true),
+          );
+        });
+      }
+    } else {
+      await rootRef.set({
+        'schemaVersion': cloudSchemaVersion,
+        'cloudGeneration': newGeneration,
+        'datasetState': 'deleted',
+        'updatedAt': FieldValue.serverTimestamp(),
+        'bootstrapComplete': true,
+      });
+      return;
+    }
+
+    await _deleteCollection(uid, 'qazaRecords');
+    await _deleteCollection(uid, 'qazaRecordTombstones');
+    await _deleteCollection(uid, 'qazaAdditions');
+    await _deleteCollection(uid, 'qazaPlanRevisions');
+
+    final actions = await _readDocs(uid, 'deletionActions');
+    for (final action in actions) {
+      final actionRef = rootRef.collection('deletionActions').doc(action.id);
+      final snapshots = await actionRef.collection('snapshots').get();
+      for (final page in _chunks(snapshots.docs, 400)) {
+        final batch = _firebase.firestore.batch();
+        for (final doc in page) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+      await actionRef.delete();
+    }
+
+    final profile = await rootRef.collection('profile').get();
+    for (final page in _chunks(profile.docs, 400)) {
+      final batch = _firebase.firestore.batch();
+      for (final doc in page) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+
+    await _firebase.firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(rootRef);
+      if (!snap.exists) return;
+      final data = snap.data() ?? const <String, dynamic>{};
+      final current =
+          (data['cloudGeneration'] as num?)?.toInt() ?? expectedGeneration;
+      if (current != newGeneration) {
+        throw StateError('Cloud generation changed during deletion.');
+      }
+      transaction.set(
+        rootRef,
+        {
+          'schemaVersion': cloudSchemaVersion,
+          'cloudGeneration': newGeneration,
+          'datasetState': 'deleted',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'bootstrapComplete': true,
+        },
+        SetOptions(merge: true),
+      );
+    });
+  }
+
+  Future<void> startNewCloudGeneration({
+    required String uid,
+    required int previousGeneration,
+    required int newGeneration,
+  }) async {
+    if (!await _firebase.initialize()) {
+      throw StateError('Firebase is unavailable.');
+    }
+    if (newGeneration <= previousGeneration) {
+      throw StateError('New cloud generation must be greater.');
+    }
+    final ref = _firebase.firestore.collection('users').doc(uid);
+    await _firebase.firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(ref);
+      if (!snap.exists) {
+        transaction.set(
+          ref,
+          {
+            'schemaVersion': cloudSchemaVersion,
+            'cloudGeneration': newGeneration,
+            'datasetState': 'initializing',
+            'updatedAt': FieldValue.serverTimestamp(),
+            'bootstrapComplete': false,
+          },
+        );
+        return;
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final current =
+          (data['cloudGeneration'] as num?)?.toInt() ?? previousGeneration;
+      final state = data['datasetState'] as String? ?? 'empty';
+      if (state != 'deleted' || current != previousGeneration) {
+        throw StateError('Cloud dataset is not ready for re-enablement.');
+      }
+      transaction.set(
+        ref,
+        {
+          'schemaVersion': cloudSchemaVersion,
+          'cloudGeneration': newGeneration,
+          'datasetState': 'initializing',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'bootstrapComplete': false,
+        },
+        SetOptions(merge: true),
+      );
+    });
+  }
+
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _readDocs(
+    String uid,
+    String collection,
+  ) async {
+    final snap = await _firebase.firestore
+        .collection('users').doc(uid).collection(collection).get();
+    return snap.docs;
+  }
+
+  Iterable<List<T>> _chunks<T>(List<T> values, int size) sync* {
+    for (var start = 0; start < values.length; start += size) {
+      final end = (start + size < values.length) ? start + size : values.length;
+      yield values.sublist(start, end);
+    }
+  }
+
+  Future<void> _deleteCollection(String uid, String collection) async {
+    final docs = await _readDocs(uid, collection);
+    for (final page in _chunks(docs, 400)) {
+      final batch = _firebase.firestore.batch();
+      for (final doc in page) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+
   Future<void> _ensureCloudGeneration({
     required String uid,
     required int expectedGeneration,
