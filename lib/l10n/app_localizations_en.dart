@@ -1000,6 +1000,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qazaHistoryHideDates => 'Hide dates';
 
   @override
+  String get qazaHistoryDeletedStatus => 'Deleted';
+
+  @override
   String get qazaHistoryNoDates => 'No dates';
 
 
