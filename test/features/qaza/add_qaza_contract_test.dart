@@ -222,7 +222,9 @@ void main() {
         File('lib/domain/services/qaza_availability_service.dart').readAsStringSync();
 
     expect(source, contains('editingAdditionId: addition.id'));
-    expect(source, contains('widget.editAddition == null || !controller.hasEditChanges'));
+    expect(source, contains('widget.editAddition == null || !currentState.hasEditChanges'));
+    expect(source, contains('allowEditWithoutNewRecords:'));
+    expect(source, contains('qazaSaveChanges'));
     expect(source, contains('witrAllowed: ProfileRules.effectiveWitr(profile) ||'));
     expect(controller, contains('QazaAdditionInputSnapshot? editSnapshot'));
     expect(controller, contains('bool get hasEditChanges'));
