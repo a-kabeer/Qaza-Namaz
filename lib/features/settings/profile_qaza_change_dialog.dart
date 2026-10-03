@@ -84,7 +84,7 @@ class _ProfileQazaChangeDialogState
       Navigator.of(context).pop(
         ProfileQazaChangeDialogResult(
           preview: preview,
-          choice: null,
+          choice: ProfileQazaChangeChoice.apply,
         ),
       );
     });
