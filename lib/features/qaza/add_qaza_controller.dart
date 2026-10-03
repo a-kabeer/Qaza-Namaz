@@ -366,7 +366,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final profile = ref.read(userProfileProvider).valueOrNull;
     if (prayer == PrayerType.witr &&
         profile != null &&
-        !ProfileRules.effectiveWitr(profile)) {
+        !ProfileRules.effectiveWitr(profile) &&
+        !state.addablePrayers.contains(PrayerType.witr) &&
+        !state.protectedPrayers.contains(PrayerType.witr)) {
       return;
     }
 
