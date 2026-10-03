@@ -16,6 +16,7 @@ class StartupGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(accountSessionManagerProvider);
+    Future.microtask(session.initialize);
     if (session.state.phase == AccountSessionPhase.loading) {
       return const SplashScreen();
     }
