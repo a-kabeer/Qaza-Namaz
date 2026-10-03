@@ -230,17 +230,16 @@ class _QazaUndoSelectionSheetState
             selectedIds: Set<String>.of(_selected),
           );
       _selected.clear();
-      await _refreshAfterUndo();
-      if (!mounted) return;
 
-      // End this sheet's temporary selection session before the route is
-      // dismissed. This prevents the next Undo action from seeing the
-      // previous session while this sheet's finally block is still running.
+      // End this sheet's temporary selection session before running refresh
+      // callbacks or dismissing the route. This prevents a later completion
+      // from observing the old remaining selection as an active session.
       final remaining = result.remainingBatch;
       await ref.read(qazaUndoManagerProvider).cancelSelection(
             userId: widget.userId,
             expectedBatch: remaining ?? _batch,
           );
+      await _refreshAfterUndo();
       if (!mounted) return;
 
       Navigator.of(context).pop();
