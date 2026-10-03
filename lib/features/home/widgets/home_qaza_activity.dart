@@ -103,7 +103,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!standalone) ...[
               Text(
                 l10n.homeQazaActivity,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -138,7 +137,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
               },
               ),
               const SizedBox(height: 14),
-            ],
             Row(
               key: const Key('home_activity_period_header'),
               children: [
