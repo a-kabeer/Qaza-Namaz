@@ -668,7 +668,7 @@ class _RecordRow extends StatelessWidget {
         child: ListTile(
           key: Key('qaza_record_${record.id}'),
           leading: Icon(
-            Icons.radio_button_unchecked_rounded,
+            Icons.pending_actions_rounded,
             size: 20,
             color: theme.colorScheme.onSurfaceVariant,
           ),
