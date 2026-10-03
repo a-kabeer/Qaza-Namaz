@@ -167,6 +167,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     if (additionId != null && expectedRevision == null) return false;
 
     _cancelRequested = false;
+    _lastProfileApply = null;
 
     final request = _QazaImportRequest(
       userId: userId,
@@ -199,6 +200,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     ) operation,
   }) {
     if (state.isActive || total < 0) return false;
+    _lastRequest = null;
     _lastProfileApply = operation;
     _lastProfileApplyTotal = total;
     state = QazaImportTaskState(
@@ -256,7 +258,9 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   }
 
   bool cancel() {
-    if (!state.isActive || state.cancelRequested) return false;
+    if (!state.isActive ||
+        state.phase == QazaImportTaskPhase.applyingProfile ||
+        state.cancelRequested) return false;
     state = state.copyWith(cancelRequested: true);
     _cancelRequested = true;
     return true;
