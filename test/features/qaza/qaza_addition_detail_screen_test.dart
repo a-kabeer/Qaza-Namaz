@@ -6,6 +6,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
+import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 import 'package:qaza_namaz/features/qaza/qaza_addition_detail_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -202,6 +203,39 @@ void main() {
 
     await tester.ensureVisible(find.text(lastLine));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Edit Addition pushes Add Qaza and Back returns to the same detail route', (
+    tester,
+  ) async {
+    final detail = _detail(
+      mode: QazaAdditionMode.multiple,
+      selectedDates: [
+        DateTime(2026, 9, 1),
+        DateTime(2026, 9, 3),
+      ],
+      selectedPrayers: [PrayerType.fajr, PrayerType.isha],
+      pendingCount: 2,
+      completedCount: 0,
+    );
+
+    await _pumpDetail(tester, detail);
+
+    await tester.tap(find.text('Edit Addition'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(AddQazaScreen), findsOneWidget);
+    final addQaza = tester.widget<AddQazaScreen>(
+      find.byType(AddQazaScreen),
+    );
+    expect(addQaza.editAddition?.id, detail.addition.id);
+
+    await tester.pageBack();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
+    expect(find.byType(AddQazaScreen), findsNothing);
+    expect(find.text('2 Records'), findsOneWidget);
   });
 
   testWidgets('Completed-only additions hide edit/delete while keeping view records', (
