@@ -6,6 +6,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/features/qaza/qaza_addition_detail_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -341,6 +342,9 @@ Future<void> _pumpDetail(
         qazaAdditionDetailProvider(
           detail.addition.id,
         ).overrideWith((ref) async => detail),
+        prayerTimeClockProvider.overrideWith(
+          (ref) => Stream<DateTime>.value(DateTime(2026, 10, 3)),
+        ),
       ],
       child: MaterialApp(
         locale: locale,
