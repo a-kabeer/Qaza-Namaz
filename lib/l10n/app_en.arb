@@ -683,6 +683,7 @@
   },
   "qazaHistoryShowAllDates": "Show all dates",
   "qazaHistoryHideDates": "Hide dates",
+  "qazaHistoryDeletedStatus": "Deleted",
   "qazaHistoryNoDates": "No dates",
   "addQazaDateCount": "{count, plural, =1{1 date} other{{count} dates}}",
   "@addQazaDateCount": {
