@@ -191,4 +191,102 @@ void main() {
       ),
     ));
   });
+  CurrentDayQazaPrayerTimeContext context({
+    required DateTime now,
+    bool hasSchedule = true,
+  }) =>
+      CurrentDayQazaPrayerTimeContext(
+        localNow: now,
+        localToday: DateTime(2026, 10, 3),
+        cutoffByPrayer: const {
+          PrayerType.fajr: DateTime(2026, 10, 3, 6),
+          PrayerType.zuhr: DateTime(2026, 10, 3, 15, 30),
+          PrayerType.asr: DateTime(2026, 10, 3, 18),
+          PrayerType.maghrib: DateTime(2026, 10, 3, 19, 30),
+          PrayerType.isha: DateTime(2026, 10, 4, 5),
+          PrayerType.witr: DateTime(2026, 10, 4, 5),
+        },
+        hasSchedule: hasSchedule,
+      );
+
+  test('time-blocked current-day combinations are unavailable, not new', () {
+    final result = service.analyze(
+      userId: 'guest',
+      dates: [DateTime(2026, 10, 3)],
+      prayerTypes: [PrayerType.fajr],
+      existingRecords: const [],
+      prayerTimeContext: context(
+        now: DateTime(2026, 10, 3, 5, 59),
+      ),
+    );
+
+    expect(result.newCount, 0);
+    expect(result.existingCandidates, isEmpty);
+    expect(result.unavailableCount, 1);
+    expect(result.newCandidates, isEmpty);
+  });
+
+  test('already-recorded prayer remains existing even when its time is blocked', () {
+    final existing = _record(
+      id: 'fajr-today',
+      prayer: PrayerType.fajr,
+      date: DateTime(2026, 10, 3),
+    );
+
+    final result = service.analyze(
+      userId: 'guest',
+      dates: [DateTime(2026, 10, 3)],
+      prayerTypes: [PrayerType.fajr],
+      existingRecords: [existing],
+      prayerTimeContext: context(
+        now: DateTime(2026, 10, 3, 5, 59),
+      ),
+    );
+
+    expect(result.existingCount, 1);
+    expect(result.unavailableCount, 1);
+    expect(result.newCount, 0);
+    expect(
+      service.eligibility(
+        userId: 'guest',
+        date: DateTime(2026, 10, 3),
+        prayerType: PrayerType.fajr,
+        existingRecords: [existing],
+        prayerTimeContext: context(
+          now: DateTime(2026, 10, 3, 5, 59),
+        ),
+      ),
+      QazaEligibility.alreadyRecorded,
+    );
+  });
+
+  test('historical date remains available with current-day context', () {
+    expect(
+      service.eligibility(
+        userId: 'guest',
+        date: DateTime(2026, 10, 2),
+        prayerType: PrayerType.fajr,
+        prayerTimeContext: context(
+          now: DateTime(2026, 10, 3, 5),
+        ),
+      ),
+      QazaEligibility.available,
+    );
+  });
+
+  test('missing current-day schedule is never treated as available', () {
+    expect(
+      service.eligibility(
+        userId: 'guest',
+        date: DateTime(2026, 10, 3),
+        prayerType: PrayerType.fajr,
+        prayerTimeContext: context(
+          now: DateTime(2026, 10, 3, 12),
+          hasSchedule: false,
+        ),
+      ),
+      QazaEligibility.timeDataUnavailable,
+    );
+  });
+
 }
