@@ -259,6 +259,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_insert
       AFTER INSERT ON qaza_records
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -274,6 +281,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_update
       AFTER UPDATE ON qaza_records
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -311,6 +325,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_insert
       AFTER INSERT ON qaza_additions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -325,6 +346,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_update
       AFTER UPDATE ON qaza_additions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -354,6 +382,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_insert
       AFTER INSERT ON qaza_deletion_actions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -368,6 +403,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_update
       AFTER UPDATE ON qaza_deletion_actions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
@@ -382,6 +424,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER qaza_deletion_snapshots_backup_insert
       AFTER INSERT ON qaza_deletion_action_record_snapshots
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         $queue
       END
