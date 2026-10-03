@@ -19,13 +19,20 @@ class RestrictedTimeWindow {
   final tz.TZDateTime startsAt;
   final tz.TZDateTime endsAt;
 
-  /// Canonical event instant shown in the Prayer Time timeline.
-  ///
-  /// Zawal is displayed at astronomical solar noon, while the restricted
-  /// interval still begins 5 minutes before and ends 5 minutes after it.
+  /// Canonical timeline instant used by shared Home/Qaza restricted rows.
   tz.TZDateTime get displayAt => switch (type) {
         RestrictedTimeType.sunrise => startsAt,
-        RestrictedTimeType.zawal => endsAt.subtract(const Duration(minutes: 5)),
+        RestrictedTimeType.zawal => startsAt,
+        RestrictedTimeType.sunset => endsAt,
+      };
+
+  /// Event instant used by the Prayer Time timeline.
+  ///
+  /// Unlike [displayAt], Zawal is shown at astronomical solar noon rather
+  /// than the beginning of its five-minute-before / five-minute-after window.
+  tz.TZDateTime get timelineDisplayAt => switch (type) {
+        RestrictedTimeType.sunrise => startsAt,
+        RestrictedTimeType.zawal => startsAt.add(const Duration(minutes: 5)),
         RestrictedTimeType.sunset => endsAt,
       };
 
