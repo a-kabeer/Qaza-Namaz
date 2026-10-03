@@ -3,6 +3,7 @@ import 'package:qaza_namaz/core/utils/qaza_completion_id.dart';
 import 'package:qaza_namaz/core/utils/qaza_date.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/services/current_day_qaza_eligibility_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_addition_repository.dart';
 
@@ -23,6 +24,7 @@ class QazaAdditionService {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     bool Function()? isCancellationRequested,
     void Function(int processed, int total, int added)? onProgress,
   }) async {
@@ -37,6 +39,7 @@ class QazaAdditionService {
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
+      prayerTimeContext: prayerTimeContext,
     );
 
     if (isCancellationRequested?.call() ?? false) {
@@ -90,6 +93,7 @@ class QazaAdditionService {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     bool Function()? isCancellationRequested,
     void Function(int processed, int total, int added)? onProgress,
   }) async {
@@ -123,6 +127,7 @@ class QazaAdditionService {
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
+      prayerTimeContext: prayerTimeContext,
     );
     if (isCancellationRequested?.call() ?? false) {
       return const QazaAdditionMutationResult(cancelled: true);
@@ -167,6 +172,7 @@ class QazaAdditionService {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     bool Function()? isCancellationRequested,
     void Function(int processed, int total, int added)? onProgress,
   }) {
@@ -179,6 +185,7 @@ class QazaAdditionService {
         earliestDate: earliestDate,
         today: today,
         witrAllowed: witrAllowed,
+        prayerTimeContext: prayerTimeContext,
         isCancellationRequested: isCancellationRequested,
         onProgress: onProgress,
       );
@@ -196,6 +203,7 @@ class QazaAdditionService {
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
+      prayerTimeContext: prayerTimeContext,
       isCancellationRequested: isCancellationRequested,
       onProgress: onProgress,
     );
@@ -223,6 +231,7 @@ class QazaAdditionService {
     required DateTime? earliestDate,
     required DateTime? today,
     required bool witrAllowed,
+    required CurrentDayQazaPrayerTimeContext? prayerTimeContext,
   }) async {
     if (snapshot.expandedDates.isEmpty || snapshot.selectedPrayers.isEmpty) {
       return const <QazaPrayerKey>[];
@@ -236,6 +245,7 @@ class QazaAdditionService {
       userId: userId,
       dates: snapshot.expandedDates,
       prayerTypes: snapshot.selectedPrayers,
+      prayerTimeContext: prayerTimeContext,
     );
 
     return analysis.newCandidates

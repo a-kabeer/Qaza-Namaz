@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../domain/services/qaza_service.dart';
 
 enum QazaImportTaskPhase {
@@ -109,6 +110,7 @@ class _QazaImportRequest {
     this.earliestDate,
     this.today,
     this.witrAllowed = true,
+    this.prayerTimeContext,
     this.profilePlanRevisionId,
     this.profilePlanFingerprint,
   });
@@ -122,6 +124,7 @@ class _QazaImportRequest {
   final DateTime? earliestDate;
   final DateTime? today;
   final bool witrAllowed;
+  final CurrentDayQazaPrayerTimeContext? prayerTimeContext;
   final String? profilePlanRevisionId;
   final String? profilePlanFingerprint;
 }
@@ -148,6 +151,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     String? profilePlanRevisionId,
     String? profilePlanFingerprint,
   }) {
@@ -169,6 +173,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
       earliestDate: earliestDate,
       today: today,
       witrAllowed: witrAllowed,
+      prayerTimeContext: prayerTimeContext,
       profilePlanRevisionId: profilePlanRevisionId,
       profilePlanFingerprint: profilePlanFingerprint,
     );
@@ -213,6 +218,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
               earliestDate: request.earliestDate,
               today: request.today,
               witrAllowed: request.witrAllowed,
+              prayerTimeContext: request.prayerTimeContext,
               profilePlanRevisionId: request.profilePlanRevisionId,
               profilePlanFingerprint: request.profilePlanFingerprint,
               isCancellationRequested: () => _cancelRequested,
@@ -259,6 +265,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
                   additionId: request.additionId,
                   expectedRevision: request.expectedRevision,
                   earliestDate: request.earliestDate,
+                  prayerTimeContext: request.prayerTimeContext,
                   today: request.today,
                   witrAllowed: request.witrAllowed,
                   isCancellationRequested: () => _cancelRequested,

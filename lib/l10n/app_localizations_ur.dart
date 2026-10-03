@@ -912,6 +912,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addQazaUnavailableLabel => 'دستیاب نہیں';
 
   @override
+  String get addQazaTimeBlocked => 'نماز کے وقت کے اختتام کے بعد دستیاب ہوگا۔';
+
+  @override
   String get addQazaCancelledTitle => 'قضا شامل کرنا منسوخ ہوا';
 
   @override

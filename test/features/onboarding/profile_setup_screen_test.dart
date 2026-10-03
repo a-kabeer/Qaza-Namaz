@@ -11,6 +11,7 @@ import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_plan_revision_repository.dart';
+import 'package:qaza_namaz/domain/services/current_day_qaza_eligibility_service.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
@@ -86,6 +87,7 @@ class _CompletingImportController extends QazaImportController {
     DateTime? earliestDate,
     DateTime? today,
     bool witrAllowed = true,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     String? profilePlanRevisionId,
     String? profilePlanFingerprint,
   }) {

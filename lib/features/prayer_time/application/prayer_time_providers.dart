@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/utils/qaza_date.dart';
+import '../../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../../core/platform/app_location_settings.dart';
 
 import '../data/offline_city_resolver.dart';
@@ -71,6 +73,84 @@ final prayerTimeClockProvider = StreamProvider.autoDispose<DateTime>((ref) async
 });
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+/// Builds the current-day Qaza eligibility context from the canonical Prayer
+/// Time snapshot and the existing local clock. Prayer times remain calculated
+/// by PrayerTimeCalculator; this only maps prayer-window boundaries to Qaza.
+CurrentDayQazaPrayerTimeContext buildCurrentDayQazaPrayerTimeContext({
+  required PrayerTimeSnapshot? snapshot,
+  required DateTime now,
+}) {
+  if (snapshot == null) {
+    return CurrentDayQazaPrayerTimeContext(
+      localNow: now,
+      localToday: QazaDate.normalize(now),
+      cutoffByPrayer: const <PrayerType, DateTime>{},
+      hasSchedule: false,
+    );
+  }
+
+  final location = tz.getLocation(snapshot.location.timezoneId);
+  final localNow = tz.TZDateTime.from(now, location);
+  final localToday = _dateOnly(localNow);
+  final todaySchedule = snapshot.today.date == localToday
+      ? snapshot.today
+      : snapshot.tomorrow.date == localToday
+          ? snapshot.tomorrow
+          : null;
+
+  if (todaySchedule == null) {
+    return CurrentDayQazaPrayerTimeContext(
+      localNow: localNow,
+      localToday: localToday,
+      cutoffByPrayer: const <PrayerType, DateTime>{},
+      hasSchedule: false,
+    );
+  }
+
+  final cutoffs = <PrayerType, DateTime>{
+    PrayerType.fajr: todaySchedule.localFor(PrayerSlot.sunrise, location),
+    PrayerType.zuhr: todaySchedule.localFor(PrayerSlot.asr, location),
+    PrayerType.asr: todaySchedule.localFor(PrayerSlot.maghrib, location),
+    PrayerType.maghrib: todaySchedule.localFor(PrayerSlot.isha, location),
+  };
+
+  if (snapshot.today.date == localToday &&
+      snapshot.tomorrow.date == localToday.add(const Duration(days: 1))) {
+    final nextFajr = snapshot.tomorrow.localFor(PrayerSlot.fajr, location);
+    cutoffs[PrayerType.isha] = nextFajr;
+    cutoffs[PrayerType.witr] = nextFajr;
+  }
+
+  return CurrentDayQazaPrayerTimeContext(
+    localNow: localNow,
+    localToday: localToday,
+    cutoffByPrayer: Map.unmodifiable(cutoffs),
+    hasSchedule: cutoffs.length == 6,
+  );
+}
+
+/// Stable signature for Add Qaza. The clock may tick every second, but this
+/// value changes only when current-day eligibility or its boundary data changes.
+final qazaPrayerTimeEligibilitySignatureProvider =
+    Provider.autoDispose<String>((ref) {
+  final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
+  final now = ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+  final context = buildCurrentDayQazaPrayerTimeContext(
+    snapshot: snapshot,
+    now: now,
+  );
+  const service = CurrentDayQazaEligibilityService();
+
+  return [
+    QazaDate.key(context.localToday),
+    context.hasSchedule.toString(),
+    for (final prayer in PrayerType.values)
+      '${prayer.name}:'
+      '${service.evaluate(date: context.localToday, prayerType: prayer, context: context).name}:'
+      '${context.cutoffFor(prayer)?.millisecondsSinceEpoch ?? -1}',
+  ].join('|');
+});
 
 PrayerSchedule _scheduleForLocalDate(
   PrayerTimeSnapshot snapshot,

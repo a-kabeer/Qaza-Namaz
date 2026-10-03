@@ -8,10 +8,12 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_availability_service.dart';
 import '../../domain/services/qaza_service.dart';
 import '../calendar/calendar_controller.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 
 enum AddQazaCandidateStatus {
   newRecord,
@@ -96,6 +98,7 @@ class AddQazaState {
     this.analysisLoading = false,
     this.analysis = AddQazaAnalysis.empty,
     this.protectedPrayers = const <PrayerType>{},
+    this.timeBlockedPrayers = const <PrayerType>{},
     this.editSnapshot,
     this.error,
   });
@@ -118,6 +121,9 @@ class AddQazaState {
 
   /// Current-addition prayers that are protected and must remain selected.
   final Set<PrayerType> protectedPrayers;
+
+  /// Current-day prayers blocked because their prayer window has not ended.
+  final Set<PrayerType> timeBlockedPrayers;
 
   /// Original edit snapshot used to detect a removal-only or other edit delta.
   final QazaAdditionInputSnapshot? editSnapshot;
@@ -174,6 +180,7 @@ class AddQazaState {
     bool? analysisLoading,
     AddQazaAnalysis? analysis,
     Set<PrayerType>? protectedPrayers,
+    Set<PrayerType>? timeBlockedPrayers,
     QazaAdditionInputSnapshot? editSnapshot,
     Object? error,
     bool clearError = false,
@@ -193,6 +200,7 @@ class AddQazaState {
         analysisLoading: analysisLoading ?? this.analysisLoading,
         analysis: analysis ?? this.analysis,
         protectedPrayers: protectedPrayers ?? this.protectedPrayers,
+        timeBlockedPrayers: timeBlockedPrayers ?? this.timeBlockedPrayers,
         editSnapshot: editSnapshot ?? this.editSnapshot,
         error: clearError ? null : error ?? this.error,
       );
@@ -261,6 +269,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   int _calendarRequest = 0;
   int _prayerAvailabilityRequest = 0;
   int _analysisRequest = 0;
+  bool _prayerTimeRefreshInFlight = false;
+  CurrentDayQazaPrayerTimeContext? _latestPrayerTimeContext;
 
   @override
   AddQazaState build() {
@@ -271,6 +281,10 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     ref.listen<AsyncValue<UserProfile?>>(
       userProfileProvider,
       (_, __) => _onProfileChanged(),
+    );
+    ref.listen<String>(
+      qazaPrayerTimeEligibilitySignatureProvider,
+      (_, __) => _onPrayerTimeEligibilityChanged(),
     );
     ref.onDispose(() {
       _disposed = true;
@@ -325,6 +339,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet()),
       analysis: AddQazaAnalysis.empty,
       protectedPrayers: const <PrayerType>{},
+      timeBlockedPrayers: const <PrayerType>{},
       editSnapshot: snapshot,
       clearError: true,
     );
@@ -340,6 +355,51 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     unawaited(_refreshPrayerAvailability());
   }
 
+  Future<CurrentDayQazaPrayerTimeContext> _resolvePrayerTimeContext() async {
+    var snapshot = ref.read(prayerTimeControllerProvider).valueOrNull;
+    var now = ref.read(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+
+    if (snapshot != null) {
+      final preview = buildCurrentDayQazaPrayerTimeContext(
+        snapshot: snapshot,
+        now: now,
+      );
+      if (QazaDate.normalize(snapshot.today.date) !=
+          QazaDate.normalize(preview.localToday)) {
+        await ref
+            .read(prayerTimeControllerProvider.notifier)
+            .refreshForDateIfNeeded(preview.localToday);
+        snapshot = ref.read(prayerTimeControllerProvider).valueOrNull;
+        now = ref.read(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+      }
+    }
+
+    final context = buildCurrentDayQazaPrayerTimeContext(
+      snapshot: snapshot,
+      now: now,
+    );
+    _latestPrayerTimeContext = context;
+    return context;
+  }
+
+  Future<CurrentDayQazaPrayerTimeContext>
+      resolveCurrentPrayerTimeContextForQaza() => _resolvePrayerTimeContext();
+
+  Future<void> _onPrayerTimeEligibilityChanged() async {
+    if (_disposed || _prayerTimeRefreshInFlight) return;
+    _prayerTimeRefreshInFlight = true;
+    try {
+      final visible = _visibleMonth;
+      if (visible != null) {
+        await refreshCalendarMonth(visible);
+      }
+      if (!_disposed && state.selectedDates.isNotEmpty) {
+        await _refreshPrayerAvailability();
+      }
+    } finally {
+      _prayerTimeRefreshInFlight = false;
+    }
+  }
   void setMode(DateSelectionMode mode) {
     final current = state;
     if (mode == current.mode) return;
@@ -424,12 +484,14 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final prayers = _profileAllowedPrayers(profile);
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final available =
           await ref.read(qazaServiceProvider).getAvailablePrayersByDate(
                 userId: ref.read(requiredUserIdProvider),
                 dates: dates,
                 prayerTypes: prayers,
                 editingAdditionId: _editingAdditionId,
+                prayerTimeContext: prayerTimeContext,
               );
 
       if (_disposed || request != _calendarRequest) return;
@@ -479,11 +541,13 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
             prayerTypes: prayers,
             editingAdditionId: _editingAdditionId,
+            prayerTimeContext: prayerTimeContext,
           );
 
       final newKeys = raw.newCandidates.toSet();
@@ -622,6 +686,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         selectedDateAvailability:
             const <DateTime, Set<PrayerType>>{},
         selectedPrayers: Set.unmodifiable(selected),
+        timeBlockedPrayers: const <PrayerType>{},
         prayerAvailabilityLoading: false,
         analysis: AddQazaAnalysis.empty,
         analysisLoading: false,
@@ -639,6 +704,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final analysisPrayers = {
         ...allowed,
         ...(_editingAdditionId == null ? const <PrayerType>{} : state.selectedPrayers),
@@ -648,6 +714,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
             dates: dates,
             prayerTypes: analysisPrayers,
             editingAdditionId: _editingAdditionId,
+            prayerTimeContext: prayerTimeContext,
           );
 
       if (_disposed || request != _prayerAvailabilityRequest) return;
@@ -703,8 +770,24 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       final protectedPrayers = raw.currentAdditionProtectedCandidates
           .map((key) => key.prayerType)
           .toSet();
+      final timeBlockedPrayers = <PrayerType>{};
+      const timeService = CurrentDayQazaEligibilityService();
+      for (final date in dates) {
+        for (final prayer in allowed) {
+          if (timeService.evaluate(
+                date: date,
+                prayerType: prayer,
+                context: prayerTimeContext,
+              ) ==
+              CurrentDayQazaTimeEligibility.notYetDue) {
+            timeBlockedPrayers.add(prayer);
+          }
+        }
+      }
       final selected = Set<PrayerType>.of(state.selectedPrayers);
       final retained = {...addable, ...protectedPrayers};
+      timeBlockedPrayers.removeAll(addable);
+      timeBlockedPrayers.removeAll(protectedPrayers);
       if (normalizedDates.isNotEmpty) {
         selected.retainAll(retained);
       } else {
@@ -730,6 +813,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         ),
         addablePrayers: Set.unmodifiable(addable),
         protectedPrayers: Set.unmodifiable(protectedPrayers),
+        timeBlockedPrayers: Set.unmodifiable(timeBlockedPrayers),
         selectedPrayers: Set.unmodifiable(selected),
         prayerAvailabilityLoading: false,
       );
