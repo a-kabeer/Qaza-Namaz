@@ -9,7 +9,7 @@ CurrentDayQazaPrayerTimeContext _context({
   return CurrentDayQazaPrayerTimeContext(
     localNow: now,
     localToday: DateTime(2026, 10, 3),
-    cutoffByPrayer: const {
+    cutoffByPrayer: {
       PrayerType.fajr: DateTime(2026, 10, 3, 6),
       PrayerType.zuhr: DateTime(2026, 10, 3, 15, 30),
       PrayerType.asr: DateTime(2026, 10, 3, 18),
