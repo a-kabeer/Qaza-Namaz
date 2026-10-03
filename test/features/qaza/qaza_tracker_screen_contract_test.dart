@@ -3,6 +3,19 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('selection header interpolates the actual selected count', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains(r"? '${state.selected.length} selected'"),
+    );
+    expect(
+      source,
+      isNot(contains(r"? '\${state.selected.length} selected'")),
+    );
+  });
   test('pending Qaza completion is swipe-only in both directions', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
