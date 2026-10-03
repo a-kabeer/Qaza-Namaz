@@ -27,7 +27,7 @@ void main() {
     expect(source, contains('timelineWindowsForSchedule'));
     expect(source, contains("Key('prayer_time_show_all_restricted_times')"));
     expect(source, contains('showAllRestrictedTimes: showAllRestrictedTimes'));
-    expect(source,
+    expect(
       source,
       contains(
         'DateFormatters.formatDurationHhMmSs(restrictedRemaining)',
