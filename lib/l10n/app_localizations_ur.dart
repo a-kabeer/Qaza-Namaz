@@ -948,16 +948,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String addQazaDateCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count تاریخیں',
-      one: '1 تاریخ',
-    );
-    return '$_temp0';
-  }
-  @override
   String qazaHistorySelectedDates(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1000,6 +990,16 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get qazaHistoryNoDates => 'کوئی تاریخ نہیں';
 
+  @override
+  String addQazaDateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تاریخیں',
+      one: '1 تاریخ',
+    );
+    return '$_temp0';
+  }
 
   @override
   String addQazaCreatedMessage(int count) {

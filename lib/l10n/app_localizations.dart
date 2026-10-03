@@ -1635,6 +1635,9 @@ abstract class AppLocalizations {
   String get addQazaUnavailableLabel;
 
   /// No description provided for @addQazaTimeBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Available after the prayer time ends.'**
   String get addQazaTimeBlocked;
 
   /// No description provided for @addQazaCancelledTitle.
@@ -1685,11 +1688,6 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 day selected • Which prayers did you miss?} other{{count} days selected • Which prayers did you miss?}}'**
   String addQazaSelectedCount(int count);
 
-  /// No description provided for @addQazaDateCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 date} other{{count} dates}}'**
-  String addQazaDateCount(int count);
   /// No description provided for @qazaHistorySelectedDates.
   ///
   /// In en, this message translates to:
@@ -1744,6 +1742,11 @@ abstract class AppLocalizations {
   /// **'No dates'**
   String get qazaHistoryNoDates;
 
+  /// No description provided for @addQazaDateCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 date} other{{count} dates}}'**
+  String addQazaDateCount(int count);
 
   /// No description provided for @addQazaCreatedMessage.
   ///
