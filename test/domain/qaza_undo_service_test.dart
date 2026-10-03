@@ -443,6 +443,74 @@ void main() {
     );
   });
 
+  test(
+    'partial Undo followed by sheet cleanup starts a fresh batch for later completions',
+    () async {
+      final records = <String, QazaRecord>{
+        for (final prayer in PrayerType.values.take(5))
+          prayer.name: _completedRecord(
+            id: prayer.name,
+            prayerType: prayer,
+            originalDate: DateTime(2026, 9, 1),
+          ),
+      };
+      final repository = _FakeQazaRepository(records);
+      final service = QazaService(repository);
+      final store = _MemoryUndoStore();
+      var now = DateTime(2026, 9, 26, 11);
+      final manager = QazaUndoManager(store: store, now: () => now);
+
+      final first = await manager.register(
+        userId: 'local',
+        records: records.values.take(4),
+      );
+      final active = await manager.beginSelection(
+        userId: 'local',
+        expectedBatch: first!,
+      );
+      final partial = await manager.undoSelected(
+        userId: 'local',
+        service: service,
+        expectedBatch: active,
+        selectedIds: {active.entries.first.recordId},
+      );
+
+      expect(partial.count, 1);
+      expect(partial.remainingBatch, isNotNull);
+      expect(
+        manager.activeSelection(userId: 'local'),
+        same(partial.remainingBatch),
+      );
+
+      await manager.cancelSelection(
+        userId: 'local',
+        expectedBatch: partial.remainingBatch!,
+      );
+
+      expect(manager.activeSelection(userId: 'local'), isNull);
+      expect(store.current, isNull);
+
+      final newRecord = records.values.last;
+      final freshFirst = await manager.register(
+        userId: 'local',
+        records: [newRecord],
+      );
+      final freshSecond = await manager.register(
+        userId: 'local',
+        records: [records.values.elementAt(1)],
+      );
+
+      expect(freshFirst!.entries, hasLength(1));
+      expect(freshFirst.entries.single.recordId, newRecord.id);
+      expect(freshSecond!.entries, hasLength(2));
+      expect(
+        freshSecond.entries.map((entry) => entry.recordId).toSet(),
+        {newRecord.id, records.values.elementAt(1).id},
+      );
+      expect(freshSecond.sessionId, isNot(active.sessionId));
+    },
+  );
+
   test('active batch selection remains usable after discovery expiry',
       () async {
     final records = <String, QazaRecord>{
@@ -654,6 +722,62 @@ void main() {
     expect(records['fajr']!.status, QazaStatus.completed);
     expect(store.current, isNull);
   });
+
+  test(
+    'successful batch Undo clears its temporary session before the next batch',
+    () async {
+      final firstRecord = _completedRecord(
+        id: 'fajr',
+        prayerType: PrayerType.fajr,
+        originalDate: DateTime(2026, 9, 1),
+      );
+      final secondRecord = _completedRecord(
+        id: 'zuhr',
+        prayerType: PrayerType.zuhr,
+        originalDate: DateTime(2026, 9, 2),
+      );
+      final records = <String, QazaRecord>{
+        firstRecord.id: firstRecord,
+        secondRecord.id: secondRecord,
+      };
+      final manager = QazaUndoManager(
+        store: _MemoryUndoStore(),
+        now: () => DateTime(2026, 9, 26, 11),
+      );
+      final service = QazaService(_FakeQazaRepository(records));
+
+      final first = await manager.register(
+        userId: 'local',
+        records: [firstRecord],
+      );
+      final active = await manager.beginSelection(
+        userId: 'local',
+        expectedBatch: first!,
+      );
+
+      final result = await manager.undo(
+        userId: 'local',
+        service: service,
+        expectedBatch: active,
+      );
+
+      expect(result.count, 1);
+      expect(manager.activeSelection(userId: 'local'), isNull);
+
+      final second = await manager.register(
+        userId: 'local',
+        records: [secondRecord],
+      );
+      expect(second!.entries.single.recordId, 'zuhr');
+      expect(second.sessionId, isNot(active.sessionId));
+
+      final secondActive = await manager.beginSelection(
+        userId: 'local',
+        expectedBatch: second,
+      );
+      expect(secondActive.entries.single.recordId, 'zuhr');
+    },
+  );
 
   test('stale Undo callback never clears a newer active session', () async {
     final firstRecord = _completedRecord(

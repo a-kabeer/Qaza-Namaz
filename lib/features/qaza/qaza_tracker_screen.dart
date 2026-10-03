@@ -520,7 +520,7 @@ class _PendingTrackerBody extends ConsumerWidget {
                   AppSpacing.lg,
                   AppSpacing.fabClearance,
                 ),
-                itemCount: state.records.length + (state.hasMore ? 1 : 0),
+                itemCount: state.records.length + (state.loadingMore ? 1 : 0),
                 itemBuilder: (_, index) {
                   if (index >= state.records.length) {
                     return const Padding(

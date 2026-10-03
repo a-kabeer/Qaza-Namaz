@@ -230,24 +230,22 @@ class _QazaUndoSelectionSheetState
             selectedIds: Set<String>.of(_selected),
           );
       _selected.clear();
+
+      // End this sheet's temporary selection session before running refresh
+      // callbacks or dismissing the route. This prevents a later completion
+      // from observing the old remaining selection as an active session.
+      final remaining = result.remainingBatch;
+      await ref.read(qazaUndoManagerProvider).cancelSelection(
+            userId: widget.userId,
+            expectedBatch: remaining ?? _batch,
+          );
       await _refreshAfterUndo();
       if (!mounted) return;
 
-      final remaining = result.remainingBatch;
-      if (remaining == null || remaining.entries.isEmpty) {
-        Navigator.of(context).pop();
-        ref.read(appSnackbarServiceProvider).success(
-              qazaUndoSuccessMessage(context, result.batch, result.count),
-            );
-      } else {
-        setState(() {
-          _batch = remaining;
-          _working = false;
-        });
-        ref.read(appSnackbarServiceProvider).success(
-              qazaUndoSuccessMessage(context, result.batch, result.count),
-            );
-      }
+      Navigator.of(context).pop();
+      ref.read(appSnackbarServiceProvider).success(
+            qazaUndoSuccessMessage(context, result.batch, result.count),
+          );
     } on QazaUndoException catch (error) {
       await _recoverCurrentBatch();
       if (!mounted) return;
@@ -284,6 +282,15 @@ class _QazaUndoSelectionSheetState
           );
       await _refreshAfterUndo();
       if (!mounted) return;
+
+      // End this sheet's temporary selection session before the route is
+      // dismissed so a new batch cannot race the old session cleanup.
+      await ref.read(qazaUndoManagerProvider).cancelSelection(
+            userId: widget.userId,
+            expectedBatch: _batch,
+          );
+      if (!mounted) return;
+
       Navigator.of(context).pop();
       ref.read(appSnackbarServiceProvider).success(
             qazaUndoSuccessMessage(context, result.batch, result.count),
