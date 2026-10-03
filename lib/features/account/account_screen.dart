@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../domain/entities/local_account.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 
