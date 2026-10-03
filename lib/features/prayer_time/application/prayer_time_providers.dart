@@ -61,6 +61,10 @@ final restrictedTimeCalculatorProvider = Provider<RestrictedTimeCalculator>(
 
 final prayerTimeRefreshProvider = StateProvider<bool>((ref) => false);
 
+/// Session-only presentation toggle for the main Prayer Time timeline.
+final prayerTimeShowAllRestrictedTimesProvider =
+    StateProvider.autoDispose<bool>((ref) => false);
+
 final prayerTimeControllerProvider = AsyncNotifierProvider<
     PrayerTimeController, PrayerTimeSnapshot?>(PrayerTimeController.new);
 
