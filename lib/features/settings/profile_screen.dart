@@ -112,7 +112,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           barrierDismissible: false,
           builder: (_) => QazaImportProgressDialog(
             title: l10n.profileQazaApplying,
-            onStart: () async {
+            onStart: () {
               final started = ref
                   .read(qazaImportProvider.notifier)
                   .startProfilePlanApply(
