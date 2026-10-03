@@ -123,7 +123,6 @@ void main() {
     expect(result.existingCandidates, hasLength(1));
     expect(result.newCandidates, hasLength(1));
   });
-}
 
 
   test('edit context distinguishes editable, protected, and other-addition records', () {
@@ -192,3 +191,4 @@ void main() {
       ),
     ));
   });
+}
