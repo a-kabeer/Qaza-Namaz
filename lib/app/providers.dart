@@ -88,7 +88,6 @@ final accountSessionManagerProvider =
     backup: ref.watch(firebaseBackupServiceProvider),
     reconciliation: ref.watch(firebaseReconciliationServiceProvider),
   );
-  Future.microtask(manager.initialize);
   return manager;
 });
 
@@ -104,7 +103,10 @@ final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
 
 final activeUserIdProvider = Provider<String?>((ref) {
   final session = ref.watch(accountSessionManagerProvider);
-  return session.activeLocalAccountId;
+  // The persisted Guest ledger is the safe local fallback until the account
+  // session has finished initializing. Once a Google account is restored,
+  // this provider automatically switches to its local partition.
+  return session.activeLocalAccountId ?? UserProfile.localLedgerUserId;
 });
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
