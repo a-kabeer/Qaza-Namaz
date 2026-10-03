@@ -82,6 +82,17 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      if (detail.isDeleted) ...[
+                        const SizedBox(height: 8),
+                        Chip(
+                          key: const Key('qaza-addition-deleted-status'),
+                          avatar: const Icon(Icons.delete_outline_rounded),
+                          label: Text(l10n.qazaHistoryDeletedStatus),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       const Divider(height: 1),
                       const SizedBox(height: 14),
@@ -170,7 +181,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       label: const Text('View Records'),
                     ),
                   ),
-                  if (detail.pendingCount > 0) ...[
+                  if (!detail.isDeleted && detail.pendingCount > 0) ...[
                     const SizedBox(width: 8),
                     PopupMenuButton<_AdditionAction>(
                       key: const Key('qaza-addition-more-actions'),
