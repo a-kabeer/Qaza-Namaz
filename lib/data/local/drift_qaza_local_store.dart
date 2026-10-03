@@ -328,9 +328,11 @@ class DriftQazaLocalStore extends QazaLocalStore {
           userId,
           removedIds.toList(growable: false),
         );
-      } else {
-        processedWork = removalIds.toSet().length;
-        if (processedWork > 0) onProgress?.call(processedWork, totalWork);
+      }
+      final requestedRemovalCount = removalIds.toSet().length;
+      if (processedWork < requestedRemovalCount) {
+        processedWork = requestedRemovalCount;
+        onProgress?.call(processedWork, totalWork);
       }
 
       final insertable = <QazaRecord>[];
