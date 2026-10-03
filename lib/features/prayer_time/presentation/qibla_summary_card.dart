@@ -50,7 +50,7 @@ class QiblaSummaryCard extends ConsumerWidget {
 
     return Semantics(
       button: true,
-      label: '${valueText}, ${l10n.qiblaDirection}',
+      label: '$valueText, ${l10n.qiblaDirection}',
       child: Card(
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
