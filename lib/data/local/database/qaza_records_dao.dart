@@ -212,16 +212,16 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           predicates.add(
             row.originalDate.isBiggerThanValue(afterOriginalDate) |
                 (row.originalDate.equals(afterOriginalDate) &
-                    (qazaPrayerRank.isBiggerThanValue(afterPrayerRank!) |
-                        (qazaPrayerRank.equals(afterPrayerRank!) &
+                    (qazaPrayerRank.isBiggerThanValue(afterPrayerRank) |
+                        (qazaPrayerRank.equals(afterPrayerRank) &
                             row.id.isBiggerThanValue(afterId!)))),
           );
         } else if (beforeOriginalDate != null) {
           predicates.add(
             row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                 (row.originalDate.equals(beforeOriginalDate) &
-                    (qazaPrayerRank.isSmallerThanValue(beforePrayerRank!) |
-                        (qazaPrayerRank.equals(beforePrayerRank!) &
+                    (qazaPrayerRank.isSmallerThanValue(beforePrayerRank) |
+                        (qazaPrayerRank.equals(beforePrayerRank) &
                             row.id.isSmallerThanValue(beforeId!)))),
           );
         }
