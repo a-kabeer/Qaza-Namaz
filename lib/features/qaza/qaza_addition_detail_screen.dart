@@ -69,15 +69,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            if (dateCount > 1)
-                              Text(
-                                l10n.qazaHistorySelectedDates(dateCount),
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                          ],
+                            ],
                         ),
                       ),
                       if (detail.pendingCount > 0 || detail.completedCount > 0) ...[
