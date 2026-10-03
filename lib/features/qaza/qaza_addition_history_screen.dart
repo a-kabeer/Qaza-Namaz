@@ -548,7 +548,7 @@ class _RecentAdditionCardState extends State<_RecentAdditionCard> {
           Text(
             hijri + suffix,
             style: textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
