@@ -188,7 +188,7 @@ void main() {
     expect(source, contains('AddQazaSelectionRules.normalizeForMode'));
     expect(source, contains('_prayerAvailabilityRequest'));
     expect(source, contains('++_analysisRequest'));
-    expect(source, contains('retainAll(addable)'));
+    expect(source, contains('selected.retainAll(retained)'));
     expect(source, contains('ProfileRules.startPrayingDate(profile)'));
     expect(source, contains('calendarTodayProvider'));
     expect(source, contains('ProfileRules.effectiveWitr(profile)'));
