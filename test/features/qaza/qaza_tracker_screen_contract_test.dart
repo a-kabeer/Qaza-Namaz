@@ -974,10 +974,16 @@ void main() {
     );
     final row = source.substring(start, end);
 
-    expect(row, contains('leading: Icon('));
-    expect(row, contains('Icons.radio_button_unchecked_rounded'));
-    expect(row, contains('size: 20'));
-    expect(row, contains('theme.colorScheme.onSurfaceVariant'));
+    final leadingStart = row.indexOf('leading: Icon(');
+    final leadingEnd = row.indexOf('contentPadding:', leadingStart);
+    expect(leadingStart, greaterThanOrEqualTo(0));
+    expect(leadingEnd, greaterThan(leadingStart));
+    final leading = row.substring(leadingStart, leadingEnd);
+
+    expect(leading, contains('Icons.radio_button_unchecked_rounded'));
+    expect(leading, contains('size: 20'));
+    expect(leading, contains('theme.colorScheme.onSurfaceVariant'));
+    expect(leading, isNot(contains('Icons.lock_clock_rounded')));
     expect(row, contains('Icons.lock_clock_rounded'));
     expect(row, contains('static const double _rowHeight = 68;'));
     expect(row, contains('trailing: SizedBox('));
