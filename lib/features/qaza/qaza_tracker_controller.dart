@@ -282,6 +282,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   }
 
   Future<void> refresh() async {
+    final additionId = state.additionId;
+    if (additionId != null) {
+      ref.invalidate(qazaAdditionDetailProvider(additionId));
+    }
+
     final generation = ++_queryGeneration;
     ref.invalidate(sahibAlTartibProvider);
     final userId = ref.read(activeUserIdProvider);

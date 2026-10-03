@@ -12,8 +12,8 @@ import '../../domain/entities/qaza_addition.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import 'add_qaza_screen.dart';
-import 'qaza_navigation.dart';
 import 'qaza_addition_history_screen.dart';
+import 'qaza_tracker_screen.dart';
 
 class QazaAdditionDetailScreen extends ConsumerWidget {
   const QazaAdditionDetailScreen({
@@ -151,9 +151,19 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: () {
-                  openQazaForAddition(ref, addition.id);
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                onPressed: () async {
+                  await Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => QazaTrackerScreen(
+                        additionId: addition.id,
+                      ),
+                    ),
+                  );
+                  if (context.mounted) {
+                    ref.invalidate(
+                      qazaAdditionDetailProvider(addition.id),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.view_list_rounded),
                 label: const Text('View Records'),
