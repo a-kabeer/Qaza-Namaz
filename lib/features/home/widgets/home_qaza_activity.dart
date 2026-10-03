@@ -801,11 +801,19 @@ class _ActivityBarChart extends StatelessWidget {
                     final label = labelsAreDates
                         ? DateFormat.E(locale).format(date)
                         : DateFormat.MMM(locale).format(date);
+                    final selectedMonthValue = selectedMonth;
+                    final selected = selectedMonthValue != null &&
+                        date.year == selectedMonthValue.year &&
+                        date.month == selectedMonthValue.month;
                     return SideTitleWidget(
                       meta: meta,
                       child: Text(
                         label,
-                        style: theme.textTheme.labelSmall,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: selected ? theme.colorScheme.primary : null,
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w500,
+                        ),
                       ),
                     );
                   },
