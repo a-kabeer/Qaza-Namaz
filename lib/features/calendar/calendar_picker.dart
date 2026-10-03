@@ -13,6 +13,7 @@ class CalendarPicker extends ConsumerStatefulWidget {
   const CalendarPicker({
     super.key,
     this.qazaDates = const <DateTime>{},
+    this.initialDisplayedMonth,
     this.availablePrayersByDate,
     this.availabilityLoading = false,
     this.onMonthChanged,
@@ -20,6 +21,12 @@ class CalendarPicker extends ConsumerStatefulWidget {
   });
 
   final Set<DateTime> qazaDates;
+
+  /// Optional initial month for an existing edit flow.
+  ///
+  /// The value is only used during CalendarPicker initialization. Once the
+  /// calendar is initialized, normal manual month navigation owns [month].
+  final DateTime? initialDisplayedMonth;
 
   /// Availability for the month on screen.
   final Map<DateTime, Set<PrayerType>>? availablePrayersByDate;
@@ -47,10 +54,23 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  DateTime _initialMonth(DateTime? value) {
+    if (value == null) return DateTime(today.year, today.month, 1);
+
+    final candidate = DateTime(value.year, value.month, 1);
+    if (candidate.isBefore(calendarFirstDate)) {
+      return DateTime(today.year, today.month, 1);
+    }
+    if (candidate.isAfter(_lastMonth)) {
+      return _lastMonth;
+    }
+    return candidate;
+  }
+
   @override
   void initState() {
     super.initState();
-    month = DateTime(today.year, today.month, 1);
+    month = _initialMonth(widget.initialDisplayedMonth);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.onMonthChanged?.call(month);
     });
