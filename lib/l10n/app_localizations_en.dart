@@ -911,6 +911,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addQazaUnavailableLabel => 'Unavailable';
 
   @override
+  String get addQazaTimeBlocked => 'Available after the prayer time ends.';
+
+  @override
   String get addQazaCancelledTitle => 'Qaza addition cancelled';
 
   @override
