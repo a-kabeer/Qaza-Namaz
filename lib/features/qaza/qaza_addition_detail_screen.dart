@@ -133,7 +133,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                         _DetailSection(
                           label: 'Requested',
                           child: Text(
-                            '${requestedSlots} requested slots',
+                            '$requestedSlots requested slots',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
