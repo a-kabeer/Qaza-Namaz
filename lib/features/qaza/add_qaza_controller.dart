@@ -378,6 +378,13 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       return;
     }
 
+    // Never allow a prayer toggle to remove a protected current-addition
+    // occurrence. The calendar can still remove only the affected dates.
+    if (state.selectedPrayers.contains(prayer) &&
+        state.protectedPrayers.contains(prayer)) {
+      return;
+    }
+
     final next = Set<PrayerType>.of(state.selectedPrayers);
     if (!next.add(prayer)) {
       next.remove(prayer);
