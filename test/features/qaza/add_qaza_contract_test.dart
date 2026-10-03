@@ -405,4 +405,44 @@ void main() {
     expect(source, contains('final prayer = prayers[index];'));
   });
 
+  test('Add Qaza uses centralized current-day prayer-time eligibility everywhere', () {
+    final controller =
+        File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_availability_service.dart').readAsStringSync();
+    final qazaService =
+        File('lib/domain/services/qaza_service.dart').readAsStringSync();
+    final addition =
+        File('lib/domain/services/qaza_addition_service.dart').readAsStringSync();
+    final importController =
+        File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
+    final prayerTime =
+        File('lib/features/prayer_time/application/prayer_time_providers.dart')
+            .readAsStringSync();
+    final screen =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+
+    expect(service, contains('CurrentDayQazaEligibilityService'));
+    expect(service, contains('QazaEligibility.notYetDue'));
+    expect(service, contains('QazaEligibility.timeDataUnavailable'));
+    expect(qazaService, contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
+    expect(qazaService, contains('prayerTimeContext: prayerTimeContext'));
+    expect(addition, contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
+    expect(addition, contains('prayerTimeContext: prayerTimeContext'));
+    expect(importController, contains('request.prayerTimeContext'));
+    expect(controller, contains('qazaPrayerTimeEligibilitySignatureProvider'));
+    expect(controller, contains('_resolvePrayerTimeContext'));
+    expect(controller, contains('resolveCurrentPrayerTimeContextForQaza'));
+    expect(controller, contains('timeBlockedPrayers'));
+    expect(prayerTime, contains('buildCurrentDayQazaPrayerTimeContext'));
+    expect(prayerTime, contains('qazaPrayerTimeEligibilitySignatureProvider'));
+    expect(prayerTime, contains('PrayerSlot.sunrise'));
+    expect(prayerTime, contains('PrayerSlot.asr'));
+    expect(prayerTime, contains('PrayerSlot.maghrib'));
+    expect(prayerTime, contains('PrayerSlot.isha'));
+    expect(prayerTime, contains('PrayerSlot.fajr'));
+    expect(screen, contains('timeBlockedPrayers: state.timeBlockedPrayers'));
+    expect(screen, contains('l10n.addQazaTimeBlocked'));
+    expect(screen, contains('prayerTimeContext: prayerTimeContext'));
+  });
 }
