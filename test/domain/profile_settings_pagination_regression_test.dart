@@ -203,11 +203,20 @@ void main() {
           expect(preview.pendingToAdd, greaterThan(0));
           expect(harness.diagnostics.events, isEmpty);
 
+          final progress = <(int, int)>[];
           final result = await harness.useCase.saveSettings(
             newProfile: testCase.newProfile,
             preview: preview,
             choice: ProfileQazaChangeChoice.apply,
+            onProgress: (processed, total) {
+              progress.add((processed, total));
+            },
           );
+
+          expect(progress, isNotEmpty);
+          expect(progress.first, (0, progress.first.$2));
+          expect(progress.last.$1, progress.last.$2);
+          expect(progress.any((value) => value.$1 > 0), isTrue);
 
           expect(result.qazaPlanChanged, isTrue);
           expect(result.revision, isNotNull);
