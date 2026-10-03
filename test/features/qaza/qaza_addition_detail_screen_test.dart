@@ -85,7 +85,7 @@ void main() {
     expect(find.text(gregorian), findsOneWidget);
     expect(find.text(hijri), findsOneWidget);
     expect(find.text('35 Records'), findsOneWidget);
-    expect(find.text(l10n.qazaHistorySelectedDates(7)), findsOneWidget);
+    expect(find.text(l10n.addQazaDateCount(7)), findsOneWidget);
     expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
     expect(find.text('Fajr'), findsOneWidget);
     expect(find.text('Isha'), findsOneWidget);
@@ -242,7 +242,7 @@ void main() {
     expect(find.text('Delete Addition'), findsOneWidget);
 
     await tester.tap(find.text('Edit Addition'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(AddQazaScreen), findsOneWidget);
     expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
