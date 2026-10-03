@@ -180,42 +180,57 @@ class _SelectionContextHeader extends StatelessWidget {
 class _ProgressHeader extends ConsumerWidget {
   const _ProgressHeader({this.additionId});
 
+  static const double _headerHeight = 84;
+
   final String? additionId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (additionId != null) {
-      final detailAsync = ref.watch(qazaAdditionDetailProvider(additionId!));
-      return detailAsync.when(
-        loading: () =>
-            const SizedBox(height: 3, child: LinearProgressIndicator()),
-        error: (_, __) => const SizedBox.shrink(),
-        data: (detail) {
-          if (detail == null) return const SizedBox.shrink();
-          final total = detail.pendingCount + detail.completedCount;
-          final percentage =
-              total == 0 ? 0.0 : detail.completedCount / total;
-          return _buildProgress(
-            context,
-            label: 'Addition progress',
-            percentage: percentage,
-            completed: detail.completedCount,
-            pending: detail.pendingCount,
-          );
-        },
-      );
-    }
+    final content = additionId != null
+        ? ref.watch(qazaAdditionDetailProvider(additionId!)).when(
+              loading: () => _buildLoading(context),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (detail) {
+                if (detail == null) return const SizedBox.shrink();
+                final total = detail.pendingCount + detail.completedCount;
+                final percentage =
+                    total == 0 ? 0.0 : detail.completedCount / total;
+                return _buildProgress(
+                  context,
+                  label: 'Addition progress',
+                  percentage: percentage,
+                  completed: detail.completedCount,
+                  pending: detail.pendingCount,
+                );
+              },
+            )
+        : ref.watch(progressSummaryProvider).when(
+              loading: () => _buildLoading(context),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (summary) => _buildProgress(
+                context,
+                label: AppLocalizations.of(context).qazaProgressLabel,
+                percentage: summary.overall.percentage,
+                completed: summary.overall.completed,
+                pending: summary.overall.pending,
+              ),
+            );
 
-    return ref.watch(progressSummaryProvider).when(
-      loading: () =>
-          const SizedBox(height: 3, child: LinearProgressIndicator()),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (summary) => _buildProgress(
-        context,
-        label: AppLocalizations.of(context).qazaProgressLabel,
-        percentage: summary.overall.percentage,
-        completed: summary.overall.completed,
-        pending: summary.overall.pending,
+    return SizedBox(
+      key: const Key('qaza_tracker_progress_header'),
+      height: _headerHeight,
+      child: content,
+    );
+  }
+
+  Widget _buildLoading(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: const LinearProgressIndicator(minHeight: 3),
+        ),
       ),
     );
   }
@@ -231,9 +246,9 @@ class _ProgressHeader extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
         AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xs,
       ),
       child: Column(
         key: const Key('qaza_tracker_progress'),
@@ -255,15 +270,15 @@ class _ProgressHeader extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: LinearProgressIndicator(
-              value: percentage,
-              minHeight: 10,
+            child: const SizedBox(
+              height: 8,
+              child: LinearProgressIndicator(),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.progressCompletedPending(
               DateFormatters.formatCount(completed),
@@ -275,7 +290,6 @@ class _ProgressHeader extends ConsumerWidget {
     );
   }
 }
-
 
 class _TrackerContent extends StatelessWidget {
   const _TrackerContent({
@@ -300,10 +314,7 @@ class _TrackerContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (state.statusFilter == QazaStatusFilter.completed)
-          const _CompletedHeader()
-        else
-          _ProgressHeader(additionId: additionId),
+        _ProgressHeader(additionId: additionId),
         _FilterSortBar(
           state: state,
           controller: controller,
@@ -315,40 +326,6 @@ class _TrackerContent extends StatelessWidget {
               : _PendingTrackerBody(state: state, controller: controller),
         ),
       ],
-    );
-  }
-}
-
-class _CompletedHeader extends ConsumerWidget {
-  const _CompletedHeader();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final completed = ref.watch(progressSummaryProvider).valueOrNull?.overall.completed;
-    final count = completed ?? 0;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Completed',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          Text(
-            '${DateFormatters.formatCount(count)} Qaza completed',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -690,6 +667,11 @@ class _RecordRow extends StatelessWidget {
         height: _rowHeight,
         child: ListTile(
           key: Key('qaza_record_${record.id}'),
+          leading: Icon(
+            Icons.radio_button_unchecked_rounded,
+            size: 20,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           minVerticalPadding: 8,
           title: Text(
