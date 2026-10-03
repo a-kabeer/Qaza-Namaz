@@ -804,34 +804,51 @@ void main() {
     expect(source, contains(": 'Qaza Date'"));
   });
 
-  test('Recent Addition View Records uses the canonical workspace handoff', () {
+  test('Recent Addition View Records pushes the scoped tracker route without clearing the back stack', () {
     final detail =
         File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
-    final navigation =
-        File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
     final tracker =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final controller =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
 
-    expect(detail, contains('openQazaForAddition(ref, addition.id);'));
+    expect(detail, contains('Navigator.of(context).push<void>('));
+    expect(detail, contains('builder: (_) => QazaTrackerScreen('));
+    expect(detail, contains('additionId: addition.id'));
     expect(
       detail,
-      contains(
-        'Navigator.of(context).popUntil((route) => route.isFirst);',
+      isNot(
+        contains(
+          'Navigator.of(context).popUntil((route) => route.isFirst);',
+        ),
       ),
     );
-    expect(detail, isNot(contains('QazaTrackerScreen(additionId: addition.id)')));
     expect(
-      navigation,
-      contains('void openQazaForAddition(WidgetRef ref, String additionId)'),
+      tracker,
+      contains(
+        'const QazaTrackerScreen({super.key, this.additionId});',
+      ),
     );
-    expect(navigation, contains('additionId: additionId'));
-    expect(navigation, contains('status: QazaStatusFilter.pending'));
-    expect(tracker, isNot(contains("'Addition Records'")));
     expect(controller, contains('final String? additionId;'));
     expect(controller, contains('additionId: request.additionId'));
     expect(controller, contains('clearAdditionId: true'));
+  });
+
+  test('Addition-scoped tracker refresh invalidates the detail provider used by the progress header', () {
+    final controller =
+        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final start = controller.indexOf('Future<void> refresh() async {');
+    final end = controller.indexOf('  /// Reads one bounded page', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final refresh = controller.substring(start, end);
+    expect(refresh, contains('final additionId = state.additionId;'));
+    expect(refresh, contains('if (additionId != null) {'));
+    expect(
+      refresh,
+      contains('ref.invalidate(qazaAdditionDetailProvider(additionId));'),
+    );
   });
 
   test('Recent Addition management actions disappear when nothing is pending', () {
