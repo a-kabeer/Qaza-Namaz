@@ -179,6 +179,49 @@ void main() {
     expect(secondAttempt.conflictCount, 0);
   });
 
+  test('edit removes eligible pending records with no new records', () async {
+    final date1 = DateTime(2026, 9, 11);
+    final date2 = DateTime(2026, 9, 12);
+    final a = addition('a-edit-only', date1);
+    final snap = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.multiple,
+      selectedDates: [date1],
+      selectedPrayers: const [PrayerType.fajr],
+    );
+
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r-edit-keep', a.id, date1),
+        record('r-edit-remove', a.id, date2),
+      ],
+    );
+
+    final result = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: 1,
+      snapshot: snap,
+      requestedKeys: {
+        QazaRecordKey(date: date1, prayerType: PrayerType.fajr),
+      },
+      recordsToAdd: const [],
+    );
+
+    expect(result.revision, 2);
+    expect(result.addedCount, 0);
+    expect(result.removedCount, 1);
+    expect(result.protectedCount, 0);
+
+    final rows = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(rows, hasLength(1));
+    expect(rows.single.id, 'r-edit-keep');
+  });
+
   test('edit removes only unchanged pending linked records', () async {
     final date1 = DateTime(2026, 9, 3);
     final date2 = DateTime(2026, 9, 4);
