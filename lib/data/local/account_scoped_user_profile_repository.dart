@@ -27,7 +27,6 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
       throw StateError('No active local account exists.');
     }
     await _store.saveProfile(id, profile);
-    await _store.enqueueSnapshot(id);
   }
 
   @override
