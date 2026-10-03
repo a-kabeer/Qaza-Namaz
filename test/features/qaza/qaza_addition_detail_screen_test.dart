@@ -8,6 +8,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/features/qaza/qaza_addition_detail_screen.dart';
+import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
@@ -235,20 +236,16 @@ void main() {
 
     final observer = _RecordingNavigatorObserver();
     await _pumpDetail(tester, detail, navigatorObserver: observer);
-    final initialPushCount = observer.pushedCount;
-
     await tester.tap(find.byKey(const Key('qaza-addition-more-actions')));
     await tester.pumpAndSettle();
     expect(find.text('Edit Addition'), findsOneWidget);
     expect(find.text('Delete Addition'), findsOneWidget);
-    final afterMenuPushCount = observer.pushedCount;
 
     await tester.tap(find.text('Edit Addition'));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
-    expect(observer.pushedCount, afterMenuPushCount + 1);
+    expect(find.byType(AddQazaScreen), findsOneWidget);
     expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
-    expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.pop();
