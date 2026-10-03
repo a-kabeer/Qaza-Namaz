@@ -456,11 +456,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           additionId: additionId,
         );
         final eligible = current
-            .where(
-              (record) =>
-                  record.status == QazaStatus.pending &&
-                  record.recordVersion == 1,
-            )
+            .where((record) => record.status == QazaStatus.pending)
             .toList(growable: false);
         final protectedCount = current.length - eligible.length;
 
