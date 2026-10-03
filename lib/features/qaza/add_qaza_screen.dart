@@ -157,6 +157,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         analysis: initial,
         mode: ref.read(addQazaControllerProvider).mode,
         selectedDates: ref.read(addQazaControllerProvider).selectedDates,
+        allowEditWithoutNewRecords:
+            widget.editAddition != null &&
+            ref.read(addQazaControllerProvider).hasEditChanges,
         onAdd: _finalValidateAndStart,
       ),
     );
@@ -841,12 +844,14 @@ class _AddQazaReviewDialog extends StatefulWidget {
     required this.analysis,
     required this.mode,
     required this.selectedDates,
+    required this.allowEditWithoutNewRecords,
     required this.onAdd,
   });
 
   final AddQazaAnalysis analysis;
   final DateSelectionMode mode;
   final List<DateTime> selectedDates;
+  final bool allowEditWithoutNewRecords;
   final Future<AddQazaAnalysis?> Function() onAdd;
 
   @override
@@ -859,7 +864,9 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
   String? _error;
 
   Future<void> _confirm() async {
-    if (_analysis.newCount == 0) return;
+    if (_analysis.newCount == 0 && !widget.allowEditWithoutNewRecords) {
+      return;
+    }
 
     setState(() {
       _busy = true;
@@ -878,7 +885,7 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
         return;
       }
 
-      if (latest.newCount == 0) {
+      if (latest.newCount == 0 && !widget.allowEditWithoutNewRecords) {
         setState(() {
           _analysis = latest;
           _busy = false;
@@ -945,7 +952,11 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
           child: Text(l10n.commonBack),
         ),
         FilledButton.icon(
-          onPressed: _busy || _analysis.newCount == 0 ? null : _confirm,
+          onPressed: _busy ||
+                  (_analysis.newCount == 0 &&
+                      !widget.allowEditWithoutNewRecords)
+              ? null
+              : _confirm,
           icon: _busy
               ? const SizedBox(
                   width: 18,
@@ -957,7 +968,7 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
             _busy
                 ? l10n.addQazaChecking
                 : _analysis.newCount == 0
-                    ? l10n.addQazaNothingNew
+                    ? l10n.qazaSaveChanges
                     : l10n.addQazaAddCount(
                         _analysis.newCount.toString(),
                       ),
