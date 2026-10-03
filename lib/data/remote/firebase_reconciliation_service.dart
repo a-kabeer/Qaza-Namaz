@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/constants/prayer_types.dart';
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' show Value, Variable;
 
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/conflict_resolver.dart';
@@ -290,7 +290,7 @@ class FirebaseReconciliationService {
       (raw['entityVersion'] as num?)?.toInt() ?? 1,
     );
     final localStamp = current.isEmpty
-        ? const VersionedEntity(
+        ? VersionedEntity(
             entityVersion: 0,
             updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
             writerDeviceId: '',
