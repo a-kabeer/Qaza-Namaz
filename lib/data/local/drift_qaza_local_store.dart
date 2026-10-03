@@ -280,6 +280,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required List<String> removalIds,
     required Set<String> newPlanKeys,
     required String expectedPreviousPlanFingerprint,
+    void Function(int processed, int total)? onProgress,
   }) {
     if (!expectedPreviousPlanFingerprint.startsWith('qazaPlanV2Fixed360|') &&
         removalIds.isNotEmpty) {
@@ -312,15 +313,24 @@ class DriftQazaLocalStore extends QazaLocalStore {
         removed.add(record);
       }
 
+      final totalWork = removalIds.toSet().length + additions.length;
+      var processedWork = 0;
+      onProgress?.call(0, totalWork);
+
       final removedIds = removed.map((record) => record.id).toSet();
       if (removedIds.isNotEmpty) {
         for (final id in removedIds) {
           await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
+          processedWork++;
+          onProgress?.call(processedWork, totalWork);
         }
         await _deleteProfilePlanProvenance(
           userId,
           removedIds.toList(growable: false),
         );
+      } else {
+        processedWork = removalIds.toSet().length;
+        if (processedWork > 0) onProgress?.call(processedWork, totalWork);
       }
 
       final insertable = <QazaRecord>[];
@@ -345,13 +355,22 @@ class DriftQazaLocalStore extends QazaLocalStore {
         duplicateKeys.add(key);
       }
 
-      final insertedIds = await _database.qazaRecordsDao
-          .insertRecordsReturningInsertedIds(
-        insertable.map(_toCompanion).toList(growable: false),
-      );
-      final inserted = insertable
-          .where((record) => insertedIds.contains(record.id))
-          .toList(growable: false);
+      final inserted = <QazaRecord>[];
+      for (var start = 0; start < insertable.length; start += 500) {
+        final end = start + 500 < insertable.length
+            ? start + 500
+            : insertable.length;
+        final chunk = insertable.sublist(start, end);
+        final insertedIds = await _database.qazaRecordsDao
+            .insertRecordsReturningInsertedIds(
+          chunk.map(_toCompanion).toList(growable: false),
+        );
+        inserted.addAll(
+          chunk.where((record) => insertedIds.contains(record.id)),
+        );
+        processedWork += chunk.length;
+        onProgress?.call(processedWork, totalWork);
+      }
       await _upsertProfilePlanProvenance(inserted);
 
       final now = DateTime.now();
