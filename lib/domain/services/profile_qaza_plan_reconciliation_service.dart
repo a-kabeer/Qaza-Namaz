@@ -136,6 +136,7 @@ class ProfileQazaPlanReconciliationService {
         currentLedgerFingerprint?.startsWith('qazaPlanV2Fixed360|') ?? false;
 
     DateTime? cursorDate;
+    PrayerType? cursorPrayerType;
     String? cursorId;
     while (true) {
       final page = await _qazaService.repository.getPage(
@@ -143,6 +144,7 @@ class ProfileQazaPlanReconciliationService {
         limit: 500,
         status: QazaStatus.pending,
         afterOriginalDate: cursorDate,
+        afterPrayerType: cursorPrayerType,
         afterId: cursorId,
       );
       for (final record in page.records) {
@@ -158,6 +160,7 @@ class ProfileQazaPlanReconciliationService {
       }
       if (!page.hasMore) break;
       cursorDate = page.nextOriginalDate;
+      cursorPrayerType = page.nextPrayerType;
       cursorId = page.nextId;
     }
 
