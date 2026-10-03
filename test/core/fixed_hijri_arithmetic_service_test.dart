@@ -175,12 +175,6 @@ void main() {
     final boundaryDifference = oneYearBoundary - birthIndex;
     expect(boundaryDifference, 360);
 
-    final profile = _profile(
-      dob: dob,
-      pubertyAge: 12,
-      startPrayingAge: 13,
-    );
-
     final beforeStart =
         firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
       const Duration(days: 1),

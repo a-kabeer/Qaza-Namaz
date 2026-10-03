@@ -220,7 +220,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   ) async {
     final stopwatch = Stopwatch()..start();
     try {
-      final onProgress = (int processed, int progressTotal) {
+      void onProgress(int processed, int progressTotal) {
         if (state.phase != QazaImportTaskPhase.applyingProfile) return;
         state = state.copyWith(
           processed: progressTotal <= 0
@@ -261,7 +261,9 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   bool cancel() {
     if (!state.isActive ||
         state.phase == QazaImportTaskPhase.applyingProfile ||
-        state.cancelRequested) return false;
+        state.cancelRequested) {
+      return false;
+    }
     state = state.copyWith(cancelRequested: true);
     _cancelRequested = true;
     return true;

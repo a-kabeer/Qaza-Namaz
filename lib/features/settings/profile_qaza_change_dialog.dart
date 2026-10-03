@@ -93,7 +93,6 @@ class _ProfileQazaChangeDialogState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return AlertDialog(
       title: Text(l10n.profileQazaPlanChangedTitle),

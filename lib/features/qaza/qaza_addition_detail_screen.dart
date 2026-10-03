@@ -137,7 +137,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       if (requestedSlots > 0) ...[
                         const SizedBox(height: 12),
                         Text(
-                          '${requestedSlots} requested slots',
+                          '$requestedSlots requested slots',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -211,7 +211,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                               Icons.delete_outline_rounded,
                               color: Theme.of(context).colorScheme.error,
                             ),
-                            title: Text('Delete Addition'),
+                            title: const Text('Delete Addition'),
                           ),
                         ),
                       ],

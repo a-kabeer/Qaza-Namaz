@@ -270,7 +270,6 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   int _prayerAvailabilityRequest = 0;
   int _analysisRequest = 0;
   bool _prayerTimeRefreshInFlight = false;
-  CurrentDayQazaPrayerTimeContext? _latestPrayerTimeContext;
 
   @override
   AddQazaState build() {
@@ -378,7 +377,6 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       snapshot: snapshot,
       now: now,
     );
-    _latestPrayerTimeContext = context;
     return context;
   }
 

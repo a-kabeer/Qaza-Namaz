@@ -11,7 +11,7 @@ import 'package:qaza_namaz/l10n/app_localizations.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final day = (int value) => DateTime(2026, 10, value);
+  DateTime day(int value) => DateTime(2026, 10, value);
 
   test('edit review is available for a removal-only delta', () {
     final date = day(6);

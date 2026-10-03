@@ -36,10 +36,10 @@ UserProfile _profile({
     );
 
 String _key(PrayerType prayer, DateTime date) =>
-    _userId + '_' + prayer.name + '_' + QazaDate.key(date);
+    '${_userId}_${prayer.name}_${QazaDate.key(date)}';
 
 String _recordId(int offset, PrayerType prayer) =>
-    offset.toString().padLeft(4, '0') + '_' + prayer.name;
+    '${offset.toString().padLeft(4, '0')}_${prayer.name}';
 
 class _Harness {
   _Harness({
