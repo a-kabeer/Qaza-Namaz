@@ -223,7 +223,7 @@ void main() {
 
     await tester.ensureVisible(find.text('Edit Addition'));
     await tester.tap(find.text('Edit Addition'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(AddQazaScreen), findsOneWidget);
     final addQaza = tester.widget<AddQazaScreen>(
@@ -232,7 +232,7 @@ void main() {
     expect(addQaza.editAddition?.id, detail.addition.id);
 
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
     expect(find.byType(AddQazaScreen), findsNothing);
