@@ -548,4 +548,111 @@ void main() {
     expect(result.protectedCount, 1);
     expect((await repo.getRecordsForAddition(userId: 'u', additionId: a.id)).length, 2);
   });
+  test('delete includes records changed from completed back to pending', () async {
+    final start = DateTime(2026, 10, 1);
+    final a = addition('a-delete-repending', start);
+    final records = [
+      for (var i = 0; i < 10; i++)
+        record(
+          'r-delete-repending-$i',
+          a.id,
+          DateTime(start.year, start.month, start.day + i),
+        ),
+    ];
+
+    await repo.createAddition(
+      addition: a,
+      records: records,
+    );
+
+    final completed = await db.qazaRecordsDao.completeByIds(
+      userId: 'u',
+      ids: records
+          .take(6)
+          .map((item) => item.id)
+          .toList(growable: false),
+      completedAt: DateTime(2026, 10, 12),
+    );
+    expect(completed, hasLength(6));
+    expect(
+      completed.every((item) => item.completionId != null),
+      isTrue,
+    );
+
+    final returnedToPendingId = completed.first.id;
+    final completionId = completed.first.completionId!;
+    final reverted = await db.qazaRecordsDao.markCompletedAsPendingBatch(
+      userId: 'u',
+      expectedCompletionIds: {
+        returnedToPendingId: completionId,
+      },
+      updatedAt: DateTime(2026, 10, 13),
+    );
+    expect(reverted, hasLength(1));
+    expect(reverted.single.id, returnedToPendingId);
+    expect(reverted.single.status, QazaStatus.pending);
+    expect(reverted.single.recordVersion, greaterThan(1));
+
+    final beforeDelete = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(
+      beforeDelete.where((item) => item.status == QazaStatus.pending),
+      hasLength(5),
+    );
+    expect(
+      beforeDelete.where((item) => item.status == QazaStatus.completed),
+      hasLength(5),
+    );
+
+    final deleted = await repo.deleteAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(deleted.deletedCount, 5);
+    expect(deleted.protectedCount, 5);
+    expect(deleted.deletionActionId, isNotNull);
+
+    final afterDelete = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(afterDelete, hasLength(5));
+    expect(
+      afterDelete.every((item) => item.status == QazaStatus.completed),
+      isTrue,
+    );
+    expect(
+      afterDelete.map((item) => item.id).toSet(),
+      completed.skip(1).map((item) => item.id).toSet(),
+    );
+
+    final deletedActions =
+        await repo.getRecentDeletionActions(userId: 'u');
+    expect(deletedActions.items, hasLength(1));
+    expect(deletedActions.items.single.deletedCount, 5);
+    expect(
+      deletedActions.items.single.additionId,
+      a.id,
+    );
+
+    final restored = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deleted.deletionActionId!,
+    );
+    expect(restored.restoredCount, 5);
+    expect(restored.conflictCount, 0);
+
+    final afterRestore = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(afterRestore, hasLength(10));
+    final restoredReturnedToPending =
+        afterRestore.singleWhere((item) => item.id == returnedToPendingId);
+    expect(restoredReturnedToPending.status, QazaStatus.pending);
+    expect(restoredReturnedToPending.recordVersion, greaterThan(1));
+  });
+
 }
