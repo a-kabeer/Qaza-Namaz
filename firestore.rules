@@ -55,7 +55,7 @@ service cloud.firestore {
       match /qazaRecords/{recordId} {
         allow read: if signedIn(uid);
         allow create, update: if signedIn(uid) && validMetadata()
-          && request.resource.data.id == recordId;
+          && request.resource.data.payload.id == recordId;
         allow delete: if signedIn(uid);
       }
 
