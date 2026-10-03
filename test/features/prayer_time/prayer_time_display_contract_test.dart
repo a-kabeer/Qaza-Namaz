@@ -23,6 +23,11 @@ void main() {
     expect(source, contains('return a.isRestricted ? -1 : 1;'));
     expect(source, contains('RestrictedTimeType.zawal'));
     expect(source, contains('RestrictedTimeType.sunset'));
+    expect(source, contains('prayerTimeShowAllRestrictedTimesProvider'));
+    expect(source, contains('timelineWindowsForSchedule'));
+    expect(source, contains("Key('prayer_time_show_all_restricted_times')"));
+    expect(source, contains('showAllRestrictedTimes: showAllRestrictedTimes'));
+    expect(source, contains('countdown: items[i].countdown'));
     expect(
       source,
       contains(
@@ -39,6 +44,16 @@ void main() {
     expect(source, isNot(contains('activeLabel')));
     expect(source, isNot(contains('class _PrayerTimeRow')));
     expect(source, isNot(contains('class _RestrictedTimesCard')));
+  });
+
+  test('Prayer Time keeps restricted visibility inside the existing schedule container', () {
+    final source =
+        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
+            .readAsStringSync();
+
+    expect(source, contains('class _PrayerSchedule extends StatelessWidget'));
+    expect(source, contains('l10n.prayerTimeRestrictedTimes'));
+    expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 
   test('Shared restricted row derives its active countdown from central state',

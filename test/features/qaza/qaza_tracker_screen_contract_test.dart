@@ -997,7 +997,7 @@ void main() {
     expect(leadingEnd, greaterThan(leadingStart));
     final leading = row.substring(leadingStart, leadingEnd);
 
-    expect(leading, contains('Icons.radio_button_unchecked_rounded'));
+    expect(leading, contains('Icons.pending_actions_rounded'));
     expect(leading, contains('size: 20'));
     expect(leading, contains('theme.colorScheme.onSurfaceVariant'));
     expect(leading, isNot(contains('Icons.lock_clock_rounded')));

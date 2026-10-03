@@ -280,6 +280,9 @@ class _PrayerTimeContent extends ConsumerWidget {
     final now = ref.watch(prayerTimeClockProvider).valueOrNull;
     final current = ref.watch(currentPrayerStateProvider);
     final restricted = ref.watch(restrictedTimeStateProvider);
+    final showAllRestrictedTimes =
+        ref.watch(prayerTimeShowAllRestrictedTimesProvider);
+    final restrictedCalculator = ref.read(restrictedTimeCalculatorProvider);
     final refreshing = ref.watch(prayerTimeRefreshProvider);
     final qiblaBearing = ref.watch(qiblaBearingProvider);
     if (snapshot == null || now == null) return const SizedBox.shrink();
@@ -303,29 +306,67 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextAt = current?.nextAt;
     final nextRemaining = nextAt?.difference(localNow);
     final countdownPrayer = currentPrayer ?? nextPrayer;
+    tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
+        window.timelineDisplayAt;
+
     final activeRestriction = restricted?.active;
     final restrictedRemaining = activeRestriction == null
         ? null
         : restricted?.remainingAt(localNow);
+    final visibleRestrictions =
+        restrictedCalculator.timelineWindowsForSchedule(
+      schedule: contentSchedule,
+      location: location,
+      now: localNow,
+      showAll: showAllRestrictedTimes,
+    );
+    final visibleSunrise = visibleRestrictions
+        .where((window) => window.type == RestrictedTimeType.sunrise)
+        .firstOrNull;
 
     final timeline = <_PrayerTimelineItem>[];
 
     for (final prayer in PrayerSlot.values) {
-      final prayerTimeUtc = contentSchedule.utcFor(prayer);
-      final isActiveRestrictedSunrise =
-          activeRestriction?.type == RestrictedTimeType.sunrise &&
-          prayer == PrayerSlot.sunrise;
-      final active = activeRestriction != null
-          ? isActiveRestrictedSunrise
-          : prayer == currentPrayer;
+      if (prayer == PrayerSlot.sunrise) {
+        // Reuse this existing timeline position for the dynamic restricted
+        // row. Outside its applicable window, Sunrise is hidden.
+        if (visibleSunrise != null) {
+          final active = visibleSunrise.contains(localNow);
+          final remaining = active
+              ? visibleSunrise.endsAt.difference(localNow)
+              : null;
+          timeline.add(
+            _PrayerTimelineItem(
+              at: visibleSunrise.displayAt.toUtc(),
+              name: _restrictedLabel(l10n, visibleSunrise.type),
+              time: _formatTime(
+                context,
+                visibleSunrise.displayAt.toUtc(),
+                snapshot,
+              ),
+              icon: _restrictedIcon(visibleSunrise.type),
+              active: active,
+              countdown: remaining == null
+                  ? null
+                  : DateFormatters.formatDurationHhMmSs(remaining),
+              isRestricted: true,
+              prayer: prayer,
+            ),
+          );
+        }
+        continue;
+      }
 
+      final prayerTimeUtc = contentSchedule.utcFor(prayer);
       timeline.add(
         _PrayerTimelineItem(
           at: prayerTimeUtc,
           name: _prayerLabel(l10n, prayer),
           time: _formatTime(context, prayerTimeUtc, snapshot),
           icon: _prayerIcon(prayer),
-          active: active,
+          active: activeRestriction != null
+              ? false
+              : prayer == currentPrayer,
           countdown: null,
           isRestricted: false,
           prayer: prayer,
@@ -333,18 +374,22 @@ class _PrayerTimeContent extends ConsumerWidget {
       );
     }
 
-    if (activeRestriction != null &&
-        activeRestriction.type != RestrictedTimeType.sunrise &&
-        restrictedRemaining != null) {
-      final displayAt = activeRestriction.displayAt;
+    for (final restriction in visibleRestrictions) {
+      if (restriction.type == RestrictedTimeType.sunrise) continue;
+      final active = restriction.contains(localNow);
+      final remaining =
+          active ? restriction.endsAt.difference(localNow) : null;
+      final displayAt = restrictedTimelineDisplayAt(restriction);
       timeline.add(
         _PrayerTimelineItem(
           at: displayAt.toUtc(),
-          name: _restrictedLabel(l10n, activeRestriction.type),
+          name: _restrictedLabel(l10n, restriction.type),
           time: _formatTime(context, displayAt.toUtc(), snapshot),
-          icon: _restrictedIcon(activeRestriction.type),
-          active: true,
-          countdown: DateFormatters.formatDurationHhMmSs(restrictedRemaining),
+          icon: _restrictedIcon(restriction.type),
+          active: active,
+          countdown: remaining == null
+              ? null
+              : DateFormatters.formatDurationHhMmSs(remaining),
           isRestricted: true,
         ),
       );
@@ -366,7 +411,7 @@ class _PrayerTimeContent extends ConsumerWidget {
       focusName = _restrictedLabel(l10n, activeRestriction.type);
       focusTime = _formatTime(
         context,
-        activeRestriction.displayAt.toUtc(),
+        restrictedTimelineDisplayAt(activeRestriction).toUtc(),
         snapshot,
       );
       focusIcon = _restrictedIcon(activeRestriction.type);
@@ -439,6 +484,12 @@ class _PrayerTimeContent extends ConsumerWidget {
           const SizedBox(height: 12),
           _PrayerSchedule(
             items: timeline,
+            showAllRestrictedTimes: showAllRestrictedTimes,
+            onShowAllRestrictedTimesChanged: (value) {
+              ref
+                  .read(prayerTimeShowAllRestrictedTimesProvider.notifier)
+                  .state = value;
+            },
           ),
           const SizedBox(height: 10),
           Padding(
@@ -666,13 +717,18 @@ class _PrayerTimeFocusCard extends StatelessWidget {
 class _PrayerSchedule extends StatelessWidget {
   const _PrayerSchedule({
     required this.items,
+    required this.showAllRestrictedTimes,
+    required this.onShowAllRestrictedTimesChanged,
   });
 
   final List<_PrayerTimelineItem> items;
+  final bool showAllRestrictedTimes;
+  final ValueChanged<bool> onShowAllRestrictedTimesChanged;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       key: const Key('prayer_time_schedule'),
@@ -684,11 +740,38 @@ class _PrayerSchedule extends StatelessWidget {
       ),
       child: Column(
         children: [
+          ListTile(
+            key: const Key('prayer_time_show_all_restricted_times'),
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            leading: Icon(
+              Icons.timer_off_outlined,
+              color: scheme.tertiary,
+            ),
+            title: Text(
+              l10n.prayerTimeRestrictedTimes,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            trailing: Switch(
+              value: showAllRestrictedTimes,
+              onChanged: onShowAllRestrictedTimesChanged,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Divider(
+              height: 1,
+              color: scheme.outlineVariant,
+            ),
+          ),
           for (var i = 0; i < items.length; i++) ...[
             PrayerTimelineRow(
               key: Key('prayer_timeline_row_$i'),
               name: items[i].name,
               time: items[i].time,
+              countdown: items[i].countdown,
               active: items[i].active,
               icon: items[i].icon,
               restricted: items[i].isRestricted,

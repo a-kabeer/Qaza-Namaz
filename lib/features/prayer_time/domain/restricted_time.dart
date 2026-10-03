@@ -19,13 +19,20 @@ class RestrictedTimeWindow {
   final tz.TZDateTime startsAt;
   final tz.TZDateTime endsAt;
 
-  /// Canonical timeline instant for displaying the restricted event.
-  ///
-  /// Sunrise and Zawal use the start of their existing restricted interval;
-  /// Sunset uses the interval end, matching sunset/Maghrib.
+  /// Canonical timeline instant used by shared Home/Qaza restricted rows.
   tz.TZDateTime get displayAt => switch (type) {
         RestrictedTimeType.sunrise => startsAt,
         RestrictedTimeType.zawal => startsAt,
+        RestrictedTimeType.sunset => endsAt,
+      };
+
+  /// Event instant used by the Prayer Time timeline.
+  ///
+  /// Unlike [displayAt], Zawal is shown at astronomical solar noon rather
+  /// than the beginning of its five-minute-before / five-minute-after window.
+  tz.TZDateTime get timelineDisplayAt => switch (type) {
+        RestrictedTimeType.sunrise => startsAt,
+        RestrictedTimeType.zawal => startsAt.add(const Duration(minutes: 5)),
         RestrictedTimeType.sunset => endsAt,
       };
 
@@ -91,6 +98,56 @@ class RestrictedTimeCalculator {
         endsAt: sunset,
       ),
     ];
+  }
+
+  /// Returns the restricted-time rows that should be exposed by the main
+  /// Prayer Time timeline.
+  ///
+  /// OFF/default mode follows the requested transitions:
+  /// Fajr → Sunrise restriction expiry: Sunrise
+  /// Sunrise restriction expiry → Zuhr + 5 min: Zawal
+  /// Zuhr + 5 min → Asr: hidden
+  /// Asr → Maghrib: Sunset
+  /// Maghrib → next Fajr: hidden
+  ///
+  /// ON mode exposes Sunrise, Zawal and Sunset for the selected schedule.
+  List<RestrictedTimeWindow> timelineWindowsForSchedule({
+    required PrayerSchedule schedule,
+    required tz.Location location,
+    required tz.TZDateTime now,
+    bool showAll = false,
+  }) {
+    final windows = forSchedule(schedule, location);
+    if (showAll) return List.unmodifiable(windows);
+
+    final sunrise = windows.firstWhere(
+      (window) => window.type == RestrictedTimeType.sunrise,
+    );
+    final zawal = windows.firstWhere(
+      (window) => window.type == RestrictedTimeType.zawal,
+    );
+    final sunset = windows.firstWhere(
+      (window) => window.type == RestrictedTimeType.sunset,
+    );
+
+    final fajr = schedule.localFor(PrayerSlot.fajr, location);
+    final asr = schedule.localFor(PrayerSlot.asr, location);
+    final maghrib = schedule.localFor(PrayerSlot.maghrib, location);
+
+    if (!now.isBefore(fajr) && now.isBefore(sunrise.endsAt)) {
+      return [sunrise];
+    }
+    final zuhr = schedule.localFor(PrayerSlot.dhuhr, location);
+    final zawalVisibleUntil = zuhr.add(zawalAfter);
+
+    if (!now.isBefore(sunrise.endsAt) && now.isBefore(zawalVisibleUntil)) {
+      return [zawal];
+    }
+    if (!now.isBefore(asr) && now.isBefore(maghrib)) {
+      return [sunset];
+    }
+
+    return const <RestrictedTimeWindow>[];
   }
 
   RestrictedTimeState stateFor({

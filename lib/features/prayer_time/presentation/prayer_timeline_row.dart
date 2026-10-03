@@ -166,6 +166,20 @@ class PrayerTimelineRow extends StatelessWidget {
               ),
             ),
           ),
+          if (countdown != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              countdown!,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              textAlign: TextAlign.end,
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: active ? scheme.onSurface : scheme.primary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
           const SizedBox(width: 12),
           Text(
             time,
