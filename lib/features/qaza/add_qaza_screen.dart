@@ -34,6 +34,20 @@ class AddQazaScreen extends ConsumerStatefulWidget {
 class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   int _lastExistingCount = 0;
 
+  DateTime? get _editCalendarInitialMonth {
+    final addition = widget.editAddition;
+    if (addition == null) return null;
+
+    final dates = addition.currentInputSnapshot.selectedDates;
+    if (dates.isEmpty) return null;
+
+    var earliest = dates.first;
+    for (final date in dates.skip(1)) {
+      if (date.isBefore(earliest)) earliest = date;
+    }
+    return DateTime(earliest.year, earliest.month, 1);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +108,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: CalendarPicker(
+                  initialDisplayedMonth: _editCalendarInitialMonth,
                   availablePrayersByDate: state.calendarAvailability,
                   availabilityLoading: state.calendarLoading,
                   dateSelectablePredicate: ref
