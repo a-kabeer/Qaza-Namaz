@@ -45,102 +45,88 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
           final theme = Theme.of(context);
           final orderedPrayers = _orderedPrayers(snapshot.selectedPrayers);
           final dateCount = _dateCount(snapshot);
-          final requestedSlots = dateCount * orderedPrayers.length;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Semantics(
-                        header: true,
-                        label: '${detail.activeCount} Records',
-                        child: Text(
-                          '${detail.activeCount} Records',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${detail.pendingCount} ${l10n.statusPending} · '
-                        '${detail.completedCount} ${l10n.statusCompleted}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 20),
-                      _DetailSection(
-                        label: 'Mode',
-                        child: Text(
-                          _modeLabel(snapshot.mode, l10n),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _DetailSection(
-                        label: l10n.addQazaDatesLabel,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ..._dateWidgets(
-                              context,
-                              snapshot,
-                              l10n,
-                              theme.textTheme,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _dateCountLabel(snapshot, dateCount),
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _DetailSection(
-                        label: orderedPrayers.isEmpty
-                            ? l10n.addQazaPrayersLabel
-                            : '${orderedPrayers.length} ${l10n.addQazaPrayersLabel}',
-                        child: orderedPrayers.isEmpty
-                            ? Text(
-                                'No prayers',
-                                style: theme.textTheme.bodyMedium,
-                              )
-                            : Wrap(
-                                spacing: 6,
-                                runSpacing: 6,
-                                children: orderedPrayers
-                                    .map(
-                                      (prayer) => Chip(
-                                        label: Text(
-                                          prayer.localizedLabel(l10n),
-                                        ),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                    )
-                                    .toList(growable: false),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${detail.activeCount} ${l10n.addQazaPrayersLabel}',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
-                      ),
-                      if (requestedSlots > 0) ...[
-                        const SizedBox(height: 16),
-                        _DetailSection(
-                          label: 'Requested',
-                          child: Text(
-                            '$requestedSlots requested slots',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                          if (dateCount > 1)
+                            Text(
+                              '${dateCount} Dates',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (detail.pendingCount > 0 || detail.completedCount > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${detail.pendingCount} ${l10n.statusPending} · '
+                          '${detail.completedCount} ${l10n.statusCompleted}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 14),
+                      _SummaryDates(
+                        snapshot: snapshot,
+                        l10n: l10n,
+                        textTheme: theme.textTheme,
+                      ),
+                      const SizedBox(height: 14),
+                      const Divider(height: 1),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Prayer Summary',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (orderedPrayers.isEmpty)
+                        Text(
+                          'No prayers',
+                          style: theme.textTheme.bodyMedium,
+                        )
+                      else
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: orderedPrayers
+                              .map(
+                                (prayer) => Chip(
+                                  label: Text(
+                                    '${prayer.localizedLabel(l10n)} · ${dateCount}',
+                                  ),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              )
+                              .toList(growable: false),
+                        ),
                     ],
                   ),
                 ),
@@ -285,96 +271,117 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
   }
 }
 
-class _DetailSection extends StatelessWidget {
-  const _DetailSection({
-    required this.label,
-    required this.child,
+
+class _SummaryDates extends StatelessWidget {
+  const _SummaryDates({
+    required this.snapshot,
+    required this.l10n,
+    required this.textTheme,
   });
 
-  final String label;
-  final Widget child;
+  final QazaAdditionInputSnapshot snapshot;
+  final AppLocalizations l10n;
+  final TextTheme textTheme;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        child,
-      ],
-    );
-  }
-}
-
-List<Widget> _dateWidgets(
-  BuildContext context,
-  QazaAdditionInputSnapshot snapshot,
-  AppLocalizations l10n,
-  TextTheme textTheme,
-) {
-  final summary = QazaAdditionDateSummary(snapshot);
-  if (summary.selectedDates.isEmpty) {
-    return [
-      Text(
+    final summary = QazaAdditionDateSummary(snapshot);
+    if (summary.selectedDates.isEmpty) {
+      return Text(
         l10n.qazaHistoryNoDates,
         style: textTheme.bodyMedium,
-      ),
-    ];
-  }
+      );
+    }
 
-  switch (snapshot.mode) {
-    case QazaAdditionMode.range:
-      return [
-        Text(
-          '${summary.formatGregorian(context, snapshot.selectedDates.first)} → '
-          '${summary.formatGregorian(context, snapshot.selectedDates.last)}',
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          '${summary.formatHijri(l10n, snapshot.selectedDates.first)} → '
-          '${summary.formatHijri(l10n, snapshot.selectedDates.last)}',
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ];
-    case QazaAdditionMode.single:
-      final date = snapshot.selectedDates.first;
-      return [
-        Text(
-          summary.formatGregorian(context, date),
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          summary.formatHijri(l10n, date),
-          style: textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ];
-    case QazaAdditionMode.multiple:
-      return snapshot.selectedDates
-          .map(
-            (date) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                '${summary.formatGregorian(context, date)} · '
-                '${summary.formatHijri(l10n, date)}',
-                style: textTheme.bodyMedium,
+    switch (snapshot.mode) {
+      case QazaAdditionMode.single:
+        final date = summary.selectedDates.first;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              summary.formatGregorian(context, date),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-          )
-          .toList(growable: false);
+            const SizedBox(height: 2),
+            Text(
+              summary.formatHijri(l10n, date),
+              style: textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+
+      case QazaAdditionMode.range:
+        final start = summary.selectedDates.first;
+        final end = summary.selectedDates.last;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${summary.formatGregorian(context, start)} → '
+              '${summary.formatGregorian(context, end)}',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${summary.formatHijri(l10n, start)} → '
+              '${summary.formatHijri(l10n, end)}',
+              style: textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+
+      case QazaAdditionMode.multiple:
+        final dates = List<DateTime>.of(summary.selectedDates)..sort();
+        final preview = dates.take(3).toList(growable: false);
+        final remaining = dates.length - preview.length;
+        final gregorian = preview
+            .map((date) => summary.formatGregorian(context, date))
+            .join(' · ');
+        final hijri = preview
+            .map((date) => summary.formatHijri(l10n, date))
+            .join(' · ');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              gregorian,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              hijri,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (remaining > 0) ...[
+              const SizedBox(height: 2),
+              Text(
+                '+ $remaining more',
+                style: textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        );
+    }
   }
 }
 
@@ -389,23 +396,3 @@ List<PrayerType> _orderedPrayers(List<PrayerType> prayers) {
 
 int _dateCount(QazaAdditionInputSnapshot snapshot) =>
     QazaAdditionDateSummary(snapshot).dayCount;
-
-String _dateCountLabel(
-  QazaAdditionInputSnapshot snapshot,
-  int count,
-) {
-  if (snapshot.mode == QazaAdditionMode.multiple) {
-    return '$count dates';
-  }
-  return count == 1 ? '1 day' : '$count days';
-}
-
-String _modeLabel(QazaAdditionMode mode, AppLocalizations l10n) =>
-    switch (mode) {
-      QazaAdditionMode.single => l10n.addQazaModeSingle,
-      QazaAdditionMode.range => l10n.addQazaModeRange,
-      QazaAdditionMode.multiple => l10n.addQazaModeMultiple,
-    };
-
-String _gregorianDate(BuildContext context, DateTime date) =>
-    MaterialLocalizations.of(context).formatMediumDate(date);
