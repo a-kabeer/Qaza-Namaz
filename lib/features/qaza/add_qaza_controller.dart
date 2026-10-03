@@ -8,10 +8,12 @@ import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/qaza_availability_service.dart';
 import '../../domain/services/qaza_service.dart';
 import '../calendar/calendar_controller.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 
 enum AddQazaCandidateStatus {
   newRecord,
@@ -96,6 +98,7 @@ class AddQazaState {
     this.analysisLoading = false,
     this.analysis = AddQazaAnalysis.empty,
     this.protectedPrayers = const <PrayerType>{},
+    this.timeBlockedPrayers = const <PrayerType>{},
     this.editSnapshot,
     this.error,
   });
@@ -118,6 +121,9 @@ class AddQazaState {
 
   /// Current-addition prayers that are protected and must remain selected.
   final Set<PrayerType> protectedPrayers;
+
+  /// Current-day prayers blocked because their prayer window has not ended.
+  final Set<PrayerType> timeBlockedPrayers;
 
   /// Original edit snapshot used to detect a removal-only or other edit delta.
   final QazaAdditionInputSnapshot? editSnapshot;
@@ -174,6 +180,7 @@ class AddQazaState {
     bool? analysisLoading,
     AddQazaAnalysis? analysis,
     Set<PrayerType>? protectedPrayers,
+    Set<PrayerType>? timeBlockedPrayers,
     QazaAdditionInputSnapshot? editSnapshot,
     Object? error,
     bool clearError = false,
@@ -193,6 +200,7 @@ class AddQazaState {
         analysisLoading: analysisLoading ?? this.analysisLoading,
         analysis: analysis ?? this.analysis,
         protectedPrayers: protectedPrayers ?? this.protectedPrayers,
+        timeBlockedPrayers: timeBlockedPrayers ?? this.timeBlockedPrayers,
         editSnapshot: editSnapshot ?? this.editSnapshot,
         error: clearError ? null : error ?? this.error,
       );
@@ -261,6 +269,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   int _calendarRequest = 0;
   int _prayerAvailabilityRequest = 0;
   int _analysisRequest = 0;
+  bool _prayerTimeRefreshInFlight = false;
+  CurrentDayQazaPrayerTimeContext? _latestPrayerTimeContext;
 
   @override
   AddQazaState build() {
@@ -271,6 +281,10 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     ref.listen<AsyncValue<UserProfile?>>(
       userProfileProvider,
       (_, __) => _onProfileChanged(),
+    );
+    ref.listen<String>(
+      qazaPrayerTimeEligibilitySignatureProvider,
+      (_, __) => _onPrayerTimeEligibilityChanged(),
     );
     ref.onDispose(() {
       _disposed = true;
