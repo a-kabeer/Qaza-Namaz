@@ -64,6 +64,14 @@ class AccountLocalStore {
     }
   }
 
+  Future<bool> hasAnyQaza(String localAccountId) async {
+    final rows = await database.customSelect(
+      'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
+      variables: [Variable(localAccountId)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
   Future<String> deviceInstanceId() async {
     final rows = await database.customSelect(
       'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
