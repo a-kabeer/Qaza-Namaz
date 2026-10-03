@@ -15,6 +15,14 @@ import '../l10n/app_localizations.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/database/app_database.dart';
 import '../data/local/drift_qaza_local_store.dart';
+import '../data/local/account_local_store.dart';
+import '../data/local/account_scoped_user_profile_repository.dart';
+import '../data/local/account_scoped_qaza_plan_revision_repository.dart';
+import '../data/remote/firebase_services.dart';
+import '../data/remote/firebase_backup_service.dart';
+import '../data/remote/firebase_reconciliation_service.dart';
+import '../data/remote/firebase_backup_worker.dart';
+import '../features/account/account_session_manager.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/local/qaza_plan_revision_repository.dart';
 import '../data/local/user_profile_repository.dart';
@@ -40,13 +48,82 @@ final appSnackbarServiceProvider = Provider<AppSnackbarService>(
   (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
 );
 
-final userProfileRepositoryProvider = Provider<UserProfileRepository>(
-  (ref) => const SharedPreferencesUserProfileRepository(),
-);
+final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
+  return AccountLocalStore(database: ref.watch(appDatabaseProvider));
+});
 
-final userProfileProvider = FutureProvider<UserProfile?>(
-  (ref) => ref.watch(userProfileRepositoryProvider).load(),
-);
+final firebaseServicesProvider = Provider<FirebaseServices>((ref) {
+  return FirebaseServices(diagnostics: ref.watch(diagnosticsProvider));
+});
+
+final googleFirebaseAuthServiceProvider =
+    Provider<GoogleFirebaseAuthService>((ref) {
+  return GoogleFirebaseAuthService(ref.watch(firebaseServicesProvider));
+});
+
+final firebaseBackupServiceProvider = Provider<FirebaseBackupService>((ref) {
+  return FirebaseBackupService(
+    firebase: ref.watch(firebaseServicesProvider),
+    database: ref.watch(appDatabaseProvider),
+    accountStore: ref.watch(accountLocalStoreProvider),
+  );
+});
+
+final firebaseReconciliationServiceProvider =
+    Provider<FirebaseReconciliationService>((ref) {
+  return FirebaseReconciliationService(
+    firebase: ref.watch(firebaseServicesProvider),
+    backupService: ref.watch(firebaseBackupServiceProvider),
+    accountStore: ref.watch(accountLocalStoreProvider),
+    database: ref.watch(appDatabaseProvider),
+  );
+});
+
+final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) {
+  return null;
+});
+
+final activeUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(activeLocalAccountIdStateProvider);
+});
+
+final accountSessionManagerProvider =
+    ChangeNotifierProvider<AccountSessionManager>((ref) {
+  final manager = AccountSessionManager(
+    accountStore: ref.watch(accountLocalStoreProvider),
+    firebase: ref.watch(firebaseServicesProvider),
+    auth: ref.watch(googleFirebaseAuthServiceProvider),
+    backup: ref.watch(firebaseBackupServiceProvider),
+    reconciliation: ref.watch(firebaseReconciliationServiceProvider),
+    onActiveLocalAccountChanged: (id) {
+      ref.read(activeLocalAccountIdStateProvider.notifier).state =
+          id;
+    },
+  );
+  return manager;
+});
+
+final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
+  final worker = FirebaseBackupWorker(
+    firebase: ref.watch(firebaseServicesProvider),
+    accountStore: ref.watch(accountLocalStoreProvider),
+    backupService: ref.watch(firebaseBackupServiceProvider),
+  );
+  Future.microtask(worker.runOnce);
+  return worker;
+});
+
+final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
+  return AccountScopedUserProfileRepository(
+    store: ref.watch(accountLocalStoreProvider),
+    activeAccountId: () => ref.read(activeUserIdProvider),
+  );
+});
+
+final userProfileProvider = FutureProvider<UserProfile?>((ref) {
+  ref.watch(activeUserIdProvider);
+  return ref.read(userProfileRepositoryProvider).load();
+});
 
 /// Single source of truth for the user's daily Qaza target.
 ///
@@ -74,7 +151,9 @@ final qazaPlanServiceProvider = Provider<QazaPlanService>(
 
 final qazaPlanRevisionRepositoryProvider =
     Provider<QazaPlanRevisionRepository>(
-  (ref) => SharedPreferencesQazaPlanRevisionRepository(),
+  (ref) => AccountScopedQazaPlanRevisionRepository(
+    ref.watch(accountLocalStoreProvider),
+  ),
 );
 
 final profileQazaPlanReconciliationServiceProvider =
@@ -186,14 +265,6 @@ final qazaUndoManagerProvider = Provider<QazaUndoManager>(
 final qazaDataTransferServiceProvider = Provider<QazaDataTransferService>(
   (ref) => QazaDataTransferService(ref.watch(qazaRepositoryProvider)),
 );
-
-/// The ledger belongs to this device's local profile. The legacy identifier
-/// remains stable so existing installed data stays visible after the auth
-/// system is removed.
-final activeUserIdProvider = Provider<String?>((ref) {
-  final profile = ref.watch(userProfileProvider).valueOrNull;
-  return profile == null ? null : UserProfile.localLedgerUserId;
-});
 
 final requiredUserIdProvider = Provider<String>((ref) {
   final userId = ref.watch(activeUserIdProvider);

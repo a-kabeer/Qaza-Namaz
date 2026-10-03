@@ -46,6 +46,7 @@ class _HomeQazaTargetSheetState
     PrayerTimeTargetAvailability availability,
   ) {
     final notifier = ref.read(homePrayerSelectionProvider.notifier);
+    final witrAllowed = ref.read(effectiveWitrProvider);
 
     if (mode != HomePrayerSelectionMode.prayerTime &&
         _showPrayerTimeSetup) {
@@ -64,7 +65,7 @@ class _HomeQazaTargetSheetState
         notifier.useAutoSequence();
         Navigator.of(context).pop();
       case HomePrayerSelectionMode.prayerSelection:
-        notifier.usePrayerSelection();
+        notifier.usePrayerSelection(witrEnabled: witrAllowed);
     }
   }
 
