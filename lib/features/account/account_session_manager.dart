@@ -1,5 +1,8 @@
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../data/remote/firebase_backup_service.dart';
@@ -39,6 +42,25 @@ class AccountSessionManager extends ChangeNotifier {
     if (_initialized) return;
     _initialized = true;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawLegacyProfile = prefs.getString(UserProfile.storageKey);
+      UserProfile? legacyProfile;
+      if (rawLegacyProfile != null) {
+        try {
+          final decoded = jsonDecode(rawLegacyProfile);
+          if (decoded is Map) {
+            legacyProfile =
+                UserProfile.fromJson(Map<String, dynamic>.from(decoded));
+          }
+        } catch (_) {}
+      }
+      await _accountStore.ensureInitialized(
+        hasLegacyProfile: rawLegacyProfile != null,
+        hasLegacyQaza:
+            await _accountStore.hasAnyQaza(UserProfile.localLedgerUserId),
+        legacyProfile: legacyProfile,
+      );
+
       final account = await _accountStore.activeAccount();
       final initialChoice = await _accountStore.initialChoiceRequired();
       if (account != null) {
@@ -273,13 +295,26 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> enableBackup() async {
     final account = activeAccount;
-    if (account == null || !account.isGoogle || account.firebaseUid == null) return;
-    await _accountStore.setBackupEnabled(account.localAccountId, true);
+    if (account == null || !account.isGoogle || account.firebaseUid == null) {
+      return;
+    }
     final root = await _backup.readCloudRoot(account.firebaseUid!);
-    final generation = root == null
-        ? account.cloudGeneration
-        : (root['cloudGeneration'] as num?)?.toInt() ?? account.cloudGeneration;
+    var generation = account.cloudGeneration;
+    if (root != null) {
+      generation = (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+      final state = root['datasetState'] as String? ?? 'empty';
+      if (state == 'deleted') {
+        final nextGeneration = generation + 1;
+        await _backup.startNewCloudGeneration(
+          uid: account.firebaseUid!,
+          previousGeneration: generation,
+          newGeneration: nextGeneration,
+        );
+        generation = nextGeneration;
+      }
+    }
     await _accountStore.setCloudGeneration(account.localAccountId, generation);
+    await _accountStore.setBackupEnabled(account.localAccountId, true);
     final refreshed =
         await _accountStore.getAccount(account.localAccountId) ?? account;
     await _backup.bootstrapAccount(
