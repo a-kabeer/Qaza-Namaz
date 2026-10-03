@@ -1,5 +1,6 @@
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_date.dart';
+import 'current_day_qaza_eligibility_service.dart';
 import '../entities/qaza_record.dart';
 
 /// Availability of one date + prayer combination.
@@ -10,6 +11,8 @@ enum QazaEligibility {
   available,
   alreadyPrayed,
   alreadyRecorded,
+  notYetDue,
+  timeDataUnavailable,
 }
 
 class QazaPrayerKey {
@@ -54,6 +57,8 @@ class QazaAvailabilityAnalysis {
     required this.total,
     required this.alreadyRecorded,
     required this.alreadyPrayed,
+    this.notYetDueCount = 0,
+    this.timeDataUnavailableCount = 0,
     required this.newCount,
     required this.blockedDateCount,
     required this.candidates,
@@ -68,6 +73,8 @@ class QazaAvailabilityAnalysis {
   final int total;
   final int alreadyRecorded;
   final int alreadyPrayed;
+  final int notYetDueCount;
+  final int timeDataUnavailableCount;
   final int newCount;
 
   /// Requested dates on which no prayer remains eligible.
@@ -98,7 +105,8 @@ class QazaAvailabilityAnalysis {
   /// Combinations already fulfilled; the plan's `alreadyCompletedCount`.
   int get alreadyCompleted => alreadyPrayed;
 
-  int get unavailableCount => alreadyRecorded + alreadyPrayed;
+  int get unavailableCount =>
+      alreadyRecorded + alreadyPrayed + notYetDueCount + timeDataUnavailableCount;
 }
 
 /// Shared domain rules for Calendar, Add Qaza and Calculator.
@@ -107,7 +115,12 @@ class QazaAvailabilityAnalysis {
 /// callers may supply [prayedKeys] when such a source is available. An empty
 /// set is intentionally the default rather than inventing prayer-history data.
 class QazaAvailabilityService {
-  const QazaAvailabilityService();
+  const QazaAvailabilityService({
+    CurrentDayQazaEligibilityService? timeEligibility,
+  }) : timeEligibility =
+            timeEligibility ?? const CurrentDayQazaEligibilityService();
+
+  final CurrentDayQazaEligibilityService timeEligibility;
 
   QazaEligibility eligibility({
     required String userId,
@@ -115,6 +128,7 @@ class QazaAvailabilityService {
     required PrayerType prayerType,
     Iterable<QazaRecord> existingRecords = const <QazaRecord>[],
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
   }) {
     final key = QazaPrayerKey(
       userId: userId,
@@ -127,6 +141,18 @@ class QazaAvailabilityService {
     }
     final recorded = recordedKeys(existingRecords);
     if (recorded.contains(key)) return QazaEligibility.alreadyRecorded;
+    if (prayerTimeContext != null) {
+      return switch (timeEligibility.evaluate(
+        date: date,
+        prayerType: prayerType,
+        context: prayerTimeContext,
+      )) {
+        CurrentDayQazaTimeEligibility.eligible => QazaEligibility.available,
+        CurrentDayQazaTimeEligibility.notYetDue => QazaEligibility.notYetDue,
+        CurrentDayQazaTimeEligibility.timeDataUnavailable =>
+          QazaEligibility.timeDataUnavailable,
+      };
+    }
     return QazaEligibility.available;
   }
 
@@ -195,6 +221,7 @@ class QazaAvailabilityService {
     required DateTime date,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     Iterable<PrayerType> prayerTypes = PrayerType.values,
   }) =>
       [
@@ -205,6 +232,7 @@ class QazaAvailabilityService {
                 prayerType: prayer,
                 existingRecords: existingRecords,
                 prayedKeys: prayedKeys,
+                prayerTimeContext: prayerTimeContext,
               ) ==
               QazaEligibility.available)
             prayer,
@@ -215,6 +243,7 @@ class QazaAvailabilityService {
     required DateTime date,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     Iterable<PrayerType> prayerTypes = PrayerType.values,
   }) =>
       availablePrayers(
@@ -222,6 +251,7 @@ class QazaAvailabilityService {
         date: date,
         existingRecords: existingRecords,
         prayedKeys: prayedKeys,
+        prayerTimeContext: prayerTimeContext,
         prayerTypes: prayerTypes,
       ).isNotEmpty;
 
@@ -232,6 +262,7 @@ class QazaAvailabilityService {
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
     String? editingAdditionId,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
   }) {
     final uniqueDates = dates.map(QazaDate.normalize).toSet().toList()..sort();
     final uniquePrayers = prayerTypes.toSet().toList();
@@ -242,6 +273,8 @@ class QazaAvailabilityService {
     final currentAdditionProtectedCandidates = <QazaPrayerKey>[];
     var alreadyRecorded = 0;
     var alreadyPrayed = 0;
+    var notYetDueCount = 0;
+    var timeDataUnavailableCount = 0;
     var blockedDateCount = 0;
     final recorded = recordedKeys(existingRecords);
     final completed = completedKeys(existingRecords);
@@ -270,13 +303,28 @@ class QazaAvailabilityService {
           alreadyRecorded++;
           existingCandidates.add(key);
         } else {
-          newCandidates.add(key);
-          eligibleOnDate++;
+          final result = prayerTimeContext == null
+              ? QazaEligibility.available
+              : eligibility(
+                  userId: userId,
+                  date: date,
+                  prayerType: prayer,
+                  prayerTimeContext: prayerTimeContext,
+                );
+          switch (result) {
+            case QazaEligibility.available:
+              newCandidates.add(key);
+              eligibleOnDate++;
+            case QazaEligibility.notYetDue:
+              notYetDueCount++;
+            case QazaEligibility.timeDataUnavailable:
+              timeDataUnavailableCount++;
+            case QazaEligibility.alreadyPrayed:
+            case QazaEligibility.alreadyRecorded:
+              break;
+          }
         }
 
-        if (currentEditable.contains(key)) {
-          currentAdditionEditableCandidates.add(key);
-        }
         if (currentEditable.contains(key)) {
           currentAdditionEditableCandidates.add(key);
         }
@@ -296,6 +344,8 @@ class QazaAvailabilityService {
       total: candidates.length,
       alreadyRecorded: alreadyRecorded,
       alreadyPrayed: alreadyPrayed,
+      notYetDueCount: notYetDueCount,
+      timeDataUnavailableCount: timeDataUnavailableCount,
       newCount: newCandidates.length,
       blockedDateCount: blockedDateCount,
       candidates: List.unmodifiable(candidates),
