@@ -8,6 +8,8 @@ QazaRecord _record({
   required PrayerType prayer,
   required DateTime date,
   QazaStatus status = QazaStatus.pending,
+  String? additionId,
+  int recordVersion = 1,
 }) {
   final stamp = DateTime(2026, 9, 26, 12);
   return QazaRecord(
@@ -16,6 +18,8 @@ QazaRecord _record({
     prayerType: prayer,
     originalDate: date,
     status: status,
+    additionId: additionId,
+    recordVersion: recordVersion,
     createdAt: stamp,
     updatedAt: stamp,
   );
@@ -120,3 +124,71 @@ void main() {
     expect(result.newCandidates, hasLength(1));
   });
 }
+
+
+  test('edit context distinguishes editable, protected, and other-addition records', () {
+    final date = DateTime(2026, 9, 10);
+    final currentPending = _record(
+      id: 'current-pending',
+      prayer: PrayerType.fajr,
+      date: date,
+      additionId: 'current',
+    );
+    final currentCompleted = _record(
+      id: 'current-completed',
+      prayer: PrayerType.zuhr,
+      date: date,
+      status: QazaStatus.completed,
+      additionId: 'current',
+    );
+    final currentVersioned = _record(
+      id: 'current-versioned',
+      prayer: PrayerType.asr,
+      date: date,
+      additionId: 'current',
+      recordVersion: 2,
+    );
+    final other = _record(
+      id: 'other',
+      prayer: PrayerType.maghrib,
+      date: date,
+      additionId: 'other',
+    );
+
+    final result = service.analyze(
+      userId: 'guest',
+      dates: [date],
+      prayerTypes: [
+        PrayerType.fajr,
+        PrayerType.zuhr,
+        PrayerType.asr,
+        PrayerType.maghrib,
+        PrayerType.isha,
+      ],
+      existingRecords: [
+        currentPending,
+        currentCompleted,
+        currentVersioned,
+        other,
+      ],
+      editingAdditionId: 'current',
+    );
+
+    final pendingKey = QazaPrayerKey.fromRecord(currentPending);
+    final completedKey = QazaPrayerKey.fromRecord(currentCompleted);
+    final versionedKey = QazaPrayerKey.fromRecord(currentVersioned);
+    final otherKey = QazaPrayerKey.fromRecord(other);
+
+    expect(result.currentAdditionEditableCandidates, contains(pendingKey));
+    expect(result.currentAdditionProtectedCandidates, contains(completedKey));
+    expect(result.currentAdditionProtectedCandidates, contains(versionedKey));
+    expect(result.currentAdditionEditableCandidates, isNot(contains(otherKey)));
+    expect(result.currentAdditionProtectedCandidates, isNot(contains(otherKey)));
+    expect(result.newCandidates, contains(
+      QazaPrayerKey(
+        userId: 'guest',
+        date: date,
+        prayerType: PrayerType.isha,
+      ),
+    ));
+  });
