@@ -417,17 +417,18 @@ class _PrayerSelection extends StatelessWidget {
             PrayerSelectionGrid(
               selected: selected,
               witrAllowed: witrAllowed,
-              disabledPrayers: availabilityLoading || !hasSelectedDates
-                  ? const <PrayerType>{}
-                  : PrayerType.values
-                      .where(
-                        (prayer) =>
-                            prayer != PrayerType.witr &&
-                            !addablePrayers.contains(prayer),
-                      )
-                      .toSet(),
-              disabledReasonBuilder: (prayer) =>
-                  l10n.addQazaAlreadyAddedLabel,
+              disabledPrayers: availabilityLoading
+                  ? PrayerType.values.toSet()
+                  : !hasSelectedDates
+                      ? const <PrayerType>{}
+                      : PrayerType.values
+                          .where(
+                            (prayer) => !addablePrayers.contains(prayer),
+                          )
+                          .toSet(),
+              disabledReasonBuilder: availabilityLoading
+                  ? null
+                  : (prayer) => l10n.addQazaAlreadyAddedLabel,
               onPrayerSelected: onToggle,
             ),
             if (availabilityLoading) ...[
