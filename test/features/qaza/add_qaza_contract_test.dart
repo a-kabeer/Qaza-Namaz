@@ -62,6 +62,8 @@ void main() {
     expect(source, contains('addablePrayers'));
     expect(source, contains('prayerAvailabilityLoading'));
     expect(source, contains('disabledPrayers'));
+    expect(source, contains('disabledPrayers: availabilityLoading'));
+    expect(source, contains('PrayerType.values.toSet()'));
     expect(source, contains('.colorScheme'));
     expect(source, isNot(contains('_ReviewDateGroup')));
   });
@@ -181,6 +183,11 @@ void main() {
     expect(source, contains('getAvailablePrayersByDate('));
     expect(source, contains('analyzeAvailability('));
     expect(source, contains('_refreshPrayerAvailability()'));
+    expect(source, contains('selectedDateAvailability'));
+    expect(source, contains('_hasCompleteAvailabilitySnapshot'));
+    expect(source, contains('AddQazaSelectionRules.normalizeForMode'));
+    expect(source, contains('_prayerAvailabilityRequest'));
+    expect(source, contains('++_analysisRequest'));
     expect(source, contains('retainAll(addable)'));
     expect(source, contains('ProfileRules.startPrayingDate(profile)'));
     expect(source, contains('calendarTodayProvider'));
@@ -289,6 +296,25 @@ void main() {
 
     expect(source, contains('this.bottomNavigationBar'));
     expect(source, contains('bottomNavigationBar: bottomNavigationBar'));
+  });
+
+  test('Add Qaza separates Range date validity from target-mode availability', () {
+    final source =
+        File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
+
+    expect(source, contains('case DateSelectionMode.range:'));
+    expect(
+      source,
+      contains('// Range intentionally ignores prayer availability.'),
+    );
+    expect(source, contains('case DateSelectionMode.single:'));
+    expect(source, contains('case DateSelectionMode.multiple:'));
+    expect(
+      source,
+      contains(
+        '_restoreCalendarSelection(mode: mode, dates: normalized)',
+      ),
+    );
   });
 
   test('disabled Witr is removed from shared selection grid', () {
