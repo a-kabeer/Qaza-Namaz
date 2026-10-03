@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../core/calendar/hijri_date_service.dart';
-import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/qaza_addition.dart';
-import '../../l10n/app_localizations.dart';
-import '../../l10n/prayer_type_l10n.dart';
+import '../../../core/calendar/hijri_date_service.dart';
+import '../../../core/constants/prayer_types.dart';
+import '../../../domain/entities/qaza_addition.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../l10n/prayer_type_l10n.dart';
 
 class QazaAdditionDateLine {
   const QazaAdditionDateLine({
