@@ -524,7 +524,6 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
                       row.userId.equals(userId) &
                       row.additionId.equals(additionId) &
                       row.status.equals(QazaStatus.pending.name) &
-                      row.recordVersion.equals(1) &
                       row.id.isIn(ids),
                 ))
               .go();
