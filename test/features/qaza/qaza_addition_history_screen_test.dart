@@ -64,6 +64,8 @@ void main() {
       contains('final total = item.pendingCount + item.completedCount;'),
     );
     expect(source, contains('LinearProgressIndicator('));
+    expect(source, contains('final progress = total == 0 ? 0.0 : item.completedCount / total;'));
+    expect(source, contains('final percent = total == 0 ? 0 : item.completedCount * 100 ~/ total;'));
     expect(source, contains('qazaHistoryTrackedRecords(total)'));
     expect(source, contains('ValueKey(item.addition.id)'));
     expect(source, contains('TextButton.icon('));
@@ -76,7 +78,8 @@ void main() {
     expect(source, isNot(contains('item.activeCount')));
     expect(source, isNot(contains('Revision ')));
     expect(source, isNot(contains('requested slots')));
-    expect(source, contains('if (_datesExpanded)'));
+    expect(source, contains('_datesExpanded ? InkWell('));
+    expect(source, contains('AnimatedSize('));
   });
 
   test('Add Qaza selection summary reuses the shared date helper', () {
