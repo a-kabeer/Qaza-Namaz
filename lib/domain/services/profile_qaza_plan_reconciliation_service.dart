@@ -183,6 +183,7 @@ class ProfileQazaPlanReconciliationService {
     required UserProfile newProfile,
     required ProfileQazaPlanPreview preview,
     required ProfileQazaChangeChoice choice,
+    void Function(int processed, int total)? onProgress,
   }) async {
     if (choice != ProfileQazaChangeChoice.apply) {
       throw StateError('A changed Qaza plan must be explicitly applied.');
@@ -221,6 +222,7 @@ class ProfileQazaPlanReconciliationService {
       removalIds: preview.removalRecordIds,
       newPlanKeys: _planKeys(userId, preview.newPlan),
       expectedPreviousPlanFingerprint: previousLedgerFingerprint,
+      onProgress: onProgress,
     );
 
     try {
