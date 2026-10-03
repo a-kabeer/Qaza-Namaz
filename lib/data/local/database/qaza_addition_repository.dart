@@ -55,7 +55,14 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
            COALESCE(SUM(CASE WHEN r.status = 'pending' THEN 1 ELSE 0 END), 0)
              AS pending_count,
            COALESCE(SUM(CASE WHEN r.status = 'completed' THEN 1 ELSE 0 END), 0)
-             AS completed_count
+             AS completed_count,
+           CASE WHEN EXISTS (
+             SELECT 1
+             FROM qaza_deletion_actions da
+             WHERE da.user_id = a.user_id
+               AND da.addition_id = a.id
+               AND da.resolved_at IS NULL
+           ) THEN 1 ELSE 0 END AS is_deleted
          FROM qaza_additions a
          LEFT JOIN qaza_records r
            ON r.user_id = a.user_id AND r.addition_id = a.id
@@ -71,6 +78,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
       activeCount: row.read<int>('active_count'),
       pendingCount: row.read<int>('pending_count'),
       completedCount: row.read<int>('completed_count'),
+      isDeleted: row.read<int>('is_deleted') != 0,
     );
   }
 
@@ -86,7 +94,16 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
       throw ArgumentError('A complete addition cursor is required.');
     }
 
-    final where = StringBuffer('a.user_id = ?');
+    final where = StringBuffer(
+      '''a.user_id = ?
+         AND NOT EXISTS (
+           SELECT 1
+           FROM qaza_deletion_actions da
+           WHERE da.user_id = a.user_id
+             AND da.addition_id = a.id
+             AND da.resolved_at IS NULL
+         )''',
+    );
     final variables = <Variable<Object>>[Variable(userId)];
 
     if (afterCreatedAt != null) {
@@ -288,6 +305,14 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         if (addition == null) {
           throw StateError('Qaza addition was not found.');
         }
+        if (await _hasUnresolvedDeletionAction(
+          userId,
+          additionId,
+        )) {
+          throw StateError(
+            'This Qaza addition is deleted. Restore it from Recently Deleted before editing.',
+          );
+        }
         if (addition.revision != expectedRevision) {
           throw StateError(
             'This Qaza addition was changed elsewhere. Reopen it and try again.',
@@ -416,6 +441,14 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
             await _getAdditionInsideTransaction(userId, additionId);
         if (addition == null) {
           throw StateError('Qaza addition was not found.');
+        }
+        if (await _hasUnresolvedDeletionAction(
+          userId,
+          additionId,
+        )) {
+          throw StateError(
+            'This Qaza addition is deleted. Restore it from Recently Deleted before deleting again.',
+          );
         }
 
         final current = await database.qazaRecordsDao.getByAdditionId(
@@ -618,6 +651,20 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           Variable(addition.updatedAt.toIso8601String()),
         ],
       );
+
+  Future<bool> _hasUnresolvedDeletionAction(
+    String userId,
+    String additionId,
+  ) async {
+    final rows = await database.customSelect(
+      '''SELECT 1
+         FROM qaza_deletion_actions
+         WHERE user_id = ? AND addition_id = ? AND resolved_at IS NULL
+         LIMIT 1''',
+      variables: [Variable(userId), Variable(additionId)],
+    ).get();
+    return rows.isNotEmpty;
+  }
 
   Future<QazaAddition?> _getAdditionInsideTransaction(
     String userId,

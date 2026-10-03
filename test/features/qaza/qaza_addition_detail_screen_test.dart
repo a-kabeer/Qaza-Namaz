@@ -272,6 +272,27 @@ void main() {
     expect(find.text('Delete Addition'), findsNothing);
   });
 
+  testWidgets('Deleted additions show status and hide all mutation actions', (tester) async {
+    final detail = _detail(
+      mode: QazaAdditionMode.single,
+      selectedDates: [DateTime(2025, 3, 12)],
+      selectedPrayers: [PrayerType.fajr],
+      pendingCount: 1,
+      completedCount: 1,
+      isDeleted: true,
+    );
+
+    await _pumpDetail(tester, detail);
+
+    expect(find.byKey(const Key('qaza-addition-deleted-status')), findsOneWidget);
+    expect(find.text('Deleted'), findsOneWidget);
+    expect(find.text('View Records'), findsOneWidget);
+    expect(find.byKey(const Key('qaza-addition-more-actions')), findsNothing);
+    expect(find.text('Edit Addition'), findsNothing);
+    expect(find.text('Delete Addition'), findsNothing);
+    expect(find.text('Restore'), findsNothing);
+  });
+
   testWidgets('Pending additions show both edit and delete actions', (tester) async {
     final detail = _detail(
       mode: QazaAdditionMode.single,
@@ -300,6 +321,7 @@ QazaAdditionDetail _detail({
   required List<PrayerType> selectedPrayers,
   int pendingCount = 0,
   int completedCount = 0,
+  bool isDeleted = false,
 }) {
   final snapshot = QazaAdditionInputSnapshot(
     schemaVersion: 1,
@@ -322,6 +344,7 @@ QazaAdditionDetail _detail({
     activeCount: pendingCount + completedCount,
     pendingCount: pendingCount,
     completedCount: completedCount,
+    isDeleted: isDeleted,
   );
 }
 

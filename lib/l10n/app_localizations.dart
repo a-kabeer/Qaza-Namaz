@@ -1732,6 +1732,12 @@ abstract class AppLocalizations {
   /// **'Hide dates'**
   String get qazaHistoryHideDates;
 
+  /// No description provided for @qazaHistoryDeletedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get qazaHistoryDeletedStatus;
+
   /// No description provided for @qazaHistoryNoDates.
   ///
   /// In en, this message translates to:
