@@ -233,6 +233,7 @@ void main() {
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.pop();
     await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 1));
 
     expect(observer.poppedCount, 1);
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
