@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -45,6 +44,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
           final theme = Theme.of(context);
           final orderedPrayers = _orderedPrayers(snapshot.selectedPrayers);
           final dateCount = _dateCount(snapshot);
+          final requestedSlots = dateCount * orderedPrayers.length;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -60,7 +60,8 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '${detail.activeCount} ${l10n.addQazaPrayersLabel}',
+                              '${requestedSlots > 0 ? requestedSlots : detail.activeCount} '
+                              '${l10n.addQazaPrayersLabel}',
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -118,7 +119,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                               .map(
                                 (prayer) => Chip(
                                   label: Text(
-                                    '${prayer.localizedLabel(l10n)} · ${dateCount}',
+                                    '${prayer.localizedLabel(l10n)} ${dateCount}',
                                   ),
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
