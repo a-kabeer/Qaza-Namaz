@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/local/database/tables/qaza_records.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 QazaRecordsCompanion _record({
@@ -154,11 +153,11 @@ void main() {
     final date = DateTime(2026, 9, 10);
     await database.qazaRecordsDao.insertRecords([
       for (final entry in [
-        MapEntry('c', PrayerType.asr),
-        MapEntry('a', PrayerType.fajr),
-        MapEntry('b', PrayerType.zuhr),
-        MapEntry('e', PrayerType.isha),
-        MapEntry('d', PrayerType.maghrib),
+        const MapEntry('c', PrayerType.asr),
+        const MapEntry('a', PrayerType.fajr),
+        const MapEntry('b', PrayerType.zuhr),
+        const MapEntry('e', PrayerType.isha),
+        const MapEntry('d', PrayerType.maghrib),
       ])
         _record(
           id: entry.key,
