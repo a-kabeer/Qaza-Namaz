@@ -8,6 +8,10 @@ import 'package:qaza_namaz/features/qaza/add_qaza_controller.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  final day = (int value) => DateTime(2026, 10, value);
+
   test('edit review is available for a removal-only delta', () {
     final date = day(6);
     final snapshot = QazaAdditionInputSnapshot(
@@ -58,10 +62,6 @@ void main() {
     expect(state.hasEditChanges, isFalse);
     expect(state.canReview, isFalse);
   });
-
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  final day = (int value) => DateTime(2026, 10, value);
 
   test('Range keeps fully occupied dates', () {
     final availability = <DateTime, Set<PrayerType>>{
