@@ -127,6 +127,161 @@ void main() {
     );
   });
 
+  test('unresolved deletion hides Recent Additions even when protected records remain', () async {
+    final date1 = DateTime(2026, 9, 21);
+    final date2 = DateTime(2026, 9, 22);
+    final a = addition('a-lifecycle', date1);
+
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r-lifecycle-pending', a.id, date1),
+        record('r-lifecycle-completed', a.id, date2),
+      ],
+    );
+    await db.qazaRecordsDao.completeByIds(
+      userId: 'u',
+      ids: ['r-lifecycle-completed'],
+      completedAt: DateTime(2026, 9, 23),
+    );
+
+    expect(
+      (await repo.getRecentAdditions(userId: 'u')).items.map(
+        (item) => item.addition.id,
+      ),
+      contains(a.id),
+    );
+
+    final deletedA = await repo.deleteAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(deletedA.deletionActionId, isNotNull);
+    expect(
+      (await repo.getRecentDeletionActions(userId: 'u')).items.single.id,
+      deletedA.deletionActionId,
+    );
+
+    final afterFirstDelete = await repo.getAdditionDetail(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(afterFirstDelete, isNotNull);
+    expect(afterFirstDelete!.isDeleted, isTrue);
+    expect(afterFirstDelete.pendingCount, 0);
+    expect(afterFirstDelete.completedCount, 1);
+    expect(
+      (await repo.getRecentAdditions(userId: 'u')).items,
+      isEmpty,
+    );
+
+    final restoredA = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deletedA.deletionActionId!,
+    );
+    expect(restoredA.restoredCount, 1);
+    expect(
+      (await repo.getRecentAdditions(userId: 'u')).items.map(
+        (item) => item.addition.id,
+      ),
+      contains(a.id),
+    );
+
+    final restoredDetail = await repo.getAdditionDetail(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(restoredDetail!.isDeleted, isFalse);
+
+    final deletedB = await repo.deleteAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(deletedB.deletionActionId, isNot(deletedA.deletionActionId));
+    expect(
+      (await repo.getRecentAdditions(userId: 'u')).items,
+      isEmpty,
+    );
+    final unresolvedActions =
+        await repo.getRecentDeletionActions(userId: 'u');
+    expect(unresolvedActions.items, hasLength(1));
+    expect(unresolvedActions.items.single.id, deletedB.deletionActionId);
+
+    final deletedAgainDetail = await repo.getAdditionDetail(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(deletedAgainDetail!.isDeleted, isTrue);
+
+    final restoredB = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deletedB.deletionActionId!,
+    );
+    expect(restoredB.restoredCount, 1);
+
+    final finalDetail = await repo.getAdditionDetail(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(finalDetail!.isDeleted, isFalse);
+    expect(
+      (await repo.getRecentAdditions(userId: 'u')).items.map(
+        (item) => item.addition.id,
+      ),
+      contains(a.id),
+    );
+  });
+
+  test('edit and delete reject mutations while a deletion action is unresolved', () async {
+    final date = DateTime(2026, 9, 24);
+    final a = addition('a-guard', date);
+    await repo.createAddition(
+      addition: a,
+      records: [record('r-guard', a.id, date)],
+    );
+
+    final deleted = await repo.deleteAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(deleted.deletionActionId, isNotNull);
+
+    final before = await repo.getAddition(userId: 'u', additionId: a.id);
+
+    await expectLater(
+      repo.editAddition(
+        userId: 'u',
+        additionId: a.id,
+        expectedRevision: before!.revision,
+        snapshot: before.currentInputSnapshot,
+        requestedKeys: {
+          QazaRecordKey(
+            date: date,
+            prayerType: PrayerType.fajr,
+          ),
+        },
+        recordsToAdd: const [],
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    final afterEdit = await repo.getAddition(userId: 'u', additionId: a.id);
+    expect(afterEdit!.revision, before.revision);
+
+    await expectLater(
+      repo.deleteAddition(
+        userId: 'u',
+        additionId: a.id,
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    final unresolvedActions =
+        await repo.getRecentDeletionActions(userId: 'u');
+    expect(unresolvedActions.items, hasLength(1));
+    expect(unresolvedActions.items.single.id, deleted.deletionActionId);
+  });
+
   test('partial restore resolves the deletion action after conflicts', () async {
     final date1 = DateTime(2026, 9, 6);
     final date2 = DateTime(2026, 9, 7);
