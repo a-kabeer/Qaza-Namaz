@@ -152,11 +152,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(effectiveWitrProvider);
 
       if (!mounted || saveResult == null) return;
+      final result = saveResult;
 
-      final message = saveResult.qazaPlanChanged
+      final message = result.qazaPlanChanged
           ? l10n.profileQazaUpdatedCounts(
-              saveResult.qazaRecordsAdded,
-              saveResult.qazaRecordsRemoved,
+              result.qazaRecordsAdded,
+              result.qazaRecordsRemoved,
             )
           : l10n.profileQazaUpdatedNoChange;
       snackbar.success(message);
