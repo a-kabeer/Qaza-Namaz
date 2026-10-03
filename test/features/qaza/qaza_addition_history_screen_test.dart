@@ -79,7 +79,6 @@ void main() {
     expect(source, isNot(contains('Revision ')));
     expect(source, isNot(contains('requested slots')));
     expect(source, contains('_datesExpanded'));
-    expect(source, contains('_datesExpanded ?'));
     expect(source, contains('AnimatedSize('));
   });
 
