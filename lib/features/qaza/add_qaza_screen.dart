@@ -114,6 +114,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             _PrayerSelection(
               selected: state.selectedPrayers,
               addablePrayers: state.addablePrayers,
+              timeBlockedPrayers: state.timeBlockedPrayers,
               availabilityLoading: state.prayerAvailabilityLoading,
               hasSelectedDates: state.selectedDates.isNotEmpty,
               witrAllowed: ProfileRules.effectiveWitr(profile) ||
