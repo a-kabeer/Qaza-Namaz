@@ -625,7 +625,7 @@ void main() {
     );
     expect(
       afterDelete.map((item) => item.id).toSet(),
-      completed.map((item) => item.id).toSet(),
+      completed.skip(1).map((item) => item.id).toSet(),
     );
 
     final deletedActions =
