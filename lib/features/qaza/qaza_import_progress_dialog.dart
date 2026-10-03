@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +15,7 @@ class QazaImportProgressDialog extends ConsumerStatefulWidget {
   });
 
   final String? title;
-  final Future<void> Function()? onStart;
+  final VoidCallback? onStart;
 
   @override
   ConsumerState<QazaImportProgressDialog> createState() =>
@@ -44,7 +42,7 @@ class _QazaImportProgressDialogState
 
     if (widget.onStart != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(widget.onStart!());
+        if (mounted) widget.onStart!();
       });
       return;
     }
