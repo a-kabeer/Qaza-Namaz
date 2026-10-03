@@ -274,7 +274,6 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
     ref.onDispose(() {
       _disposed = true;
-      ref.read(calendarControllerProvider.notifier).clear();
     });
 
     Future.microtask(() {
