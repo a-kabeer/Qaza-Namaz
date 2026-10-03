@@ -153,8 +153,22 @@ void main() {
       );
 
       expect(sunriseWindow.displayAt, sunriseWindow.startsAt);
-      expect(zawalWindow.displayAt, zawalWindow.startsAt);
+      expect(zawalWindow.displayAt, tz.TZDateTime.from(solarNoon, location));
       expect(sunsetWindow.displayAt, sunsetWindow.endsAt);
+    });
+
+    test('hides the restricted row before Fajr even when Sunrise is upcoming', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 26, 22, 30),
+        location,
+      );
+      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+        schedule: schedule,
+        location: location,
+        now: now,
+      );
+
+      expect(windows, isEmpty);
     });
 
     test('shows Sunrise during Fajr before the restricted window begins', () {
@@ -250,15 +264,6 @@ void main() {
           RestrictedTimeType.sunset,
         ],
       );
-    });
-
-    test('displays Zawal at astronomical solar noon', () {
-      const calculator = RestrictedTimeCalculator();
-      final zawal = calculator
-          .forSchedule(schedule, location)
-          .firstWhere((window) => window.type == RestrictedTimeType.zawal);
-
-      expect(zawal.displayAt, tz.TZDateTime.from(solarNoon, location));
     });
 
     test('reports the next restricted window when none is active', {
