@@ -177,13 +177,13 @@ class AddQazaSelectionRules {
       case DateSelectionMode.single:
         if (canonical.isEmpty) return const <DateTime>[];
         final endpoint = canonical.last;
-        return availability[endpoint]?.isNotEmpty == true
+        return hasAvailablePrayer(endpoint, availability)
             ? <DateTime>[endpoint]
             : const <DateTime>[];
       case DateSelectionMode.multiple:
         return List.unmodifiable(
           canonical.where(
-            (date) => availability[date]?.isNotEmpty == true,
+            (date) => hasAvailablePrayer(date, availability),
           ),
         );
     }
