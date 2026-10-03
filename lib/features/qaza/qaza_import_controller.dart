@@ -136,6 +136,7 @@ final qazaImportProvider =
   QazaImportController.new,
 );
 
+/// Shared long-running task state for onboarding imports and Profile Qaza-plan applies.
 class QazaImportController extends Notifier<QazaImportTaskState> {
   _QazaImportRequest? _lastRequest;
   Future<void> Function(void Function(int processed, int total) onProgress)?
