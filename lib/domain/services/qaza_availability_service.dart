@@ -277,8 +277,16 @@ class QazaAvailabilityService {
         if (currentEditable.contains(key)) {
           currentAdditionEditableCandidates.add(key);
         }
+        if (currentEditable.contains(key)) {
+          currentAdditionEditableCandidates.add(key);
+        }
         if (currentProtected.contains(key)) {
           currentAdditionProtectedCandidates.add(key);
+        }
+        if (currentEditable.contains(key) || currentProtected.contains(key)) {
+          // In edit mode, a current-addition occurrence is still a valid
+          // retained selection even though it is not a new insertion.
+          eligibleOnDate++;
         }
       }
       if (uniquePrayers.isNotEmpty && eligibleOnDate == 0) blockedDateCount++;
