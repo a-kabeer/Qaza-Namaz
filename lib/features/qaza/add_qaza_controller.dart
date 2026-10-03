@@ -95,6 +95,8 @@ class AddQazaState {
     this.prayerAvailabilityLoading = false,
     this.analysisLoading = false,
     this.analysis = AddQazaAnalysis.empty,
+    this.protectedPrayers = const <PrayerType>{},
+    this.editSnapshot,
     this.error,
   });
 
@@ -113,14 +115,52 @@ class AddQazaState {
   final bool prayerAvailabilityLoading;
   final bool analysisLoading;
   final AddQazaAnalysis analysis;
+
+  /// Current-addition prayers that are protected and must remain selected.
+  final Set<PrayerType> protectedPrayers;
+
+  /// Original edit snapshot used to detect a removal-only or other edit delta.
+  final QazaAdditionInputSnapshot? editSnapshot;
+
   final Object? error;
 
-  bool get canReview =>
-      selectedDates.isNotEmpty &&
-      selectedPrayers.isNotEmpty &&
-      analysis.newCount > 0 &&
-      !prayerAvailabilityLoading &&
-      !analysisLoading;
+  bool get hasEditChanges {
+    final snapshot = editSnapshot;
+    if (snapshot == null) return false;
+
+    final originalMode = switch (snapshot.mode) {
+      QazaAdditionMode.single => DateSelectionMode.single,
+      QazaAdditionMode.range => DateSelectionMode.range,
+      QazaAdditionMode.multiple => DateSelectionMode.multiple,
+    };
+    if (mode != originalMode) return true;
+
+    final currentDates = selectedDates
+        .map(QazaDate.normalize)
+        .map((date) => date.millisecondsSinceEpoch)
+        .toSet();
+    final originalDates = snapshot.selectedDates
+        .map(QazaDate.normalize)
+        .map((date) => date.millisecondsSinceEpoch)
+        .toSet();
+    if (!setEquals(currentDates, originalDates)) return true;
+
+    return !setEquals(
+      selectedPrayers,
+      snapshot.selectedPrayers.toSet(),
+    );
+  }
+
+  bool get canReview {
+    if (selectedDates.isEmpty ||
+        selectedPrayers.isEmpty ||
+        prayerAvailabilityLoading ||
+        analysisLoading) {
+      return false;
+    }
+    if (analysis.newCount > 0) return true;
+    return editSnapshot != null && hasEditChanges;
+  }
 
   AddQazaState copyWith({
     DateSelectionMode? mode,
@@ -133,6 +173,8 @@ class AddQazaState {
     bool? prayerAvailabilityLoading,
     bool? analysisLoading,
     AddQazaAnalysis? analysis,
+    Set<PrayerType>? protectedPrayers,
+    QazaAdditionInputSnapshot? editSnapshot,
     Object? error,
     bool clearError = false,
   }) =>
@@ -150,6 +192,8 @@ class AddQazaState {
             prayerAvailabilityLoading ?? this.prayerAvailabilityLoading,
         analysisLoading: analysisLoading ?? this.analysisLoading,
         analysis: analysis ?? this.analysis,
+        protectedPrayers: protectedPrayers ?? this.protectedPrayers,
+        editSnapshot: editSnapshot ?? this.editSnapshot,
         error: clearError ? null : error ?? this.error,
       );
 }
@@ -210,6 +254,7 @@ class AddQazaSelectionRules {
 }
 
 class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
+  String? _editingAdditionId;
   DateTime? _visibleMonth;
   bool _disposed = false;
   bool _syncingCalendarSelection = false;
@@ -261,7 +306,12 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     return const AddQazaState();
   }
 
-  void restoreFromSnapshot(QazaAdditionInputSnapshot snapshot) {
+  void restoreFromSnapshot(
+    QazaAdditionInputSnapshot snapshot, {
+    String? editingAdditionId,
+  }) {
+    _editingAdditionId = editingAdditionId;
+
     final mode = switch (snapshot.mode) {
       QazaAdditionMode.single => DateSelectionMode.single,
       QazaAdditionMode.range => DateSelectionMode.range,
@@ -275,6 +325,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       ),
       selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet()),
       analysis: AddQazaAnalysis.empty,
+      protectedPrayers: const <PrayerType>{},
+      editSnapshot: snapshot,
       clearError: true,
     );
 
