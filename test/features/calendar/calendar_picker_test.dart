@@ -106,4 +106,209 @@ void main() {
     final state = container.read(calendarControllerProvider);
     expect(state.selectedDates, [DateTime(2026, 9, 7)]);
   });
+
+  testWidgets('single selected date edit opens on the selected month', (
+    tester,
+  ) async {
+    final selected = DateTime(2018, 3, 15);
+    final container = ProviderContainer(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(DateTime(2026, 10, 4)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(calendarControllerProvider.notifier).restoreSelection(
+          mode: DateSelectionMode.single,
+          dates: [selected],
+        );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(
+              initialDisplayedMonth: selected,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('March 2018'), findsOneWidget);
+    expect(
+      container.read(calendarControllerProvider).selectedDates,
+      [selected],
+    );
+  });
+
+  testWidgets('range edit opens on the start month, not the end month', (
+    tester,
+  ) async {
+    final start = DateTime(2025, 10, 21);
+    final end = DateTime(2026, 10, 21);
+    final container = ProviderContainer(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(DateTime(2026, 12, 31)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(calendarControllerProvider.notifier).restoreSelection(
+          mode: DateSelectionMode.range,
+          dates: [start, end],
+        );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(
+              initialDisplayedMonth: start,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('October 2025'), findsOneWidget);
+    expect(
+      container.read(calendarControllerProvider).selectedDates,
+      [start, end],
+    );
+  });
+
+  testWidgets('multiple edit uses the earliest selected date as anchor', (
+    tester,
+  ) async {
+    final first = DateTime(2020, 1, 10);
+    final second = DateTime(2021, 6, 15);
+    final third = DateTime(2023, 9, 20);
+    final selected = [third, first, second];
+    final container = ProviderContainer(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(DateTime(2026, 10, 4)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(calendarControllerProvider.notifier).restoreSelection(
+          mode: DateSelectionMode.multiple,
+          dates: selected,
+        );
+
+    final earliest = selected.reduce(
+      (a, b) => a.isBefore(b) ? a : b,
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(
+              initialDisplayedMonth: earliest,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('January 2020'), findsOneWidget);
+    expect(
+      container.read(calendarControllerProvider).selectedDates,
+      selected,
+    );
+  });
+
+  testWidgets('normal Add Qaza calendar still opens on the current month', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(DateTime(2026, 10, 4)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('October 2026'), findsOneWidget);
+  });
+
+  testWidgets('manual month navigation is not reset after initialization', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        calendarTodayProvider.overrideWithValue(DateTime(2026, 10, 4)),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(
+              initialDisplayedMonth: DateTime(2025, 10, 21),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('October 2025'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('calendar_next_month')));
+    await tester.pump();
+
+    expect(find.text('November 2025'), findsOneWidget);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: CalendarPicker(
+              initialDisplayedMonth: DateTime(2025, 10, 21),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('November 2025'), findsOneWidget);
+  });
+
 }
