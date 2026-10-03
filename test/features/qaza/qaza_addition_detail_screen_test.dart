@@ -230,7 +230,8 @@ void main() {
     expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
 
-    await tester.pageBack();
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.pop();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(observer.poppedCount, 1);
