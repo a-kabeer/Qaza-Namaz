@@ -117,6 +117,8 @@ void main() {
     addTearDown(container.dispose);
 
     final provider = qazaTrackerControllerProvider(null);
+    final subscription = container.listen(provider, (_, __) {});
+    addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
 
     controller.setSortOrder(QazaSortOrder.newestFirst);
@@ -142,6 +144,8 @@ void main() {
     addTearDown(container.dispose);
 
     final provider = qazaTrackerControllerProvider(null);
+    final subscription = container.listen(provider, (_, __) {});
+    addTearDown(subscription.close);
     final controller = container.read(provider.notifier);
 
     controller.setStatusFilter(QazaStatusFilter.completed);
