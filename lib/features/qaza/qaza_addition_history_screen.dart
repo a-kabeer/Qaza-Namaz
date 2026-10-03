@@ -555,8 +555,6 @@ class _RecentAdditionCardState extends State<_RecentAdditionCard> {
           ),
         ];
     }
-
-    return const <Widget>[];
   }
 
   Widget _expandedMultipleDates(
