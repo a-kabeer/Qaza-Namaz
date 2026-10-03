@@ -18,6 +18,7 @@ class AccountSessionManager extends ChangeNotifier {
     required GoogleFirebaseAuthService auth,
     required FirebaseBackupService backup,
     required FirebaseReconciliationService reconciliation,
+    this.onActiveLocalAccountChanged,
   })  : _accountStore = accountStore,
         _firebase = firebase,
         _auth = auth,
@@ -29,6 +30,7 @@ class AccountSessionManager extends ChangeNotifier {
   final GoogleFirebaseAuthService _auth;
   final FirebaseBackupService _backup;
   final FirebaseReconciliationService _reconciliation;
+  final void Function(String?)? onActiveLocalAccountChanged;
 
   AccountSessionState _state = const AccountSessionState.loading();
   bool _initialized = false;
@@ -397,6 +399,9 @@ class AccountSessionManager extends ChangeNotifier {
 
   void _setState(AccountSessionState value) {
     _state = value;
+    onActiveLocalAccountChanged?.call(
+      value.activeLocalAccountId ?? UserProfile.localLedgerUserId,
+    );
     notifyListeners();
   }
 }
