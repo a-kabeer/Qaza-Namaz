@@ -5,8 +5,8 @@ import 'package:qaza_namaz/l10n/app_localizations_ur.dart';
 
 void main() {
   test('profile Qaza success localization resolves numeric interpolation', () {
-    const en = AppLocalizationsEn();
-    const ur = AppLocalizationsUr();
+    final en = AppLocalizationsEn();
+    final ur = AppLocalizationsUr();
 
     final enMessage = en.profileQazaUpdatedCounts(120, 30);
     final urMessage = ur.profileQazaUpdatedCounts(120, 30);
