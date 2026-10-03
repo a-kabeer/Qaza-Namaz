@@ -1,37 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../app/providers.dart';
-import '../../core/constants/prayer_types.dart';
-import '../../domain/entities/user_profile.dart';
-import '../../domain/services/profile_rules.dart';
-import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
-import '../../domain/services/qaza_plan_service.dart';
-import '../../l10n/app_localizations.dart';
-import '../qaza/qaza_import_controller.dart';
-import '../qaza/qaza_import_progress_dialog.dart';
-import 'profile_form.dart';
-import 'qaza_review_dialog.dart';
-import 'startup_gate.dart';
-
-class ProfileSetupScreen extends ConsumerStatefulWidget {
-  const ProfileSetupScreen({
-    super.key,
-    required this.languageCode,
-    this.initialProfile,
-  });
-
-  final String languageCode;
-  final UserProfile? initialProfile;
-
-  @override
-  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
-}
-
-class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
-  late UserProfile _draft;
-  Future<void> _saveQueue = Future<void>.value();
-
   @override
   void initState() {
     super.initState();
@@ -50,6 +16,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _submit(UserProfile profile) async {
     await _saveQueue;
 
+    // Completing onboarding activates the local Guest ledger for the
+    // subsequent import and for StartupGate/profile consumers.
+    ref.read(activeLocalAccountIdStateProvider.notifier).state =
+        UserProfile.localLedgerUserId;
+
     final finalizedProfile = profile.copyWith(
       witrIncluded: ProfileRules.effectiveWitr(profile),
       onboardingCompleted: true,
@@ -59,138 +30,3 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (plan == null) {
       throw StateError('A valid Qaza plan could not be calculated.');
     }
-
-    // A zero-day/zero-record calculation is valid. There is nothing to
-    // review or import, so onboarding can finish normally.
-    // QazaPlan currently represents exactly five Fard prayers per day plus
-    // the optional Witr count, so this is the domain result's exact number
-    // of records this onboarding import would generate before duplicates.
-    if (plan.totalWithWitr == 0) {
-      await _finishOnboarding(finalizedProfile);
-      return;
-    }
-
-    final revisionId = ProfileQazaPlanReconciliationService.newRevisionId();
-
-    // The onboarding profile was created/updated locally above, but the
-    // shared provider may still hold the pre-onboarding cached value. Refresh
-    // it before the Qaza import so the local repository activates the ledger.
-    ref.invalidate(userProfileProvider);
-    await ref.read(userProfileProvider.future);
-
-    if (!mounted) return;
-
-    final action = await showDialog<QazaReviewAction>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => QazaReviewDialog(
-        profile: finalizedProfile,
-        plan: plan,
-        onConfirm: () => _startQazaPlanImport(
-          plan,
-          revisionId: revisionId,
-        ),
-      ),
-    );
-
-    if (!mounted || action != QazaReviewAction.add) return;
-
-    await _showImportProgress();
-
-    if (!mounted) return;
-    if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
-      await _finishOnboarding(
-        finalizedProfile,
-        plan: plan,
-        revisionId: revisionId,
-      );
-    }
-  }
-
-  Future<void> _showImportProgress() async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const QazaImportProgressDialog(),
-    );
-  }
-
-  Future<void> _finishOnboarding(
-    UserProfile profile, {
-    QazaPlan? plan,
-    String? revisionId,
-  }) async {
-    final completedProfile = profile.copyWith(onboardingCompleted: true);
-    if (plan == null || revisionId == null) {
-      await ref.read(userProfileRepositoryProvider).save(completedProfile);
-    } else {
-      await ref.read(saveProfileUseCaseProvider).completeOnboarding(
-            profile: completedProfile,
-            plan: plan,
-            revisionId: revisionId,
-          );
-    }
-    ref.invalidate(userProfileProvider);
-
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(
-        builder: (_) => const StartupGate(),
-      ),
-      (_) => false,
-    );
-  }
-
-  Future<bool> _startQazaPlanImport(
-    QazaPlan plan, {
-    String? revisionId,
-  }) async {
-    final userId = ref.read(requiredUserIdProvider);
-    final dates = _planDates(plan).toList(growable: false);
-    final prayers = _planPrayerTypes(plan).toSet();
-    return ref.read(qazaImportProvider.notifier).start(
-          userId: userId,
-          dates: dates,
-          prayers: prayers,
-          profilePlanRevisionId: revisionId,
-          profilePlanFingerprint:
-              ProfileQazaPlanReconciliationService.planFingerprint(plan),
-        );
-  }
-
-  Iterable<DateTime> _planDates(QazaPlan plan) =>
-      QazaPlanService.datesFor(plan);
-
-  List<PrayerType> _planPrayerTypes(QazaPlan plan) => [
-        PrayerType.fajr,
-        PrayerType.zuhr,
-        PrayerType.asr,
-        PrayerType.maghrib,
-        PrayerType.isha,
-        if (plan.includeWitr) PrayerType.witr,
-      ];
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.profileSetupTitle),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ProfileForm(
-                initialProfile: _draft,
-                submitLabel: l10n.profileSubmit,
-                onChanged: _saveDraft,
-                onSubmit: _submit,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
