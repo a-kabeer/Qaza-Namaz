@@ -431,7 +431,10 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('No completed Qaza in this period.'),
+        find.descendant(
+          of: find.byKey(const Key('home_activity_inline_month_detail')),
+          matching: find.text('No completed Qaza in this period.'),
+        ),
         findsOneWidget,
       );
     },
