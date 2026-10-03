@@ -379,7 +379,7 @@ class _ProfileFormState extends State<ProfileForm> {
           child: IconButton(
             key: decrementKey,
             tooltip: '$labelText −',
-            onPressed: canDecrease ? () => onChanged(selected! - 1) : null,
+            onPressed: canDecrease ? () => onChanged(selected - 1) : null,
             icon: const Icon(Icons.remove),
           ),
         ),
