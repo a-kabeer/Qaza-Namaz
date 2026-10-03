@@ -80,7 +80,7 @@ final firebaseReconciliationServiceProvider =
 });
 
 final _activeUserIdStateProvider = StateProvider<String?>((ref) {
-  return UserProfile.localLedgerUserId;
+  return null;
 });
 
 final activeUserIdProvider = Provider<String?>((ref) {
@@ -121,8 +121,7 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
 });
 
 final userProfileProvider = FutureProvider<UserProfile?>((ref) {
-  final userId = ref.watch(activeUserIdProvider);
-  if (userId == null) return Future.value(null);
+  ref.watch(activeUserIdProvider);
   return ref.read(userProfileRepositoryProvider).load();
 });
 
