@@ -263,7 +263,7 @@ class AccountLocalStore {
            (local_account_id, account_mode, firebase_uid, google_email,
             lifecycle_state, cloud_backup_enabled, cloud_generation,
             created_at, updated_at)
-           VALUES (?, 'google', ?, ?, 'active', 1, 1, ?, ?)''',
+           VALUES (?, 'google', ?, ?, 'migrating', 1, 1, ?, ?)''',
         variables: [
           Variable(target),
           Variable(firebaseUid),
@@ -334,21 +334,50 @@ class AccountLocalStore {
         variables: [Variable(target), Variable(guest.localAccountId)],
       );
       await database.customUpdate(
-        '''UPDATE local_accounts
-           SET lifecycle_state = 'archived', updated_at = ?
-           WHERE local_account_id = ?''',
-        variables: [Variable(now), Variable(guest.localAccountId)],
-      );
-      await database.customUpdate(
         '''UPDATE app_session_state
            SET active_local_account_id = ?,
                initial_choice_required = 0,
                migration_state = 'target_ready'
            WHERE id = 1''',
-        variables: [Variable(target)],
+        variables: [Variable(guest.localAccountId)],
       );
     });
     return target;
+  }
+
+  Future<void> finalizeGuestMigration({
+    required String guestLocalAccountId,
+    required String googleLocalAccountId,
+  }) async {
+    await database.transaction(() async {
+      final guest = await getAccount(guestLocalAccountId);
+      final google = await getAccount(googleLocalAccountId);
+      if (guest == null || google == null) {
+        throw StateError('Migration partitions are missing.');
+      }
+      if (!google.isGoogle) {
+        throw StateError('Migration target is not a Google account.');
+      }
+      final now = DateTime.now().microsecondsSinceEpoch;
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = 'archived', updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [Variable(now), Variable(guestLocalAccountId)],
+      );
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = 'active', updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [Variable(now), Variable(googleLocalAccountId)],
+      );
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = ?, migration_state = 'completed'
+           WHERE id = 1''',
+        variables: [Variable(googleLocalAccountId)],
+      );
+    });
   }
 
   Future<void> deleteLocalAccount(String localAccountId) async {
