@@ -548,13 +548,15 @@ class _RecentAdditionCardState extends State<_RecentAdditionCard> {
           Text(
             hijri + suffix,
             style: textTheme.bodySmall?.copyWith(
-              color: themeOnSurfaceVariant(context),
+              color: theme.colorScheme.onSurfaceVariant,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ];
     }
+
+    return const <Widget>[];
   }
 
   Widget _expandedMultipleDates(
