@@ -439,6 +439,13 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TRIGGER account_plan_revisions_backup_insert
       AFTER INSERT ON account_plan_revisions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = NEW.local_account_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
       BEGIN
         $queue
       END
