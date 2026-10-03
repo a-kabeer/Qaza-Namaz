@@ -370,26 +370,15 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
       // while preferences were loading.
       if (restoreRevision != _targetRevision) return;
 
-      final witrEnabled = ref.read(effectiveWitrProvider);
-      var restoredSequencePrayer = sequencePrayer;
-      if (!witrEnabled && restoredSequencePrayer == PrayerType.witr) {
-        restoredSequencePrayer = PrayerType.fajr;
-      }
-      if (!witrEnabled && selectedPrayer == PrayerType.witr) {
-        selectedPrayer = PrayerType.fajr;
-      }
-
-      // A persisted Prayer Selection state must always have one valid prayer.
-      if (mode != HomePrayerSelectionMode.prayerSelection) {
-        selectedPrayer = PrayerType.fajr;
-      }
-
+      // Preference restoration is intentionally independent from profile/DB
+      // state. Witr eligibility is applied by the Home targeting layer when
+      // it has the current profile available.
       state = HomePrayerSelectionState(
         mode: mode,
         selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
             ? selectedPrayer
             : null,
-        autoSequencePrayer: restoredSequencePrayer,
+        autoSequencePrayer: sequencePrayer,
       );
     } catch (_) {
       // The default Auto Sequence/Fajr state is safe when preferences are unavailable.
