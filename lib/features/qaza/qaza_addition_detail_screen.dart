@@ -352,12 +352,24 @@ class _SummaryDatesState extends State<_SummaryDates> {
       case QazaAdditionMode.range:
         final start = summary.selectedDates.first;
         final end = summary.selectedDates.last;
-        return _datePair(
-          context,
-          '${summary.formatGregorian(context, start)} → '
-              '${summary.formatGregorian(context, end)}',
-          '${summary.formatHijri(widget.l10n, start)} → '
-              '${summary.formatHijri(widget.l10n, end)}',
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.l10n.addQazaDateCount(summary.dayCount),
+              style: widget.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            _datePair(
+              context,
+              '${summary.formatGregorian(context, start)} → '
+                  '${summary.formatGregorian(context, end)}',
+              '${summary.formatHijri(widget.l10n, start)} → '
+                  '${summary.formatHijri(widget.l10n, end)}',
+            ),
+          ],
         );
 
       case QazaAdditionMode.multiple:
