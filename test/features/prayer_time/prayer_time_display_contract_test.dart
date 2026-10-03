@@ -11,6 +11,7 @@ void main() {
     expect(source, contains("import 'prayer_timeline_row.dart';"));
     expect(source, contains("import '../../../core/widgets/prayer_visuals.dart';"));
     expect(source, contains('LocationSelectorStyle.header'));
+    expect(source, contains('DateFormatters.formatGregorianWeekdayShortFull(date)'));
     expect(source, contains('_PrayerTimeHeader('));
     expect(source, contains('_PrayerTimeFocusCard('));
     expect(source, contains('_PrayerSchedule('));

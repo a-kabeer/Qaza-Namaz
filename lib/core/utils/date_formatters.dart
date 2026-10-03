@@ -57,6 +57,11 @@ class DateFormatters {
   static String formatGregorianDatePadded(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')} ${gregorianMonthName(date.month)} ${date.year}';
 
+  /// Compact Gregorian date with a short weekday, e.g. `Sat, Oct 3, 2026`.
+  static String formatGregorianWeekdayShortFull(DateTime date) =>
+      '${weekdayShortNames[date.weekday - 1]}, '
+      '${gregorianMonthName(date.month)} ${date.day}, ${date.year}';
+
   /// Groups a count with thousands separators, e.g. `4380` becomes `4,380`.
   static String formatCount(int value) {
     final digits = value.abs().toString();
