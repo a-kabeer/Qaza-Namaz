@@ -36,7 +36,7 @@ class QazaTrackerScreen extends ConsumerWidget {
         ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
-        ? '\${state.selected.length} selected'
+        ? '${state.selected.length} selected'
         : l10n.qazaTitle;
 
     return PopScope(
