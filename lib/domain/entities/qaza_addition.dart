@@ -143,12 +143,14 @@ class QazaAdditionDetail {
     required this.activeCount,
     required this.pendingCount,
     required this.completedCount,
+    required this.isDeleted,
   });
 
   final QazaAddition addition;
   final int activeCount;
   final int pendingCount;
   final int completedCount;
+  final bool isDeleted;
 }
 
 class QazaDeletionActionRecordSnapshot {
