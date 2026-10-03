@@ -219,6 +219,181 @@ class AppDatabase extends _$AppDatabase {
       'CREATE INDEX IF NOT EXISTS sync_outbox_modern_ready_idx '
       'ON sync_outbox (user_id, type, next_attempt_at, queued_at)',
     );
+    await _ensureBackupTriggers();
+  }
+
+  Future<void> _ensureBackupTriggers() async {
+    const timestamp = "(CAST(strftime('%s','now') AS INTEGER) * 1000000)";
+    const queue = '''
+      INSERT INTO sync_outbox
+        (id, user_id, type, queued_at, firebase_uid, cloud_generation,
+         entity_type, operation, next_attempt_at, attempts,
+         writer_device_id)
+      SELECT lower(hex(randomblob(16))), local_account_id, 'account_snapshot',
+             $timestamp, firebase_uid, cloud_generation, 'account',
+             'snapshot', $timestamp, 0,
+             (SELECT device_instance_id FROM device_metadata WHERE id = 1)
+      FROM local_accounts
+      WHERE local_account_id = %USER%
+        AND account_mode = 'google'
+        AND cloud_backup_enabled = 1
+        AND firebase_uid IS NOT NULL
+    ''';
+
+    const triggers = <String>[
+      'qaza_records_backup_insert',
+      'qaza_records_backup_update',
+      'qaza_records_backup_delete',
+      'qaza_additions_backup_insert',
+      'qaza_additions_backup_update',
+      'qaza_additions_backup_delete',
+      'qaza_deletion_actions_backup_insert',
+      'qaza_deletion_actions_backup_update',
+      'qaza_deletion_snapshots_backup_insert',
+      'qaza_plan_revisions_backup_insert',
+    ];
+    for (final name in triggers) {
+      await customStatement('DROP TRIGGER IF EXISTS $name');
+    }
+
+    await customStatement('''
+      CREATE TRIGGER qaza_records_backup_insert
+      AFTER INSERT ON qaza_records
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
+               NEW.updated_at,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_records_backup_update
+      AFTER UPDATE ON qaza_records
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
+               NEW.updated_at,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_records_backup_delete
+      AFTER DELETE ON qaza_records
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = OLD.user_id AND account_mode = 'google'
+      )
+      BEGIN
+        INSERT OR REPLACE INTO qaza_record_tombstones
+          (local_account_id, record_id, record_version, deleted_at,
+           writer_device_id, operation_id, cloud_generation)
+        SELECT OLD.user_id, OLD.id, OLD.record_version + 1, $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16))),
+               COALESCE(
+                 (SELECT cloud_generation FROM local_accounts
+                  WHERE local_account_id = OLD.user_id), 1
+               );
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'OLD.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_additions_backup_insert
+      AFTER INSERT ON qaza_additions
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'qazaAddition', NEW.id, NEW.revision, $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_additions_backup_update
+      AFTER UPDATE ON qaza_additions
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'qazaAddition', NEW.id, NEW.revision, $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_additions_backup_delete
+      AFTER DELETE ON qaza_additions
+      WHEN EXISTS (
+        SELECT 1 FROM local_accounts
+        WHERE local_account_id = OLD.user_id
+          AND account_mode = 'google'
+          AND cloud_backup_enabled = 1
+          AND firebase_uid IS NOT NULL
+      )
+      BEGIN
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'OLD.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_deletion_actions_backup_insert
+      AFTER INSERT ON qaza_deletion_actions
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_deletion_actions_backup_update
+      AFTER UPDATE ON qaza_deletion_actions
+      BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id)
+        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16)));
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER qaza_deletion_snapshots_backup_insert
+      AFTER INSERT ON qaza_deletion_action_record_snapshots
+      BEGIN
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.user_id'));
+
+    await customStatement('''
+      CREATE TRIGGER account_plan_revisions_backup_insert
+      AFTER INSERT ON account_plan_revisions
+      BEGIN
+        $queue
+      END
+    '''.replaceFirst('%USER%', 'NEW.local_account_id'));
   }
 
   Future<void> _removeLegacyQazaHistorySchema() async {
