@@ -237,7 +237,7 @@ class AppDatabase extends _$AppDatabase {
       WHERE local_account_id = %USER%
         AND account_mode = 'google'
         AND cloud_backup_enabled = 1
-        AND firebase_uid IS NOT NULL
+        AND firebase_uid IS NOT NULL;
     ''';
 
     const triggers = <String>[
