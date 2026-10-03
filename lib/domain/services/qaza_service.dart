@@ -314,7 +314,8 @@ class QazaService {
       {required String userId,
       required Iterable<DateTime> dates,
       required Iterable<PrayerType> prayerTypes,
-      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{}}) async {
+      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+      String? editingAdditionId}) async {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     final existing = await _getExistingForAvailability(
@@ -324,7 +325,8 @@ class QazaService {
         dates: normalizedDates,
         prayerTypes: selectedPrayers,
         existingRecords: existing,
-        prayedKeys: prayedKeys);
+        prayedKeys: prayedKeys,
+        editingAdditionId: editingAdditionId);
   }
 
   /// Returns the prayers still eligible on each requested date. Reads remain bounded to the requested dates.
@@ -332,20 +334,26 @@ class QazaService {
       {required String userId,
       required Iterable<DateTime> dates,
       Iterable<PrayerType> prayerTypes = PrayerType.values,
-      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{}}) async {
+      Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+      String? editingAdditionId}) async {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return const {};
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
     final recorded = availability.recordedKeys(existing);
+    final retained = availability.currentAdditionRetainedKeys(
+      existingRecords: existing,
+      editingAdditionId: editingAdditionId,
+    );
     final result = <DateTime, Set<PrayerType>>{};
     for (final date in normalizedDates) {
       final available = <PrayerType>{};
       for (final prayer in selectedPrayers) {
         final key =
             QazaPrayerKey(userId: userId, date: date, prayerType: prayer);
-        if (!prayedKeys.contains(key) && !recorded.contains(key)) {
+        if (retained.contains(key) ||
+            (!prayedKeys.contains(key) && !recorded.contains(key))) {
           available.add(prayer);
         }
       }
