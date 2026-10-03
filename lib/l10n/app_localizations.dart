@@ -1634,6 +1634,9 @@ abstract class AppLocalizations {
   /// **'Unavailable'**
   String get addQazaUnavailableLabel;
 
+  /// No description provided for @addQazaTimeBlocked.
+  String get addQazaTimeBlocked;
+
   /// No description provided for @addQazaCancelledTitle.
   ///
   /// In en, this message translates to:
