@@ -14,6 +14,7 @@ enum QazaImportTaskPhase {
   idle,
   preparing,
   importing,
+  applyingProfile,
   completed,
   cancelled,
   failed,
@@ -57,7 +58,8 @@ class QazaImportTaskState {
 
   bool get isActive =>
       phase == QazaImportTaskPhase.preparing ||
-      phase == QazaImportTaskPhase.importing;
+      phase == QazaImportTaskPhase.importing ||
+      phase == QazaImportTaskPhase.applyingProfile;
 
   double? get progress =>
       total <= 0 ? null : (processed / total).clamp(0.0, 1.0).toDouble();
@@ -136,6 +138,9 @@ final qazaImportProvider =
 
 class QazaImportController extends Notifier<QazaImportTaskState> {
   _QazaImportRequest? _lastRequest;
+  Future<void> Function(void Function(int processed, int total) onProgress)?
+      _lastProfileApply;
+  int _lastProfileApplyTotal = 0;
   bool _cancelRequested = false;
 
   @override
@@ -187,6 +192,67 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     return true;
   }
 
+  bool startProfilePlanApply({
+    required int total,
+    required Future<void> Function(
+      void Function(int processed, int total) onProgress,
+    ) operation,
+  }) {
+    if (state.isActive || total < 0) return false;
+    _lastProfileApply = operation;
+    _lastProfileApplyTotal = total;
+    state = QazaImportTaskState(
+      phase: QazaImportTaskPhase.applyingProfile,
+      total: total,
+      startedAt: DateTime.now(),
+    );
+    unawaited(_runProfileApply(operation, total));
+    return true;
+  }
+
+  Future<void> _runProfileApply(
+    Future<void> Function(void Function(int processed, int total) onProgress)
+        operation,
+    int total,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      final onProgress = (int processed, int progressTotal) {
+        if (state.phase != QazaImportTaskPhase.applyingProfile) return;
+        state = state.copyWith(
+          processed: progressTotal <= 0 ? 0 : processed.clamp(0, progressTotal),
+          total: progressTotal,
+        );
+      };
+      await operation(onProgress);
+      stopwatch.stop();
+      if (state.phase == QazaImportTaskPhase.applyingProfile) {
+        state = state.copyWith(
+          phase: QazaImportTaskPhase.completed,
+          processed: total,
+          total: total,
+          completedAt: DateTime.now(),
+          elapsed: stopwatch.elapsed,
+          clearError: true,
+        );
+      }
+    } catch (error, stack) {
+      stopwatch.stop();
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.failed,
+        completedAt: DateTime.now(),
+        elapsed: stopwatch.elapsed,
+        error: error,
+      );
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.importData,
+            'profile_qaza_plan_apply_failed',
+            error,
+            stack: stack,
+          );
+    }
+  }
+
   bool cancel() {
     if (!state.isActive || state.cancelRequested) return false;
     state = state.copyWith(cancelRequested: true);
@@ -195,8 +261,19 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   }
 
   bool retry() {
+    if (state.isActive) return false;
+    final profileApply = _lastProfileApply;
+    if (profileApply != null) {
+      state = QazaImportTaskState(
+        phase: QazaImportTaskPhase.applyingProfile,
+        total: _lastProfileApplyTotal,
+        startedAt: DateTime.now(),
+      );
+      unawaited(_runProfileApply(profileApply, _lastProfileApplyTotal));
+      return true;
+    }
     final request = _lastRequest;
-    if (request == null || state.isActive) return false;
+    if (request == null) return false;
     _cancelRequested = false;
     state = QazaImportTaskState(
       phase: QazaImportTaskPhase.preparing,
