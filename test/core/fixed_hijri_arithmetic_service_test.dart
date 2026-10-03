@@ -117,6 +117,11 @@ void main() {
       month: 9,
       day: 30,
     );
+    final profile = _profile(
+      dob: dob,
+      pubertyAge: 12,
+      startPrayingAge: 13,
+    );
     expect(ProfileRules.pubertyDate(profile), isNotNull);
     expect(ProfileRules.startPrayingDate(profile), isNotNull);
 
@@ -169,12 +174,6 @@ void main() {
         FixedHijriArithmeticService.daysPerYear;
     final boundaryDifference = oneYearBoundary - birthIndex;
     expect(boundaryDifference, 360);
-
-    final profile = _profile(
-      dob: dob,
-      pubertyAge: 12,
-      startPrayingAge: 13,
-    );
 
     final beforeStart =
         firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
