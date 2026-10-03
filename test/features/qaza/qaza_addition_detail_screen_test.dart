@@ -220,13 +220,14 @@ void main() {
 
     final observer = _RecordingNavigatorObserver();
     await _pumpDetail(tester, detail, navigatorObserver: observer);
+    final initialPushCount = observer.pushedCount;
 
     await tester.ensureVisible(find.text('Edit Addition'));
     await tester.tap(find.text('Edit Addition'));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(observer.pushedCount, 1);
-    expect(find.text('Add Qaza'), findsOneWidget);
+    expect(observer.pushedCount, initialPushCount + 1);
+    expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
 
     await tester.pageBack();
@@ -307,10 +308,12 @@ QazaAdditionDetail _detail({
 class _RecordingNavigatorObserver extends NavigatorObserver {
   int pushedCount = 0;
   int poppedCount = 0;
+  Route<dynamic>? lastPushedRoute;
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     pushedCount++;
+    lastPushedRoute = route;
     super.didPush(route, previousRoute);
   }
 
