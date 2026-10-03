@@ -8,7 +8,14 @@ import 'qaza_import_controller.dart';
 ///
 /// The caller owns what should happen after the import reaches a terminal state.
 class QazaImportProgressDialog extends ConsumerStatefulWidget {
-  const QazaImportProgressDialog({super.key});
+  const QazaImportProgressDialog({
+    super.key,
+    this.title,
+    this.onStart,
+  });
+
+  final String? title;
+  final VoidCallback? onStart;
 
   @override
   ConsumerState<QazaImportProgressDialog> createState() =>
@@ -32,6 +39,13 @@ class _QazaImportProgressDialogState
         });
       },
     );
+
+    if (widget.onStart != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onStart!();
+      });
+      return;
+    }
 
     final current = ref.read(qazaImportProvider);
     if (current.phase != QazaImportTaskPhase.failed && !current.isActive) {
@@ -78,7 +92,7 @@ class _QazaImportProgressDialogState
     return PopScope(
       canPop: false,
       child: AlertDialog(
-        title: Text(l10n.addQazaInProgress),
+        title: Text(widget.title ?? l10n.addQazaInProgress),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -90,7 +104,8 @@ class _QazaImportProgressDialogState
               ),
               const SizedBox(height: 12),
               const LinearProgressIndicator(),
-            ] else if (state.phase == QazaImportTaskPhase.importing) ...[
+            ] else if (state.phase == QazaImportTaskPhase.importing ||
+                state.phase == QazaImportTaskPhase.applyingProfile) ...[
               if (state.progress == null) ...[
                 Text(
                   l10n.addQazaChecking,
@@ -118,23 +133,24 @@ class _QazaImportProgressDialogState
                 const SizedBox(height: 12),
                 Text('${state.processed} / ${state.total}'),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ImportStat(
-                        label: l10n.qazaImportAdded,
-                        value: state.added,
+                if (state.phase == QazaImportTaskPhase.importing)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ImportStat(
+                          label: l10n.qazaImportAdded,
+                          value: state.added,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _ImportStat(
-                        label: l10n.qazaImportSkipped,
-                        value: state.skipped,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _ImportStat(
+                          label: l10n.qazaImportSkipped,
+                          value: state.skipped,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ] else ...[
               const LinearProgressIndicator(),

@@ -1666,6 +1666,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your profile change changes the calculated Qaza plan.';
 
   @override
+  String get profileQazaReviewError =>
+      'We could not prepare the Qaza plan review. Please try again.';
+
+  @override
+  String get profileQazaApplying => 'Applying Qaza plan…';
+
+  @override
   String get profileQazaImpact => 'Impact';
 
   @override
@@ -1707,6 +1714,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileQazaUpdated => 'Profile and Qaza plan updated.';
+
+  @override
+  String profileQazaUpdatedCounts(int added, int removed) {
+    return 'Profile and Qaza plan updated. Qaza added: $added; Qaza removed: $removed.';
+  }
 
   @override
   String get profileQazaUpdatedNoChange =>

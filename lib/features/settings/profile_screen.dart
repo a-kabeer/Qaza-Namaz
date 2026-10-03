@@ -5,8 +5,11 @@ import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../domain/services/save_profile_use_case.dart';
 import '../../l10n/app_localizations.dart';
 import '../onboarding/profile_form.dart';
+import '../qaza/qaza_import_controller.dart';
+import '../qaza/qaza_import_progress_dialog.dart';
 import 'profile_qaza_change_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -58,40 +61,104 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l10n = AppLocalizations.of(context);
 
     try {
-      final preview = await useCase.prepareSettingsSave(
-        newProfile: finalizedProfile,
-      );
+      final currentProfile = ref.read(userProfileProvider).valueOrNull;
+      final calculationFieldsChanged = currentProfile == null
+          ? true
+          : ProfileQazaPlanReconciliationService.changedProfileFields(
+              ProfileQazaPlanReconciliationService.profileSnapshot(
+                currentProfile,
+              ),
+              ProfileQazaPlanReconciliationService.profileSnapshot(
+                finalizedProfile,
+              ),
+            ).isNotEmpty;
 
-      if (!mounted) return;
+      ProfileQazaPlanPreview preview;
+      ProfileQazaChangeChoice choice;
 
-      ProfileQazaChangeChoice? choice;
-      if (preview.requiresUserDecision) {
-        choice = await showProfileQazaChangeDialog(
+      if (calculationFieldsChanged) {
+        final review = await showProfileQazaChangeDialog(
           context: context,
-          preview: preview,
+          preview: useCase.prepareSettingsSave(newProfile: finalizedProfile),
         );
-        if (!mounted || choice == null) return;
+        if (!mounted || review == null || review.choice == null) return;
+        preview = review.preview;
+        choice = review.choice!;
       } else {
-        choice = ProfileQazaChangeChoice.apply;
+        preview = await useCase.prepareSettingsSave(
+          newProfile: finalizedProfile,
+        );
+        if (!mounted) return;
+
+        if (preview.requiresUserDecision) {
+          final review = await showProfileQazaChangeDialog(
+            context: context,
+            preview: preview,
+          );
+          if (!mounted || review == null || review.choice == null) return;
+          preview = review.preview;
+          choice = review.choice!;
+        } else {
+          choice = ProfileQazaChangeChoice.apply;
+        }
       }
 
-      final result = await useCase.saveSettings(
-        newProfile: finalizedProfile,
-        preview: preview,
-        choice: choice,
-      );
+      ProfileSaveResult? saveResult;
+      if (preview.requiresUserDecision) {
+        final totalWork =
+            preview.pendingAdditionKeys.length + preview.removalRecordIds.length;
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => QazaImportProgressDialog(
+            title: l10n.profileQazaApplying,
+            onStart: () {
+              final started = ref
+                  .read(qazaImportProvider.notifier)
+                  .startProfilePlanApply(
+                    total: totalWork,
+                    operation: (onProgress) async {
+                      saveResult = await useCase.saveSettings(
+                        newProfile: finalizedProfile,
+                        preview: preview,
+                        choice: choice,
+                        onProgress: onProgress,
+                      );
+                    },
+                  );
+              if (!started) {
+                throw StateError('Could not start profile Qaza update.');
+              }
+            },
+          ),
+        );
+
+        if (!mounted) return;
+        if (ref.read(qazaImportProvider).phase !=
+            QazaImportTaskPhase.completed) {
+          return;
+        }
+      } else {
+        saveResult = await useCase.saveSettings(
+          newProfile: finalizedProfile,
+          preview: preview,
+          choice: choice,
+        );
+      }
 
       ref.invalidate(userProfileProvider);
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(enabledPrayerTypesProvider);
       ref.invalidate(effectiveWitrProvider);
 
-      if (!mounted) return;
+      if (!mounted || saveResult == null) return;
+      final result = saveResult!;
 
       final message = result.qazaPlanChanged
-          ? '\${l10n.profileQazaUpdated} '
-              '\${l10n.profileQazaToAdd}: \${result.qazaRecordsAdded}; '
-              '\${l10n.profileQazaNoLongerRequired}: \${result.qazaRecordsRemoved}'
+          ? l10n.profileQazaUpdatedCounts(
+              result.qazaRecordsAdded,
+              result.qazaRecordsRemoved,
+            )
           : l10n.profileQazaUpdatedNoChange;
       snackbar.success(message);
       Navigator.of(context).pop();

@@ -1662,6 +1662,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔';
 
   @override
+  String get profileQazaReviewError =>
+      'قضا پلان کا جائزہ تیار نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get profileQazaApplying => 'قضا پلان لاگو ہو رہا ہے…';
+
+  @override
   String get profileQazaImpact => 'اثر';
 
   @override
@@ -1704,6 +1711,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileQazaUpdated => 'پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔';
+
+  @override
+  String profileQazaUpdatedCounts(int added, int removed) {
+    return 'پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔ شامل کی گئی قضا: $added؛ ہٹائی گئی قضا: $removed۔';
+  }
 
   @override
   String get profileQazaUpdatedNoChange =>

@@ -603,6 +603,8 @@
   "profileSave": "تبدیلیاں محفوظ کریں",
   "profileQazaPlanChangedTitle": "قضا پلان اپ ڈیٹ ہوگا",
   "profileQazaPlanSummary": "آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔",
+  "profileQazaReviewError": "قضا پلان کا جائزہ تیار نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "profileQazaApplying": "قضا پلان لاگو ہو رہا ہے…",
   "profileQazaImpact": "اثر",
   "profileQazaCount": "{count} قضا",
   "@profileQazaCount": {
@@ -623,6 +625,13 @@
   "profileQazaApply": "قضا پلان لاگو کریں",
   "profileQazaCompletedProtected": "مکمل شدہ اور دستی طور پر شامل کی گئی قضا حذف نہیں ہوگی۔",
   "profileQazaUpdated": "پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔",
+  "profileQazaUpdatedCounts": "پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔ شامل کی گئی قضا: {added}؛ ہٹائی گئی قضا: {removed}۔",
+  "@profileQazaUpdatedCounts": {
+    "placeholders": {
+      "added": { "type": "int" },
+      "removed": { "type": "int" }
+    }
+  },
   "profileQazaUpdatedNoChange": "پروفائل اپ ڈیٹ ہوگئی۔ قضا پلان میں کوئی تبدیلی نہیں ہوئی۔",
   "qazaReviewTitle": "اپنا قضا پلان دیکھیں",
   "qazaReviewSubtitle": "قضا ٹریکر میں شامل کرنے سے پہلے اپنی تفصیلات کا جائزہ لیں۔",

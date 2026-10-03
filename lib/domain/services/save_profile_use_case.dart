@@ -71,6 +71,7 @@ class SaveProfileUseCase {
     required UserProfile newProfile,
     required ProfileQazaPlanPreview preview,
     required ProfileQazaChangeChoice choice,
+    void Function(int processed, int total)? onProgress,
   }) async {
     final oldProfile = await _profileRepository.load();
     if (oldProfile == null || !oldProfile.isComplete) {
@@ -97,6 +98,7 @@ class SaveProfileUseCase {
         newProfile: newProfile,
         preview: preview,
         choice: choice,
+        onProgress: onProgress,
       );
       return ProfileSaveResult(
         qazaPlanChanged: true,

@@ -385,6 +385,7 @@ class OfflineFirstQazaRepository
     required List<String> removalIds,
     required Set<String> newPlanKeys,
     required String expectedPreviousPlanFingerprint,
+    void Function(int processed, int total)? onProgress,
   }) async {
     _validateActive(userId);
     return _localStore.applyProfilePlanChanges(
@@ -393,6 +394,7 @@ class OfflineFirstQazaRepository
       removalIds: removalIds,
       newPlanKeys: newPlanKeys,
       expectedPreviousPlanFingerprint: expectedPreviousPlanFingerprint,
+      onProgress: onProgress,
     );
   }
 

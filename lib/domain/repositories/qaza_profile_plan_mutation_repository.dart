@@ -35,6 +35,7 @@ abstract interface class QazaProfilePlanMutationRepository {
     required List<String> removalIds,
     required Set<String> newPlanKeys,
     required String expectedPreviousPlanFingerprint,
+    void Function(int processed, int total)? onProgress,
   });
 
   Future<void> rollbackProfilePlanChanges(

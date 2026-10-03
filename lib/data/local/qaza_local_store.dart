@@ -708,6 +708,7 @@ abstract class QazaLocalStore {
     required List<String> removalIds,
     required Set<String> newPlanKeys,
     required String expectedPreviousPlanFingerprint,
+    void Function(int processed, int total)? onProgress,
   }) async {
     if (expectedPreviousPlanFingerprint.isEmpty) {
       throw ArgumentError.value(
@@ -728,6 +729,9 @@ abstract class QazaLocalStore {
         QazaPrayerKey.fromRecord(record).value: record,
     };
 
+    final totalWork = removalIds.toSet().length + additions.length;
+    var processedWork = 0;
+    onProgress?.call(0, totalWork);
     final removed = <QazaRecord>[];
     for (final id in removalIds.toSet()) {
       final record = byId[id];
@@ -743,6 +747,8 @@ abstract class QazaLocalStore {
       removed.add(record);
       byId.remove(id);
       byKey.remove(key);
+      processedWork++;
+      onProgress?.call(processedWork, totalWork);
     }
 
     final added = <QazaRecord>[];
@@ -756,6 +762,8 @@ abstract class QazaLocalStore {
       added.add(record);
       byId[record.id] = record;
       byKey[key] = record;
+      processedWork++;
+      onProgress?.call(processedWork, totalWork);
     }
 
     final now = DateTime.now();

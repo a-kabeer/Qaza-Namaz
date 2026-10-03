@@ -280,6 +280,7 @@ class DriftQazaLocalStore extends QazaLocalStore {
     required List<String> removalIds,
     required Set<String> newPlanKeys,
     required String expectedPreviousPlanFingerprint,
+    void Function(int processed, int total)? onProgress,
   }) {
     if (!expectedPreviousPlanFingerprint.startsWith('qazaPlanV2Fixed360|') &&
         removalIds.isNotEmpty) {
@@ -312,15 +313,26 @@ class DriftQazaLocalStore extends QazaLocalStore {
         removed.add(record);
       }
 
-      final removedIds = removed.map((record) => record.id).toSet();
-      if (removedIds.isNotEmpty) {
-        for (final id in removedIds) {
+      final totalWork = removalIds.toSet().length + additions.length;
+      var processedWork = 0;
+      onProgress?.call(0, totalWork);
+
+      final removedIds = removed.map((record) => record.id).toList(growable: false);
+      for (var start = 0; start < removedIds.length; start += 500) {
+        final end =
+            start + 500 < removedIds.length ? start + 500 : removedIds.length;
+        final chunkIds = removedIds.sublist(start, end);
+        for (final id in chunkIds) {
           await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
         }
-        await _deleteProfilePlanProvenance(
-          userId,
-          removedIds.toList(growable: false),
-        );
+        await _deleteProfilePlanProvenance(userId, chunkIds);
+        processedWork += chunkIds.length;
+        onProgress?.call(processedWork, totalWork);
+      }
+      final requestedRemovalCount = removalIds.toSet().length;
+      if (processedWork < requestedRemovalCount) {
+        processedWork = requestedRemovalCount;
+        onProgress?.call(processedWork, totalWork);
       }
 
       final insertable = <QazaRecord>[];
@@ -345,14 +357,24 @@ class DriftQazaLocalStore extends QazaLocalStore {
         duplicateKeys.add(key);
       }
 
-      final insertedIds = await _database.qazaRecordsDao
-          .insertRecordsReturningInsertedIds(
-        insertable.map(_toCompanion).toList(growable: false),
-      );
-      final inserted = insertable
-          .where((record) => insertedIds.contains(record.id))
-          .toList(growable: false);
-      await _upsertProfilePlanProvenance(inserted);
+      final inserted = <QazaRecord>[];
+      for (var start = 0; start < insertable.length; start += 500) {
+        final end = start + 500 < insertable.length
+            ? start + 500
+            : insertable.length;
+        final chunk = insertable.sublist(start, end);
+        final insertedIds = await _database.qazaRecordsDao
+            .insertRecordsReturningInsertedIds(
+          chunk.map(_toCompanion).toList(growable: false),
+        );
+        final insertedChunk = chunk
+            .where((record) => insertedIds.contains(record.id))
+            .toList(growable: false);
+        inserted.addAll(insertedChunk);
+        await _upsertProfilePlanProvenance(insertedChunk);
+        processedWork += chunk.length;
+        onProgress?.call(processedWork, totalWork);
+      }
 
       final now = DateTime.now();
       final operations = <PendingSyncOp>[

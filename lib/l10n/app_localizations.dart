@@ -2873,6 +2873,18 @@ abstract class AppLocalizations {
   /// **'Your profile change changes the calculated Qaza plan.'**
   String get profileQazaPlanSummary;
 
+  /// No description provided for @profileQazaReviewError.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not prepare the Qaza plan review. Please try again.'**
+  String get profileQazaReviewError;
+
+  /// No description provided for @profileQazaApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying Qaza plan…'**
+  String get profileQazaApplying;
+
   /// No description provided for @profileQazaImpact.
   ///
   /// In en, this message translates to:
@@ -2950,6 +2962,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile and Qaza plan updated.'**
   String get profileQazaUpdated;
+
+  /// No description provided for @profileQazaUpdatedCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile and Qaza plan updated. Qaza added: {added}; Qaza removed: {removed}.'**
+  String profileQazaUpdatedCounts(int added, int removed);
 
   /// No description provided for @profileQazaUpdatedNoChange.
   ///
