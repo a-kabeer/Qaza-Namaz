@@ -11,8 +11,18 @@ void main() {
     addTearDown(container.dispose);
 
     final controller = container.read(qazaImportProvider.notifier);
-    final finished = Completer<void>();
+    final completed = Completer<void>();
     final progress = <(int, int)>[];
+    final subscription = container.listen(
+      qazaImportProvider,
+      (_, next) {
+        if (next.phase == QazaImportTaskPhase.completed &&
+            !completed.isCompleted) {
+          completed.complete();
+        }
+      },
+    );
+    addTearDown(subscription.close);
 
     expect(
       controller.startProfilePlanApply(
@@ -26,13 +36,13 @@ void main() {
           await Future<void>.value();
           onProgress(10, 10);
           progress.add((10, 10));
-          finished.complete();
+
         },
       ),
       isTrue,
     );
 
-    await finished.future;
+    await completed.future;
 
     expect(progress, [(0, 10), (5, 10), (10, 10)]);
     expect(
@@ -49,6 +59,21 @@ void main() {
 
     final controller = container.read(qazaImportProvider.notifier);
     var attempts = 0;
+    final failed = Completer<void>();
+    final completed = Completer<void>();
+    final subscription = container.listen(
+      qazaImportProvider,
+      (_, next) {
+        if (next.phase == QazaImportTaskPhase.failed && !failed.isCompleted) {
+          failed.complete();
+        }
+        if (next.phase == QazaImportTaskPhase.completed &&
+            !completed.isCompleted) {
+          completed.complete();
+        }
+      },
+    );
+    addTearDown(subscription.close);
 
     expect(
       controller.startProfilePlanApply(
@@ -64,8 +89,7 @@ void main() {
       isTrue,
     );
 
-    await Future<void>.value();
-    await Future<void>.value();
+    await failed.future;
 
     expect(
       container.read(qazaImportProvider).phase,
@@ -74,8 +98,7 @@ void main() {
 
     expect(controller.retry(), isTrue);
 
-    await Future<void>.value();
-    await Future<void>.value();
+    await completed.future;
 
     expect(attempts, 2);
     expect(
