@@ -354,13 +354,12 @@ void main() {
         'itemCount: state.records.length + (state.loadingMore ? 1 : 0),',
       ),
     );
+    final itemCountLine = source
+        .split('\n')
+        .firstWhere((line) => line.contains('itemCount:'));
     expect(
-      source,
-      isNot(
-        contains(
-          'itemCount: state.records.length + (state.hasMore ? 1 : 0),',
-        ),
-      ),
+      itemCountLine,
+      contains('state.loadingMore ? 1 : 0'),
     );
   });
 
