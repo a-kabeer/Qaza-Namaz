@@ -8,6 +8,7 @@ import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
+import '../account/account_screen.dart';
 import 'qaza_reset_controller.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -48,6 +49,16 @@ class SettingsScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
+          Card(
+            child: SettingsNavRow(
+              key: const Key('settings_account'),
+              icon: Icons.account_circle_outlined,
+              title: l10n.accountTitle,
+              subtitle: l10n.accountConnectGoogle,
+              onTap: () => open(const AccountScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             child: SettingsNavRow(
               key: const Key('settings_profile'),
