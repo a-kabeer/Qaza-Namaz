@@ -55,27 +55,30 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${requestedSlots > 0 ? requestedSlots : detail.activeCount} '
-                              '${l10n.addQazaPrayersLabel}',
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
+                      Semantics(
+                        header: true,
+                        label: '${detail.activeCount} Records',
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${detail.activeCount} Records',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          if (dateCount > 1)
-                            Text(
-                              '${dateCount} Dates',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
+                            if (dateCount > 1)
+                              Text(
+                                l10n.qazaHistorySelectedDates(dateCount),
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                       if (detail.pendingCount > 0 || detail.completedCount > 0) ...[
                         const SizedBox(height: 4),
@@ -99,7 +102,9 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       const Divider(height: 1),
                       const SizedBox(height: 14),
                       Text(
-                        'Prayer Summary',
+                        orderedPrayers.isEmpty
+                            ? l10n.addQazaPrayersLabel
+                            : '${orderedPrayers.length} ${l10n.addQazaPrayersLabel}',
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
@@ -118,9 +123,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                           children: orderedPrayers
                               .map(
                                 (prayer) => Chip(
-                                  label: Text(
-                                    '${prayer.localizedLabel(l10n)} ${dateCount}',
-                                  ),
+                                  label: Text(prayer.localizedLabel(l10n)),
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                   visualDensity: VisualDensity.compact,
@@ -128,47 +131,41 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                               )
                               .toList(growable: false),
                         ),
+                      if (requestedSlots > 0) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          '${requestedSlots} requested slots',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Text(
+                        l10n.qazaHistoryAdded(
+                          MaterialLocalizations.of(context)
+                              .formatMediumDate(addition.createdAt),
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                'Created ${MaterialLocalizations.of(context).formatMediumDate(addition.createdAt)}',
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () async {
-                  await Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => QazaTrackerScreen(
-                        additionId: addition.id,
-                      ),
-                    ),
-                  );
-                  if (context.mounted) {
-                    ref.invalidate(
-                      qazaAdditionDetailProvider(addition.id),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.view_list_rounded),
-                label: const Text('View Records'),
-              ),
-              if (detail.pendingCount > 0) ...[
-                const SizedBox(height: 8),
-                OverflowBar(
-                  spacing: 8,
-                  overflowSpacing: 8,
-                  alignment: MainAxisAlignment.end,
-                  children: [
-                    FilledButton.tonalIcon(
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
                       onPressed: () async {
-                        await Navigator.of(context).push(
+                        await Navigator.of(context).push<void>(
                           MaterialPageRoute<void>(
-                            builder: (_) =>
-                                AddQazaScreen(editAddition: addition),
+                            builder: (_) => QazaTrackerScreen(
+                              additionId: addition.id,
+                            ),
                           ),
                         );
                         if (context.mounted) {
@@ -177,22 +174,70 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                           );
                         }
                       },
-                      icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Edit Addition'),
+                      icon: const Icon(Icons.view_list_rounded),
+                      label: const Text('View Records'),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => _delete(context, ref, addition.id),
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      label: const Text('Delete Addition'),
+                  ),
+                  if (detail.pendingCount > 0) ...[
+                    const SizedBox(width: 8),
+                    PopupMenuButton<_AdditionAction>(
+                      key: const Key('qaza-addition-more-actions'),
+                      tooltip: 'More actions',
+                      onSelected: (action) {
+                        switch (action) {
+                          case _AdditionAction.edit:
+                            unawaited(_edit(context, ref, addition));
+                          case _AdditionAction.delete:
+                            unawaited(_delete(context, ref, addition.id));
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem<_AdditionAction>(
+                          value: _AdditionAction.edit,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(Icons.edit_rounded),
+                            title: Text('Edit Addition'),
+                          ),
+                        ),
+                        PopupMenuItem<_AdditionAction>(
+                          value: _AdditionAction.delete,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(
+                              Icons.delete_outline_rounded,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            title: Text('Delete Addition'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
+                ],
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    QazaAddition addition,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AddQazaScreen(editAddition: addition),
+      ),
+    );
+    if (context.mounted) {
+      ref.invalidate(
+        qazaAdditionDetailProvider(addition.id),
+      );
+    }
   }
 
   Future<void> _delete(
@@ -273,7 +318,9 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
 }
 
 
-class _SummaryDates extends StatelessWidget {
+enum _AdditionAction { edit, delete }
+
+class _SummaryDates extends StatefulWidget {
   const _SummaryDates({
     required this.snapshot,
     required this.l10n,
@@ -285,109 +332,203 @@ class _SummaryDates extends StatelessWidget {
   final TextTheme textTheme;
 
   @override
+  State<_SummaryDates> createState() => _SummaryDatesState();
+}
+
+class _SummaryDatesState extends State<_SummaryDates> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    final summary = QazaAdditionDateSummary(snapshot);
+    final summary = QazaAdditionDateSummary(widget.snapshot);
     if (summary.selectedDates.isEmpty) {
       return Text(
-        l10n.qazaHistoryNoDates,
-        style: textTheme.bodyMedium,
+        widget.l10n.qazaHistoryNoDates,
+        style: widget.textTheme.bodyMedium,
       );
     }
 
-    switch (snapshot.mode) {
+    switch (widget.snapshot.mode) {
       case QazaAdditionMode.single:
         final date = summary.selectedDates.first;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              summary.formatGregorian(context, date),
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              summary.formatHijri(l10n, date),
-              style: textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+        return _datePair(
+          context,
+          summary.formatGregorian(context, date),
+          summary.formatHijri(widget.l10n, date),
         );
 
       case QazaAdditionMode.range:
         final start = summary.selectedDates.first;
         final end = summary.selectedDates.last;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${summary.formatGregorian(context, start)} → '
+        return _datePair(
+          context,
+          '${summary.formatGregorian(context, start)} → '
               '${summary.formatGregorian(context, end)}',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${summary.formatHijri(l10n, start)} → '
-              '${summary.formatHijri(l10n, end)}',
-              style: textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+          '${summary.formatHijri(widget.l10n, start)} → '
+              '${summary.formatHijri(widget.l10n, end)}',
         );
 
       case QazaAdditionMode.multiple:
-        final dates = List<DateTime>.of(summary.selectedDates)..sort();
-        final preview = dates.take(3).toList(growable: false);
-        final remaining = dates.length - preview.length;
-        final gregorian = preview
-            .map((date) => summary.formatGregorian(context, date))
-            .join(' · ');
-        final hijri = preview
-            .map((date) => summary.formatHijri(l10n, date))
-            .join(' · ');
+        return _multipleDates(context, summary);
+    }
+  }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _datePair(
+    BuildContext context,
+    String primary,
+    String secondary,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          primary,
+          style: widget.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          secondary,
+          style: widget.textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _multipleDates(
+    BuildContext context,
+    QazaAdditionDateSummary summary,
+  ) {
+    final dates = List<DateTime>.of(summary.selectedDates)..sort();
+    final preview = dates.take(3).toList(growable: false);
+    final remaining = dates.length - preview.length;
+    final gregorian = preview
+        .map((date) => summary.formatGregorian(context, date))
+        .join(' · ');
+    final hijri = preview
+        .map((date) => summary.formatHijri(widget.l10n, date))
+        .join(' · ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.l10n.qazaHistorySelectedDates(dates.length),
+          style: widget.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        AnimatedSize(
+          duration: kThemeAnimationDuration,
+          curve: Curves.easeInOut,
+          child: _expanded
+              ? _expandedDateList(context, summary, dates)
+              : Column(
+                  key: const ValueKey('collapsed-qaza-addition-dates'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      gregorian,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: widget.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hijri,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: widget.textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (remaining > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '+ $remaining more',
+                        style: widget.textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            key: const Key('qaza-addition-toggle-dates'),
+            onPressed: () => setState(() => _expanded = !_expanded),
+            icon: Icon(
+              _expanded
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+            ),
+            label: Text(
+              _expanded
+                  ? widget.l10n.qazaHistoryHideDates
+                  : widget.l10n.qazaHistoryShowAllDates,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _expandedDateList(
+    BuildContext context,
+    QazaAdditionDateSummary summary,
+    List<DateTime> dates,
+  ) {
+    return ConstrainedBox(
+      key: const ValueKey('expanded-qaza-addition-dates'),
+      constraints: const BoxConstraints(maxHeight: 240),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              gregorian,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              hijri,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (remaining > 0) ...[
-              const SizedBox(height: 2),
-              Text(
-                '+ $remaining more',
-                style: textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+            for (final date in dates)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        summary.formatGregorian(context, date),
+                        style: widget.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        summary.formatHijri(widget.l10n, date),
+                        style: widget.textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
           ],
-        );
-    }
+        ),
+      ),
+    );
   }
 }
 
 List<PrayerType> _orderedPrayers(List<PrayerType> prayers) {
-
   final ordered = prayers.toList(growable: false)
     ..sort(
       (a, b) => a.qazaSequenceIndex.compareTo(b.qazaSequenceIndex),
