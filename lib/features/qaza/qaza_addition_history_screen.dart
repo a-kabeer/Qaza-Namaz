@@ -362,19 +362,24 @@ class _RecentAdditionCardState extends State<_RecentAdditionCard> {
                 ),
               ),
             ),
-            if (_datesExpanded)
-              InkWell(
-                onTap: _openDetail,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: _expandedMultipleDates(
-                    context,
-                    summary,
-                    l10n,
-                    theme.textTheme,
-                  ),
-                ),
-              ),
+            AnimatedSize(
+              duration: kThemeAnimationDuration,
+              curve: Curves.easeInOut,
+              child: _datesExpanded
+                  ? InkWell(
+                      onTap: _openDetail,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: _expandedMultipleDates(
+                          context,
+                          summary,
+                          l10n,
+                          theme.textTheme,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
           InkWell(
             onTap: _openDetail,
