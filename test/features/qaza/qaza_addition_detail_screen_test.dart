@@ -99,7 +99,7 @@ void main() {
       mode: QazaAdditionMode.multiple,
       selectedDates: dates,
       selectedPrayers: [PrayerType.fajr, PrayerType.witr],
-      pendingCount: 2,
+      pendingCount: 5,
       completedCount: 1,
     );
 
@@ -141,7 +141,7 @@ void main() {
       size: const Size(640, 900),
     );
 
-    final fajr = tester.getTopLeft(find.text('Fajr'));
+    final fajr = tester.getTopLeft(find.text('Fajr 1'));
     final zuhr = tester.getTopLeft(find.text('Zuhr'));
     final asr = tester.getTopLeft(find.text('Asr'));
     final witr = tester.getTopLeft(find.text('Witr'));
@@ -152,7 +152,7 @@ void main() {
     }
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
-    expect(find.text('Witr'), findsOneWidget);
+    expect(find.text('Witr 1'), findsOneWidget);
     expect(find.text('Fajr 1'), findsOneWidget);
     expect(find.text('Witr 1'), findsOneWidget);
   });
@@ -213,7 +213,7 @@ void main() {
         DateTime(2026, 9, 3),
       ],
       selectedPrayers: [PrayerType.fajr, PrayerType.isha],
-      pendingCount: 2,
+      pendingCount: 4,
       completedCount: 0,
     );
 
