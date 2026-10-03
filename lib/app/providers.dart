@@ -79,12 +79,12 @@ final firebaseReconciliationServiceProvider =
   );
 });
 
-final _activeUserIdStateProvider = StateProvider<String?>((ref) {
+final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) {
   return null;
 });
 
 final activeUserIdProvider = Provider<String?>((ref) {
-  return ref.watch(_activeUserIdStateProvider);
+  return ref.watch(activeLocalAccountIdStateProvider);
 });
 
 final accountSessionManagerProvider =
@@ -96,8 +96,8 @@ final accountSessionManagerProvider =
     backup: ref.watch(firebaseBackupServiceProvider),
     reconciliation: ref.watch(firebaseReconciliationServiceProvider),
     onActiveLocalAccountChanged: (id) {
-      ref.read(_activeUserIdStateProvider.notifier).state =
-          id ?? UserProfile.localLedgerUserId;
+      ref.read(activeLocalAccountIdStateProvider.notifier).state =
+          id;
     },
   );
   return manager;
