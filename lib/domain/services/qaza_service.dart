@@ -8,6 +8,7 @@ import '../entities/qaza_completion_result.dart';
 import '../repositories/qaza_repository.dart';
 import '../repositories/qaza_bulk_write_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
+import 'current_day_qaza_eligibility_service.dart';
 import 'qaza_availability_service.dart';
 import 'profile_rules.dart';
 import 'sahib_al_tartib_service.dart';
@@ -315,7 +316,8 @@ class QazaService {
       required Iterable<DateTime> dates,
       required Iterable<PrayerType> prayerTypes,
       Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
-      String? editingAdditionId}) async {
+      String? editingAdditionId,
+      CurrentDayQazaPrayerTimeContext? prayerTimeContext}) async {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     final existing = await _getExistingForAvailability(
@@ -326,7 +328,8 @@ class QazaService {
         prayerTypes: selectedPrayers,
         existingRecords: existing,
         prayedKeys: prayedKeys,
-        editingAdditionId: editingAdditionId);
+        editingAdditionId: editingAdditionId,
+        prayerTimeContext: prayerTimeContext);
   }
 
   /// Returns the prayers still eligible on each requested date. Reads remain bounded to the requested dates.
@@ -335,7 +338,8 @@ class QazaService {
       required Iterable<DateTime> dates,
       Iterable<PrayerType> prayerTypes = PrayerType.values,
       Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
-      String? editingAdditionId}) async {
+      String? editingAdditionId,
+      CurrentDayQazaPrayerTimeContext? prayerTimeContext}) async {
     final normalizedDates = dates.map(QazaDate.normalize).toSet();
     final selectedPrayers = prayerTypes.toSet();
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return const {};
@@ -353,7 +357,15 @@ class QazaService {
         final key =
             QazaPrayerKey(userId: userId, date: date, prayerType: prayer);
         if (retained.contains(key) ||
-            (!prayedKeys.contains(key) && !recorded.contains(key))) {
+            availability.eligibility(
+                  userId: userId,
+                  date: date,
+                  prayerType: prayer,
+                  existingRecords: existing,
+                  prayedKeys: prayedKeys,
+                  prayerTimeContext: prayerTimeContext,
+                ) ==
+                QazaEligibility.available) {
           available.add(prayer);
         }
       }
@@ -656,6 +668,7 @@ class QazaService {
     DateTime? earliestDate,
     DateTime? today,
     bool? witrAllowed,
+    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
     String? profilePlanRevisionId,
     String? profilePlanFingerprint,
     bool Function()? isCancellationRequested,
@@ -713,6 +726,7 @@ class QazaService {
       prayerTypes: selectedPrayers,
       existingRecords: existing,
       prayedKeys: prayedKeys,
+      prayerTimeContext: prayerTimeContext,
     );
     final candidates = analysis.newCandidates
         .where((candidate) =>
