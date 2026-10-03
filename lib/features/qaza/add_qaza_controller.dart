@@ -95,6 +95,8 @@ class AddQazaState {
     this.prayerAvailabilityLoading = false,
     this.analysisLoading = false,
     this.analysis = AddQazaAnalysis.empty,
+    this.protectedPrayers = const <PrayerType>{},
+    this.editSnapshot,
     this.error,
   });
 
@@ -113,14 +115,52 @@ class AddQazaState {
   final bool prayerAvailabilityLoading;
   final bool analysisLoading;
   final AddQazaAnalysis analysis;
+
+  /// Current-addition prayers that are protected and must remain selected.
+  final Set<PrayerType> protectedPrayers;
+
+  /// Original edit snapshot used to detect a removal-only or other edit delta.
+  final QazaAdditionInputSnapshot? editSnapshot;
+
   final Object? error;
 
-  bool get canReview =>
-      selectedDates.isNotEmpty &&
-      selectedPrayers.isNotEmpty &&
-      analysis.newCount > 0 &&
-      !prayerAvailabilityLoading &&
-      !analysisLoading;
+  bool get hasEditChanges {
+    final snapshot = editSnapshot;
+    if (snapshot == null) return false;
+
+    final originalMode = switch (snapshot.mode) {
+      QazaAdditionMode.single => DateSelectionMode.single,
+      QazaAdditionMode.range => DateSelectionMode.range,
+      QazaAdditionMode.multiple => DateSelectionMode.multiple,
+    };
+    if (mode != originalMode) return true;
+
+    final currentDates = selectedDates
+        .map(QazaDate.normalize)
+        .map((date) => date.millisecondsSinceEpoch)
+        .toSet();
+    final originalDates = snapshot.selectedDates
+        .map(QazaDate.normalize)
+        .map((date) => date.millisecondsSinceEpoch)
+        .toSet();
+    if (!setEquals(currentDates, originalDates)) return true;
+
+    return !setEquals(
+      selectedPrayers,
+      snapshot.selectedPrayers.toSet(),
+    );
+  }
+
+  bool get canReview {
+    if (selectedDates.isEmpty ||
+        selectedPrayers.isEmpty ||
+        prayerAvailabilityLoading ||
+        analysisLoading) {
+      return false;
+    }
+    if (analysis.newCount > 0) return true;
+    return editSnapshot != null && hasEditChanges;
+  }
 
   AddQazaState copyWith({
     DateSelectionMode? mode,
@@ -133,6 +173,8 @@ class AddQazaState {
     bool? prayerAvailabilityLoading,
     bool? analysisLoading,
     AddQazaAnalysis? analysis,
+    Set<PrayerType>? protectedPrayers,
+    QazaAdditionInputSnapshot? editSnapshot,
     Object? error,
     bool clearError = false,
   }) =>
@@ -150,6 +192,8 @@ class AddQazaState {
             prayerAvailabilityLoading ?? this.prayerAvailabilityLoading,
         analysisLoading: analysisLoading ?? this.analysisLoading,
         analysis: analysis ?? this.analysis,
+        protectedPrayers: protectedPrayers ?? this.protectedPrayers,
+        editSnapshot: editSnapshot ?? this.editSnapshot,
         error: clearError ? null : error ?? this.error,
       );
 }
@@ -210,6 +254,7 @@ class AddQazaSelectionRules {
 }
 
 class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
+  String? _editingAdditionId;
   DateTime? _visibleMonth;
   bool _disposed = false;
   bool _syncingCalendarSelection = false;
@@ -229,7 +274,6 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
     ref.onDispose(() {
       _disposed = true;
-      ref.read(calendarControllerProvider.notifier).clear();
     });
 
     Future.microtask(() {
@@ -261,7 +305,12 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     return const AddQazaState();
   }
 
-  void restoreFromSnapshot(QazaAdditionInputSnapshot snapshot) {
+  void restoreFromSnapshot(
+    QazaAdditionInputSnapshot snapshot, {
+    String? editingAdditionId,
+  }) {
+    _editingAdditionId = editingAdditionId;
+
     final mode = switch (snapshot.mode) {
       QazaAdditionMode.single => DateSelectionMode.single,
       QazaAdditionMode.range => DateSelectionMode.range,
@@ -275,6 +324,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       ),
       selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet()),
       analysis: AddQazaAnalysis.empty,
+      protectedPrayers: const <PrayerType>{},
+      editSnapshot: snapshot,
       clearError: true,
     );
 
@@ -314,7 +365,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final profile = ref.read(userProfileProvider).valueOrNull;
     if (prayer == PrayerType.witr &&
         profile != null &&
-        !ProfileRules.effectiveWitr(profile)) {
+        !ProfileRules.effectiveWitr(profile) &&
+        !state.addablePrayers.contains(PrayerType.witr) &&
+        !state.protectedPrayers.contains(PrayerType.witr)) {
       return;
     }
 
@@ -323,6 +376,13 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     if (state.selectedDates.isNotEmpty &&
         (state.prayerAvailabilityLoading ||
             !state.addablePrayers.contains(prayer))) {
+      return;
+    }
+
+    // Never allow a prayer toggle to remove a protected current-addition
+    // occurrence. The calendar can still remove only the affected dates.
+    if (state.selectedPrayers.contains(prayer) &&
+        state.protectedPrayers.contains(prayer)) {
       return;
     }
 
@@ -369,6 +429,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
                 userId: ref.read(requiredUserIdProvider),
                 dates: dates,
                 prayerTypes: prayers,
+                editingAdditionId: _editingAdditionId,
               );
 
       if (_disposed || request != _calendarRequest) return;
@@ -422,24 +483,32 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
             prayerTypes: prayers,
+            editingAdditionId: _editingAdditionId,
           );
 
       final newKeys = raw.newCandidates.toSet();
       final existingKeys = raw.existingCandidates.toSet();
+      final currentEditableKeys =
+          raw.currentAdditionEditableCandidates.toSet();
+      final currentProtectedKeys =
+          raw.currentAdditionProtectedCandidates.toSet();
 
       final items = [
         for (final key in raw.candidates)
           AddQazaCandidate(
             key: key,
-            status: !_dateAllowed(key.date, profile) ||
-                    (key.prayerType == PrayerType.witr &&
-                        !ProfileRules.effectiveWitr(profile))
-                ? AddQazaCandidateStatus.unavailable
-                : newKeys.contains(key)
-                    ? AddQazaCandidateStatus.newRecord
-                    : existingKeys.contains(key)
-                        ? AddQazaCandidateStatus.alreadyAdded
-                        : AddQazaCandidateStatus.unavailable,
+            status: currentEditableKeys.contains(key) ||
+                    currentProtectedKeys.contains(key)
+                ? AddQazaCandidateStatus.alreadyAdded
+                : !_dateAllowed(key.date, profile) ||
+                        (key.prayerType == PrayerType.witr &&
+                            !ProfileRules.effectiveWitr(profile))
+                    ? AddQazaCandidateStatus.unavailable
+                    : newKeys.contains(key)
+                        ? AddQazaCandidateStatus.newRecord
+                        : existingKeys.contains(key)
+                            ? AddQazaCandidateStatus.alreadyAdded
+                            : AddQazaCandidateStatus.unavailable,
           ),
       ]..sort((a, b) {
           final dateCompare = a.key.date.compareTo(b.key.date);
@@ -475,7 +544,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     if (profile == null || _disposed) return;
 
     final selected = Set<PrayerType>.of(state.selectedPrayers);
-    if (!ProfileRules.effectiveWitr(profile)) {
+    if (!ProfileRules.effectiveWitr(profile) &&
+        !state.addablePrayers.contains(PrayerType.witr) &&
+        !state.protectedPrayers.contains(PrayerType.witr)) {
       selected.remove(PrayerType.witr);
     }
 
@@ -545,7 +616,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final allowed = _profileAllowedPrayers(profile).toSet();
     if (dates.isEmpty) {
       final selected = Set<PrayerType>.of(state.selectedPrayers)
-        ..retainAll(allowed);
+        ..retainAll({...allowed, ...state.protectedPrayers, ...state.addablePrayers});
       state = state.copyWith(
         addablePrayers: Set.unmodifiable(allowed),
         selectedDateAvailability:
@@ -568,10 +639,15 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final analysisPrayers = {
+        ...allowed,
+        ...(_editingAdditionId == null ? const <PrayerType>{} : state.selectedPrayers),
+      };
       final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
-            prayerTypes: allowed,
+            prayerTypes: analysisPrayers,
+            editingAdditionId: _editingAdditionId,
           );
 
       if (_disposed || request != _prayerAvailabilityRequest) return;
@@ -588,6 +664,22 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         }
       }
 
+      // Existing records owned by this edit remain selectable so restoring
+      // the snapshot is stable across async availability refreshes. Protected
+      // records are retained but cannot be removed by the UI.
+      for (final key in raw.currentAdditionEditableCandidates) {
+        final date = QazaDate.normalize(key.date);
+        if (availableByDate.containsKey(date)) {
+          availableByDate[date]!.add(key.prayerType);
+        }
+      }
+      for (final key in raw.currentAdditionProtectedCandidates) {
+        final date = QazaDate.normalize(key.date);
+        if (availableByDate.containsKey(date)) {
+          availableByDate[date]!.add(key.prayerType);
+        }
+      }
+
       final normalizedDates = AddQazaSelectionRules.normalizeForMode(
         mode: state.mode,
         dates: dates,
@@ -599,15 +691,24 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
               Set.unmodifiable(availableByDate[QazaDate.normalize(date)] ??
                   const <PrayerType>{}),
       };
-      final addable = AddQazaSelectionRules.unionAvailablePrayers(
-        normalizedDates,
-        normalizedAvailability,
-      );
+      final addable = {
+        ...AddQazaSelectionRules.unionAvailablePrayers(
+          normalizedDates,
+          normalizedAvailability,
+        ),
+        ...raw.currentAdditionEditableCandidates.map(
+          (key) => key.prayerType,
+        ),
+      };
+      final protectedPrayers = raw.currentAdditionProtectedCandidates
+          .map((key) => key.prayerType)
+          .toSet();
       final selected = Set<PrayerType>.of(state.selectedPrayers);
+      final retained = {...addable, ...protectedPrayers};
       if (normalizedDates.isNotEmpty) {
-        selected.retainAll(addable);
+        selected.retainAll(retained);
       } else {
-        selected.retainAll(allowed);
+        selected.retainAll({...allowed, ...protectedPrayers});
       }
 
       final currentCalendar = ref.read(calendarControllerProvider);
@@ -628,6 +729,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
           normalizedAvailability,
         ),
         addablePrayers: Set.unmodifiable(addable),
+        protectedPrayers: Set.unmodifiable(protectedPrayers),
         selectedPrayers: Set.unmodifiable(selected),
         prayerAvailabilityLoading: false,
       );

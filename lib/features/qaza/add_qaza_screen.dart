@@ -41,9 +41,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     if (addition != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref
-            .read(addQazaControllerProvider.notifier)
-            .restoreFromSnapshot(addition.currentInputSnapshot);
+        ref.read(addQazaControllerProvider.notifier).restoreFromSnapshot(
+              addition.currentInputSnapshot,
+              editingAdditionId: addition.id,
+            );
       });
     }
   }
@@ -115,7 +116,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               addablePrayers: state.addablePrayers,
               availabilityLoading: state.prayerAvailabilityLoading,
               hasSelectedDates: state.selectedDates.isNotEmpty,
-              witrAllowed: ProfileRules.effectiveWitr(profile),
+              witrAllowed: ProfileRules.effectiveWitr(profile) ||
+                  state.addablePrayers.contains(PrayerType.witr) ||
+                  state.protectedPrayers.contains(PrayerType.witr),
               onToggle: (prayer) => ref
                   .read(addQazaControllerProvider.notifier)
                   .togglePrayer(prayer),
@@ -155,6 +158,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         analysis: initial,
         mode: ref.read(addQazaControllerProvider).mode,
         selectedDates: ref.read(addQazaControllerProvider).selectedDates,
+        allowEditWithoutNewRecords:
+            widget.editAddition != null &&
+            ref.read(addQazaControllerProvider).hasEditChanges,
         onAdd: _finalValidateAndStart,
       ),
     );
@@ -171,7 +177,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       final latest = await controller.refreshAnalysis();
       if (!mounted) return null;
 
-      if (latest.newCount == 0) return latest;
+      final currentState = ref.read(addQazaControllerProvider);
+      if (latest.newCount == 0 &&
+          (widget.editAddition == null || !currentState.hasEditChanges)) {
+        return latest;
+      }
 
       final current = ref.read(addQazaControllerProvider);
       final profile = ref.read(userProfileProvider).valueOrNull;
@@ -792,12 +802,14 @@ class _AddQazaReviewDialog extends StatefulWidget {
     required this.analysis,
     required this.mode,
     required this.selectedDates,
+    required this.allowEditWithoutNewRecords,
     required this.onAdd,
   });
 
   final AddQazaAnalysis analysis;
   final DateSelectionMode mode;
   final List<DateTime> selectedDates;
+  final bool allowEditWithoutNewRecords;
   final Future<AddQazaAnalysis?> Function() onAdd;
 
   @override
@@ -810,7 +822,9 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
   String? _error;
 
   Future<void> _confirm() async {
-    if (_analysis.newCount == 0) return;
+    if (_analysis.newCount == 0 && !widget.allowEditWithoutNewRecords) {
+      return;
+    }
 
     setState(() {
       _busy = true;
@@ -829,7 +843,7 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
         return;
       }
 
-      if (latest.newCount == 0) {
+      if (latest.newCount == 0 && !widget.allowEditWithoutNewRecords) {
         setState(() {
           _analysis = latest;
           _busy = false;
@@ -896,7 +910,11 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
           child: Text(l10n.commonBack),
         ),
         FilledButton.icon(
-          onPressed: _busy || _analysis.newCount == 0 ? null : _confirm,
+          onPressed: _busy ||
+                  (_analysis.newCount == 0 &&
+                      !widget.allowEditWithoutNewRecords)
+              ? null
+              : _confirm,
           icon: _busy
               ? const SizedBox(
                   width: 18,
@@ -908,7 +926,7 @@ class _AddQazaReviewDialogState extends State<_AddQazaReviewDialog> {
             _busy
                 ? l10n.addQazaChecking
                 : _analysis.newCount == 0
-                    ? l10n.addQazaNothingNew
+                    ? l10n.qazaSaveChanges
                     : l10n.addQazaAddCount(
                         _analysis.newCount.toString(),
                       ),

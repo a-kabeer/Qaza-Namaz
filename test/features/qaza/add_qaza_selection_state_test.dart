@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/widgets/prayer_selection_grid.dart';
+import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
+import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_controller.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -10,6 +12,57 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final day = (int value) => DateTime(2026, 10, value);
+
+  test('edit review is available for a removal-only delta', () {
+    final date = day(6);
+    final snapshot = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.single,
+      selectedDates: [date],
+      selectedPrayers: const [PrayerType.fajr, PrayerType.zuhr],
+    );
+    final state = AddQazaState(
+      selectedDates: [date],
+      selectedPrayers: const {PrayerType.fajr},
+      analysis: AddQazaAnalysis(
+        items: [
+          AddQazaCandidate(
+            key: QazaPrayerKey(
+              userId: 'guest',
+              date: date,
+              prayerType: PrayerType.fajr,
+            ),
+            status: AddQazaCandidateStatus.alreadyAdded,
+          ),
+        ],
+      ),
+      editSnapshot: snapshot,
+      calendarLoading: false,
+    );
+
+    expect(state.hasEditChanges, isTrue);
+    expect(state.canReview, isTrue);
+  });
+
+  test('unchanged edit stays disabled when there are no new records', () {
+    final date = day(7);
+    final snapshot = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.single,
+      selectedDates: [date],
+      selectedPrayers: const [PrayerType.fajr],
+    );
+    final state = AddQazaState(
+      selectedDates: [date],
+      selectedPrayers: const {PrayerType.fajr},
+      analysis: AddQazaAnalysis.empty,
+      editSnapshot: snapshot,
+      calendarLoading: false,
+    );
+
+    expect(state.hasEditChanges, isFalse);
+    expect(state.canReview, isFalse);
+  });
 
   test('Range keeps fully occupied dates', () {
     final availability = <DateTime, Set<PrayerType>>{

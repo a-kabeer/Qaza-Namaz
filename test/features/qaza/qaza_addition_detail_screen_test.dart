@@ -6,6 +6,7 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/features/qaza/qaza_addition_detail_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -204,6 +205,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Edit Addition pushes Add Qaza and Back returns to the same detail route', (
+    tester,
+  ) async {
+    final detail = _detail(
+      mode: QazaAdditionMode.multiple,
+      selectedDates: [
+        DateTime(2026, 9, 1),
+        DateTime(2026, 9, 3),
+      ],
+      selectedPrayers: [PrayerType.fajr, PrayerType.isha],
+      pendingCount: 2,
+      completedCount: 0,
+    );
+
+    final observer = _RecordingNavigatorObserver();
+    await _pumpDetail(tester, detail, navigatorObserver: observer);
+    final initialPushCount = observer.pushedCount;
+
+    await tester.ensureVisible(find.text('Edit Addition'));
+    await tester.tap(find.text('Edit Addition'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(observer.pushedCount, initialPushCount + 1);
+    expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
+    expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
+
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.pop();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(observer.poppedCount, 1);
+    expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
+    expect(find.text('2 Records'), findsOneWidget);
+  });
+
   testWidgets('Completed-only additions hide edit/delete while keeping view records', (
     tester,
   ) async {
@@ -270,11 +307,31 @@ QazaAdditionDetail _detail({
   );
 }
 
+class _RecordingNavigatorObserver extends NavigatorObserver {
+  int pushedCount = 0;
+  int poppedCount = 0;
+  Route<dynamic>? lastPushedRoute;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedCount++;
+    lastPushedRoute = route;
+    super.didPush(route, previousRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    poppedCount++;
+    super.didPop(route, previousRoute);
+  }
+}
+
 Future<void> _pumpDetail(
   WidgetTester tester,
   QazaAdditionDetail detail, {
   Locale locale = const Locale('en'),
   Size size = const Size(412, 900),
+  NavigatorObserver? navigatorObserver,
 }) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -285,11 +342,17 @@ Future<void> _pumpDetail(
         qazaAdditionDetailProvider(
           detail.addition.id,
         ).overrideWith((ref) async => detail),
+        prayerTimeClockProvider.overrideWith(
+          (ref) => Stream<DateTime>.value(DateTime(2026, 10, 3)),
+        ),
       ],
       child: MaterialApp(
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        navigatorObservers: [
+          if (navigatorObserver != null) navigatorObserver,
+        ],
         home: QazaAdditionDetailScreen(additionId: detail.addition.id),
       ),
     ),

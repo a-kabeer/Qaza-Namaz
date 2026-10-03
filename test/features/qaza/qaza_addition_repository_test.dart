@@ -179,6 +179,181 @@ void main() {
     expect(secondAttempt.conflictCount, 0);
   });
 
+  test('edit removes eligible pending records with no new records', () async {
+    final date1 = DateTime(2026, 9, 11);
+    final date2 = DateTime(2026, 9, 12);
+    final a = addition('a-edit-only', date1);
+    final snap = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.multiple,
+      selectedDates: [date1],
+      selectedPrayers: const [PrayerType.fajr],
+    );
+
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r-edit-keep', a.id, date1),
+        record('r-edit-remove', a.id, date2),
+      ],
+    );
+
+    final result = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: 1,
+      snapshot: snap,
+      requestedKeys: {
+        QazaRecordKey(date: date1, prayerType: PrayerType.fajr),
+      },
+      recordsToAdd: const [],
+    );
+
+    expect(result.revision, 2);
+    expect(result.addedCount, 0);
+    expect(result.removedCount, 1);
+    expect(result.protectedCount, 0);
+
+    final rows = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(rows, hasLength(1));
+    expect(rows.single.id, 'r-edit-keep');
+  });
+
+  test('edit keeps existing records without duplicate insertion', () async {
+    final date = DateTime(2026, 9, 13);
+    final a = addition('a-keep', date);
+
+    await repo.createAddition(
+      addition: a,
+      records: [record('r-keep', a.id, date)],
+    );
+
+    final result = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: 1,
+      snapshot: a.currentInputSnapshot,
+      requestedKeys: {
+        QazaRecordKey(date: date, prayerType: PrayerType.fajr),
+      },
+      recordsToAdd: const [],
+    );
+
+    expect(result.revision, 2);
+    expect(result.addedCount, 0);
+    expect(result.removedCount, 0);
+    expect((await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    )), hasLength(1));
+  });
+
+  test('edit performs add and remove atomically while preserving completed records', () async {
+    final date1 = DateTime(2026, 9, 14);
+    final date2 = DateTime(2026, 9, 15);
+    final date3 = DateTime(2026, 9, 16);
+    final a = addition('a-mixed', date1);
+    final snapshot = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.multiple,
+      selectedDates: [date1, date3],
+      selectedPrayers: const [PrayerType.fajr],
+    );
+
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r-remove', a.id, date2),
+        record('r-completed', a.id, date1),
+      ],
+    );
+    await db.qazaRecordsDao.completeByIds(
+      userId: 'u',
+      ids: ['r-completed'],
+      completedAt: DateTime(2026, 9, 17),
+    );
+
+    final result = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: 1,
+      snapshot: snapshot,
+      requestedKeys: {
+        QazaRecordKey(date: date1, prayerType: PrayerType.fajr),
+        QazaRecordKey(date: date3, prayerType: PrayerType.fajr),
+      },
+      recordsToAdd: [
+        QazaRecord(
+          id: 'r-new',
+          userId: 'u',
+          additionId: a.id,
+          prayerType: PrayerType.fajr,
+          originalDate: date3,
+          createdAt: date3,
+          updatedAt: date3,
+        ),
+      ],
+    );
+
+    expect(result.revision, 2);
+    expect(result.addedCount, 1);
+    expect(result.removedCount, 1);
+    expect(result.protectedCount, 0);
+
+    final rows = await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    );
+    expect(rows.map((row) => row.id).toSet(),
+        {'r-completed', 'r-new'});
+  });
+
+  test('edit counts a deselected completed record as protected', () async {
+    final date1 = DateTime(2026, 9, 18);
+    final date2 = DateTime(2026, 9, 19);
+    final a = addition('a-protected', date1);
+    final snapshot = QazaAdditionInputSnapshot(
+      schemaVersion: 1,
+      mode: QazaAdditionMode.single,
+      selectedDates: [date1],
+      selectedPrayers: const [PrayerType.fajr],
+    );
+
+    await repo.createAddition(
+      addition: a,
+      records: [
+        record('r-pending', a.id, date1),
+        record('r-completed-protected', a.id, date2),
+      ],
+    );
+    await db.qazaRecordsDao.completeByIds(
+      userId: 'u',
+      ids: ['r-completed-protected'],
+      completedAt: DateTime(2026, 9, 20),
+    );
+
+    final result = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: 1,
+      snapshot: snapshot,
+      requestedKeys: {
+        QazaRecordKey(date: date1, prayerType: PrayerType.fajr),
+      },
+      recordsToAdd: const [],
+    );
+
+    expect(result.removedCount, 0);
+    expect(result.protectedCount, 1);
+    expect((await repo.getRecordsForAddition(
+      userId: 'u',
+      additionId: a.id,
+    )), hasLength(2));
+  });
+
   test('edit removes only unchanged pending linked records', () async {
     final date1 = DateTime(2026, 9, 3);
     final date2 = DateTime(2026, 9, 4);

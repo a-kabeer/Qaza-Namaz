@@ -190,7 +190,7 @@ void main() {
     expect(source, contains('AddQazaSelectionRules.normalizeForMode'));
     expect(source, contains('_prayerAvailabilityRequest'));
     expect(source, contains('++_analysisRequest'));
-    expect(source, contains('retainAll(addable)'));
+    expect(source, contains('selected.retainAll(retained)'));
     expect(source, contains('ProfileRules.startPrayingDate(profile)'));
     expect(source, contains('calendarTodayProvider'));
     expect(source, contains('ProfileRules.effectiveWitr(profile)'));
@@ -211,6 +211,60 @@ void main() {
     expect(controller, contains('createOrEdit('));
     expect(controller, contains('additionId'));
     expect(controller, contains('expectedRevision'));
+  });
+
+  test('Add Qaza edit mode passes ownership context and preserves edit-only review', () {
+    final source =
+        File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
+    final controller =
+        File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
+    final service =
+        File('lib/domain/services/qaza_service.dart').readAsStringSync();
+    final availability =
+        File('lib/domain/services/qaza_availability_service.dart').readAsStringSync();
+
+    expect(source, contains('editingAdditionId: addition.id'));
+    expect(source, contains('widget.editAddition == null || !currentState.hasEditChanges'));
+    expect(source, contains('allowEditWithoutNewRecords:'));
+    expect(source, contains('qazaSaveChanges'));
+    expect(source, contains('witrAllowed: ProfileRules.effectiveWitr(profile) ||'));
+    expect(controller, contains('QazaAdditionInputSnapshot? editSnapshot'));
+    expect(controller, contains('bool get hasEditChanges'));
+    expect(controller, contains('currentAdditionEditableCandidates'));
+    expect(controller, contains('currentAdditionProtectedCandidates'));
+    expect(controller, contains('editingAdditionId: _editingAdditionId'));
+    expect(controller, contains('state.protectedPrayers.contains(prayer)'));
+    expect(service, contains('String? editingAdditionId'));
+    expect(service, contains('currentAdditionRetainedKeys'));
+    expect(availability, contains('currentAdditionEditableKeys'));
+    expect(availability, contains('currentAdditionProtectedKeys'));
+  });
+
+  test('Add Qaza edit snapshot maps all three selection modes', () {
+    final source =
+        File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
+
+    expect(
+      source,
+      contains('QazaAdditionMode.single => DateSelectionMode.single'),
+    );
+    expect(
+      source,
+      contains('QazaAdditionMode.range => DateSelectionMode.range'),
+    );
+    expect(
+      source,
+      contains('QazaAdditionMode.multiple => DateSelectionMode.multiple'),
+    );
+    expect(
+      source,
+      contains('selectedDates: List.unmodifiable('),
+    );
+    expect(
+      source,
+      contains('selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet())'),
+    );
+    expect(source, contains('editSnapshot: snapshot'));
   });
 
   test('Add Qaza uses shared determinate import progress without a cancel action', () {
