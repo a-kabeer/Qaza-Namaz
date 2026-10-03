@@ -62,14 +62,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     try {
       final currentProfile = ref.read(userProfileProvider).valueOrNull;
-      final calculationFieldsChanged = currentProfile == null
-          ? true
-          : ProfileQazaPlanReconciliationService.profileSnapshot(
-                currentProfile,
-              ) .toString() !=
-              ProfileQazaPlanReconciliationService.profileSnapshot(
-                finalizedProfile,
-              ).toString();
+    final calculationFieldsChanged = currentProfile == null
+        ? true
+        : ProfileQazaPlanReconciliationService.changedProfileFields(
+            ProfileQazaPlanReconciliationService.profileSnapshot(
+              currentProfile,
+            ),
+            ProfileQazaPlanReconciliationService.profileSnapshot(
+              finalizedProfile,
+            ),
+          ).isNotEmpty;
 
       ProfileQazaPlanPreview preview;
       ProfileQazaChangeChoice choice;
@@ -105,27 +107,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (preview.requiresUserDecision) {
         final totalWork =
             preview.pendingAdditionKeys.length + preview.removalRecordIds.length;
-        final started = ref.read(qazaImportProvider.notifier).startProfilePlanApply(
-              total: totalWork,
-              operation: (onProgress) async {
-                saveResult = await useCase.saveSettings(
-                  newProfile: finalizedProfile,
-                  preview: preview,
-                  choice: choice,
-                  onProgress: onProgress,
-                );
-              },
-            );
-        if (!started) {
-          snackbar.error(l10n.errorUnknown);
-          return;
-        }
-
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
           builder: (_) => QazaImportProgressDialog(
             title: l10n.profileQazaApplying,
+            onStart: () async {
+              final started = ref
+                  .read(qazaImportProvider.notifier)
+                  .startProfilePlanApply(
+                    total: totalWork,
+                    operation: (onProgress) async {
+                      saveResult = await useCase.saveSettings(
+                        newProfile: finalizedProfile,
+                        preview: preview,
+                        choice: choice,
+                        onProgress: onProgress,
+                      );
+                    },
+                  );
+              if (!started) {
+                throw StateError('Could not start profile Qaza update.');
+              }
+            },
           ),
         );
 
