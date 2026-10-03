@@ -252,7 +252,6 @@ class ProfileRules {
     }
 
     final dob = next.dateOfBirth;
-    final start = next.startPrayingAge;
     final validGender = next.gender;
     final validPuberty = next.pubertyAge;
     if (dob != null &&
