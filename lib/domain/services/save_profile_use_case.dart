@@ -1,3 +1,4 @@
+import '../../core/diagnostics/diagnostics.dart';
 import '../entities/qaza_plan_revision.dart';
 import '../entities/user_profile.dart';
 import 'profile_qaza_plan_reconciliation_service.dart';
@@ -27,11 +28,14 @@ class SaveProfileUseCase {
   SaveProfileUseCase({
     required UserProfileRepository profileRepository,
     required ProfileQazaPlanReconciliationService reconciliationService,
+    DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : _profileRepository = profileRepository,
-        _reconciliationService = reconciliationService;
+        _reconciliationService = reconciliationService,
+        _diagnostics = diagnostics;
 
   final UserProfileRepository _profileRepository;
   final ProfileQazaPlanReconciliationService _reconciliationService;
+  final DiagnosticsService _diagnostics;
 
   Future<void> saveDraft(UserProfile profile) {
     return _profileRepository.save(
@@ -46,11 +50,21 @@ class SaveProfileUseCase {
     if (oldProfile == null || !oldProfile.isComplete) {
       throw StateError('A completed profile is required for profile editing.');
     }
-    return _reconciliationService.preview(
-      userId: UserProfile.localLedgerUserId,
-      oldProfile: oldProfile,
-      newProfile: newProfile,
-    );
+    try {
+      return await _reconciliationService.preview(
+        userId: UserProfile.localLedgerUserId,
+        oldProfile: oldProfile,
+        newProfile: newProfile,
+      );
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.uncaught,
+        'profile_settings_prepare_failed',
+        error,
+        stack: stack,
+      );
+      rethrow;
+    }
   }
 
   Future<ProfileSaveResult> saveSettings({
@@ -91,7 +105,13 @@ class SaveProfileUseCase {
         keptExistingQaza: false,
         revision: result.revision,
       );
-    } catch (_) {
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.uncaught,
+        'profile_settings_save_failed',
+        error,
+        stack: stack,
+      );
       // Restore the previous profile so a failed reconciliation never leaves
       // the profile pointing at a calculation that was not successfully saved.
       try {
