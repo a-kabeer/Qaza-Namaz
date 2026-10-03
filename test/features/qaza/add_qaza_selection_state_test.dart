@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/widgets/prayer_selection_grid.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
+import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/features/calendar/calendar_controller.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_controller.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
