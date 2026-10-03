@@ -861,7 +861,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final contentStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
-    final contentEnd = source.indexOf('class _CompletedHeader extends ConsumerWidget {', contentStart);
+    final contentEnd = source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', contentStart);
     final trackerContent = source.substring(contentStart, contentEnd);
 
     expect(trackerContent, contains('_FilterSortBar('));
