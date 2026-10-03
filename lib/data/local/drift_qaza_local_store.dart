@@ -317,17 +317,17 @@ class DriftQazaLocalStore extends QazaLocalStore {
       var processedWork = 0;
       onProgress?.call(0, totalWork);
 
-      final removedIds = removed.map((record) => record.id).toSet();
-      if (removedIds.isNotEmpty) {
-        for (final id in removedIds) {
+      final removedIds = removed.map((record) => record.id).toList(growable: false);
+      for (var start = 0; start < removedIds.length; start += 500) {
+        final end =
+            start + 500 < removedIds.length ? start + 500 : removedIds.length;
+        final chunkIds = removedIds.sublist(start, end);
+        for (final id in chunkIds) {
           await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
-          processedWork++;
-          onProgress?.call(processedWork, totalWork);
         }
-        await _deleteProfilePlanProvenance(
-          userId,
-          removedIds.toList(growable: false),
-        );
+        await _deleteProfilePlanProvenance(userId, chunkIds);
+        processedWork += chunkIds.length;
+        onProgress?.call(processedWork, totalWork);
       }
       final requestedRemovalCount = removalIds.toSet().length;
       if (processedWork < requestedRemovalCount) {
@@ -367,13 +367,14 @@ class DriftQazaLocalStore extends QazaLocalStore {
             .insertRecordsReturningInsertedIds(
           chunk.map(_toCompanion).toList(growable: false),
         );
-        inserted.addAll(
-          chunk.where((record) => insertedIds.contains(record.id)),
-        );
+        final insertedChunk = chunk
+            .where((record) => insertedIds.contains(record.id))
+            .toList(growable: false);
+        inserted.addAll(insertedChunk);
+        await _upsertProfilePlanProvenance(insertedChunk);
         processedWork += chunk.length;
         onProgress?.call(processedWork, totalWork);
       }
-      await _upsertProfilePlanProvenance(inserted);
 
       final now = DateTime.now();
       final operations = <PendingSyncOp>[
