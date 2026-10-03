@@ -88,6 +88,8 @@ class AddQazaState {
       PrayerType.maghrib,
       PrayerType.isha,
     },
+    this.selectedDateAvailability =
+        const <DateTime, Set<PrayerType>>{},
     this.calendarAvailability = const <DateTime, Set<PrayerType>>{},
     this.calendarLoading = true,
     this.prayerAvailabilityLoading = false,
@@ -102,6 +104,9 @@ class AddQazaState {
 
   /// Prayers with at least one new occurrence across the selected dates.
   final Set<PrayerType> addablePrayers;
+
+  /// Exact prayer availability for the currently selected dates.
+  final Map<DateTime, Set<PrayerType>> selectedDateAvailability;
 
   final Map<DateTime, Set<PrayerType>> calendarAvailability;
   final bool calendarLoading;
@@ -122,6 +127,7 @@ class AddQazaState {
     List<DateTime>? selectedDates,
     Set<PrayerType>? selectedPrayers,
     Set<PrayerType>? addablePrayers,
+    Map<DateTime, Set<PrayerType>>? selectedDateAvailability,
     Map<DateTime, Set<PrayerType>>? calendarAvailability,
     bool? calendarLoading,
     bool? prayerAvailabilityLoading,
@@ -135,6 +141,8 @@ class AddQazaState {
         selectedDates: selectedDates ?? this.selectedDates,
         selectedPrayers: selectedPrayers ?? this.selectedPrayers,
         addablePrayers: addablePrayers ?? this.addablePrayers,
+        selectedDateAvailability:
+            selectedDateAvailability ?? this.selectedDateAvailability,
         calendarAvailability:
             calendarAvailability ?? this.calendarAvailability,
         calendarLoading: calendarLoading ?? this.calendarLoading,
@@ -151,9 +159,60 @@ final addQazaControllerProvider =
   AddQazaController.new,
 );
 
+/// Feature-specific date-selection rules for Add Qaza.
+class AddQazaSelectionRules {
+  const AddQazaSelectionRules._();
+
+  static List<DateTime> normalizeForMode({
+    required DateSelectionMode mode,
+    required Iterable<DateTime> dates,
+    required Map<DateTime, Set<PrayerType>> availability,
+  }) {
+    final canonical = dates.map(QazaDate.normalize).toSet().toList()..sort();
+
+    switch (mode) {
+      case DateSelectionMode.range:
+        // Range intentionally ignores prayer availability.
+        return List.unmodifiable(canonical);
+      case DateSelectionMode.single:
+        if (canonical.isEmpty) return const <DateTime>[];
+        final endpoint = canonical.last;
+        return hasAvailablePrayer(endpoint, availability)
+            ? <DateTime>[endpoint]
+            : const <DateTime>[];
+      case DateSelectionMode.multiple:
+        return List.unmodifiable(
+          canonical.where(
+            (date) => hasAvailablePrayer(date, availability),
+          ),
+        );
+    }
+  }
+
+  static bool hasAvailablePrayer(
+    DateTime date,
+    Map<DateTime, Set<PrayerType>> availability,
+  ) =>
+      availability[QazaDate.normalize(date)]?.isNotEmpty == true;
+
+  static Set<PrayerType> unionAvailablePrayers(
+    Iterable<DateTime> dates,
+    Map<DateTime, Set<PrayerType>> availability,
+  ) {
+    final result = <PrayerType>{};
+    for (final date in dates) {
+      result.addAll(
+        availability[QazaDate.normalize(date)] ?? const <PrayerType>{},
+      );
+    }
+    return result;
+  }
+}
+
 class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   DateTime? _visibleMonth;
   bool _disposed = false;
+  bool _syncingCalendarSelection = false;
   int _calendarRequest = 0;
   int _prayerAvailabilityRequest = 0;
   int _analysisRequest = 0;
@@ -219,10 +278,10 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       clearError: true,
     );
 
-    ref.read(calendarControllerProvider.notifier).restoreSelection(
-          mode: mode,
-          dates: snapshot.selectedDates,
-        );
+    _restoreCalendarSelection(
+      mode: mode,
+      dates: snapshot.selectedDates,
+    );
     if (snapshot.selectedDates.isNotEmpty) {
       final first = QazaDate.normalize(snapshot.selectedDates.first);
       unawaited(refreshCalendarMonth(first));
@@ -231,6 +290,23 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
   }
 
   void setMode(DateSelectionMode mode) {
+    final current = state;
+    if (mode == current.mode) return;
+
+    if (current.mode == DateSelectionMode.range &&
+        (mode == DateSelectionMode.single ||
+            mode == DateSelectionMode.multiple) &&
+        _hasCompleteAvailabilitySnapshot(current.selectedDates)) {
+      final normalized = AddQazaSelectionRules.normalizeForMode(
+        mode: mode,
+        dates: current.selectedDates,
+        availability: current.selectedDateAvailability,
+      );
+      _restoreCalendarSelection(mode: mode, dates: normalized);
+      _refreshPrayerAvailability();
+      return;
+    }
+
     ref.read(calendarControllerProvider.notifier).setSelectionMode(mode);
   }
 
@@ -421,7 +497,41 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       selectedDates: List.unmodifiable(dates),
       clearError: true,
     );
+    if (_syncingCalendarSelection) return;
     _refreshPrayerAvailability();
+  }
+
+  bool _hasCompleteAvailabilitySnapshot(Iterable<DateTime> dates) {
+    final availability = state.selectedDateAvailability;
+    return dates.every(
+      (date) => availability.containsKey(QazaDate.normalize(date)),
+    );
+  }
+
+  bool _sameDates(Iterable<DateTime> a, Iterable<DateTime> b) {
+    final left = a.map(QazaDate.normalize).toList()..sort();
+    final right = b.map(QazaDate.normalize).toList()..sort();
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
+    }
+    return true;
+  }
+
+  void _restoreCalendarSelection({
+    required DateSelectionMode mode,
+    required Iterable<DateTime> dates,
+  }) {
+    final canonical = dates.map(QazaDate.normalize).toSet().toList()..sort();
+    _syncingCalendarSelection = true;
+    try {
+      ref.read(calendarControllerProvider.notifier).restoreSelection(
+            mode: mode,
+            dates: canonical,
+          );
+    } finally {
+      _syncingCalendarSelection = false;
+    }
   }
 
   Future<void> _refreshPrayerAvailability() async {
@@ -429,12 +539,17 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final profile = ref.read(userProfileProvider).valueOrNull;
     if (profile == null) return;
 
+    // Any date/mode change invalidates analysis that may still be in flight.
+    ++_analysisRequest;
+
     final allowed = _profileAllowedPrayers(profile).toSet();
     if (dates.isEmpty) {
       final selected = Set<PrayerType>.of(state.selectedPrayers)
         ..retainAll(allowed);
       state = state.copyWith(
         addablePrayers: Set.unmodifiable(allowed),
+        selectedDateAvailability:
+            const <DateTime, Set<PrayerType>>{},
         selectedPrayers: Set.unmodifiable(selected),
         prayerAvailabilityLoading: false,
         analysis: AddQazaAnalysis.empty,
@@ -445,6 +560,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
     final request = ++_prayerAvailabilityRequest;
     state = state.copyWith(
+      selectedDateAvailability:
+          const <DateTime, Set<PrayerType>>{},
       prayerAvailabilityLoading: true,
       analysis: AddQazaAnalysis.empty,
       clearError: true,
@@ -459,16 +576,57 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
       if (_disposed || request != _prayerAvailabilityRequest) return;
 
-      final addable = <PrayerType>{
-        for (final key in raw.newCandidates)
-          if (_dateAllowed(key.date, profile) &&
-              allowed.contains(key.prayerType))
-            key.prayerType,
+      final availableByDate = <DateTime, Set<PrayerType>>{
+        for (final date in dates) QazaDate.normalize(date): <PrayerType>{},
       };
-      final selected = Set<PrayerType>.of(state.selectedPrayers)
-        ..retainAll(addable);
+      for (final key in raw.newCandidates) {
+        final date = QazaDate.normalize(key.date);
+        if (_dateAllowed(key.date, profile) &&
+            allowed.contains(key.prayerType) &&
+            availableByDate.containsKey(date)) {
+          availableByDate[date]!.add(key.prayerType);
+        }
+      }
+
+      final normalizedDates = AddQazaSelectionRules.normalizeForMode(
+        mode: state.mode,
+        dates: dates,
+        availability: availableByDate,
+      );
+      final normalizedAvailability = <DateTime, Set<PrayerType>>{
+        for (final date in normalizedDates)
+          QazaDate.normalize(date):
+              Set.unmodifiable(availableByDate[QazaDate.normalize(date)] ??
+                  const <PrayerType>{}),
+      };
+      final addable = AddQazaSelectionRules.unionAvailablePrayers(
+        normalizedDates,
+        normalizedAvailability,
+      );
+      final selected = Set<PrayerType>.of(state.selectedPrayers);
+      if (normalizedDates.isNotEmpty) {
+        selected.retainAll(addable);
+      } else {
+        selected.retainAll(allowed);
+      }
+
+      final currentCalendar = ref.read(calendarControllerProvider);
+      if (!_sameDates(
+        currentCalendar.datesForStorage,
+        normalizedDates,
+      ) ||
+          currentCalendar.selectionMode != state.mode) {
+        _restoreCalendarSelection(
+          mode: state.mode,
+          dates: normalizedDates,
+        );
+      }
 
       state = state.copyWith(
+        selectedDates: List.unmodifiable(normalizedDates),
+        selectedDateAvailability: Map.unmodifiable(
+          normalizedAvailability,
+        ),
         addablePrayers: Set.unmodifiable(addable),
         selectedPrayers: Set.unmodifiable(selected),
         prayerAvailabilityLoading: false,
