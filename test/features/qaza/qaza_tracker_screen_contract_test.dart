@@ -912,7 +912,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final trackerStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
-    final trackerEnd = source.indexOf('class _CompletedHeader extends ConsumerWidget {', trackerStart);
+    final trackerEnd = source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', trackerStart);
     final tracker = source.substring(trackerStart, trackerEnd);
 
     expect(tracker, contains('_FilterSortBar('));
@@ -920,6 +920,85 @@ void main() {
     expect(source, contains('_FilterSheet(additionId: state.additionId)'));
     expect(source, contains('qazaTrackerControllerProvider(additionId)'));
     expect(source, contains('qaza_tracker_sort'));
+  });
+
+  test('Pending and Completed share the same progress header', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final end =
+        source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', start);
+    final tracker = source.substring(start, end);
+
+    expect(tracker, contains('_ProgressHeader(additionId: additionId),'));
+    expect(tracker, isNot(contains('_CompletedHeader(')));
+    expect(source, isNot(contains('class _CompletedHeader extends')));
+  });
+
+  test('shared progress header keeps one stable footprint and existing progress sources', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _ProgressHeader extends ConsumerWidget {');
+    final end = source.indexOf(
+      'class _TrackerContent extends StatelessWidget {',
+      start,
+    );
+    final header = source.substring(start, end);
+
+    expect(header, contains('static const double _headerHeight = 84;'));
+    expect(header, contains('height: _headerHeight,'));
+    expect(header, contains("Key('qaza_tracker_progress_header')"));
+    expect(header, contains('qazaAdditionDetailProvider(additionId!)'));
+    expect(header, contains('progressSummaryProvider'));
+    expect(header, contains('detail.pendingCount + detail.completedCount'));
+    expect(header, contains('detail.completedCount / total'));
+    expect(header, contains('summary.overall.percentage'));
+    expect(header, contains('summary.overall.completed'));
+    expect(header, contains('summary.overall.pending'));
+    expect(header, contains('LinearProgressIndicator(value: percentage)'));
+    expect(header, contains('qaza_tracker_progress'));
+    expect(
+      header,
+      isNot(contains('SizedBox(height: 3, child: LinearProgressIndicator())')),
+    );
+    expect(header, contains('error: (_, __) => const SizedBox.shrink()'));
+  });
+
+  test('Pending rows use a neutral leading pending status icon and keep restricted lock status', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _RecordRow extends StatelessWidget {');
+    final end = source.indexOf(
+      'class _CompletionSwipeBackground extends StatelessWidget {',
+      start,
+    );
+    final row = source.substring(start, end);
+
+    expect(row, contains('leading: Icon('));
+    expect(row, contains('Icons.radio_button_unchecked_rounded'));
+    expect(row, contains('size: 20'));
+    expect(row, contains('theme.colorScheme.onSurfaceVariant'));
+    expect(row, contains('Icons.lock_clock_rounded'));
+    expect(row, contains('static const double _rowHeight = 68;'));
+    expect(row, contains('trailing: SizedBox('));
+    expect(row, contains('width: _selectionControlWidth'));
+    expect(row, contains('height: _selectionControlWidth'));
+    expect(row, contains('Checkbox('));
+    expect(row, isNot(contains('leading: selectionMode')));
+  });
+
+  test('Completed rows retain their check-circle status icon', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+    final start = source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+    final end = source.indexOf(
+      'class _CompletedBatchActionBar extends ConsumerWidget {',
+      start,
+    );
+    final row = source.substring(start, end);
+
+    expect(row, contains('Icons.check_circle_rounded'));
+    expect(row, contains('leading: Icon('));
   });
 
 }
