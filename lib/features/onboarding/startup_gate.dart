@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../domain/services/profile_rules.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
+import '../account/account_choice_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
 
@@ -13,6 +14,15 @@ class StartupGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(accountSessionManagerProvider);
+    if (session.state.phase == AccountSessionPhase.loading) {
+      return const SplashScreen();
+    }
+    if (session.initialChoiceRequired &&
+        session.activeLocalAccountId == null) {
+      return const AccountChoiceScreen();
+    }
+
     final profileAsync = ref.watch(userProfileProvider);
     return profileAsync.when(
       loading: () => const SplashScreen(),
