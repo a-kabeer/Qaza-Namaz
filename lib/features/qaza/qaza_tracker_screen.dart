@@ -273,9 +273,9 @@ class _ProgressHeader extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xs),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: const SizedBox(
+            child: SizedBox(
               height: 8,
-              child: LinearProgressIndicator(),
+              child: LinearProgressIndicator(value: percentage),
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
