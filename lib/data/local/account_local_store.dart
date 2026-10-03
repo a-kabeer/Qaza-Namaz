@@ -139,7 +139,7 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> ensureGuestActive() async {
+  Future<String> ensureGuestActive() async {
     final now = DateTime.now().microsecondsSinceEpoch;
     final guest = await getAccount(UserProfile.localLedgerUserId);
     if (guest == null) {
@@ -151,17 +151,24 @@ class AccountLocalStore {
            VALUES ('guest', 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
         variables: [Variable(now), Variable(now)],
       );
-    } else if (guest.lifecycleState == AccountLifecycleState.archived) {
+      await activate(UserProfile.localLedgerUserId);
+      return UserProfile.localLedgerUserId;
+    }
+    if (guest.lifecycleState == AccountLifecycleState.archived) {
+      final freshGuestId = _randomId('guest');
       await database.customInsert(
         '''INSERT INTO local_accounts
            (local_account_id, account_mode, firebase_uid, google_email,
             lifecycle_state, cloud_backup_enabled, cloud_generation,
             created_at, updated_at)
            VALUES (?, 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
-        variables: [Variable(_randomId('guest')), Variable(now), Variable(now)],
+        variables: [Variable(freshGuestId), Variable(now), Variable(now)],
       );
+      await activate(freshGuestId);
+      return freshGuestId;
     }
-    await activate(UserProfile.localLedgerUserId);
+    await activate(guest.localAccountId);
+    return guest.localAccountId;
   }
 
   Future<String> createGooglePartition({
@@ -225,9 +232,9 @@ class AccountLocalStore {
       await database.customUpdate(
         '''INSERT INTO qaza_records
            (id, user_id, prayer_type, original_date, status, completed_at,
-            completion_id, created_at, updated_at)
+            completion_id, addition_id, record_version, created_at, updated_at)
            SELECT id, ?, prayer_type, original_date, status, completed_at,
-                  completion_id, created_at, updated_at
+                  completion_id, addition_id, record_version, created_at, updated_at
            FROM qaza_records WHERE user_id = ?''',
         variables: [Variable(target), Variable(guest.localAccountId)],
       );
@@ -426,24 +433,34 @@ class AccountLocalStore {
     final now = DateTime.now().microsecondsSinceEpoch;
     final device = await deviceInstanceId();
     final opId = _randomId('op');
-    await database.customUpdate(
-      '''INSERT INTO account_profiles
-         (local_account_id, payload_json, entity_version, updated_at,
-          writer_device_id, operation_id)
-         VALUES (?, ?, 1, ?, ?, ?)
-         ON CONFLICT(local_account_id) DO UPDATE SET
-           payload_json = excluded.payload_json,
-           entity_version = account_profiles.entity_version + 1,
-           updated_at = excluded.updated_at,
-           writer_device_id = excluded.writer_device_id,
-           operation_id = excluded.operation_id''',
-      variables: [
-        Variable(localAccountId),
-        Variable(jsonEncode(profile.toJson())),
-        Variable(now),
-        Variable(device),
-        Variable(opId),
-      ],
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''INSERT INTO account_profiles
+           (local_account_id, payload_json, entity_version, updated_at,
+            writer_device_id, operation_id)
+           VALUES (?, ?, 1, ?, ?, ?)
+           ON CONFLICT(local_account_id) DO UPDATE SET
+             payload_json = excluded.payload_json,
+             entity_version = account_profiles.entity_version + 1,
+             updated_at = excluded.updated_at,
+             writer_device_id = excluded.writer_device_id,
+             operation_id = excluded.operation_id''',
+        variables: [
+          Variable(localAccountId),
+          Variable(jsonEncode(profile.toJson())),
+          Variable(now),
+          Variable(device),
+          Variable(opId),
+        ],
+      );
+      await _enqueueSnapshotInsideTransaction(localAccountId, now, device);
+    });
+  }
+
+  Future<void> clearProfile(String localAccountId) async {
+    await database.customDelete(
+      'DELETE FROM account_profiles WHERE local_account_id = ?',
+      variables: [Variable(localAccountId)],
     );
   }
 
@@ -489,17 +506,24 @@ class AccountLocalStore {
       }
       return;
     }
-    await database.customInsert(
-      '''INSERT INTO account_plan_revisions
-         (local_account_id, revision_id, payload_json, created_at)
-         VALUES (?, ?, ?, ?)''',
-      variables: [
-        Variable(localAccountId),
-        Variable(revision.revisionId),
-        Variable(payload),
-        Variable(revision.createdAt.microsecondsSinceEpoch),
-      ],
-    );
+    await database.transaction(() async {
+      await database.customInsert(
+        '''INSERT INTO account_plan_revisions
+           (local_account_id, revision_id, payload_json, created_at)
+           VALUES (?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(revision.revisionId),
+          Variable(payload),
+          Variable(revision.createdAt.microsecondsSinceEpoch),
+        ],
+      );
+      await _enqueueSnapshotInsideTransaction(
+        localAccountId,
+        DateTime.now().microsecondsSinceEpoch,
+        await deviceInstanceId(),
+      );
+    });
   }
 
   Future<List<Map<String, Object?>>> loadModernOutboxBatch({
@@ -644,6 +668,40 @@ class AccountLocalStore {
     );
   }
 
+  Future<void> _enqueueSnapshotInsideTransaction(
+    String localAccountId,
+    int nowMicros,
+    String writerDeviceId,
+  ) async {
+    final rows = await database.customSelect(
+      '''SELECT firebase_uid, cloud_generation, cloud_backup_enabled
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId)],
+    ).get();
+    if (rows.isEmpty || rows.first.read<int>('cloud_backup_enabled') == 0) {
+      return;
+    }
+    final uid = rows.first.read<String?>('firebase_uid');
+    if (uid == null || uid.isEmpty) return;
+    await database.customInsert(
+      '''INSERT INTO sync_outbox
+         (id, user_id, type, queued_at, firebase_uid, cloud_generation,
+          entity_type, operation, next_attempt_at, attempts, worker_id,
+          lease_until, writer_device_id)
+         VALUES (?, ?, 'account_snapshot', ?, ?, ?, 'account', 'snapshot',
+                 ?, 0, NULL, NULL, ?)''',
+      variables: [
+        Variable(_randomId('snapshot')),
+        Variable(localAccountId),
+        Variable(nowMicros),
+        Variable(uid),
+        Variable(rows.first.read<int>('cloud_generation')),
+        Variable(nowMicros),
+        Variable(writerDeviceId),
+      ],
+    );
+  }
+
   Future<void> _ensureGuestAccount({
     required bool hasLegacyProfile,
     required bool hasLegacyQaza,
@@ -731,5 +789,3 @@ class AccountLocalStore {
 
   String jsonEncode(Object value) => json.encode(value);
 }
-
-// patch marker
