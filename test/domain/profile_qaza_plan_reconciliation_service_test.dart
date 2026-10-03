@@ -6,7 +6,6 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
 import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
-import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
@@ -14,7 +13,6 @@ import 'package:qaza_namaz/domain/repositories/qaza_plan_revision_repository.dar
 import 'package:qaza_namaz/domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/services/profile_qaza_plan_reconciliation_service.dart';
-import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 
@@ -149,7 +147,7 @@ class MemoryMutationRepository implements QazaProfilePlanMutationRepository {
       qaza.records.add(record);
       added.add(record);
     }
-    last = QazaProfilePlanMutationResult(userId: userId, added: added, removed: removed, operationIds: [...added.map((r) => 'add_' + r.id), ...removed.map((r) => 'delete_' + r.id)]);
+    last = QazaProfilePlanMutationResult(userId: userId, added: added, removed: removed, operationIds: [...added.map((r) => 'add_${r.id}'), ...removed.map((r) => 'delete_${r.id}')]);
     return last!;
   }
 
