@@ -131,14 +131,27 @@ class MemoryMutationRepository implements QazaProfilePlanMutationRepository {
   QazaProfilePlanMutationResult? last;
 
   @override
-  Future<QazaProfilePlanMutationResult> applyProfilePlanChanges({required String userId, required List<QazaRecord> additions, required List<String> removalIds, required Set<String> newPlanKeys, required String expectedPreviousPlanFingerprint}) async {
+  Future<QazaProfilePlanMutationResult> applyProfilePlanChanges({required String userId, required List<QazaRecord> additions, required List<String> removalIds, required Set<String> newPlanKeys, required String expectedPreviousPlanFingerprint, void Function(int processed, int total)? onProgress}) async {
+    final total = removalIds.length + additions.length;
+    var processed = 0;
+    onProgress?.call(processed, total);
     final removed = <QazaRecord>[];
     for (final id in removalIds) {
       final index = qaza.records.indexWhere((r) => r.id == id);
-      if (index < 0) continue;
+      if (index < 0) {
+        processed++;
+        onProgress?.call(processed, total);
+        continue;
+      }
       final record = qaza.records[index];
-      if (record.status != QazaStatus.pending || record.profilePlanRevisionId == null || record.profilePlanFingerprint == null || newPlanKeys.contains(qaza.key(record))) continue;
+      if (record.status != QazaStatus.pending || record.profilePlanRevisionId == null || record.profilePlanFingerprint == null || newPlanKeys.contains(qaza.key(record))) {
+        processed++;
+        onProgress?.call(processed, total);
+        continue;
+      }
       removed.add(record);
+      processed++;
+      onProgress?.call(processed, total);
     }
     qaza.records.removeWhere((r) => removed.any((x) => x.id == r.id));
     final added = <QazaRecord>[];
@@ -146,6 +159,8 @@ class MemoryMutationRepository implements QazaProfilePlanMutationRepository {
       if (qaza.records.any((x) => qaza.key(x) == qaza.key(record))) continue;
       qaza.records.add(record);
       added.add(record);
+      processed++;
+      onProgress?.call(processed, total);
     }
     last = QazaProfilePlanMutationResult(userId: userId, added: added, removed: removed, operationIds: [...added.map((r) => 'add_${r.id}'), ...removed.map((r) => 'delete_${r.id}')]);
     return last!;
