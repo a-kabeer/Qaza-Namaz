@@ -69,6 +69,13 @@ Future<void> _undoFromSnack({
       userId: userId,
       expectedBatch: batch,
     );
+    if (!context.mounted) {
+      await manager.cancelSelection(
+        userId: userId,
+        expectedBatch: activeBatch,
+      );
+      return;
+    }
   } on QazaUndoException catch (error, stack) {
     ref.read(diagnosticsProvider).recordFailure(
       DiagnosticArea.qazaCompletion,

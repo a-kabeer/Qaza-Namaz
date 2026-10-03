@@ -209,20 +209,28 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             );
           }
         } else if (afterOriginalDate != null) {
+          final prayerRank = afterPrayerRank ??
+              (throw StateError('Pending pagination cursor is missing prayer rank.'));
+          final recordId = afterId ??
+              (throw StateError('Pending pagination cursor is missing record id.'));
           predicates.add(
             row.originalDate.isBiggerThanValue(afterOriginalDate) |
                 (row.originalDate.equals(afterOriginalDate) &
-                    (qazaPrayerRank.isBiggerThanValue(afterPrayerRank!) |
-                        (qazaPrayerRank.equals(afterPrayerRank!) &
-                            row.id.isBiggerThanValue(afterId!)))),
+                    (qazaPrayerRank.isBiggerThanValue(prayerRank) |
+                        (qazaPrayerRank.equals(prayerRank) &
+                            row.id.isBiggerThanValue(recordId)))),
           );
         } else if (beforeOriginalDate != null) {
+          final prayerRank = beforePrayerRank ??
+              (throw StateError('Pending pagination cursor is missing prayer rank.'));
+          final recordId = beforeId ??
+              (throw StateError('Pending pagination cursor is missing record id.'));
           predicates.add(
             row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                 (row.originalDate.equals(beforeOriginalDate) &
-                    (qazaPrayerRank.isSmallerThanValue(beforePrayerRank!) |
-                        (qazaPrayerRank.equals(beforePrayerRank!) &
-                            row.id.isSmallerThanValue(beforeId!)))),
+                    (qazaPrayerRank.isSmallerThanValue(prayerRank) |
+                        (qazaPrayerRank.equals(prayerRank) &
+                            row.id.isSmallerThanValue(recordId)))),
           );
         }
 

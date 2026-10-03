@@ -396,7 +396,7 @@ class QazaUndoManager {
           (expectedBatch == null || active.matches(expectedBatch));
 
       final batch = useActiveSelection
-          ? active!
+          ? active
           : await restore(userId: userId);
       if (batch == null) {
         throw const QazaUndoException(

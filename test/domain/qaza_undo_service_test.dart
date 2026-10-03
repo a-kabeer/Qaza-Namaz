@@ -649,10 +649,6 @@ void main() {
       prayerType: PrayerType.zuhr,
       originalDate: DateTime(2026, 9, 2),
     );
-    final records = <String, QazaRecord>{
-      firstRecord.id: firstRecord,
-      secondRecord.id: secondRecord,
-    };
     final store = _MemoryUndoStore();
     var now = DateTime(2026, 9, 26, 11);
     final manager = QazaUndoManager(store: store, now: () => now);

@@ -122,7 +122,6 @@ void main() {
       pubertyAge: 12,
       startPrayingAge: 13,
     );
-
     expect(ProfileRules.pubertyDate(profile), isNotNull);
     expect(ProfileRules.startPrayingDate(profile), isNotNull);
 
@@ -208,7 +207,7 @@ void main() {
       pubertyAge: 12,
       startPrayingAge: 15,
     );
-    final service = const QazaPlanService();
+    const service = QazaPlanService();
 
     final first = service.planFor(base)!;
     final changedDob = service.planFor(
