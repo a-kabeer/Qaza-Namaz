@@ -854,7 +854,10 @@ void main() {
   test('Recent Addition management actions disappear when nothing is pending', () {
     final detail =
         File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
-    expect(detail, contains('if (detail.pendingCount > 0) ...['));
+    expect(
+      detail,
+      contains('if (!detail.isDeleted && detail.pendingCount > 0) ...['),
+    );
     expect(detail, contains('Edit Addition'));
     expect(detail, contains('Delete Addition'));
   });
