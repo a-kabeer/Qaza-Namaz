@@ -117,11 +117,6 @@ void main() {
       month: 9,
       day: 30,
     );
-    final profile = _profile(
-      dob: dob,
-      pubertyAge: 12,
-      startPrayingAge: 13,
-    );
     expect(ProfileRules.pubertyDate(profile), isNotNull);
     expect(ProfileRules.startPrayingDate(profile), isNotNull);
 
