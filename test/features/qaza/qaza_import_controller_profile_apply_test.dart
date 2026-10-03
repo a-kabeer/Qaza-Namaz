@@ -11,7 +11,7 @@ void main() {
     addTearDown(container.dispose);
 
     final controller = container.read(qazaImportProvider.notifier);
-    final reachedDone = Completer<void>();
+    final finished = Completer<void>();
     final progress = <(int, int)>[];
 
     expect(
@@ -26,14 +26,13 @@ void main() {
           await Future<void>.value();
           onProgress(10, 10);
           progress.add((10, 10));
+          finished.complete();
         },
       ),
       isTrue,
     );
 
-    await Future<void>.value();
-    await Future<void>.value();
-    await Future<void>.value();
+    await finished.future;
 
     expect(progress, [(0, 10), (5, 10), (10, 10)]);
     expect(
@@ -42,8 +41,6 @@ void main() {
     );
     expect(container.read(qazaImportProvider).processed, 10);
     expect(container.read(qazaImportProvider).total, 10);
-    reachedDone.complete();
-    await reachedDone.future;
   });
 
   test('profile Qaza apply can retry after an atomic failure', () async {
