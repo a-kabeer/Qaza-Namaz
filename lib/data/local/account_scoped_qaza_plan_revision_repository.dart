@@ -18,6 +18,5 @@ class AccountScopedQazaPlanRevisionRepository
   @override
   Future<void> save(QazaPlanRevision revision) async {
     await store.savePlanRevision(revision.userId, revision);
-    await store.enqueueSnapshot(revision.userId);
   }
 }
