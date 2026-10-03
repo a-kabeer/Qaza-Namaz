@@ -430,7 +430,10 @@ void main() {
         find.byKey(const Key('home_activity_inline_month_detail')),
         findsOneWidget,
       );
-      expect(find.text('No activity yet'), findsOneWidget);
+      expect(
+        find.text('No completed Qaza in this period.'),
+        findsOneWidget,
+      );
     },
   );
 
