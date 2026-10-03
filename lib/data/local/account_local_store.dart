@@ -836,6 +836,19 @@ class AccountLocalStore {
     return changed > 0;
   }
 
+  Future<void> clearBackupOperations(String localAccountId) async {
+    final rows = await database.customSelect(
+      '''SELECT cloud_generation FROM local_accounts
+         WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId)],
+    ).get();
+    if (rows.isEmpty) return;
+    await removeAllOutboxForGeneration(
+      localAccountId: localAccountId,
+      generation: rows.first.read<int>('cloud_generation'),
+    );
+  }
+
   Future<void> removeOutboxOperation({
     required String localAccountId,
     required String operationId,
