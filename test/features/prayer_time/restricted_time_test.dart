@@ -270,7 +270,7 @@ void main() {
       );
     });
 
-    test('reports the next restricted window when none is active', {
+    test('reports the next restricted window when none is active', () {
       final now = tz.TZDateTime.from(
         DateTime.utc(2026, 9, 27, 4, 0),
         location,
