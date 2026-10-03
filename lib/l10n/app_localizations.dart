@@ -1657,7 +1657,17 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adding Qaza...'**
   String get addQazaInProgress;
+
+  /// No description provided for @qazaImportAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
   String get qazaImportAdded;
+
+  /// No description provided for @qazaImportSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
   String get qazaImportSkipped;
 
   /// No description provided for @addQazaCreatedTitle.
@@ -3009,78 +3019,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Prayer Time'**
   String get prayerTimeTitle;
-  /// No description provided for @qiblaTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Qibla'**
-  String get qiblaTitle;
-
-  /// No description provided for @qiblaDirection.
-  ///
-  /// In en, this message translates to:
-  /// **'Qibla Direction'**
-  String get qiblaDirection;
-
-  /// No description provided for @qiblaBearing.
-  ///
-  /// In en, this message translates to:
-  /// **'Qibla bearing'**
-  String get qiblaBearing;
-
-  /// No description provided for @qiblaFromTrueNorth.
-  ///
-  /// In en, this message translates to:
-  /// **'From True North'**
-  String get qiblaFromTrueNorth;
-
-  /// No description provided for @qiblaUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Qibla unavailable'**
-  String get qiblaUnavailable;
-
-  /// No description provided for @qiblaLocationRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Select or save a location to calculate Qibla.'**
-  String get qiblaLocationRequired;
-
-  /// No description provided for @qiblaCompassBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Rotate your phone; the arrow points toward Qibla.'**
-  String get qiblaCompassBody;
-
-  /// No description provided for @qiblaSensorUnavailableBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This device has no usable compass sensor, so a static Qibla bearing is shown.'**
-  String get qiblaSensorUnavailableBody;
-
-  /// No description provided for @qiblaHeadingUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Compass heading is temporarily unavailable.'**
-  String get qiblaHeadingUnavailable;
-
-  /// No description provided for @qiblaTurnToDirection.
-  ///
-  /// In en, this message translates to:
-  /// **'Rotate your phone in this direction.'**
-  String get qiblaTurnToDirection;
-
-  /// No description provided for @qiblaCompassAccuracy.
-  ///
-  /// In en, this message translates to:
-  /// **'Compass accuracy ±{degrees}°'**
-  String qiblaCompassAccuracy(String degrees);
-
-  /// No description provided for @qiblaCalibrationHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.'**
-  String get qiblaCalibrationHint;
-
 
   /// No description provided for @prayerTimeLocation.
   ///
@@ -3423,6 +3361,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Isha'**
   String get prayerTimeIsha;
+
+  /// No description provided for @qiblaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Qibla'**
+  String get qiblaTitle;
+
+  /// No description provided for @qiblaDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'Qibla Direction'**
+  String get qiblaDirection;
+
+  /// No description provided for @qiblaBearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Qibla bearing'**
+  String get qiblaBearing;
+
+  /// No description provided for @qiblaFromTrueNorth.
+  ///
+  /// In en, this message translates to:
+  /// **'From True North'**
+  String get qiblaFromTrueNorth;
+
+  /// No description provided for @qiblaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Qibla unavailable'**
+  String get qiblaUnavailable;
+
+  /// No description provided for @qiblaLocationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select or save a location to calculate Qibla.'**
+  String get qiblaLocationRequired;
+
+  /// No description provided for @qiblaCompassBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate your phone; the arrow points toward Qibla.'**
+  String get qiblaCompassBody;
+
+  /// No description provided for @qiblaSensorUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no usable compass sensor, so a static Qibla bearing is shown.'**
+  String get qiblaSensorUnavailableBody;
+
+  /// No description provided for @qiblaHeadingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass heading is temporarily unavailable.'**
+  String get qiblaHeadingUnavailable;
+
+  /// No description provided for @qiblaTurnToDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate your phone in this direction.'**
+  String get qiblaTurnToDirection;
+
+  /// No description provided for @qiblaCompassAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass accuracy ±{degrees}°'**
+  String qiblaCompassAccuracy(String degrees);
+
+  /// No description provided for @qiblaCalibrationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.'**
+  String get qiblaCalibrationHint;
 }
 
 class _AppLocalizationsDelegate

@@ -1723,49 +1723,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prayerTimeTitle => 'Prayer Time';
-  @override
-  String get qiblaTitle => 'Qibla';
-
-  @override
-  String get qiblaDirection => 'Qibla Direction';
-
-  @override
-  String get qiblaBearing => 'Qibla bearing';
-
-  @override
-  String get qiblaFromTrueNorth => 'From True North';
-
-  @override
-  String get qiblaUnavailable => 'Qibla unavailable';
-
-  @override
-  String get qiblaLocationRequired =>
-      'Select or save a location to calculate Qibla.';
-
-  @override
-  String get qiblaCompassBody =>
-      'Rotate your phone; the arrow points toward Qibla.';
-
-  @override
-  String get qiblaSensorUnavailableBody =>
-      'This device has no usable compass sensor, so a static Qibla bearing is shown.';
-
-  @override
-  String get qiblaHeadingUnavailable =>
-      'Compass heading is temporarily unavailable.';
-
-  @override
-  String get qiblaTurnToDirection => 'Rotate your phone in this direction.';
-
-  @override
-  String qiblaCompassAccuracy(String degrees) {
-    return 'Compass accuracy ±$degrees°';
-  }
-
-  @override
-  String get qiblaCalibrationHint =>
-      'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.';
-
 
   @override
   String get prayerTimeLocation => 'Location';
@@ -1951,4 +1908,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prayerTimeIsha => 'Isha';
+
+  @override
+  String get qiblaTitle => 'Qibla';
+
+  @override
+  String get qiblaDirection => 'Qibla Direction';
+
+  @override
+  String get qiblaBearing => 'Qibla bearing';
+
+  @override
+  String get qiblaFromTrueNorth => 'From True North';
+
+  @override
+  String get qiblaUnavailable => 'Qibla unavailable';
+
+  @override
+  String get qiblaLocationRequired =>
+      'Select or save a location to calculate Qibla.';
+
+  @override
+  String get qiblaCompassBody =>
+      'Rotate your phone; the arrow points toward Qibla.';
+
+  @override
+  String get qiblaSensorUnavailableBody =>
+      'This device has no usable compass sensor, so a static Qibla bearing is shown.';
+
+  @override
+  String get qiblaHeadingUnavailable =>
+      'Compass heading is temporarily unavailable.';
+
+  @override
+  String get qiblaTurnToDirection => 'Rotate your phone in this direction.';
+
+  @override
+  String qiblaCompassAccuracy(String degrees) {
+    return 'Compass accuracy ±$degrees°';
+  }
+
+  @override
+  String get qiblaCalibrationHint =>
+      'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.';
 }
