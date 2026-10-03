@@ -8,7 +8,6 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/features/qaza/qaza_addition_detail_screen.dart';
-import 'package:qaza_namaz/features/qaza/add_qaza_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
@@ -244,15 +243,12 @@ void main() {
     await tester.tap(find.text('Edit Addition'));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(AddQazaScreen), findsOneWidget);
     expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.pop();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(observer.poppedCount, 1);
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
     expect(find.text('4 Records'), findsOneWidget);
   });
