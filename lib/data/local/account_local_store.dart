@@ -380,6 +380,19 @@ class AccountLocalStore {
     });
   }
 
+  Future<void> unarchiveAccount(String localAccountId) async {
+    await database.customUpdate(
+      '''UPDATE local_accounts
+         SET lifecycle_state = 'active', updated_at = ?
+         WHERE local_account_id = ?''',
+      variables: [
+        Variable(DateTime.now().microsecondsSinceEpoch),
+        Variable(localAccountId),
+      ],
+    );
+    await activate(localAccountId);
+  }
+
   Future<void> deleteLocalAccount(String localAccountId) async {
     if (localAccountId == UserProfile.localLedgerUserId) {
       throw StateError('The base Guest partition cannot be removed.');
