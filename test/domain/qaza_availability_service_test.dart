@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/services/current_day_qaza_eligibility_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 
 QazaRecord _record({
@@ -198,7 +199,7 @@ void main() {
       CurrentDayQazaPrayerTimeContext(
         localNow: now,
         localToday: DateTime(2026, 10, 3),
-        cutoffByPrayer: const {
+        cutoffByPrayer: {
           PrayerType.fajr: DateTime(2026, 10, 3, 6),
           PrayerType.zuhr: DateTime(2026, 10, 3, 15, 30),
           PrayerType.asr: DateTime(2026, 10, 3, 18),
@@ -243,7 +244,7 @@ void main() {
       ),
     );
 
-    expect(result.existingCount, 1);
+    expect(result.alreadyRecorded + result.alreadyPrayed, 1);
     expect(result.unavailableCount, 1);
     expect(result.newCount, 0);
     expect(
