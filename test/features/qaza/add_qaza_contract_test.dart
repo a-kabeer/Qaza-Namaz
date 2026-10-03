@@ -298,6 +298,24 @@ void main() {
     expect(source, contains('bottomNavigationBar: bottomNavigationBar'));
   });
 
+  test('Add Qaza rejects stale availability and analysis results', () {
+    final source =
+        File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
+
+    expect(source, contains('++_prayerAvailabilityRequest'));
+    expect(
+      source,
+      contains(
+        'if (_disposed || request != _prayerAvailabilityRequest) return;',
+      ),
+    );
+    expect(source, contains('++_analysisRequest'));
+    expect(
+      source,
+      contains('if (_disposed || request != _analysisRequest) return analysis;'),
+    );
+  });
+
   test('Add Qaza separates Range date validity from target-mode availability', () {
     final source =
         File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
