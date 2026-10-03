@@ -339,6 +339,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet()),
       analysis: AddQazaAnalysis.empty,
       protectedPrayers: const <PrayerType>{},
+      timeBlockedPrayers: const <PrayerType>{},
       editSnapshot: snapshot,
       clearError: true,
     );
@@ -354,6 +355,51 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     unawaited(_refreshPrayerAvailability());
   }
 
+  Future<CurrentDayQazaPrayerTimeContext> _resolvePrayerTimeContext() async {
+    var snapshot = ref.read(prayerTimeControllerProvider).valueOrNull;
+    var now = ref.read(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+
+    if (snapshot != null) {
+      final preview = buildCurrentDayQazaPrayerTimeContext(
+        snapshot: snapshot,
+        now: now,
+      );
+      if (QazaDate.normalize(snapshot.today.date) !=
+          QazaDate.normalize(preview.localToday)) {
+        await ref
+            .read(prayerTimeControllerProvider.notifier)
+            .refreshForDateIfNeeded(preview.localToday);
+        snapshot = ref.read(prayerTimeControllerProvider).valueOrNull;
+        now = ref.read(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+      }
+    }
+
+    final context = buildCurrentDayQazaPrayerTimeContext(
+      snapshot: snapshot,
+      now: now,
+    );
+    _latestPrayerTimeContext = context;
+    return context;
+  }
+
+  Future<CurrentDayQazaPrayerTimeContext>
+      resolveCurrentPrayerTimeContextForQaza() => _resolvePrayerTimeContext();
+
+  Future<void> _onPrayerTimeEligibilityChanged() async {
+    if (_disposed || _prayerTimeRefreshInFlight) return;
+    _prayerTimeRefreshInFlight = true;
+    try {
+      final visible = _visibleMonth;
+      if (visible != null) {
+        await refreshCalendarMonth(visible);
+      }
+      if (!_disposed && state.selectedDates.isNotEmpty) {
+        await _refreshPrayerAvailability();
+      }
+    } finally {
+      _prayerTimeRefreshInFlight = false;
+    }
+  }
   void setMode(DateSelectionMode mode) {
     final current = state;
     if (mode == current.mode) return;
@@ -438,12 +484,14 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final prayers = _profileAllowedPrayers(profile);
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final available =
           await ref.read(qazaServiceProvider).getAvailablePrayersByDate(
                 userId: ref.read(requiredUserIdProvider),
                 dates: dates,
                 prayerTypes: prayers,
                 editingAdditionId: _editingAdditionId,
+                prayerTimeContext: prayerTimeContext,
               );
 
       if (_disposed || request != _calendarRequest) return;
@@ -493,11 +541,13 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
             dates: dates,
             prayerTypes: prayers,
             editingAdditionId: _editingAdditionId,
+            prayerTimeContext: prayerTimeContext,
           );
 
       final newKeys = raw.newCandidates.toSet();
@@ -662,6 +712,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
             dates: dates,
             prayerTypes: analysisPrayers,
             editingAdditionId: _editingAdditionId,
+            prayerTimeContext: prayerTimeContext,
           );
 
       if (_disposed || request != _prayerAvailabilityRequest) return;
