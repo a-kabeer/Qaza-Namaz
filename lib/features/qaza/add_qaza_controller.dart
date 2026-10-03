@@ -686,6 +686,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         selectedDateAvailability:
             const <DateTime, Set<PrayerType>>{},
         selectedPrayers: Set.unmodifiable(selected),
+        timeBlockedPrayers: const <PrayerType>{},
         prayerAvailabilityLoading: false,
         analysis: AddQazaAnalysis.empty,
         analysisLoading: false,
@@ -703,6 +704,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
 
     try {
+      final prayerTimeContext = await _resolvePrayerTimeContext();
       final analysisPrayers = {
         ...allowed,
         ...(_editingAdditionId == null ? const <PrayerType>{} : state.selectedPrayers),
@@ -768,8 +770,24 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       final protectedPrayers = raw.currentAdditionProtectedCandidates
           .map((key) => key.prayerType)
           .toSet();
+      final timeBlockedPrayers = <PrayerType>{};
+      const timeService = CurrentDayQazaEligibilityService();
+      for (final date in dates) {
+        for (final prayer in allowed) {
+          if (timeService.evaluate(
+                date: date,
+                prayerType: prayer,
+                context: prayerTimeContext,
+              ) ==
+              CurrentDayQazaTimeEligibility.notYetDue) {
+            timeBlockedPrayers.add(prayer);
+          }
+        }
+      }
       final selected = Set<PrayerType>.of(state.selectedPrayers);
       final retained = {...addable, ...protectedPrayers};
+      timeBlockedPrayers.removeAll(addable);
+      timeBlockedPrayers.removeAll(protectedPrayers);
       if (normalizedDates.isNotEmpty) {
         selected.retainAll(retained);
       } else {
@@ -795,6 +813,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         ),
         addablePrayers: Set.unmodifiable(addable),
         protectedPrayers: Set.unmodifiable(protectedPrayers),
+        timeBlockedPrayers: Set.unmodifiable(timeBlockedPrayers),
         selectedPrayers: Set.unmodifiable(selected),
         prayerAvailabilityLoading: false,
       );
