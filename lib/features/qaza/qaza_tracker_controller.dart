@@ -41,6 +41,16 @@ extension QazaStatusFilterX on QazaStatusFilter {
         QazaStatusFilter.pending => 'Pending',
         QazaStatusFilter.completed => 'Completed',
       };
+
+  /// Default sort direction for each status workspace.
+  ///
+  /// Pending and All retain the historical oldest-first ordering. Completed
+  /// defaults to newest-first because its primary date field is [completedAt].
+  QazaSortOrder get defaultSortOrder => switch (this) {
+        QazaStatusFilter.completed => QazaSortOrder.newestFirst,
+        QazaStatusFilter.all ||
+        QazaStatusFilter.pending => QazaSortOrder.oldestFirst,
+      };
 }
 
 /// Sort state shared by Pending and Completed. The controller maps the
@@ -221,8 +231,10 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     Future.microtask(refresh);
     if (request == null) return QazaTrackerState(additionId: additionId);
     _consumeRequest(request);
+    final status = request.status ?? QazaStatusFilter.pending;
     return QazaTrackerState(
-      statusFilter: request.status ?? QazaStatusFilter.pending,
+      statusFilter: status,
+      sortOrder: status.defaultSortOrder,
       prayerFilter: request.prayer,
       additionId: request.additionId,
     );
@@ -232,12 +244,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
   void _applyRequest(QazaTrackerFilterRequest request) {
     _consumeRequest(request);
     final status = request.status ?? state.statusFilter;
+    final statusChanged = status != state.statusFilter;
 
     // Every cross-screen hand-off represents a complete filter context.
     // Clear the previous context first, then apply only the filters supplied
     // by the new request.
     state = state.copyWith(
       statusFilter: status,
+      sortOrder: statusChanged ? status.defaultSortOrder : state.sortOrder,
       clearPrayerFilter: true,
       clearDates: true,
       clearAdditionId: true,
@@ -411,6 +425,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     if (filter == state.statusFilter) return;
     state = state.copyWith(
       statusFilter: filter,
+      sortOrder: filter.defaultSortOrder,
       records: const <QazaRecord>[],
       hasMore: false,
       loadingMore: false,
