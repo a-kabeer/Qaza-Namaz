@@ -35,7 +35,7 @@ void main() {
     final l10n = AppLocalizations.of(context);
 
     expect(find.byType(Card), findsOneWidget);
-    expect(find.text('24 Records'), findsOneWidget);
+    expect(find.text('24 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
     expect(find.text('18 Pending · 6 Completed'), findsOneWidget);
     final gregorian = find.text(
       MaterialLocalizations.of(context).formatMediumDate(date),
@@ -44,8 +44,8 @@ void main() {
     expect(gregorian, findsOneWidget);
     expect(hijri, findsOneWidget);
     expect(tester.getTopLeft(gregorian).dy, lessThan(tester.getTopLeft(hijri).dy));
-    expect(find.text('1 day'), findsOneWidget);
-    expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('Fajr · 1'), findsOneWidget);
+    expect(find.text('Isha · 1'), findsOneWidget);
     expect(find.text('Revision'), findsNothing);
   });
 
@@ -81,8 +81,10 @@ void main() {
 
     expect(find.text(gregorian), findsOneWidget);
     expect(find.text(hijri), findsOneWidget);
-    expect(find.text('7 days'), findsOneWidget);
-    expect(find.text('35 requested slots'), findsOneWidget);
+    expect(find.text('35 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('7 Dates'), findsOneWidget);
+    expect(find.text('Fajr · 7'), findsOneWidget);
+    expect(find.text('Isha · 7'), findsOneWidget);
   });
 
   testWidgets('Multiple mode pairs every date with its Hijri date', (
@@ -106,14 +108,17 @@ void main() {
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
 
-    for (final date in dates) {
-      final line =
-          '${MaterialLocalizations.of(context).formatMediumDate(date)} · '
-          '${HijriDateService.format(date, l10n)}';
-      expect(find.text(line), findsOneWidget);
-    }
-    expect(find.text('3 dates'), findsOneWidget);
-    expect(find.text('6 requested slots'), findsOneWidget);
+    final gregorian = dates
+        .map(MaterialLocalizations.of(context).formatMediumDate)
+        .join(' · ');
+    final hijri =
+        dates.map((date) => HijriDateService.format(date, l10n)).join(' · ');
+
+    expect(find.text(gregorian), findsOneWidget);
+    expect(find.text(hijri), findsOneWidget);
+    expect(find.text('3 Dates'), findsOneWidget);
+    expect(find.text('Fajr · 3'), findsOneWidget);
+    expect(find.text('Witr · 3'), findsOneWidget);
   });
 
   testWidgets('Prayer chips use canonical order and include Witr', (tester) async {
@@ -148,10 +153,8 @@ void main() {
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
     expect(find.text('Witr'), findsOneWidget);
-    expect(
-      find.text('4 ${l10n.addQazaPrayersLabel}'),
-      findsOneWidget,
-    );
+    expect(find.text('Fajr · 1'), findsOneWidget);
+    expect(find.text('Witr · 1'), findsOneWidget);
   });
 
   testWidgets('Urdu locale uses localized prayer names', (tester) async {
@@ -193,16 +196,11 @@ void main() {
 
     expect(tester.takeException(), isNull);
 
-    final last = dates.last;
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
-    final lastLine =
-        '${MaterialLocalizations.of(context).formatMediumDate(last)} · '
-        '${HijriDateService.format(last, l10n)}';
-    expect(find.text(lastLine), findsOneWidget);
-
-    await tester.ensureVisible(find.text(lastLine));
-    expect(tester.takeException(), isNull);
+    expect(find.text('30 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('30 Dates'), findsOneWidget);
+    expect(find.text('+ 27 more'), findsOneWidget);
   });
 
   testWidgets('Edit Addition pushes Add Qaza and Back returns to the same detail route', (
@@ -238,7 +236,9 @@ void main() {
 
     expect(observer.poppedCount, 1);
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
-    expect(find.text('2 Records'), findsOneWidget);
+    expect(find.text('2 ${AppLocalizations.of(
+      tester.element(find.byType(QazaAdditionDetailScreen)),
+    ).addQazaPrayersLabel}'), findsOneWidget);
   });
 
   testWidgets('Completed-only additions hide edit/delete while keeping view records', (
