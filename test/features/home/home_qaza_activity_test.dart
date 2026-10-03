@@ -211,7 +211,7 @@ void main() {
   );
 
   testWidgets(
-    'each yearly month bar is tappable and opens the exact month',
+    'yearly month tap selects inline monthly detail without navigation',
     (tester) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
@@ -219,75 +219,90 @@ void main() {
       await tester.pumpAndSettle();
 
       final chartFinder = find.byKey(const Key('home_activity_year_chart'));
-      final chartWidget = tester.widget<BarChart>(
+      final initialChart = tester.widget<BarChart>(
         find.descendant(of: chartFinder, matching: find.byType(BarChart)),
       );
-      final callback = chartWidget.data.barTouchData.touchCallback;
 
-      expect(chartWidget.data.barGroups, hasLength(12));
-      expect(chartWidget.data.barTouchData.enabled, isTrue);
-      expect(callback, isNotNull);
+      expect(initialChart.data.barGroups, hasLength(12));
+      expect(initialChart.data.barTouchData.enabled, isTrue);
+      expect(initialChart.data.barTouchData.touchCallback, isNotNull);
+      expect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+        findsNothing,
+      );
+      expect(
+        tester.state<NavigatorState>(find.byType(Navigator).first).canPop(),
+        isFalse,
+      );
 
-      const expectedMonths = <String>[
-        'January 2026',
-        'February 2026',
-        'March 2026',
-        'April 2026',
-        'May 2026',
-        'June 2026',
-        'July 2026',
-        'August 2026',
-        'September 2026',
-        'October 2026',
-        'November 2026',
-        'December 2026',
-      ];
-
-      for (var index = 0; index < expectedMonths.length; index++) {
-        final group = chartWidget.data.barGroups[index];
-        final rod = group.barRods.first;
-        final spot = BarTouchedSpot(
-          group,
-          index,
-          rod,
-          0,
-          null,
-          -1,
-          FlSpot(group.x.toDouble(), rod.toY),
-          Offset.zero,
+      for (final index in <int>[8, 9]) {
+        final latestChart = tester.widget<BarChart>(
+          find.descendant(
+            of: find.byKey(const Key('home_activity_year_chart')),
+            matching: find.byType(BarChart),
+          ),
         );
+        final group = latestChart.data.barGroups[index];
+        final rod = group.barRods.first;
 
-        callback!(
+        latestChart.data.barTouchData.touchCallback!(
           FlTapUpEvent(
             TapUpDetails(kind: PointerDeviceKind.touch),
           ),
           BarTouchResponse(
             touchLocation: Offset.zero,
             touchChartCoordinate: Offset.zero,
-            spot: spot,
+            spot: BarTouchedSpot(
+              group,
+              index,
+              rod,
+              0,
+              null,
+              -1,
+              FlSpot(group.x.toDouble(), rod.toY),
+              Offset.zero,
+            ),
           ),
         );
         await tester.pumpAndSettle();
 
+        final expectedMonth = index == 8 ? 'September 2026' : 'October 2026';
         expect(
           tester.widget<Text>(
-            find.byKey(const Key('home_activity_date_header')),
+            find.byKey(const Key('home_activity_selected_month_title')),
           ).data,
-          expectedMonths[index],
+          expectedMonth,
         );
         expect(
-          find.byKey(const Key('home_activity_month_drilldown')),
+          find.byKey(const Key('home_activity_inline_month_detail')),
           findsOneWidget,
         );
+        expect(find.byKey(const Key('home_qaza_activity')), findsOneWidget);
+        expect(
+          find.byKey(const Key('home_activity_range_selector')),
+          findsOneWidget,
+        );
+        expect(
+          tester.state<NavigatorState>(find.byType(Navigator).first).canPop(),
+          isFalse,
+        );
 
-        await tester.pageBack();
-        await tester.pumpAndSettle();
+        final selectedChart = tester.widget<BarChart>(
+          find.descendant(
+            of: find.byKey(const Key('home_activity_year_chart')),
+            matching: find.byType(BarChart),
+          ),
+        );
+        expect(
+          selectedChart.data.barGroups[index].barRods.first.color,
+          Theme.of(tester.element(chartFinder)).colorScheme.primary,
+        );
       }
     },
   );
 
   testWidgets(
-    'yearly drilldown preserves a cross-year month and returns to the same year',
+    'selected month follows year navigation without stale previous-year detail',
     (tester) async {
       await tester.pumpWidget(buildWidget());
       await tester.pumpAndSettle();
@@ -304,52 +319,118 @@ void main() {
         '2025',
       );
 
-      final chartFinder = find.byKey(const Key('home_activity_year_chart'));
       final chartWidget = tester.widget<BarChart>(
-        find.descendant(of: chartFinder, matching: find.byType(BarChart)),
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
       );
-      final callback = chartWidget.data.barTouchData.touchCallback;
       final group = chartWidget.data.barGroups[11];
       final rod = group.barRods.first;
-      final spot = BarTouchedSpot(
-        group,
-        11,
-        rod,
-        0,
-        null,
-        -1,
-        FlSpot(group.x.toDouble(), rod.toY),
-        Offset.zero,
-      );
 
-      callback!(
+      chartWidget.data.barTouchData.touchCallback!(
         FlTapUpEvent(
           TapUpDetails(kind: PointerDeviceKind.touch),
         ),
         BarTouchResponse(
           touchLocation: Offset.zero,
           touchChartCoordinate: Offset.zero,
-          spot: spot,
+          spot: BarTouchedSpot(
+            group,
+            11,
+            rod,
+            0,
+            null,
+            -1,
+            FlSpot(group.x.toDouble(), rod.toY),
+            Offset.zero,
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(
         tester.widget<Text>(
-          find.byKey(const Key('home_activity_date_header')),
+          find.byKey(const Key('home_activity_selected_month_title')),
         ).data,
         'December 2025',
       );
+      expect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+        findsOneWidget,
+      );
 
-      await tester.pageBack();
+      await tester.tap(find.byKey(const Key('home_activity_previous')));
       await tester.pumpAndSettle();
 
       expect(
         tester.widget<Text>(
           find.byKey(const Key('home_activity_date_header')),
         ).data,
-        '2025',
+        '2024',
       );
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_selected_month_title')),
+        ).data,
+        'December 2024',
+      );
+      expect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'zero-activity yearly months remain selectable inline',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      final chartWidget = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      final group = chartWidget.data.barGroups[10];
+      final rod = group.barRods.first;
+
+      chartWidget.data.barTouchData.touchCallback!(
+        FlTapUpEvent(
+          TapUpDetails(kind: PointerDeviceKind.touch),
+        ),
+        BarTouchResponse(
+          touchLocation: Offset.zero,
+          touchChartCoordinate: Offset.zero,
+          spot: BarTouchedSpot(
+            group,
+            10,
+            rod,
+            0,
+            null,
+            -1,
+            FlSpot(group.x.toDouble(), rod.toY),
+            Offset.zero,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_selected_month_title')),
+        ).data,
+        'November 2026',
+      );
+      expect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+        findsOneWidget,
+      );
+      expect(find.text('No activity yet'), findsOneWidget);
     },
   );
 

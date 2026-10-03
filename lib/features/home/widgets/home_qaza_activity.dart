@@ -8,7 +8,6 @@ import '../../../app/providers.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/prayer_types.dart';
-import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/services/qaza_activity_service.dart';
@@ -20,12 +19,7 @@ import 'home_prayer_icon.dart';
 enum _ActivityRange { weekly, monthly, yearly }
 
 class HomeQazaActivity extends ConsumerStatefulWidget {
-  const HomeQazaActivity({
-    super.key,
-    this.initialMonth,
-  });
-
-  final DateTime? initialMonth;
+  const HomeQazaActivity({super.key});
 
   @override
   ConsumerState<HomeQazaActivity> createState() => _HomeQazaActivityState();
@@ -39,32 +33,15 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
   var _range = _ActivityRange.weekly;
   var _pageIndex = _basePage;
   DateTime? _selectedDay;
+  DateTime? _selectedMonth;
 
   @override
   void initState() {
     super.initState();
 
-    final initialMonth = widget.initialMonth;
-    if (initialMonth == null) {
-      _maxPage = _basePage;
-      _pageController = PageController(initialPage: _basePage);
-      return;
-    }
-
-    _range = _ActivityRange.monthly;
-    final today = ref.read(homeLocalDateProvider);
-    final initialOffset = _monthDifference(
-      DateTime(today.year, today.month),
-      DateTime(initialMonth.year, initialMonth.month),
-    );
-
-    _pageIndex = _basePage + initialOffset;
-    _maxPage = _basePage + math.max(initialOffset, 0);
-    _pageController = PageController(initialPage: _pageIndex);
+    _maxPage = _basePage;
+    _pageController = PageController(initialPage: _basePage);
   }
-
-  static int _monthDifference(DateTime from, DateTime to) =>
-      (to.year - from.year) * 12 + (to.month - from.month);
 
   @override
   void dispose() {
@@ -97,6 +74,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
       _range = range;
       _pageIndex = _basePage;
       _selectedDay = null;
+      _selectedMonth = null;
     });
     _pageController.jumpToPage(_basePage);
   }
@@ -117,7 +95,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     final anchor = _anchorForOffset(today, _periodOffset);
     final canPrevious = _pageIndex > 0;
     final canNext = _pageIndex < _maxPage;
-    final standalone = widget.initialMonth != null;
 
     final content = Card(
       key: const Key('home_qaza_activity'),
@@ -224,9 +201,15 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 controller: _pageController,
                 itemCount: _maxPage + 1,
                 onPageChanged: (index) {
+                  final pageAnchor =
+                      _anchorForOffset(today, index - _basePage);
                   setState(() {
                     _pageIndex = index;
                     _selectedDay = null;
+                    if (_selectedMonth != null) {
+                      _selectedMonth =
+                          DateTime(pageAnchor.year, _selectedMonth!.month);
+                    }
                   });
                 },
                 itemBuilder: (context, index) {
@@ -242,6 +225,15 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                     onSelectedDay: index == _pageIndex
                         ? (date) => setState(() => _selectedDay = date)
                         : null,
+                    selectedMonth:
+                        index == _pageIndex ? _selectedMonth : null,
+                    onSelectedMonth: index == _pageIndex
+                        ? (month) => setState(() {
+                              _selectedMonth =
+                                  DateTime(month.year, month.month);
+                              _selectedDay = null;
+                            })
+                        : null,
                   );
                   },
                 ),
@@ -249,7 +241,29 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
             );
               },
             ),
-            if (_selectedDay != null && _range != _ActivityRange.yearly) ...[
+            if (_range == _ActivityRange.yearly && _selectedMonth != null) ...[
+              const SizedBox(height: 16),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: _InlineMonthlyDetail(
+                    key: ValueKey(
+                      'home_activity_month_detail_${_selectedMonth!.year}_${_selectedMonth!.month}',
+                    ),
+                    month: _selectedMonth!,
+                    selectedDay: _selectedDay,
+                    onSelectedDay: (date) {
+                      setState(() => _selectedDay = date);
+                    },
+                  ),
+                ),
+              ),
+            ] else if (_selectedDay != null &&
+                _range != _ActivityRange.yearly) ...[
               const SizedBox(height: 12),
               _SelectedActivityDayDetails(
                 key: const Key('home_activity_selected_day_details'),
@@ -263,26 +277,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
       ),
     );
 
-    if (!standalone) return content;
-
-    final locale = Localizations.localeOf(context).languageCode;
-    final monthTitle = DateFormat.yMMMM(locale).format(anchor);
-
-    return AppScaffold(
-      key: const Key('home_activity_month_drilldown'),
-      title: monthTitle,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            AppSpacing.fabClearance,
-          ),
-          child: content,
-        ),
-      ),
-    );
+    return content;
   }
 
   double _activityViewportHeight(
@@ -427,12 +422,16 @@ class _ActivityPeriodPage extends ConsumerWidget {
     required this.anchor,
     required this.selectedDay,
     required this.onSelectedDay,
+    required this.selectedMonth,
+    required this.onSelectedMonth,
   });
 
   final _ActivityRange range;
   final DateTime anchor;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
+  final DateTime? selectedMonth;
+  final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -461,18 +460,10 @@ class _ActivityPeriodPage extends ConsumerWidget {
         range: range,
         selectedDay: selectedDay,
         onSelectedDay: onSelectedDay,
+        selectedMonth: selectedMonth,
         onSelectedMonth: range == _ActivityRange.yearly
-            ? (month) => _openMonthlyDrilldown(context, month)
+            ? onSelectedMonth
             : null,
-      ),
-    );
-  }
-
-  void _openMonthlyDrilldown(BuildContext context, DateTime month) {
-    final target = DateTime(month.year, month.month);
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => HomeQazaActivity(initialMonth: target),
       ),
     );
   }
@@ -495,6 +486,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
     required this.range,
     required this.selectedDay,
     required this.onSelectedDay,
+    required this.selectedMonth,
     required this.onSelectedMonth,
   });
 
@@ -502,6 +494,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
   final _ActivityRange range;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
+  final DateTime? selectedMonth;
   final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
@@ -548,6 +541,7 @@ class _ActivityPeriodContent extends ConsumerWidget {
             labelsAreDates: false,
             selectedDay: null,
             onSelectedDay: null,
+            selectedMonth: selectedMonth,
             onSelectedMonth: onSelectedMonth,
           ),
       ],
@@ -736,6 +730,7 @@ class _ActivityBarChart extends StatelessWidget {
     required this.labelsAreDates,
     required this.selectedDay,
     required this.onSelectedDay,
+    this.selectedMonth,
     this.onSelectedMonth,
   });
 
@@ -743,6 +738,7 @@ class _ActivityBarChart extends StatelessWidget {
   final bool labelsAreDates;
   final DateTime? selectedDay;
   final ValueChanged<DateTime>? onSelectedDay;
+  final DateTime? selectedMonth;
   final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
@@ -875,13 +871,21 @@ class _ActivityBarChart extends StatelessWidget {
 
   Color _barColor(BuildContext context, QazaDailyActivity day) {
     final scheme = Theme.of(context).colorScheme;
-    final selected =
-        selectedDay != null && day.date == DateTime(
-          selectedDay!.year,
-          selectedDay!.month,
-          selectedDay!.day,
+    final selectedDayValue = selectedDay;
+    final selectedDayMatches = selectedDayValue != null &&
+        day.date == DateTime(
+          selectedDayValue.year,
+          selectedDayValue.month,
+          selectedDayValue.day,
         );
-    return selected ? scheme.primary : scheme.primary.withAlpha(120);
+    final selectedMonthValue = selectedMonth;
+    final selectedMonthMatches = selectedMonthValue != null &&
+        day.date.year == selectedMonthValue.year &&
+        day.date.month == selectedMonthValue.month;
+
+    return selectedDayMatches || selectedMonthMatches
+        ? scheme.primary
+        : scheme.primary.withAlpha(120);
   }
 
   String _chartSemantics(BuildContext context) {
@@ -893,6 +897,93 @@ class _ActivityBarChart extends StatelessWidget {
             ? '${DateFormat.EEEE(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}'
             : '${DateFormat.MMMM(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}',
     ].join(', ');
+  }
+}
+
+class _InlineMonthlyDetail extends ConsumerWidget {
+  const _InlineMonthlyDetail({
+    super.key,
+    required this.month,
+    required this.selectedDay,
+    required this.onSelectedDay,
+  });
+
+  final DateTime month;
+  final DateTime? selectedDay;
+  final ValueChanged<DateTime> onSelectedDay;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final normalizedMonth = DateTime(month.year, month.month);
+    final periodAsync = ref.watch(
+      homeQazaActivityMonthProvider(normalizedMonth),
+    );
+
+    return periodAsync.when(
+      loading: () => const Center(
+        key: Key('home_activity_inline_month_loading'),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 28),
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+        ),
+      ),
+      error: (_, __) => _ActivityError(
+        onRetry: () => ref.invalidate(
+          homeQazaActivityMonthProvider(normalizedMonth),
+        ),
+      ),
+      data: (period) => Column(
+        key: const Key('home_activity_inline_month_detail'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Divider(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            height: 1,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            DateFormat.yMMMM(locale).format(normalizedMonth),
+            key: const Key('home_activity_selected_month_title'),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 10),
+          _ActivityTargetSummary(
+            period: period,
+            range: _ActivityRange.monthly,
+          ),
+          const SizedBox(height: 12),
+          if (period.totalCompleted == 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                AppLocalizations.of(context).homeNoActivity,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          _ActivityMonthGrid(
+            period: period,
+            selectedDay: selectedDay,
+            onSelectedDay: onSelectedDay,
+          ),
+          if (selectedDay != null) ...[
+            const SizedBox(height: 12),
+            _SelectedActivityDayDetails(
+              key: const Key('home_activity_selected_day_details'),
+              range: _ActivityRange.monthly,
+              anchor: normalizedMonth,
+              selectedDay: selectedDay!,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
