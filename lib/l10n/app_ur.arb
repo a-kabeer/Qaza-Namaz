@@ -380,6 +380,7 @@
   },
   "qazaHistoryShowAllDates": "تمام تاریخیں دکھائیں",
   "qazaHistoryHideDates": "تاریخیں چھپائیں",
+  "qazaHistoryDeletedStatus": "حذف شدہ",
   "qazaHistoryNoDates": "کوئی تاریخ نہیں",
   "addQazaDateCount": "{count, plural, =1{1 تاریخ} other{{count} تاریخیں}}",
   "addQazaCreatedMessage": "{count, plural, =1{1 ریکارڈ آپ کے کھاتے میں شامل ہو گیا۔} other{{count} ریکارڈ آپ کے کھاتے میں شامل ہو گئے۔}}",
