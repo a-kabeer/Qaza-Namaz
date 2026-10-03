@@ -62,16 +62,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     try {
       final currentProfile = ref.read(userProfileProvider).valueOrNull;
-    final calculationFieldsChanged = currentProfile == null
-        ? true
-        : ProfileQazaPlanReconciliationService.changedProfileFields(
-            ProfileQazaPlanReconciliationService.profileSnapshot(
-              currentProfile,
-            ),
-            ProfileQazaPlanReconciliationService.profileSnapshot(
-              finalizedProfile,
-            ),
-          ).isNotEmpty;
+      final calculationFieldsChanged = currentProfile == null
+          ? true
+          : ProfileQazaPlanReconciliationService.changedProfileFields(
+              ProfileQazaPlanReconciliationService.profileSnapshot(
+                currentProfile,
+              ),
+              ProfileQazaPlanReconciliationService.profileSnapshot(
+                finalizedProfile,
+              ),
+            ).isNotEmpty;
 
       ProfileQazaPlanPreview preview;
       ProfileQazaChangeChoice choice;
