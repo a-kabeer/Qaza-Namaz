@@ -156,7 +156,6 @@ class _ProfileQazaReviewContent extends StatelessWidget {
     final previousPlan = preview.previousLedgerPlan;
 
     return SingleChildScrollView(
-      key: const Key('profile_qaza_review_skeleton'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -219,6 +218,7 @@ class _ProfileQazaReviewSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return SingleChildScrollView(
+      key: const Key('profile_qaza_review_skeleton'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
