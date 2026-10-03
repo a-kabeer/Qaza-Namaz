@@ -1687,6 +1687,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 date} other{{count} dates}}'**
   String addQazaDateCount(int count);
+  /// No description provided for @qazaHistorySelectedDates.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected date} other{{count} selected dates}}'**
+  String qazaHistorySelectedDates(int count);
+
+  /// No description provided for @qazaHistorySelectionScope.
+  ///
+  /// In en, this message translates to:
+  /// **'{prayers} prayers · {days} days'**
+  String qazaHistorySelectionScope(int prayers, int days);
+
+  /// No description provided for @qazaHistoryProgressPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String qazaHistoryProgressPercentage(int percent);
+
+  /// No description provided for @qazaHistoryTrackedRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tracked record} other{{count} tracked records}}'**
+  String qazaHistoryTrackedRecords(int count);
+
+  /// No description provided for @qazaHistoryAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {date}'**
+  String qazaHistoryAdded(String date);
+
+  /// No description provided for @qazaHistoryShowAllDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all dates'**
+  String get qazaHistoryShowAllDates;
+
+  /// No description provided for @qazaHistoryHideDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide dates'**
+  String get qazaHistoryHideDates;
+
+  /// No description provided for @qazaHistoryNoDates.
+  ///
+  /// In en, this message translates to:
+  /// **'No dates'**
+  String get qazaHistoryNoDates;
+
 
   /// No description provided for @addQazaCreatedMessage.
   ///
