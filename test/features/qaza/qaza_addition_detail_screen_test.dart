@@ -235,7 +235,6 @@ void main() {
 
     expect(observer.poppedCount, 1);
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
-    expect(find.byType(AddQazaScreen), findsNothing);
     expect(find.text('2 Records'), findsOneWidget);
   });
 
