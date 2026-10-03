@@ -303,6 +303,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         availability: current.selectedDateAvailability,
       );
       _restoreCalendarSelection(mode: mode, dates: normalized);
+      _refreshPrayerAvailability();
       return;
     }
 
