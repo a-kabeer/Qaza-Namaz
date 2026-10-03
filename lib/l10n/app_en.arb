@@ -637,7 +637,54 @@
       }
     }
   },
-  "addQazaDateCount": "{count, plural, =1{1 date} other{{count} dates}}",
+  "addQazaDateCount":
+"qazaHistorySelectedDates": "{count, plural, =1{1 selected date} other{{count} selected dates}}",
+  "@qazaHistorySelectedDates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistorySelectionScope": "{prayers} prayers · {days} days",
+  "@qazaHistorySelectionScope": {
+    "placeholders": {
+      "prayers": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryProgressPercentage": "{percent}%",
+  "@qazaHistoryProgressPercentage": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryTrackedRecords": "{count, plural, =1{1 tracked record} other{{count} tracked records}}",
+  "@qazaHistoryTrackedRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryAdded": "Added {date}",
+  "@qazaHistoryAdded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaHistoryShowAllDates": "Show all dates",
+  "qazaHistoryHideDates": "Hide dates",
+  "qazaHistoryNoDates": "No dates",
+ "{count, plural, =1{1 date} other{{count} dates}}",
   "@addQazaDateCount": {
     "placeholders": {
       "count": {
