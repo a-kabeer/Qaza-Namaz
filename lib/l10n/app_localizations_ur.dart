@@ -995,6 +995,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get qazaHistoryHideDates => 'تاریخیں چھپائیں';
 
   @override
+  String get qazaHistoryDeletedStatus => 'حذف شدہ';
+
+  @override
   String get qazaHistoryNoDates => 'کوئی تاریخ نہیں';
 
 
