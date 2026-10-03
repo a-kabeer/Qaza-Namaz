@@ -622,6 +622,7 @@
   "addQazaNewLabel": "New",
   "addQazaAlreadyAddedLabel": "Already Added",
   "addQazaUnavailableLabel": "Unavailable",
+  "addQazaTimeBlocked": "Available after the prayer time ends.",
   "addQazaCancelledTitle": "Qaza addition cancelled",
   "addQazaCancelledMessage": "The addition was cancelled. Any records already saved were kept.",
   "addQazaNewQazaLabel": "New Qaza records",
