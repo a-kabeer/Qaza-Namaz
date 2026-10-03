@@ -229,13 +229,6 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
   @override
   HomePrayerSelectionState build() {
-    ref.listen<bool>(effectiveWitrProvider, (_, next) {
-      if (!next &&
-          (state.autoSequencePrayer == PrayerType.witr ||
-              state.selectedPrayer == PrayerType.witr)) {
-        _normalizeDisabledWitr();
-      }
-    });
     Future<void>.microtask(_restore);
     return const HomePrayerSelectionState();
   }
@@ -258,8 +251,11 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
-  void selectPrayer(PrayerType prayer) {
-    if (prayer == PrayerType.witr && !ref.read(effectiveWitrProvider)) return;
+  void selectPrayer(
+    PrayerType prayer, {
+    bool witrEnabled = true,
+  }) {
+    if (prayer == PrayerType.witr && !witrEnabled) return;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
@@ -295,8 +291,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   ///
   /// Reuses the previously selected prayer when available; otherwise Fajr is
   /// the deterministic initial selection.
-  void usePrayerSelection() {
-    final witrEnabled = ref.read(effectiveWitrProvider);
+  void usePrayerSelection({bool witrEnabled = true}) {
     final candidate = state.selectedPrayer ?? state.autoSequencePrayer;
     final prayer = !witrEnabled && candidate == PrayerType.witr
         ? PrayerType.fajr
@@ -310,7 +305,10 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     _persistSelectedPrayer(prayer);
   }
 
-  void afterSuccessfulCompletion(PrayerType completedPrayer) {
+  void afterSuccessfulCompletion(
+    PrayerType completedPrayer, {
+    bool witrEnabled = true,
+  }) {
     _undoSnapshot ??= state;
     _undoSnapshotRevision ??= _targetRevision;
     _undoSnapshotTimer?.cancel();
@@ -321,7 +319,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
     state = state.afterSuccessfulCompletion(
       completedPrayer,
-      witrEnabled: ref.read(effectiveWitrProvider),
+      witrEnabled: witrEnabled,
     );
     _persistSequence(state.autoSequencePrayer);
   }
