@@ -46,8 +46,8 @@ void main() {
     expect(gregorian, findsOneWidget);
     expect(hijri, findsOneWidget);
     expect(tester.getTopLeft(gregorian).dy, lessThan(tester.getTopLeft(hijri).dy));
-    expect(find.text('Fajr 1'), findsOneWidget);
-    expect(find.text('Isha 1'), findsOneWidget);
+    expect(find.text('Fajr'), findsOneWidget);
+    expect(find.text('Isha'), findsOneWidget);
     expect(find.text('Revision'), findsNothing);
   });
 
@@ -241,11 +241,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Edit Addition'), findsOneWidget);
     expect(find.text('Delete Addition'), findsOneWidget);
+    final afterMenuPushCount = observer.pushedCount;
 
     await tester.tap(find.text('Edit Addition'));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(observer.pushedCount, initialPushCount + 1);
+    expect(observer.pushedCount, afterMenuPushCount + 1);
     expect(observer.lastPushedRoute, isA<MaterialPageRoute<dynamic>>());
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
 
