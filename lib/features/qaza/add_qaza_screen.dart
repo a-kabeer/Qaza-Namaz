@@ -173,8 +173,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       final latest = await controller.refreshAnalysis();
       if (!mounted) return null;
 
+      final currentState = ref.read(addQazaControllerProvider);
       if (latest.newCount == 0 &&
-          (widget.editAddition == null || !controller.hasEditChanges)) {
+          (widget.editAddition == null || !currentState.hasEditChanges)) {
         return latest;
       }
 
