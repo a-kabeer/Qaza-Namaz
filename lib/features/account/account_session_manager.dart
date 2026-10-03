@@ -173,7 +173,6 @@ class AccountSessionManager extends ChangeNotifier {
 
       if (target == null) throw StateError('Unable to create Google partition.');
 
-      await _accountStore.activate(target.localAccountId);
       await _accountStore.setInitialChoiceRequired(false);
 
       final root = await _backup.readCloudRoot(user.uid);
@@ -207,16 +206,30 @@ class AccountSessionManager extends ChangeNotifier {
         );
       }
 
-      await _accountStore.setMigrationState('completed');
+      if (guestWasActive && previous != null) {
+        await _accountStore.finalizeGuestMigration(
+          guestLocalAccountId: previous.localAccountId,
+          googleLocalAccountId: target.localAccountId,
+        );
+      } else {
+        await _accountStore.activate(target.localAccountId);
+        await _accountStore.setMigrationState('completed');
+      }
       await _refresh();
     } catch (error) {
       await _accountStore.setMigrationState('failed');
       if (guestWasActive) {
         final current = await _accountStore.activeAccount();
-        if (current != null && current.isGoogle) {
+        if (current != null &&
+            current.isGoogle &&
+            current.localAccountId != previous?.localAccountId) {
           await _accountStore.deleteLocalAccount(current.localAccountId);
         }
-        await _accountStore.ensureGuestActive();
+        if (previous != null) {
+          await _accountStore.unarchiveAccount(previous.localAccountId);
+        } else {
+          await _accountStore.ensureGuestActive();
+        }
         await _auth.signOut();
       }
       _setState(
