@@ -93,13 +93,17 @@ void main() {
       expect(find.text(l10n.profileQazaPreviousTotal), findsOneWidget);
       expect(find.text('2,124 Qaza'), findsOneWidget);
       expect(find.text('23 Aug 2026 – 25 Aug 2026'), findsOneWidget);
-      expect(
-        find.text(
-          '\${HijriDateService.format(preview.oldPlan!.startDate, l10n)} – '
-          '\${HijriDateService.format(preview.oldPlan!.endDate.subtract(const Duration(days: 1)), l10n)}',
-        ),
-        findsOneWidget,
-      );
+      final oldPlan = preview.oldPlan!;
+      final expectedHijriRange = HijriDateService.format(
+            oldPlan.startDate,
+            l10n,
+          ) +
+          ' – ' +
+          HijriDateService.format(
+            oldPlan.endDate.subtract(const Duration(days: 1)),
+            l10n,
+          );
+      expect(find.text(expectedHijriRange), findsOneWidget);
       expect(find.text(l10n.profileQazaNewTotal), findsOneWidget);
       expect(find.text('4,260 Qaza'), findsOneWidget);
       expect(find.text('12 Aug 2026 – 13 Aug 2026'), findsOneWidget);
