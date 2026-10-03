@@ -156,6 +156,7 @@ class _ProfileQazaReviewContent extends StatelessWidget {
     final previousPlan = preview.previousLedgerPlan;
 
     return SingleChildScrollView(
+      key: const Key('profile_qaza_review_skeleton'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
