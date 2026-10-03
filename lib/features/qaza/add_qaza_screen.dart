@@ -40,9 +40,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
     if (addition != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref
-            .read(addQazaControllerProvider.notifier)
-            .restoreFromSnapshot(addition.currentInputSnapshot);
+        ref.read(addQazaControllerProvider.notifier).restoreFromSnapshot(
+              addition.currentInputSnapshot,
+              editingAdditionId: addition.id,
+            );
       });
     }
   }
@@ -114,7 +115,9 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               addablePrayers: state.addablePrayers,
               availabilityLoading: state.prayerAvailabilityLoading,
               hasSelectedDates: state.selectedDates.isNotEmpty,
-              witrAllowed: ProfileRules.effectiveWitr(profile),
+              witrAllowed: ProfileRules.effectiveWitr(profile) ||
+                  state.addablePrayers.contains(PrayerType.witr) ||
+                  state.protectedPrayers.contains(PrayerType.witr),
               onToggle: (prayer) => ref
                   .read(addQazaControllerProvider.notifier)
                   .togglePrayer(prayer),
@@ -170,7 +173,10 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       final latest = await controller.refreshAnalysis();
       if (!mounted) return null;
 
-      if (latest.newCount == 0) return latest;
+      if (latest.newCount == 0 &&
+          (widget.editAddition == null || !controller.hasEditChanges)) {
+        return latest;
+      }
 
       final current = ref.read(addQazaControllerProvider);
       final profile = ref.read(userProfileProvider).valueOrNull;
