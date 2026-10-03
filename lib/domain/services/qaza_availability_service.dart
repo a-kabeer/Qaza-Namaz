@@ -59,6 +59,10 @@ class QazaAvailabilityAnalysis {
     required this.candidates,
     required this.newCandidates,
     required this.existingCandidates,
+    this.currentAdditionEditableCandidates =
+        const <QazaPrayerKey>[],
+    this.currentAdditionProtectedCandidates =
+        const <QazaPrayerKey>[],
   });
 
   final int total;
@@ -74,6 +78,19 @@ class QazaAvailabilityAnalysis {
 
   /// Requested combinations that already exist, pending or completed.
   final List<QazaPrayerKey> existingCandidates;
+
+  /// Pending, unchanged records owned by the addition currently being edited.
+  ///
+  /// These remain selectable in the edit UI but are never treated as new
+  /// records for persistence.
+  final List<QazaPrayerKey> currentAdditionEditableCandidates;
+
+  /// Completed or otherwise protected records owned by the addition currently
+  /// being edited.
+  ///
+  /// These remain represented in the edit UI but can never be removed by the
+  /// normal addition-edit pipeline.
+  final List<QazaPrayerKey> currentAdditionProtectedCandidates;
 
   /// Every requested `date x prayer` combination.
   int get requestedCount => total;
@@ -130,6 +147,49 @@ class QazaAvailabilityService {
             QazaPrayerKey.fromRecord(record),
       };
 
+  Set<QazaPrayerKey> currentAdditionEditableKeys({
+    required Iterable<QazaRecord> existingRecords,
+    required String? editingAdditionId,
+  }) {
+    if (editingAdditionId == null) return const <QazaPrayerKey>{};
+    return {
+      for (final record in existingRecords)
+        if (record.additionId == editingAdditionId &&
+            record.status == QazaStatus.pending &&
+            record.recordVersion == 1)
+          QazaPrayerKey.fromRecord(record),
+    };
+  }
+
+  Set<QazaPrayerKey> currentAdditionProtectedKeys({
+    required Iterable<QazaRecord> existingRecords,
+    required String? editingAdditionId,
+  }) {
+    if (editingAdditionId == null) return const <QazaPrayerKey>{};
+    return {
+      for (final record in existingRecords)
+        if (record.additionId == editingAdditionId &&
+            !(record.status == QazaStatus.pending &&
+                record.recordVersion == 1))
+          QazaPrayerKey.fromRecord(record),
+    };
+  }
+
+  Set<QazaPrayerKey> currentAdditionRetainedKeys({
+    required Iterable<QazaRecord> existingRecords,
+    required String? editingAdditionId,
+  }) =>
+      {
+        ...currentAdditionEditableKeys(
+          existingRecords: existingRecords,
+          editingAdditionId: editingAdditionId,
+        ),
+        ...currentAdditionProtectedKeys(
+          existingRecords: existingRecords,
+          editingAdditionId: editingAdditionId,
+        ),
+      };
+
   List<PrayerType> availablePrayers({
     required String userId,
     required DateTime date,
@@ -171,17 +231,28 @@ class QazaAvailabilityService {
     required Iterable<PrayerType> prayerTypes,
     required Iterable<QazaRecord> existingRecords,
     Set<QazaPrayerKey> prayedKeys = const <QazaPrayerKey>{},
+    String? editingAdditionId,
   }) {
     final uniqueDates = dates.map(QazaDate.normalize).toSet().toList()..sort();
     final uniquePrayers = prayerTypes.toSet().toList();
     final candidates = <QazaPrayerKey>[];
     final newCandidates = <QazaPrayerKey>[];
     final existingCandidates = <QazaPrayerKey>[];
+    final currentAdditionEditableCandidates = <QazaPrayerKey>[];
+    final currentAdditionProtectedCandidates = <QazaPrayerKey>[];
     var alreadyRecorded = 0;
     var alreadyPrayed = 0;
     var blockedDateCount = 0;
     final recorded = recordedKeys(existingRecords);
     final completed = completedKeys(existingRecords);
+    final currentEditable = currentAdditionEditableKeys(
+      existingRecords: existingRecords,
+      editingAdditionId: editingAdditionId,
+    );
+    final currentProtected = currentAdditionProtectedKeys(
+      existingRecords: existingRecords,
+      editingAdditionId: editingAdditionId,
+    );
 
     for (final date in uniqueDates) {
       var eligibleOnDate = 0;
@@ -202,6 +273,13 @@ class QazaAvailabilityService {
           newCandidates.add(key);
           eligibleOnDate++;
         }
+
+        if (currentEditable.contains(key)) {
+          currentAdditionEditableCandidates.add(key);
+        }
+        if (currentProtected.contains(key)) {
+          currentAdditionProtectedCandidates.add(key);
+        }
       }
       if (uniquePrayers.isNotEmpty && eligibleOnDate == 0) blockedDateCount++;
     }
@@ -215,6 +293,10 @@ class QazaAvailabilityService {
       candidates: List.unmodifiable(candidates),
       newCandidates: List.unmodifiable(newCandidates),
       existingCandidates: List.unmodifiable(existingCandidates),
+      currentAdditionEditableCandidates:
+          List.unmodifiable(currentAdditionEditableCandidates),
+      currentAdditionProtectedCandidates:
+          List.unmodifiable(currentAdditionProtectedCandidates),
     );
   }
 }
