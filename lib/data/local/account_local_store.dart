@@ -398,47 +398,47 @@ class AccountLocalStore {
       throw StateError('The base Guest partition cannot be removed.');
     }
     await database.transaction(() async {
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_records WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_profile_plan_provenance WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_additions WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_deletion_actions WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM account_profiles WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM account_plan_revisions WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM entity_metadata WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM qaza_record_tombstones WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM sync_outbox WHERE user_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.customDelete(
+      await database.customUpdate(
         'DELETE FROM local_accounts WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
@@ -544,7 +544,7 @@ class AccountLocalStore {
   }
 
   Future<void> clearProfile(String localAccountId) async {
-    await database.customDelete(
+    await database.customUpdate(
       'DELETE FROM account_profiles WHERE local_account_id = ?',
       variables: [Variable(localAccountId)],
     );
@@ -680,7 +680,7 @@ class AccountLocalStore {
     required String localAccountId,
     required String operationId,
   }) async {
-    await database.customDelete(
+    await database.customUpdate(
       'DELETE FROM sync_outbox WHERE user_id = ? AND id = ?',
       variables: [Variable(localAccountId), Variable(operationId)],
     );
@@ -690,7 +690,7 @@ class AccountLocalStore {
     required String localAccountId,
     required int generation,
   }) async {
-    await database.customDelete(
+    await database.customUpdate(
       '''DELETE FROM sync_outbox
          WHERE user_id = ? AND
                type = 'account_snapshot' AND
