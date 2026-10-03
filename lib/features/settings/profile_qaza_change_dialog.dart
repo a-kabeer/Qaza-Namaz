@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
@@ -5,19 +7,144 @@ import '../../core/utils/date_formatters.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../l10n/app_localizations.dart';
 
-Future<ProfileQazaChangeChoice?> showProfileQazaChangeDialog({
+class ProfileQazaChangeDialogResult {
+  const ProfileQazaChangeDialogResult({
+    required this.preview,
+    required this.choice,
+  });
+
+  final ProfileQazaPlanPreview preview;
+  final ProfileQazaChangeChoice? choice;
+}
+
+Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
   required BuildContext context,
-  required ProfileQazaPlanPreview preview,
+  required FutureOr<ProfileQazaPlanPreview> preview,
 }) {
-  return showDialog<ProfileQazaChangeChoice>(
+  return showDialog<ProfileQazaChangeDialogResult>(
     context: context,
     barrierDismissible: false,
     builder: (_) => _ProfileQazaChangeDialog(preview: preview),
   );
 }
 
-class _ProfileQazaChangeDialog extends StatelessWidget {
+class _ProfileQazaChangeDialog extends StatefulWidget {
   const _ProfileQazaChangeDialog({required this.preview});
+
+  final FutureOr<ProfileQazaPlanPreview> preview;
+
+  @override
+  State<_ProfileQazaChangeDialog> createState() =>
+      _ProfileQazaChangeDialogState();
+}
+
+class _ProfileQazaChangeDialogState
+    extends State<_ProfileQazaChangeDialog> {
+  ProfileQazaPlanPreview? _resolvedPreview;
+  Object? _error;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = widget.preview;
+    if (source is ProfileQazaPlanPreview) {
+      _resolvedPreview = source;
+      _loading = false;
+      _autoFinishWithoutDecision(source);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_resolvePreview());
+      });
+    }
+  }
+
+  Future<void> _resolvePreview() async {
+    try {
+      final preview = await widget.preview;
+      if (!mounted) return;
+      setState(() {
+        _resolvedPreview = preview;
+        _loading = false;
+      });
+      _autoFinishWithoutDecision(preview);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
+    }
+  }
+
+  void _autoFinishWithoutDecision(ProfileQazaPlanPreview preview) {
+    if (preview.requiresUserDecision) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pop(
+        ProfileQazaChangeDialogResult(
+          preview: preview,
+          choice: null,
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text(l10n.profileQazaPlanChangedTitle),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: _loading
+            ? const _ProfileQazaReviewSkeleton()
+            : _error != null
+                ? _ErrorContent(message: l10n.profileQazaReviewError)
+                : _ProfileQazaReviewContent(
+                    preview: _resolvedPreview!,
+                  ),
+      ),
+      actions: [
+        if (_loading)
+          const SizedBox.shrink()
+        else if (_error != null)
+          TextButton(
+            key: const Key('profile_qaza_error_close'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.commonClose),
+          )
+        else if (_resolvedPreview?.requiresUserDecision ?? false) ...[
+          TextButton(
+            key: const Key('profile_qaza_cancel'),
+            onPressed: () => Navigator.of(context).pop(
+              ProfileQazaChangeDialogResult(
+                preview: _resolvedPreview!,
+                choice: null,
+              ),
+            ),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            key: const Key('profile_qaza_apply'),
+            onPressed: () => Navigator.of(context).pop(
+              ProfileQazaChangeDialogResult(
+                preview: _resolvedPreview!,
+                choice: ProfileQazaChangeChoice.apply,
+              ),
+            ),
+            child: Text(l10n.profileQazaApply),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ProfileQazaReviewContent extends StatelessWidget {
+  const _ProfileQazaReviewContent({required this.preview});
 
   final ProfileQazaPlanPreview preview;
 
@@ -28,78 +155,155 @@ class _ProfileQazaChangeDialog extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final previousPlan = preview.previousLedgerPlan;
 
-    return AlertDialog(
-      title: Text(l10n.profileQazaPlanChangedTitle),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.profileQazaPlanSummary,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _PlanSummary(
-                title: l10n.profileQazaPreviousTotal,
-                total: previousPlan?.totalWithWitr ?? 0,
-                start: previousPlan?.startDate,
-                end: previousPlan?.endDate,
-              ),
-              const SizedBox(height: 24),
-              _PlanSummary(
-                title: l10n.profileQazaNewTotal,
-                total: preview.newPlanTotal,
-                start: preview.newPlan.startDate,
-                end: preview.newPlan.endDate,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.profileQazaImpact,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _ImpactRow(
-                label: l10n.profileQazaCompletedInPlan,
-                value: DateFormatters.formatCount(
-                  preview.existingCompletedInNewPlan,
-                ),
-              ),
-              _ImpactRow(
-                label: l10n.profileQazaToAdd,
-                value: DateFormatters.formatCount(preview.pendingToAdd),
-              ),
-              _ImpactRow(
-                label: l10n.profileQazaNoLongerRequired,
-                value: DateFormatters.formatCount(preview.pendingToRemove),
-              ),
-              const SizedBox(height: 16),
-              _ProtectionNote(
-                text: l10n.profileQazaCompletedProtected,
-              ),
-            ],
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.profileQazaPlanSummary,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
+          const SizedBox(height: 24),
+          _PlanSummary(
+            title: l10n.profileQazaPreviousTotal,
+            total: previousPlan?.totalWithWitr ?? 0,
+            start: previousPlan?.startDate,
+            end: previousPlan?.endDate,
+          ),
+          const SizedBox(height: 24),
+          _PlanSummary(
+            title: l10n.profileQazaNewTotal,
+            total: preview.newPlanTotal,
+            start: preview.newPlan.startDate,
+            end: preview.newPlan.endDate,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.profileQazaImpact,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _ImpactRow(
+            label: l10n.profileQazaCompletedInPlan,
+            value: DateFormatters.formatCount(
+              preview.existingCompletedInNewPlan,
+            ),
+          ),
+          _ImpactRow(
+            label: l10n.profileQazaToAdd,
+            value: DateFormatters.formatCount(preview.pendingToAdd),
+          ),
+          _ImpactRow(
+            label: l10n.profileQazaNoLongerRequired,
+            value: DateFormatters.formatCount(preview.pendingToRemove),
+          ),
+          const SizedBox(height: 16),
+          _ProtectionNote(
+            text: l10n.profileQazaCompletedProtected,
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          key: const Key('profile_qaza_cancel'),
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        FilledButton(
-          key: const Key('profile_qaza_apply'),
-          onPressed: () => Navigator.of(context).pop(
-            ProfileQazaChangeChoice.apply,
+    );
+  }
+}
+
+class _ProfileQazaReviewSkeleton extends StatelessWidget {
+  const _ProfileQazaReviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SkeletonBlock(width: double.infinity, height: 20),
+          const SizedBox(height: 24),
+          const _SkeletonBlock(width: 140, height: 18),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: 220, height: 34),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: double.infinity, height: 16),
+          const SizedBox(height: 4),
+          const _SkeletonBlock(width: 240, height: 16),
+          const SizedBox(height: 24),
+          const _SkeletonBlock(width: 140, height: 18),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: 220, height: 34),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: double.infinity, height: 16),
+          const SizedBox(height: 4),
+          const _SkeletonBlock(width: 240, height: 16),
+          const SizedBox(height: 24),
+          const _SkeletonBlock(width: 90, height: 18),
+          const SizedBox(height: 12),
+          const _SkeletonBlock(width: double.infinity, height: 18),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: double.infinity, height: 18),
+          const SizedBox(height: 8),
+          const _SkeletonBlock(width: double.infinity, height: 18),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 54,
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          child: Text(l10n.profileQazaApply),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonBlock extends StatelessWidget {
+  const _SkeletonBlock({
+    required this.width,
+    required this.height,
+  });
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+}
+
+class _ErrorContent extends StatelessWidget {
+  const _ErrorContent({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 320,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
