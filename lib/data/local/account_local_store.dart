@@ -21,11 +21,47 @@ class AccountLocalStore {
     UserProfile? legacyProfile,
   }) async {
     await _ensureDeviceId();
+    final legacy = legacyProfile ?? await _readLegacyProfile();
     await _ensureGuestAccount(
-      hasLegacyProfile: hasLegacyProfile,
+      hasLegacyProfile: hasLegacyProfile || legacy != null,
       hasLegacyQaza: hasLegacyQaza,
-      legacyProfile: legacyProfile,
+      legacyProfile: legacy,
     );
+    await _migrateLegacyPlanRevisions();
+  }
+
+  Future<UserProfile?> _readLegacyProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(UserProfile.storageKey);
+      if (raw == null) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return UserProfile.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _migrateLegacyPlanRevisions() async {
+    final prefs = await SharedPreferences.getInstance();
+    const prefix = 'qaza_plan_revision_v1_guest_';
+    for (final key in prefs.getKeys()) {
+      if (!key.startsWith(prefix)) continue;
+      final raw = prefs.getString(key);
+      if (raw == null) continue;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map) continue;
+        final revision = QazaPlanRevision.fromJson(
+          Map<String, dynamic>.from(decoded),
+        );
+        await savePlanRevision(UserProfile.localLedgerUserId, revision);
+      } catch (_) {
+        // Preserve the legacy key; a malformed historical revision must not
+        // block the rest of account initialization.
+      }
+    }
   }
 
   Future<String> deviceInstanceId() async {
