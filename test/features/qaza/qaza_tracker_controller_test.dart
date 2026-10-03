@@ -1,5 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 
@@ -45,4 +47,63 @@ void main() {
     expect(newest.sortOrder, QazaSortOrder.newestFirst);
   });
 
+  test('Status-specific default sort mapping is stable', () {
+    expect(
+      QazaStatusFilter.pending.defaultSortOrder,
+      QazaSortOrder.oldestFirst,
+    );
+    expect(
+      QazaStatusFilter.completed.defaultSortOrder,
+      QazaSortOrder.newestFirst,
+    );
+    expect(
+      QazaStatusFilter.all.defaultSortOrder,
+      QazaSortOrder.oldestFirst,
+    );
+  });
+
+  test('Fresh Completed request initializes with newest-first sort', () {
+    final container = ProviderContainer(
+      overrides: [
+        activeUserIdProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(qazaTrackerFilterRequestProvider.notifier).state =
+        const QazaTrackerFilterRequest(
+      status: QazaStatusFilter.completed,
+    );
+
+    final state = container.read(qazaTrackerControllerProvider(null));
+
+    expect(state.statusFilter, QazaStatusFilter.completed);
+    expect(state.sortOrder, QazaSortOrder.newestFirst);
+  });
+
+  test('Status switching resets to the target workspace default', () {
+    final container = ProviderContainer(
+      overrides: [
+        activeUserIdProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final provider = qazaTrackerControllerProvider(null);
+    final controller = container.read(provider.notifier);
+
+    expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
+
+    controller.setSortOrder(QazaSortOrder.newestFirst);
+    expect(container.read(provider).sortOrder, QazaSortOrder.newestFirst);
+
+    controller.setStatusFilter(QazaStatusFilter.completed);
+    expect(container.read(provider).sortOrder, QazaSortOrder.newestFirst);
+
+    controller.setSortOrder(QazaSortOrder.oldestFirst);
+    expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
+
+    controller.setStatusFilter(QazaStatusFilter.pending);
+    expect(container.read(provider).sortOrder, QazaSortOrder.oldestFirst);
+  });
 }
