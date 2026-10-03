@@ -345,7 +345,6 @@ class QazaService {
     if (normalizedDates.isEmpty || selectedPrayers.isEmpty) return const {};
     final existing = await _getExistingForAvailability(
         userId: userId, dates: normalizedDates, prayerTypes: selectedPrayers);
-    final recorded = availability.recordedKeys(existing);
     final retained = availability.currentAdditionRetainedKeys(
       existingRecords: existing,
       editingAdditionId: editingAdditionId,
