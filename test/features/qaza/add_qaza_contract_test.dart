@@ -47,6 +47,7 @@ void main() {
     expect(source, contains('DateSelectionMode.multiple'));
     expect(source, contains('CalendarPicker('));
     expect(source, contains('class _SelectionSummary'));
+    expect(source, contains('QazaAdditionDateSummary(_snapshot)'));
     expect(source, contains('class _PrayerSelection'));
     expect(source, contains('PrayerSelectionGrid('));
     final prayerGrid =
@@ -54,10 +55,11 @@ void main() {
     expect(prayerGrid, contains('FilterChip('));
     expect(prayerGrid, contains('crossAxisCount: 3'));
     expect(source, isNot(contains('CheckboxListTile')));
-    expect(source, contains('HijriDateService.format(dates.first, l10n)'));
+    expect(source, contains('summary.formatHijri(l10n, dates.first)'));
     expect(source, contains('bottomNavigationBar: _AddQazaBottomAction('));
     expect(source, contains('l10n.addQazaReviewHeading'));
     expect(source, contains('class _AnalysisSummary'));
+    expect(source, contains('summary.consecutiveGroups'));
     expect(source, contains('analysis.countForPrayer(prayer)'));
     expect(source, contains('addablePrayers'));
     expect(source, contains('prayerAvailabilityLoading'));
