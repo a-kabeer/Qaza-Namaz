@@ -35,8 +35,10 @@ void main() {
     final l10n = AppLocalizations.of(context);
 
     expect(find.byType(Card), findsOneWidget);
-    expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('5 Records'), findsOneWidget);
     expect(find.text('4 Pending · 1 Completed'), findsOneWidget);
+    expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('5 requested slots'), findsOneWidget);
     final gregorian = find.text(
       MaterialLocalizations.of(context).formatMediumDate(date),
     );
@@ -81,10 +83,12 @@ void main() {
 
     expect(find.text(gregorian), findsOneWidget);
     expect(find.text(hijri), findsOneWidget);
-    expect(find.text('35 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
-    expect(find.text('7 Dates'), findsOneWidget);
-    expect(find.text('Fajr 7'), findsOneWidget);
-    expect(find.text('Isha 7'), findsOneWidget);
+    expect(find.text('35 Records'), findsOneWidget);
+    expect(find.text(l10n.qazaHistorySelectedDates(7)), findsOneWidget);
+    expect(find.text('5 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
+    expect(find.text('Fajr'), findsOneWidget);
+    expect(find.text('Isha'), findsOneWidget);
+    expect(find.text('35 requested slots'), findsOneWidget);
   });
 
   testWidgets('Multiple mode pairs every date with its Hijri date', (
@@ -108,17 +112,27 @@ void main() {
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
 
-    final gregorian = dates
-        .map(MaterialLocalizations.of(context).formatMediumDate)
-        .join(' · ');
-    final hijri =
-        dates.map((date) => HijriDateService.format(date, l10n)).join(' · ');
+    expect(find.text('6 Records'), findsOneWidget);
+    expect(find.text(l10n.qazaHistorySelectedDates(3)), findsOneWidget);
+    expect(find.text('Fajr'), findsOneWidget);
+    expect(find.text('Witr'), findsOneWidget);
+    expect(find.byKey(const Key('qaza-addition-toggle-dates')), findsOneWidget);
+    expect(find.text(l10n.qazaHistoryShowAllDates), findsOneWidget);
 
-    expect(find.text(gregorian), findsOneWidget);
-    expect(find.text(hijri), findsOneWidget);
-    expect(find.text('3 Dates'), findsOneWidget);
-    expect(find.text('Fajr 3'), findsOneWidget);
-    expect(find.text('Witr 3'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('qaza-addition-toggle-dates')));
+    await tester.pumpAndSettle();
+
+    for (final date in dates) {
+      expect(
+        find.text(MaterialLocalizations.of(context).formatMediumDate(date)),
+        findsOneWidget,
+      );
+      expect(
+        find.text(HijriDateService.format(date, l10n)),
+        findsOneWidget,
+      );
+    }
+    expect(find.text(l10n.qazaHistoryHideDates), findsOneWidget);
   });
 
   testWidgets('Prayer chips use canonical order and include Witr', (tester) async {
@@ -141,19 +155,17 @@ void main() {
       size: const Size(640, 900),
     );
 
-    final fajr = tester.getTopLeft(find.text('Fajr 1'));
-    final zuhr = tester.getTopLeft(find.text('Zuhr 1'));
-    final asr = tester.getTopLeft(find.text('Asr 1'));
-    final witr = tester.getTopLeft(find.text('Witr 1'));
+    final fajr = tester.getTopLeft(find.text('Fajr'));
+    final zuhr = tester.getTopLeft(find.text('Zuhr'));
+    final asr = tester.getTopLeft(find.text('Asr'));
+    final witr = tester.getTopLeft(find.text('Witr'));
 
     final positions = [fajr, zuhr, asr, witr];
     for (var i = 1; i < positions.length; i++) {
       expect(_isAfter(positions[i - 1], positions[i]), isTrue);
     }
-    final context = tester.element(find.byType(QazaAdditionDetailScreen));
-    expect(find.text('Witr 1'), findsOneWidget);
-    expect(find.text('Fajr 1'), findsOneWidget);
-    expect(find.text('Witr 1'), findsOneWidget);
+    expect(find.text('Witr'), findsOneWidget);
+    expect(find.text('Fajr'), findsOneWidget);
   });
 
   testWidgets('Urdu locale uses localized prayer names', (tester) async {
@@ -197,9 +209,14 @@ void main() {
 
     final context = tester.element(find.byType(QazaAdditionDetailScreen));
     final l10n = AppLocalizations.of(context);
-    expect(find.text('30 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
-    expect(find.text('30 Dates'), findsOneWidget);
+    expect(find.text('30 Records'), findsOneWidget);
+    expect(find.text(l10n.qazaHistorySelectedDates(30)), findsOneWidget);
+    expect(find.text('1 ${l10n.addQazaPrayersLabel}'), findsOneWidget);
     expect(find.text('+ 27 more'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('qaza-addition-toggle-dates')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Edit Addition pushes Add Qaza and Back returns to the same detail route', (
@@ -220,7 +237,11 @@ void main() {
     await _pumpDetail(tester, detail, navigatorObserver: observer);
     final initialPushCount = observer.pushedCount;
 
-    await tester.ensureVisible(find.text('Edit Addition'));
+    await tester.tap(find.byKey(const Key('qaza-addition-more-actions')));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit Addition'), findsOneWidget);
+    expect(find.text('Delete Addition'), findsOneWidget);
+
     await tester.tap(find.text('Edit Addition'));
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -235,7 +256,7 @@ void main() {
 
     expect(observer.poppedCount, 1);
     expect(find.byType(QazaAdditionDetailScreen), findsOneWidget);
-    expect(find.text('4 Qaza Prayers'), findsOneWidget);
+    expect(find.text('4 Records'), findsOneWidget);
   });
 
   testWidgets('Completed-only additions hide edit/delete while keeping view records', (
@@ -252,6 +273,7 @@ void main() {
     await _pumpDetail(tester, detail);
 
     expect(find.text('View Records'), findsOneWidget);
+    expect(find.byKey(const Key('qaza-addition-more-actions')), findsNothing);
     expect(find.text('Edit Addition'), findsNothing);
     expect(find.text('Delete Addition'), findsNothing);
   });
@@ -268,6 +290,11 @@ void main() {
     await _pumpDetail(tester, detail);
 
     expect(find.text('View Records'), findsOneWidget);
+    expect(find.byKey(const Key('qaza-addition-more-actions')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('qaza-addition-more-actions')));
+    await tester.pumpAndSettle();
+
     expect(find.text('Edit Addition'), findsOneWidget);
     expect(find.text('Delete Addition'), findsOneWidget);
   });
