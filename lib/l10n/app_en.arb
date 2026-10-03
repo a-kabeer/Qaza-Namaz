@@ -990,6 +990,8 @@
   "profileSave": "Save Changes",
   "profileQazaPlanChangedTitle": "Qaza plan will be updated",
   "profileQazaPlanSummary": "Your profile change changes the calculated Qaza plan.",
+  "profileQazaReviewError": "We could not prepare the Qaza plan review. Please try again.",
+  "profileQazaApplying": "Applying Qaza plan…",
   "profileQazaImpact": "Impact",
   "profileQazaCount": "{count} Qaza",
   "@profileQazaCount": {
@@ -1010,6 +1012,13 @@
   "profileQazaApply": "Apply Qaza plan",
   "profileQazaCompletedProtected": "Completed and manually added Qaza will not be removed.",
   "profileQazaUpdated": "Profile and Qaza plan updated.",
+  "profileQazaUpdatedCounts": "Profile and Qaza plan updated. Qaza added: {added}; Qaza removed: {removed}.",
+  "@profileQazaUpdatedCounts": {
+    "placeholders": {
+      "added": { "type": "int" },
+      "removed": { "type": "int" }
+    }
+  },
   "profileQazaUpdatedNoChange": "Profile updated. Your Qaza plan was unchanged.",
   "qazaReviewTitle": "Review Your Qaza Plan",
   "qazaReviewSubtitle": "Please review your Qaza details before adding them to your tracker.",
