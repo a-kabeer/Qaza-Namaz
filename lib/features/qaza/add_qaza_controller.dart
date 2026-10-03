@@ -201,7 +201,9 @@ class AddQazaSelectionRules {
   ) {
     final result = <PrayerType>{};
     for (final date in dates) {
-      result.addAll(availability[QazaDate.normalize(date)] ?? const {});
+      result.addAll(
+        availability[QazaDate.normalize(date)] ?? const <PrayerType>{},
+      );
     }
     return result;
   }
@@ -505,6 +507,16 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     );
   }
 
+  bool _sameDates(Iterable<DateTime> a, Iterable<DateTime> b) {
+    final left = a.map(QazaDate.normalize).toList()..sort();
+    final right = b.map(QazaDate.normalize).toList()..sort();
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
+    }
+    return true;
+  }
+
   void _restoreCalendarSelection({
     required DateSelectionMode mode,
     required Iterable<DateTime> dates,
@@ -564,15 +576,16 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       if (_disposed || request != _prayerAvailabilityRequest) return;
 
       final availableByDate = <DateTime, Set<PrayerType>>{
-        for (final date in dates)
-          QazaDate.normalize(date): <PrayerType>{
-            for (final key in raw.newCandidates)
-              if (QazaDate.normalize(key.date) == QazaDate.normalize(date) &&
-                  _dateAllowed(key.date, profile) &&
-                  allowed.contains(key.prayerType))
-                key.prayerType,
-          },
+        for (final date in dates) QazaDate.normalize(date): <PrayerType>{},
       };
+      for (final key in raw.newCandidates) {
+        final date = QazaDate.normalize(key.date);
+        if (_dateAllowed(key.date, profile) &&
+            allowed.contains(key.prayerType) &&
+            availableByDate.containsKey(date)) {
+          availableByDate[date]!.add(key.prayerType);
+        }
+      }
 
       final normalizedDates = AddQazaSelectionRules.normalizeForMode(
         mode: state.mode,
