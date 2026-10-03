@@ -32,6 +32,11 @@ dependencies:
   geonames_offline: ^0.1.0
   flutter_device_compass: ^2.2.0
   geomag: ^0.3.0
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+  google_sign_in: ^7.2.0
+  firebase_app_check: ^0.4.8
 
 dev_dependencies:
   flutter_test:
