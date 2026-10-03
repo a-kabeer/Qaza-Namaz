@@ -583,7 +583,7 @@ class _PrayerTimeHeader extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  MaterialLocalizations.of(context).formatFullDate(date),
+                  DateFormatters.formatGregorianWeekdayShortFull(date),
                   style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
