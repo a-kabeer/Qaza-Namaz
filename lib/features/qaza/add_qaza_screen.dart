@@ -187,6 +187,8 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
       final current = ref.read(addQazaControllerProvider);
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) return null;
+      final prayerTimeContext =
+          await controller.resolveCurrentPrayerTimeContextForQaza();
 
       final additionMode = switch (current.mode) {
         DateSelectionMode.single => QazaAdditionMode.single,
@@ -203,6 +205,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             earliestDate: controller.startPrayingDate,
             today: controller.today,
             witrAllowed: ProfileRules.effectiveWitr(profile),
+            prayerTimeContext: prayerTimeContext,
           );
 
       if (!started) return null;
@@ -398,6 +401,7 @@ class _PrayerSelection extends StatelessWidget {
   const _PrayerSelection({
     required this.selected,
     required this.addablePrayers,
+    required this.timeBlockedPrayers,
     required this.availabilityLoading,
     required this.hasSelectedDates,
     required this.witrAllowed,
@@ -406,6 +410,7 @@ class _PrayerSelection extends StatelessWidget {
 
   final Set<PrayerType> selected;
   final Set<PrayerType> addablePrayers;
+  final Set<PrayerType> timeBlockedPrayers;
   final bool availabilityLoading;
   final bool hasSelectedDates;
   final bool witrAllowed;
@@ -440,7 +445,9 @@ class _PrayerSelection extends StatelessWidget {
                           .toSet(),
               disabledReasonBuilder: availabilityLoading
                   ? null
-                  : (prayer) => l10n.addQazaAlreadyAddedLabel,
+                  : (prayer) => timeBlockedPrayers.contains(prayer)
+                      ? l10n.addQazaTimeBlocked
+                      : l10n.addQazaAlreadyAddedLabel,
               onPrayerSelected: onToggle,
             ),
             if (availabilityLoading) ...[
