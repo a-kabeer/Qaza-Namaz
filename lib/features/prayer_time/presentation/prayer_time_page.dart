@@ -771,6 +771,7 @@ class _PrayerSchedule extends StatelessWidget {
               key: Key('prayer_timeline_row_$i'),
               name: items[i].name,
               time: items[i].time,
+              countdown: items[i].countdown,
               active: items[i].active,
               icon: items[i].icon,
               restricted: items[i].isRestricted,
