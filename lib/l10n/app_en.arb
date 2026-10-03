@@ -637,8 +637,7 @@
       }
     }
   },
-  "addQazaDateCount":
-"qazaHistorySelectedDates": "{count, plural, =1{1 selected date} other{{count} selected dates}}",
+  "qazaHistorySelectedDates": "{count, plural, =1{1 selected date} other{{count} selected dates}}",
   "@qazaHistorySelectedDates": {
     "placeholders": {
       "count": {
@@ -684,7 +683,7 @@
   "qazaHistoryShowAllDates": "Show all dates",
   "qazaHistoryHideDates": "Hide dates",
   "qazaHistoryNoDates": "No dates",
- "{count, plural, =1{1 date} other{{count} dates}}",
+  "addQazaDateCount": "{count, plural, =1{1 date} other{{count} dates}}",
   "@addQazaDateCount": {
     "placeholders": {
       "count": {
