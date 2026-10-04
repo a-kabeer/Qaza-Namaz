@@ -80,8 +80,8 @@ jobs:
             git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
             diff_base="origin/$GITHUB_BASE_REF"
           else
-            diff_base="$GITHUB_EVENT_BEFORE"
-            if [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
+            diff_base="${{ github.event.before }}"
+            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
               diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
             fi
           fi
