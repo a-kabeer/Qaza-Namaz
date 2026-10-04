@@ -137,12 +137,7 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp
         && (
           validRootTransition()
-          || (
-            request.resource.data.datasetState == 'deleted'
-            && request.resource.data.cloudGeneration is int
-            && request.resource.data.cloudGeneration >= 1
-            && request.resource.data.bootstrapComplete == true
-          )
+          || request.resource.data.datasetState == 'deleted'
         );
 
       allow delete: if false;
