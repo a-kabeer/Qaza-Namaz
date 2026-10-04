@@ -302,7 +302,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _ensureBackupTriggers() async {
     const timestamp = "(CAST(strftime('%s','now') AS INTEGER) * 1000000)";
     const queue = '''
-      INSERT OR REPLACE INTO sync_outbox
+      INSERT OR IGNORE INTO sync_outbox
         (id, user_id, type, queued_at, firebase_uid, cloud_generation,
          entity_type, operation, next_attempt_at, attempts,
          writer_device_id, worker_id, lease_until)
