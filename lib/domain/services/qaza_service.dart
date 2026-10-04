@@ -459,9 +459,8 @@ class QazaService {
 
     var deleted = 0;
     for (final id in ids) {
-      if (await repository.deleteRecord(userId: userId, recordId: id)) {
-        deleted++;
-      }
+      await repository.deleteRecord(userId: userId, recordId: id);
+      deleted++;
     }
     return deleted;
   }
