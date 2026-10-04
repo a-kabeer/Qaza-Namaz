@@ -18,6 +18,9 @@ import 'home_prayer_icon.dart';
 
 enum _ActivityRange { weekly, monthly, yearly }
 
+const _monthlyCalendarRows = 6;
+const _monthlyCalendarSpacing = 6.0;
+
 class HomeQazaActivity extends ConsumerStatefulWidget {
   const HomeQazaActivity({super.key});
 
@@ -286,35 +289,17 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     const chartHeight = 250.0;
     const listVerticalPadding = 8.0;
     const contentSpacing = 12.0;
-    final targetAvailable = period?.targetAvailable ??
-        switch (_range) {
-          _ActivityRange.weekly =>
-            QazaActivityService.calendarWeekStartForDate(anchor) ==
-                QazaActivityService.calendarWeekStartForDate(
-                  ref.read(homeLocalDateProvider),
-                ),
-          _ActivityRange.monthly =>
-            DateTime(anchor.year, anchor.month) ==
-                DateTime(
-                  ref.read(homeLocalDateProvider).year,
-                  ref.read(homeLocalDateProvider).month,
-                ),
-          _ActivityRange.yearly => false,
-        };
-    final summaryHeight = targetAvailable ? 56.0 : 42.0;
-    final noActivityHeight =
-        period != null && period.totalCompleted == 0 ? 28.0 : 0.0;
+
+    // Keep the period viewport geometry stable while data changes. Monthly
+    // calendars always reserve the maximum six-week footprint.
+    const summaryHeight = 56.0;
+    const noActivityHeight = 28.0;
 
     if (_range == _ActivityRange.monthly) {
-      final daysInMonth = DateTime(anchor.year, anchor.month + 1, 0).day;
-      final first = DateTime(anchor.year, anchor.month);
-      final leading = first.weekday % 7;
-      final rows = (leading + daysInMonth + 6) ~/ 7;
-      final gridWidth = math.max(width - 2, 0).toDouble();
-      final cellWidth = math.max((gridWidth - 36) / 7, 0).toDouble();
-      final gridHeight =
-          rows * cellWidth + math.max(rows - 1, 0).toDouble() * 6;
       const weekdayHeaderHeight = 24.0;
+      final gridWidth = math.max(width - 2, 0).toDouble();
+      final gridHeight = _monthlyCalendarGridHeight(gridWidth);
+
       return listVerticalPadding +
           summaryHeight +
           contentSpacing +
@@ -510,14 +495,18 @@ class _ActivityPeriodContent extends ConsumerWidget {
         ] else
           _ActivityYearSummary(period: period),
         const SizedBox(height: 12),
-        if (period.totalCompleted == 0)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              l10n.homeNoActivity,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
+        SizedBox(
+          height: 28,
+          child: period.totalCompleted == 0
+              ? Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    l10n.homeNoActivity,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
         if (range == _ActivityRange.monthly)
           _ActivityMonthGrid(
             period: period,
@@ -583,23 +572,20 @@ class _ActivityTargetSummary extends StatelessWidget {
       ]);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            for (final metric in metrics)
-              Expanded(
-                child: _SummaryMetric(
-                  label: metric.label,
-                  value: metric.value,
-                  secondary: metric.secondary,
-                ),
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          for (final metric in metrics)
+            Expanded(
+              child: _SummaryMetric(
+                label: metric.label,
+                value: metric.value,
+                secondary: metric.secondary,
               ),
-          ],
-        ),
-
-      ],
+            ),
+        ],
+      ),
     );
   }
 }
@@ -612,27 +598,30 @@ class _ActivityYearSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: _SummaryMetric(
-            label: l10n.homeCompleted,
-            value: DateFormatters.formatCount(period.totalCompleted),
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryMetric(
+              label: l10n.homeCompleted,
+              value: DateFormatters.formatCount(period.totalCompleted),
+            ),
           ),
-        ),
-        Expanded(
-          child: _SummaryMetric(
-            label: l10n.homeActiveDays,
-            value: DateFormatters.formatCount(period.activeDays),
+          Expanded(
+            child: _SummaryMetric(
+              label: l10n.homeActiveDays,
+              value: DateFormatters.formatCount(period.activeDays),
+            ),
           ),
-        ),
-        Expanded(
-          child: _SummaryMetric(
-            label: l10n.homeActiveMonths,
-            value: DateFormatters.formatCount(period.activeMonths),
+          Expanded(
+            child: _SummaryMetric(
+              label: l10n.homeActiveMonths,
+              value: DateFormatters.formatCount(period.activeMonths),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -965,14 +954,18 @@ class _InlineMonthlyDetail extends ConsumerWidget {
             range: _ActivityRange.monthly,
           ),
           const SizedBox(height: 12),
-          if (period.totalCompleted == 0)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                AppLocalizations.of(context).homeNoActivity,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
+          SizedBox(
+            height: 28,
+            child: period.totalCompleted == 0
+                ? Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      AppLocalizations.of(context).homeNoActivity,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
           _ActivityMonthGrid(
             period: period,
             selectedDay: selectedDay,
@@ -980,17 +973,38 @@ class _InlineMonthlyDetail extends ConsumerWidget {
           ),
           if (selectedDay != null) ...[
             const SizedBox(height: 12),
-            _SelectedActivityDayDetails(
-              key: const Key('home_activity_selected_day_details'),
-              range: _ActivityRange.monthly,
-              anchor: normalizedMonth,
-              selectedDay: selectedDay!,
+            AnimatedSize(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _SelectedActivityDayDetails(
+                key: const Key('home_activity_selected_day_details'),
+                range: _ActivityRange.monthly,
+                anchor: normalizedMonth,
+                selectedDay: selectedDay!,
+              ),
             ),
           ],
         ],
       ),
     );
   }
+}
+
+double _monthlyCalendarCellExtent(double width) {
+  final availableWidth = math.max(width, 0);
+  return math.max(
+    (availableWidth -
+            (_monthlyCalendarRows - 1) * _monthlyCalendarSpacing) /
+        7,
+    0,
+  );
+}
+
+double _monthlyCalendarGridHeight(double width) {
+  final cellExtent = _monthlyCalendarCellExtent(width);
+  return _monthlyCalendarRows * cellExtent +
+      (_monthlyCalendarRows - 1) * _monthlyCalendarSpacing;
 }
 
 class _ActivityMonthGrid extends StatelessWidget {
@@ -1010,58 +1024,70 @@ class _ActivityMonthGrid extends StatelessWidget {
     final theme = Theme.of(context);
     final first = period.days.first.date;
     final leading = first.weekday % 7;
-    final totalCells = leading + period.days.length;
-    final cellCount = ((totalCells + 6) ~/ 7) * 7;
     final labels = [
       for (var index = 0; index < 7; index++)
         DateFormat.E(locale).format(DateTime(2024, 1, 7 + index)),
     ];
 
-    return Column(
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellExtent = _monthlyCalendarCellExtent(constraints.maxWidth);
+        final gridHeight = _monthlyCalendarGridHeight(constraints.maxWidth);
+
+        return Column(
           children: [
-            for (final label in labels)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+            SizedBox(
+              height: 24,
+              child: Row(
+                children: [
+                  for (final label in labels)
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                ],
               ),
+            ),
+            const SizedBox(height: _monthlyCalendarSpacing),
+            SizedBox(
+              height: gridHeight,
+              child: GridView.builder(
+                key: const Key('home_activity_month_grid'),
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _monthlyCalendarRows * 7,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: _monthlyCalendarSpacing,
+                  crossAxisSpacing: _monthlyCalendarSpacing,
+                  mainAxisExtent: cellExtent,
+                ),
+                itemBuilder: (context, index) {
+                  if (index < leading ||
+                      index - leading >= period.days.length) {
+                    return const SizedBox.expand();
+                  }
+                  final day = period.days[index - leading];
+                  final selected =
+                      selectedDay != null && day.date == selectedDay;
+                  return _ActivityDayCell(
+                    day: day,
+                    selected: selected,
+                    onTap: onSelectedDay == null
+                        ? null
+                        : () => onSelectedDay!(day.date),
+                  );
+                },
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 6),
-        GridView.builder(
-          key: const Key('home_activity_month_grid'),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: cellCount,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            childAspectRatio: 1,
-          ),
-          itemBuilder: (context, index) {
-            if (index < leading || index - leading >= period.days.length) {
-              return const SizedBox.shrink();
-            }
-            final day = period.days[index - leading];
-            final selected = selectedDay != null && day.date == selectedDay;
-            return _ActivityDayCell(
-              day: day,
-              selected: selected,
-              onTap: onSelectedDay == null
-                  ? null
-                  : () => onSelectedDay!(day.date),
-            );
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 }
