@@ -351,17 +351,11 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
-  bool selectPrayer(
+  void selectPrayer(
     PrayerType prayer, {
     bool witrEnabled = true,
   }) {
-    if (prayer == PrayerType.witr && !witrEnabled) return false;
-
-    final summary = ref.read(progressSummaryProvider).valueOrNull;
-    if (summary == null ||
-        (summary.byPrayer[prayer]?.progress.pending ?? 0) <= 0) {
-      return false;
-    }
+    if (prayer == PrayerType.witr && !witrEnabled) return;
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
