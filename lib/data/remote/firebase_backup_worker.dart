@@ -94,6 +94,7 @@ class FirebaseBackupWorker {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
             );
           }
         } catch (error) {
