@@ -80,6 +80,7 @@ Future<ProviderContainer> _containerFor({
   bool includeActiveUser = false,
   bool useTestCompletionController = false,
   Future<QazaRecord?> Function()? oldestPendingOverride,
+  AppSnackbarService? snackbarService,
 }) async {
   return ProviderContainer(
     overrides: [
@@ -108,6 +109,8 @@ Future<ProviderContainer> _containerFor({
         qazaCompletionControllerProvider.overrideWith(
           _TestQazaCompletionController.new,
         ),
+      if (snackbarService != null)
+        appSnackbarServiceProvider.overrideWithValue(snackbarService),
       if (useFixedTargetResolution)
         homeSelectedPrayerProvider.overrideWith(
           (ref) => HomeSelectedPrayerState(
@@ -409,13 +412,7 @@ void main() {
         useFixedTargetResolution: true,
         includeActiveUser: true,
         useTestCompletionController: true,
-      );
-      container.updateOverrides(
-        [
-          appSnackbarServiceProvider.overrideWithValue(
-            _RecordingSnackbarService(messages),
-          ),
-        ],
+        snackbarService: _RecordingSnackbarService(messages),
       );
       addTearDown(container.dispose);
 
