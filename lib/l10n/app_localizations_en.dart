@@ -361,6 +361,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePrayerSelection => 'Prayer Selection';
 
   @override
+  String homePrayerSelectionNoPending(String prayer) {
+    return '$prayer has no pending Qaza. Select another prayer.';
+  }
+
+  @override
   String get homePrayerTimeUnavailable =>
       'Prayer Time selection is unavailable until Prayer Times are set up.';
 
