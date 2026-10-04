@@ -243,6 +243,24 @@ class _PrayerTimeContent extends ConsumerWidget {
     return intl.DateFormat.jm(locale).format(local);
   }
 
+  String _formatRestrictedRange(
+    BuildContext context,
+    RestrictedTimeWindow window,
+    PrayerTimeSnapshot snapshot,
+  ) {
+    final start = _formatTime(
+      context,
+      window.startsAt.toUtc(),
+      snapshot,
+    );
+    final end = _formatTime(
+      context,
+      window.endsAt.toUtc(),
+      snapshot,
+    );
+    return '$start – $end';
+  }
+
   String _restrictedLabel(
     AppLocalizations l10n,
     RestrictedTimeType type,
@@ -339,9 +357,9 @@ class _PrayerTimeContent extends ConsumerWidget {
             _PrayerTimelineItem(
               at: visibleSunrise.displayAt.toUtc(),
               name: _restrictedLabel(l10n, visibleSunrise.type),
-              time: _formatTime(
+              time: _formatRestrictedRange(
                 context,
-                visibleSunrise.displayAt.toUtc(),
+                visibleSunrise,
                 snapshot,
               ),
               icon: _restrictedIcon(visibleSunrise.type),
@@ -384,7 +402,11 @@ class _PrayerTimeContent extends ConsumerWidget {
         _PrayerTimelineItem(
           at: displayAt.toUtc(),
           name: _restrictedLabel(l10n, restriction.type),
-          time: _formatTime(context, displayAt.toUtc(), snapshot),
+          time: _formatRestrictedRange(
+            context,
+            restriction,
+            snapshot,
+          ),
           icon: _restrictedIcon(restriction.type),
           active: active,
           countdown: remaining == null
@@ -409,9 +431,9 @@ class _PrayerTimeContent extends ConsumerWidget {
 
     if (activeRestriction != null && restrictedRemaining != null) {
       focusName = _restrictedLabel(l10n, activeRestriction.type);
-      focusTime = _formatTime(
+      focusTime = _formatRestrictedRange(
         context,
-        restrictedTimelineDisplayAt(activeRestriction).toUtc(),
+        activeRestriction,
         snapshot,
       );
       focusIcon = _restrictedIcon(activeRestriction.type);
