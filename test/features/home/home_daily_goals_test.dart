@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
+import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/widgets/home_daily_goals.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_goals.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
