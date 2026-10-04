@@ -146,13 +146,32 @@ class AppDatabase extends _$AppDatabase {
         active_local_account_id TEXT,
         initial_choice_required INTEGER NOT NULL DEFAULT 0,
         migration_state TEXT NOT NULL DEFAULT 'none',
-        restore_state TEXT NOT NULL DEFAULT 'none'
+        restore_state TEXT NOT NULL DEFAULT 'none',
+        migration_snapshot_id TEXT
       )
     ''');
+    final sessionColumns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    final sessionColumnNames =
+        sessionColumns.map((row) => row.read<String>('name')).toSet();
+    if (!sessionColumnNames.contains('migration_snapshot_id')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
     await customStatement('''
       CREATE TABLE IF NOT EXISTS device_metadata (
         id INTEGER NOT NULL PRIMARY KEY,
         device_instance_id TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
+        migration_id TEXT NOT NULL,
+        local_account_id TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (migration_id, local_account_id)
       )
     ''');
     await customStatement('''
