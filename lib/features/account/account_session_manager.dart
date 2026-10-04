@@ -432,7 +432,18 @@ class AccountSessionManager extends ChangeNotifier {
     final root = await _backup.readCloudRoot(account.firebaseUid!);
     var generation = account.cloudGeneration;
     if (root != null) {
-      generation = (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+      final remoteGeneration =
+          (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+      if (remoteGeneration < account.cloudGeneration) {
+        throw StateError(
+          'Cloud generation is stale: local=' +
+              account.cloudGeneration.toString() +
+              ' remote=' +
+              remoteGeneration.toString() +
+              '.',
+        );
+      }
+      generation = remoteGeneration;
       final state = root['datasetState'] as String? ?? 'empty';
       if (state == 'deleted') {
         final nextGeneration = generation + 1;
