@@ -87,13 +87,34 @@ class FirebaseBackupService {
     await _writePlanRevisions(localAccountId, uid, generation);
     await _writeTombstones(localAccountId, uid, generation);
 
-    await rootRef.set({
-      'schemaVersion': cloudSchemaVersion,
-      'cloudGeneration': generation,
-      'datasetState': 'ready',
-      'updatedAt': FieldValue.serverTimestamp(),
-      'bootstrapComplete': true,
-    }, SetOptions(merge: true));
+    await _firebase.firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(rootRef);
+      if (!snap.exists) {
+        throw StateError('Cloud account root disappeared during snapshot.');
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final remoteGeneration =
+          (data['cloudGeneration'] as num?)?.toInt() ?? generation;
+      final remoteState = data['datasetState'] as String? ?? 'empty';
+      if (remoteGeneration != generation ||
+          remoteState == 'deleting' ||
+          remoteState == 'deleted') {
+        throw StateError(
+          'Cloud dataset changed before snapshot completion.',
+        );
+      }
+      transaction.set(
+        rootRef,
+        {
+          'schemaVersion': cloudSchemaVersion,
+          'cloudGeneration': generation,
+          'datasetState': 'ready',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'bootstrapComplete': true,
+        },
+        SetOptions(merge: true),
+      );
+    });
   }
 
 
@@ -370,6 +391,7 @@ class FirebaseBackupService {
                   'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
               entityId: record.id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -412,6 +434,7 @@ class FirebaseBackupService {
                   'addition_${id}_${row.read<int>('revision')}',
               entityId: id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -454,6 +477,7 @@ class FirebaseBackupService {
               operationId: 'deletion_${actionId}',
               entityId: actionId,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -496,7 +520,8 @@ class FirebaseBackupService {
             operationId: 'snapshot_${actionId}_${id}',
             entityId: id,
           ),
-          generation: generation,
+          uid: uid,
+        generation: generation,
           immutable: true,
         );
       }
@@ -522,6 +547,7 @@ class FirebaseBackupService {
           operationId: 'plan_${revision.revisionId}',
           entityId: revision.revisionId,
         ),
+        uid: uid,
         generation: generation,
         immutable: true,
       );
@@ -560,6 +586,7 @@ class FirebaseBackupService {
           operationId: row.read<String>('operation_id'),
           entityId: id,
         ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -604,12 +631,30 @@ class FirebaseBackupService {
 
   Future<void> _writeVersioned(
     DocumentReference<Map<String, dynamic>> ref, {
+    required String uid,
     required Map<String, dynamic> payload,
     required VersionedEntity version,
     required int generation,
     required bool immutable,
   }) async {
+    final rootRef = _firebase.firestore.collection('users').doc(uid);
     await _firebase.firestore.runTransaction((transaction) async {
+      final root = await transaction.get(rootRef);
+      final rootData = root.data();
+      if (!root.exists || rootData == null) {
+        throw StateError('Cloud account root is unavailable.');
+      }
+      final rootGeneration =
+          (rootData['cloudGeneration'] as num?)?.toInt() ?? 0;
+      final rootState = rootData['datasetState'] as String? ?? 'empty';
+      if (rootGeneration != generation ||
+          rootState == 'deleting' ||
+          rootState == 'deleted') {
+        throw StateError(
+          'Stale cloud generation/state while writing ${ref.path}.',
+        );
+      }
+
       final current = await transaction.get(ref);
       final currentData = current.data();
       if (currentData != null) {
