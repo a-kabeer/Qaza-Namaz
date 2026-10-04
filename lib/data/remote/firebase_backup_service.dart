@@ -10,6 +10,20 @@ import '../local/account_local_store.dart';
 import '../local/database/app_database.dart';
 import 'firebase_services.dart';
 
+class _VersionedWrite {
+  const _VersionedWrite({
+    required this.ref,
+    required this.payload,
+    required this.version,
+    required this.immutable,
+  });
+
+  final DocumentReference<Map<String, dynamic>> ref;
+  final Map<String, dynamic> payload;
+  final VersionedEntity version;
+  final bool immutable;
+}
+
 class FirebaseBackupService {
   FirebaseBackupService({
     required FirebaseServices firebase,
@@ -461,27 +475,36 @@ class FirebaseBackupService {
     int generation,
   ) async {
     final rows = await _database.qazaRecordsDao.getAll(userId: localId);
+    if (rows.isEmpty) return;
+    final metadata = await _metadataByType(localId, 'qazaRecord');
     final device = await _accountStore.deviceInstanceId();
+
+    final writes = <_VersionedWrite>[];
     for (final record in rows) {
-      final meta = await _metadata(localId, 'qazaRecord', record.id);
-      await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaRecords').doc(record.id),
-        payload: _qazaRecordPayload(record),
-        version: meta ??
-            VersionedEntity(
-              entityVersion: record.recordVersion,
-              updatedAt: record.updatedAt,
-              writerDeviceId: device,
-              operationId:
-                  'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
-              entityId: record.id,
-            ),
-        uid: uid,
-        generation: generation,
-        immutable: false,
+      writes.add(
+        _VersionedWrite(
+          ref: _firebase.firestore.collection('users').doc(uid)
+              .collection('qazaRecords').doc(record.id),
+          payload: _qazaRecordPayload(record),
+          version: metadata[record.id] ??
+              VersionedEntity(
+                entityVersion: record.recordVersion,
+                updatedAt: record.updatedAt,
+                writerDeviceId: device,
+                operationId:
+                    'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+                entityId: record.id,
+              ),
+          generation: generation,
+          immutable: false,
+        ),
       );
     }
+    await _writeVersionedBatch(
+      uid: uid,
+      generation: generation,
+      writes: writes,
+    );
   }
 
   Future<void> _writeQazaAdditions(
@@ -494,37 +517,47 @@ class FirebaseBackupService {
          FROM qaza_additions WHERE user_id = ? ORDER BY created_at ASC''',
       variables: [Variable(localId)],
     ).get();
+    if (rows.isEmpty) return;
+    final metadata = await _metadataByType(localId, 'qazaAddition');
     final device = await _accountStore.deviceInstanceId();
+    final writes = <_VersionedWrite>[];
+
     for (final row in rows) {
       final id = row.read<String>('id');
       final updatedAt = DateTime.parse(row.read<String>('updated_at'));
-      final meta = await _metadata(localId, 'qazaAddition', id);
-      await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaAdditions').doc(id),
-        payload: {
-          'id': id,
-          'mode': row.read<String>('mode'),
-          'currentInputSnapshot':
-              _decodeObject(row.read<String>('input_snapshot')),
-          'revision': row.read<int>('revision'),
-          'createdAt': DateTime.parse(row.read<String>('created_at')),
-          'updatedAt': updatedAt,
-        },
-        version: meta ??
-            VersionedEntity(
-              entityVersion: row.read<int>('revision'),
-              updatedAt: updatedAt,
-              writerDeviceId: device,
-              operationId:
-                  'addition_${id}_${row.read<int>('revision')}',
-              entityId: id,
-            ),
-        uid: uid,
-        generation: generation,
-        immutable: false,
+      final revision = row.read<int>('revision');
+      writes.add(
+        _VersionedWrite(
+          ref: _firebase.firestore.collection('users').doc(uid)
+              .collection('qazaAdditions').doc(id),
+          payload: {
+            'id': id,
+            'mode': row.read<String>('mode'),
+            'currentInputSnapshot':
+                _decodeObject(row.read<String>('input_snapshot')),
+            'revision': revision,
+            'createdAt': DateTime.parse(row.read<String>('created_at')),
+            'updatedAt': updatedAt,
+          },
+          version: metadata[id] ??
+              VersionedEntity(
+                entityVersion: revision,
+                updatedAt: updatedAt,
+                writerDeviceId: device,
+                operationId: 'addition_${id}_${revision}',
+                entityId: id,
+              ),
+          generation: generation,
+          immutable: false,
+        ),
       );
     }
+
+    await _writeVersionedBatch(
+      uid: uid,
+      generation: generation,
+      writes: writes,
+    );
   }
 
   Future<void> _writeDeletionActions(
@@ -533,11 +566,15 @@ class FirebaseBackupService {
     int generation,
   ) async {
     final actions = await _database.customSelect(
-      '''SELECT id, addition_id, created_at, resolved_at
+      '''SELECT id, addition_id, created_at, resolved_at, entity_version
          FROM qaza_deletion_actions WHERE user_id = ? ORDER BY created_at ASC''',
       variables: [Variable(localId)],
     ).get();
+    if (actions.isEmpty) return;
+
+    final metadata = await _metadataByType(localId, 'deletionAction');
     final device = await _accountStore.deviceInstanceId();
+    final writes = <_VersionedWrite>[];
 
     for (final row in actions) {
       final actionId = row.read<String>('id');
@@ -545,27 +582,30 @@ class FirebaseBackupService {
       final resolvedRaw = row.read<String?>('resolved_at');
       final updatedAt =
           resolvedRaw == null ? createdAt : DateTime.parse(resolvedRaw);
-      await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('deletionActions').doc(actionId),
-        payload: {
-          'id': actionId,
-          'additionId': row.read<String>('addition_id'),
-          'createdAt': createdAt,
-          'resolvedAt':
-              resolvedRaw == null ? null : DateTime.parse(resolvedRaw),
-        },
-        version: await _metadata(localId, 'deletionAction', actionId) ??
-            VersionedEntity(
-              entityVersion: 1,
-              updatedAt: updatedAt,
-              writerDeviceId: device,
-              operationId: 'deletion_${actionId}',
-              entityId: actionId,
-            ),
-        uid: uid,
-        generation: generation,
-        immutable: false,
+      final entityVersion = row.read<int>('entity_version');
+
+      writes.add(
+        _VersionedWrite(
+          ref: _firebase.firestore.collection('users').doc(uid)
+              .collection('deletionActions').doc(actionId),
+          payload: {
+            'id': actionId,
+            'additionId': row.read<String>('addition_id'),
+            'createdAt': createdAt,
+            'resolvedAt':
+                resolvedRaw == null ? null : DateTime.parse(resolvedRaw),
+          },
+          version: metadata[actionId] ??
+              VersionedEntity(
+                entityVersion: entityVersion,
+                updatedAt: updatedAt,
+                writerDeviceId: device,
+                operationId: 'deletion_${actionId}',
+                entityId: actionId,
+              ),
+          generation: generation,
+          immutable: false,
+        ),
       );
 
       final snapshots = await _database.customSelect(
@@ -578,40 +618,46 @@ class FirebaseBackupService {
       ).get();
       for (final snapshot in snapshots) {
         final id = snapshot.read<String>('record_id');
-        final payload = <String, dynamic>{
-          'deletionActionId': actionId,
-          'recordId': id,
-          'additionId': snapshot.read<String>('addition_id'),
-          'prayerType': snapshot.read<String>('prayer_type'),
-          'originalDate':
-              DateTime.parse(snapshot.read<String>('original_date')),
-          'status': snapshot.read<String>('status'),
-          'completedAt':
-              _parseDate(snapshot.read<String?>('completed_at')),
-          'completionId': snapshot.read<String?>('completion_id'),
-          'createdAt': DateTime.parse(snapshot.read<String>('created_at')),
-          'updatedAt': DateTime.parse(snapshot.read<String>('updated_at')),
-          'recordVersion': snapshot.read<int>('record_version'),
-        };
-        await _writeVersioned(
-          _firebase.firestore.collection('users').doc(uid)
-              .collection('deletionActions').doc(actionId)
-              .collection('snapshots').doc(id),
-          payload: payload,
-          version: VersionedEntity(
-            entityVersion: snapshot.read<int>('record_version'),
-            updatedAt:
-                DateTime.parse(snapshot.read<String>('updated_at')),
-            writerDeviceId: device,
-            operationId: 'snapshot_${actionId}_${id}',
-            entityId: id,
+        writes.add(
+          _VersionedWrite(
+            ref: _firebase.firestore.collection('users').doc(uid)
+                .collection('deletionActions').doc(actionId)
+                .collection('snapshots').doc(id),
+            payload: {
+              'deletionActionId': actionId,
+              'recordId': id,
+              'additionId': snapshot.read<String>('addition_id'),
+              'prayerType': snapshot.read<String>('prayer_type'),
+              'originalDate':
+                  DateTime.parse(snapshot.read<String>('original_date')),
+              'status': snapshot.read<String>('status'),
+              'completedAt':
+                  _parseDate(snapshot.read<String?>('completed_at')),
+              'completionId': snapshot.read<String?>('completion_id'),
+              'createdAt': DateTime.parse(snapshot.read<String>('created_at')),
+              'updatedAt': DateTime.parse(snapshot.read<String>('updated_at')),
+              'recordVersion': snapshot.read<int>('record_version'),
+            },
+            version: VersionedEntity(
+              entityVersion: snapshot.read<int>('record_version'),
+              updatedAt:
+                  DateTime.parse(snapshot.read<String>('updated_at')),
+              writerDeviceId: device,
+              operationId: 'snapshot_${actionId}_${id}',
+              entityId: id,
+            ),
+            generation: generation,
+            immutable: true,
           ),
-          uid: uid,
-          generation: generation,
-          immutable: true,
         );
       }
     }
+
+    await _writeVersionedBatch(
+      uid: uid,
+      generation: generation,
+      writes: writes,
+    );
   }
 
   Future<void> _writePlanRevisions(
@@ -620,24 +666,30 @@ class FirebaseBackupService {
     int generation,
   ) async {
     final revisions = await _accountStore.loadPlanRevisions(localId);
+    if (revisions.isEmpty) return;
     final device = await _accountStore.deviceInstanceId();
-    for (final revision in revisions) {
-      await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaPlanRevisions').doc(revision.revisionId),
-        payload: revision.toJson(),
-        version: VersionedEntity(
-          entityVersion: 1,
-          updatedAt: revision.createdAt,
-          writerDeviceId: device,
-          operationId: 'plan_${revision.revisionId}',
-          entityId: revision.revisionId,
+    final writes = <_VersionedWrite>[
+      for (final revision in revisions)
+        _VersionedWrite(
+          ref: _firebase.firestore.collection('users').doc(uid)
+              .collection('qazaPlanRevisions').doc(revision.revisionId),
+          payload: revision.toJson(),
+          version: VersionedEntity(
+            entityVersion: 1,
+            updatedAt: revision.createdAt,
+            writerDeviceId: device,
+            operationId: 'plan_${revision.revisionId}',
+            entityId: revision.revisionId,
+          ),
+          generation: generation,
+          immutable: true,
         ),
-        uid: uid,
-        generation: generation,
-        immutable: true,
-      );
-    }
+    ];
+    await _writeVersionedBatch(
+      uid: uid,
+      generation: generation,
+      writes: writes,
+    );
   }
 
   Future<void> _writeTombstones(
@@ -651,45 +703,129 @@ class FirebaseBackupService {
          FROM qaza_record_tombstones WHERE local_account_id = ?''',
       variables: [Variable(localId)],
     ).get();
+    if (rows.isEmpty) return;
+
     final ref = _firebase.firestore.collection('users').doc(uid)
         .collection('qazaRecordTombstones');
-
-    for (final row in rows) {
-      final id = row.read<String>('record_id');
-      final version = row.read<int>('record_version');
-      await _writeVersioned(
-        ref.doc(id),
-        payload: {
-          'recordId': id,
-          'recordVersion': version,
-          'deletedAt': _microsToDate(row.read<int>('deleted_at')),
-          'cloudGeneration': row.read<int>('cloud_generation'),
-        },
-        version: VersionedEntity(
-          entityVersion: version,
-          updatedAt: _microsToDate(row.read<int>('deleted_at')),
-          writerDeviceId: row.read<String>('writer_device_id'),
-          operationId: row.read<String>('operation_id'),
-          entityId: id,
+    final writes = <_VersionedWrite>[
+      for (final row in rows)
+        _VersionedWrite(
+          ref: ref.doc(row.read<String>('record_id')),
+          payload: {
+            'recordId': row.read<String>('record_id'),
+            'recordVersion': row.read<int>('record_version'),
+            'deletedAt': _microsToDate(row.read<int>('deleted_at')),
+            'cloudGeneration': row.read<int>('cloud_generation'),
+          },
+          version: VersionedEntity(
+            entityVersion: row.read<int>('record_version'),
+            updatedAt: _microsToDate(row.read<int>('deleted_at')),
+            writerDeviceId: row.read<String>('writer_device_id'),
+            operationId: row.read<String>('operation_id'),
+            entityId: row.read<String>('record_id'),
+          ),
+          generation: generation,
+          immutable: false,
         ),
-        uid: uid,
-        generation: generation,
-        immutable: false,
-      );
+    ];
 
-      final recordRef = _firebase.firestore.collection('users').doc(uid)
-          .collection('qazaRecords').doc(id);
+    await _writeVersionedBatch(
+      uid: uid,
+      generation: generation,
+      writes: writes,
+    );
+    await _deleteRecordsCoveredByCloudTombstones(
+      uid: uid,
+      generation: generation,
+      recordIds: rows.map((row) => row.read<String>('record_id')).toList(
+            growable: false,
+          ),
+    );
+  }
+
+  Future<void> _deleteRecordsCoveredByCloudTombstones({
+    required String uid,
+    required int generation,
+    required List<String> recordIds,
+  }) async {
+    final rootRef = _firebase.firestore.collection('users').doc(uid);
+    final tombstoneRef =
+        rootRef.collection('qazaRecordTombstones');
+    final recordRef = rootRef.collection('qazaRecords');
+
+    for (final ids in _chunks(recordIds, 200)) {
       await _firebase.firestore.runTransaction((transaction) async {
-        final recordSnap = await transaction.get(recordRef);
-        if (!recordSnap.exists) return;
-        final recordData = recordSnap.data() ?? const <String, dynamic>{};
-        final recordVersion =
-            (recordData['recordVersion'] as num?)?.toInt() ?? 0;
-        if (version >= recordVersion) {
-          transaction.delete(recordRef);
+        final rootSnapshot = await transaction.get(rootRef);
+        _assertCloudRootForWrite(
+          snapshot: rootSnapshot,
+          generation: generation,
+          context: 'tombstone cleanup',
+        );
+
+        final tombstones = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        final records = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        for (final id in ids) {
+          tombstones[id] = await transaction.get(tombstoneRef.doc(id));
+          records[id] = await transaction.get(recordRef.doc(id));
+        }
+
+        for (final id in ids) {
+          final tombstone = tombstones[id];
+          final record = records[id];
+          if (tombstone == null ||
+              !tombstone.exists ||
+              record == null ||
+              !record.exists) {
+            continue;
+          }
+          final tombstoneData =
+              tombstone.data() ?? const <String, dynamic>{};
+          final recordData =
+              record.data() ?? const <String, dynamic>{};
+          final payload = tombstoneData['payload'];
+          if (tombstoneData['cloudGeneration'] != null ||
+              payload is! Map) {
+            // Generation is validated from the root and payload below.
+          }
+          final tombstoneGeneration =
+              (payload['cloudGeneration'] as num?)?.toInt() ?? 0;
+          if (tombstoneGeneration != generation) continue;
+
+          final tombstoneVersion =
+              (payload['recordVersion'] as num?)?.toInt() ?? 0;
+          final recordVersion =
+              (recordData['payload'] is Map)
+                  ? ((recordData['payload']['recordVersion'] as num?)?.toInt() ?? 0)
+                  : 0;
+          if (tombstoneVersion >= recordVersion) {
+            transaction.delete(recordRef.doc(id));
+          }
         }
       });
     }
+  }
+
+  Future<Map<String, VersionedEntity>> _metadataByType(
+    String localId,
+    String type,
+  ) async {
+    final rows = await _database.customSelect(
+      '''SELECT entity_id, entity_version, updated_at, writer_device_id,
+                operation_id
+         FROM entity_metadata
+         WHERE local_account_id = ? AND entity_type = ?''',
+      variables: [Variable(localId), Variable(type)],
+    ).get();
+    return <String, VersionedEntity>{
+      for (final row in rows)
+        row.read<String>('entity_id'): VersionedEntity(
+          entityVersion: row.read<int>('entity_version'),
+          updatedAt: _microsToDate(row.read<int>('updated_at')),
+          writerDeviceId: row.read<String>('writer_device_id'),
+          operationId: row.read<String>('operation_id'),
+          entityId: row.read<String>('entity_id'),
+        ),
+    };
   }
 
   Future<VersionedEntity?> _metadata(
@@ -713,6 +849,130 @@ class FirebaseBackupService {
       operationId: row.read<String>('operation_id'),
       entityId: entityId,
     );
+  }
+
+  Future<void> _writeVersionedBatch({
+    required String uid,
+    required int generation,
+    required List<_VersionedWrite> writes,
+  }) async {
+    if (writes.isEmpty) return;
+    final rootRef = _firebase.firestore.collection('users').doc(uid);
+
+    // Firestore limits a transaction to 500 writes. Keep headroom so a
+    // transaction also remains safe if this method is extended later.
+    for (final chunk in _chunks(writes, 400)) {
+      await _firebase.firestore.runTransaction((transaction) async {
+        final rootSnapshot = await transaction.get(rootRef);
+        _assertCloudRootForWrite(
+          snapshot: rootSnapshot,
+          generation: generation,
+          context: 'batched backup',
+        );
+
+        final current = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        for (final operation in chunk) {
+          current[operation.ref.path] = await transaction.get(operation.ref);
+        }
+
+        for (final operation in chunk) {
+          final snapshot = current[operation.ref.path];
+          final currentData = snapshot?.data();
+          if (currentData != null) {
+            final remote = VersionedEntity(
+              entityVersion:
+                  (currentData['entityVersion'] as num?)?.toInt() ?? 0,
+              updatedAt: _timestampDate(currentData['updatedAt']) ??
+                  DateTime.fromMillisecondsSinceEpoch(0),
+              writerDeviceId: currentData['writerDeviceId'] as String? ?? '',
+              operationId: currentData['operationId'] as String? ?? '',
+              entityId: operation.ref.id,
+            );
+            final cmp = _resolver.compare(operation.version, remote);
+            if (cmp < 0 || cmp == 0) {
+              continue;
+            }
+
+            if (operation.immutable) {
+              throw StateError(
+                'Immutable cloud entity conflict: ' + operation.ref.path,
+              );
+            }
+
+            final remoteGeneration =
+                (currentData['cloudGeneration'] as num?)?.toInt();
+            if (remoteGeneration != null &&
+                remoteGeneration != generation) {
+              throw StateError(
+                'Cloud generation changed while writing ' +
+                    operation.ref.path +
+                    '.',
+              );
+            }
+          }
+        }
+
+        for (final operation in chunk) {
+          final snapshot = current[operation.ref.path];
+          final currentData = snapshot?.data();
+          if (currentData != null) {
+            final remote = VersionedEntity(
+              entityVersion:
+                  (currentData['entityVersion'] as num?)?.toInt() ?? 0,
+              updatedAt: _timestampDate(currentData['updatedAt']) ??
+                  DateTime.fromMillisecondsSinceEpoch(0),
+              writerDeviceId: currentData['writerDeviceId'] as String? ?? '',
+              operationId: currentData['operationId'] as String? ?? '',
+              entityId: operation.ref.id,
+            );
+            final cmp = _resolver.compare(operation.version, remote);
+            if (cmp <= 0) continue;
+          }
+
+          transaction.set(
+            operation.ref,
+            {
+              'schemaVersion': cloudSchemaVersion,
+              'cloudGeneration': generation,
+              'entityVersion': operation.version.entityVersion,
+              'updatedAt': Timestamp.fromDate(operation.version.updatedAt),
+              'writerDeviceId': operation.version.writerDeviceId,
+              'operationId': operation.version.operationId,
+              'payload': operation.payload,
+              'immutable': operation.immutable,
+            },
+            SetOptions(merge: true),
+          );
+        }
+      });
+    }
+  }
+
+  void _assertCloudRootForWrite({
+    required DocumentSnapshot<Map<String, dynamic>> snapshot,
+    required int generation,
+    required String context,
+  }) {
+    if (!snapshot.exists) {
+      throw StateError(
+        'Cloud account root is missing during ' + context + '.',
+      );
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final rootGeneration =
+        (data['cloudGeneration'] as num?)?.toInt() ?? 0;
+    final rootState = data['datasetState'] as String? ?? 'empty';
+    if (rootGeneration != generation ||
+        (rootState != 'initializing' && rootState != 'ready')) {
+      throw StateError(
+        'Cloud generation/state changed during ' +
+            context +
+            ': generation=' +
+            rootGeneration.toString() +
+            ' state=' +
+            rootState,
+      );
+    }
   }
 
   Future<void> _writeVersioned(
