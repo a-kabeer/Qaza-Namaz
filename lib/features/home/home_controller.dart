@@ -14,12 +14,7 @@ class HomeController {
     ref.invalidate(homeNowProvider);
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
-    ref.invalidate(homeDailyProgressProvider);
-    ref.invalidate(homeQazaActivityCurrentWeekProvider);
-    ref.invalidate(homeQazaActivityDailyGoalsProvider);
-    ref.invalidate(homeQazaActivityWeekProvider);
-    ref.invalidate(homeQazaActivityMonthProvider);
-    ref.invalidate(homeQazaActivityYearProvider);
+    ref.invalidate(homeDashboardActivityProvider);
     for (final prayer in ref.read(enabledPrayerTypesProvider)) {
       ref.invalidate(oldestPendingProvider(prayer));
     }
@@ -36,8 +31,8 @@ class HomeController {
     );
 
     await _refreshOptional(
-      homeDailyProgressProvider,
-      'home_daily_progress_refresh_failed',
+      homeDashboardActivityProvider,
+      'home_dashboard_activity_refresh_failed',
     );
     await _refreshOptional(
       sahibAlTartibProvider,
