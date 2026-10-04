@@ -286,7 +286,8 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
 
     // Keep the period viewport geometry stable while data changes. Monthly
     // calendars always reserve the maximum six-week footprint.
-    const summaryHeight = 56.0;
+    // Reserve enough height for the two-line target metric without overflow.
+    const summaryHeight = 64.0;
     const noActivityHeight = 28.0;
 
     if (_range == _ActivityRange.monthly) {
@@ -567,7 +568,7 @@ class _ActivityTargetSummary extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 56,
+      height: 64,
       child: Row(
         children: [
           for (final metric in metrics)
@@ -593,7 +594,7 @@ class _ActivityYearSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return SizedBox(
-      height: 56,
+      height: 64,
       child: Row(
         children: [
           Expanded(
