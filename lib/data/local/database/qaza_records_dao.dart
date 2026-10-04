@@ -828,6 +828,19 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .map((record) => record.id.value)
         .toSet()
         .toList(growable: false);
+    final existingIds = <String>{};
+
+    for (var start = 0; start < uniqueIds.length; start += 400) {
+      final end = start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
+      final chunk = uniqueIds.sublist(start, end);
+      final rows = await (select(qazaRecords)
+            ..where(
+              (row) =>
+                  row.userId.equals(userId) & row.id.isIn(chunk),
+            ))
+          .get();
+      existingIds.addAll(rows.map((row) => row.id));
+    }
 
     await batch((batch) {
       batch.insertAll(
@@ -837,20 +850,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       );
     });
 
-    final insertedIds = <String>[];
-    for (var start = 0; start < uniqueIds.length; start += 400) {
-      final end =
-          start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
-      final chunk = uniqueIds.sublist(start, end);
-      final rows = await (select(qazaRecords)
-            ..where(
-              (row) =>
-                  row.userId.equals(userId) & row.id.isIn(chunk),
-            ))
-          .get();
-      insertedIds.addAll(rows.map((row) => row.id));
-    }
-    return insertedIds;
+    return [
+      for (final id in uniqueIds)
+        if (!existingIds.contains(id)) id,
+    ];
   }
 
   /// Inserts records atomically. Each row is still constrained by its own
