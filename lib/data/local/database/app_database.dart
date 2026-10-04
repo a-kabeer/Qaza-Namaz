@@ -355,7 +355,7 @@ class AppDatabase extends _$AppDatabase {
                0;
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_update
@@ -378,7 +378,7 @@ class AppDatabase extends _$AppDatabase {
                0;
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_delete
@@ -409,7 +409,7 @@ class AppDatabase extends _$AppDatabase {
                );
         $queue
       END
-    '''.replaceFirst('%USER%', 'OLD.user_id'));
+    '''.replaceAll('%USER%', 'OLD.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_insert
@@ -430,7 +430,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_update
@@ -451,7 +451,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_delete
@@ -466,7 +466,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'OLD.user_id'));
+    '''.replaceAll('%USER%', 'OLD.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_insert
@@ -487,7 +487,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_update
@@ -508,7 +508,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_snapshots_backup_insert
@@ -523,7 +523,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER account_plan_revisions_backup_insert
@@ -538,7 +538,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.local_account_id'));
+    '''.replaceAll('%USER%', 'NEW.local_account_id'));
   }
 
   Future<void> _removeLegacyQazaHistorySchema() async {
