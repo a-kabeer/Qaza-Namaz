@@ -31,6 +31,16 @@ class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
   HomePrayerSelectionState build() => initial;
 }
 
+class _RecordingSnackbarService extends AppSnackbarService {
+  _RecordingSnackbarService(this.messages)
+      : super(messengerKey: appScaffoldMessengerKey);
+
+  final List<String> messages;
+
+  @override
+  void info(String message) => messages.add(message);
+}
+
 class _TestQazaCompletionController extends QazaCompletionController {
   @override
   Future<QazaCompletionReceipt> completeRecordWithReceipt({
@@ -388,6 +398,7 @@ void main() {
         prayer: PrayerType.isha,
         date: DateTime(2026, 9, 23),
       );
+      final messages = <String>[];
       final container = await _containerFor(
         selection: const HomePrayerSelectionState(
           mode: HomePrayerSelectionMode.prayerSelection,
@@ -399,6 +410,13 @@ void main() {
         includeActiveUser: true,
         useTestCompletionController: true,
       );
+      container.updateOverrides(
+        [
+          appSnackbarServiceProvider.overrideWithValue(
+            _RecordingSnackbarService(messages),
+          ),
+        ],
+      );
       addTearDown(container.dispose);
 
       await _pumpHomeTodayProgress(tester, container, record);
@@ -407,12 +425,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Isha has no pending Qaza. Select another prayer.'),
-        findsOneWidget,
+        messages,
+        contains('Isha has no pending Qaza. Select another prayer.'),
       );
       expect(
-        find.text('No pending Qaza for this prayer.'),
-        findsNothing,
+        messages,
+        isNot(contains('No pending Qaza for this prayer.')),
       );
     },
   );
