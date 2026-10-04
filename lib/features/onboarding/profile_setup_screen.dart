@@ -52,8 +52,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     // Onboarding is always scoped to the account selected by the
     // account/session layer. Never force the Guest partition here.
-    final activeAccountId = ref.read(activeUserIdProvider);
-    if (activeAccountId == null) {
+    if (ref.read(activeUserIdProvider) == null) {
       throw StateError('No active local account exists for onboarding.');
     }
 
