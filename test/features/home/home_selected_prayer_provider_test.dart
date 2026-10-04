@@ -37,10 +37,12 @@ void main() {
     required Map<PrayerType, int> pending,
     required bool witrEnabled,
     PrayerType cursor = PrayerType.fajr,
+    PrayerType selectedPrayer = PrayerType.fajr,
   }) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       'qaza_home_completion_mode': mode.name,
       'qaza_home_auto_sequence_prayer': cursor.name,
+      'qaza_home_selected_prayer': selectedPrayer.name,
     });
 
     final summary = summaryFor(pending);
