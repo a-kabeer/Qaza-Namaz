@@ -269,14 +269,15 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _ensureBackupTriggers() async {
     const timestamp = "(CAST(strftime('%s','now') AS INTEGER) * 1000000)";
     const queue = '''
-      INSERT INTO sync_outbox
+      INSERT OR REPLACE INTO sync_outbox
         (id, user_id, type, queued_at, firebase_uid, cloud_generation,
          entity_type, operation, next_attempt_at, attempts,
-         writer_device_id)
-      SELECT lower(hex(randomblob(16))), local_account_id, 'account_snapshot',
+         writer_device_id, worker_id, lease_until)
+      SELECT 'account_snapshot_' || %USER%, %USER%, 'account_snapshot',
              $timestamp, firebase_uid, cloud_generation, 'account',
              'snapshot', $timestamp, 0,
-             (SELECT device_instance_id FROM device_metadata WHERE id = 1)
+             (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+             NULL, NULL
       FROM local_accounts
       WHERE local_account_id = %USER%
         AND account_mode = 'google'
