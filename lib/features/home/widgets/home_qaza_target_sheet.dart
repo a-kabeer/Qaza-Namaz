@@ -74,6 +74,17 @@ class _HomeQazaTargetSheetState
     final l10n = AppLocalizations.of(context);
     final selection = ref.watch(homePrayerSelectionProvider);
     final witrAllowed = ref.watch(effectiveWitrProvider);
+    final summaryAsync = ref.watch(progressSummaryProvider);
+    final disabledPrayers =
+        ref.watch(homePrayerSelectionDisabledPrayersProvider);
+    final selectedPrayer = selection.selectedPrayer;
+    final selectedPrayerUnavailable =
+        selection.mode == HomePrayerSelectionMode.prayerSelection &&
+        selectedPrayer != null &&
+        summaryAsync.hasValue &&
+        (summaryAsync.valueOrNull?.byPrayer[selectedPrayer]?.progress.pending ??
+                0) <=
+            0;
     final availability = ref.watch(prayerTimeTargetAvailabilityProvider);
     final showSetup = _showPrayerTimeSetup ||
         (selection.mode == HomePrayerSelectionMode.prayerTime &&
