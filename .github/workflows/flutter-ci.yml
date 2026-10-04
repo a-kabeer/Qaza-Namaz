@@ -27,6 +27,37 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
+      - name: Verify Firebase Android configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("android/app/google-services.json")
+          if not path.exists():
+              raise SystemExit("android/app/google-services.json is missing.")
+          data = json.loads(path.read_text())
+          if data.get("project_info", {}).get("project_id") != "qaza-nmz":
+              raise SystemExit("Unexpected Firebase project ID.")
+          clients = data.get("client", [])
+          expected_package = "com.example.qaza_namaz_task1_flutter"
+          expected_app_id = "1:895430705174:android:1e8d352d654a4a3c7537"
+          matched = False
+          for client in clients:
+              info = client.get("client_info", {})
+              android = info.get("android_client_info", {})
+              if android.get("package_name") == expected_package:
+                  if info.get("mobilesdk_app_id") != expected_app_id:
+                      raise SystemExit("Task 1 Firebase Android App ID does not match.")
+                  matched = True
+                  break
+          if not matched:
+              raise SystemExit("Task 1 Firebase Android client is missing.")
+          print("Firebase Android configuration matches Task 1.")
+          PY
+
       - name: Flutter clean
         run: flutter clean
       - name: pub get

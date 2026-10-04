@@ -50,6 +50,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _submit(UserProfile profile) async {
     await _saveQueue;
 
+    // Completing onboarding activates the local Guest ledger for the
+    // subsequent import and for StartupGate/profile consumers.
+    ref.read(activeLocalAccountIdStateProvider.notifier).state =
+        UserProfile.localLedgerUserId;
+
     final finalizedProfile = profile.copyWith(
       witrIncluded: ProfileRules.effectiveWitr(profile),
       onboardingCompleted: true,

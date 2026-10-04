@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
@@ -14,7 +17,34 @@ class QazaNamazApp extends ConsumerStatefulWidget {
   ConsumerState<QazaNamazApp> createState() => _QazaNamazAppState();
 }
 
-class _QazaNamazAppState extends ConsumerState<QazaNamazApp> {
+class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
+    with WidgetsBindingObserver {
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((_) {
+      if (mounted) {
+        ref.read(backupWorkerProvider).runOnce();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      ref.read(backupWorkerProvider).runOnce();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);

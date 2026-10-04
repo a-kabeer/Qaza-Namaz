@@ -93,12 +93,16 @@ class HomeController {
   void afterCompletion({
     required PrayerType completedPrayer,
   }) {
+    final witrEnabled = ref.read(effectiveWitrProvider);
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
     ref
         .read(homePrayerSelectionProvider.notifier)
-        .afterSuccessfulCompletion(completedPrayer);
+        .afterSuccessfulCompletion(
+          completedPrayer,
+          witrEnabled: witrEnabled,
+        );
   }
 
   void afterStaleCompletion() {
