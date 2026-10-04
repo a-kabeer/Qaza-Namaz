@@ -1315,6 +1315,23 @@ class AccountLocalStore {
     return migrationId;
   }
 
+  Future<void> completeMigration() async {
+    await database.transaction(() async {
+      final id = await migrationSnapshotId();
+      if (id != null) {
+        await database.customUpdate(
+          'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
+          variables: [Variable(id)],
+        );
+      }
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET migration_snapshot_id = NULL, migration_state = 'completed'
+           WHERE id = 1''',
+      );
+    });
+  }
+
   Future<void> clearMigrationSnapshot() async {
     final id = await migrationSnapshotId();
     if (id == null) return;
