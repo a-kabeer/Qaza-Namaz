@@ -20,13 +20,14 @@ class QazaNamazApp extends ConsumerStatefulWidget {
 class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _appVisible = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((_) {
-      if (mounted) {
+      if (mounted && !_appVisible) {
         ref.read(backupWorkerProvider).runOnce();
       }
     });
@@ -41,8 +42,19 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted) {
-      ref.read(backupWorkerProvider).runOnce();
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _appVisible = true;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        _appVisible = false;
+        if (state == AppLifecycleState.paused && mounted) {
+          // Backups are deliberately moved out of the foreground so a local
+          // Qaza completion never competes with Firestore work for frame time.
+          ref.read(backupWorkerProvider).runOnce();
+        }
     }
   }
   @override
