@@ -264,20 +264,13 @@ class FirebaseReconciliationService {
 
       // Upsert only the canonical records. Existing retained IDs are updated
       // in place; cloud-only records are inserted with the current account ID.
-      for (final record in byId.values) {
-        final existing = byId.containsKey(record.id)
-            ? local.where((item) => item.id == record.id).toList(growable: false)
-            : const <QazaRecord>[];
-        if (existing.isEmpty) {
-          await _database.qazaRecordsDao.insertRecord(
-            _recordCompanion(record),
-          );
-        } else {
-          await _database.qazaRecordsDao.updateRecord(
-            _recordCompanion(record),
-          );
-        }
+      if (byId.isNotEmpty) {
+        await _database.qazaRecordsDao.upsertRecords(
+          byId.values.map(_recordCompanion).toList(growable: false),
+        );
+      }
 
+      for (final record in byId.values) {
         final provenance =
             record.profilePlanRevisionId == null ||
                     record.profilePlanFingerprint == null
