@@ -37,8 +37,10 @@ def request_json(url, method="GET", body=None, token=None, expected=None):
     return status, json.loads(payload) if payload else {}
 
 
-def wait_for(url):
-    deadline = time.time() + 60
+def wait_for(url, timeout_seconds=180):
+    # Firebase Emulator downloads can exceed one minute on a fresh CI runner.
+    # Keep the readiness check bounded, but allow the first-run download to finish.
+    deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
             request_json(url, expected={200, 404})
