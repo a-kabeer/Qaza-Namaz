@@ -524,9 +524,13 @@ class FirebaseBackupService {
       '''SELECT r.id, r.prayer_type, r.original_date, r.status,
                 r.completed_at, r.completion_id, r.addition_id,
                 r.record_version, r.created_at, r.updated_at,
+                p.plan_revision_id, p.plan_fingerprint,
                 m.entity_version, m.updated_at AS meta_updated_at,
                 m.writer_device_id, m.operation_id
          FROM qaza_records r
+         LEFT JOIN qaza_profile_plan_provenance p
+           ON p.user_id = r.user_id
+          AND p.record_id = r.id
          LEFT JOIN entity_metadata m
            ON m.local_account_id = r.user_id
           AND m.entity_type = 'qazaRecord'
@@ -558,6 +562,10 @@ class FirebaseBackupService {
             ),
             'completionId': row.read<String?>('completion_id'),
             'additionId': row.read<String?>('addition_id'),
+            'profilePlanRevisionId':
+                row.read<String?>('plan_revision_id'),
+            'profilePlanFingerprint':
+                row.read<String?>('plan_fingerprint'),
             'recordVersion': row.read<int>('record_version'),
             'createdAt': _microsToDate(row.read<int>('created_at')),
             'updatedAt': _microsToDate(row.read<int>('updated_at')),
