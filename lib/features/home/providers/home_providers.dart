@@ -363,7 +363,6 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     _targetRevision++;
     _persistMode(HomePrayerSelectionMode.prayerSelection);
     _persistSelectedPrayer(prayer);
-    return true;
   }
 
   /// Switches to Prayer Time while preserving the Auto Sequence cursor.
