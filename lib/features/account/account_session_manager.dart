@@ -180,6 +180,8 @@ class AccountSessionManager extends ChangeNotifier {
     _setBusy(AccountSessionPhase.connecting);
     final previous = await _accountStore.activeAccount();
     final guestWasActive = previous?.isGuest == true;
+    var createdTarget = false;
+    String? createdTargetId;
 
     try {
       await _accountStore.setMigrationState('prepared');
@@ -204,6 +206,8 @@ class AccountSessionManager extends ChangeNotifier {
           firebaseUid: user.uid,
           email: user.email,
         );
+        createdTarget = true;
+        createdTargetId = targetId;
         target = await _accountStore.getAccount(targetId);
       }
 
@@ -269,18 +273,22 @@ class AccountSessionManager extends ChangeNotifier {
       await _refresh();
     } catch (error) {
       await _accountStore.setMigrationState('rollbackRequired');
+      if (createdTarget && createdTargetId != null) {
+        await _accountStore.deleteLocalAccount(createdTargetId);
+      }
       if (guestWasActive && previous != null) {
         await _accountStore.rollbackGoogleMigration(previous.localAccountId);
-        await _auth.signOut();
+      } else if (previous == null) {
+        await _accountStore.ensureGuestActive();
       }
+      await _auth.signOut();
       await _accountStore.setMigrationState('failed');
+      final restoredActive = await _accountStore.activeAccount();
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.ready,
-          activeLocalAccountId: previous?.localAccountId,
-          activeAccount: await _accountStore.getAccount(
-            previous?.localAccountId ?? UserProfile.localLedgerUserId,
-          ),
+          activeLocalAccountId: restoredActive?.localAccountId,
+          activeAccount: restoredActive,
           initialChoiceRequired: false,
           migrationState: 'failed',
           restoreState: 'none',
