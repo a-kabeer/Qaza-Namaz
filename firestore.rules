@@ -111,9 +111,14 @@ service cloud.firestore {
 
       match /qazaAdditions/{additionId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata()
+        allow create, update: if signedIn(uid)
+          && validMetadata()
+          && currentGeneration(uid)
+          && writableState(uid)
           && request.resource.data.payload.id == additionId;
-        allow delete: if signedIn(uid);
+        allow delete: if signedIn(uid)
+          && resource.data.cloudGeneration == rootGeneration(uid)
+          && deletableState(uid);
       }
 
       match /deletionActions/{actionId} {
@@ -132,7 +137,7 @@ service cloud.firestore {
           allow create, update: if signedIn(uid)
             && validMetadata()
             && currentGeneration(uid)
-            && rootState(uid) == 'deleting';
+            && writableState(uid);
           allow delete: if signedIn(uid)
             && resource.data.cloudGeneration == rootGeneration(uid)
             && rootState(uid) == 'deleting';
