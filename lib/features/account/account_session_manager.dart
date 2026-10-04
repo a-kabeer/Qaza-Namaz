@@ -175,7 +175,7 @@ class AccountSessionManager extends ChangeNotifier {
     final operationEpoch = ++_operationEpoch;
     final operationAccountId = _state.activeLocalAccountId;
     await _accountStore.ensureGuestActive();
-    _ensureOperationCurrent(operationEpoch, operationAccountId);
+    _ensureOperationCurrent(operationEpoch, activeLocalAccountId);
     await _accountStore.setInitialChoiceRequired(false);
     await _refresh();
   }
@@ -573,7 +573,8 @@ class AccountSessionManager extends ChangeNotifier {
     bool allowGuestUid = false,
   }) {
     final active = _state.activeAccount;
-    if (active?.localAccountId != expectedAccountId) {
+    if (expectedAccountId != null &&
+        active?.localAccountId != expectedAccountId) {
       throw StateError('Account changed during account operation.');
     }
     if (!allowGuestUid &&
