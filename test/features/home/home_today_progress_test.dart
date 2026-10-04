@@ -380,6 +380,43 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets(
+    'Prayer Selection stale completion shows contextual no-pending message',
+    (tester) async {
+      final record = _pendingRecord(
+        id: 'isha',
+        prayer: PrayerType.isha,
+        date: DateTime(2026, 9, 23),
+      );
+      final container = await _containerFor(
+        selection: const HomePrayerSelectionState(
+          mode: HomePrayerSelectionMode.prayerSelection,
+          selectedPrayer: PrayerType.isha,
+        ),
+        targetRecord: record,
+        onDailyProgressRead: () {},
+        useFixedTargetResolution: true,
+        includeActiveUser: true,
+        useTestCompletionController: true,
+      );
+      addTearDown(container.dispose);
+
+      await _pumpHomeTodayProgress(tester, container, record);
+
+      await tester.tap(find.byKey(const Key('home_complete_oldest_qaza')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Isha has no pending Qaza. Select another prayer.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('No pending Qaza for this prayer.'),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('daily progress loading never hides Next Qaza', (tester) async {
     final record = _pendingRecord(
       id: 'fajr',
