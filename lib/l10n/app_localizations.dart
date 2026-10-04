@@ -2354,6 +2354,96 @@ abstract class AppLocalizations {
   /// **'Sign in to manage cloud data.'**
   String get cloudDeleteSignInRequired;
 
+  /// No description provided for @accountGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get accountGuest;
+
+  /// No description provided for @accountConnectGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google'**
+  String get accountConnectGoogle;
+
+  /// No description provided for @accountGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account'**
+  String get accountGoogle;
+
+  /// No description provided for @accountCloudBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup'**
+  String get accountCloudBackup;
+
+  /// No description provided for @accountAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get accountAutomatic;
+
+  /// No description provided for @accountBackupPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup paused'**
+  String get accountBackupPaused;
+
+  /// No description provided for @accountEnableBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable backup'**
+  String get accountEnableBackup;
+
+  /// No description provided for @accountDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Google'**
+  String get accountDisconnect;
+
+  /// No description provided for @accountDeleteCloudData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete cloud data'**
+  String get accountDeleteCloudData;
+
+  /// No description provided for @accountDeleteCloudDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cloud copy will be permanently deleted. Your Qaza data on this device will remain.'**
+  String get accountDeleteCloudDataMessage;
+
+  /// No description provided for @accountDeleteCloudDataAcknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand the cloud copy will be permanently deleted.'**
+  String get accountDeleteCloudDataAcknowledge;
+
+  /// No description provided for @accountCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get accountCancel;
+
+  /// No description provided for @accountContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get accountContinue;
+
+  /// No description provided for @accountConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google connection could not be completed. Your local data is still safe.'**
+  String get accountConnectFailed;
+
+  /// No description provided for @accountCloudDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud data deleted. Your local Qaza data remains on this device.'**
+  String get accountCloudDeleted;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

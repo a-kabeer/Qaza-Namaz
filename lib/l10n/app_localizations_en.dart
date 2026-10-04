@@ -1389,6 +1389,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudDeleteSignInRequired => 'Sign in to manage cloud data.';
 
   @override
+  String get accountGuest => 'Guest';
+
+  @override
+  String get accountConnectGoogle => 'Connect Google';
+
+  @override
+  String get accountGoogle => 'Google account';
+
+  @override
+  String get accountCloudBackup => 'Cloud backup';
+
+  @override
+  String get accountAutomatic => 'Automatic';
+
+  @override
+  String get accountBackupPaused => 'Backup paused';
+
+  @override
+  String get accountEnableBackup => 'Enable backup';
+
+  @override
+  String get accountDisconnect => 'Disconnect Google';
+
+  @override
+  String get accountDeleteCloudData => 'Delete cloud data';
+
+  @override
+  String get accountDeleteCloudDataMessage =>
+      'Your cloud copy will be permanently deleted. Your Qaza data on this device will remain.';
+
+  @override
+  String get accountDeleteCloudDataAcknowledge =>
+      'I understand the cloud copy will be permanently deleted.';
+
+  @override
+  String get accountCancel => 'Cancel';
+
+  @override
+  String get accountContinue => 'Continue';
+
+  @override
+  String get accountConnectFailed =>
+      'Google connection could not be completed. Your local data is still safe.';
+
+  @override
+  String get accountCloudDeleted =>
+      'Cloud data deleted. Your local Qaza data remains on this device.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

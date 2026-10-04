@@ -1386,6 +1386,55 @@ class AppLocalizationsUr extends AppLocalizations {
       'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
 
   @override
+  String get accountGuest => 'مہمان';
+
+  @override
+  String get accountConnectGoogle => 'گوگل سے منسلک کریں';
+
+  @override
+  String get accountGoogle => 'گوگل اکاؤنٹ';
+
+  @override
+  String get accountCloudBackup => 'کلاؤڈ بیک اپ';
+
+  @override
+  String get accountAutomatic => 'خودکار';
+
+  @override
+  String get accountBackupPaused => 'بیک اپ روک دیا گیا ہے';
+
+  @override
+  String get accountEnableBackup => 'بیک اپ فعال کریں';
+
+  @override
+  String get accountDisconnect => 'گوگل منقطع کریں';
+
+  @override
+  String get accountDeleteCloudData => 'کلاؤڈ ڈیٹا حذف کریں';
+
+  @override
+  String get accountDeleteCloudDataMessage =>
+      'آپ کی کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔ اس ڈیوائس پر آپ کا قضا ڈیٹا برقرار رہے گا۔';
+
+  @override
+  String get accountDeleteCloudDataAcknowledge =>
+      'میں سمجھتا/سمجھتی ہوں کہ کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔';
+
+  @override
+  String get accountCancel => 'منسوخ';
+
+  @override
+  String get accountContinue => 'جاری رکھیں';
+
+  @override
+  String get accountConnectFailed =>
+      'گوگل کنکشن مکمل نہیں ہو سکا۔ آپ کا لوکل ڈیٹا محفوظ ہے۔';
+
+  @override
+  String get accountCloudDeleted =>
+      'کلاؤڈ ڈیٹا حذف ہو گیا۔ آپ کا لوکل قضا ڈیٹا اس ڈیوائس پر برقرار ہے۔';
+
+  @override
   String get settingsTitle => 'ترتیبات';
 
   @override
