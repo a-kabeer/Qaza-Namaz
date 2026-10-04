@@ -159,6 +159,7 @@ class AccountSessionManager extends ChangeNotifier {
       var target = await _accountStore.findGoogleByUid(user.uid);
 
       if (target == null && guestWasActive) {
+        await _accountStore.setMigrationState('localStateSnapshotSecured');
         final targetId = await _accountStore.cloneGuestToGoogle(
           firebaseUid: user.uid,
           email: user.email,
@@ -166,6 +167,7 @@ class AccountSessionManager extends ChangeNotifier {
         target = await _accountStore.getAccount(targetId);
         await _accountStore.setMigrationState('targetPartitionPrepared');
       } else if (target == null) {
+        await _accountStore.setMigrationState('targetPartitionPrepared');
         final targetId = await _accountStore.createGooglePartition(
           firebaseUid: user.uid,
           email: user.email,
@@ -176,10 +178,14 @@ class AccountSessionManager extends ChangeNotifier {
       if (target == null) throw StateError('Unable to create Google partition.');
 
       await _accountStore.setInitialChoiceRequired(false);
+      await _accountStore.setMigrationState('targetPartitionPrepared');
 
       final root = await _backup.readCloudRoot(user.uid);
+      await _accountStore.setMigrationState('cloudStateRead');
       if (root == null) {
+        await _accountStore.setMigrationState('canonicalStateCalculated');
         await _accountStore.setMigrationState('localCanonicalCommit');
+        await _accountStore.setMigrationState('cloudBackupInProgress');
         await _backup.bootstrapAccount(
           localAccountId: target.localAccountId,
           uid: user.uid,
@@ -194,13 +200,15 @@ class AccountSessionManager extends ChangeNotifier {
             remoteGeneration,
           );
         }
-        await _accountStore.setMigrationState('cloudStateRead');
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
           uid: user.uid,
         );
+        await _accountStore.setMigrationState('canonicalStateCalculated');
         final refreshed =
             await _accountStore.getAccount(target.localAccountId) ?? target;
+        await _accountStore.setMigrationState('localCanonicalCommit');
+        await _accountStore.setMigrationState('cloudBackupInProgress');
         await _backup.snapshotAccount(
           localAccountId: refreshed.localAccountId,
           uid: user.uid,
@@ -215,8 +223,8 @@ class AccountSessionManager extends ChangeNotifier {
         );
       } else {
         await _accountStore.activate(target.localAccountId);
-        await _accountStore.setMigrationState('completed');
       }
+      await _accountStore.setMigrationState('completed');
       await _refresh();
     } catch (error) {
       await _accountStore.setMigrationState('failed');
