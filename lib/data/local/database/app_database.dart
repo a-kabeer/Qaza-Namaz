@@ -57,7 +57,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -113,6 +113,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 11) {
             await _ensureAccountSchema();
+          }
+          if (from < 12) {
+            await _ensureDeletionActionVersionColumn();
           }
           await _ensurePerformanceIndexes();
         },
@@ -393,7 +396,7 @@ class AppDatabase extends _$AppDatabase {
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
            writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
                lower(hex(randomblob(16)));
         $queue
@@ -414,7 +417,7 @@ class AppDatabase extends _$AppDatabase {
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
            writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
                lower(hex(randomblob(16)));
         $queue
@@ -530,7 +533,8 @@ class AppDatabase extends _$AppDatabase {
         user_id TEXT NOT NULL,
         addition_id TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        resolved_at TEXT
+        resolved_at TEXT,
+        entity_version INTEGER NOT NULL DEFAULT 1
       )
     ''');
     await customStatement('''
@@ -563,7 +567,22 @@ class AppDatabase extends _$AppDatabase {
     ''');
   }
 
-  Future<void> _ensurePerformanceIndexes() async {
+  Future<void> _ensureDeletionActionVersionColumn() async {
+    final columns = await customSelect(
+      'PRAGMA table_info(qaza_deletion_actions)',
+    ).get();
+    final exists = columns.any(
+      (row) => row.read<String>('name') == 'entity_version',
+    );
+    if (!exists) {
+      await customStatement(
+        'ALTER TABLE qaza_deletion_actions '
+        'ADD COLUMN entity_version INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+  }
+
+    Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
       'ON qaza_records (user_id, original_date)',
