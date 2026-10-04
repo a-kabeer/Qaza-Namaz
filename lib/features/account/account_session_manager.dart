@@ -230,15 +230,6 @@ class AccountSessionManager extends ChangeNotifier {
           generation: target.cloudGeneration,
         );
       } else {
-        final remoteGeneration =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-        if (remoteGeneration != target.cloudGeneration) {
-          await _accountStore.setCloudGeneration(
-            target.localAccountId,
-            remoteGeneration,
-          );
-        }
-
         await _accountStore.setMigrationState('canonicalStateCalculated');
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
@@ -340,14 +331,6 @@ class AccountSessionManager extends ChangeNotifier {
         generation: target.cloudGeneration,
       );
     } else {
-      final generation =
-          (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-      if (generation != target.cloudGeneration) {
-        await _accountStore.setCloudGeneration(
-          target.localAccountId,
-          generation,
-        );
-      }
       await _accountStore.setMigrationState('canonicalStateCalculated');
       await _reconciliation.restore(
         localAccountId: target.localAccountId,
@@ -395,9 +378,6 @@ class AccountSessionManager extends ChangeNotifier {
           generation: target.cloudGeneration,
         );
       } else {
-        final generation =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-        await _accountStore.setCloudGeneration(target.localAccountId, generation);
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
           uid: uid,
