@@ -222,7 +222,7 @@ class _HomeQazaTargetSheetState
                                 disabledReasonBuilder: (_) =>
                                     l10n.completeNoPendingTitle,
                                 onPrayerSelected: (prayer) {
-                                  final changed = ref
+                                  ref
                                       .read(
                                         homePrayerSelectionProvider.notifier,
                                       )
@@ -230,9 +230,7 @@ class _HomeQazaTargetSheetState
                                         prayer,
                                         witrEnabled: witrAllowed,
                                       );
-                                  if (changed) {
-                                    Navigator.of(context).pop();
-                                  }
+                                  Navigator.of(context).pop();
                                 },
                               ),
                             ],
