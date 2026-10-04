@@ -767,13 +767,19 @@ class FirebaseBackupService {
         final cmp = _resolver.compare(version, remote);
         if (cmp < 0) return;
 
-        if (immutable &&
-            cmp == 0 &&
-            jsonEncode(currentData['payload']) != jsonEncode(payload)) {
+        if (immutable) {
+          if (cmp == 0 &&
+              jsonEncode(currentData['payload']) == jsonEncode(payload)) {
+            // Immutable entities are write-once. A retry of the same
+            // snapshot/revision must be a no-op, because Firestore rules
+            // intentionally reject updates to immutable documents.
+            return;
+          }
           throw StateError(
             'Immutable cloud entity conflict: ' + ref.path,
           );
         }
+
         final remoteGeneration =
             (currentData['cloudGeneration'] as num?)?.toInt();
         if (remoteGeneration != null && remoteGeneration != generation) {
