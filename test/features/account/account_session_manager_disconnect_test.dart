@@ -88,6 +88,25 @@ void main() {
   });
 
   test(
+    'pause backup never disconnects Google or activates Guest',
+    () async {
+      final google = manager.activeAccount;
+      expect(google?.isGoogle, isTrue);
+      expect(google?.cloudBackupEnabled, isTrue);
+
+      await manager.pauseBackup();
+
+      expect(auth.disconnectCalled, isFalse);
+      expect(auth.signOutCalled, isFalse);
+      final active = await store.activeAccount();
+      expect(active?.localAccountId, google?.localAccountId);
+      expect(active?.isGoogle, isTrue);
+      final paused = await store.getAccount(google!.localAccountId);
+      expect(paused?.cloudBackupEnabled, isFalse);
+    },
+  );
+
+  test(
     'disconnect uses Google disconnect, disables backup, and returns to Guest',
     () async {
       final google = manager.activeAccount;
