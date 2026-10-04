@@ -138,11 +138,9 @@ service cloud.firestore {
         && (
           validRootTransition()
           || (
-            resource.data.datasetState == 'deleting'
-            && request.resource.data.cloudGeneration ==
+            request.resource.data.datasetState == 'deleted'
+            && request.resource.data.cloudGeneration >=
               resource.data.cloudGeneration
-            && request.resource.data.datasetState == 'deleted'
-            && request.resource.data.bootstrapComplete is bool
             && request.resource.data.bootstrapComplete == true
           )
         );
