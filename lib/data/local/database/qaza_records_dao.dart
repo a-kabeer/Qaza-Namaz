@@ -818,11 +818,29 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<List<String>> insertRecordsReturningInsertedIds(
       List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return const <String>[];
+
+    final uniqueIds = records
+        .map((record) => record.id.value)
+        .toSet()
+        .toList(growable: false);
+
+    await batch((batch) {
+      batch.insertAll(
+        qazaRecords,
+        records,
+        mode: InsertMode.insertOrIgnore,
+      );
+    });
+
     final insertedIds = <String>[];
-    for (final record in records) {
-      if (await _insertIfAbsent(record)) {
-        insertedIds.add(record.id.value);
-      }
+    for (var start = 0; start < uniqueIds.length; start += 400) {
+      final end =
+          start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
+      final chunk = uniqueIds.sublist(start, end);
+      final rows = await (select(qazaRecords)
+            ..where((row) => row.id.isIn(chunk)))
+          .get();
+      insertedIds.addAll(rows.map((row) => row.id));
     }
     return insertedIds;
   }
