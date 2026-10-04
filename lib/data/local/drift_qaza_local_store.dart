@@ -6,6 +6,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_bulk_delete_repository.dart';
 import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../../domain/services/qaza_availability_service.dart';
 import 'database/app_database.dart';
@@ -16,7 +17,8 @@ import 'qaza_local_store.dart';
 /// SharedPreferences is intentionally not part of the runtime persistence
 /// path. It is retained only by the one-time migration bootstrap so existing
 /// installations can be upgraded safely.
-class DriftQazaLocalStore extends QazaLocalStore {
+class DriftQazaLocalStore extends QazaLocalStore
+    implements QazaBulkDeleteRepository {
   DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
@@ -169,6 +171,28 @@ class DriftQazaLocalStore extends QazaLocalStore {
         originalDate: originalDate,
         excludingRecordId: excludingRecordId,
       );
+
+  @override
+  Future<int> deleteRecords({
+    required String userId,
+    required List<String> recordIds,
+  }) async {
+    if (recordIds.isEmpty) return 0;
+    return _database.transaction(() async {
+      final unique = recordIds.toSet().toList(growable: false);
+      var deleted = 0;
+      for (var start = 0; start < unique.length; start += 400) {
+        final end = start + 400 < unique.length ? start + 400 : unique.length;
+        final ids = unique.sublist(start, end);
+        deleted += await _database.qazaRecordsDao.deleteByIds(
+          userId: userId,
+          ids: ids,
+        );
+        await _deleteProfilePlanProvenance(userId, ids);
+      }
+      return deleted;
+    });
+  }
 
   @override
   Future<bool> updateRecord(QazaRecord record) => _database.transaction(() async {
