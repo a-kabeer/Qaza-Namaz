@@ -41,6 +41,23 @@ service cloud.firestore {
         && currentState(uid) == 'deleting';
     }
 
+    function authorizedRecordDelete(uid, recordId) {
+      return writableDataset(uid)
+        && exists(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        )
+        && get(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        ).data.cloudGeneration == currentGeneration(uid)
+        && get(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        ).data.payload.recordId == recordId
+        && resource.data.payload.recordVersion <=
+          get(
+            /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+          ).data.payload.recordVersion;
+    }
+
     function validMetadata(uid) {
       return request.resource.data.schemaVersion is int
         && request.resource.data.schemaVersion >= 1
@@ -100,7 +117,7 @@ service cloud.firestore {
         allow create, update: if writableDataset(uid)
           && validMetadata(uid)
           && request.resource.data.payload.id == recordId;
-        allow delete: if deletingDataset(uid);
+        allow delete: if deletingDataset(uid) || authorizedRecordDelete(uid, recordId);
       }
 
       match /qazaRecordTombstones/{recordId} {
