@@ -873,6 +873,67 @@ class FirebaseBackupService {
   DateTime? _optionalMicrosToDate(int? micros) =>
       micros == null ? null : _microsToDate(micros);
 
+  Future<void> _deleteRecordsCoveredByCloudTombstones({
+    required String uid,
+    required int generation,
+    required List<String> recordIds,
+  }) async {
+    final rootRef = _firebase.firestore.collection('users').doc(uid);
+    final tombstoneRef = rootRef.collection('qazaRecordTombstones');
+    final recordRef = rootRef.collection('qazaRecords');
+
+    for (final ids in _chunks(recordIds, 200)) {
+      await _firebase.firestore.runTransaction((transaction) async {
+        final rootSnapshot = await transaction.get(rootRef);
+        _assertCloudRootForWrite(
+          snapshot: rootSnapshot,
+          generation: generation,
+          context: 'tombstone cleanup',
+        );
+
+        final tombstones =
+            <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        final records = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        for (final id in ids) {
+          tombstones[id] = await transaction.get(tombstoneRef.doc(id));
+          records[id] = await transaction.get(recordRef.doc(id));
+        }
+
+        for (final id in ids) {
+          final tombstone = tombstones[id];
+          final record = records[id];
+          if (tombstone == null ||
+              !tombstone.exists ||
+              record == null ||
+              !record.exists) {
+            continue;
+          }
+
+          final tombstoneData =
+              tombstone.data() ?? const <String, dynamic>{};
+          final recordData = record.data() ?? const <String, dynamic>{};
+          final payload = tombstoneData['payload'];
+          if (payload is! Map) continue;
+
+          final tombstoneGeneration =
+              (payload['cloudGeneration'] as num?)?.toInt() ?? 0;
+          if (tombstoneGeneration != generation) continue;
+
+          final tombstoneVersion =
+              (payload['recordVersion'] as num?)?.toInt() ?? 0;
+          final recordPayload = recordData['payload'];
+          final recordVersion = recordPayload is Map
+              ? (recordPayload['recordVersion'] as num?)?.toInt() ?? 0
+              : 0;
+
+          if (tombstoneVersion >= recordVersion) {
+            transaction.delete(recordRef.doc(id));
+          }
+        }
+      });
+    }
+  }
+
   Future<Map<String, VersionedEntity>> _metadataByType(
     String localId,
     String type,
@@ -934,6 +995,7 @@ class FirebaseBackupService {
         final rootSnapshot = await transaction.get(rootRef);
         _assertCloudRootForWrite(
           snapshot: rootSnapshot,
+          generation: generation,
           context: 'batched backup',
         );
 
