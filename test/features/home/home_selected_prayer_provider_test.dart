@@ -337,6 +337,74 @@ void main() {
     );
 
     test(
+      'selected Prayer Selection target becomes unavailable after pending drops to zero',
+      () async {
+        var summary = summaryFor({
+          PrayerType.isha: 1,
+        });
+        final container = ProviderContainer(
+          overrides: [
+            progressSummaryProvider.overrideWith((ref) async => summary),
+            sahibAlTartibProvider.overrideWith(
+              (ref) async => const SahibAlTartibState(
+                pendingFarzCount: 0,
+                requiresOrder: false,
+                nextPending: null,
+              ),
+            ),
+            currentQazaPrayerTypeProvider.overrideWith(
+              (ref) => PrayerType.isha,
+            ),
+            effectiveWitrProvider.overrideWith((ref) => true),
+            homePrayerSelectionProvider.overrideWith(
+              () => _TestHomePrayerSelectionNotifier(
+                const HomePrayerSelectionState(
+                  mode: HomePrayerSelectionMode.prayerSelection,
+                  selectedPrayer: PrayerType.isha,
+                ),
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final progressSubscription = container.listen(
+          progressSummaryProvider,
+          (_, __) {},
+          fireImmediately: true,
+        );
+        final tartibSubscription = container.listen(
+          sahibAlTartibProvider,
+          (_, __) {},
+          fireImmediately: true,
+        );
+        addTearDown(progressSubscription.close);
+        addTearDown(tartibSubscription.close);
+
+        await container.read(progressSummaryProvider.future);
+        await container.read(sahibAlTartibProvider.future);
+        expect(
+          container.read(homeSelectedPrayerProvider).prayer,
+          PrayerType.isha,
+        );
+
+        summary = summaryFor({
+          PrayerType.isha: 0,
+          PrayerType.fajr: 10,
+        });
+        container.invalidate(progressSummaryProvider);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final selected = container.read(homeSelectedPrayerProvider);
+        expect(selected.prayer, isNull);
+        expect(
+          selected.source,
+          HomePrayerSelectionSource.prayerSelectionUnavailable,
+        );
+      },
+    );
+
+    test(
       'persisted zero-pending Prayer Selection cannot become actionable',
       () async {
         SharedPreferences.setMockInitialValues(<String, Object>{
