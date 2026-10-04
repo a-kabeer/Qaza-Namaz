@@ -74,6 +74,16 @@ class AccountLocalStore {
     return rows.isNotEmpty;
   }
 
+  Future<bool> hasAnyGoogleAccount() async {
+    final rows = await database.customSelect(
+      '''SELECT 1 FROM local_accounts
+         WHERE account_mode = 'google'
+           AND lifecycle_state <> 'archived'
+         LIMIT 1''',
+    ).get();
+    return rows.isNotEmpty;
+  }
+
   Future<String> deviceInstanceId() async {
     final rows = await database.customSelect(
       'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
