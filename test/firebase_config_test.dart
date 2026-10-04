@@ -15,7 +15,7 @@ void main() {
     );
     expect(
       FirebaseConfiguration.androidAppId,
-      '1:895430705174:android:1e8d352d654a4a3c7537',
+      '1:895430705174:android:1e8d352d65428a4a3c7537',
     );
     expect(
       FirebaseConfiguration.androidPackage,
