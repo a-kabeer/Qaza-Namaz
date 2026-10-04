@@ -162,6 +162,15 @@ class AccountLocalStore {
     );
   }
 
+  Future<String> migrationState() async {
+    final rows = await database.customSelect(
+      'SELECT migration_state FROM app_session_state WHERE id = 1',
+    ).get();
+    return rows.isEmpty
+        ? 'none'
+        : rows.first.read<String>('migration_state');
+  }
+
   Future<void> setRestoreState(String value) async {
     await database.customUpdate(
       'UPDATE app_session_state SET restore_state = ? WHERE id = 1',
@@ -436,6 +445,19 @@ class AccountLocalStore {
     );
   }
 
+  Future<String?> migratingGoogleAccount() async {
+    final rows = await database.customSelect(
+      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
+                lifecycle_state, cloud_backup_enabled, cloud_generation,
+                created_at, updated_at
+         FROM local_accounts
+         WHERE account_mode = 'google' AND lifecycle_state = 'migrating'
+         ORDER BY updated_at DESC
+         LIMIT 1''',
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('local_account_id');
+  }
+
   Future<String> cloneGuestToGoogle({
     required String firebaseUid,
     required String? email,
@@ -447,62 +469,89 @@ class AccountLocalStore {
       return createGooglePartition(firebaseUid: firebaseUid, email: email);
     }
 
-    if (existing != null &&
-        await hasAnyAccountData(existing.localAccountId)) {
-      throw StateError(
-        'The Google account already has local data; refusing to overwrite it.',
-      );
-    }
-
-    final target = existing?.localAccountId ?? _randomId('google');
-    final now = DateTime.now().microsecondsSinceEpoch;
-
-    await database.transaction(() async {
-      if (existing == null) {
-        await database.customInsert(
-          '''INSERT INTO local_accounts
-             (local_account_id, account_mode, firebase_uid, google_email,
-              lifecycle_state, cloud_backup_enabled, cloud_generation,
-              created_at, updated_at)
-             VALUES (?, 'google', ?, ?, 'migrating', 1, 1, ?, ?)''',
+    // Prefer converting the existing Guest partition in place. Qaza record IDs
+    // are globally unique in SQLite, so copying records into a second local
+    // partition necessarily changes identity. Reusing the Guest partition
+    // preserves every record/addition/tombstone ID exactly.
+    if (existing == null) {
+      final now = DateTime.now().microsecondsSinceEpoch;
+      await database.transaction(() async {
+        await database.customUpdate(
+          '''UPDATE local_accounts
+             SET account_mode = 'google',
+                 firebase_uid = ?,
+                 google_email = ?,
+                 lifecycle_state = 'migrating',
+                 cloud_backup_enabled = 1,
+                 cloud_generation = 1,
+                 updated_at = ?
+             WHERE local_account_id = ?''',
           variables: [
-            Variable(target),
             Variable(firebaseUid),
             Variable(email),
             Variable(now),
-            Variable(now),
+            Variable(guest.localAccountId),
           ],
         );
-      } else {
+        await database.customUpdate(
+          '''UPDATE app_session_state
+             SET active_local_account_id = ?,
+                 initial_choice_required = 0,
+                 migration_state = 'targetPartitionPrepared'
+             WHERE id = 1''',
+          variables: [Variable(guest.localAccountId)],
+        );
+      });
+      return guest.localAccountId;
+    }
+
+    if (existing.localAccountId == guest.localAccountId) {
+      return existing.localAccountId;
+    }
+
+    // An empty historical Google partition can safely be removed and replaced
+    // by the existing Guest partition. This is still identity-preserving.
+    if (!await hasAnyAccountData(existing.localAccountId)) {
+      final now = DateTime.now().microsecondsSinceEpoch;
+      await database.transaction(() async {
+        await database.customUpdate(
+          'DELETE FROM local_accounts WHERE local_account_id = ?',
+          variables: [Variable(existing.localAccountId)],
+        );
         await database.customUpdate(
           '''UPDATE local_accounts
-             SET google_email = ?, lifecycle_state = 'migrating',
-                 cloud_backup_enabled = 1, updated_at = ?
+             SET account_mode = 'google',
+                 firebase_uid = ?,
+                 google_email = ?,
+                 lifecycle_state = 'migrating',
+                 cloud_backup_enabled = 1,
+                 cloud_generation = ?,
+                 updated_at = ?
              WHERE local_account_id = ?''',
           variables: [
+            Variable(firebaseUid),
             Variable(email),
+            Variable(guest.cloudGeneration),
             Variable(now),
-            Variable(target),
+            Variable(guest.localAccountId),
           ],
         );
-      }
+        await database.customUpdate(
+          '''UPDATE app_session_state
+             SET active_local_account_id = ?,
+                 initial_choice_required = 0,
+                 migration_state = 'targetPartitionPrepared'
+             WHERE id = 1''',
+          variables: [Variable(guest.localAccountId)],
+        );
+      });
+      return guest.localAccountId;
+    }
 
-      await _copyGuestDataToGooglePartition(
-        guestLocalAccountId: guest.localAccountId,
-        googleLocalAccountId: target,
-      );
-
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?,
-               initial_choice_required = 0,
-               migration_state = 'target_ready'
-           WHERE id = 1''',
-        variables: [Variable(guest.localAccountId)],
-      );
-    });
-
-    return target;
+    throw StateError(
+      'The Google account already has local data; migration requires '
+      'deterministic reconciliation before ownership conversion.',
+    );
   }
 
   Future<void> finalizeGuestMigration({
