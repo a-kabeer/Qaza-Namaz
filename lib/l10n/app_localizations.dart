@@ -740,6 +740,12 @@ abstract class AppLocalizations {
   /// **'Prayer Selection'**
   String get homePrayerSelection;
 
+  /// No description provided for @homePrayerSelectionNoPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{prayer} has no pending Qaza. Select another prayer.'**
+  String homePrayerSelectionNoPending(String prayer);
+
   /// No description provided for @homePrayerTimeUnavailable.
   ///
   /// In en, this message translates to:
