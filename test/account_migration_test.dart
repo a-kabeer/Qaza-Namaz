@@ -7,6 +7,8 @@ import '../lib/data/local/database/app_database.dart';
 import '../lib/domain/entities/user_profile.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late AppDatabase database;
   late AccountLocalStore store;
 
