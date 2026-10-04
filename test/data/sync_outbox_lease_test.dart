@@ -8,6 +8,7 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 void main() {
   late AppDatabase database;
   late AccountLocalStore store;
+  late String googleAccountId;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -17,19 +18,19 @@ void main() {
       hasLegacyProfile: false,
       hasLegacyQaza: false,
     );
-    final googleId = await store.createGooglePartition(
+    googleAccountId = await store.createGooglePartition(
       firebaseUid: 'outbox-user',
       email: 'outbox@example.com',
     );
-    await store.activate(googleId);
-    await store.enqueueSnapshot(googleId);
+    await store.activate(googleAccountId);
+    await store.enqueueSnapshot(googleAccountId);
   });
 
   tearDown(() => database.close());
 
   test('outbox lease is owned by one worker and late worker cannot remove it', () async {
     final rows = await store.loadModernOutboxBatch(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       nowMicros: DateTime.now().microsecondsSinceEpoch,
       limit: 10,
     );
@@ -38,7 +39,7 @@ void main() {
     final operationId = rows.single['id']! as String;
 
     final claimed = await store.claimOutbox(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       operationId: operationId,
       workerId: 'worker-a',
       leaseUntilMicros:
@@ -47,7 +48,7 @@ void main() {
     expect(claimed, isTrue);
 
     final secondClaim = await store.claimOutbox(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       operationId: operationId,
       workerId: 'worker-b',
       leaseUntilMicros:
@@ -56,24 +57,24 @@ void main() {
     expect(secondClaim, isFalse);
 
     await store.removeOutboxOperation(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       operationId: operationId,
       workerId: 'worker-b',
     );
     final stillQueued = await store.loadModernOutboxBatch(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       nowMicros: DateTime.now().microsecondsSinceEpoch,
       limit: 10,
     );
     expect(stillQueued.map((row) => row['id']), contains(operationId));
 
     await store.removeOutboxOperation(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       operationId: operationId,
       workerId: 'worker-a',
     );
     final removed = await store.loadModernOutboxBatch(
-      localAccountId: 'guest',
+      localAccountId: googleAccountId,
       nowMicros: DateTime.now().microsecondsSinceEpoch,
       limit: 10,
     );
