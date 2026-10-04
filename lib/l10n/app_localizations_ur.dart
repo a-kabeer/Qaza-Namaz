@@ -359,6 +359,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get homePrayerSelection => 'نماز کا انتخاب';
 
   @override
+  String homePrayerSelectionNoPending(String prayer) {
+    return '$prayer کی کوئی قضا باقی نہیں۔ کوئی دوسری نماز منتخب کریں۔';
+  }
+
+  @override
   String get homePrayerTimeUnavailable =>
       'نماز کے اوقات سیٹ ہونے تک وقتِ نماز کے مطابق انتخاب دستیاب نہیں۔';
 
