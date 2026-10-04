@@ -6,6 +6,7 @@ import '../entities/qaza_progress.dart';
 import '../entities/qaza_record.dart';
 import '../entities/qaza_completion_result.dart';
 import '../repositories/qaza_repository.dart';
+import '../repositories/qaza_bulk_delete_repository.dart';
 import '../repositories/qaza_bulk_write_repository.dart';
 import '../repositories/qaza_undo_repository.dart';
 import 'current_day_qaza_eligibility_service.dart';
@@ -440,6 +441,30 @@ class QazaService {
         userId: userId,
         recordId: recordId,
       );
+
+  Future<int> deleteRecords({
+    required String userId,
+    required List<String> recordIds,
+  }) async {
+    if (recordIds.isEmpty) return 0;
+    final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
+    if (ids.isEmpty) return 0;
+
+    if (repository is QazaBulkDeleteRepository) {
+      return (repository as QazaBulkDeleteRepository).deleteRecords(
+        userId: userId,
+        recordIds: ids,
+      );
+    }
+
+    var deleted = 0;
+    for (final id in ids) {
+      if (await repository.deleteRecord(userId: userId, recordId: id)) {
+        deleted++;
+      }
+    }
+    return deleted;
+  }
 
   Future<void> addRecords(List<QazaRecord> records) =>
       repository.addRecords(records);
