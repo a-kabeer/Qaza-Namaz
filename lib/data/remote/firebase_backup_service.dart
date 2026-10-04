@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,7 +67,8 @@ class FirebaseBackupService {
         );
       }
       if (remoteState == 'deleting' || remoteState == 'deleted') {
-        throw StateError('Cloud dataset is not writable in state $remoteState.');
+        throw StateError(
+            'Cloud dataset is not writable in state $remoteState.');
       }
     } else {
       await rootRef.set({
@@ -116,7 +116,6 @@ class FirebaseBackupService {
       );
     });
   }
-
 
   Future<void> deleteCloudData({
     required String uid,
@@ -288,7 +287,10 @@ class FirebaseBackupService {
     String collection,
   ) async {
     final snap = await _firebase.firestore
-        .collection('users').doc(uid).collection(collection).get();
+        .collection('users')
+        .doc(uid)
+        .collection(collection)
+        .get();
     return snap.docs;
   }
 
@@ -354,8 +356,11 @@ class FirebaseBackupService {
     final row = rows.first;
     final payload = _decodeObject(row.read<String>('payload_json'));
     await _writeVersioned(
-      _firebase.firestore.collection('users').doc(uid)
-          .collection('profile').doc('current'),
+      _firebase.firestore
+          .collection('users')
+          .doc(uid)
+          .collection('profile')
+          .doc('current'),
       payload: {'profile': payload},
       version: VersionedEntity(
         entityVersion: row.read<int>('entity_version'),
@@ -379,8 +384,11 @@ class FirebaseBackupService {
     for (final record in rows) {
       final meta = await _metadata(localId, 'qazaRecord', record.id);
       await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaRecords').doc(record.id),
+        _firebase.firestore
+            .collection('users')
+            .doc(uid)
+            .collection('qazaRecords')
+            .doc(record.id),
         payload: _qazaRecordPayload(record),
         version: meta ??
             VersionedEntity(
@@ -414,8 +422,11 @@ class FirebaseBackupService {
       final updatedAt = DateTime.parse(row.read<String>('updated_at'));
       final meta = await _metadata(localId, 'qazaAddition', id);
       await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaAdditions').doc(id),
+        _firebase.firestore
+            .collection('users')
+            .doc(uid)
+            .collection('qazaAdditions')
+            .doc(id),
         payload: {
           'id': id,
           'mode': row.read<String>('mode'),
@@ -430,8 +441,7 @@ class FirebaseBackupService {
               entityVersion: row.read<int>('revision'),
               updatedAt: updatedAt,
               writerDeviceId: device,
-              operationId:
-                  'addition_${id}_${row.read<int>('revision')}',
+              operationId: 'addition_${id}_${row.read<int>('revision')}',
               entityId: id,
             ),
         uid: uid,
@@ -460,8 +470,11 @@ class FirebaseBackupService {
       final updatedAt =
           resolvedRaw == null ? createdAt : DateTime.parse(resolvedRaw);
       await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('deletionActions').doc(actionId),
+        _firebase.firestore
+            .collection('users')
+            .doc(uid)
+            .collection('deletionActions')
+            .doc(actionId),
         payload: {
           'id': actionId,
           'additionId': row.read<String>('addition_id'),
@@ -500,28 +513,30 @@ class FirebaseBackupService {
           'originalDate':
               DateTime.parse(snapshot.read<String>('original_date')),
           'status': snapshot.read<String>('status'),
-          'completedAt':
-              _parseDate(snapshot.read<String?>('completed_at')),
+          'completedAt': _parseDate(snapshot.read<String?>('completed_at')),
           'completionId': snapshot.read<String?>('completion_id'),
           'createdAt': DateTime.parse(snapshot.read<String>('created_at')),
           'updatedAt': DateTime.parse(snapshot.read<String>('updated_at')),
           'recordVersion': snapshot.read<int>('record_version'),
         };
         await _writeVersioned(
-          _firebase.firestore.collection('users').doc(uid)
-              .collection('deletionActions').doc(actionId)
-              .collection('snapshots').doc(id),
+          _firebase.firestore
+              .collection('users')
+              .doc(uid)
+              .collection('deletionActions')
+              .doc(actionId)
+              .collection('snapshots')
+              .doc(id),
           payload: payload,
           version: VersionedEntity(
             entityVersion: snapshot.read<int>('record_version'),
-            updatedAt:
-                DateTime.parse(snapshot.read<String>('updated_at')),
+            updatedAt: DateTime.parse(snapshot.read<String>('updated_at')),
             writerDeviceId: device,
             operationId: 'snapshot_${actionId}_${id}',
             entityId: id,
           ),
           uid: uid,
-        generation: generation,
+          generation: generation,
           immutable: true,
         );
       }
@@ -537,8 +552,11 @@ class FirebaseBackupService {
     final device = await _accountStore.deviceInstanceId();
     for (final revision in revisions) {
       await _writeVersioned(
-        _firebase.firestore.collection('users').doc(uid)
-            .collection('qazaPlanRevisions').doc(revision.revisionId),
+        _firebase.firestore
+            .collection('users')
+            .doc(uid)
+            .collection('qazaPlanRevisions')
+            .doc(revision.revisionId),
         payload: revision.toJson(),
         version: VersionedEntity(
           entityVersion: 1,
@@ -565,7 +583,9 @@ class FirebaseBackupService {
          FROM qaza_record_tombstones WHERE local_account_id = ?''',
       variables: [Variable(localId)],
     ).get();
-    final ref = _firebase.firestore.collection('users').doc(uid)
+    final ref = _firebase.firestore
+        .collection('users')
+        .doc(uid)
         .collection('qazaRecordTombstones');
 
     for (final row in rows) {
@@ -591,8 +611,11 @@ class FirebaseBackupService {
         immutable: false,
       );
 
-      final recordRef = _firebase.firestore.collection('users').doc(uid)
-          .collection('qazaRecords').doc(id);
+      final recordRef = _firebase.firestore
+          .collection('users')
+          .doc(uid)
+          .collection('qazaRecords')
+          .doc(id);
       await _firebase.firestore.runTransaction((transaction) async {
         final recordSnap = await transaction.get(recordRef);
         if (!recordSnap.exists) return;
@@ -659,8 +682,7 @@ class FirebaseBackupService {
       final currentData = current.data();
       if (currentData != null) {
         final remote = VersionedEntity(
-          entityVersion:
-              (currentData['entityVersion'] as num?)?.toInt() ?? 0,
+          entityVersion: (currentData['entityVersion'] as num?)?.toInt() ?? 0,
           updatedAt: _timestampDate(currentData['updatedAt']) ??
               DateTime.fromMillisecondsSinceEpoch(0),
           writerDeviceId: currentData['writerDeviceId'] as String? ?? '',
@@ -670,7 +692,8 @@ class FirebaseBackupService {
         final cmp = _resolver.compare(version, remote);
         if (cmp < 0) return;
 
-        if (immutable && cmp == 0 &&
+        if (immutable &&
+            cmp == 0 &&
             jsonEncode(currentData['payload']) != jsonEncode(payload)) {
           throw StateError('Immutable cloud entity conflict: ${ref.path}');
         }
