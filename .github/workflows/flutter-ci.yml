@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -74,8 +76,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
-          files=$(git diff --name-only "origin/$GITHUB_BASE_REF" HEAD -- '*.dart')
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+            diff_base="origin/$GITHUB_BASE_REF"
+          else
+            diff_base="$GITHUB_EVENT_BEFORE"
+            if [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
+              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            fi
+          fi
+          files=$(git diff --name-only "$diff_base" HEAD -- '*.dart')
           if [ -z "$files" ]; then
             echo "No Dart files changed in this PR."
             exit 0
