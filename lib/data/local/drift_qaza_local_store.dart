@@ -341,14 +341,16 @@ class DriftQazaLocalStore extends QazaLocalStore
       var processedWork = 0;
       onProgress?.call(0, totalWork);
 
-      final removedIds = removed.map((record) => record.id).toList(growable: false);
-      for (var start = 0; start < removedIds.length; start += 500) {
+      final removedIds =
+          removed.map((record) => record.id).toList(growable: false);
+      for (var start = 0; start < removedIds.length; start += 400) {
         final end =
-            start + 500 < removedIds.length ? start + 500 : removedIds.length;
+            start + 400 < removedIds.length ? start + 400 : removedIds.length;
         final chunkIds = removedIds.sublist(start, end);
-        for (final id in chunkIds) {
-          await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
-        }
+        await _database.qazaRecordsDao.deleteByIds(
+          userId: userId,
+          ids: chunkIds,
+        );
         await _deleteProfilePlanProvenance(userId, chunkIds);
         processedWork += chunkIds.length;
         onProgress?.call(processedWork, totalWork);
