@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:math';
 
@@ -73,9 +72,11 @@ class AccountLocalStore {
   }
 
   Future<String> deviceInstanceId() async {
-    final rows = await database.customSelect(
-      'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
+        )
+        .get();
     if (rows.isNotEmpty) return rows.first.read<String>('device_instance_id');
 
     final id = _randomId('device');
@@ -133,16 +134,21 @@ class AccountLocalStore {
   }
 
   Future<bool> initialChoiceRequired() async {
-    final rows = await database.customSelect(
-      'SELECT initial_choice_required FROM app_session_state WHERE id = 1',
-    ).get();
-    return rows.isNotEmpty && rows.first.read<int>('initial_choice_required') != 0;
+    final rows = await database
+        .customSelect(
+          'SELECT initial_choice_required FROM app_session_state WHERE id = 1',
+        )
+        .get();
+    return rows.isNotEmpty &&
+        rows.first.read<int>('initial_choice_required') != 0;
   }
 
   Future<String?> activeLocalAccountId() async {
-    final rows = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     return rows.isEmpty
         ? null
         : rows.first.read<String?>('active_local_account_id');
@@ -171,7 +177,8 @@ class AccountLocalStore {
 
   Future<void> activate(String localAccountId) async {
     final account = await getAccount(localAccountId);
-    if (account == null) throw StateError('Local account not found: $localAccountId');
+    if (account == null)
+      throw StateError('Local account not found: $localAccountId');
     if (account.lifecycleState == AccountLifecycleState.archived) {
       throw StateError('Archived local account cannot become active.');
     }
@@ -187,11 +194,11 @@ class AccountLocalStore {
     final now = DateTime.now().microsecondsSinceEpoch;
     final guest = await getAccount(UserProfile.localLedgerUserId);
 
-    if (guest == null || !guest.isGuest ||
+    if (guest == null ||
+        !guest.isGuest ||
         guest.lifecycleState == AccountLifecycleState.archived) {
-      final freshGuestId = guest == null
-          ? UserProfile.localLedgerUserId
-          : _randomId('guest');
+      final freshGuestId =
+          guest == null ? UserProfile.localLedgerUserId : _randomId('guest');
       await database.customInsert(
         '''INSERT INTO local_accounts
            (local_account_id, account_mode, firebase_uid, google_email,
@@ -346,7 +353,10 @@ class AccountLocalStore {
          (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
          SELECT id, ?, mode, input_snapshot, revision, created_at, updated_at
          FROM qaza_additions WHERE user_id = ?''',
-      variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+      variables: [
+        Variable(googleLocalAccountId),
+        Variable(guestLocalAccountId)
+      ],
     );
 
     await database.customUpdate(
@@ -354,7 +364,10 @@ class AccountLocalStore {
          (id, user_id, addition_id, created_at, resolved_at)
          SELECT id, ?, addition_id, created_at, resolved_at
          FROM qaza_deletion_actions WHERE user_id = ?''',
-      variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+      variables: [
+        Variable(googleLocalAccountId),
+        Variable(guestLocalAccountId)
+      ],
     );
 
     for (final row in snapshotRows) {
@@ -385,7 +398,9 @@ class AccountLocalStore {
       '''SELECT cloud_generation FROM local_accounts
          WHERE local_account_id = ? LIMIT 1''',
       variables: [Variable(googleLocalAccountId)],
-    ).get()).first.read<int>('cloud_generation');
+    ).get())
+        .first
+        .read<int>('cloud_generation');
 
     for (final row in tombstoneRows) {
       await database.customInsert(
@@ -570,13 +585,13 @@ class AccountLocalStore {
         continue;
       }
 
-      final target = targetById.isNotEmpty ? targetById.first : targetByKey.first;
+      final target =
+          targetById.isNotEmpty ? targetById.first : targetByKey.first;
       final guestVersion = row.read<int>('record_version');
       final targetVersion = target.read<int>('record_version');
       final guestUpdated = row.read<int>('updated_at');
       final targetUpdated = target.read<int>('updated_at');
-      final guestWins =
-          guestVersion > targetVersion ||
+      final guestWins = guestVersion > targetVersion ||
           (guestVersion == targetVersion && guestUpdated > targetUpdated);
 
       if (guestWins) {
@@ -629,9 +644,11 @@ class AccountLocalStore {
       final guestRevision = row.read<int>('revision');
       final targetRevision = target.first.read<int>('revision');
       final guestUpdated = DateTime.parse(row.read<String>('updated_at'));
-      final targetUpdated = DateTime.parse(target.first.read<String>('updated_at'));
+      final targetUpdated =
+          DateTime.parse(target.first.read<String>('updated_at'));
       if (guestRevision > targetRevision ||
-          (guestRevision == targetRevision && guestUpdated.isAfter(targetUpdated))) {
+          (guestRevision == targetRevision &&
+              guestUpdated.isAfter(targetUpdated))) {
         await database.customUpdate(
           'DELETE FROM qaza_additions WHERE user_id = ? AND id = ?',
           variables: [Variable(googleLocalAccountId), Variable(id)],
@@ -677,7 +694,8 @@ class AccountLocalStore {
         final guestResolved = row.read<String?>('resolved_at');
         final targetResolved = target.first.read<String?>('resolved_at');
         final guestKey = guestResolved ?? row.read<String>('created_at');
-        final targetKey = targetResolved ?? target.first.read<String>('created_at');
+        final targetKey =
+            targetResolved ?? target.first.read<String>('created_at');
         if (guestKey.compareTo(targetKey) > 0) {
           await database.customUpdate(
             'DELETE FROM qaza_deletion_actions WHERE user_id = ? AND id = ?',
@@ -713,12 +731,18 @@ class AccountLocalStore {
                AND target.deletion_action_id = qaza_deletion_action_record_snapshots.deletion_action_id
                AND target.record_id = qaza_deletion_action_record_snapshots.record_id
            )''',
-      variables: [Variable(guestLocalAccountId), Variable(googleLocalAccountId)],
+      variables: [
+        Variable(guestLocalAccountId),
+        Variable(googleLocalAccountId)
+      ],
     );
     await database.customUpdate(
       '''UPDATE qaza_deletion_action_record_snapshots
          SET user_id = ? WHERE user_id = ?''',
-      variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+      variables: [
+        Variable(googleLocalAccountId),
+        Variable(guestLocalAccountId)
+      ],
     );
 
     // Immutable plan revisions must match byte-for-byte when their revision ID
@@ -736,7 +760,8 @@ class AccountLocalStore {
         variables: [Variable(googleLocalAccountId), Variable(revisionId)],
       ).get();
       if (target.isNotEmpty &&
-          target.first.read<String>('payload_json') != row.read<String>('payload_json')) {
+          target.first.read<String>('payload_json') !=
+              row.read<String>('payload_json')) {
         throw StateError('Immutable QazaPlanRevision conflict: $revisionId');
       }
     }
@@ -794,7 +819,8 @@ class AccountLocalStore {
         variables: [Variable(googleLocalAccountId), Variable(recordId)],
       ).get();
       if (target.isEmpty ||
-          row.read<int>('record_version') > target.first.read<int>('record_version')) {
+          row.read<int>('record_version') >
+              target.first.read<int>('record_version')) {
         if (target.isNotEmpty) {
           await database.customUpdate(
             '''DELETE FROM qaza_record_tombstones
@@ -835,7 +861,10 @@ class AccountLocalStore {
         await database.customUpdate(
           '''UPDATE account_profiles SET local_account_id = ?
              WHERE local_account_id = ?''',
-          variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId)
+          ],
         );
       } else {
         final guestVersion = guestProfile.first.read<int>('entity_version');
@@ -1344,9 +1373,11 @@ class AccountLocalStore {
       );
     }
 
-    final sessionRows = await database.customSelect(
-      'SELECT id FROM app_session_state WHERE id = 1',
-    ).get();
+    final sessionRows = await database
+        .customSelect(
+          'SELECT id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     if (sessionRows.isEmpty) {
       final initialChoiceRequired = !hasLegacyProfile && !hasLegacyQaza;
       await database.customInsert(
@@ -1389,8 +1420,8 @@ class AccountLocalStore {
       accountMode: AccountMode.values.byName(row.read<String>('account_mode')),
       firebaseUid: row.read<String?>('firebase_uid'),
       googleEmail: row.read<String?>('google_email'),
-      lifecycleState:
-          AccountLifecycleState.values.byName(row.read<String>('lifecycle_state')),
+      lifecycleState: AccountLifecycleState.values
+          .byName(row.read<String>('lifecycle_state')),
       cloudBackupEnabled: row.read<int>('cloud_backup_enabled') != 0,
       cloudGeneration: row.read<int>('cloud_generation'),
       createdAt:
