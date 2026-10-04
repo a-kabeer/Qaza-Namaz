@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,10 +10,8 @@ import '../../core/diagnostics/diagnostics.dart';
 class FirebaseConfiguration {
   static const projectId = 'qaza-nmz';
   static const projectNumber = '895430705174';
-  static const androidAppId =
-      '1:895430705174:android:1e8d352d65428a4a3c7537';
-  static const androidPackage =
-      'com.example.qaza_namaz_task1_flutter';
+  static const androidAppId = '1:895430705174:android:1e8d352d65428a4a3c7537';
+  static const androidPackage = 'com.example.qaza_namaz_task1_flutter';
   static const androidSha1 =
       '3a:b6:c8:b5:08:a6:85:79:25:4d:31:98:37:16:f5:d2:ba:bd:41:8d';
   static const androidSha256 =
@@ -108,10 +105,8 @@ class GoogleFirebaseAuthService {
       throw StateError('Google Sign-In did not return an ID token.');
     }
 
-    final credential =
-        GoogleAuthProvider.credential(idToken: idToken);
-    final result =
-        await services.auth.signInWithCredential(credential);
+    final credential = GoogleAuthProvider.credential(idToken: idToken);
+    final result = await services.auth.signInWithCredential(credential);
     return result.user;
   }
 
