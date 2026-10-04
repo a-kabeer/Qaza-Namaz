@@ -186,20 +186,12 @@ class AccountLocalStore {
   Future<String> ensureGuestActive() async {
     final now = DateTime.now().microsecondsSinceEpoch;
     final guest = await getAccount(UserProfile.localLedgerUserId);
-    if (guest == null) {
-      await database.customInsert(
-        '''INSERT INTO local_accounts
-           (local_account_id, account_mode, firebase_uid, google_email,
-            lifecycle_state, cloud_backup_enabled, cloud_generation,
-            created_at, updated_at)
-           VALUES ('guest', 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
-        variables: [Variable(now), Variable(now)],
-      );
-      await activate(UserProfile.localLedgerUserId);
-      return UserProfile.localLedgerUserId;
-    }
-    if (guest.lifecycleState == AccountLifecycleState.archived) {
-      final freshGuestId = _randomId('guest');
+
+    if (guest == null || !guest.isGuest ||
+        guest.lifecycleState == AccountLifecycleState.archived) {
+      final freshGuestId = guest == null
+          ? UserProfile.localLedgerUserId
+          : _randomId('guest');
       await database.customInsert(
         '''INSERT INTO local_accounts
            (local_account_id, account_mode, firebase_uid, google_email,
@@ -211,6 +203,7 @@ class AccountLocalStore {
       await activate(freshGuestId);
       return freshGuestId;
     }
+
     await activate(guest.localAccountId);
     return guest.localAccountId;
   }
