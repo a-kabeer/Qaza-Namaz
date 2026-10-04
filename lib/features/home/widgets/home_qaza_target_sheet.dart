@@ -188,20 +188,53 @@ class _HomeQazaTargetSheetState
                           HomePrayerSelectionMode.prayerSelection
                       ? Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: PrayerSelectionGrid(
-                            key: const Key('home_qaza_target_prayer_grid'),
-                            selected: {
-                              selection.selectedPrayer ?? PrayerType.fajr,
-                            },
-                            witrAllowed: witrAllowed,
-                            onPrayerSelected: (prayer) {
-                              ref
-                                  .read(
-                                    homePrayerSelectionProvider.notifier,
-                                  )
-                                  .selectPrayer(prayer);
-                              Navigator.of(context).pop();
-                            },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (selectedPrayerUnavailable) ...[
+                                Container(
+                                  key: const Key(
+                                    'home_qaza_target_selected_unavailable',
+                                  ),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    l10n.homePrayerSelectionNoPending(
+                                      selectedPrayer!.localizedLabel(l10n),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                              PrayerSelectionGrid(
+                                key: const Key('home_qaza_target_prayer_grid'),
+                                selected: {
+                                  selection.selectedPrayer ?? PrayerType.fajr,
+                                },
+                                witrAllowed: witrAllowed,
+                                disabledPrayers: disabledPrayers,
+                                disabledReasonBuilder: (_) =>
+                                    l10n.completeNoPendingTitle,
+                                onPrayerSelected: (prayer) {
+                                  final changed = ref
+                                      .read(
+                                        homePrayerSelectionProvider.notifier,
+                                      )
+                                      .selectPrayer(
+                                        prayer,
+                                        witrEnabled: witrAllowed,
+                                      );
+                                  if (changed) {
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                         )
                       : const SizedBox.shrink(),
