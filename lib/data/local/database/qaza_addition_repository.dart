@@ -614,7 +614,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           // actionable. Keep the action row for permanent history.
           await database.customUpdate(
             '''UPDATE qaza_deletion_actions
-               SET resolved_at = ?
+               SET resolved_at = ?, entity_version = entity_version + 1
                WHERE user_id = ? AND id = ? AND resolved_at IS NULL''',
             variables: [
               Variable(DateTime.now().toIso8601String()),

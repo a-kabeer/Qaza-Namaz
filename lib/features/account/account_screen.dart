@@ -128,7 +128,7 @@ class AccountScreen extends ConsumerWidget {
                   } else {
                     await ref
                         .read(accountSessionManagerProvider.notifier)
-                        .disconnect();
+                        .pauseBackup();
                   }
                 },
               ),

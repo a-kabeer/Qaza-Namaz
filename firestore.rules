@@ -6,93 +6,203 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    function validGeneration() {
-      return request.resource.data.cloudGeneration is int
-        && request.resource.data.cloudGeneration >= 1;
+    function userRef(uid) {
+      return /databases/$(database)/documents/users/$(uid);
     }
 
-    function validMetadata() {
+    function userExists(uid) {
+      return exists(userRef(uid));
+    }
+
+    function currentGeneration(uid) {
+      return get(userRef(uid)).data.cloudGeneration;
+    }
+
+    function currentState(uid) {
+      return get(userRef(uid)).data.datasetState;
+    }
+
+    function validGeneration(uid) {
+      return request.resource.data.cloudGeneration is int
+        && request.resource.data.cloudGeneration >= 1
+        && userExists(uid)
+        && request.resource.data.cloudGeneration == currentGeneration(uid);
+    }
+
+    function writableDataset(uid) {
+      return signedIn(uid)
+        && userExists(uid)
+        && (currentState(uid) == 'initializing' || currentState(uid) == 'ready');
+    }
+
+    function deletingDataset(uid) {
+      return signedIn(uid)
+        && userExists(uid)
+        && currentState(uid) == 'deleting';
+    }
+
+    function validRootState(data) {
+      return data.datasetState in [
+          'empty', 'initializing', 'ready', 'deleting', 'deleted'
+        ]
+        && data.bootstrapComplete is bool
+        && (
+          (data.datasetState == 'ready' && data.bootstrapComplete == true)
+          || (data.datasetState == 'deleted' && data.bootstrapComplete == true)
+          || ((data.datasetState == 'empty' || data.datasetState == 'initializing' ||
+               data.datasetState == 'deleting') && data.bootstrapComplete == false)
+        );
+    }
+
+    function validRootTransition() {
+      return validRootState(request.resource.data)
+        && (
+          // Same generation: only legal forward lifecycle transitions.
+          (
+            request.resource.data.cloudGeneration == resource.data.cloudGeneration
+            && (
+              (resource.data.datasetState == 'empty'
+                && request.resource.data.datasetState in ['empty', 'initializing'])
+              || (resource.data.datasetState == 'initializing'
+                && request.resource.data.datasetState in ['initializing', 'ready'])
+              || (resource.data.datasetState == 'ready'
+                && request.resource.data.datasetState in ['ready'])
+              || (resource.data.datasetState == 'deleting'
+                && (
+                  request.resource.data.datasetState == 'deleting'
+                  || (
+                    request.resource.data.datasetState == 'deleted'
+                    && request.resource.data.bootstrapComplete == true
+                  )
+                ))
+              || (resource.data.datasetState == 'deleted'
+                && request.resource.data.datasetState == 'deleted')
+            )
+          )
+          // New generations always start in a non-authoritative state.
+          || (
+            request.resource.data.cloudGeneration ==
+              resource.data.cloudGeneration + 1
+            && request.resource.data.datasetState in ['initializing', 'deleting']
+            && request.resource.data.bootstrapComplete == false
+          )
+        );
+    }
+
+    function authorizedRecordDelete(uid, recordId) {
+      return writableDataset(uid)
+        && exists(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        )
+        && get(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        ).data.cloudGeneration == currentGeneration(uid)
+        && get(
+          /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+        ).data.payload.recordId == recordId
+        && resource.data.payload.recordVersion <=
+          get(
+            /databases/$(database)/documents/users/$(uid)/qazaRecordTombstones/$(recordId)
+          ).data.payload.recordVersion;
+    }
+
+    function validMetadata(uid) {
       return request.resource.data.schemaVersion is int
         && request.resource.data.schemaVersion >= 1
-        && validGeneration()
+        && request.resource.data.cloudGeneration is int
         && request.resource.data.entityVersion is int
         && request.resource.data.entityVersion >= 1
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.writerDeviceId is string
-        && request.resource.data.operationId is string;
+        && request.resource.data.operationId is string
+        && validGeneration(uid);
     }
 
     match /users/{uid} {
       allow read: if signedIn(uid);
+
+      // The root is the generation/lifecycle anchor and must never be deleted.
+      // A client may only move the generation forward by one epoch.
       allow create: if signedIn(uid)
         && request.resource.data.schemaVersion is int
         && request.resource.data.cloudGeneration is int
         && request.resource.data.cloudGeneration >= 1
-        && request.resource.data.datasetState in [
-          'empty', 'initializing', 'ready', 'deleting', 'deleted'
-        ];
+        && request.resource.data.datasetState in ['empty', 'initializing']
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.bootstrapComplete == false;
+
       allow update: if signedIn(uid)
         && request.resource.data.schemaVersion is int
         && request.resource.data.cloudGeneration is int
-        && request.resource.data.cloudGeneration >= resource.data.cloudGeneration
-        && request.resource.data.datasetState in [
-          'empty', 'initializing', 'ready', 'deleting', 'deleted'
-        ]
-        && (
-          request.resource.data.cloudGeneration == resource.data.cloudGeneration
-          || request.resource.data.datasetState == 'initializing'
-          || request.resource.data.datasetState == 'deleting'
-          || request.resource.data.datasetState == 'deleted'
-        );
-      allow delete: if signedIn(uid);
+        && request.resource.data.updatedAt is timestamp
+        && validRootTransition();
+
+      allow update: if signedIn(uid)
+        && resource.data.datasetState == 'deleting'
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.cloudGeneration is int
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.datasetState == 'deleted'
+        && request.resource.data.bootstrapComplete == true;
+
+      allow delete: if false;
 
       match /profile/{docId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata();
-        allow delete: if signedIn(uid);
+        allow create, update: if writableDataset(uid)
+          && validMetadata(uid);
+        allow delete: if deletingDataset(uid);
       }
 
       match /qazaRecords/{recordId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata()
-          && request.resource.data.id == recordId;
-        allow delete: if signedIn(uid);
+        allow create, update: if writableDataset(uid)
+          && validMetadata(uid)
+          && request.resource.data.payload.id == recordId;
+        allow delete: if deletingDataset(uid) || authorizedRecordDelete(uid, recordId);
       }
 
       match /qazaRecordTombstones/{recordId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata()
+        allow create, update: if writableDataset(uid)
+          && validMetadata(uid)
           && request.resource.data.payload.recordId == recordId;
-        allow delete: if signedIn(uid);
+        allow delete: if deletingDataset(uid);
       }
 
       match /qazaAdditions/{additionId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata()
+        allow create, update: if writableDataset(uid)
+          && validMetadata(uid)
           && request.resource.data.payload.id == additionId;
-        allow delete: if signedIn(uid);
+        allow delete: if deletingDataset(uid);
       }
 
       match /deletionActions/{actionId} {
         allow read: if signedIn(uid);
-        allow create, update: if signedIn(uid) && validMetadata()
+        allow create, update: if writableDataset(uid)
+          && validMetadata(uid)
           && request.resource.data.payload.id == actionId;
-        allow delete: if signedIn(uid);
+        allow delete: if deletingDataset(uid);
 
         match /snapshots/{recordId} {
           allow read: if signedIn(uid);
-          allow create, update: if signedIn(uid) && validMetadata();
-          allow delete: if signedIn(uid);
+          // Snapshots are immutable historical facts. They may be created
+          // once, but never rewritten outside explicit cloud deletion.
+          allow create: if writableDataset(uid)
+            && validMetadata(uid);
+          allow update: if false;
+          allow delete: if deletingDataset(uid);
         }
       }
 
       match /qazaPlanRevisions/{revisionId} {
         allow read: if signedIn(uid);
-        allow create: if signedIn(uid) && validMetadata()
+        allow create: if writableDataset(uid)
+          && validMetadata(uid)
           && request.resource.data.payload.revisionId == revisionId;
-        allow update: if signedIn(uid)
-          && resource.data.payload == request.resource.data.payload;
-        allow delete: if signedIn(uid);
+        allow update: if false;
+        allow delete: if deletingDataset(uid);
       }
 
       match /{document=**} {

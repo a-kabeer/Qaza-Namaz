@@ -2,7 +2,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' show Variable;
 
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/conflict_resolver.dart';
@@ -37,6 +37,7 @@ class FirebaseBackupService {
     required String uid,
     required int generation,
   }) async {
+    final bootstrapCutoffMicros = DateTime.now().microsecondsSinceEpoch;
     await _ensureCloudGeneration(
       uid: uid,
       expectedGeneration: generation,
@@ -46,6 +47,7 @@ class FirebaseBackupService {
       localAccountId: localAccountId,
       uid: uid,
       generation: generation,
+      bootstrapCutoffMicros: bootstrapCutoffMicros,
     );
   }
 
@@ -53,6 +55,7 @@ class FirebaseBackupService {
     required String localAccountId,
     required String uid,
     required int generation,
+    int? bootstrapCutoffMicros,
   }) async {
     if (!await _firebase.initialize()) return;
 
@@ -80,6 +83,30 @@ class FirebaseBackupService {
       });
     }
 
+    if (bootstrapCutoffMicros != null) {
+      await _firebase.firestore.runTransaction((transaction) async {
+        final snap = await transaction.get(rootRef);
+        if (!snap.exists) {
+          throw StateError('Cloud account root disappeared before bootstrap.');
+        }
+        final data = snap.data() ?? const <String, dynamic>{};
+        final actualGeneration =
+            (data['cloudGeneration'] as num?)?.toInt() ?? 0;
+        final state = data['datasetState'] as String? ?? 'empty';
+        if (actualGeneration != generation ||
+            (state != 'initializing' && state != 'ready')) {
+          throw StateError(
+            'Cloud dataset changed before bootstrap marker was stored.',
+          );
+        }
+        transaction.set(
+          rootRef,
+          {'bootstrapCutoffMicros': bootstrapCutoffMicros},
+          SetOptions(merge: true),
+        );
+      });
+    }
+
     await _writeProfile(localAccountId, uid, generation);
     await _writeQazaRecords(localAccountId, uid, generation);
     await _writeQazaAdditions(localAccountId, uid, generation);
@@ -87,13 +114,48 @@ class FirebaseBackupService {
     await _writePlanRevisions(localAccountId, uid, generation);
     await _writeTombstones(localAccountId, uid, generation);
 
-    await rootRef.set({
-      'schemaVersion': cloudSchemaVersion,
-      'cloudGeneration': generation,
-      'datasetState': 'ready',
-      'updatedAt': FieldValue.serverTimestamp(),
-      'bootstrapComplete': true,
-    }, SetOptions(merge: true));
+    if (bootstrapCutoffMicros != null &&
+        await _hasOutboxMutationAfter(localAccountId, bootstrapCutoffMicros)) {
+      throw StateError(
+        'Local mutation occurred during cloud bootstrap; retry bootstrap.',
+      );
+    }
+
+    await _firebase.firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(rootRef);
+      if (!snap.exists) {
+        throw StateError('Cloud account root disappeared during backup.');
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final currentGeneration =
+          (data['cloudGeneration'] as num?)?.toInt() ?? 0;
+      final state = data['datasetState'] as String? ?? 'empty';
+      final storedCutoff =
+          (data['bootstrapCutoffMicros'] as num?)?.toInt();
+      if (currentGeneration != generation ||
+          (state != 'initializing' && state != 'ready') ||
+          (bootstrapCutoffMicros != null &&
+              storedCutoff != bootstrapCutoffMicros)) {
+        throw StateError(
+          'Cloud dataset changed before backup completion: '
+          'generation=' +
+              currentGeneration.toString() +
+              ' state=' +
+              state,
+        );
+      }
+      transaction.set(
+        rootRef,
+        {
+          'schemaVersion': cloudSchemaVersion,
+          'cloudGeneration': generation,
+          'datasetState': 'ready',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'bootstrapComplete': true,
+        },
+        SetOptions(merge: true),
+      );
+    });
   }
 
 
@@ -171,24 +233,24 @@ class FirebaseBackupService {
     final actions = await _readDocs(uid, 'deletionActions');
     for (final action in actions) {
       final actionRef = rootRef.collection('deletionActions').doc(action.id);
-      final snapshots = await actionRef.collection('snapshots').get();
-      for (final page in _chunks(snapshots.docs, 400)) {
+      final snapshotRef = actionRef.collection('snapshots');
+      DocumentSnapshot<Map<String, dynamic>>? snapshotCursor;
+      while (true) {
+        Query<Map<String, dynamic>> query = snapshotRef.limit(400);
+        if (snapshotCursor != null) {
+          query = query.startAfterDocument(snapshotCursor);
+        }
+        final snapshots = await query.get();
+        if (snapshots.docs.isEmpty) break;
         final batch = _firebase.firestore.batch();
-        for (final doc in page) {
+        for (final doc in snapshots.docs) {
           batch.delete(doc.reference);
         }
         await batch.commit();
+        if (snapshots.docs.length < 400) break;
+        snapshotCursor = snapshots.docs.last;
       }
       await actionRef.delete();
-    }
-
-    final profile = await rootRef.collection('profile').get();
-    for (final page in _chunks(profile.docs, 400)) {
-      final batch = _firebase.firestore.batch();
-      for (final doc in page) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
     }
 
     await _firebase.firestore.runTransaction((transaction) async {
@@ -262,13 +324,43 @@ class FirebaseBackupService {
     });
   }
 
+  Future<bool> _hasOutboxMutationAfter(
+    String localAccountId,
+    int cutoffMicros,
+  ) async {
+    final rows = await _database.customSelect(
+      '''SELECT id FROM sync_outbox
+         WHERE user_id = ?
+           AND type = 'account_snapshot'
+           AND queued_at > ?
+         LIMIT 1''',
+      variables: [Variable(localAccountId), Variable(cutoffMicros)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _readDocs(
     String uid,
     String collection,
   ) async {
-    final snap = await _firebase.firestore
-        .collection('users').doc(uid).collection(collection).get();
-    return snap.docs;
+    final ref = _firebase.firestore
+        .collection('users')
+        .doc(uid)
+        .collection(collection);
+    final result = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    while (true) {
+      Query<Map<String, dynamic>> query = ref.limit(400);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+      final page = await query.get();
+      if (page.docs.isEmpty) break;
+      result.addAll(page.docs);
+      if (page.docs.length < 400) break;
+      cursor = page.docs.last;
+    }
+    return result;
   }
 
   Iterable<List<T>> _chunks<T>(List<T> values, int size) sync* {
@@ -279,13 +371,27 @@ class FirebaseBackupService {
   }
 
   Future<void> _deleteCollection(String uid, String collection) async {
-    final docs = await _readDocs(uid, collection);
-    for (final page in _chunks(docs, 400)) {
+    final ref = _firebase.firestore
+        .collection('users')
+        .doc(uid)
+        .collection(collection);
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    while (true) {
+      Query<Map<String, dynamic>> query = ref.limit(400);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+      final page = await query.get();
+      if (page.docs.isEmpty) break;
+
       final batch = _firebase.firestore.batch();
-      for (final doc in page) {
+      for (final doc in page.docs) {
         batch.delete(doc.reference);
       }
       await batch.commit();
+
+      if (page.docs.length < 400) break;
+      cursor = page.docs.last;
     }
   }
 
@@ -335,6 +441,7 @@ class FirebaseBackupService {
     await _writeVersioned(
       _firebase.firestore.collection('users').doc(uid)
           .collection('profile').doc('current'),
+      uid: uid,
       payload: {'profile': payload},
       version: VersionedEntity(
         entityVersion: row.read<int>('entity_version'),
@@ -370,6 +477,7 @@ class FirebaseBackupService {
                   'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
               entityId: record.id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -412,6 +520,7 @@ class FirebaseBackupService {
                   'addition_${id}_${row.read<int>('revision')}',
               entityId: id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -454,6 +563,7 @@ class FirebaseBackupService {
               operationId: 'deletion_${actionId}',
               entityId: actionId,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -496,6 +606,7 @@ class FirebaseBackupService {
             operationId: 'snapshot_${actionId}_${id}',
             entityId: id,
           ),
+          uid: uid,
           generation: generation,
           immutable: true,
         );
@@ -522,6 +633,7 @@ class FirebaseBackupService {
           operationId: 'plan_${revision.revisionId}',
           entityId: revision.revisionId,
         ),
+        uid: uid,
         generation: generation,
         immutable: true,
       );
@@ -560,6 +672,7 @@ class FirebaseBackupService {
           operationId: row.read<String>('operation_id'),
           entityId: id,
         ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -604,12 +717,41 @@ class FirebaseBackupService {
 
   Future<void> _writeVersioned(
     DocumentReference<Map<String, dynamic>> ref, {
+    required String uid,
     required Map<String, dynamic> payload,
     required VersionedEntity version,
     required int generation,
     required bool immutable,
   }) async {
+    final rootRef =
+        _firebase.firestore.collection('users').doc(uid);
     await _firebase.firestore.runTransaction((transaction) async {
+      // Read the generation anchor and the entity in the same transaction.
+      // This prevents a concurrent cloud deletion from racing a stale
+      // snapshot write and recreating data under an old generation.
+      final rootSnapshot = await transaction.get(rootRef);
+      if (!rootSnapshot.exists) {
+        throw StateError(
+          'Cloud account root is missing while writing ' + ref.path,
+        );
+      }
+      final rootData =
+          rootSnapshot.data() ?? const <String, dynamic>{};
+      final rootGeneration =
+          (rootData['cloudGeneration'] as num?)?.toInt() ?? 0;
+      final rootState = rootData['datasetState'] as String? ?? 'empty';
+      if (rootGeneration != generation ||
+          (rootState != 'initializing' && rootState != 'ready')) {
+        throw StateError(
+          'Cloud generation/state changed while writing ' +
+              ref.path +
+              ': generation=' +
+              rootGeneration.toString() +
+              ' state=' +
+              rootState,
+        );
+      }
+
       final current = await transaction.get(ref);
       final currentData = current.data();
       if (currentData != null) {
@@ -625,15 +767,24 @@ class FirebaseBackupService {
         final cmp = _resolver.compare(version, remote);
         if (cmp < 0) return;
 
-        if (immutable && cmp == 0 &&
-            jsonEncode(currentData['payload']) != jsonEncode(payload)) {
-          throw StateError('Immutable cloud entity conflict: ${ref.path}');
+        if (immutable) {
+          if (cmp == 0 &&
+              jsonEncode(currentData['payload']) == jsonEncode(payload)) {
+            // Immutable entities are write-once. A retry of the same
+            // snapshot/revision must be a no-op, because Firestore rules
+            // intentionally reject updates to immutable documents.
+            return;
+          }
+          throw StateError(
+            'Immutable cloud entity conflict: ' + ref.path,
+          );
         }
+
         final remoteGeneration =
             (currentData['cloudGeneration'] as num?)?.toInt();
         if (remoteGeneration != null && remoteGeneration != generation) {
           throw StateError(
-            'Cloud generation changed while writing ${ref.path}.',
+            'Cloud generation changed while writing ' + ref.path + '.',
           );
         }
       }

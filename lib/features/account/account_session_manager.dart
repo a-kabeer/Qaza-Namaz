@@ -34,6 +34,7 @@ class AccountSessionManager extends ChangeNotifier {
 
   AccountSessionState _state = const AccountSessionState.loading();
   bool _initialized = false;
+  int _operationEpoch = 0;
 
   AccountSessionState get state => _state;
   String? get activeLocalAccountId => _state.activeLocalAccountId;
@@ -56,6 +57,7 @@ class AccountSessionManager extends ChangeNotifier {
           }
         } catch (_) {}
       }
+
       await _accountStore.ensureInitialized(
         hasLegacyProfile: rawLegacyProfile != null,
         hasLegacyQaza:
@@ -65,6 +67,7 @@ class AccountSessionManager extends ChangeNotifier {
 
       final account = await _accountStore.activeAccount();
       final initialChoice = await _accountStore.initialChoiceRequired();
+      final migrationState = await _accountStore.migrationState();
       if (account != null) {
         _setState(
           AccountSessionState(
@@ -72,7 +75,7 @@ class AccountSessionManager extends ChangeNotifier {
             activeLocalAccountId: account.localAccountId,
             activeAccount: account,
             initialChoiceRequired: initialChoice,
-            migrationState: 'none',
+            migrationState: migrationState,
             restoreState: 'none',
           ),
         );
@@ -81,18 +84,47 @@ class AccountSessionManager extends ChangeNotifier {
       try {
         if (await _firebase.initialize()) {
           final firebaseUser = _auth.currentUser;
+          final terminalMigrationState =
+              migrationState == 'none' ||
+              migrationState == 'completed' ||
+              migrationState == 'failed';
+
           if (firebaseUser != null) {
-            final local = await _accountStore.findGoogleByUid(firebaseUser.uid);
-            if (local != null) {
-              await _accountStore.activate(local.localAccountId);
-              await _restoreExisting(local);
-            } else if (account == null || account.isGuest) {
-              await _resumeInterruptedGoogle(
+            if (!terminalMigrationState) {
+              await _resumeInterruptedMigration(
                 firebaseUser.uid,
                 firebaseUser.email,
               );
             } else {
-              await _auth.signOut();
+              final local =
+                  await _accountStore.findGoogleByUid(firebaseUser.uid);
+              if (local != null) {
+                if (local.lifecycleState == AccountLifecycleState.migrating) {
+                  await _resumeInterruptedMigration(
+                    firebaseUser.uid,
+                    firebaseUser.email,
+                  );
+                } else {
+                  await _accountStore.activate(local.localAccountId);
+                  await _restoreExisting(local);
+                }
+              } else if (account == null || account.isGuest) {
+                await _resumeInterruptedGoogle(
+                  firebaseUser.uid,
+                  firebaseUser.email,
+                );
+              } else {
+                await _auth.signOut();
+              }
+            }
+          } else if (!terminalMigrationState) {
+            // No Firebase session remains after an interrupted in-place
+            // conversion. The converted local account can safely be restored
+            // to Guest because no second partition is created for the normal
+            // Guest -> Google migration path.
+            final migratingId = await _accountStore.migratingGoogleAccount();
+            if (migratingId != null) {
+              await _accountStore.rollbackGoogleMigration(migratingId);
             }
           }
         }
@@ -104,7 +136,7 @@ class AccountSessionManager extends ChangeNotifier {
               activeLocalAccountId: _state.activeLocalAccountId,
               activeAccount: _state.activeAccount,
               initialChoiceRequired: false,
-              migrationState: _state.migrationState,
+              migrationState: await _accountStore.migrationState(),
               restoreState: 'failed',
               message: error.toString(),
             ),
@@ -120,7 +152,7 @@ class AccountSessionManager extends ChangeNotifier {
           activeAccount: refreshed,
           initialChoiceRequired:
               await _accountStore.initialChoiceRequired(),
-          migrationState: 'none',
+          migrationState: await _accountStore.migrationState(),
           restoreState: 'none',
         ),
       );
@@ -140,25 +172,41 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> continueAsGuest() async {
+    final operationEpoch = ++_operationEpoch;
+    final operationAccountId = _state.activeLocalAccountId;
     await _accountStore.ensureGuestActive();
+    _ensureOperationCurrent(operationEpoch, activeLocalAccountId);
     await _accountStore.setInitialChoiceRequired(false);
     await _refresh();
   }
 
   Future<void> connectGoogle() async {
     _setBusy(AccountSessionPhase.connecting);
+    final operationEpoch = ++_operationEpoch;
     final previous = await _accountStore.activeAccount();
+    final operationAccountId = previous?.localAccountId;
     final guestWasActive = previous?.isGuest == true;
+    var createdTarget = false;
+    String? createdTargetId;
 
     try {
       await _accountStore.setMigrationState('prepared');
       final user = await _auth.signIn();
-      if (user == null) throw StateError('Google authentication returned no user.');
+      if (user == null) {
+        throw StateError('Google authentication returned no user.');
+      }
 
       await _accountStore.setMigrationState('authenticated');
+      _ensureOperationCurrent(operationEpoch, operationAccountId);
+      _ensureActiveAccount(
+        operationAccountId,
+        user.uid,
+        allowGuestUid: true,
+      );
       var target = await _accountStore.findGoogleByUid(user.uid);
 
-      if (target == null && guestWasActive) {
+      if (guestWasActive) {
+        await _accountStore.setMigrationState('localStateSnapshotSecured');
         final targetId = await _accountStore.cloneGuestToGoogle(
           firebaseUid: user.uid,
           email: user.email,
@@ -170,75 +218,86 @@ class AccountSessionManager extends ChangeNotifier {
           firebaseUid: user.uid,
           email: user.email,
         );
+        createdTarget = true;
+        createdTargetId = targetId;
         target = await _accountStore.getAccount(targetId);
       }
 
-      if (target == null) throw StateError('Unable to create Google partition.');
+      if (target == null) {
+        throw StateError('Unable to create Google partition.');
+      }
+      _ensureOperationCurrent(operationEpoch, operationAccountId);
 
       await _accountStore.setInitialChoiceRequired(false);
 
       final root = await _backup.readCloudRoot(user.uid);
+      await _accountStore.setMigrationState('cloudStateRead');
+
       if (root == null) {
+        await _accountStore.setMigrationState('canonicalStateCalculated');
         await _accountStore.setMigrationState('localCanonicalCommit');
+        await _accountStore.setMigrationState('cloudBackupInProgress');
         await _backup.bootstrapAccount(
           localAccountId: target.localAccountId,
           uid: user.uid,
           generation: target.cloudGeneration,
         );
       } else {
-        final remoteGeneration =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-        if (remoteGeneration != target.cloudGeneration) {
-          await _accountStore.setCloudGeneration(
-            target.localAccountId,
-            remoteGeneration,
-          );
-        }
-        await _accountStore.setMigrationState('cloudStateRead');
+        await _accountStore.setMigrationState('canonicalStateCalculated');
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
           uid: user.uid,
         );
-        final refreshed =
+        _ensureOperationCurrent(operationEpoch, operationAccountId);
+        final refreshedTarget =
             await _accountStore.getAccount(target.localAccountId) ?? target;
+        await _accountStore.setMigrationState('localCanonicalCommit');
+        await _accountStore.setMigrationState('cloudBackupInProgress');
         await _backup.snapshotAccount(
-          localAccountId: refreshed.localAccountId,
+          localAccountId: refreshedTarget.localAccountId,
           uid: user.uid,
-          generation: refreshed.cloudGeneration,
+          generation: refreshedTarget.cloudGeneration,
         );
+        _ensureOperationCurrent(operationEpoch, operationAccountId);
+        target = refreshedTarget;
       }
 
       if (guestWasActive && previous != null) {
-        await _accountStore.finalizeGuestMigration(
-          guestLocalAccountId: previous.localAccountId,
-          googleLocalAccountId: target.localAccountId,
-        );
+        if (target.localAccountId == previous.localAccountId) {
+          await _accountStore.activate(target.localAccountId);
+          await _accountStore.setMigrationState('completed');
+        } else {
+          await _accountStore.finalizeGuestMigration(
+            guestLocalAccountId: previous.localAccountId,
+            googleLocalAccountId: target.localAccountId,
+          );
+        }
       } else {
         await _accountStore.activate(target.localAccountId);
         await _accountStore.setMigrationState('completed');
       }
+      await _accountStore.completeMigration();
+      _ensureOperationCurrent(operationEpoch, operationAccountId);
       await _refresh();
     } catch (error) {
-      await _accountStore.setMigrationState('failed');
-      if (guestWasActive) {
-        final current = await _accountStore.activeAccount();
-        if (current != null &&
-            current.isGoogle &&
-            current.localAccountId != previous?.localAccountId) {
-          await _accountStore.deleteLocalAccount(current.localAccountId);
-        }
-        if (previous != null) {
-          await _accountStore.unarchiveAccount(previous.localAccountId);
-        } else {
-          await _accountStore.ensureGuestActive();
-        }
-        await _auth.signOut();
+      if (operationEpoch != _operationEpoch) return;
+      await _accountStore.setMigrationState('rollbackRequired');
+      if (createdTarget && createdTargetId != null) {
+        await _accountStore.deleteLocalAccount(createdTargetId);
       }
+      if (guestWasActive && previous != null) {
+        await _accountStore.rollbackGoogleMigration(previous.localAccountId);
+      } else if (previous == null) {
+        await _accountStore.ensureGuestActive();
+      }
+      await _auth.signOut();
+      await _accountStore.setMigrationState('failed');
+      final restoredActive = await _accountStore.activeAccount();
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.ready,
-          activeLocalAccountId: previous?.localAccountId,
-          activeAccount: previous,
+          activeLocalAccountId: restoredActive?.localAccountId,
+          activeAccount: restoredActive,
           initialChoiceRequired: false,
           migrationState: 'failed',
           restoreState: 'none',
@@ -246,6 +305,75 @@ class AccountSessionManager extends ChangeNotifier {
         ),
       );
     }
+  }
+
+  Future<void> _resumeInterruptedMigration(
+    String uid,
+    String? email,
+  ) async {
+    final active = await _accountStore.activeAccount();
+    final target = await _accountStore.findGoogleByUid(uid);
+    if (target == null) {
+      if (active?.isGuest == true) {
+        await _accountStore.setMigrationState('failed');
+      }
+      return;
+    }
+
+    final guestMigration =
+        active?.isGuest == true &&
+        active?.localAccountId != target.localAccountId;
+    if (!guestMigration && active?.localAccountId != target.localAccountId) {
+      throw StateError('Interrupted Google migration has ambiguous ownership.');
+    }
+
+    if (guestMigration) {
+      await _accountStore.setMigrationState('localStateSnapshotSecured');
+      await _accountStore.mergeGuestIntoGooglePartition(
+        guestLocalAccountId: active!.localAccountId,
+        googleLocalAccountId: target.localAccountId,
+      );
+      await _accountStore.setMigrationState('targetPartitionPrepared');
+    }
+
+    final root = await _backup.readCloudRoot(uid);
+    await _accountStore.setMigrationState('cloudStateRead');
+
+    if (root == null) {
+      await _accountStore.setMigrationState('canonicalStateCalculated');
+      await _accountStore.setMigrationState('localCanonicalCommit');
+      await _accountStore.setMigrationState('cloudBackupInProgress');
+      await _backup.bootstrapAccount(
+        localAccountId: target.localAccountId,
+        uid: uid,
+        generation: target.cloudGeneration,
+      );
+    } else {
+      await _accountStore.setMigrationState('canonicalStateCalculated');
+      await _reconciliation.restore(
+        localAccountId: target.localAccountId,
+        uid: uid,
+      );
+      final refreshed =
+          await _accountStore.getAccount(target.localAccountId) ?? target;
+      await _accountStore.setMigrationState('localCanonicalCommit');
+      await _accountStore.setMigrationState('cloudBackupInProgress');
+      await _backup.snapshotAccount(
+        localAccountId: refreshed.localAccountId,
+        uid: uid,
+        generation: refreshed.cloudGeneration,
+      );
+    }
+
+    if (guestMigration && active != null) {
+      await _accountStore.finalizeGuestMigration(
+        guestLocalAccountId: active.localAccountId,
+        googleLocalAccountId: target.localAccountId,
+      );
+    } else {
+      await _accountStore.activate(target.localAccountId);
+    }
+    await _accountStore.completeMigration();
   }
 
   Future<void> _resumeInterruptedGoogle(
@@ -268,9 +396,6 @@ class AccountSessionManager extends ChangeNotifier {
           generation: target.cloudGeneration,
         );
       } else {
-        final generation =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-        await _accountStore.setCloudGeneration(target.localAccountId, generation);
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
           uid: uid,
@@ -296,27 +421,58 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    final operationEpoch = ++_operationEpoch;
+    final operationAccountId = activeLocalAccountId;
     await _auth.signOut();
+    _ensureOperationCurrent(operationEpoch, operationAccountId);
     await _accountStore.ensureGuestActive();
+    _ensureOperationCurrent(operationEpoch, operationAccountId);
+    await _refresh();
+  }
+
+  Future<void> pauseBackup() async {
+    final operationEpoch = ++_operationEpoch;
+    final account = activeAccount;
+    if (account == null || !account.isGoogle) return;
+    await _accountStore.setBackupEnabled(account.localAccountId, false);
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
   }
 
   Future<void> disconnect() async {
+    final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
     if (account == null || !account.isGoogle) return;
     await _accountStore.setBackupEnabled(account.localAccountId, false);
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
+    await _auth.disconnect();
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
+    await _accountStore.ensureGuestActive();
     await _refresh();
   }
 
   Future<void> enableBackup() async {
+    final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
     if (account == null || !account.isGoogle || account.firebaseUid == null) {
       return;
     }
     final root = await _backup.readCloudRoot(account.firebaseUid!);
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
     var generation = account.cloudGeneration;
     if (root != null) {
-      generation = (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+      final remoteGeneration =
+          (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+      if (remoteGeneration < account.cloudGeneration) {
+        throw StateError(
+          'Cloud generation is stale: local=' +
+              account.cloudGeneration.toString() +
+              ' remote=' +
+              remoteGeneration.toString() +
+              '.',
+        );
+      }
+      generation = remoteGeneration;
       final state = root['datasetState'] as String? ?? 'empty';
       if (state == 'deleted') {
         final nextGeneration = generation + 1;
@@ -337,10 +493,12 @@ class AccountSessionManager extends ChangeNotifier {
       uid: refreshed.firebaseUid!,
       generation: refreshed.cloudGeneration,
     );
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
   }
 
   Future<void> deleteCloudData() async {
+    final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
     if (account == null || !account.isGoogle || account.firebaseUid == null) return;
     await _accountStore.setBackupEnabled(account.localAccountId, false);
@@ -350,6 +508,7 @@ class AccountSessionManager extends ChangeNotifier {
       expectedGeneration: account.cloudGeneration,
       newGeneration: nextGeneration,
     );
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _accountStore.setCloudGeneration(
       account.localAccountId,
       nextGeneration,
@@ -359,12 +518,14 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> restoreNow() async {
+    final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
     if (account == null || !account.isGoogle || account.firebaseUid == null) return;
     await _reconciliation.restore(
       localAccountId: account.localAccountId,
       uid: account.firebaseUid!,
     );
+    _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
   }
 
@@ -377,7 +538,7 @@ class AccountSessionManager extends ChangeNotifier {
         activeAccount: account,
         initialChoiceRequired:
             await _accountStore.initialChoiceRequired(),
-        migrationState: 'none',
+        migrationState: await _accountStore.migrationState(),
         restoreState: 'none',
       ),
     );
@@ -395,6 +556,32 @@ class AccountSessionManager extends ChangeNotifier {
         restoreState: current.restoreState,
       ),
     );
+  }
+
+  void _ensureOperationCurrent(
+    int operationEpoch,
+    String? expectedAccountId,
+  ) {
+    if (operationEpoch != _operationEpoch ||
+        activeLocalAccountId != expectedAccountId) {
+      throw StateError('Stale account operation result rejected.');
+    }
+  }
+
+  void _ensureActiveAccount(
+    String? expectedAccountId,
+    String uid, {
+    bool allowGuestUid = false,
+  }) {
+    final active = _state.activeAccount;
+    if (expectedAccountId != null &&
+        active?.localAccountId != expectedAccountId) {
+      throw StateError('Account changed during account operation.');
+    }
+    if (!allowGuestUid &&
+        (active?.firebaseUid == null || active!.firebaseUid != uid)) {
+      throw StateError('Firebase account changed during account operation.');
+    }
   }
 
   void _setState(AccountSessionState value) {

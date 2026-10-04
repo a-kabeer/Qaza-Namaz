@@ -50,10 +50,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _submit(UserProfile profile) async {
     await _saveQueue;
 
-    // Completing onboarding activates the local Guest ledger for the
-    // subsequent import and for StartupGate/profile consumers.
-    ref.read(activeLocalAccountIdStateProvider.notifier).state =
-        UserProfile.localLedgerUserId;
+    // Onboarding is always scoped to the account selected by the
+    // account/session layer. Never force the Guest partition here.
+    if (ref.read(activeUserIdProvider) == null) {
+      throw StateError('No active local account exists for onboarding.');
+    }
 
     final finalizedProfile = profile.copyWith(
       witrIncluded: ProfileRules.effectiveWitr(profile),

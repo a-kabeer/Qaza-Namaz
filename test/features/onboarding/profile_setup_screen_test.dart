@@ -124,7 +124,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            userProfileRepositoryProvider.overrideWithValue(repository),
+            activeLocalAccountIdStateProvider.overrideWith(
+            (ref) => UserProfile.localLedgerUserId,
+          ),
+          userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
             ),
@@ -213,7 +216,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            userProfileRepositoryProvider.overrideWithValue(repository),
+            activeLocalAccountIdStateProvider.overrideWith(
+            (ref) => UserProfile.localLedgerUserId,
+          ),
+          userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               const QazaPlanService(),
             ),

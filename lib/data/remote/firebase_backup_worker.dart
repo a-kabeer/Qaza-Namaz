@@ -11,13 +11,16 @@ class FirebaseBackupWorker {
     required FirebaseServices firebase,
     required AccountLocalStore accountStore,
     required FirebaseBackupService backupService,
+    Future<String?> Function()? currentFirebaseUidProvider,
   })  : _firebase = firebase,
         _accountStore = accountStore,
-        _backup = backupService;
+        _backup = backupService,
+        _currentFirebaseUidProvider = currentFirebaseUidProvider;
 
   final FirebaseServices _firebase;
   final AccountLocalStore _accountStore;
   final FirebaseBackupService _backup;
+  final Future<String?> Function()? _currentFirebaseUidProvider;
   final String _workerId = 'worker_${Random.secure().nextInt(1 << 30)}';
   bool _running = false;
 
@@ -32,7 +35,8 @@ class FirebaseBackupWorker {
       final uid = account.firebaseUid;
       if (uid == null || uid.isEmpty) return;
 
-      final currentUser = await _currentFirebaseUserId();
+      final currentUser = await (_currentFirebaseUidProvider?.call() ??
+          _currentFirebaseUserId());
       if (currentUser != uid) return;
 
       final now = DateTime.now().microsecondsSinceEpoch;
@@ -74,6 +78,7 @@ class FirebaseBackupWorker {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
             );
           }
           continue;
@@ -89,6 +94,7 @@ class FirebaseBackupWorker {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
             );
           }
         } catch (error) {
@@ -101,6 +107,7 @@ class FirebaseBackupWorker {
             await _accountStore.markOutboxRetry(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
               attempts: attempts,
               error: error.toString().replaceFirst('Exception: ', ''),
               nextAttemptMicros: next.microsecondsSinceEpoch,

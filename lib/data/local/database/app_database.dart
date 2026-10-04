@@ -57,7 +57,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +67,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
+          await _ensureMigrationSnapshotSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -111,13 +112,37 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10) {
             await _ensureQazaProfilePlanProvenanceSchema();
           }
+          if (from < 12) {
+            await _ensureDeletionActionVersionColumn();
+          }
           if (from < 11) {
             await _ensureAccountSchema();
           }
           await _ensurePerformanceIndexes();
+          await _ensureMigrationSnapshotSchema();
         },
       );
 
+
+  Future<void> _ensureMigrationSnapshotSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
+        migration_id TEXT NOT NULL,
+        local_account_id TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (migration_id, local_account_id)
+      )
+    ''');
+    final columns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('migration_snapshot_id')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
+  }
 
   Future<void> _ensureAccountSchema() async {
     await customStatement('''
@@ -143,13 +168,32 @@ class AppDatabase extends _$AppDatabase {
         active_local_account_id TEXT,
         initial_choice_required INTEGER NOT NULL DEFAULT 0,
         migration_state TEXT NOT NULL DEFAULT 'none',
-        restore_state TEXT NOT NULL DEFAULT 'none'
+        restore_state TEXT NOT NULL DEFAULT 'none',
+        migration_snapshot_id TEXT
       )
     ''');
+    final sessionColumns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    final sessionColumnNames =
+        sessionColumns.map((row) => row.read<String>('name')).toSet();
+    if (!sessionColumnNames.contains('migration_snapshot_id')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
     await customStatement('''
       CREATE TABLE IF NOT EXISTS device_metadata (
         id INTEGER NOT NULL PRIMARY KEY,
         device_instance_id TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
+        migration_id TEXT NOT NULL,
+        local_account_id TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (migration_id, local_account_id)
       )
     ''');
     await customStatement('''
@@ -393,7 +437,7 @@ class AppDatabase extends _$AppDatabase {
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
            writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
                lower(hex(randomblob(16)));
         $queue
@@ -414,7 +458,7 @@ class AppDatabase extends _$AppDatabase {
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
            writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, 1, $timestamp,
+        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
                lower(hex(randomblob(16)));
         $queue
@@ -530,7 +574,8 @@ class AppDatabase extends _$AppDatabase {
         user_id TEXT NOT NULL,
         addition_id TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        resolved_at TEXT
+        resolved_at TEXT,
+        entity_version INTEGER NOT NULL DEFAULT 1
       )
     ''');
     await customStatement('''
@@ -563,7 +608,22 @@ class AppDatabase extends _$AppDatabase {
     ''');
   }
 
-  Future<void> _ensurePerformanceIndexes() async {
+  Future<void> _ensureDeletionActionVersionColumn() async {
+    final columns = await customSelect(
+      'PRAGMA table_info(qaza_deletion_actions)',
+    ).get();
+    final exists = columns.any(
+      (row) => row.read<String>('name') == 'entity_version',
+    );
+    if (!exists) {
+      await customStatement(
+        'ALTER TABLE qaza_deletion_actions '
+        'ADD COLUMN entity_version INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+  }
+
+    Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
       'ON qaza_records (user_id, original_date)',

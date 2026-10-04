@@ -48,6 +48,7 @@ class FirebaseReconciliationService {
 
       final generation = (root['cloudGeneration'] as num?)?.toInt() ?? 1;
       final state = root['datasetState'] as String? ?? 'empty';
+      final bootstrapComplete = root['bootstrapComplete'] as bool? ?? false;
       if (state == 'deleting' || state == 'deleted') {
         await _accountStore.setRestoreState('skipped');
         return ReconciliationResult(
@@ -56,10 +57,14 @@ class FirebaseReconciliationService {
           skipped: true,
         );
       }
-
-      final current = await _accountStore.getAccount(localAccountId);
-      if (current != null && generation != current.cloudGeneration) {
-        await _accountStore.setCloudGeneration(localAccountId, generation);
+      if (state != 'ready' || !bootstrapComplete) {
+        await _accountStore.setRestoreState('skipped');
+        return ReconciliationResult(
+          cloudAvailable: true,
+          generation: generation,
+          skipped: true,
+          partial: true,
+        );
       }
 
       final cloudRecords =
@@ -74,34 +79,70 @@ class FirebaseReconciliationService {
           await _readCollection(uid, 'deletionActions', pageSize: 400);
       final cloudRevisions =
           await _readCollection(uid, 'qazaPlanRevisions', pageSize: 400);
+      final cloudSnapshots =
+          await _readDeletionSnapshots(uid, cloudActions, pageSize: 400);
 
-      await _mergeQazaRecords(
-        localAccountId: localAccountId,
-        cloudRecords: cloudRecords,
-        cloudTombstones: cloudTombstones,
+      _validateCloudDocuments(
+        generation: generation,
+        documents: <Map<String, dynamic>>[
+          ...cloudRecords,
+          ...cloudTombstones,
+          ...cloudProfileDocs,
+          ...cloudAdditions,
+          ...cloudActions,
+          ...cloudRevisions,
+          ...cloudSnapshots,
+        ],
       );
-      await _mergeProfile(
-        localAccountId: localAccountId,
-        cloudProfileDocs: cloudProfileDocs,
-      );
-      await _mergeAdditions(
-        localAccountId: localAccountId,
-        cloudAdditions: cloudAdditions,
-      );
-      await _mergeDeletionActions(
-        localAccountId: localAccountId,
-        cloudActions: cloudActions,
-      );
-      await _mergePlanRevisions(
-        localAccountId: localAccountId,
-        cloudRevisions: cloudRevisions,
-      );
+      await _assertRestoreContext(localAccountId, uid);
+
+      await _database.transaction(() async {
+        await _assertRestoreContext(localAccountId, uid);
+        final current = await _accountStore.getAccount(localAccountId);
+        if (current != null && generation < current.cloudGeneration) {
+          throw StateError(
+            'Cloud generation is stale: local=' +
+                current.cloudGeneration.toString() +
+                ' remote=' +
+                generation.toString() +
+                '.',
+          );
+        }
+        if (current != null && generation > current.cloudGeneration) {
+          await _accountStore.setCloudGeneration(localAccountId, generation);
+        }
+
+        await _mergeQazaRecords(
+          localAccountId: localAccountId,
+          cloudRecords: cloudRecords,
+          cloudTombstones: cloudTombstones,
+        );
+        await _mergeProfile(
+          localAccountId: localAccountId,
+          cloudProfileDocs: cloudProfileDocs,
+        );
+        await _mergeAdditions(
+          localAccountId: localAccountId,
+          cloudAdditions: cloudAdditions,
+        );
+        await _mergeDeletionActions(
+          localAccountId: localAccountId,
+          cloudActions: cloudActions,
+        );
+        await _mergeDeletionSnapshots(
+          localAccountId: localAccountId,
+          cloudSnapshots: cloudSnapshots,
+        );
+        await _mergePlanRevisions(
+          localAccountId: localAccountId,
+          cloudRevisions: cloudRevisions,
+        );
+      });
 
       await _accountStore.setRestoreState('complete');
       return ReconciliationResult(
         cloudAvailable: true,
         generation: generation,
-        partial: state == 'initializing',
       );
     } catch (error) {
       await _accountStore.setRestoreState('failed');
@@ -132,6 +173,71 @@ class FirebaseReconciliationService {
       cursor = page.docs.last;
     }
     return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _readDeletionSnapshots(
+    String uid,
+    List<Map<String, dynamic>> cloudActions, {
+    int pageSize = 400,
+  }) async {
+    final result = <Map<String, dynamic>>[];
+    final root = _firebase.firestore.collection('users').doc(uid);
+    for (final actionRaw in cloudActions) {
+      final actionPayload = _payload(actionRaw);
+      final actionId =
+          actionPayload['id'] as String? ?? actionRaw['__id'] as String?;
+      if (actionId == null || actionId.isEmpty) continue;
+      final ref = root.collection('deletionActions').doc(actionId)
+          .collection('snapshots');
+      DocumentSnapshot<Map<String, dynamic>>? cursor;
+      while (true) {
+        Query<Map<String, dynamic>> query = ref.limit(pageSize);
+        if (cursor != null) query = query.startAfterDocument(cursor);
+        final page = await query.get();
+        if (page.docs.isEmpty) break;
+        for (final doc in page.docs) {
+          final data = doc.data();
+          data['__id'] = doc.id;
+          data['__deletionActionId'] = actionId;
+          result.add(data);
+        }
+        if (page.docs.length < pageSize) break;
+        cursor = page.docs.last;
+      }
+    }
+    return result;
+  }
+
+  void _validateCloudDocuments({
+    required int generation,
+    required List<Map<String, dynamic>> documents,
+  }) {
+    for (final raw in documents) {
+      final rawGeneration = (raw['cloudGeneration'] as num?)?.toInt();
+      if (rawGeneration == null || rawGeneration != generation) {
+        throw StateError('Cloud entity generation mismatch.');
+      }
+      final entityVersion = (raw['entityVersion'] as num?)?.toInt();
+      if (entityVersion == null || entityVersion < 1) {
+        throw StateError('Cloud entity has invalid entityVersion.');
+      }
+      if (_date(raw['updatedAt']) == null) {
+        throw StateError('Cloud entity has invalid updatedAt.');
+      }
+      if (raw['writerDeviceId'] is! String ||
+          raw['operationId'] is! String ||
+          raw['payload'] is! Map) {
+        throw StateError('Cloud entity metadata/payload is invalid.');
+      }
+    }
+  }
+
+  Future<void> _assertRestoreContext(String localAccountId, String uid) async {
+    final active = await _accountStore.activeAccount();
+    if (active?.localAccountId != localAccountId ||
+        active?.firebaseUid != uid) {
+      throw StateError('Restore result belongs to an inactive account.');
+    }
   }
 
   Future<void> _mergeQazaRecords({
@@ -239,11 +345,36 @@ class FirebaseReconciliationService {
       }
     }
 
-    await _database.transaction(() async {
-      await _database.qazaRecordsDao.replaceUserRecords(
-        userId: localAccountId,
-        records: byId.values.map(_recordCompanion).toList(growable: false),
-      );
+    final canonicalIds = byId.keys.toSet();
+
+      // Reconciliation must not clear and reinsert the whole account. Doing
+      // so fires local delete triggers for otherwise retained records and can
+      // create false tombstones/outbox work. Delete only records that are
+      // genuinely absent from the canonical merge.
+      for (final record in local) {
+        if (canonicalIds.contains(record.id)) continue;
+        await _database.qazaRecordsDao.deleteById(
+          userId: localAccountId,
+          id: record.id,
+        );
+        await _database.customUpdate(
+          'DELETE FROM qaza_profile_plan_provenance '
+          'WHERE user_id = ? AND record_id = ?',
+          variables: [
+            Variable(localAccountId),
+            Variable(record.id),
+          ],
+        );
+      }
+
+      // Upsert only the canonical records. Existing retained IDs are updated
+      // in place; cloud-only records are inserted with the current account ID.
+      if (byId.isNotEmpty) {
+        await _database.qazaRecordsDao.upsertRecords(
+          byId.values.map(_recordCompanion).toList(growable: false),
+        );
+      }
+
       for (final record in byId.values) {
         final provenance =
             record.profilePlanRevisionId == null ||
@@ -253,20 +384,30 @@ class FirebaseReconciliationService {
                     'revision': record.profilePlanRevisionId!,
                     'fingerprint': record.profilePlanFingerprint!,
                   };
-        if (provenance == null) continue;
-        await _database.customInsert(
-          '''INSERT OR REPLACE INTO qaza_profile_plan_provenance
-             (record_id, user_id, plan_revision_id, plan_fingerprint)
-             VALUES (?, ?, ?, ?)''',
-          variables: [
-            Variable(record.id),
-            Variable(localAccountId),
-            Variable(provenance['revision']),
-            Variable(provenance['fingerprint']),
-          ],
-        );
+        if (provenance == null) {
+          await _database.customUpdate(
+            'DELETE FROM qaza_profile_plan_provenance '
+            'WHERE user_id = ? AND record_id = ?',
+            variables: [
+              Variable(localAccountId),
+              Variable(record.id),
+            ],
+          );
+        } else {
+          await _database.customInsert(
+            '''INSERT OR REPLACE INTO qaza_profile_plan_provenance
+               (record_id, user_id, plan_revision_id, plan_fingerprint)
+               VALUES (?, ?, ?, ?)''',
+            variables: [
+              Variable(record.id),
+              Variable(localAccountId),
+              Variable(provenance['revision']),
+              Variable(provenance['fingerprint']),
+            ],
+          );
+        }
       }
-    });
+
   }
 
   Future<void> _mergeProfile({
@@ -332,17 +473,17 @@ class FirebaseReconciliationService {
       final id = payload['id'] as String? ?? raw['__id'] as String?;
       if (id == null || id.isEmpty) continue;
       final revision = (payload['revision'] as num?)?.toInt() ?? 1;
-      final updatedAt = _date(payload['updatedAt']) ??
-          _date(raw['updatedAt']) ??
-          DateTime.now();
+      final updatedAt = _date(payload['updatedAt']) ?? _date(raw['updatedAt']) ?? DateTime.now();
       final existing = await _database.customSelect(
         '''SELECT revision, updated_at FROM qaza_additions
            WHERE user_id = ? AND id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(id)],
       ).get();
+      final remoteStamp = _cloudStamp(raw, id, revision);
+
       if (existing.isEmpty) {
         await _database.customInsert(
-          '''INSERT OR IGNORE INTO qaza_additions
+          '''INSERT INTO qaza_additions
              (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)''',
           variables: [
@@ -355,33 +496,46 @@ class FirebaseReconciliationService {
             Variable(updatedAt.toIso8601String()),
           ],
         );
-        continue;
-      }
-      final localRevision = existing.first.read<int>('revision');
-      final localUpdated = DateTime.parse(existing.first.read<String>('updated_at'));
-      final localStamp = VersionedEntity(
-        entityVersion: localRevision,
-        updatedAt: localUpdated,
-        writerDeviceId: '',
-        operationId: '',
-        entityId: id,
-      );
-      final remoteStamp = _cloudStamp(raw, id, revision);
-      if (_resolver.compare(remoteStamp, localStamp) > 0) {
-        await _database.customUpdate(
-          '''UPDATE qaza_additions
-             SET mode = ?, input_snapshot = ?, revision = ?, updated_at = ?
-             WHERE user_id = ? AND id = ?''',
-          variables: [
-            Variable(payload['mode'] as String? ?? 'single'),
-            Variable(jsonEncode(payload['currentInputSnapshot'])),
-            Variable(revision),
-            Variable(updatedAt.toIso8601String()),
-            Variable(localAccountId),
-            Variable(id),
-          ],
+      } else {
+        final row = existing.first;
+        final localStamp = await _localStamp(
+          localAccountId,
+          'qazaAddition',
+          id,
+          fallbackVersion: row.read<int>('revision'),
+          fallbackUpdatedAt: DateTime.parse(row.read<String>('updated_at')),
         );
+        if (_resolver.compare(remoteStamp, localStamp) > 0) {
+          await _database.customUpdate(
+            '''UPDATE qaza_additions
+               SET mode = ?, input_snapshot = ?, revision = ?, updated_at = ?
+               WHERE user_id = ? AND id = ?''',
+            variables: [
+              Variable(payload['mode'] as String? ?? 'single'),
+              Variable(jsonEncode(payload['currentInputSnapshot'])),
+              Variable(revision),
+              Variable(updatedAt.toIso8601String()),
+              Variable(localAccountId),
+              Variable(id),
+            ],
+          );
+        }
       }
+
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'qazaAddition', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(id),
+          Variable(remoteStamp.entityVersion),
+          Variable(remoteStamp.updatedAt.microsecondsSinceEpoch),
+          Variable(remoteStamp.writerDeviceId),
+          Variable(remoteStamp.operationId),
+        ],
+      );
     }
   }
 
@@ -395,24 +549,167 @@ class FirebaseReconciliationService {
       if (id == null || id.isEmpty) continue;
       final created = _date(payload['createdAt']) ?? DateTime.now();
       final resolved = _date(payload['resolvedAt']);
+      final remoteUpdatedAt = _date(raw['updatedAt']) ?? (resolved ?? created);
+      final remoteStamp = _cloudStamp(raw, id, 1);
       final existing = await _database.customSelect(
-        'SELECT id FROM qaza_deletion_actions WHERE user_id = ? AND id = ? LIMIT 1',
+        '''SELECT id, addition_id, created_at, resolved_at, entity_version
+           FROM qaza_deletion_actions
+           WHERE user_id = ? AND id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(id)],
       ).get();
+
       if (existing.isEmpty) {
         await _database.customInsert(
-          '''INSERT OR IGNORE INTO qaza_deletion_actions
-             (id, user_id, addition_id, created_at, resolved_at)
-             VALUES (?, ?, ?, ?, ?)''',
+          '''INSERT INTO qaza_deletion_actions
+             (id, user_id, addition_id, created_at, resolved_at, entity_version)
+             VALUES (?, ?, ?, ?, ?, ?)''',
           variables: [
             Variable(id),
             Variable(localAccountId),
             Variable(payload['additionId'] as String? ?? ''),
             Variable(created.toIso8601String()),
             Variable(resolved?.toIso8601String()),
+            Variable(remoteStamp.entityVersion),
           ],
         );
+      } else {
+        final row = existing.first;
+        final localStamp = await _localStamp(
+          localAccountId,
+          'deletionAction',
+          id,
+          fallbackVersion: row.read<int>('entity_version'),
+          fallbackUpdatedAt: _date(row.read<String?>('resolved_at')) ?? DateTime.parse(row.read<String>('created_at')),
+        );
+        if (_resolver.compare(remoteStamp, localStamp) > 0) {
+          await _database.customUpdate(
+            '''UPDATE qaza_deletion_actions
+               SET addition_id = ?, created_at = ?, resolved_at = ?, entity_version = ?
+               WHERE user_id = ? AND id = ?''',
+            variables: [
+              Variable(payload['additionId'] as String? ?? ''),
+              Variable(created.toIso8601String()),
+              Variable(resolved?.toIso8601String()),
+              Variable(remoteStamp.entityVersion),
+              Variable(localAccountId),
+              Variable(id),
+            ],
+          );
+        }
       }
+
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'deletionAction', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(id),
+          Variable(remoteStamp.entityVersion),
+          Variable(remoteUpdatedAt.microsecondsSinceEpoch),
+          Variable(remoteStamp.writerDeviceId),
+          Variable(remoteStamp.operationId),
+        ],
+      );
+    }
+  }
+
+  Future<void> _mergeDeletionSnapshots({
+    required String localAccountId,
+    required List<Map<String, dynamic>> cloudSnapshots,
+  }) async {
+    for (final raw in cloudSnapshots) {
+      final payload = _payload(raw);
+      final actionId =
+          payload['deletionActionId'] as String? ?? raw['__deletionActionId'] as String?;
+      final recordId =
+          payload['recordId'] as String? ?? raw['__id'] as String?;
+      if (actionId == null || recordId == null || actionId.isEmpty || recordId.isEmpty) {
+        continue;
+      }
+
+      final additionId = payload['additionId'] as String? ?? '';
+      final prayerType = payload['prayerType'] as String? ?? '';
+      final originalDate = _date(payload['originalDate']);
+      final status = payload['status'] as String? ?? 'pending';
+      final completedAt = _date(payload['completedAt']);
+      final createdAt = _date(payload['createdAt']) ?? DateTime.now();
+      final updatedAt = _date(payload['updatedAt']) ?? createdAt;
+      final completionId = payload['completionId'] as String?;
+      final recordVersion =
+          (payload['recordVersion'] as num?)?.toInt() ??
+          (raw['entityVersion'] as num?)?.toInt() ??
+          1;
+      if (originalDate == null || prayerType.isEmpty) {
+        throw StateError('Invalid deletion snapshot payload.');
+      }
+
+      final existing = await _database.customSelect(
+        '''SELECT addition_id, prayer_type, original_date, status, completed_at,
+                  completion_id, created_at, updated_at, record_version
+           FROM qaza_deletion_action_record_snapshots
+           WHERE deletion_action_id = ? AND record_id = ? AND user_id = ?
+           LIMIT 1''',
+        variables: [
+          Variable(actionId),
+          Variable(recordId),
+          Variable(localAccountId),
+        ],
+      ).get();
+
+      if (existing.isEmpty) {
+        await _database.customInsert(
+          '''INSERT INTO qaza_deletion_action_record_snapshots
+             (deletion_action_id, record_id, user_id, addition_id,
+              prayer_type, original_date, status, completed_at,
+              completion_id, created_at, updated_at, record_version)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          variables: [
+            Variable(actionId),
+            Variable(recordId),
+            Variable(localAccountId),
+            Variable(additionId),
+            Variable(prayerType),
+            Variable(originalDate.toIso8601String()),
+            Variable(status),
+            Variable(completedAt?.toIso8601String()),
+            Variable(completionId),
+            Variable(createdAt.toIso8601String()),
+            Variable(updatedAt.toIso8601String()),
+            Variable(recordVersion),
+          ],
+        );
+      } else {
+        final row = existing.first;
+        final same = row.read<String>('addition_id') == additionId &&
+            row.read<String>('prayer_type') == prayerType &&
+            row.read<String>('original_date') == originalDate.toIso8601String() &&
+            row.read<String>('status') == status &&
+            row.read<String?>('completed_at') == completedAt?.toIso8601String() &&
+            row.read<String?>('completion_id') == completionId &&
+            row.read<String>('created_at') == createdAt.toIso8601String() &&
+            row.read<String>('updated_at') == updatedAt.toIso8601String() &&
+            row.read<int>('record_version') == recordVersion;
+        if (!same) {
+          throw StateError('Deletion snapshot conflict: $actionId/$recordId');
+        }
+      }
+
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'deletionSnapshot', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable('$actionId/$recordId'),
+          Variable((raw['entityVersion'] as num?)?.toInt() ?? recordVersion),
+          Variable((_date(raw['updatedAt']) ?? updatedAt).microsecondsSinceEpoch),
+          Variable(raw['writerDeviceId'] as String),
+          Variable(raw['operationId'] as String),
+        ],
+      );
     }
   }
 
@@ -422,17 +719,16 @@ class FirebaseReconciliationService {
   }) async {
     for (final raw in cloudRevisions) {
       final payload = _payload(raw);
-      final revisionId =
-          payload['revisionId'] as String? ?? raw['__id'] as String?;
+      final revisionId = payload['revisionId'] as String? ?? raw['__id'] as String?;
       if (revisionId == null || revisionId.isEmpty) continue;
       final encoded = jsonEncode(payload);
+      final createdAt = _date(payload['createdAt']) ?? DateTime.now();
       final existing = await _database.customSelect(
         '''SELECT payload_json FROM account_plan_revisions
            WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(revisionId)],
       ).get();
       if (existing.isEmpty) {
-        final createdAt = _date(payload['createdAt']) ?? DateTime.now();
         await _database.customInsert(
           '''INSERT INTO account_plan_revisions
              (local_account_id, revision_id, payload_json, created_at)
@@ -447,6 +743,22 @@ class FirebaseReconciliationService {
       } else if (existing.first.read<String>('payload_json') != encoded) {
         throw StateError('Immutable QazaPlanRevision conflict: $revisionId');
       }
+
+      final stamp = _cloudStamp(raw, revisionId, 1);
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'qazaPlanRevision', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(revisionId),
+          Variable(stamp.entityVersion),
+          Variable(stamp.updatedAt.microsecondsSinceEpoch),
+          Variable(stamp.writerDeviceId),
+          Variable(stamp.operationId),
+        ],
+      );
     }
   }
 
