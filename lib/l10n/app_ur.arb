@@ -132,6 +132,14 @@
   "homeAutoSequence": "خودکار ترتیب",
   "homeQazaTarget": "قضا کا ہدف",
   "homePrayerSelection": "نماز کا انتخاب",
+  "homePrayerSelectionNoPending": "{prayer} کی کوئی قضا باقی نہیں۔ کوئی دوسری نماز منتخب کریں۔",
+  "@homePrayerSelectionNoPending": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
   "homePrayerTimeUnavailable": "نماز کے اوقات سیٹ ہونے تک وقتِ نماز کے مطابق انتخاب دستیاب نہیں۔",
   "homeQazaTargetReachedTitle": "الحمدللہ!",
   "homeQazaTargetReachedMessage": "آپ نے آج کا اپنا قضا منصوبہ مکمل کر لیا ہے۔\nاللہ تعالیٰ آپ کی کوششیں قبول فرمائے۔",
