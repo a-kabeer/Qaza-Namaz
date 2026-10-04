@@ -124,11 +124,20 @@ uid_b, token_b = signup("b@example.com")
 
 # Owner can create/read their root and child data.
 root = doc_url("users/" + uid_a)
+# Root creation must begin in a non-authoritative state, then transition
+# to ready under the lifecycle rules.
 request_json(
     root,
     method="PATCH",
     token=token_a,
-    body={"fields": root_fields()},
+    body={"fields": root_fields(state="initializing")},
+    expected={200},
+)
+request_json(
+    root,
+    method="PATCH",
+    token=token_a,
+    body={"fields": root_fields(state="ready")},
     expected={200},
 )
 record = doc_url("users/" + uid_a + "/qazaRecords/record-1")
