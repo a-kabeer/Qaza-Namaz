@@ -830,7 +830,7 @@ class DriftQazaLocalStore extends QazaLocalStore
       final chunk = eligible.sublist(start, end);
       final values = chunk
           .map(
-            (record) => '('${_sqlStringLiteral(record.id)}, '
+            (record) => '(${_sqlStringLiteral(record.id)}, '
                 '${_sqlStringLiteral(record.userId)}, '
                 '${_sqlStringLiteral(record.profilePlanRevisionId!)}, '
                 '${_sqlStringLiteral(record.profilePlanFingerprint!)})',
