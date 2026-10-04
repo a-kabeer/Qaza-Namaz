@@ -63,6 +63,43 @@ void main() {
     );
   });
 
+  test(
+    'existing Google migration snapshot restores target partition after failure',
+    () async {
+      await store.ensureGuestActive();
+      final googleId = await store.createGooglePartition(
+        firebaseUid: 'firebase-snapshot-user',
+        email: 'snapshot@example.com',
+      );
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: 'google-before-migration',
+          userId: googleId,
+          prayerType: PrayerType.fajr.name,
+          originalDate: DateTime(2026, 2, 2),
+          status: 'pending',
+          createdAt: DateTime(2026, 2, 2),
+          updatedAt: DateTime(2026, 2, 2),
+        ),
+      );
+
+      await store.createMigrationSnapshot(googleId);
+      await database.qazaRecordsDao.deleteById(
+        userId: googleId,
+        id: 'google-before-migration',
+      );
+
+      await store.rollbackGoogleMigration(UserProfile.localLedgerUserId);
+
+      final restored = await database.qazaRecordsDao.getAll(userId: googleId);
+      expect(restored.single.id, 'google-before-migration');
+      final snapshotId = await store.migrationSnapshotId();
+      expect(snapshotId, isNull);
+      final active = await store.activeAccount();
+      expect(active?.isGuest, isTrue);
+    },
+  );
+
   test('failed in-place migration rolls the account back to Guest', () async {
     await database.qazaRecordsDao.insertRecord(
       QazaRecordsCompanion.insert(
