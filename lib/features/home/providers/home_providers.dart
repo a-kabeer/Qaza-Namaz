@@ -408,6 +408,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   void afterSuccessfulCompletion(
     PrayerType completedPrayer, {
     bool witrEnabled = true,
+    bool targetWasAutoSequence = false,
   }) {
     _undoSnapshot ??= state;
     _undoSnapshotRevision ??= _targetRevision;
@@ -420,6 +421,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     state = state.afterSuccessfulCompletion(
       completedPrayer,
       witrEnabled: witrEnabled,
+      targetWasAutoSequence: targetWasAutoSequence,
     );
     _persistSequence(state.autoSequencePrayer);
   }
