@@ -51,7 +51,6 @@ class RestrictedTimeState {
 
   bool get isActive => active != null;
 
-
   /// Returns the remaining time for the active restriction, or until
   /// the next restriction starts when the state is inactive.
   Duration? remainingAt(tz.TZDateTime now) {
@@ -68,7 +67,7 @@ class RestrictedTimeCalculator {
   const RestrictedTimeCalculator();
 
   // Centralized practical Hanafi policy for Qaza completion gating.
-  static const sunriseAfter = Duration(minutes: 20);
+  static const sunriseAfter = Duration(minutes: 15);
   static const zawalBefore = Duration(minutes: 5);
   static const zawalAfter = Duration(minutes: 5);
   static const sunsetBefore = Duration(minutes: 15);
@@ -137,8 +136,7 @@ class RestrictedTimeCalculator {
     if (!now.isBefore(fajr) && now.isBefore(sunrise.endsAt)) {
       return [sunrise];
     }
-    final zuhr = schedule.localFor(PrayerSlot.dhuhr, location);
-    final zawalVisibleUntil = zuhr.add(zawalAfter);
+    final zawalVisibleUntil = zawal.endsAt;
 
     if (!now.isBefore(sunrise.endsAt) && now.isBefore(zawalVisibleUntil)) {
       return [zawal];

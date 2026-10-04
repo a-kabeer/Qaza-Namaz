@@ -137,6 +137,122 @@ void main() {
       expect(state.active?.type, RestrictedTimeType.sunset);
     });
 
+    test('derives every restricted range from the astronomical boundaries with exact durations', () {
+      const calculator = RestrictedTimeCalculator();
+      final windows = calculator.forSchedule(schedule, location);
+
+      final sunriseWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunrise,
+      );
+      final zawalWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.zawal,
+      );
+      final sunsetWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunset,
+      );
+
+      expect(sunriseWindow.startsAt, tz.TZDateTime.from(sunrise, location));
+      expect(
+        sunriseWindow.endsAt.difference(sunriseWindow.startsAt),
+        const Duration(minutes: 15),
+      );
+      expect(
+        zawalWindow.startsAt,
+        tz.TZDateTime.from(
+          solarNoon.subtract(const Duration(minutes: 5)),
+          location,
+        ),
+      );
+      expect(
+        zawalWindow.endsAt,
+        tz.TZDateTime.from(
+          solarNoon.add(const Duration(minutes: 5)),
+          location,
+        ),
+      );
+      expect(
+        zawalWindow.endsAt.difference(zawalWindow.startsAt),
+        const Duration(minutes: 10),
+      );
+      expect(
+        sunsetWindow.startsAt,
+        tz.TZDateTime.from(
+          sunset.subtract(const Duration(minutes: 15)),
+          location,
+        ),
+      );
+      expect(sunsetWindow.endsAt, tz.TZDateTime.from(sunset, location));
+      expect(
+        sunsetWindow.endsAt.difference(sunsetWindow.startsAt),
+        const Duration(minutes: 15),
+      );
+    });
+
+    test('recalculates range clock times when the underlying date changes', () {
+      final laterDay = day.add(const Duration(days: 30));
+      final laterSunrise = sunrise.add(const Duration(minutes: 7));
+      final laterSolarNoon = solarNoon.add(const Duration(minutes: 11));
+      final laterSunset = sunset.add(const Duration(minutes: 9));
+      final laterSchedule = PrayerSchedule(
+        date: laterDay,
+        timesUtc: schedule.timesUtc,
+        astronomicalSunriseUtc: laterSunrise,
+        astronomicalDhuhrUtc: laterSolarNoon,
+        astronomicalSunsetUtc: laterSunset,
+      );
+
+      final windows = const RestrictedTimeCalculator().forSchedule(
+        laterSchedule,
+        location,
+      );
+
+      final sunriseWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunrise,
+      );
+      final zawalWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.zawal,
+      );
+      final sunsetWindow = windows.firstWhere(
+        (window) => window.type == RestrictedTimeType.sunset,
+      );
+
+      expect(
+        sunriseWindow.startsAt,
+        tz.TZDateTime.from(laterSunrise, location),
+      );
+      expect(
+        sunriseWindow.endsAt.difference(sunriseWindow.startsAt),
+        const Duration(minutes: 15),
+      );
+      expect(
+        zawalWindow.startsAt,
+        tz.TZDateTime.from(
+          laterSolarNoon.subtract(const Duration(minutes: 5)),
+          location,
+        ),
+      );
+      expect(
+        zawalWindow.endsAt.difference(zawalWindow.startsAt),
+        const Duration(minutes: 10),
+      );
+      expect(
+        sunsetWindow.startsAt,
+        tz.TZDateTime.from(
+          laterSunset.subtract(const Duration(minutes: 15)),
+          location,
+        ),
+      );
+      expect(
+        sunsetWindow.endsAt,
+        tz.TZDateTime.from(laterSunset, location),
+      );
+      expect(
+        sunriseWindow.startsAt.isBefore(zawalWindow.startsAt) &&
+            zawalWindow.startsAt.isBefore(sunsetWindow.startsAt),
+        isTrue,
+      );
+    });
+
     test('uses event-specific display instants for the timeline', () {
       const calculator = RestrictedTimeCalculator();
 
@@ -284,6 +400,24 @@ void main() {
       expect(state.next, isNotNull);
     });
 
+    test('keeps countdown bound to the active window end', () {
+      final now = tz.TZDateTime.from(
+        DateTime.utc(2026, 9, 27, 1, 30),
+        location,
+      );
+      final state = const RestrictedTimeCalculator().stateFor(
+        snapshot: snapshot,
+        now: now,
+      );
+
+      expect(state.active?.startsAt, tz.TZDateTime.from(sunrise, location));
+      expect(state.active?.endsAt, tz.TZDateTime.from(
+        sunrise.add(const Duration(minutes: 15)),
+        location,
+      ));
+      expect(state.remainingAt(now), const Duration(minutes: 6));
+    });
+
     test('derives remaining time from the active window end', () {
       final now = tz.TZDateTime.from(
         DateTime.utc(2026, 9, 27, 1, 30),
@@ -294,7 +428,7 @@ void main() {
         now: now,
       );
 
-      expect(state.remainingAt(now), const Duration(minutes: 11));
+      expect(state.remainingAt(now), const Duration(minutes: 6));
     });
 
     test('derives remaining time until the next window when inactive', () {
