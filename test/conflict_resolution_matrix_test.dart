@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../lib/domain/services/conflict_resolver.dart';
+import '../lib/domain/services/conflict_resolver.dart';
 
 void main() {
   const resolver = ConflictResolver();
