@@ -428,6 +428,13 @@ class AccountSessionManager extends ChangeNotifier {
     await _refresh();
   }
 
+  Future<void> pauseBackup() async {
+    final account = activeAccount;
+    if (account == null || !account.isGoogle) return;
+    await _accountStore.setBackupEnabled(account.localAccountId, false);
+    await _refresh();
+  }
+
   Future<void> disconnect() async {
     final account = activeAccount;
     if (account == null || !account.isGoogle) return;
