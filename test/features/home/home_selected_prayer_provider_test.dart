@@ -11,6 +11,15 @@ import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 
+class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
+  _TestHomePrayerSelectionNotifier(this.initial);
+
+  final HomePrayerSelectionState initial;
+
+  @override
+  HomePrayerSelectionState build() => initial;
+}
+
 void main() {
   QazaProgressSummary summaryFor(Map<PrayerType, int> pending) {
     final byPrayer = <PrayerType, PrayerProgress>{
