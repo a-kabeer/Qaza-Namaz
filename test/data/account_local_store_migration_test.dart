@@ -100,6 +100,44 @@ void main() {
     },
   );
 
+  test(
+    'snapshot rollback restores the Google partition even when called with its ID',
+    () async {
+      await store.ensureGuestActive();
+      final googleId = await store.createGooglePartition(
+        firebaseUid: 'firebase-restart-user',
+        email: 'restart@example.com',
+      );
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: 'google-restart-record',
+          userId: googleId,
+          prayerType: PrayerType.fajr.name,
+          originalDate: DateTime(2026, 2, 3),
+          status: 'pending',
+          createdAt: DateTime(2026, 2, 3),
+          updatedAt: DateTime(2026, 2, 3),
+        ),
+      );
+
+      await store.createMigrationSnapshot(googleId);
+      await database.qazaRecordsDao.deleteById(
+        userId: googleId,
+        id: 'google-restart-record',
+      );
+
+      await store.rollbackGoogleMigration(googleId);
+
+      final restored = await database.qazaRecordsDao.getAll(userId: googleId);
+      expect(restored.single.id, 'google-restart-record');
+      final restoredAccount = await store.getAccount(googleId);
+      expect(restoredAccount?.isGoogle, isTrue);
+      final active = await store.activeAccount();
+      expect(active?.isGuest, isTrue);
+      expect(await store.migrationSnapshotId(), isNull);
+    },
+  );
+
   test('failed in-place migration rolls the account back to Guest', () async {
     await database.qazaRecordsDao.insertRecord(
       QazaRecordsCompanion.insert(
