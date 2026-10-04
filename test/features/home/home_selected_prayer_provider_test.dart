@@ -289,18 +289,23 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.sahibAlTartib);
     });
 
-    test('Prayer Selection remains sticky and is not changed by pending fallback', () async {
-      final selected = await resolve(
-        mode: HomePrayerSelectionMode.prayerSelection,
-        currentPrayer: PrayerType.asr,
-        pending: {
-          PrayerType.fajr: 10,
-          PrayerType.isha: 10,
-        },
-        witrEnabled: true,
-      );
+    test(
+      'Prayer Selection remains sticky and is not changed by pending fallback',
+      () async {
+        final selected = await resolve(
+          mode: HomePrayerSelectionMode.prayerSelection,
+          currentPrayer: PrayerType.asr,
+          selectedPrayer: PrayerType.isha,
+          pending: {
+            PrayerType.fajr: 10,
+            PrayerType.isha: 10,
+          },
+          witrEnabled: true,
+        );
 
-      expect(selected.prayer, PrayerType.fajr);
-    });
+        expect(selected.prayer, PrayerType.isha);
+        expect(selected.source, HomePrayerSelectionSource.prayerSelection);
+      },
+    );
   });
 }
