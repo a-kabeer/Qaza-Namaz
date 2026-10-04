@@ -369,6 +369,7 @@ class FirebaseBackupService {
         operationId: row.read<String>('operation_id'),
         entityId: localId,
       ),
+      uid: uid,
       generation: generation,
       immutable: false,
     );
