@@ -576,6 +576,18 @@ final homeSelectedPrayerProvider =
   // all-completed/no-pending behavior take over without a false completion
   // action. Prayer Selection intentionally keeps its existing sticky behavior.
   if (resolvedTarget == null) {
+    // Preserve the existing tartib-loading state for an unresolved Fard
+    // target; pending-aware fallback must never turn an authority problem into
+    // a generic no-target state.
+    if (target != null &&
+        target != PrayerType.witr &&
+        (!tartibAsync.hasValue || tartib == null)) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: null,
+        source: HomePrayerSelectionSource.tartibUnavailable,
+      );
+    }
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
