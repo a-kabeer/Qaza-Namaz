@@ -311,11 +311,20 @@ class AccountSessionManager extends ChangeNotifier {
       return;
     }
 
-    // The normal interrupted Guest -> Google path reuses the Guest partition,
-    // so the target and currently active account are the same local partition.
-    // Do not activate a separate half-migrated partition.
-    if (active?.localAccountId != target.localAccountId) {
+    final guestMigration =
+        active?.isGuest == true &&
+        active?.localAccountId != target.localAccountId;
+    if (!guestMigration && active?.localAccountId != target.localAccountId) {
       throw StateError('Interrupted Google migration has ambiguous ownership.');
+    }
+
+    if (guestMigration) {
+      await _accountStore.setMigrationState('localStateSnapshotSecured');
+      await _accountStore.mergeGuestIntoGooglePartition(
+        guestLocalAccountId: active!.localAccountId,
+        googleLocalAccountId: target.localAccountId,
+      );
+      await _accountStore.setMigrationState('targetPartitionPrepared');
     }
 
     final root = await _backup.readCloudRoot(uid);
@@ -355,7 +364,14 @@ class AccountSessionManager extends ChangeNotifier {
       );
     }
 
-    await _accountStore.activate(target.localAccountId);
+    if (guestMigration && active != null) {
+      await _accountStore.finalizeGuestMigration(
+        guestLocalAccountId: active.localAccountId,
+        googleLocalAccountId: target.localAccountId,
+      );
+    } else {
+      await _accountStore.activate(target.localAccountId);
+    }
     await _accountStore.setMigrationState('completed');
   }
 
