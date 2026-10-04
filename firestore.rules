@@ -41,6 +41,48 @@ service cloud.firestore {
         && currentState(uid) == 'deleting';
     }
 
+    function validRootState(data) {
+      return data.datasetState in [
+          'empty', 'initializing', 'ready', 'deleting', 'deleted'
+        ]
+        && data.bootstrapComplete is bool
+        && (
+          (data.datasetState == 'ready' && data.bootstrapComplete == true)
+          || (data.datasetState == 'deleted' && data.bootstrapComplete == true)
+          || ((data.datasetState == 'empty' || data.datasetState == 'initializing' ||
+               data.datasetState == 'deleting') && data.bootstrapComplete == false)
+        );
+    }
+
+    function validRootTransition() {
+      return validRootState(request.resource.data)
+        && (
+          // Same generation: only legal forward lifecycle transitions.
+          (
+            request.resource.data.cloudGeneration == resource.data.cloudGeneration
+            && (
+              (resource.data.datasetState == 'empty'
+                && request.resource.data.datasetState in ['empty', 'initializing'])
+              || (resource.data.datasetState == 'initializing'
+                && request.resource.data.datasetState in ['initializing', 'ready'])
+              || (resource.data.datasetState == 'ready'
+                && request.resource.data.datasetState in ['ready'])
+              || (resource.data.datasetState == 'deleting'
+                && request.resource.data.datasetState in ['deleting', 'deleted'])
+              || (resource.data.datasetState == 'deleted'
+                && request.resource.data.datasetState == 'deleted')
+            )
+          )
+          // New generations always start in a non-authoritative state.
+          || (
+            request.resource.data.cloudGeneration ==
+              resource.data.cloudGeneration + 1
+            && request.resource.data.datasetState in ['initializing', 'deleting']
+            && request.resource.data.bootstrapComplete == false
+          )
+        );
+    }
+
     function authorizedRecordDelete(uid, recordId) {
       return writableDataset(uid)
         && exists(
@@ -79,29 +121,19 @@ service cloud.firestore {
         && request.resource.data.schemaVersion is int
         && request.resource.data.cloudGeneration is int
         && request.resource.data.cloudGeneration >= 1
-        && request.resource.data.datasetState in [
-          'empty', 'initializing', 'ready', 'deleting', 'deleted'
-        ]
+        && request.resource.data.datasetState in ['empty', 'initializing']
         && request.resource.data.updatedAt is timestamp
-        && request.resource.data.bootstrapComplete is bool;
+        && request.resource.data.bootstrapComplete is bool
+        && (
+          request.resource.data.datasetState == 'initializing'
+          || request.resource.data.bootstrapComplete == false
+        );
 
       allow update: if signedIn(uid)
         && request.resource.data.schemaVersion is int
         && request.resource.data.cloudGeneration is int
-        && request.resource.data.datasetState in [
-          'empty', 'initializing', 'ready', 'deleting', 'deleted'
-        ]
         && request.resource.data.updatedAt is timestamp
-        && request.resource.data.bootstrapComplete is bool
-        && request.resource.data.cloudGeneration >= resource.data.cloudGeneration
-        && (
-          request.resource.data.cloudGeneration == resource.data.cloudGeneration
-          || request.resource.data.cloudGeneration == resource.data.cloudGeneration + 1
-        )
-        && (
-          request.resource.data.cloudGeneration == resource.data.cloudGeneration
-          || request.resource.data.datasetState in ['initializing', 'deleting']
-        );
+        && validRootTransition();
 
       allow delete: if false;
 
