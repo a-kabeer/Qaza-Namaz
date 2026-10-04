@@ -136,7 +136,6 @@ class RestrictedTimeCalculator {
     if (!now.isBefore(fajr) && now.isBefore(sunrise.endsAt)) {
       return [sunrise];
     }
-    final zuhr = schedule.localFor(PrayerSlot.dhuhr, location);
     final zawalVisibleUntil = zawal.endsAt;
 
     if (!now.isBefore(sunrise.endsAt) && now.isBefore(zawalVisibleUntil)) {
