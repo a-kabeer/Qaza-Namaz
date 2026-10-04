@@ -240,11 +240,44 @@ class FirebaseReconciliationService {
     }
 
     await _database.transaction(() async {
-      await _database.qazaRecordsDao.replaceUserRecords(
-        userId: localAccountId,
-        records: byId.values.map(_recordCompanion).toList(growable: false),
-      );
+      final canonicalIds = byId.keys.toSet();
+
+      // Reconciliation must not clear and reinsert the whole account. Doing
+      // so fires local delete triggers for otherwise retained records and can
+      // create false tombstones/outbox work. Delete only records that are
+      // genuinely absent from the canonical merge.
+      for (final record in local) {
+        if (canonicalIds.contains(record.id)) continue;
+        await _database.qazaRecordsDao.deleteById(
+          userId: localAccountId,
+          id: record.id,
+        );
+        await _database.customUpdate(
+          'DELETE FROM qaza_profile_plan_provenance '
+          'WHERE user_id = ? AND record_id = ?',
+          variables: [
+            Variable(localAccountId),
+            Variable(record.id),
+          ],
+        );
+      }
+
+      // Upsert only the canonical records. Existing retained IDs are updated
+      // in place; cloud-only records are inserted with the current account ID.
       for (final record in byId.values) {
+        final existing = byId.containsKey(record.id)
+            ? local.where((item) => item.id == record.id).toList(growable: false)
+            : const <QazaRecord>[];
+        if (existing.isEmpty) {
+          await _database.qazaRecordsDao.insertRecord(
+            _recordCompanion(record),
+          );
+        } else {
+          await _database.qazaRecordsDao.updateRecord(
+            _recordCompanion(record),
+          );
+        }
+
         final provenance =
             record.profilePlanRevisionId == null ||
                     record.profilePlanFingerprint == null
@@ -253,18 +286,28 @@ class FirebaseReconciliationService {
                     'revision': record.profilePlanRevisionId!,
                     'fingerprint': record.profilePlanFingerprint!,
                   };
-        if (provenance == null) continue;
-        await _database.customInsert(
-          '''INSERT OR REPLACE INTO qaza_profile_plan_provenance
-             (record_id, user_id, plan_revision_id, plan_fingerprint)
-             VALUES (?, ?, ?, ?)''',
-          variables: [
-            Variable(record.id),
-            Variable(localAccountId),
-            Variable(provenance['revision']),
-            Variable(provenance['fingerprint']),
-          ],
-        );
+        if (provenance == null) {
+          await _database.customUpdate(
+            'DELETE FROM qaza_profile_plan_provenance '
+            'WHERE user_id = ? AND record_id = ?',
+            variables: [
+              Variable(localAccountId),
+              Variable(record.id),
+            ],
+          );
+        } else {
+          await _database.customInsert(
+            '''INSERT OR REPLACE INTO qaza_profile_plan_provenance
+               (record_id, user_id, plan_revision_id, plan_fingerprint)
+               VALUES (?, ?, ?, ?)''',
+            variables: [
+              Variable(record.id),
+              Variable(localAccountId),
+              Variable(provenance['revision']),
+              Variable(provenance['fingerprint']),
+            ],
+          );
+        }
       }
     });
   }
