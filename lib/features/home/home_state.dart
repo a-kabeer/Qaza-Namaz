@@ -35,6 +35,9 @@ enum HomePrayerSelectionSource {
   /// why the UI tells these two apart.
   tartibUnavailable,
 
+  /// The sticky Prayer Selection target is known to have no pending Qaza.
+  prayerSelectionUnavailable,
+
   unavailable,
 }
 
