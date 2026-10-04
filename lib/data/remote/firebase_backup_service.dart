@@ -16,14 +16,12 @@ class _VersionedWrite {
     required this.payload,
     required this.version,
     required this.immutable,
-    required this.generation,
   });
 
   final DocumentReference<Map<String, dynamic>> ref;
   final Map<String, dynamic> payload;
   final VersionedEntity version;
   final bool immutable;
-  final int generation;
 }
 
 class FirebaseBackupService {
@@ -508,8 +506,7 @@ class FirebaseBackupService {
                   entityId: record.id,
                 ),
             immutable: false,
-            generation: generation,
-          ),
+            ),
       ];
       await _writeVersionedBatch(
         uid: uid,
@@ -587,7 +584,6 @@ class FirebaseBackupService {
                   entityId: row.read<String>('id'),
                 ),
           immutable: false,
-          generation: generation,
         ),
     ];
 
@@ -639,7 +635,6 @@ class FirebaseBackupService {
                 operationId: 'addition_${id}_${revision}',
                 entityId: id,
               ),
-          generation: generation,
           immutable: false,
         ),
       );
@@ -695,7 +690,6 @@ class FirebaseBackupService {
                 operationId: 'deletion_${actionId}',
                 entityId: actionId,
               ),
-          generation: generation,
           immutable: false,
         ),
       );
@@ -738,8 +732,7 @@ class FirebaseBackupService {
               operationId: 'snapshot_${actionId}_${id}',
               entityId: id,
             ),
-            generation: generation,
-            immutable: true,
+              immutable: true,
           ),
         );
       }
@@ -773,7 +766,6 @@ class FirebaseBackupService {
             operationId: 'plan_${revision.revisionId}',
             entityId: revision.revisionId,
           ),
-          generation: generation,
           immutable: true,
         ),
     ];
@@ -835,7 +827,6 @@ class FirebaseBackupService {
             entityId: row.read<String>('record_id'),
           ),
           immutable: false,
-          generation: generation,
         ),
     ];
 
@@ -943,7 +934,6 @@ class FirebaseBackupService {
         final rootSnapshot = await transaction.get(rootRef);
         _assertCloudRootForWrite(
           snapshot: rootSnapshot,
-          generation: generation,
           context: 'batched backup',
         );
 
