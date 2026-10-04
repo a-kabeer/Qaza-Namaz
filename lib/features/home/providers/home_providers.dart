@@ -67,6 +67,105 @@ final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
   );
 });
 
+class HomeDashboardActivity {
+  const HomeDashboardActivity({
+    required this.dailyProgress,
+    required this.currentWeek,
+    required this.dailyGoals,
+  });
+
+  final HomeDailyProgress dailyProgress;
+  final QazaActivityPeriod currentWeek;
+  final QazaActivityPeriod dailyGoals;
+}
+
+final homeDashboardActivityProvider =
+    FutureProvider.autoDispose<HomeDashboardActivity>((ref) async {
+  final userId = ref.watch(activeUserIdProvider);
+  final today = ref.watch(homeLocalDateProvider);
+  final target = ref.watch(dailyQazaTargetProvider);
+  final service = ref.read(qazaActivityServiceProvider);
+  final enabled = service.enabledPrayerTypes;
+
+  final currentWeek = homeCurrentWeekStartForDate(today);
+  final dailyFrom = DateTime(today.year, today.month, today.day - 6);
+  final queryFrom =
+      dailyFrom.isBefore(currentWeek) ? dailyFrom : currentWeek;
+  final weekEnd = homeCurrentWeekEndExclusiveForDate(today);
+  final tomorrow = DateTime(today.year, today.month, today.day + 1);
+  final queryToExclusive =
+      weekEnd.isAfter(tomorrow) ? weekEnd : tomorrow;
+
+  if (userId == null || enabled.isEmpty) {
+    final emptyWeek = QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: currentWeek,
+      toExclusive: weekEnd,
+      today: today,
+      dailyTarget: target,
+      targetAvailable: true,
+      enabledPrayerTypes: enabled,
+    );
+    final emptyDaily = QazaActivityService.buildPeriodFromRows(
+      rows: const <QazaActivityRow>[],
+      from: dailyFrom,
+      toExclusive: tomorrow,
+      today: today,
+      dailyTarget: target,
+      targetAvailable: true,
+      enabledPrayerTypes: enabled,
+    );
+    return HomeDashboardActivity(
+      dailyProgress: HomeDailyProgress(completed: 0, target: target),
+      currentWeek: emptyWeek,
+      dailyGoals: emptyDaily,
+    );
+  }
+
+  final rows = await service.repository.getCompletedActivityRows(
+    userId: userId,
+    from: queryFrom,
+    toExclusive: queryToExclusive,
+    prayerTypes: enabled,
+  );
+
+  final weekPeriod = QazaActivityService.buildPeriodFromRows(
+    rows: rows,
+    from: currentWeek,
+    toExclusive: weekEnd,
+    today: today,
+    dailyTarget: target,
+    targetAvailable: true,
+    enabledPrayerTypes: enabled,
+  );
+  final dailyPeriod = QazaActivityService.buildPeriodFromRows(
+    rows: rows,
+    from: dailyFrom,
+    toExclusive: tomorrow,
+    today: today,
+    dailyTarget: target,
+    targetAvailable: true,
+    enabledPrayerTypes: enabled,
+  );
+
+  var completedToday = 0;
+  for (final day in dailyPeriod.days) {
+    if (day.date == today) {
+      completedToday = day.completed;
+      break;
+    }
+  }
+
+  return HomeDashboardActivity(
+    dailyProgress: HomeDailyProgress(
+      completed: completedToday,
+      target: target,
+    ),
+    currentWeek: weekPeriod,
+    dailyGoals: dailyPeriod,
+  );
+});
+
 final homeQazaActivityCurrentWeekProvider =
     FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
