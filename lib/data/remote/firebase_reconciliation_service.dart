@@ -464,17 +464,17 @@ class FirebaseReconciliationService {
       final id = payload['id'] as String? ?? raw['__id'] as String?;
       if (id == null || id.isEmpty) continue;
       final revision = (payload['revision'] as num?)?.toInt() ?? 1;
-      final updatedAt = _date(payload['updatedAt']) ??
-          _date(raw['updatedAt']) ??
-          DateTime.now();
+      final updatedAt = _date(payload['updatedAt']) ?? _date(raw['updatedAt']) ?? DateTime.now();
       final existing = await _database.customSelect(
         '''SELECT revision, updated_at FROM qaza_additions
            WHERE user_id = ? AND id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(id)],
       ).get();
+      final remoteStamp = _cloudStamp(raw, id, revision);
+
       if (existing.isEmpty) {
         await _database.customInsert(
-          '''INSERT OR IGNORE INTO qaza_additions
+          '''INSERT INTO qaza_additions
              (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)''',
           variables: [
@@ -487,33 +487,46 @@ class FirebaseReconciliationService {
             Variable(updatedAt.toIso8601String()),
           ],
         );
-        continue;
-      }
-      final localRevision = existing.first.read<int>('revision');
-      final localUpdated = DateTime.parse(existing.first.read<String>('updated_at'));
-      final localStamp = VersionedEntity(
-        entityVersion: localRevision,
-        updatedAt: localUpdated,
-        writerDeviceId: '',
-        operationId: '',
-        entityId: id,
-      );
-      final remoteStamp = _cloudStamp(raw, id, revision);
-      if (_resolver.compare(remoteStamp, localStamp) > 0) {
-        await _database.customUpdate(
-          '''UPDATE qaza_additions
-             SET mode = ?, input_snapshot = ?, revision = ?, updated_at = ?
-             WHERE user_id = ? AND id = ?''',
-          variables: [
-            Variable(payload['mode'] as String? ?? 'single'),
-            Variable(jsonEncode(payload['currentInputSnapshot'])),
-            Variable(revision),
-            Variable(updatedAt.toIso8601String()),
-            Variable(localAccountId),
-            Variable(id),
-          ],
+      } else {
+        final row = existing.first;
+        final localStamp = await _localStamp(
+          localAccountId,
+          'qazaAddition',
+          id,
+          fallbackVersion: row.read<int>('revision'),
+          fallbackUpdatedAt: DateTime.parse(row.read<String>('updated_at')),
         );
+        if (_resolver.compare(remoteStamp, localStamp) > 0) {
+          await _database.customUpdate(
+            '''UPDATE qaza_additions
+               SET mode = ?, input_snapshot = ?, revision = ?, updated_at = ?
+               WHERE user_id = ? AND id = ?''',
+            variables: [
+              Variable(payload['mode'] as String? ?? 'single'),
+              Variable(jsonEncode(payload['currentInputSnapshot'])),
+              Variable(revision),
+              Variable(updatedAt.toIso8601String()),
+              Variable(localAccountId),
+              Variable(id),
+            ],
+          );
+        }
       }
+
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'qazaAddition', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(id),
+          Variable(remoteStamp.entityVersion),
+          Variable(remoteStamp.updatedAt.microsecondsSinceEpoch),
+          Variable(remoteStamp.writerDeviceId),
+          Variable(remoteStamp.operationId),
+        ],
+      );
     }
   }
 
@@ -527,24 +540,69 @@ class FirebaseReconciliationService {
       if (id == null || id.isEmpty) continue;
       final created = _date(payload['createdAt']) ?? DateTime.now();
       final resolved = _date(payload['resolvedAt']);
+      final remoteUpdatedAt = _date(raw['updatedAt']) ?? (resolved ?? created);
+      final remoteStamp = _cloudStamp(raw, id, 1);
       final existing = await _database.customSelect(
-        'SELECT id FROM qaza_deletion_actions WHERE user_id = ? AND id = ? LIMIT 1',
+        '''SELECT id, addition_id, created_at, resolved_at, entity_version
+           FROM qaza_deletion_actions
+           WHERE user_id = ? AND id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(id)],
       ).get();
+
       if (existing.isEmpty) {
         await _database.customInsert(
-          '''INSERT OR IGNORE INTO qaza_deletion_actions
-             (id, user_id, addition_id, created_at, resolved_at)
-             VALUES (?, ?, ?, ?, ?)''',
+          '''INSERT INTO qaza_deletion_actions
+             (id, user_id, addition_id, created_at, resolved_at, entity_version)
+             VALUES (?, ?, ?, ?, ?, ?)''',
           variables: [
             Variable(id),
             Variable(localAccountId),
             Variable(payload['additionId'] as String? ?? ''),
             Variable(created.toIso8601String()),
             Variable(resolved?.toIso8601String()),
+            Variable(remoteStamp.entityVersion),
           ],
         );
+      } else {
+        final row = existing.first;
+        final localStamp = await _localStamp(
+          localAccountId,
+          'deletionAction',
+          id,
+          fallbackVersion: row.read<int>('entity_version'),
+          fallbackUpdatedAt: _date(row.read<String?>('resolved_at')) ?? DateTime.parse(row.read<String>('created_at')),
+        );
+        if (_resolver.compare(remoteStamp, localStamp) > 0) {
+          await _database.customUpdate(
+            '''UPDATE qaza_deletion_actions
+               SET addition_id = ?, created_at = ?, resolved_at = ?, entity_version = ?
+               WHERE user_id = ? AND id = ?''',
+            variables: [
+              Variable(payload['additionId'] as String? ?? ''),
+              Variable(created.toIso8601String()),
+              Variable(resolved?.toIso8601String()),
+              Variable(remoteStamp.entityVersion),
+              Variable(localAccountId),
+              Variable(id),
+            ],
+          );
+        }
       }
+
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'deletionAction', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(id),
+          Variable(remoteStamp.entityVersion),
+          Variable(remoteUpdatedAt.microsecondsSinceEpoch),
+          Variable(remoteStamp.writerDeviceId),
+          Variable(remoteStamp.operationId),
+        ],
+      );
     }
   }
 
@@ -652,17 +710,16 @@ class FirebaseReconciliationService {
   }) async {
     for (final raw in cloudRevisions) {
       final payload = _payload(raw);
-      final revisionId =
-          payload['revisionId'] as String? ?? raw['__id'] as String?;
+      final revisionId = payload['revisionId'] as String? ?? raw['__id'] as String?;
       if (revisionId == null || revisionId.isEmpty) continue;
       final encoded = jsonEncode(payload);
+      final createdAt = _date(payload['createdAt']) ?? DateTime.now();
       final existing = await _database.customSelect(
         '''SELECT payload_json FROM account_plan_revisions
            WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
         variables: [Variable(localAccountId), Variable(revisionId)],
       ).get();
       if (existing.isEmpty) {
-        final createdAt = _date(payload['createdAt']) ?? DateTime.now();
         await _database.customInsert(
           '''INSERT INTO account_plan_revisions
              (local_account_id, revision_id, payload_json, created_at)
@@ -677,6 +734,22 @@ class FirebaseReconciliationService {
       } else if (existing.first.read<String>('payload_json') != encoded) {
         throw StateError('Immutable QazaPlanRevision conflict: $revisionId');
       }
+
+      final stamp = _cloudStamp(raw, revisionId, 1);
+      await _database.customInsert(
+        '''INSERT OR REPLACE INTO entity_metadata
+           (local_account_id, entity_type, entity_id, entity_version,
+            updated_at, writer_device_id, operation_id)
+           VALUES (?, 'qazaPlanRevision', ?, ?, ?, ?, ?)''',
+        variables: [
+          Variable(localAccountId),
+          Variable(revisionId),
+          Variable(stamp.entityVersion),
+          Variable(stamp.updatedAt.microsecondsSinceEpoch),
+          Variable(stamp.writerDeviceId),
+          Variable(stamp.operationId),
+        ],
+      );
     }
   }
 
