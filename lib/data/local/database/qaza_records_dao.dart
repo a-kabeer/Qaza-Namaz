@@ -819,6 +819,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return const <String>[];
 
+    final userId = records.first.userId.value;
+    if (records.any((record) => record.userId.value != userId)) {
+      throw StateError('Cannot bulk insert Qaza records for different users.');
+    }
+
     final uniqueIds = records
         .map((record) => record.id.value)
         .toSet()
@@ -838,7 +843,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
       final chunk = uniqueIds.sublist(start, end);
       final rows = await (select(qazaRecords)
-            ..where((row) => row.id.isIn(chunk)))
+            ..where(
+              (row) =>
+                  row.userId.equals(userId) & row.id.isIn(chunk),
+            ))
           .get();
       insertedIds.addAll(rows.map((row) => row.id));
     }
