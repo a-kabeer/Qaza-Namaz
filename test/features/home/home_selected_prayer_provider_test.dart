@@ -315,6 +315,95 @@ void main() {
     });
 
     test(
+      'Prayer Selection zero-pending target becomes unavailable without silent fallback',
+      () async {
+        final selected = await resolve(
+          mode: HomePrayerSelectionMode.prayerSelection,
+          currentPrayer: PrayerType.isha,
+          selectedPrayer: PrayerType.isha,
+          pending: {
+            PrayerType.fajr: 10,
+            PrayerType.isha: 0,
+          },
+          witrEnabled: true,
+        );
+
+        expect(selected.prayer, isNull);
+        expect(
+          selected.source,
+          HomePrayerSelectionSource.prayerSelectionUnavailable,
+        );
+      },
+    );
+
+    test(
+      'persisted zero-pending Prayer Selection cannot become actionable',
+      () async {
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          'qaza_home_completion_mode':
+              HomePrayerSelectionMode.prayerSelection.name,
+          'qaza_home_auto_sequence_prayer': PrayerType.fajr.name,
+          'qaza_home_selected_prayer': PrayerType.isha.name,
+        });
+
+        final summary = summaryFor({
+          PrayerType.fajr: 10,
+          PrayerType.isha: 0,
+        });
+        final container = ProviderContainer(
+          overrides: [
+            progressSummaryProvider.overrideWith(
+              (ref) => Future.value(summary),
+            ),
+            sahibAlTartibProvider.overrideWith(
+              (ref) => Future.value(
+                const SahibAlTartibState(
+                  pendingFarzCount: 0,
+                  requiresOrder: false,
+                  nextPending: null,
+                ),
+              ),
+            ),
+            currentQazaPrayerTypeProvider.overrideWith(
+              (ref) => PrayerType.isha,
+            ),
+            effectiveWitrProvider.overrideWith((ref) => true),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final progressSubscription = container.listen(
+          progressSummaryProvider,
+          (_, __) {},
+          fireImmediately: true,
+        );
+        final tartibSubscription = container.listen(
+          sahibAlTartibProvider,
+          (_, __) {},
+          fireImmediately: true,
+        );
+        addTearDown(progressSubscription.close);
+        addTearDown(tartibSubscription.close);
+
+        container.read(homePrayerSelectionProvider);
+        await container.read(progressSummaryProvider.future);
+        await container.read(sahibAlTartibProvider.future);
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+
+        final state = container.read(homePrayerSelectionProvider);
+        expect(state.mode, HomePrayerSelectionMode.prayerSelection);
+        expect(state.selectedPrayer, PrayerType.isha);
+
+        final selected = container.read(homeSelectedPrayerProvider);
+        expect(selected.prayer, isNull);
+        expect(
+          selected.source,
+          HomePrayerSelectionSource.prayerSelectionUnavailable,
+        );
+      },
+    );
+
+    test(
       'Prayer Selection remains sticky and is not changed by pending fallback',
       () async {
         final selected = await resolve(
