@@ -14,6 +14,7 @@ import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
+import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../../prayer_time/presentation/prayer_timeline_row.dart';
