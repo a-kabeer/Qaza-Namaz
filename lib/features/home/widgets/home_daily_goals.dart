@@ -17,7 +17,7 @@ class HomeDailyGoals extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activity = ref.watch(homeQazaActivityDailyGoalsProvider);
+    final activity = ref.watch(homeDashboardActivityProvider);
 
     return Card(
       key: const Key('home_daily_goals'),
@@ -49,8 +49,8 @@ class HomeDailyGoals extends ConsumerWidget {
               ),
             ],
           ),
-          data: (period) => _DailyGoalsContent(
-            period: period,
+          data: (dashboard) => _DailyGoalsContent(
+            period: dashboard.dailyGoals,
           ),
         ),
       ),
