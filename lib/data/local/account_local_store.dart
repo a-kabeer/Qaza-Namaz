@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/services/conflict_resolver.dart';
 import 'database/app_database.dart';
 
 class AccountLocalStore {
@@ -270,6 +271,719 @@ class AccountLocalStore {
     return false;
   }
 
+  Future<VersionedEntity> _localEntityStamp(
+    String localAccountId,
+    String entityType,
+    String entityId, {
+    required int fallbackVersion,
+    required DateTime fallbackUpdatedAt,
+  }) async {
+    final rows = await database.customSelect(
+      '''SELECT entity_version, updated_at, writer_device_id, operation_id
+         FROM entity_metadata
+         WHERE local_account_id = ? AND entity_type = ? AND entity_id = ?
+         LIMIT 1''',
+      variables: [
+        Variable(localAccountId),
+        Variable(entityType),
+        Variable(entityId),
+      ],
+    ).get();
+    if (rows.isEmpty) {
+      return VersionedEntity(
+        entityVersion: fallbackVersion,
+        updatedAt: fallbackUpdatedAt,
+        writerDeviceId: '',
+        operationId: 'legacy_' + entityId,
+        entityId: entityId,
+      );
+    }
+    final row = rows.first;
+    return VersionedEntity(
+      entityVersion: row.read<int>('entity_version'),
+      updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+        row.read<int>('updated_at'),
+      ),
+      writerDeviceId: row.read<String>('writer_device_id'),
+      operationId: row.read<String>('operation_id'),
+      entityId: entityId,
+    );
+  }
+
+  VersionedEntity _rowEntityStamp({
+    required String entityId,
+    required int version,
+    required DateTime updatedAt,
+    String writerDeviceId = '',
+    String operationId = '',
+  }) {
+    return VersionedEntity(
+      entityVersion: version,
+      updatedAt: updatedAt,
+      writerDeviceId: writerDeviceId,
+      operationId: operationId.isEmpty ? 'legacy_' + entityId : operationId,
+      entityId: entityId,
+    );
+  }
+
+  String _mergeBusinessKey(
+    String prayerType,
+    DateTime date,
+  ) =>
+      prayerType +
+      '|' +
+      date.year.toString() +
+      '-' +
+      date.month.toString().padLeft(2, '0') +
+      '-' +
+      date.day.toString().padLeft(2, '0');
+
+  Future<void> mergeGuestIntoGooglePartition({
+    required String guestLocalAccountId,
+    required String googleLocalAccountId,
+  }) async {
+    if (guestLocalAccountId == googleLocalAccountId) return;
+
+    final guest = await getAccount(guestLocalAccountId);
+    final google = await getAccount(googleLocalAccountId);
+    if (guest == null || google == null || !google.isGoogle) {
+      throw StateError('Guest/Google migration partitions are unavailable.');
+    }
+
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = 'migrating',
+               cloud_backup_enabled = 1,
+               updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(googleLocalAccountId),
+        ],
+      );
+
+      // ---------- Profile ----------
+      final guestProfileRows = await database.customSelect(
+        '''SELECT payload_json, entity_version, updated_at,
+                  writer_device_id, operation_id
+           FROM account_profiles
+           WHERE local_account_id = ? LIMIT 1''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      final googleProfileRows = await database.customSelect(
+        '''SELECT payload_json, entity_version, updated_at,
+                  writer_device_id, operation_id
+           FROM account_profiles
+           WHERE local_account_id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId)],
+      ).get();
+
+      if (guestProfileRows.isNotEmpty) {
+        final guestProfile = guestProfileRows.first;
+        final guestStamp = VersionedEntity(
+          entityVersion: guestProfile.read<int>('entity_version'),
+          updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+            guestProfile.read<int>('updated_at'),
+          ),
+          writerDeviceId: guestProfile.read<String>('writer_device_id'),
+          operationId: guestProfile.read<String>('operation_id'),
+          entityId: 'profile',
+        );
+        final keepGuest = googleProfileRows.isEmpty
+            ? true
+            : ConflictResolver().compare(
+                  guestStamp,
+                  VersionedEntity(
+                    entityVersion:
+                        googleProfileRows.first.read<int>('entity_version'),
+                    updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+                      googleProfileRows.first.read<int>('updated_at'),
+                    ),
+                    writerDeviceId:
+                        googleProfileRows.first.read<String>('writer_device_id'),
+                    operationId:
+                        googleProfileRows.first.read<String>('operation_id'),
+                    entityId: 'profile',
+                  ),
+                ) > 0;
+        if (keepGuest) {
+          await database.customInsert(
+            '''INSERT INTO account_profiles
+               (local_account_id, payload_json, entity_version, updated_at,
+                writer_device_id, operation_id)
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(local_account_id) DO UPDATE SET
+                 payload_json = excluded.payload_json,
+                 entity_version = excluded.entity_version,
+                 updated_at = excluded.updated_at,
+                 writer_device_id = excluded.writer_device_id,
+                 operation_id = excluded.operation_id''',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(guestProfile.read<String>('payload_json')),
+              Variable(guestProfile.read<int>('entity_version')),
+              Variable(guestProfile.read<int>('updated_at')),
+              Variable(guestProfile.read<String>('writer_device_id')),
+              Variable(guestProfile.read<String>('operation_id')),
+            ],
+          );
+        }
+      }
+
+      // ---------- Qaza records ----------
+      final guestRecords =
+          await database.qazaRecordsDao.getAll(userId: guestLocalAccountId);
+      final googleRecords =
+          await database.qazaRecordsDao.getAll(userId: googleLocalAccountId);
+      final googleById = <String, QazaRecord>{
+        for (final record in googleRecords) record.id: record,
+      };
+      final googleByKey = <String, QazaRecord>{
+        for (final record in googleRecords)
+          _mergeBusinessKey(record.prayerType.name, record.originalDate):
+              record,
+      };
+      final canonical = <String, QazaRecord>{...googleById};
+      final guestWinningIds = <String>{};
+      final targetLoserIds = <String>{};
+
+      for (final guestRecord in guestRecords) {
+        final sameId = googleById[guestRecord.id];
+        if (sameId != null) {
+          final guestStamp = await _localEntityStamp(
+            guestLocalAccountId,
+            'qazaRecord',
+            guestRecord.id,
+            fallbackVersion: guestRecord.recordVersion,
+            fallbackUpdatedAt: guestRecord.updatedAt,
+          );
+          final googleStamp = await _localEntityStamp(
+            googleLocalAccountId,
+            'qazaRecord',
+            sameId.id,
+            fallbackVersion: sameId.recordVersion,
+            fallbackUpdatedAt: sameId.updatedAt,
+          );
+          if (ConflictResolver().compare(guestStamp, googleStamp) > 0) {
+            canonical[guestRecord.id] = guestRecord;
+            guestWinningIds.add(guestRecord.id);
+          }
+          continue;
+        }
+
+        final key = _mergeBusinessKey(
+          guestRecord.prayerType.name,
+          guestRecord.originalDate,
+        );
+        final collision = googleByKey[key];
+        if (collision == null) {
+          canonical[guestRecord.id] = guestRecord;
+          guestWinningIds.add(guestRecord.id);
+          googleByKey[key] = guestRecord;
+          continue;
+        }
+
+        final guestStamp = await _localEntityStamp(
+          guestLocalAccountId,
+          'qazaRecord',
+          guestRecord.id,
+          fallbackVersion: guestRecord.recordVersion,
+          fallbackUpdatedAt: guestRecord.updatedAt,
+        );
+        final googleStamp = await _localEntityStamp(
+          googleLocalAccountId,
+          'qazaRecord',
+          collision.id,
+          fallbackVersion: collision.recordVersion,
+          fallbackUpdatedAt: collision.updatedAt,
+        );
+        if (ConflictResolver().compare(guestStamp, googleStamp) > 0) {
+          canonical.remove(collision.id);
+          targetLoserIds.add(collision.id);
+          canonical[guestRecord.id] = guestRecord;
+          guestWinningIds.add(guestRecord.id);
+          googleByKey[key] = guestRecord;
+        }
+      }
+
+      for (final id in targetLoserIds) {
+        await database.qazaRecordsDao.deleteById(
+          userId: googleLocalAccountId,
+          id: id,
+        );
+        await database.customUpdate(
+          'DELETE FROM qaza_profile_plan_provenance '
+          'WHERE user_id = ? AND record_id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(id),
+          ],
+        );
+      }
+
+      if (guestWinningIds.isNotEmpty) {
+        final guestRows = guestWinningIds
+            .map((id) => canonical[id])
+            .whereType<QazaRecord>()
+            .toList(growable: false);
+        for (final record in guestRows) {
+          await database.customInsert(
+            '''INSERT INTO qaza_records
+               (id, user_id, prayer_type, original_date, status, completed_at,
+                completion_id, addition_id, record_version, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                 user_id = excluded.user_id,
+                 prayer_type = excluded.prayer_type,
+                 original_date = excluded.original_date,
+                 status = excluded.status,
+                 completed_at = excluded.completed_at,
+                 completion_id = excluded.completion_id,
+                 addition_id = excluded.addition_id,
+                 record_version = excluded.record_version,
+                 created_at = excluded.created_at,
+                 updated_at = excluded.updated_at''',
+            variables: [
+              Variable(record.id),
+              Variable(googleLocalAccountId),
+              Variable(record.prayerType.name),
+              Variable(record.originalDate),
+              Variable(record.status.name),
+              Variable(record.completedAt),
+              Variable(record.completionId),
+              Variable(record.additionId),
+              Variable(record.recordVersion),
+              Variable(record.createdAt),
+              Variable(record.updatedAt),
+            ],
+          );
+        }
+      }
+
+      // Remove target records that lost a same-business-key conflict or were
+      // otherwise excluded by the canonical set.
+      final canonicalIds = canonical.keys.toSet();
+      for (final record in googleRecords) {
+        if (!canonicalIds.contains(record.id) &&
+            !targetLoserIds.contains(record.id)) {
+          await database.qazaRecordsDao.deleteById(
+            userId: googleLocalAccountId,
+            id: record.id,
+          );
+          await database.customUpdate(
+            'DELETE FROM qaza_profile_plan_provenance '
+            'WHERE user_id = ? AND record_id = ?',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(record.id),
+            ],
+          );
+        }
+      }
+
+      // ---------- Plan provenance ----------
+      for (final id in guestWinningIds) {
+        final rows = await database.customSelect(
+          '''SELECT plan_revision_id, plan_fingerprint
+             FROM qaza_profile_plan_provenance
+             WHERE user_id = ? AND record_id = ? LIMIT 1''',
+          variables: [
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        ).get();
+        if (rows.isEmpty) continue;
+        await database.customInsert(
+          '''INSERT OR REPLACE INTO qaza_profile_plan_provenance
+             (record_id, user_id, plan_revision_id, plan_fingerprint)
+             VALUES (?, ?, ?, ?)''',
+          variables: [
+            Variable(id),
+            Variable(googleLocalAccountId),
+            Variable(rows.first.read<String>('plan_revision_id')),
+            Variable(rows.first.read<String>('plan_fingerprint')),
+          ],
+        );
+      }
+
+      // ---------- Additions ----------
+      final guestAdditions = await database.customSelect(
+        '''SELECT id, mode, input_snapshot, revision, created_at, updated_at
+           FROM qaza_additions WHERE user_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      final googleAdditionIds = (await database.customSelect(
+        'SELECT id FROM qaza_additions WHERE user_id = ?',
+        variables: [Variable(googleLocalAccountId)],
+      ).get()).map((row) => row.read<String>('id')).toSet();
+
+      for (final row in guestAdditions) {
+        final id = row.read<String>('id');
+        if (!googleAdditionIds.contains(id)) {
+          await database.customInsert(
+            '''INSERT INTO qaza_additions
+               (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable(id),
+              Variable(googleLocalAccountId),
+              Variable(row.read<String>('mode')),
+              Variable(row.read<String>('input_snapshot')),
+              Variable(row.read<int>('revision')),
+              Variable(row.read<String>('created_at')),
+              Variable(row.read<String>('updated_at')),
+            ],
+          );
+          continue;
+        }
+
+        final googleRow = (await database.customSelect(
+          '''SELECT mode, input_snapshot, revision, updated_at
+             FROM qaza_additions
+             WHERE user_id = ? AND id = ? LIMIT 1''',
+          variables: [Variable(googleLocalAccountId), Variable(id)],
+        )).first;
+        final guestStamp = await _localEntityStamp(
+          guestLocalAccountId,
+          'qazaAddition',
+          id,
+          fallbackVersion: row.read<int>('revision'),
+          fallbackUpdatedAt: DateTime.parse(row.read<String>('updated_at')),
+        );
+        final googleStamp = await _localEntityStamp(
+          googleLocalAccountId,
+          'qazaAddition',
+          id,
+          fallbackVersion: googleRow.read<int>('revision'),
+          fallbackUpdatedAt:
+              DateTime.parse(googleRow.read<String>('updated_at')),
+        );
+        if (ConflictResolver().compare(guestStamp, googleStamp) > 0) {
+          await database.customUpdate(
+            '''UPDATE qaza_additions
+               SET mode = ?, input_snapshot = ?, revision = ?,
+                   created_at = ?, updated_at = ?
+               WHERE user_id = ? AND id = ?''',
+            variables: [
+              Variable(row.read<String>('mode')),
+              Variable(row.read<String>('input_snapshot')),
+              Variable(row.read<int>('revision')),
+              Variable(row.read<String>('created_at')),
+              Variable(row.read<String>('updated_at')),
+              Variable(googleLocalAccountId),
+              Variable(id),
+            ],
+          );
+        }
+      }
+
+      // ---------- Deletion actions ----------
+      final guestActions = await database.customSelect(
+        '''SELECT id, addition_id, created_at, resolved_at, entity_version
+           FROM qaza_deletion_actions WHERE user_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      for (final row in guestActions) {
+        final id = row.read<String>('id');
+        final googleRows = await database.customSelect(
+          '''SELECT id, addition_id, created_at, resolved_at, entity_version
+             FROM qaza_deletion_actions
+             WHERE user_id = ? AND id = ? LIMIT 1''',
+          variables: [Variable(googleLocalAccountId), Variable(id)],
+        ).get();
+        if (googleRows.isEmpty) {
+          await database.customInsert(
+            '''INSERT INTO qaza_deletion_actions
+               (id, user_id, addition_id, created_at, resolved_at, entity_version)
+               VALUES (?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable(id),
+              Variable(googleLocalAccountId),
+              Variable(row.read<String>('addition_id')),
+              Variable(row.read<String>('created_at')),
+              Variable(row.read<String?>('resolved_at')),
+              Variable(row.read<int>('entity_version')),
+            ],
+          );
+        } else {
+          final googleRow = googleRows.first;
+          final guestUpdated =
+              DateTime.parse(row.read<String?>('resolved_at') ??
+                  row.read<String>('created_at'));
+          final googleUpdated =
+              DateTime.parse(googleRow.read<String?>('resolved_at') ??
+                  googleRow.read<String>('created_at'));
+          final guestStamp = await _localEntityStamp(
+            guestLocalAccountId,
+            'deletionAction',
+            id,
+            fallbackVersion: row.read<int>('entity_version'),
+            fallbackUpdatedAt: guestUpdated,
+          );
+          final googleStamp = await _localEntityStamp(
+            googleLocalAccountId,
+            'deletionAction',
+            id,
+            fallbackVersion: googleRow.read<int>('entity_version'),
+            fallbackUpdatedAt: googleUpdated,
+          );
+          if (ConflictResolver().compare(guestStamp, googleStamp) > 0) {
+            await database.customUpdate(
+              '''UPDATE qaza_deletion_actions
+                 SET addition_id = ?, created_at = ?, resolved_at = ?,
+                     entity_version = ?
+                 WHERE user_id = ? AND id = ?''',
+              variables: [
+                Variable(row.read<String>('addition_id')),
+                Variable(row.read<String>('created_at')),
+                Variable(row.read<String?>('resolved_at')),
+                Variable(row.read<int>('entity_version')),
+                Variable(googleLocalAccountId),
+                Variable(id),
+              ],
+            );
+          }
+        }
+      }
+
+      // ---------- Immutable deletion snapshots ----------
+      final guestSnapshots = await database.customSelect(
+        '''SELECT deletion_action_id, record_id, user_id, addition_id,
+                  prayer_type, original_date, status, completed_at,
+                  completion_id, created_at, updated_at, record_version
+           FROM qaza_deletion_action_record_snapshots
+           WHERE user_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      for (final row in guestSnapshots) {
+        final existing = await database.customSelect(
+          '''SELECT prayer_type, original_date, status, completed_at,
+                    completion_id, created_at, updated_at, record_version
+             FROM qaza_deletion_action_record_snapshots
+             WHERE user_id = ? AND deletion_action_id = ? AND record_id = ?
+             LIMIT 1''',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(row.read<String>('deletion_action_id')),
+            Variable(row.read<String>('record_id')),
+          ],
+        ).get();
+        if (existing.isEmpty) {
+          await database.customInsert(
+            '''INSERT INTO qaza_deletion_action_record_snapshots
+               (deletion_action_id, record_id, user_id, addition_id,
+                prayer_type, original_date, status, completed_at,
+                completion_id, created_at, updated_at, record_version)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable(row.read<String>('deletion_action_id')),
+              Variable(row.read<String>('record_id')),
+              Variable(googleLocalAccountId),
+              Variable(row.read<String>('addition_id')),
+              Variable(row.read<String>('prayer_type')),
+              Variable(row.read<String>('original_date')),
+              Variable(row.read<String?>('status')),
+              Variable(row.read<String?>('completed_at')),
+              Variable(row.read<String?>('completion_id')),
+              Variable(row.read<String>('created_at')),
+              Variable(row.read<String>('updated_at')),
+              Variable(row.read<int>('record_version')),
+            ],
+          );
+        } else {
+          final same = existing.first.read<String>('prayer_type') ==
+                  row.read<String>('prayer_type') &&
+              existing.first.read<String>('original_date') ==
+                  row.read<String>('original_date') &&
+              existing.first.read<String?>('status') ==
+                  row.read<String?>('status') &&
+              existing.first.read<String?>('completed_at') ==
+                  row.read<String?>('completed_at') &&
+              existing.first.read<String?>('completion_id') ==
+                  row.read<String?>('completion_id') &&
+              existing.first.read<String>('created_at') ==
+                  row.read<String>('created_at') &&
+              existing.first.read<String>('updated_at') ==
+                  row.read<String>('updated_at') &&
+              existing.first.read<int>('record_version') ==
+                  row.read<int>('record_version');
+          if (!same) {
+            throw StateError(
+              'Immutable deletion snapshot conflict: ' +
+                  row.read<String>('deletion_action_id') +
+                  '/' +
+                  row.read<String>('record_id'),
+            );
+          }
+        }
+      }
+
+      // ---------- Immutable plan revisions ----------
+      final guestRevisions = await database.customSelect(
+        '''SELECT revision_id, payload_json, created_at
+           FROM account_plan_revisions
+           WHERE local_account_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      for (final row in guestRevisions) {
+        final id = row.read<String>('revision_id');
+        final existing = await database.customSelect(
+          '''SELECT payload_json FROM account_plan_revisions
+             WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(id),
+          ],
+        ).get();
+        if (existing.isEmpty) {
+          await database.customInsert(
+            '''INSERT INTO account_plan_revisions
+               (local_account_id, revision_id, payload_json, created_at)
+               VALUES (?, ?, ?, ?)''',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(id),
+              Variable(row.read<String>('payload_json')),
+              Variable(row.read<int>('created_at')),
+            ],
+          );
+        } else if (existing.first.read<String>('payload_json') !=
+            row.read<String>('payload_json')) {
+          throw StateError('Immutable QazaPlanRevision conflict: ' + id);
+        }
+      }
+
+      // ---------- Tombstones ----------
+      final guestTombstones = await database.customSelect(
+        '''SELECT record_id, record_version, deleted_at, writer_device_id,
+                  operation_id, cloud_generation
+           FROM qaza_record_tombstones
+           WHERE local_account_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      for (final row in guestTombstones) {
+        final id = row.read<String>('record_id');
+        final googleRows = await database.customSelect(
+          '''SELECT record_version, deleted_at, writer_device_id,
+                    operation_id, cloud_generation
+             FROM qaza_record_tombstones
+             WHERE local_account_id = ? AND record_id = ? LIMIT 1''',
+          variables: [Variable(googleLocalAccountId), Variable(id)],
+        ).get();
+        if (googleRows.isEmpty) {
+          await database.customInsert(
+            '''INSERT INTO qaza_record_tombstones
+               (local_account_id, record_id, record_version, deleted_at,
+                writer_device_id, operation_id, cloud_generation)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(id),
+              Variable(row.read<int>('record_version')),
+              Variable(row.read<int>('deleted_at')),
+              Variable(row.read<String>('writer_device_id')),
+              Variable(row.read<String>('operation_id')),
+              Variable(google.cloudGeneration),
+            ],
+          );
+        } else {
+          final current = googleRows.first;
+          final guestStamp = _rowEntityStamp(
+            entityId: id,
+            version: row.read<int>('record_version'),
+            updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+              row.read<int>('deleted_at'),
+            ),
+            writerDeviceId: row.read<String>('writer_device_id'),
+            operationId: row.read<String>('operation_id'),
+          );
+          final googleStamp = _rowEntityStamp(
+            entityId: id,
+            version: current.read<int>('record_version'),
+            updatedAt: DateTime.fromMicrosecondsSinceEpoch(
+              current.read<int>('deleted_at'),
+            ),
+            writerDeviceId: current.read<String>('writer_device_id'),
+            operationId: current.read<String>('operation_id'),
+          );
+          if (ConflictResolver().compare(guestStamp, googleStamp) > 0) {
+            await database.customUpdate(
+              '''UPDATE qaza_record_tombstones
+                 SET record_version = ?, deleted_at = ?, writer_device_id = ?,
+                     operation_id = ?, cloud_generation = ?
+                 WHERE local_account_id = ? AND record_id = ?''',
+              variables: [
+                Variable(row.read<int>('record_version')),
+                Variable(row.read<int>('deleted_at')),
+                Variable(row.read<String>('writer_device_id')),
+                Variable(row.read<String>('operation_id')),
+                Variable(google.cloudGeneration),
+                Variable(googleLocalAccountId),
+                Variable(id),
+              ],
+            );
+          }
+        }
+      }
+
+      // A winning tombstone removes only records that are not newer than it.
+      final mergedTombstones = await database.customSelect(
+        '''SELECT record_id, record_version
+           FROM qaza_record_tombstones
+           WHERE local_account_id = ?''',
+        variables: [Variable(googleLocalAccountId)],
+      ).get();
+      for (final row in mergedTombstones) {
+        final id = row.read<String>('record_id');
+        final version = row.read<int>('record_version');
+        final records = await database.customSelect(
+          '''SELECT record_version FROM qaza_records
+             WHERE user_id = ? AND id = ? LIMIT 1''',
+          variables: [Variable(googleLocalAccountId), Variable(id)],
+        ).get();
+        if (records.isNotEmpty && version >= records.first.read<int>('record_version')) {
+          await database.qazaRecordsDao.deleteById(
+            userId: googleLocalAccountId,
+            id: id,
+          );
+        }
+      }
+
+      // Copy source metadata for Guest-owned winners. This preserves the
+      // version chain instead of resetting entity metadata during migration.
+      final metadataRows = await database.customSelect(
+        '''SELECT entity_type, entity_id, entity_version, updated_at,
+                  writer_device_id, operation_id
+           FROM entity_metadata
+           WHERE local_account_id = ?''',
+        variables: [Variable(guestLocalAccountId)],
+      ).get();
+      for (final row in metadataRows) {
+        final keep =
+            (row.read<String>('entity_type') == 'qazaRecord' &&
+                    guestWinningIds.contains(row.read<String>('entity_id'))) ||
+                row.read<String>('entity_type') != 'qazaRecord';
+        if (!keep) continue;
+        await database.customInsert(
+          '''INSERT OR REPLACE INTO entity_metadata
+             (local_account_id, entity_type, entity_id, entity_version,
+              updated_at, writer_device_id, operation_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?)''',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(row.read<String>('entity_type')),
+            Variable(row.read<String>('entity_id')),
+            Variable(row.read<int>('entity_version')),
+            Variable(row.read<int>('updated_at')),
+            Variable(row.read<String>('writer_device_id')),
+            Variable(row.read<String>('operation_id')),
+          ],
+        );
+      }
+    });
+  }
+
   Future<String?> migratingGoogleAccount() async {
     final rows = await database.customSelect(
       '''SELECT local_account_id, account_mode, firebase_uid, google_email,
@@ -373,10 +1087,11 @@ class AccountLocalStore {
       return guest.localAccountId;
     }
 
-    throw StateError(
-      'The Google account already has local data; migration requires '
-      'deterministic reconciliation before ownership conversion.',
+    await mergeGuestIntoGooglePartition(
+      guestLocalAccountId: guest.localAccountId,
+      googleLocalAccountId: existing.localAccountId,
     );
+    return existing.localAccountId;
   }
 
   Future<void> finalizeGuestMigration({
