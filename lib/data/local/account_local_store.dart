@@ -428,6 +428,19 @@ class AccountLocalStore {
               Variable(guestProfile.read<String>('operation_id')),
             ],
           );
+          await database.customInsert(
+            '''INSERT OR REPLACE INTO entity_metadata
+               (local_account_id, entity_type, entity_id, entity_version,
+                updated_at, writer_device_id, operation_id)
+               VALUES (?, 'profile', 'profile', ?, ?, ?, ?)''',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(guestProfile.read<int>('entity_version')),
+              Variable(guestProfile.read<int>('updated_at')),
+              Variable(guestProfile.read<String>('writer_device_id')),
+              Variable(guestProfile.read<String>('operation_id')),
+            ],
+          );
         }
       }
 
