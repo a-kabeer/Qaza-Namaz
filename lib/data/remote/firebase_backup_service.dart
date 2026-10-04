@@ -124,11 +124,21 @@ class FirebaseBackupService {
     }
 
     await _writeProfile(localAccountId, uid, generation);
-    await _writeQazaRecords(localAccountId, uid, generation);
+    await _writeQazaRecords(
+      localAccountId,
+      uid,
+      generation,
+      incremental: bootstrapCutoffMicros == null,
+    );
     await _writeQazaAdditions(localAccountId, uid, generation);
     await _writeDeletionActions(localAccountId, uid, generation);
     await _writePlanRevisions(localAccountId, uid, generation);
-    await _writeTombstones(localAccountId, uid, generation);
+    await _writeTombstones(
+      localAccountId,
+      uid,
+      generation,
+      incremental: bootstrapCutoffMicros == null,
+    );
 
     if (bootstrapCutoffMicros != null &&
         await _hasOutboxMutationAfter(localAccountId, bootstrapCutoffMicros)) {
@@ -474,39 +484,111 @@ class FirebaseBackupService {
   Future<void> _writeQazaRecords(
     String localId,
     String uid,
-    int generation,
-  ) async {
-    final rows = await _database.qazaRecordsDao.getAll(userId: localId);
-    if (rows.isEmpty) return;
-    final metadata = await _metadataByType(localId, 'qazaRecord');
-    final device = await _accountStore.deviceInstanceId();
+    int generation, {
+    bool incremental = false,
+  }) async {
+    if (!incremental) {
+      final rows = await _database.qazaRecordsDao.getAll(userId: localId);
+      if (rows.isEmpty) return;
+      final metadata = await _metadataByType(localId, 'qazaRecord');
+      final device = await _accountStore.deviceInstanceId();
+      final writes = <_VersionedWrite>[
+        for (final record in rows)
+          _VersionedWrite(
+            ref: _firebase.firestore.collection('users').doc(uid)
+                .collection('qazaRecords').doc(record.id),
+            payload: _qazaRecordPayload(record),
+            version: metadata[record.id] ??
+                VersionedEntity(
+                  entityVersion: record.recordVersion,
+                  updatedAt: record.updatedAt,
+                  writerDeviceId: device,
+                  operationId:
+                      'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
+                  entityId: record.id,
+                ),
+            immutable: false,
+            generation: generation,
+          ),
+      ];
+      await _writeVersionedBatch(
+        uid: uid,
+        generation: generation,
+        writes: writes,
+      );
+      await _markQazaEntitiesSynced(localId, writes);
+      return;
+    }
 
-    final writes = <_VersionedWrite>[];
-    for (final record in rows) {
-      writes.add(
+    final rows = await _database.customSelect(
+      '''SELECT r.id, r.prayer_type, r.original_date, r.status,
+                r.completed_at, r.completion_id, r.addition_id,
+                r.record_version, r.created_at, r.updated_at,
+                m.entity_version, m.updated_at AS meta_updated_at,
+                m.writer_device_id, m.operation_id
+         FROM qaza_records r
+         LEFT JOIN entity_metadata m
+           ON m.local_account_id = r.user_id
+          AND m.entity_type = 'qazaRecord'
+          AND m.entity_id = r.id
+         WHERE r.user_id = ?
+           AND (
+             m.entity_id IS NULL
+             OR m.synced_entity_version < m.entity_version
+           )''',
+      variables: [Variable(localId)],
+    ).get();
+    if (rows.isEmpty) return;
+
+    final device = await _accountStore.deviceInstanceId();
+    final writes = <_VersionedWrite>[
+      for (final row in rows)
         _VersionedWrite(
           ref: _firebase.firestore.collection('users').doc(uid)
-              .collection('qazaRecords').doc(record.id),
-          payload: _qazaRecordPayload(record),
-          version: metadata[record.id] ??
-              VersionedEntity(
-                entityVersion: record.recordVersion,
-                updatedAt: record.updatedAt,
-                writerDeviceId: device,
-                operationId:
-                    'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
-                entityId: record.id,
-              ),
-          generation: generation,
+              .collection('qazaRecords').doc(row.read<String>('id')),
+          payload: {
+            'id': row.read<String>('id'),
+            'prayerType': row.read<String>('prayer_type'),
+            'originalDate': _microsToDate(
+              row.read<int>('original_date'),
+            ),
+            'status': row.read<String>('status'),
+            'completedAt': _optionalMicrosToDate(
+              row.read<int?>('completed_at'),
+            ),
+            'completionId': row.read<String?>('completion_id'),
+            'additionId': row.read<String?>('addition_id'),
+            'recordVersion': row.read<int>('record_version'),
+            'createdAt': _microsToDate(row.read<int>('created_at')),
+            'updatedAt': _microsToDate(row.read<int>('updated_at')),
+          },
+          version: row.read<int?>('entity_version') == null
+              ? VersionedEntity(
+                  entityVersion: row.read<int>('record_version'),
+                  updatedAt: _microsToDate(row.read<int>('updated_at')),
+                  writerDeviceId: device,
+                  operationId:
+                      'local_${row.read<String>('id')}_${row.read<int>('updated_at')}',
+                  entityId: row.read<String>('id'),
+                )
+              : VersionedEntity(
+                  entityVersion: row.read<int>('entity_version')!,
+                  updatedAt: _microsToDate(row.read<int>('meta_updated_at')),
+                  writerDeviceId: row.read<String>('writer_device_id'),
+                  operationId: row.read<String>('operation_id'),
+                  entityId: row.read<String>('id'),
+                ),
           immutable: false,
+          generation: generation,
         ),
-      );
-    }
+    ];
+
     await _writeVersionedBatch(
       uid: uid,
       generation: generation,
       writes: writes,
     );
+    await _markQazaEntitiesSynced(localId, writes);
   }
 
   Future<void> _writeQazaAdditions(
@@ -697,22 +779,38 @@ class FirebaseBackupService {
   Future<void> _writeTombstones(
     String localId,
     String uid,
-    int generation,
-  ) async {
+    int generation, {
+    bool incremental = false,
+  }) async {
+    final where = incremental
+        ? '''AND EXISTS (
+             SELECT 1 FROM entity_metadata m
+             WHERE m.local_account_id = t.local_account_id
+               AND m.entity_type = 'qazaRecord'
+               AND m.entity_id = t.record_id
+               AND m.synced_entity_version < m.entity_version
+           )'''
+        : '';
     final rows = await _database.customSelect(
-      '''SELECT record_id, record_version, deleted_at, writer_device_id,
-                operation_id, cloud_generation
-         FROM qaza_record_tombstones WHERE local_account_id = ?''',
+      '''SELECT t.record_id, t.record_version, t.deleted_at, t.writer_device_id,
+                t.operation_id, t.cloud_generation,
+                m.entity_version AS meta_entity_version
+         FROM qaza_record_tombstones t
+         LEFT JOIN entity_metadata m
+           ON m.local_account_id = t.local_account_id
+          AND m.entity_type = 'qazaRecord'
+          AND m.entity_id = t.record_id
+         WHERE t.local_account_id = ? $where''',
       variables: [Variable(localId)],
     ).get();
     if (rows.isEmpty) return;
 
-    final ref = _firebase.firestore.collection('users').doc(uid)
-        .collection('qazaRecordTombstones');
     final writes = <_VersionedWrite>[
       for (final row in rows)
         _VersionedWrite(
-          ref: ref.doc(row.read<String>('record_id')),
+          ref: _firebase.firestore.collection('users').doc(uid)
+              .collection('qazaRecordTombstones')
+              .doc(row.read<String>('record_id')),
           payload: {
             'recordId': row.read<String>('record_id'),
             'recordVersion': row.read<int>('record_version'),
@@ -720,14 +818,16 @@ class FirebaseBackupService {
             'cloudGeneration': row.read<int>('cloud_generation'),
           },
           version: VersionedEntity(
-            entityVersion: row.read<int>('record_version'),
+            entityVersion:
+                row.read<int?>('meta_entity_version') ??
+                row.read<int>('record_version'),
             updatedAt: _microsToDate(row.read<int>('deleted_at')),
             writerDeviceId: row.read<String>('writer_device_id'),
             operationId: row.read<String>('operation_id'),
             entityId: row.read<String>('record_id'),
           ),
-          generation: generation,
           immutable: false,
+          generation: generation,
         ),
     ];
 
@@ -739,70 +839,40 @@ class FirebaseBackupService {
     await _deleteRecordsCoveredByCloudTombstones(
       uid: uid,
       generation: generation,
-      recordIds: rows.map((row) => row.read<String>('record_id')).toList(
-            growable: false,
-          ),
+      recordIds: rows
+          .map((row) => row.read<String>('record_id'))
+          .toList(growable: false),
     );
+    await _markQazaEntitiesSynced(localId, writes);
   }
 
-  Future<void> _deleteRecordsCoveredByCloudTombstones({
-    required String uid,
-    required int generation,
-    required List<String> recordIds,
-  }) async {
-    final rootRef = _firebase.firestore.collection('users').doc(uid);
-    final tombstoneRef =
-        rootRef.collection('qazaRecordTombstones');
-    final recordRef = rootRef.collection('qazaRecords');
-
-    for (final ids in _chunks(recordIds, 200)) {
-      await _firebase.firestore.runTransaction((transaction) async {
-        final rootSnapshot = await transaction.get(rootRef);
-        _assertCloudRootForWrite(
-          snapshot: rootSnapshot,
-          generation: generation,
-          context: 'tombstone cleanup',
+  Future<void> _markQazaEntitiesSynced(
+    String localId,
+    List<_VersionedWrite> writes,
+  ) async {
+    if (writes.isEmpty) return;
+    await _database.transaction(() async {
+      for (final operation in writes) {
+        await _database.customUpdate(
+          '''UPDATE entity_metadata
+             SET synced_entity_version = ?
+             WHERE local_account_id = ?
+               AND entity_type = 'qazaRecord'
+               AND entity_id = ?
+               AND entity_version = ?''',
+          variables: [
+            Variable(operation.version.entityVersion),
+            Variable(localId),
+            Variable(operation.version.entityId),
+            Variable(operation.version.entityVersion),
+          ],
         );
-
-        final tombstones = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-        final records = <String, DocumentSnapshot<Map<String, dynamic>>>{};
-        for (final id in ids) {
-          tombstones[id] = await transaction.get(tombstoneRef.doc(id));
-          records[id] = await transaction.get(recordRef.doc(id));
-        }
-
-        for (final id in ids) {
-          final tombstone = tombstones[id];
-          final record = records[id];
-          if (tombstone == null ||
-              !tombstone.exists ||
-              record == null ||
-              !record.exists) {
-            continue;
-          }
-          final tombstoneData =
-              tombstone.data() ?? const <String, dynamic>{};
-          final recordData =
-              record.data() ?? const <String, dynamic>{};
-          final payload = tombstoneData['payload'];
-          if (payload is! Map) continue;
-          final tombstoneGeneration =
-              (payload['cloudGeneration'] as num?)?.toInt() ?? 0;
-          if (tombstoneGeneration != generation) continue;
-
-          final tombstoneVersion =
-              (payload['recordVersion'] as num?)?.toInt() ?? 0;
-          final recordVersion =
-              (recordData['payload'] is Map)
-                  ? ((recordData['payload']['recordVersion'] as num?)?.toInt() ?? 0)
-                  : 0;
-          if (tombstoneVersion >= recordVersion) {
-            transaction.delete(recordRef.doc(id));
-          }
-        }
-      });
-    }
+      }
+    });
   }
+
+  DateTime? _optionalMicrosToDate(int? micros) =>
+      micros == null ? null : _microsToDate(micros);
 
   Future<Map<String, VersionedEntity>> _metadataByType(
     String localId,
