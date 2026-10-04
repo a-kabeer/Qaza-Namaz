@@ -141,8 +141,7 @@ service cloud.firestore {
             && currentGeneration(uid)
             && writableState(uid);
           allow delete: if signedIn(uid)
-            && resource.data.cloudGeneration == rootGeneration(uid)
-            && rootState(uid) == 'deleting';
+            && childDeleteAllowed(uid, resource.data.cloudGeneration);
         }
       }
 
