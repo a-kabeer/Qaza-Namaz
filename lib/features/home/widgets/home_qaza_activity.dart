@@ -986,12 +986,12 @@ class _InlineMonthlyDetail extends ConsumerWidget {
 }
 
 double _monthlyCalendarCellExtent(double width) {
-  final availableWidth = math.max(width, 0);
+  final availableWidth = math.max(width, 0.0);
   return math.max(
     (availableWidth -
             (_monthlyCalendarRows - 1) * _monthlyCalendarSpacing) /
         7,
-    0,
+    0.0,
   );
 }
 
