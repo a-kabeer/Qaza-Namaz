@@ -84,10 +84,27 @@ class FirebaseBackupService {
     }
 
     if (bootstrapCutoffMicros != null) {
-      await rootRef.set(
-        {'bootstrapCutoffMicros': bootstrapCutoffMicros},
-        SetOptions(merge: true),
-      );
+      await _firebase.firestore.runTransaction((transaction) async {
+        final snap = await transaction.get(rootRef);
+        if (!snap.exists) {
+          throw StateError('Cloud account root disappeared before bootstrap.');
+        }
+        final data = snap.data() ?? const <String, dynamic>{};
+        final actualGeneration =
+            (data['cloudGeneration'] as num?)?.toInt() ?? 0;
+        final state = data['datasetState'] as String? ?? 'empty';
+        if (actualGeneration != generation ||
+            (state != 'initializing' && state != 'ready')) {
+          throw StateError(
+            'Cloud dataset changed before bootstrap marker was stored.',
+          );
+        }
+        transaction.set(
+          rootRef,
+          {'bootstrapCutoffMicros': bootstrapCutoffMicros},
+          SetOptions(merge: true),
+        );
+      });
     }
 
     await _writeProfile(localAccountId, uid, generation);
@@ -113,8 +130,12 @@ class FirebaseBackupService {
       final currentGeneration =
           (data['cloudGeneration'] as num?)?.toInt() ?? 0;
       final state = data['datasetState'] as String? ?? 'empty';
+      final storedCutoff =
+          (data['bootstrapCutoffMicros'] as num?)?.toInt();
       if (currentGeneration != generation ||
-          (state != 'initializing' && state != 'ready')) {
+          (state != 'initializing' && state != 'ready') ||
+          (bootstrapCutoffMicros != null &&
+              storedCutoff != bootstrapCutoffMicros)) {
         throw StateError(
           'Cloud dataset changed before backup completion: '
           'generation=' +
