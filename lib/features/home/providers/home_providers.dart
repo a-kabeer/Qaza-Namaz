@@ -583,17 +583,46 @@ final homeSelectedPrayerProvider =
     HomePrayerSelectionMode.prayerSelection => selection.selectedPrayer,
   };
 
+  final witrEnabled = ref.watch(effectiveWitrProvider);
+  final summary = ref.watch(progressSummaryProvider).valueOrNull;
+
+  // Prayer Selection is sticky. Never silently replace a selected prayer just
+  // because its latest pending count reached zero.
+  if (selection.mode == HomePrayerSelectionMode.prayerSelection) {
+    if (target == null) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: null,
+        source: HomePrayerSelectionSource.unavailable,
+      );
+    }
+
+    if (target == PrayerType.witr && !witrEnabled) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: null,
+        source: HomePrayerSelectionSource.unavailable,
+      );
+    }
+
+    if (summary == null ||
+        (summary.byPrayer[target]?.progress.pending ?? 0) <= 0) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: null,
+        source: HomePrayerSelectionSource.prayerSelectionUnavailable,
+      );
+    }
+  }
+
   final pendingAwareMode = selection.mode == HomePrayerSelectionMode.prayerTime ||
       selection.mode == HomePrayerSelectionMode.autoSequence;
-  final summary = pendingAwareMode
-      ? ref.watch(progressSummaryProvider).valueOrNull
-      : null;
   final resolvedTarget =
       pendingAwareMode && target != null && summary != null
           ? const QazaTargetingService().resolveNextPendingPrayer(
               summary: summary,
               startPrayer: target,
-              witrEnabled: ref.watch(effectiveWitrProvider),
+              witrEnabled: witrEnabled,
             )
           : target;
 
