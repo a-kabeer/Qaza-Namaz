@@ -7,6 +7,7 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 
 class _UnavailableFirebaseServices extends FirebaseServices {
@@ -104,7 +105,7 @@ void main() {
 
       final active = await store.activeAccount();
       expect(active?.isGuest, isTrue);
-      expect(active?.localAccountId, 'guest_local_ledger');
+      expect(active?.localAccountId, UserProfile.localLedgerUserId);
 
       final googleAfter = await store.getAccount(google!.localAccountId);
       expect(googleAfter?.isGoogle, isTrue);
