@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -118,8 +117,7 @@ class AccountSessionManager extends ChangeNotifier {
           phase: AccountSessionPhase.ready,
           activeLocalAccountId: refreshed?.localAccountId,
           activeAccount: refreshed,
-          initialChoiceRequired:
-              await _accountStore.initialChoiceRequired(),
+          initialChoiceRequired: await _accountStore.initialChoiceRequired(),
           migrationState: 'none',
           restoreState: 'none',
         ),
@@ -153,7 +151,8 @@ class AccountSessionManager extends ChangeNotifier {
     try {
       await _accountStore.setMigrationState('prepared');
       final user = await _auth.signIn();
-      if (user == null) throw StateError('Google authentication returned no user.');
+      if (user == null)
+        throw StateError('Google authentication returned no user.');
 
       await _accountStore.setMigrationState('authenticated');
       var target = await _accountStore.findGoogleByUid(user.uid);
@@ -175,7 +174,8 @@ class AccountSessionManager extends ChangeNotifier {
         target = await _accountStore.getAccount(targetId);
       }
 
-      if (target == null) throw StateError('Unable to create Google partition.');
+      if (target == null)
+        throw StateError('Unable to create Google partition.');
 
       await _accountStore.setInitialChoiceRequired(false);
       await _accountStore.setMigrationState('targetPartitionPrepared');
@@ -192,8 +192,8 @@ class AccountSessionManager extends ChangeNotifier {
           generation: target.cloudGeneration,
         );
       } else {
-        final remoteGeneration =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
+        final remoteGeneration = (root['cloudGeneration'] as num?)?.toInt() ??
+            target.cloudGeneration;
         if (remoteGeneration != target.cloudGeneration) {
           await _accountStore.setCloudGeneration(
             target.localAccountId,
@@ -265,7 +265,8 @@ class AccountSessionManager extends ChangeNotifier {
       email: email,
     );
     final target = await _accountStore.getAccount(targetId);
-    if (target == null) throw StateError('Google recovery partition unavailable.');
+    if (target == null)
+      throw StateError('Google recovery partition unavailable.');
 
     try {
       final root = await _backup.readCloudRoot(uid);
@@ -276,9 +277,10 @@ class AccountSessionManager extends ChangeNotifier {
           generation: target.cloudGeneration,
         );
       } else {
-        final generation =
-            (root['cloudGeneration'] as num?)?.toInt() ?? target.cloudGeneration;
-        await _accountStore.setCloudGeneration(target.localAccountId, generation);
+        final generation = (root['cloudGeneration'] as num?)?.toInt() ??
+            target.cloudGeneration;
+        await _accountStore.setCloudGeneration(
+            target.localAccountId, generation);
         await _reconciliation.restore(
           localAccountId: target.localAccountId,
           uid: uid,
@@ -350,7 +352,8 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> deleteCloudData() async {
     final account = activeAccount;
-    if (account == null || !account.isGoogle || account.firebaseUid == null) return;
+    if (account == null || !account.isGoogle || account.firebaseUid == null)
+      return;
     await _accountStore.setBackupEnabled(account.localAccountId, false);
     final nextGeneration = account.cloudGeneration + 1;
     await _backup.deleteCloudData(
@@ -368,7 +371,8 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> restoreNow() async {
     final account = activeAccount;
-    if (account == null || !account.isGoogle || account.firebaseUid == null) return;
+    if (account == null || !account.isGoogle || account.firebaseUid == null)
+      return;
     await _reconciliation.restore(
       localAccountId: account.localAccountId,
       uid: account.firebaseUid!,
@@ -383,8 +387,7 @@ class AccountSessionManager extends ChangeNotifier {
         phase: AccountSessionPhase.ready,
         activeLocalAccountId: account?.localAccountId,
         activeAccount: account,
-        initialChoiceRequired:
-            await _accountStore.initialChoiceRequired(),
+        initialChoiceRequired: await _accountStore.initialChoiceRequired(),
         migrationState: 'none',
         restoreState: 'none',
       ),
