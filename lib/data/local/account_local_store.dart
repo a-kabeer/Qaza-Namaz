@@ -1759,6 +1759,9 @@ class AccountLocalStore {
     );
   }
 
+  String _snapshotOutboxId(String localAccountId) =>
+      'account_snapshot_$localAccountId';
+
   Future<void> enqueueSnapshot(String localAccountId) async {
     final rows = await database.customSelect(
       '''SELECT firebase_uid, cloud_generation, cloud_backup_enabled
@@ -1772,7 +1775,7 @@ class AccountLocalStore {
 
     final device = await deviceInstanceId();
     final now = DateTime.now().microsecondsSinceEpoch;
-    final id = _randomId('snapshot');
+    final id = _snapshotOutboxId(localAccountId);
     await database.customInsert(
       '''INSERT INTO sync_outbox
          (id, user_id, type, queued_at, firebase_uid, cloud_generation,
@@ -1815,7 +1818,7 @@ class AccountLocalStore {
          VALUES (?, ?, 'account_snapshot', ?, ?, ?, 'account', 'snapshot',
                  ?, 0, NULL, NULL, ?)''',
       variables: [
-        Variable(_randomId('snapshot')),
+        Variable(_snapshotOutboxId(localAccountId)),
         Variable(localAccountId),
         Variable(nowMicros),
         Variable(uid),
