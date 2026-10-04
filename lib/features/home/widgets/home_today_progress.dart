@@ -417,6 +417,10 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
+    if (_cachedPrayer != null && _cachedPrayer != prayer) {
+      _cachedRecord = null;
+      _cachedPrayer = null;
+    }
     final tartibAsync = ref.watch(sahibAlTartibProvider);
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final selection = ref.watch(homePrayerSelectionProvider);
