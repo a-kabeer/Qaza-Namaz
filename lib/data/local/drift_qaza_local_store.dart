@@ -817,17 +817,29 @@ class DriftQazaLocalStore extends QazaLocalStore
   Future<void> _upsertProfilePlanProvenance(
     Iterable<QazaRecord> records,
   ) async {
-    for (final record in records) {
-      final revisionId = record.profilePlanRevisionId;
-      final fingerprint = record.profilePlanFingerprint;
-      if (revisionId == null || fingerprint == null) continue;
+    final eligible = records
+        .where(
+          (record) =>
+              record.profilePlanRevisionId != null &&
+              record.profilePlanFingerprint != null,
+        )
+        .toList(growable: false);
+    for (var start = 0; start < eligible.length; start += 400) {
+      final end =
+          start + 400 < eligible.length ? start + 400 : eligible.length;
+      final chunk = eligible.sublist(start, end);
+      final values = chunk
+          .map(
+            (record) => '('${_sqlStringLiteral(record.id)}, '
+                '${_sqlStringLiteral(record.userId)}, '
+                '${_sqlStringLiteral(record.profilePlanRevisionId!)}, '
+                '${_sqlStringLiteral(record.profilePlanFingerprint!)})',
+          )
+          .join(', ');
       await _database.customStatement(
         'INSERT INTO qaza_profile_plan_provenance '
         '(record_id, user_id, plan_revision_id, plan_fingerprint) '
-        'VALUES (${_sqlStringLiteral(record.id)}, '
-        '${_sqlStringLiteral(record.userId)}, '
-        '${_sqlStringLiteral(revisionId)}, '
-        '${_sqlStringLiteral(fingerprint)}) '
+        'VALUES $values '
         'ON CONFLICT(record_id) DO UPDATE SET '
         'user_id = excluded.user_id, '
         'plan_revision_id = excluded.plan_revision_id, '
