@@ -55,8 +55,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith(
-            (ref) => Future.value(period),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
           ),
         ],
         child: _app(child: HomeDailyGoals(onDetails: () {})),
@@ -225,12 +231,16 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith((ref) async {
+          homeDashboardActivityProvider.overrideWith((ref) async {
             attempts += 1;
             if (attempts == 1) {
               throw StateError('daily goals failed');
             }
-            return period;
+            return HomeDashboardActivity(
+              dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
+              currentWeek: period,
+              dailyGoals: period,
+            );
           }),
         ],
         child: _app(child: HomeDailyGoals(onDetails: () {})),
@@ -269,11 +279,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith(
-            (ref) => Future.value(dailyPeriod),
-          ),
-          homeQazaActivityCurrentWeekProvider.overrideWith(
-            (ref) => Future.value(weeklyPeriod),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress: const HomeDailyProgress(completed: 2, target: 5),
+                currentWeek: weeklyPeriod,
+                dailyGoals: dailyPeriod,
+              ),
+            ),
           ),
         ],
         child: MaterialApp(
