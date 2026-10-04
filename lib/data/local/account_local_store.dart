@@ -1360,7 +1360,7 @@ class AccountLocalStore {
         if (columns.isEmpty) continue;
         final placeholders = List.filled(columns.length, '?').join(', ');
         await database.customInsert(
-          'INSERT INTO $table (${columns.join(', ')}) VALUES ($placeholders)',
+          'INSERT OR REPLACE INTO $table (${columns.join(', ')}) VALUES ($placeholders)',
           variables: columns.map((column) => Variable(row[column])).toList(),
         );
       }
