@@ -53,11 +53,14 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Schema version 13 adds per-entity backup progress markers so normal
+  /// Google backups only transmit changed Qaza entities.
+  /// Schema version 12 adds versioning to deletion actions.
   /// Schema version 11 adds account/session and cloud-backup infrastructure.
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -114,6 +117,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 12) {
             await _ensureDeletionActionVersionColumn();
+          }
+          if (from < 13) {
+            await _ensureEntityMetadataSyncColumn();
           }
           if (from < 11) {
             await _ensureAccountSchema();
@@ -224,9 +230,25 @@ class AppDatabase extends _$AppDatabase {
         updated_at INTEGER NOT NULL,
         writer_device_id TEXT NOT NULL,
         operation_id TEXT NOT NULL,
+        synced_entity_version INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (local_account_id, entity_type, entity_id)
       )
     ''');
+    await _ensureEntityMetadataSyncColumn();
+    await customStatement(
+      '''INSERT OR IGNORE INTO entity_metadata
+         (local_account_id, entity_type, entity_id, entity_version,
+          updated_at, writer_device_id, operation_id, synced_entity_version)
+         SELECT r.user_id, 'qazaRecord', r.id, r.record_version,
+                r.updated_at,
+                COALESCE(
+                  (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+                  'unknown_device'
+                ),
+                'backfill_' || r.id,
+                0
+         FROM qaza_records r''',
+    );
     await customStatement('''
       CREATE TABLE IF NOT EXISTS qaza_record_tombstones (
         local_account_id TEXT NOT NULL,
@@ -314,11 +336,12 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
+           writer_device_id, operation_id, synced_entity_version)
         SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
                NEW.updated_at,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
+               lower(hex(randomblob(16))),
+               0;
         $queue
       END
     '''.replaceFirst('%USER%', 'NEW.user_id'));
@@ -336,11 +359,12 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
+           writer_device_id, operation_id, synced_entity_version)
         SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
                NEW.updated_at,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
+               lower(hex(randomblob(16))),
+               0;
         $queue
       END
     '''.replaceFirst('%USER%', 'NEW.user_id'));
@@ -353,6 +377,15 @@ class AppDatabase extends _$AppDatabase {
         WHERE local_account_id = OLD.user_id AND account_mode = 'google'
       )
       BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id, synced_entity_version)
+        SELECT OLD.user_id, 'qazaRecord', OLD.id, OLD.record_version + 1,
+               $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16))),
+               0;
+
         INSERT OR REPLACE INTO qaza_record_tombstones
           (local_account_id, record_id, record_version, deleted_at,
            writer_device_id, operation_id, cloud_generation)
@@ -607,6 +640,20 @@ class AppDatabase extends _$AppDatabase {
         plan_fingerprint TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _ensureEntityMetadataSyncColumn() async {
+    final columns =
+        await customSelect('PRAGMA table_info(entity_metadata)').get();
+    final exists = columns.any(
+      (row) => row.read<String>('name') == 'synced_entity_version',
+    );
+    if (!exists) {
+      await customStatement(
+        'ALTER TABLE entity_metadata '
+        'ADD COLUMN synced_entity_version INTEGER NOT NULL DEFAULT 0',
+      );
+    }
   }
 
   Future<void> _ensureDeletionActionVersionColumn() async {
