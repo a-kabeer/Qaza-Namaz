@@ -91,37 +91,128 @@ void main() {
     expect(rows.single.id, 'record-stable-2');
   });
 
-  test('an existing Google partition with local data is never overwritten',
+  test(
+    'Sign Out after Guest to Google creates an independent Guest partition',
+    () async {
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: 'record-stable-signout',
+          userId: UserProfile.localLedgerUserId,
+          prayerType: PrayerType.fajr.name,
+          originalDate: DateTime(2026, 3, 1),
+          status: 'pending',
+          createdAt: DateTime(2026, 3, 1),
+          updatedAt: DateTime(2026, 3, 1),
+        ),
+      );
+
+      await store.cloneGuestToGoogle(
+        firebaseUid: 'firebase-user-signout',
+        email: 'signout@example.com',
+      );
+
+      final guestId = await store.ensureGuestActive();
+
+      expect(guestId, isNot(UserProfile.localLedgerUserId));
+
+      final guest = await store.getAccount(guestId);
+      expect(guest?.isGuest, isTrue);
+      expect(await store.hasAnyQaza(guestId), isFalse);
+
+      final google = await store.findGoogleByUid('firebase-user-signout');
+      expect(google?.isGoogle, isTrue);
+      expect(await store.hasAnyQaza(google!.localAccountId), isTrue);
+    },
+  );
+
+  test(
+    'Guest to an existing empty Google partition preserves record identity',
+    () async {
+      await store.ensureGuestActive();
+      final googleId = await store.createGooglePartition(
+        firebaseUid: 'firebase-user-empty',
+        email: 'empty@example.com',
+      );
+
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: 'record-preserved-empty-target',
+          userId: UserProfile.localLedgerUserId,
+          prayerType: PrayerType.isha.name,
+          originalDate: DateTime(2026, 3, 2),
+          status: 'pending',
+          createdAt: DateTime(2026, 3, 2),
+          updatedAt: DateTime(2026, 3, 2),
+        ),
+      );
+
+      final targetId = await store.cloneGuestToGoogle(
+        firebaseUid: 'firebase-user-empty',
+        email: 'empty@example.com',
+      );
+
+      expect(targetId, UserProfile.localLedgerUserId);
+      expect(await store.getAccount(googleId), isNull);
+
+      final google = await store.findGoogleByUid('firebase-user-empty');
+      expect(google?.localAccountId, UserProfile.localLedgerUserId);
+
+      final rows = await database.qazaRecordsDao.getAll(
+        userId: UserProfile.localLedgerUserId,
+      );
+      expect(rows.single.id, 'record-preserved-empty-target');
+    },
+  );
+
+  test('An existing Google partition is reconciled without overwriting its data',
       () async {
     final googleId = await store.createGooglePartition(
       firebaseUid: 'firebase-user-3',
       email: 'user3@example.com',
     );
-    await database.customInsert(
-      '''INSERT INTO account_profiles
-         (local_account_id, payload_json, entity_version, updated_at,
-          writer_device_id, operation_id)
-         VALUES (?, ?, 1, ?, ?, ?)''',
-      variables: [
-        Variable(googleId),
-        Variable('{}'),
-        Variable(DateTime(2026, 1, 1).microsecondsSinceEpoch),
-        Variable('device'),
-        Variable('operation'),
-      ],
+
+    await database.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'google-existing-record',
+        userId: googleId,
+        prayerType: PrayerType.fajr.name,
+        originalDate: DateTime(2026, 3, 3),
+        status: 'pending',
+        createdAt: DateTime(2026, 3, 3),
+        updatedAt: DateTime(2026, 3, 3),
+      ),
     );
 
-    await expectLater(
-      store.cloneGuestToGoogle(
-        firebaseUid: 'firebase-user-3',
-        email: 'user3@example.com',
+    await database.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'guest-record-to-merge',
+        userId: UserProfile.localLedgerUserId,
+        prayerType: PrayerType.isha.name,
+        originalDate: DateTime(2026, 3, 4),
+        status: 'pending',
+        createdAt: DateTime(2026, 3, 4),
+        updatedAt: DateTime(2026, 3, 4),
       ),
-      throwsStateError,
+    );
+
+    final targetId = await store.cloneGuestToGoogle(
+      firebaseUid: 'firebase-user-3',
+      email: 'user3@example.com',
+    );
+
+    expect(targetId, googleId);
+
+    final googleRecords =
+        await database.qazaRecordsDao.getAll(userId: googleId);
+    expect(
+      googleRecords.map((record) => record.id),
+      containsAll(<String>[
+        'google-existing-record',
+        'guest-record-to-merge',
+      ]),
     );
 
     final guest = await store.getAccount(UserProfile.localLedgerUserId);
-    final google = await store.getAccount(googleId);
     expect(guest?.isGuest, isTrue);
-    expect(google?.isGoogle, isTrue);
   });
 }
