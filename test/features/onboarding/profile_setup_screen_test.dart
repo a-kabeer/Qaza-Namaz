@@ -56,8 +56,7 @@ class _OneDayQazaPlanService extends QazaPlanService {
   }
 }
 
-class _FakeQazaPlanRevisionRepository
-    implements QazaPlanRevisionRepository {
+class _FakeQazaPlanRevisionRepository implements QazaPlanRevisionRepository {
   QazaPlanRevision? stored;
 
   @override
@@ -191,7 +190,6 @@ void main() {
     },
   );
 
-
   testWidgets(
     'zero-Qaza onboarding completes directly from Profile Setup without review or import',
     (tester) async {
@@ -310,7 +308,8 @@ void main() {
 
       expect(find.byType(WorkspaceShell), findsOneWidget);
       for (var i = 0;
-          i < 20 && find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
+          i < 20 &&
+              find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
           i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -346,6 +345,4 @@ void main() {
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
     },
   );
-
-
 }
