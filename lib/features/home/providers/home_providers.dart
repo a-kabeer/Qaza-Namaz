@@ -351,16 +351,16 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
-  void selectPrayer(
+  bool selectPrayer(
     PrayerType prayer, {
     bool witrEnabled = true,
   }) {
-    if (prayer == PrayerType.witr && !witrEnabled) return;
+    if (prayer == PrayerType.witr && !witrEnabled) return false;
 
     final summary = ref.read(progressSummaryProvider).valueOrNull;
     if (summary == null ||
         (summary.byPrayer[prayer]?.progress.pending ?? 0) <= 0) {
-      return;
+      return false;
     }
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
@@ -369,6 +369,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     _targetRevision++;
     _persistMode(HomePrayerSelectionMode.prayerSelection);
     _persistSelectedPrayer(prayer);
+    return true;
   }
 
   /// Switches to Prayer Time while preserving the Auto Sequence cursor.
