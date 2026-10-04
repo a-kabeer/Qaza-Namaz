@@ -168,20 +168,43 @@ request_json(
     expected={403},
 )
 
-# Invalid lifecycle state disables child writes.
+# Illegal lifecycle transitions are denied.
 request_json(
     root,
     method="PATCH",
     token=token_a,
     body={"fields": root_fields(state="deleted", generation=1)},
+    expected={403},
+)
+request_json(
+    root,
+    method="PATCH",
+    token=token_a,
+    body={"fields": root_fields(state="initializing", generation=3)},
+    expected={403},
+)
+
+# A new generation can enter deleting, and child writes are then denied.
+request_json(
+    root,
+    method="PATCH",
+    token=token_a,
+    body={"fields": root_fields(state="deleting", generation=2)},
     expected={200},
 )
 request_json(
-    doc_url("users/" + uid_a + "/qazaRecords/deleted-state"),
+    doc_url("users/" + uid_a + "/qazaRecords/deleting-state"),
     method="PATCH",
     token=token_a,
-    body={"fields": child_fields()},
+    body={"fields": child_fields(generation=2)},
     expected={403},
+)
+request_json(
+    root,
+    method="PATCH",
+    token=token_a,
+    body={"fields": root_fields(state="deleted", generation=2)},
+    expected={200},
 )
 
 # Root deletion is always denied.
