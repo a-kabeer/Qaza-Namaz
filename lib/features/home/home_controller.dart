@@ -15,8 +15,12 @@ class HomeController {
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDashboardActivityProvider);
-    for (final prayer in ref.read(enabledPrayerTypesProvider)) {
-      ref.invalidate(oldestPendingProvider(prayer));
+
+    final selected = ref.read(homeSelectedPrayerProvider);
+    if (selected.prayer != null) {
+      ref.invalidate(oldestPendingProvider(selected.prayer!));
+    } else {
+      ref.invalidate(homeFallbackPendingProvider);
     }
   }
 
@@ -90,31 +94,25 @@ class HomeController {
     required PrayerType completedPrayer,
   }) {
     final witrEnabled = ref.read(effectiveWitrProvider);
-    invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
     ref
         .read(homePrayerSelectionProvider.notifier)
         .afterSuccessfulCompletion(
           completedPrayer,
           witrEnabled: witrEnabled,
         );
+    invalidateDashboard();
+    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterStaleCompletion() {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
   }
 
   void afterUndo() {
     ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
-    for (final prayer in PrayerType.values) {
-      ref.invalidate(oldestPendingProvider(prayer));
-    }
   }
 }
 
