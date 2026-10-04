@@ -249,6 +249,17 @@ class AppDatabase extends _$AppDatabase {
                 0
          FROM qaza_records r''',
     );
+    await customStatement(
+      '''INSERT OR IGNORE INTO entity_metadata
+         (local_account_id, entity_type, entity_id, entity_version,
+          updated_at, writer_device_id, operation_id, synced_entity_version)
+         SELECT t.local_account_id, 'qazaRecord', t.record_id, t.record_version,
+                t.deleted_at,
+                t.writer_device_id,
+                t.operation_id,
+                0
+         FROM qaza_record_tombstones t''',
+    );
     await customStatement('''
       CREATE TABLE IF NOT EXISTS qaza_record_tombstones (
         local_account_id TEXT NOT NULL,
