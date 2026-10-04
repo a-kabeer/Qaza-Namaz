@@ -65,6 +65,7 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Check formatting
+        id: formatting
         shell: bash
         run: |
           set -euo pipefail
@@ -74,7 +75,28 @@ jobs:
             echo "No Dart files changed in this PR."
             exit 0
           fi
-          printf '%s\n' "$files" | xargs dart format --output=none --set-exit-if-changed
+
+          rm -rf /tmp/formatted-dart
+          mkdir -p /tmp/formatted-dart
+          printf '%s\n' "$files" | while IFS= read -r file; do
+            mkdir -p "/tmp/formatted-dart/$(dirname "$file")"
+            dart format "$file"
+            cp "$file" "/tmp/formatted-dart/$file"
+          done
+
+          if ! git diff --quiet -- "$files"; then
+            echo "Changed Dart files are not formatted:"
+            git diff --name-only -- "$files"
+            git diff --no-color -- "$files"
+            exit 1
+          fi
+
+      - name: Upload formatter output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-dart-files
+          path: /tmp/formatted-dart
 
       - name: Test
         run: flutter test
