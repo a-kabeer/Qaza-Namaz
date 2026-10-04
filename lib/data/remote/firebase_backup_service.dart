@@ -212,24 +212,24 @@ class FirebaseBackupService {
     final actions = await _readDocs(uid, 'deletionActions');
     for (final action in actions) {
       final actionRef = rootRef.collection('deletionActions').doc(action.id);
-      final snapshots = await actionRef.collection('snapshots').get();
-      for (final page in _chunks(snapshots.docs, 400)) {
+      final snapshotRef = actionRef.collection('snapshots');
+      DocumentSnapshot<Map<String, dynamic>>? snapshotCursor;
+      while (true) {
+        Query<Map<String, dynamic>> query = snapshotRef.limit(400);
+        if (snapshotCursor != null) {
+          query = query.startAfterDocument(snapshotCursor);
+        }
+        final snapshots = await query.get();
+        if (snapshots.docs.isEmpty) break;
         final batch = _firebase.firestore.batch();
-        for (final doc in page) {
+        for (final doc in snapshots.docs) {
           batch.delete(doc.reference);
         }
         await batch.commit();
+        if (snapshots.docs.length < 400) break;
+        snapshotCursor = snapshots.docs.last;
       }
       await actionRef.delete();
-    }
-
-    final profile = await rootRef.collection('profile').get();
-    for (final page in _chunks(profile.docs, 400)) {
-      final batch = _firebase.firestore.batch();
-      for (final doc in page) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
     }
 
     await _firebase.firestore.runTransaction((transaction) async {
@@ -335,13 +335,27 @@ class FirebaseBackupService {
   }
 
   Future<void> _deleteCollection(String uid, String collection) async {
-    final docs = await _readDocs(uid, collection);
-    for (final page in _chunks(docs, 400)) {
+    final ref = _firebase.firestore
+        .collection('users')
+        .doc(uid)
+        .collection(collection);
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    while (true) {
+      Query<Map<String, dynamic>> query = ref.limit(400);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+      final page = await query.get();
+      if (page.docs.isEmpty) break;
+
       final batch = _firebase.firestore.batch();
-      for (final doc in page) {
+      for (final doc in page.docs) {
         batch.delete(doc.reference);
       }
       await batch.commit();
+
+      if (page.docs.length < 400) break;
+      cursor = page.docs.last;
     }
   }
 
