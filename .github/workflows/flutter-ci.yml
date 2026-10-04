@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
-          files=$(git diff --name-only "origin/$GITHUB_BASE_REF...HEAD" -- '*.dart')
+          files=$(git diff --name-only "origin/$GITHUB_BASE_REF" HEAD -- '*.dart')
           if [ -z "$files" ]; then
             echo "No Dart files changed in this PR."
             exit 0
