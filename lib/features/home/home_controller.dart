@@ -25,19 +25,20 @@ class HomeController {
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
 
-    await _refreshRequired(
-      progressSummaryProvider,
-      'home_summary_refresh_failed',
-    );
-
-    await _refreshOptional(
-      homeDashboardActivityProvider,
-      'home_dashboard_activity_refresh_failed',
-    );
-    await _refreshOptional(
-      sahibAlTartibProvider,
-      'home_sahib_al_tartib_refresh_failed',
-    );
+    await Future.wait<void>([
+      _refreshRequired(
+        progressSummaryProvider,
+        'home_summary_refresh_failed',
+      ),
+      _refreshOptional(
+        homeDashboardActivityProvider,
+        'home_dashboard_activity_refresh_failed',
+      ),
+      _refreshOptional(
+        sahibAlTartibProvider,
+        'home_sahib_al_tartib_refresh_failed',
+      ),
+    ]);
     final selected = ref.read(homeSelectedPrayerProvider);
     if (selected.prayer != null) {
       await _refreshOptional(
