@@ -950,37 +950,9 @@ class AccountLocalStore {
         }
       }
 
-      // Copy source metadata for Guest-owned winners. This preserves the
-      // version chain instead of resetting entity metadata during migration.
-      final metadataRows = await database.customSelect(
-        '''SELECT entity_type, entity_id, entity_version, updated_at,
-                  writer_device_id, operation_id
-           FROM entity_metadata
-           WHERE local_account_id = ?''',
-        variables: [Variable(guestLocalAccountId)],
-      ).get();
-      for (final row in metadataRows) {
-        final keep =
-            (row.read<String>('entity_type') == 'qazaRecord' &&
-                    guestWinningIds.contains(row.read<String>('entity_id'))) ||
-                row.read<String>('entity_type') != 'qazaRecord';
-        if (!keep) continue;
-        await database.customInsert(
-          '''INSERT OR REPLACE INTO entity_metadata
-             (local_account_id, entity_type, entity_id, entity_version,
-              updated_at, writer_device_id, operation_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?)''',
-          variables: [
-            Variable(googleLocalAccountId),
-            Variable(row.read<String>('entity_type')),
-            Variable(row.read<String>('entity_id')),
-            Variable(row.read<int>('entity_version')),
-            Variable(row.read<int>('updated_at')),
-            Variable(row.read<String>('writer_device_id')),
-            Variable(row.read<String>('operation_id')),
-          ],
-        );
-      }
+      // Qaza-record/addition/deletion metadata is maintained by the
+      // corresponding database triggers during the merge. Profile metadata is
+      // copied only when the Guest profile actually won the profile conflict.
     });
   }
 
