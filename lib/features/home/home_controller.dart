@@ -92,14 +92,18 @@ class HomeController {
 
   void afterCompletion({
     required PrayerType completedPrayer,
+    required HomePrayerSelectionSource selectionSource,
   }) {
     final witrEnabled = ref.read(effectiveWitrProvider);
-    ref
-        .read(homePrayerSelectionProvider.notifier)
-        .afterSuccessfulCompletion(
-          completedPrayer,
-          witrEnabled: witrEnabled,
-        );
+    if (selectionSource == HomePrayerSelectionSource.autoSequence) {
+      ref
+          .read(homePrayerSelectionProvider.notifier)
+          .afterSuccessfulCompletion(
+            completedPrayer,
+            witrEnabled: witrEnabled,
+            targetWasAutoSequence: true,
+          );
+    }
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
   }
