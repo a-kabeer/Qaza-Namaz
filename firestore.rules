@@ -68,7 +68,13 @@ service cloud.firestore {
               || (resource.data.datasetState == 'ready'
                 && request.resource.data.datasetState in ['ready'])
               || (resource.data.datasetState == 'deleting'
-                && request.resource.data.datasetState in ['deleting', 'deleted'])
+                && (
+                  request.resource.data.datasetState == 'deleting'
+                  || (
+                    request.resource.data.datasetState == 'deleted'
+                    && request.resource.data.bootstrapComplete == true
+                  )
+                ))
               || (resource.data.datasetState == 'deleted'
                 && request.resource.data.datasetState == 'deleted')
             )
