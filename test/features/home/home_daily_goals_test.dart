@@ -90,8 +90,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith(
-            (ref) => Future.value(period),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress:
+                    const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
           ),
         ],
         child: _app(child: HomeDailyGoals(onDetails: () => tapped = true)),
@@ -114,8 +121,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith(
-            (ref) => Future.value(period),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress:
+                    const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
           ),
         ],
         child: _app(child: HomeDailyGoals(onDetails: () {})),
@@ -138,8 +152,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityDailyGoalsProvider.overrideWith(
-            (ref) => Future.value(period),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress:
+                    const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
           ),
         ],
         child: _app(child: HomeDailyGoals(onDetails: () {})),
