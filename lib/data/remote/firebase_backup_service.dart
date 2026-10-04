@@ -359,6 +359,7 @@ class FirebaseBackupService {
     await _writeVersioned(
       _firebase.firestore.collection('users').doc(uid)
           .collection('profile').doc('current'),
+      uid: uid,
       payload: {'profile': payload},
       version: VersionedEntity(
         entityVersion: row.read<int>('entity_version'),
