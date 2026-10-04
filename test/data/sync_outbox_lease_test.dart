@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,12 +62,18 @@ void main() {
       operationId: operationId,
       workerId: 'worker-b',
     );
-    final stillQueued = await store.loadModernOutboxBatch(
-      localAccountId: googleAccountId,
-      nowMicros: DateTime.now().microsecondsSinceEpoch,
-      limit: 10,
+    final stillQueued = await database.customSelect(
+      '''SELECT id FROM sync_outbox
+         WHERE user_id = ? AND id = ?''',
+      variables: [
+        Variable(googleAccountId),
+        Variable(operationId),
+      ],
+    ).get();
+    expect(
+      stillQueued.map((row) => row.read<String>('id')),
+      contains(operationId),
     );
-    expect(stillQueued.map((row) => row['id']), contains(operationId));
 
     await store.removeOutboxOperation(
       localAccountId: googleAccountId,
