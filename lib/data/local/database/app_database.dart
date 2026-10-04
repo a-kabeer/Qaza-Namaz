@@ -111,11 +111,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10) {
             await _ensureQazaProfilePlanProvenanceSchema();
           }
-          if (from < 11) {
-            await _ensureAccountSchema();
-          }
           if (from < 12) {
             await _ensureDeletionActionVersionColumn();
+          }
+          if (from < 11) {
+            await _ensureAccountSchema();
           }
           await _ensurePerformanceIndexes();
         },
