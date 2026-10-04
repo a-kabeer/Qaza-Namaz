@@ -10,6 +10,8 @@ import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_activity.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
+const _monthlyCalendarCellCountForTest = 42;
+
 void main() {
   Widget buildWidget() {
     return ProviderScope(
@@ -571,6 +573,133 @@ void main() {
       expect(find.text('Thursday, October 1, 2026'), findsOneWidget);
       expect(find.text('Daily Target'), findsOneWidget);
       expect(find.text('5'), findsWidgets);
+    },
+  );
+
+  testWidgets(
+    'monthly calendar keeps a fixed six-row footprint across month boundaries',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Monthly'));
+      await tester.pumpAndSettle();
+
+      for (var index = 0; index < 7; index++) {
+        await tester.tap(find.byKey(const Key('home_activity_previous')));
+        await tester.pumpAndSettle();
+      }
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_date_header')),
+        ).data,
+        'February 2026',
+      );
+
+      final grid = find.byKey(const Key('home_activity_month_grid'));
+      final gridView = tester.widget<GridView>(grid);
+      final delegate = gridView.childrenDelegate as SliverChildBuilderDelegate;
+      expect(
+        delegate.estimatedChildCount,
+        _monthlyCalendarCellCountForTest,
+      );
+
+      final februaryHeight = tester.getRect(grid).height;
+
+      await tester.tap(find.byKey(const Key('home_activity_next')));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_activity_date_header')),
+        ).data,
+        'March 2026',
+      );
+
+      final marchHeight = tester.getRect(
+        find.byKey(const Key('home_activity_month_grid')),
+      ).height;
+      expect(marchHeight, closeTo(februaryHeight, 0.01));
+    },
+  );
+
+  testWidgets(
+    'yearly month drill-down keeps stable monthly geometry',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      Future<void> selectMonth(int index) async {
+        final chart = tester.widget<BarChart>(
+          find.descendant(
+            of: find.byKey(const Key('home_activity_year_chart')),
+            matching: find.byType(BarChart),
+          ),
+        );
+        final group = chart.data.barGroups[index];
+        final rod = group.barRods.first;
+        chart.data.barTouchData.touchCallback!(
+          FlTapUpEvent(
+            TapUpDetails(kind: PointerDeviceKind.touch),
+          ),
+          BarTouchResponse(
+            touchLocation: Offset.zero,
+            touchChartCoordinate: Offset.zero,
+            spot: BarTouchedSpot(
+              group,
+              index,
+              rod,
+              0,
+              null,
+              -1,
+              FlSpot(group.x.toDouble(), rod.toY),
+              Offset.zero,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await selectMonth(1);
+      final februaryHeight = tester.getRect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+      ).height;
+
+      await selectMonth(2);
+      final marchHeight = tester.getRect(
+        find.byKey(const Key('home_activity_inline_month_detail')),
+      ).height;
+
+      expect(marchHeight, closeTo(februaryHeight, 0.01));
+    },
+  );
+
+  testWidgets(
+    'daily drill-down does not change monthly calendar geometry',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Monthly'));
+      await tester.pumpAndSettle();
+
+      final grid = find.byKey(const Key('home_activity_month_grid'));
+      final before = tester.getRect(grid).height;
+      final dayOne = find.descendant(of: grid, matching: find.text('1'));
+      expect(dayOne, findsOneWidget);
+
+      await tester.tap(dayOne);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getRect(find.byKey(const Key('home_activity_month_grid'))).height,
+        closeTo(before, 0.01),
+      );
+      expect(
+        find.byKey(const Key('home_activity_day_details')),
+        findsOneWidget,
+      );
     },
   );
 
