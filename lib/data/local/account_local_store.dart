@@ -654,6 +654,33 @@ class AccountLocalStore {
     });
   }
 
+  Future<void> rollbackGoogleMigration(String localAccountId) async {
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET account_mode = 'guest',
+               firebase_uid = NULL,
+               google_email = NULL,
+               lifecycle_state = 'active',
+               cloud_backup_enabled = 0,
+               cloud_generation = 1,
+               updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(localAccountId),
+        ],
+      );
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = ?,
+               migration_state = 'failed'
+           WHERE id = 1''',
+        variables: [Variable(localAccountId)],
+      );
+    });
+  }
+
   Future<void> updateGoogleAccount({
     required String localAccountId,
     required String uid,
