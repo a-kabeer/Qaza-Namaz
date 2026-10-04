@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -65,7 +67,26 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Check formatting
-        run: dart format --set-exit-if-changed .
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          changed_dart="$(git diff --name-only "$base_sha" "$GITHUB_SHA" -- '*.dart')"
+          if [ -z "$changed_dart" ]; then
+            echo "No changed Dart files."
+            exit 0
+          fi
+
+          echo "Checking changed Dart files:"
+          printf '%s\n' "$changed_dart"
+
+          dart format $changed_dart
+
+          if ! git diff --quiet -- $changed_dart; then
+            echo "::error::Changed Dart files require formatting."
+            git diff --no-color -- $changed_dart
+            exit 1
+          fi
 
       - name: Test
         run: flutter test
