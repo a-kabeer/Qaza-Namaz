@@ -276,6 +276,7 @@ class AccountSessionManager extends ChangeNotifier {
         await _accountStore.activate(target.localAccountId);
         await _accountStore.setMigrationState('completed');
       }
+      await _accountStore.clearMigrationSnapshot();
       _ensureOperationCurrent(operationEpoch, operationAccountId);
       await _refresh();
     } catch (error) {
@@ -372,6 +373,7 @@ class AccountSessionManager extends ChangeNotifier {
     } else {
       await _accountStore.activate(target.localAccountId);
     }
+    await _accountStore.clearMigrationSnapshot();
     await _accountStore.setMigrationState('completed');
   }
 
