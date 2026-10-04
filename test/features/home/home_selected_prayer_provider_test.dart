@@ -67,6 +67,18 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    final progressSubscription = container.listen(
+      progressSummaryProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    final tartibSubscription = container.listen(
+      sahibAlTartibProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    addTearDown(progressSubscription.close);
+    addTearDown(tartibSubscription.close);
 
     container.read(homePrayerSelectionProvider);
     await container.read(progressSummaryProvider.future);
@@ -279,6 +291,18 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      final progressSubscription = container.listen(
+        progressSummaryProvider,
+        (_, __) {},
+        fireImmediately: true,
+      );
+      final tartibSubscription = container.listen(
+        sahibAlTartibProvider,
+        (_, __) {},
+        fireImmediately: true,
+      );
+      addTearDown(progressSubscription.close);
+      addTearDown(tartibSubscription.close);
 
       container.read(homePrayerSelectionProvider);
       await container.read(progressSummaryProvider.future);
