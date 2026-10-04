@@ -322,9 +322,24 @@ class FirebaseBackupService {
     String uid,
     String collection,
   ) async {
-    final snap = await _firebase.firestore
-        .collection('users').doc(uid).collection(collection).get();
-    return snap.docs;
+    final ref = _firebase.firestore
+        .collection('users')
+        .doc(uid)
+        .collection(collection);
+    final result = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    while (true) {
+      Query<Map<String, dynamic>> query = ref.limit(400);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+      final page = await query.get();
+      if (page.docs.isEmpty) break;
+      result.addAll(page.docs);
+      if (page.docs.length < 400) break;
+      cursor = page.docs.last;
+    }
+    return result;
   }
 
   Iterable<List<T>> _chunks<T>(List<T> values, int size) sync* {
