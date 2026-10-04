@@ -16,12 +16,14 @@ class _VersionedWrite {
     required this.payload,
     required this.version,
     required this.immutable,
+    required this.generation,
   });
 
   final DocumentReference<Map<String, dynamic>> ref;
   final Map<String, dynamic> payload;
   final VersionedEntity version;
   final bool immutable;
+  final int generation;
 }
 
 class FirebaseBackupService {
@@ -783,10 +785,7 @@ class FirebaseBackupService {
           final recordData =
               record.data() ?? const <String, dynamic>{};
           final payload = tombstoneData['payload'];
-          if (tombstoneData['cloudGeneration'] != null ||
-              payload is! Map) {
-            // Generation is validated from the root and payload below.
-          }
+          if (payload is! Map) continue;
           final tombstoneGeneration =
               (payload['cloudGeneration'] as num?)?.toInt() ?? 0;
           if (tombstoneGeneration != generation) continue;
@@ -889,8 +888,16 @@ class FirebaseBackupService {
               entityId: operation.ref.id,
             );
             final cmp = _resolver.compare(operation.version, remote);
-            if (cmp < 0 || cmp == 0) {
-              continue;
+            if (cmp < 0) continue;
+            if (cmp == 0) {
+              if (!operation.immutable) continue;
+              final remotePayload = currentData['payload'];
+              if (jsonEncode(remotePayload) == jsonEncode(operation.payload)) {
+                continue;
+              }
+              throw StateError(
+                'Immutable cloud entity conflict: ' + operation.ref.path,
+              );
             }
 
             if (operation.immutable) {
