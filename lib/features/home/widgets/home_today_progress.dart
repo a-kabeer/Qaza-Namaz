@@ -198,11 +198,11 @@ class _TodayProgressSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final daily = ref.watch(homeDailyProgressProvider);
+    final daily = ref.watch(homeDashboardActivityProvider);
     final today = ref.watch(homeLocalDateProvider);
 
-    ref.listen<AsyncValue<HomeDailyProgress>>(
-      homeDailyProgressProvider,
+    ref.listen<AsyncValue<HomeDashboardActivity>>(
+      homeDashboardActivityProvider,
       (previous, next) {
         if (!next.hasError || next.error == previous?.error) return;
         ref.read(diagnosticsProvider).recordFailure(
@@ -223,12 +223,13 @@ class _TodayProgressSection extends ConsumerWidget {
           Expanded(child: Text(l10n.homeDailyProgressError)),
           TextButton(
             key: const Key('home_daily_progress_retry'),
-            onPressed: () => ref.invalidate(homeDailyProgressProvider),
+            onPressed: () => ref.invalidate(homeDashboardActivityProvider),
             child: Text(l10n.commonRetry),
           ),
         ],
       ),
-      data: (progress) {
+      data: (dashboard) {
+        final progress = dashboard.dailyProgress;
         final percent = (progress.percentage * 100).round();
         final summaryText =
             l10n.homeDailyProgress(progress.completed, progress.target);
