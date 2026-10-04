@@ -188,8 +188,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 final period = periodAsync.valueOrNull;
                 final height = _activityViewportHeight(
                   constraints.maxWidth,
-                  anchor,
-                  period,
                 );
 
                 return AnimatedSize(
@@ -281,11 +279,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     return content;
   }
 
-  double _activityViewportHeight(
-    double width,
-    DateTime anchor,
-    QazaActivityPeriod? period,
-  ) {
+  double _activityViewportHeight(double width) {
     const chartHeight = 250.0;
     const listVerticalPadding = 8.0;
     const contentSpacing = 12.0;
