@@ -356,6 +356,12 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     bool witrEnabled = true,
   }) {
     if (prayer == PrayerType.witr && !witrEnabled) return;
+
+    final summary = ref.read(progressSummaryProvider).valueOrNull;
+    if (summary == null ||
+        (summary.byPrayer[prayer]?.progress.pending ?? 0) <= 0) {
+      return;
+    }
     state = state.copyWith(
       mode: HomePrayerSelectionMode.prayerSelection,
       selectedPrayer: prayer,
