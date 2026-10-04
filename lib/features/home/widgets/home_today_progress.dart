@@ -505,7 +505,13 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              l10n.homePrayerTimeUnavailable,
+              widget.selected.source ==
+                      HomePrayerSelectionSource.prayerSelectionUnavailable
+                  ? l10n.homePrayerSelectionNoPending(
+                      selection.selectedPrayer?.localizedLabel(l10n) ??
+                          l10n.homePrayerSelection,
+                    )
+                  : l10n.homePrayerTimeUnavailable,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           )
