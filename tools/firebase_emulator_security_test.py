@@ -34,7 +34,13 @@ def request_json(url, method="GET", body=None, token=None, expected=None):
         raise AssertionError(
             f"Unexpected HTTP {status} for {method} {url}: {payload}"
         )
-    return status, json.loads(payload) if payload else {}
+    if not payload:
+        return status, {}
+    try:
+        return status, json.loads(payload)
+    except json.JSONDecodeError:
+        # Readiness checks intentionally accept non-JSON 404 responses.
+        return status, {}
 
 
 def wait_for(url, timeout_seconds=1200):
