@@ -6,6 +6,7 @@ import '../../../core/constants/prayer_types.dart';
 import '../../../core/widgets/prayer_selection_grid.dart';
 import '../../../features/prayer_time/application/prayer_time_providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../l10n/prayer_type_l10n.dart';
 import '../../shell/workspace_shell.dart';
 import '../home_state.dart';
 import '../providers/home_providers.dart';
