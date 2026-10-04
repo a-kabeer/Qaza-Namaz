@@ -136,7 +136,7 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Production release signing is not configured; release artifacts will be skipped."
+            echo "No production release signing configured; CI will verify unsigned release artifacts."
           fi
 
       - name: Prepare release signing
@@ -157,12 +157,10 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
-      - name: Build signed release APK
-        if: steps.release_signing.outputs.configured == 'true'
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Build release AAB
-        if: steps.release_signing.outputs.configured == 'true'
         run: flutter build appbundle --release
 
       - name: Upload debug APK
@@ -171,15 +169,13 @@ jobs:
           name: app-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - name: Upload signed release APK
-        if: steps.release_signing.outputs.configured == 'true'
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk-signed
+          name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload release AAB
-        if: steps.release_signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
