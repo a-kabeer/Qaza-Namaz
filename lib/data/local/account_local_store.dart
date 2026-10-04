@@ -1447,10 +1447,16 @@ class AccountLocalStore {
   Future<void> removeOutboxOperation({
     required String localAccountId,
     required String operationId,
+    required String workerId,
   }) async {
     await database.customUpdate(
-      'DELETE FROM sync_outbox WHERE user_id = ? AND id = ?',
-      variables: [Variable(localAccountId), Variable(operationId)],
+      '''DELETE FROM sync_outbox
+         WHERE user_id = ? AND id = ? AND worker_id = ?''',
+      variables: [
+        Variable(localAccountId),
+        Variable(operationId),
+        Variable(workerId),
+      ],
     );
   }
 
@@ -1470,6 +1476,7 @@ class AccountLocalStore {
   Future<void> markOutboxRetry({
     required String localAccountId,
     required String operationId,
+    required String workerId,
     required int attempts,
     required String error,
     required int nextAttemptMicros,
@@ -1478,13 +1485,14 @@ class AccountLocalStore {
       '''UPDATE sync_outbox
          SET attempts = ?, last_error = ?, next_attempt_at = ?,
              worker_id = NULL, lease_until = NULL
-         WHERE user_id = ? AND id = ?''',
+         WHERE user_id = ? AND id = ? AND worker_id = ?''',
       variables: [
         Variable(attempts),
         Variable(error),
         Variable(nextAttemptMicros),
         Variable(localAccountId),
         Variable(operationId),
+        Variable(workerId),
       ],
     );
   }
