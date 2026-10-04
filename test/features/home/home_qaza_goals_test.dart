@@ -42,8 +42,14 @@ QazaActivityPeriod _period({
 Widget _buildWidget(QazaActivityPeriod period) {
   return ProviderScope(
     overrides: [
-      homeQazaActivityCurrentWeekProvider.overrideWith(
-        (ref) => Future.value(period),
+      homeDashboardActivityProvider.overrideWith(
+        (ref) => Future.value(
+          HomeDashboardActivity(
+            dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
+            currentWeek: period,
+            dailyGoals: period,
+          ),
+        ),
       ),
     ],
     child: MaterialApp(
@@ -136,8 +142,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          homeQazaActivityCurrentWeekProvider.overrideWith(
-            (ref) => Future.value(period),
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress:
+                    const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
           ),
         ],
         child: MaterialApp(
