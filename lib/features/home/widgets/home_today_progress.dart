@@ -107,6 +107,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     try {
       ref.read(homeControllerProvider).afterCompletion(
         completedPrayer: prayer,
+        selectionSource: widget.selected.source,
       );
     } catch (error, stack) {
       diagnostics.recordFailure(
