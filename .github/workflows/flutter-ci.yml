@@ -115,6 +115,14 @@ jobs:
           else
             echo "No formatter changes detected."
           fi
+      - name: Cache Firebase Emulator binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-auth-firestore
+          restore-keys: |
+            firebase-emulators-${{ runner.os }}-
+
       - name: Firebase Auth and Firestore Emulator security tests
         shell: bash
         run: |
