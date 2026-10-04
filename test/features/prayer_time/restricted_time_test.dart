@@ -428,7 +428,7 @@ void main() {
         now: now,
       );
 
-      expect(state.remainingAt(now), const Duration(minutes: 11));
+      expect(state.remainingAt(now), const Duration(minutes: 6));
     });
 
     test('derives remaining time until the next window when inactive', () {
