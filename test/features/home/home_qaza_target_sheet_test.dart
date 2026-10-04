@@ -230,6 +230,12 @@ void main() {
         isNotNull,
       );
       expect(
+        find.byKey(
+          const Key('home_qaza_target_selected_unavailable'),
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.text('Isha has no pending Qaza. Select another prayer.'),
         findsOneWidget,
       );
