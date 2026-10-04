@@ -527,6 +527,24 @@ final homePrayerSelectionProvider =
   HomePrayerSelectionNotifier.new,
 );
 
+/// Pending-aware availability for the Home Prayer Selection grid.
+///
+/// Database access remains behind the existing aggregated progress provider;
+/// this provider only derives which prayer targets have no pending Qaza.
+final homePrayerSelectionDisabledPrayersProvider =
+    Provider<Set<PrayerType>>((ref) {
+  final summary = ref.watch(progressSummaryProvider).valueOrNull;
+  if (summary == null) {
+    // Unknown availability is never treated as actionable.
+    return PrayerType.values.toSet();
+  }
+
+  return {
+    for (final prayer in PrayerType.values)
+      if ((summary.byPrayer[prayer]?.progress.pending ?? 0) <= 0) prayer,
+  };
+});
+
 final homeFallbackPendingProvider =
     FutureProvider.autoDispose<QazaRecord?>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
