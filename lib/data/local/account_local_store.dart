@@ -1414,11 +1414,18 @@ class AccountLocalStore {
   }
   Future<void> rollbackGoogleMigration(String localAccountId) async {
     // Existing Google-partition migrations are secured by a durable snapshot.
-    // Restore that snapshot before falling back to the legacy in-place rollback.
+    // The caller may provide either the Guest or migrating Google ID after a
+    // restart, so snapshot-backed rollback must always restore the target and
+    // explicitly reactivate the canonical Guest partition.
     if (await migrationSnapshotId() != null) {
       await restoreMigrationSnapshotIfPresent();
+      await ensureGuestActive();
+      await setMigrationState('failed');
+      return;
     }
 
+    // Normal Guest -> Google in-place migration has no second partition and can
+    // safely be reverted by converting the migrating account back to Guest.
     await database.transaction(() async {
       await database.customUpdate(
         '''UPDATE local_accounts
