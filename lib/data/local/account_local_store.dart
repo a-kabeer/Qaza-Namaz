@@ -442,67 +442,436 @@ class AccountLocalStore {
   }) async {
     final existing = await findGoogleByUid(firebaseUid);
     final guest = await getAccount(UserProfile.localLedgerUserId);
+
     if (guest == null) {
       if (existing != null) return existing.localAccountId;
       return createGooglePartition(firebaseUid: firebaseUid, email: email);
     }
 
-    if (existing != null &&
-        await hasAnyAccountData(existing.localAccountId)) {
-      throw StateError(
-        'The Google account already has local data; refusing to overwrite it.',
-      );
-    }
-
-    final target = existing?.localAccountId ?? _randomId('google');
     final now = DateTime.now().microsecondsSinceEpoch;
 
     await database.transaction(() async {
       if (existing == null) {
-        await database.customInsert(
-          '''INSERT INTO local_accounts
-             (local_account_id, account_mode, firebase_uid, google_email,
-              lifecycle_state, cloud_backup_enabled, cloud_generation,
-              created_at, updated_at)
-             VALUES (?, 'google', ?, ?, 'migrating', 1, 1, ?, ?)''',
+        // Reuse the Guest LocalAccount itself when no Google partition exists.
+        // This is the only way to guarantee stable Qaza IDs, addition IDs,
+        // timestamps, tombstones, and provenance without widening all legacy
+        // table primary keys to include localAccountId.
+        await database.customUpdate(
+          '''UPDATE local_accounts
+             SET account_mode = 'google',
+                 firebase_uid = ?,
+                 google_email = ?,
+                 lifecycle_state = 'active',
+                 cloud_backup_enabled = 1,
+                 updated_at = ?
+             WHERE local_account_id = ?''',
           variables: [
-            Variable(target),
             Variable(firebaseUid),
             Variable(email),
             Variable(now),
-            Variable(now),
+            Variable(guest.localAccountId),
           ],
         );
-      } else {
         await database.customUpdate(
-          '''UPDATE local_accounts
-             SET google_email = ?, lifecycle_state = 'migrating',
-                 cloud_backup_enabled = 1, updated_at = ?
-             WHERE local_account_id = ?''',
-          variables: [
-            Variable(email),
-            Variable(now),
-            Variable(target),
-          ],
+          '''UPDATE app_session_state
+             SET active_local_account_id = ?,
+                 initial_choice_required = 0,
+                 migration_state = 'targetPartitionPrepared'
+             WHERE id = 1''',
+          variables: [Variable(guest.localAccountId)],
         );
+        return;
       }
 
-      await _copyGuestDataToGooglePartition(
+      if (existing.localAccountId == guest.localAccountId) {
+        throw StateError('Guest and Google accounts unexpectedly share an ID.');
+      }
+
+      await _mergeGuestIntoGooglePartition(
         guestLocalAccountId: guest.localAccountId,
-        googleLocalAccountId: target,
+        googleLocalAccountId: existing.localAccountId,
       );
 
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET google_email = ?, lifecycle_state = 'active',
+               cloud_backup_enabled = 1, updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [
+          Variable(email),
+          Variable(now),
+          Variable(existing.localAccountId),
+        ],
+      );
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = 'archived', updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [Variable(now), Variable(guest.localAccountId)],
+      );
       await database.customUpdate(
         '''UPDATE app_session_state
            SET active_local_account_id = ?,
                initial_choice_required = 0,
-               migration_state = 'target_ready'
+               migration_state = 'targetPartitionPrepared'
            WHERE id = 1''',
-        variables: [Variable(guest.localAccountId)],
+        variables: [Variable(existing.localAccountId)],
       );
     });
 
-    return target;
+    return existing?.localAccountId ?? guest.localAccountId;
+  }
+
+  Future<void> _mergeGuestIntoGooglePartition({
+    required String guestLocalAccountId,
+    required String googleLocalAccountId,
+  }) async {
+    // Freeze remote queueing for the target while the two local partitions are
+    // reconciled. The caller re-enables backup only after this transaction.
+    await database.customUpdate(
+      '''UPDATE local_accounts
+         SET cloud_backup_enabled = 0, lifecycle_state = 'migrating'
+         WHERE local_account_id = ?''',
+      variables: [Variable(googleLocalAccountId)],
+    );
+
+    final guestRecords = await database.customSelect(
+      '''SELECT id, prayer_type, original_date, status, completed_at,
+                completion_id, addition_id, record_version, created_at, updated_at
+         FROM qaza_records WHERE user_id = ?
+         ORDER BY id ASC''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+
+    for (final row in guestRecords) {
+      final id = row.read<String>('id');
+      final targetById = await database.customSelect(
+        '''SELECT id, record_version, updated_at
+           FROM qaza_records WHERE user_id = ? AND id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId), Variable(id)],
+      ).get();
+
+      final targetByKey = targetById.isEmpty
+          ? await database.customSelect(
+              '''SELECT id, record_version, updated_at
+                 FROM qaza_records
+                 WHERE user_id = ? AND prayer_type = ? AND original_date = ?
+                 LIMIT 1''',
+              variables: [
+                Variable(googleLocalAccountId),
+                Variable(row.read<String>('prayer_type')),
+                Variable(row.read<int>('original_date')),
+              ],
+            ).get()
+          : const <QueryRow>[];
+
+      if (targetById.isEmpty && targetByKey.isEmpty) {
+        await database.customUpdate(
+          'UPDATE qaza_records SET user_id = ? WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        );
+        continue;
+      }
+
+      final target = targetById.isNotEmpty ? targetById.first : targetByKey.first;
+      final guestVersion = row.read<int>('record_version');
+      final targetVersion = target.read<int>('record_version');
+      final guestUpdated = row.read<int>('updated_at');
+      final targetUpdated = target.read<int>('updated_at');
+      final guestWins =
+          guestVersion > targetVersion ||
+          (guestVersion == targetVersion && guestUpdated > targetUpdated);
+
+      if (guestWins) {
+        await database.customUpdate(
+          'DELETE FROM qaza_records WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(target.read<String>('id')),
+          ],
+        );
+        await database.customUpdate(
+          'UPDATE qaza_records SET user_id = ? WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        );
+      } else {
+        await database.customUpdate(
+          'DELETE FROM qaza_records WHERE user_id = ? AND id = ?',
+          variables: [Variable(guestLocalAccountId), Variable(id)],
+        );
+      }
+    }
+
+    // Additions use their immutable IDs plus monotonic revision/updatedAt.
+    final guestAdditions = await database.customSelect(
+      '''SELECT id, revision, updated_at FROM qaza_additions WHERE user_id = ?''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+    for (final row in guestAdditions) {
+      final id = row.read<String>('id');
+      final target = await database.customSelect(
+        '''SELECT revision, updated_at FROM qaza_additions
+           WHERE user_id = ? AND id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId), Variable(id)],
+      ).get();
+      if (target.isEmpty) {
+        await database.customUpdate(
+          'UPDATE qaza_additions SET user_id = ? WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        );
+        continue;
+      }
+      final guestRevision = row.read<int>('revision');
+      final targetRevision = target.first.read<int>('revision');
+      final guestUpdated = DateTime.parse(row.read<String>('updated_at'));
+      final targetUpdated = DateTime.parse(target.first.read<String>('updated_at'));
+      if (guestRevision > targetRevision ||
+          (guestRevision == targetRevision && guestUpdated.isAfter(targetUpdated))) {
+        await database.customUpdate(
+          'DELETE FROM qaza_additions WHERE user_id = ? AND id = ?',
+          variables: [Variable(googleLocalAccountId), Variable(id)],
+        );
+        await database.customUpdate(
+          'UPDATE qaza_additions SET user_id = ? WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        );
+      } else {
+        await database.customUpdate(
+          'DELETE FROM qaza_additions WHERE user_id = ? AND id = ?',
+          variables: [Variable(guestLocalAccountId), Variable(id)],
+        );
+      }
+    }
+
+    final guestActions = await database.customSelect(
+      '''SELECT id, created_at, resolved_at
+         FROM qaza_deletion_actions WHERE user_id = ?''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+    for (final row in guestActions) {
+      final id = row.read<String>('id');
+      final target = await database.customSelect(
+        '''SELECT created_at, resolved_at FROM qaza_deletion_actions
+           WHERE user_id = ? AND id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId), Variable(id)],
+      ).get();
+      if (target.isEmpty) {
+        await database.customUpdate(
+          'UPDATE qaza_deletion_actions SET user_id = ? WHERE user_id = ? AND id = ?',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(id),
+          ],
+        );
+      } else {
+        final guestResolved = row.read<String?>('resolved_at');
+        final targetResolved = target.first.read<String?>('resolved_at');
+        final guestKey = guestResolved ?? row.read<String>('created_at');
+        final targetKey = targetResolved ?? target.first.read<String>('created_at');
+        if (guestKey.compareTo(targetKey) > 0) {
+          await database.customUpdate(
+            'DELETE FROM qaza_deletion_actions WHERE user_id = ? AND id = ?',
+            variables: [Variable(googleLocalAccountId), Variable(id)],
+          );
+          await database.customUpdate(
+            'UPDATE qaza_deletion_actions SET user_id = ? WHERE user_id = ? AND id = ?',
+            variables: [
+              Variable(googleLocalAccountId),
+              Variable(guestLocalAccountId),
+              Variable(id),
+            ],
+          );
+        } else {
+          await database.customUpdate(
+            'DELETE FROM qaza_deletion_actions WHERE user_id = ? AND id = ?',
+            variables: [Variable(guestLocalAccountId), Variable(id)],
+          );
+        }
+      }
+    }
+
+    // Snapshot IDs are scoped by deletion action. Prefer the target when an
+    // immutable snapshot already exists; otherwise move the Guest snapshot
+    // unchanged so historical timestamps and record versions survive.
+    await database.customUpdate(
+      '''DELETE FROM qaza_deletion_action_record_snapshots
+         WHERE user_id = ?
+           AND EXISTS (
+             SELECT 1
+             FROM qaza_deletion_action_record_snapshots target
+             WHERE target.user_id = ?
+               AND target.deletion_action_id = qaza_deletion_action_record_snapshots.deletion_action_id
+               AND target.record_id = qaza_deletion_action_record_snapshots.record_id
+           )''',
+      variables: [Variable(guestLocalAccountId), Variable(googleLocalAccountId)],
+    );
+    await database.customUpdate(
+      '''UPDATE qaza_deletion_action_record_snapshots
+         SET user_id = ? WHERE user_id = ?''',
+      variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+    );
+
+    // Immutable plan revisions must match byte-for-byte when their revision ID
+    // already exists in the target partition.
+    final guestRevisions = await database.customSelect(
+      '''SELECT revision_id, payload_json FROM account_plan_revisions
+         WHERE local_account_id = ?''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+    for (final row in guestRevisions) {
+      final revisionId = row.read<String>('revision_id');
+      final target = await database.customSelect(
+        '''SELECT payload_json FROM account_plan_revisions
+           WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId), Variable(revisionId)],
+      ).get();
+      if (target.isNotEmpty &&
+          target.first.read<String>('payload_json') != row.read<String>('payload_json')) {
+        throw StateError('Immutable QazaPlanRevision conflict: $revisionId');
+      }
+    }
+    await database.customUpdate(
+      '''INSERT INTO account_plan_revisions
+         (local_account_id, revision_id, payload_json, created_at)
+         SELECT ?, revision_id, payload_json, created_at
+         FROM account_plan_revisions
+         WHERE local_account_id = ?
+           AND revision_id NOT IN (
+             SELECT revision_id FROM account_plan_revisions
+             WHERE local_account_id = ?
+           )''',
+      variables: [
+        Variable(googleLocalAccountId),
+        Variable(guestLocalAccountId),
+        Variable(googleLocalAccountId),
+      ],
+    );
+    await database.customUpdate(
+      'DELETE FROM account_plan_revisions WHERE local_account_id = ?',
+      variables: [Variable(guestLocalAccountId)],
+    );
+
+    // Move surviving provenance and tombstones to the Google partition.
+    await database.customUpdate(
+      '''UPDATE qaza_profile_plan_provenance
+         SET user_id = ?
+         WHERE user_id = ? AND EXISTS (
+           SELECT 1 FROM qaza_records r
+           WHERE r.user_id = ? AND r.id = qaza_profile_plan_provenance.record_id
+         )''',
+      variables: [
+        Variable(googleLocalAccountId),
+        Variable(guestLocalAccountId),
+        Variable(googleLocalAccountId),
+      ],
+    );
+    await database.customUpdate(
+      'DELETE FROM qaza_profile_plan_provenance WHERE user_id = ?',
+      variables: [Variable(guestLocalAccountId)],
+    );
+
+    final guestTombstones = await database.customSelect(
+      '''SELECT record_id, record_version, deleted_at, writer_device_id,
+                operation_id, cloud_generation
+         FROM qaza_record_tombstones WHERE local_account_id = ?''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+    for (final row in guestTombstones) {
+      final recordId = row.read<String>('record_id');
+      final target = await database.customSelect(
+        '''SELECT record_version FROM qaza_record_tombstones
+           WHERE local_account_id = ? AND record_id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId), Variable(recordId)],
+      ).get();
+      if (target.isEmpty ||
+          row.read<int>('record_version') > target.first.read<int>('record_version')) {
+        if (target.isNotEmpty) {
+          await database.customUpdate(
+            '''DELETE FROM qaza_record_tombstones
+               WHERE local_account_id = ? AND record_id = ?''',
+            variables: [Variable(googleLocalAccountId), Variable(recordId)],
+          );
+        }
+        await database.customUpdate(
+          '''UPDATE qaza_record_tombstones
+             SET local_account_id = ? WHERE local_account_id = ? AND record_id = ?''',
+          variables: [
+            Variable(googleLocalAccountId),
+            Variable(guestLocalAccountId),
+            Variable(recordId),
+          ],
+        );
+      } else {
+        await database.customUpdate(
+          '''DELETE FROM qaza_record_tombstones
+             WHERE local_account_id = ? AND record_id = ?''',
+          variables: [Variable(guestLocalAccountId), Variable(recordId)],
+        );
+      }
+    }
+
+    final guestProfile = await database.customSelect(
+      '''SELECT payload_json, entity_version, updated_at, writer_device_id, operation_id
+         FROM account_profiles WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable(guestLocalAccountId)],
+    ).get();
+    if (guestProfile.isNotEmpty) {
+      final targetProfile = await database.customSelect(
+        '''SELECT entity_version, updated_at FROM account_profiles
+           WHERE local_account_id = ? LIMIT 1''',
+        variables: [Variable(googleLocalAccountId)],
+      ).get();
+      if (targetProfile.isEmpty) {
+        await database.customUpdate(
+          '''UPDATE account_profiles SET local_account_id = ?
+             WHERE local_account_id = ?''',
+          variables: [Variable(googleLocalAccountId), Variable(guestLocalAccountId)],
+        );
+      } else {
+        final guestVersion = guestProfile.first.read<int>('entity_version');
+        final targetVersion = targetProfile.first.read<int>('entity_version');
+        if (guestVersion > targetVersion ||
+            (guestVersion == targetVersion &&
+                guestProfile.first.read<int>('updated_at') >
+                    targetProfile.first.read<int>('updated_at'))) {
+          await database.customUpdate(
+            '''UPDATE account_profiles
+               SET payload_json = ?, entity_version = ?, updated_at = ?,
+                   writer_device_id = ?, operation_id = ?
+               WHERE local_account_id = ?''',
+            variables: [
+              Variable(guestProfile.first.read<String>('payload_json')),
+              Variable(guestVersion),
+              Variable(guestProfile.first.read<int>('updated_at')),
+              Variable(guestProfile.first.read<String>('writer_device_id')),
+              Variable(guestProfile.first.read<String>('operation_id')),
+              Variable(googleLocalAccountId),
+            ],
+          );
+        }
+        await database.customUpdate(
+          'DELETE FROM account_profiles WHERE local_account_id = ?',
+          variables: [Variable(guestLocalAccountId)],
+        );
+      }
+    }
   }
 
   Future<void> finalizeGuestMigration({
