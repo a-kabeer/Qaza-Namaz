@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
+import 'home_state.dart';
 import 'providers/home_providers.dart';
 
 class HomeController {
@@ -92,14 +93,18 @@ class HomeController {
 
   void afterCompletion({
     required PrayerType completedPrayer,
+    required HomePrayerSelectionSource selectionSource,
   }) {
     final witrEnabled = ref.read(effectiveWitrProvider);
-    ref
-        .read(homePrayerSelectionProvider.notifier)
-        .afterSuccessfulCompletion(
-          completedPrayer,
-          witrEnabled: witrEnabled,
-        );
+    if (selectionSource == HomePrayerSelectionSource.autoSequence) {
+      ref
+          .read(homePrayerSelectionProvider.notifier)
+          .afterSuccessfulCompletion(
+            completedPrayer,
+            witrEnabled: witrEnabled,
+            targetWasAutoSequence: true,
+          );
+    }
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
   }

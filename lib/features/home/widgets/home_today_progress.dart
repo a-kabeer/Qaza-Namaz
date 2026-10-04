@@ -35,7 +35,11 @@ class HomeTodayProgress extends ConsumerStatefulWidget {
 }
 
 class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
-  Future<void> _complete(QazaRecord record, PrayerType prayer) async {
+  Future<void> _complete(
+    QazaRecord record,
+    PrayerType prayer,
+    HomePrayerSelectionSource selectionSource,
+  ) async {
     if (ref.read(qazaCompletionControllerProvider).isWorking) return;
 
     final userId = ref.read(requiredUserIdProvider);
@@ -107,6 +111,7 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     try {
       ref.read(homeControllerProvider).afterCompletion(
         completedPrayer: prayer,
+        selectionSource: selectionSource,
       );
     } catch (error, stack) {
       diagnostics.recordFailure(
@@ -323,7 +328,11 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   final QazaProgressSummary summary;
   final HomeSelectedPrayerState selected;
   final bool working;
-  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+  final Future<void> Function(
+    QazaRecord record,
+    PrayerType prayer,
+    HomePrayerSelectionSource selectionSource,
+  ) onComplete;
 
   @override
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
@@ -408,6 +417,10 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final prayer = widget.selected.prayer;
+    if (_cachedPrayer != null && _cachedPrayer != prayer) {
+      _cachedRecord = null;
+      _cachedPrayer = null;
+    }
     final tartibAsync = ref.watch(sahibAlTartibProvider);
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final selection = ref.watch(homePrayerSelectionProvider);
@@ -513,6 +526,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                       completionWorking: widget.working,
                       refreshing: true,
                       onComplete: widget.onComplete,
+                      selectionSource: widget.selected.source,
                     );
                   }
                   return const HomeNextQazaSkeleton();
@@ -541,6 +555,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     completionWorking: widget.working,
                     refreshing: state.isLoading || state.isRefreshing,
                     onComplete: widget.onComplete,
+                    selectionSource: widget.selected.source,
                   );
                 },
               );
@@ -559,6 +574,7 @@ class _HomeNextQazaRecord extends StatelessWidget {
     required this.completionWorking,
     required this.refreshing,
     required this.onComplete,
+    required this.selectionSource,
   });
 
   final QazaRecord record;
@@ -566,7 +582,12 @@ class _HomeNextQazaRecord extends StatelessWidget {
   final bool restricted;
   final bool completionWorking;
   final bool refreshing;
-  final Future<void> Function(QazaRecord record, PrayerType prayer) onComplete;
+  final Future<void> Function(
+    QazaRecord record,
+    PrayerType prayer,
+    HomePrayerSelectionSource selectionSource,
+  ) onComplete;
+  final HomePrayerSelectionSource selectionSource;
 
   @override
   Widget build(BuildContext context) {
@@ -584,7 +605,7 @@ class _HomeNextQazaRecord extends StatelessWidget {
           child: FilledButton.icon(
             key: const Key('home_complete_oldest_qaza'),
             onPressed: completeEnabled
-                ? () => onComplete(record, prayer)
+                ? () => onComplete(record, prayer, selectionSource)
                 : null,
             icon: const Icon(Icons.play_arrow_rounded),
             label: Text(

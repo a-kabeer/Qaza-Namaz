@@ -68,6 +68,23 @@ void main() {
       expect(next.selectedPrayer, isNull);
     });
 
+    test(
+      'Auto Sequence fallback completion advances from the resolved prayer',
+      () {
+        const state = HomePrayerSelectionState(
+          mode: HomePrayerSelectionMode.autoSequence,
+          autoSequencePrayer: PrayerType.isha,
+        );
+
+        final next = state.afterSuccessfulCompletion(
+          PrayerType.fajr,
+          targetWasAutoSequence: true,
+        );
+
+        expect(next.autoSequencePrayer, PrayerType.zuhr);
+      },
+    );
+
     test('Prayer Time completion does not mutate targeting state', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.prayerTime,

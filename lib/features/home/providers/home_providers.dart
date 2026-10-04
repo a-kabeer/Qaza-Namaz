@@ -9,6 +9,7 @@ import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/entities/qaza_record.dart';
 import '../../../domain/repositories/qaza_activity_repository.dart';
 import '../../../domain/services/qaza_activity_service.dart';
+import '../../../domain/services/qaza_targeting_service.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../home_state.dart';
 
@@ -407,6 +408,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   void afterSuccessfulCompletion(
     PrayerType completedPrayer, {
     bool witrEnabled = true,
+    bool targetWasAutoSequence = false,
   }) {
     _undoSnapshot ??= state;
     _undoSnapshotRevision ??= _targetRevision;
@@ -419,6 +421,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     state = state.afterSuccessfulCompletion(
       completedPrayer,
       witrEnabled: witrEnabled,
+      targetWasAutoSequence: targetWasAutoSequence,
     );
     _persistSequence(state.autoSequencePrayer);
   }
@@ -556,8 +559,37 @@ final homeSelectedPrayerProvider =
     HomePrayerSelectionMode.prayerSelection => selection.selectedPrayer,
   };
 
-  // Witr remains governed by the existing profile eligibility rule.
-  if (target == PrayerType.witr && !ref.watch(effectiveWitrProvider)) {
+  final pendingAwareMode = selection.mode == HomePrayerSelectionMode.prayerTime ||
+      selection.mode == HomePrayerSelectionMode.autoSequence;
+  final summary = pendingAwareMode
+      ? ref.watch(progressSummaryProvider).valueOrNull
+      : null;
+  final resolvedTarget =
+      pendingAwareMode && target != null && summary != null
+          ? const QazaTargetingService().resolveNextPendingPrayer(
+              summary: summary,
+              startPrayer: target,
+              witrEnabled: ref.watch(effectiveWitrProvider),
+            )
+          : target;
+
+  // An unavailable or zero-pending target is not actionable in the
+  // pending-aware modes. Returning unavailable here lets the existing Home
+  // all-completed/no-pending behavior take over without a false completion
+  // action. Prayer Selection intentionally keeps its existing sticky behavior.
+  if (resolvedTarget == null) {
+    // Preserve the existing tartib-loading state for an unresolved Fard
+    // target; pending-aware fallback must never turn an authority problem into
+    // a generic no-target state.
+    if (target != null &&
+        target != PrayerType.witr &&
+        (!tartibAsync.hasValue || tartib == null)) {
+      return HomeSelectedPrayerState(
+        mode: selection.mode,
+        prayer: null,
+        source: HomePrayerSelectionSource.tartibUnavailable,
+      );
+    }
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
@@ -565,12 +597,33 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  // Witr is independent of Sahib al-Tartib and remains actionable even while
-  // the ordering check is temporarily unavailable.
-  if (target == PrayerType.witr) {
+  // Witr remains governed by the existing profile eligibility rule.
+  if (resolvedTarget == PrayerType.witr &&
+      !ref.watch(effectiveWitrProvider)) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
-      prayer: target,
+      prayer: null,
+      source: HomePrayerSelectionSource.unavailable,
+    );
+  }
+
+  // A Fard target still requires the existing Sahib al-Tartib result to be
+  // known. We never use pending-aware fallback to bypass that authority.
+  if (resolvedTarget != PrayerType.witr &&
+      (!tartibAsync.hasValue || tartib == null)) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: null,
+      source: HomePrayerSelectionSource.tartibUnavailable,
+    );
+  }
+
+  // Witr is independent of Sahib al-Tartib and remains actionable even while
+  // the ordering check is temporarily unavailable.
+  if (resolvedTarget == PrayerType.witr) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: resolvedTarget,
       source: switch (selection.mode) {
         HomePrayerSelectionMode.prayerTime =>
           HomePrayerSelectionSource.prayerTime,
@@ -582,25 +635,9 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  if (!tartibAsync.hasValue || tartib == null) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: null,
-      source: HomePrayerSelectionSource.tartibUnavailable,
-    );
-  }
-
-  if (target == null) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: null,
-      source: HomePrayerSelectionSource.unavailable,
-    );
-  }
-
   return HomeSelectedPrayerState(
     mode: selection.mode,
-    prayer: target,
+    prayer: resolvedTarget,
     source: switch (selection.mode) {
       HomePrayerSelectionMode.prayerTime =>
         HomePrayerSelectionSource.prayerTime,

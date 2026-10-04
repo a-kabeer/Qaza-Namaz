@@ -76,6 +76,9 @@ Future<ProviderContainer> _containerFor({
       homePrayerSelectionProvider.overrideWith(
         () => _TestHomePrayerSelectionNotifier(selection),
       ),
+      progressSummaryProvider.overrideWith(
+        (ref) => Future.value(_summaryFor(targetRecord)),
+      ),
       sahibAlTartibProvider.overrideWith(
         (ref) async => const SahibAlTartibState(
           pendingFarzCount: 6,

@@ -71,19 +71,25 @@ class HomePrayerSelectionState {
   ///
   /// Prayer Selection is sticky. Prayer Time is resolved from the live
   /// Prayer Time provider, so completion does not mutate its target.
-  /// Auto Sequence advances only when its own cursor prayer is completed.
-  /// Sahib al-Tartib overrides the actionable prayer without changing this
-  /// underlying state.
+  /// Advances Auto Sequence from the prayer that was actually targeted.
+  ///
+  /// Normally that is the persisted cursor prayer. When pending-aware fallback
+  /// resolves past a zero-pending cursor, [targetWasAutoSequence] lets the
+  /// caller advance from the resolved prayer instead. Sahib al-Tartib callers
+  /// leave it false so the existing cursor remains untouched.
   HomePrayerSelectionState afterSuccessfulCompletion(
     PrayerType completedPrayer, {
     bool witrEnabled = true,
+    bool targetWasAutoSequence = false,
   }) {
     switch (mode) {
       case HomePrayerSelectionMode.prayerTime:
       case HomePrayerSelectionMode.prayerSelection:
         return this;
       case HomePrayerSelectionMode.autoSequence:
-        if (completedPrayer != autoSequencePrayer) return this;
+        if (!targetWasAutoSequence && completedPrayer != autoSequencePrayer) {
+          return this;
+        }
         return copyWith(
           autoSequencePrayer:
               completedPrayer.nextInQazaSequenceSkippingWitr(
