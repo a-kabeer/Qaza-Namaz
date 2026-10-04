@@ -46,6 +46,11 @@ service cloud.firestore {
       return rootState(uid) in ['initializing', 'ready', 'deleting'];
     }
 
+    function childDeleteAllowed(uid) {
+      return rootState(uid) == 'deleting'
+        || rootState(uid) in ['initializing', 'ready'];
+    }
+
     match /users/{uid} {
       allow read: if signedIn(uid);
       allow create: if signedIn(uid)
@@ -82,7 +87,7 @@ service cloud.firestore {
           && writableState(uid);
         allow delete: if signedIn(uid)
           && resource.data.cloudGeneration == rootGeneration(uid)
-          && deletableState(uid);
+          && childDeleteAllowed(uid);
       }
 
       match /qazaRecords/{recordId} {
@@ -94,7 +99,7 @@ service cloud.firestore {
           && request.resource.data.payload.id == recordId;
         allow delete: if signedIn(uid)
           && resource.data.cloudGeneration == rootGeneration(uid)
-          && deletableState(uid);
+          && childDeleteAllowed(uid);
       }
 
       match /qazaRecordTombstones/{recordId} {
@@ -105,8 +110,7 @@ service cloud.firestore {
           && writableState(uid)
           && request.resource.data.payload.recordId == recordId;
         allow delete: if signedIn(uid)
-          && resource.data.cloudGeneration == rootGeneration(uid)
-          && rootState(uid) == 'deleting';
+          && childDeleteAllowed(uid);
       }
 
       match /qazaAdditions/{additionId} {
@@ -118,7 +122,7 @@ service cloud.firestore {
           && request.resource.data.payload.id == additionId;
         allow delete: if signedIn(uid)
           && resource.data.cloudGeneration == rootGeneration(uid)
-          && deletableState(uid);
+          && childDeleteAllowed(uid);
       }
 
       match /deletionActions/{actionId} {
@@ -130,7 +134,7 @@ service cloud.firestore {
           && request.resource.data.payload.id == actionId;
         allow delete: if signedIn(uid)
           && resource.data.cloudGeneration == rootGeneration(uid)
-          && deletableState(uid);
+          && childDeleteAllowed(uid);
 
         match /snapshots/{recordId} {
           allow read: if signedIn(uid);
@@ -156,8 +160,7 @@ service cloud.firestore {
           && currentGeneration(uid)
           && resource.data.payload == request.resource.data.payload;
         allow delete: if signedIn(uid)
-          && resource.data.cloudGeneration == rootGeneration(uid)
-          && rootState(uid) == 'deleting';
+          && childDeleteAllowed(uid);
       }
 
       match /{document=**} {
