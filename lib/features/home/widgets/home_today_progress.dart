@@ -99,9 +99,13 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
 
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      ref.read(appSnackbarServiceProvider).info(
-            '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}',
-          );
+      final message =
+          selectionSource == HomePrayerSelectionSource.prayerSelection
+              ? l10n.homePrayerSelectionNoPending(
+                  prayer.localizedLabel(l10n),
+                )
+              : '${l10n.completeNoPendingTitle} ${l10n.completeNoPendingMessage}';
+      ref.read(appSnackbarServiceProvider).info(message);
       return;
     }
 
