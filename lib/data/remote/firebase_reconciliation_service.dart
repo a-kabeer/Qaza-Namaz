@@ -99,7 +99,16 @@ class FirebaseReconciliationService {
       await _database.transaction(() async {
         await _assertRestoreContext(localAccountId, uid);
         final current = await _accountStore.getAccount(localAccountId);
-        if (current != null && generation != current.cloudGeneration) {
+        if (current != null && generation < current.cloudGeneration) {
+          throw StateError(
+            'Cloud generation is stale: local=' +
+                current.cloudGeneration.toString() +
+                ' remote=' +
+                generation.toString() +
+                '.',
+          );
+        }
+        if (current != null && generation > current.cloudGeneration) {
           await _accountStore.setCloudGeneration(localAccountId, generation);
         }
 
