@@ -1066,6 +1066,7 @@ class AccountLocalStore {
       return guest.localAccountId;
     }
 
+    await createMigrationSnapshot(existing.localAccountId);
     await mergeGuestIntoGooglePartition(
       guestLocalAccountId: guest.localAccountId,
       googleLocalAccountId: existing.localAccountId,
@@ -1173,6 +1174,227 @@ class AccountLocalStore {
     });
   }
 
+  Future<String?> migrationSnapshotId() async {
+    final rows = await database.customSelect(
+      'SELECT migration_snapshot_id FROM app_session_state WHERE id = 1',
+    ).get();
+    if (rows.isEmpty) return null;
+    return rows.first.read<String?>('migration_snapshot_id');
+  }
+
+  Future<String> createMigrationSnapshot(String localAccountId) async {
+    final accountRows = await database.customSelect(
+      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
+                lifecycle_state, cloud_backup_enabled, cloud_generation,
+                created_at, updated_at
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId)],
+    ).get();
+    if (accountRows.isEmpty) {
+      throw StateError('Migration snapshot account does not exist.');
+    }
+
+    Future<List<Map<String, dynamic>>> queryMaps(
+      String sql,
+      List<String> columns,
+    ) async {
+      final rows = await database.customSelect(
+        sql,
+        variables: [Variable(localAccountId)],
+      ).get();
+      return rows
+          .map((row) => <String, dynamic>{
+                for (final column in columns) column: row.data[column],
+              })
+          .toList(growable: false);
+    }
+
+    final account = accountRows.first;
+    final migrationId = _randomId('migration');
+    final snapshot = <String, dynamic>{
+      'local_accounts': [
+        {
+          'local_account_id': account.read<String>('local_account_id'),
+          'account_mode': account.read<String>('account_mode'),
+          'firebase_uid': account.read<String?>('firebase_uid'),
+          'google_email': account.read<String?>('google_email'),
+          'lifecycle_state': account.read<String>('lifecycle_state'),
+          'cloud_backup_enabled': account.read<int>('cloud_backup_enabled'),
+          'cloud_generation': account.read<int>('cloud_generation'),
+          'created_at': account.read<int>('created_at'),
+          'updated_at': account.read<int>('updated_at'),
+        },
+      ],
+      'account_profiles': await queryMaps(
+        '''SELECT local_account_id, payload_json, entity_version, updated_at,
+                  writer_device_id, operation_id
+           FROM account_profiles WHERE local_account_id = ?''',
+        ['local_account_id', 'payload_json', 'entity_version', 'updated_at',
+          'writer_device_id', 'operation_id'],
+      ),
+      'qaza_records': await queryMaps(
+        '''SELECT id, user_id, prayer_type, original_date, status, completed_at,
+                  completion_id, addition_id, record_version, created_at, updated_at
+           FROM qaza_records WHERE user_id = ?''',
+        ['id', 'user_id', 'prayer_type', 'original_date', 'status', 'completed_at',
+          'completion_id', 'addition_id', 'record_version', 'created_at', 'updated_at'],
+      ),
+      'qaza_additions': await queryMaps(
+        '''SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at
+           FROM qaza_additions WHERE user_id = ?''',
+        ['id', 'user_id', 'mode', 'input_snapshot', 'revision', 'created_at', 'updated_at'],
+      ),
+      'qaza_deletion_actions': await queryMaps(
+        '''SELECT id, user_id, addition_id, created_at, resolved_at, entity_version
+           FROM qaza_deletion_actions WHERE user_id = ?''',
+        ['id', 'user_id', 'addition_id', 'created_at', 'resolved_at', 'entity_version'],
+      ),
+      'qaza_deletion_action_record_snapshots': await queryMaps(
+        '''SELECT deletion_action_id, record_id, user_id, addition_id,
+                  prayer_type, original_date, status, completed_at,
+                  completion_id, created_at, updated_at, record_version
+           FROM qaza_deletion_action_record_snapshots WHERE user_id = ?''',
+        ['deletion_action_id', 'record_id', 'user_id', 'addition_id', 'prayer_type',
+          'original_date', 'status', 'completed_at', 'completion_id', 'created_at',
+          'updated_at', 'record_version'],
+      ),
+      'account_plan_revisions': await queryMaps(
+        '''SELECT local_account_id, revision_id, payload_json, created_at
+           FROM account_plan_revisions WHERE local_account_id = ?''',
+        ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
+      ),
+      'entity_metadata': await queryMaps(
+        '''SELECT local_account_id, entity_type, entity_id, entity_version,
+                  updated_at, writer_device_id, operation_id
+           FROM entity_metadata WHERE local_account_id = ?''',
+        ['local_account_id', 'entity_type', 'entity_id', 'entity_version',
+          'updated_at', 'writer_device_id', 'operation_id'],
+      ),
+      'qaza_record_tombstones': await queryMaps(
+        '''SELECT local_account_id, record_id, record_version, deleted_at,
+                  writer_device_id, operation_id, cloud_generation
+           FROM qaza_record_tombstones WHERE local_account_id = ?''',
+        ['local_account_id', 'record_id', 'record_version', 'deleted_at',
+          'writer_device_id', 'operation_id', 'cloud_generation'],
+      ),
+      'qaza_profile_plan_provenance': await queryMaps(
+        '''SELECT record_id, user_id, plan_revision_id, plan_fingerprint
+           FROM qaza_profile_plan_provenance WHERE user_id = ?''',
+        ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
+      ),
+      'sync_outbox': await queryMaps(
+        '''SELECT id, user_id, type, queued_at, firebase_uid, cloud_generation,
+                  entity_type, operation, payload_json, next_attempt_at, attempts,
+                  worker_id, lease_until, writer_device_id
+           FROM sync_outbox WHERE user_id = ?''',
+        ['id', 'user_id', 'type', 'queued_at', 'firebase_uid', 'cloud_generation',
+          'entity_type', 'operation', 'payload_json', 'next_attempt_at', 'attempts',
+          'worker_id', 'lease_until', 'writer_device_id'],
+      ),
+    };
+
+    await database.transaction(() async {
+      await database.customInsert(
+        '''INSERT INTO account_migration_snapshots
+           (migration_id, local_account_id, snapshot_json, created_at)
+           VALUES (?, ?, ?, ?)''',
+        variables: [
+          Variable(migrationId),
+          Variable(localAccountId),
+          Variable(jsonEncode(snapshot)),
+          Variable(DateTime.now().microsecondsSinceEpoch),
+        ],
+      );
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET migration_snapshot_id = ?, migration_state = 'localStateSnapshotSecured'
+           WHERE id = 1''',
+        variables: [Variable(migrationId)],
+      );
+    });
+    return migrationId;
+  }
+
+  Future<void> clearMigrationSnapshot() async {
+    final id = await migrationSnapshotId();
+    if (id == null) return;
+    await database.transaction(() async {
+      await database.customUpdate(
+        'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
+        variables: [Variable(id)],
+      );
+      await database.customUpdate(
+        'UPDATE app_session_state SET migration_snapshot_id = NULL WHERE id = 1',
+      );
+    });
+  }
+
+  Future<void> restoreMigrationSnapshotIfPresent() async {
+    final id = await migrationSnapshotId();
+    if (id == null) return;
+    final rows = await database.customSelect(
+      '''SELECT local_account_id, snapshot_json
+         FROM account_migration_snapshots WHERE migration_id = ? LIMIT 1''',
+      variables: [Variable(id)],
+    ).get();
+    if (rows.isEmpty) return;
+    final snapshot = Map<String, dynamic>.from(
+      jsonDecode(rows.first.read<String>('snapshot_json')) as Map,
+    );
+    final accounts = (snapshot['local_accounts'] as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
+    if (accounts.isEmpty) throw StateError('Migration snapshot is empty.');
+    final targetId = accounts.first['local_account_id'] as String;
+
+    Future<void> deleteRows(String table, String column) async {
+      await database.customUpdate(
+        'DELETE FROM $table WHERE $column = ?',
+        variables: [Variable(targetId)],
+      );
+    }
+    Future<void> insertRows(String table, List<dynamic> rawRows) async {
+      for (final rawRow in rawRows) {
+        final row = Map<String, dynamic>.from(rawRow as Map);
+        final columns = row.keys.toList(growable: false);
+        if (columns.isEmpty) continue;
+        final placeholders = List.filled(columns.length, '?').join(', ');
+        await database.customInsert(
+          'INSERT INTO $table (${columns.join(', ')}) VALUES ($placeholders)',
+          variables: columns.map((column) => Variable(row[column])).toList(),
+        );
+      }
+    }
+
+    await database.transaction(() async {
+      await deleteRows('qaza_profile_plan_provenance', 'user_id');
+      await deleteRows('qaza_deletion_action_record_snapshots', 'user_id');
+      await deleteRows('qaza_deletion_actions', 'user_id');
+      await deleteRows('qaza_additions', 'user_id');
+      await deleteRows('qaza_records', 'user_id');
+      await deleteRows('account_plan_revisions', 'local_account_id');
+      await deleteRows('entity_metadata', 'local_account_id');
+      await deleteRows('qaza_record_tombstones', 'local_account_id');
+      await deleteRows('sync_outbox', 'user_id');
+      await database.customUpdate(
+        'DELETE FROM local_accounts WHERE local_account_id = ?',
+        variables: [Variable(targetId)],
+      );
+      for (final entry in snapshot.entries) {
+        if (entry.key == 'local_accounts') continue;
+        final value = entry.value;
+        if (value is List) await insertRows(entry.key, value);
+      }
+      await insertRows('local_accounts', accounts);
+      await database.customUpdate(
+        'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
+        variables: [Variable(id)],
+      );
+      await database.customUpdate(
+        'UPDATE app_session_state SET migration_snapshot_id = NULL WHERE id = 1',
+      );
+    });
+  }
   Future<void> rollbackGoogleMigration(String localAccountId) async {
     await database.transaction(() async {
       await database.customUpdate(
