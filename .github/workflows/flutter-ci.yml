@@ -110,6 +110,19 @@ jobs:
           else
             echo "No formatter changes detected."
           fi
+      - name: Firebase Auth and Firestore Emulator security tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools emulators:start             --only auth,firestore             --project qaza-nmz             > /tmp/firebase-emulators.log 2>&1 &
+          emulator_pid=$!
+          cleanup() {
+            kill "$emulator_pid" >/dev/null 2>&1 || true
+            cat /tmp/firebase-emulators.log || true
+          }
+          trap cleanup EXIT
+          python3 tools/firebase_emulator_security_test.py
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
