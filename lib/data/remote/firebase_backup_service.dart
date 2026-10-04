@@ -783,12 +783,9 @@ class FirebaseBackupService {
     bool incremental = false,
   }) async {
     final where = incremental
-        ? '''AND EXISTS (
-             SELECT 1 FROM entity_metadata m
-             WHERE m.local_account_id = t.local_account_id
-               AND m.entity_type = 'qazaRecord'
-               AND m.entity_id = t.record_id
-               AND m.synced_entity_version < m.entity_version
+        ? '''AND (
+             m.entity_id IS NULL
+             OR m.synced_entity_version < m.entity_version
            )'''
         : '';
     final rows = await _database.customSelect(
