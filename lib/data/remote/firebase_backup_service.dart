@@ -37,6 +37,7 @@ class FirebaseBackupService {
     required String uid,
     required int generation,
   }) async {
+    final bootstrapCutoffMicros = DateTime.now().microsecondsSinceEpoch;
     await _ensureCloudGeneration(
       uid: uid,
       expectedGeneration: generation,
@@ -46,6 +47,7 @@ class FirebaseBackupService {
       localAccountId: localAccountId,
       uid: uid,
       generation: generation,
+      bootstrapCutoffMicros: bootstrapCutoffMicros,
     );
   }
 
@@ -53,6 +55,7 @@ class FirebaseBackupService {
     required String localAccountId,
     required String uid,
     required int generation,
+    int? bootstrapCutoffMicros,
   }) async {
     if (!await _firebase.initialize()) return;
 
@@ -80,12 +83,26 @@ class FirebaseBackupService {
       });
     }
 
+    if (bootstrapCutoffMicros != null) {
+      await rootRef.set(
+        {'bootstrapCutoffMicros': bootstrapCutoffMicros},
+        SetOptions(merge: true),
+      );
+    }
+
     await _writeProfile(localAccountId, uid, generation);
     await _writeQazaRecords(localAccountId, uid, generation);
     await _writeQazaAdditions(localAccountId, uid, generation);
     await _writeDeletionActions(localAccountId, uid, generation);
     await _writePlanRevisions(localAccountId, uid, generation);
     await _writeTombstones(localAccountId, uid, generation);
+
+    if (bootstrapCutoffMicros != null &&
+        await _hasOutboxMutationAfter(localAccountId, bootstrapCutoffMicros)) {
+      throw StateError(
+        'Local mutation occurred during cloud bootstrap; retry bootstrap.',
+      );
+    }
 
     await _firebase.firestore.runTransaction((transaction) async {
       final snap = await transaction.get(rootRef);
@@ -284,6 +301,21 @@ class FirebaseBackupService {
         SetOptions(merge: true),
       );
     });
+  }
+
+  Future<bool> _hasOutboxMutationAfter(
+    String localAccountId,
+    int cutoffMicros,
+  ) async {
+    final rows = await _database.customSelect(
+      '''SELECT id FROM sync_outbox
+         WHERE user_id = ?
+           AND type = 'account_snapshot'
+           AND queued_at > ?
+         LIMIT 1''',
+      variables: [Variable(localAccountId), Variable(cutoffMicros)],
+    ).get();
+    return rows.isNotEmpty;
   }
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _readDocs(
