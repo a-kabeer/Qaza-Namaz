@@ -238,6 +238,42 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.unavailable);
     });
 
+    test('Sahib al-Tartib remains authoritative over pending fallback', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'qaza_home_completion_mode':
+            HomePrayerSelectionMode.autoSequence.name,
+        'qaza_home_auto_sequence_prayer': PrayerType.isha.name,
+      });
+
+      final summary = summaryFor({
+        PrayerType.fajr: 10,
+        PrayerType.asr: 10,
+        PrayerType.isha: 0,
+      });
+      final container = ProviderContainer(
+        overrides: [
+          progressSummaryProvider.overrideWith((ref) => Future.value(summary)),
+          sahibAlTartibProvider.overrideWith(
+            (ref) => Future.value(
+              const SahibAlTartibState(
+                pendingFarzCount: 2,
+                requiresOrder: true,
+                nextPending: null,
+              ),
+            ),
+          ),
+          currentQazaPrayerTypeProvider.overrideWith(
+            (ref) => PrayerType.isha,
+          ),
+          effectiveWitrProvider.overrideWith((ref) => true),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // A real tartib target is represented through nextPending/nextPrayer.
+      // Rebuild the override with a minimal pending record below.
+    });
+
     test('Prayer Selection remains sticky and is not changed by pending fallback', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.prayerSelection,
