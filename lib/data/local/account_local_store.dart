@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/local_account.dart';
 import '../../domain/entities/qaza_plan_revision.dart';
+import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/conflict_resolver.dart';
 import 'database/app_database.dart';
@@ -649,7 +650,7 @@ class AccountLocalStore {
              FROM qaza_additions
              WHERE user_id = ? AND id = ? LIMIT 1''',
           variables: [Variable(googleLocalAccountId), Variable(id)],
-        )).first;
+        ).get()).first;
         final guestStamp = await _localEntityStamp(
           guestLocalAccountId,
           'qazaAddition',
