@@ -74,6 +74,7 @@ class FirebaseBackupWorker {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
             );
           }
           continue;
@@ -101,6 +102,7 @@ class FirebaseBackupWorker {
             await _accountStore.markOutboxRetry(
               localAccountId: account.localAccountId,
               operationId: op['id']! as String,
+              workerId: _workerId,
               attempts: attempts,
               error: error.toString().replaceFirst('Exception: ', ''),
               nextAttemptMicros: next.microsecondsSinceEpoch,
