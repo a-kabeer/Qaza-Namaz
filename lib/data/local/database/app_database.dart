@@ -67,6 +67,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
+          await _ensureMigrationSnapshotSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -118,9 +119,30 @@ class AppDatabase extends _$AppDatabase {
             await _ensureAccountSchema();
           }
           await _ensurePerformanceIndexes();
+          await _ensureMigrationSnapshotSchema();
         },
       );
 
+
+  Future<void> _ensureMigrationSnapshotSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
+        migration_id TEXT NOT NULL,
+        local_account_id TEXT NOT NULL,
+        snapshot_json TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (migration_id, local_account_id)
+      )
+    ''');
+    final columns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('migration_snapshot_id')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
+  }
 
   Future<void> _ensureAccountSchema() async {
     await customStatement('''
