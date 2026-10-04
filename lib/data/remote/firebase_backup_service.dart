@@ -87,13 +87,37 @@ class FirebaseBackupService {
     await _writePlanRevisions(localAccountId, uid, generation);
     await _writeTombstones(localAccountId, uid, generation);
 
-    await rootRef.set({
-      'schemaVersion': cloudSchemaVersion,
-      'cloudGeneration': generation,
-      'datasetState': 'ready',
-      'updatedAt': FieldValue.serverTimestamp(),
-      'bootstrapComplete': true,
-    }, SetOptions(merge: true));
+    await _firebase.firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(rootRef);
+      if (!snap.exists) {
+        throw StateError('Cloud account root disappeared during backup.');
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final currentGeneration =
+          (data['cloudGeneration'] as num?)?.toInt() ?? 0;
+      final state = data['datasetState'] as String? ?? 'empty';
+      if (currentGeneration != generation ||
+          (state != 'initializing' && state != 'ready')) {
+        throw StateError(
+          'Cloud dataset changed before backup completion: '
+          'generation=' +
+              currentGeneration.toString() +
+              ' state=' +
+              state,
+        );
+      }
+      transaction.set(
+        rootRef,
+        {
+          'schemaVersion': cloudSchemaVersion,
+          'cloudGeneration': generation,
+          'datasetState': 'ready',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'bootstrapComplete': true,
+        },
+        SetOptions(merge: true),
+      );
+    });
   }
 
 
@@ -370,6 +394,7 @@ class FirebaseBackupService {
                   'local_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
               entityId: record.id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -412,6 +437,7 @@ class FirebaseBackupService {
                   'addition_${id}_${row.read<int>('revision')}',
               entityId: id,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -454,6 +480,7 @@ class FirebaseBackupService {
               operationId: 'deletion_${actionId}',
               entityId: actionId,
             ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -496,6 +523,7 @@ class FirebaseBackupService {
             operationId: 'snapshot_${actionId}_${id}',
             entityId: id,
           ),
+          uid: uid,
           generation: generation,
           immutable: true,
         );
@@ -522,6 +550,7 @@ class FirebaseBackupService {
           operationId: 'plan_${revision.revisionId}',
           entityId: revision.revisionId,
         ),
+        uid: uid,
         generation: generation,
         immutable: true,
       );
@@ -560,6 +589,7 @@ class FirebaseBackupService {
           operationId: row.read<String>('operation_id'),
           entityId: id,
         ),
+        uid: uid,
         generation: generation,
         immutable: false,
       );
@@ -604,12 +634,41 @@ class FirebaseBackupService {
 
   Future<void> _writeVersioned(
     DocumentReference<Map<String, dynamic>> ref, {
+    required String uid,
     required Map<String, dynamic> payload,
     required VersionedEntity version,
     required int generation,
     required bool immutable,
   }) async {
+    final rootRef =
+        _firebase.firestore.collection('users').doc(uid);
     await _firebase.firestore.runTransaction((transaction) async {
+      // Read the generation anchor and the entity in the same transaction.
+      // This prevents a concurrent cloud deletion from racing a stale
+      // snapshot write and recreating data under an old generation.
+      final rootSnapshot = await transaction.get(rootRef);
+      if (!rootSnapshot.exists) {
+        throw StateError(
+          'Cloud account root is missing while writing ' + ref.path,
+        );
+      }
+      final rootData =
+          rootSnapshot.data() ?? const <String, dynamic>{};
+      final rootGeneration =
+          (rootData['cloudGeneration'] as num?)?.toInt() ?? 0;
+      final rootState = rootData['datasetState'] as String? ?? 'empty';
+      if (rootGeneration != generation ||
+          (rootState != 'initializing' && rootState != 'ready')) {
+        throw StateError(
+          'Cloud generation/state changed while writing ' +
+              ref.path +
+              ': generation=' +
+              rootGeneration.toString() +
+              ' state=' +
+              rootState,
+        );
+      }
+
       final current = await transaction.get(ref);
       final currentData = current.data();
       if (currentData != null) {
@@ -625,15 +684,18 @@ class FirebaseBackupService {
         final cmp = _resolver.compare(version, remote);
         if (cmp < 0) return;
 
-        if (immutable && cmp == 0 &&
+        if (immutable &&
+            cmp == 0 &&
             jsonEncode(currentData['payload']) != jsonEncode(payload)) {
-          throw StateError('Immutable cloud entity conflict: ${ref.path}');
+          throw StateError(
+            'Immutable cloud entity conflict: ' + ref.path,
+          );
         }
         final remoteGeneration =
             (currentData['cloudGeneration'] as num?)?.toInt();
         if (remoteGeneration != null && remoteGeneration != generation) {
           throw StateError(
-            'Cloud generation changed while writing ${ref.path}.',
+            'Cloud generation changed while writing ' + ref.path + '.',
           );
         }
       }
