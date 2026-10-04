@@ -1413,6 +1413,12 @@ class AccountLocalStore {
     });
   }
   Future<void> rollbackGoogleMigration(String localAccountId) async {
+    // Existing Google-partition migrations are secured by a durable snapshot.
+    // Restore that snapshot before falling back to the legacy in-place rollback.
+    if (await migrationSnapshotId() != null) {
+      await restoreMigrationSnapshotIfPresent();
+    }
+
     await database.transaction(() async {
       await database.customUpdate(
         '''UPDATE local_accounts
