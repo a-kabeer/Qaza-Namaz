@@ -432,7 +432,7 @@ class AccountSessionManager extends ChangeNotifier {
     final account = activeAccount;
     if (account == null || !account.isGoogle) return;
     await _accountStore.setBackupEnabled(account.localAccountId, false);
-    await _auth.signOut();
+    await _auth.disconnect();
     await _accountStore.ensureGuestActive();
     await _refresh();
   }
