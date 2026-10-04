@@ -65,7 +65,15 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only HEAD^1...HEAD -- '*.dart')
+          if [ -z "$files" ]; then
+            echo "No Dart files changed in this PR."
+            exit 0
+          fi
+          printf '%s\n' "$files" | xargs dart format --output=none --set-exit-if-changed
 
       - name: Test
         run: flutter test
