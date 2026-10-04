@@ -123,11 +123,7 @@ service cloud.firestore {
         && request.resource.data.cloudGeneration >= 1
         && request.resource.data.datasetState in ['empty', 'initializing']
         && request.resource.data.updatedAt is timestamp
-        && request.resource.data.bootstrapComplete is bool
-        && (
-          request.resource.data.datasetState == 'initializing'
-          || request.resource.data.bootstrapComplete == false
-        );
+        && request.resource.data.bootstrapComplete == false;
 
       allow update: if signedIn(uid)
         && request.resource.data.schemaVersion is int
