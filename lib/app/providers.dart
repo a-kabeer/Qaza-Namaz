@@ -109,7 +109,6 @@ final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
     accountStore: ref.watch(accountLocalStoreProvider),
     backupService: ref.watch(firebaseBackupServiceProvider),
   );
-  Future.microtask(worker.runOnce);
   return worker;
 });
 

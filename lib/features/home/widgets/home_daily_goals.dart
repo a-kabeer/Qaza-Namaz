@@ -17,7 +17,7 @@ class HomeDailyGoals extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activity = ref.watch(homeQazaActivityDailyGoalsProvider);
+    final activity = ref.watch(homeDashboardActivityProvider);
 
     return Card(
       key: const Key('home_daily_goals'),
@@ -27,33 +27,34 @@ class HomeDailyGoals extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           child: activity.when(
-          loading: () => const SizedBox(
-            height: 108,
-            child: Center(
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
+            loading: () => const SizedBox(
+              height: 108,
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
             ),
-          ),
-          error: (_, __) => Row(
-            children: [
-              const Icon(Icons.refresh_rounded),
-              const SizedBox(width: 12),
-              Expanded(child: Text(l10n.homeProgressError)),
-              TextButton(
-                key: const Key('home_daily_goals_retry'),
-                onPressed: () => ref.invalidate(homeQazaActivityDailyGoalsProvider),
-                child: Text(l10n.commonRetry),
-              ),
-            ],
-          ),
-          data: (period) => _DailyGoalsContent(
-            period: period,
+            error: (_, __) => Row(
+              children: [
+                const Icon(Icons.refresh_rounded),
+                const SizedBox(width: 12),
+                Expanded(child: Text(l10n.homeProgressError)),
+                TextButton(
+                  key: const Key('home_daily_goals_retry'),
+                  onPressed: () =>
+                      ref.invalidate(homeDashboardActivityProvider),
+                  child: Text(l10n.commonRetry),
+                ),
+              ],
+            ),
+            data: (dashboard) => _DailyGoalsContent(
+              period: dashboard.dailyGoals,
+            ),
           ),
         ),
-      ),
       ),
     );
   }

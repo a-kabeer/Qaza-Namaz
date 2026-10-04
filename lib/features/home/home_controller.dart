@@ -14,14 +14,13 @@ class HomeController {
     ref.invalidate(homeNowProvider);
     ref.invalidate(homeLocalDateProvider);
     ref.invalidate(progressSummaryProvider);
-    ref.invalidate(homeDailyProgressProvider);
-    ref.invalidate(homeQazaActivityCurrentWeekProvider);
-    ref.invalidate(homeQazaActivityDailyGoalsProvider);
-    ref.invalidate(homeQazaActivityWeekProvider);
-    ref.invalidate(homeQazaActivityMonthProvider);
-    ref.invalidate(homeQazaActivityYearProvider);
-    for (final prayer in ref.read(enabledPrayerTypesProvider)) {
-      ref.invalidate(oldestPendingProvider(prayer));
+    ref.invalidate(homeDashboardActivityProvider);
+
+    final selected = ref.read(homeSelectedPrayerProvider);
+    if (selected.prayer != null) {
+      ref.invalidate(oldestPendingProvider(selected.prayer!));
+    } else {
+      ref.invalidate(homeFallbackPendingProvider);
     }
   }
 
@@ -30,19 +29,20 @@ class HomeController {
     ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
 
-    await _refreshRequired(
-      progressSummaryProvider,
-      'home_summary_refresh_failed',
-    );
-
-    await _refreshOptional(
-      homeDailyProgressProvider,
-      'home_daily_progress_refresh_failed',
-    );
-    await _refreshOptional(
-      sahibAlTartibProvider,
-      'home_sahib_al_tartib_refresh_failed',
-    );
+    await Future.wait<void>([
+      _refreshRequired(
+        progressSummaryProvider,
+        'home_summary_refresh_failed',
+      ),
+      _refreshOptional(
+        homeDashboardActivityProvider,
+        'home_dashboard_activity_refresh_failed',
+      ),
+      _refreshOptional(
+        sahibAlTartibProvider,
+        'home_sahib_al_tartib_refresh_failed',
+      ),
+    ]);
     final selected = ref.read(homeSelectedPrayerProvider);
     if (selected.prayer != null) {
       await _refreshOptional(
@@ -94,31 +94,25 @@ class HomeController {
     required PrayerType completedPrayer,
   }) {
     final witrEnabled = ref.read(effectiveWitrProvider);
-    invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
     ref
         .read(homePrayerSelectionProvider.notifier)
         .afterSuccessfulCompletion(
           completedPrayer,
           witrEnabled: witrEnabled,
         );
+    invalidateDashboard();
+    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterStaleCompletion() {
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
   }
 
   void afterUndo() {
     ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
     ref.invalidate(sahibAlTartibProvider);
-    ref.invalidate(homeFallbackPendingProvider);
-    for (final prayer in PrayerType.values) {
-      ref.invalidate(oldestPendingProvider(prayer));
-    }
   }
 }
 

@@ -74,6 +74,16 @@ class AccountLocalStore {
     return rows.isNotEmpty;
   }
 
+  Future<bool> hasAnyGoogleAccount() async {
+    final rows = await database.customSelect(
+      '''SELECT 1 FROM local_accounts
+         WHERE account_mode = 'google'
+           AND lifecycle_state <> 'archived'
+         LIMIT 1''',
+    ).get();
+    return rows.isNotEmpty;
+  }
+
   Future<String> deviceInstanceId() async {
     final rows = await database.customSelect(
       'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
@@ -348,7 +358,7 @@ class AccountLocalStore {
       await database.customUpdate(
         '''UPDATE local_accounts
            SET lifecycle_state = 'migrating',
-               cloud_backup_enabled = 1,
+               cloud_backup_enabled = 0,
                updated_at = ?
            WHERE local_account_id = ?''',
         variables: [
@@ -957,9 +967,22 @@ class AccountLocalStore {
         }
       }
 
-      // Qaza-record/addition/deletion metadata is maintained by the
-      // corresponding database triggers during the merge. Profile metadata is
-      // copied only when the Guest profile actually won the profile conflict.
+      // Backup triggers stay disabled during the cross-partition merge
+      // so copied Qaza rows do not enqueue duplicate snapshots.
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET cloud_backup_enabled = 1, updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(googleLocalAccountId),
+        ],
+      );
+      await _enqueueSnapshotInsideTransaction(
+        googleLocalAccountId,
+        DateTime.now().microsecondsSinceEpoch,
+        await deviceInstanceId(),
+      );
     });
   }
 
@@ -1749,6 +1772,9 @@ class AccountLocalStore {
     );
   }
 
+  String _snapshotOutboxId(String localAccountId) =>
+      'account_snapshot_$localAccountId';
+
   Future<void> enqueueSnapshot(String localAccountId) async {
     final rows = await database.customSelect(
       '''SELECT firebase_uid, cloud_generation, cloud_backup_enabled
@@ -1762,9 +1788,9 @@ class AccountLocalStore {
 
     final device = await deviceInstanceId();
     final now = DateTime.now().microsecondsSinceEpoch;
-    final id = _randomId('snapshot');
+    final id = _snapshotOutboxId(localAccountId);
     await database.customInsert(
-      '''INSERT INTO sync_outbox
+      '''INSERT OR IGNORE INTO sync_outbox
          (id, user_id, type, queued_at, firebase_uid, cloud_generation,
           entity_type, operation, next_attempt_at, attempts, worker_id,
           lease_until, writer_device_id)
@@ -1798,14 +1824,14 @@ class AccountLocalStore {
     final uid = rows.first.read<String?>('firebase_uid');
     if (uid == null || uid.isEmpty) return;
     await database.customInsert(
-      '''INSERT INTO sync_outbox
+      '''INSERT OR IGNORE INTO sync_outbox
          (id, user_id, type, queued_at, firebase_uid, cloud_generation,
           entity_type, operation, next_attempt_at, attempts, worker_id,
           lease_until, writer_device_id)
          VALUES (?, ?, 'account_snapshot', ?, ?, ?, 'account', 'snapshot',
                  ?, 0, NULL, NULL, ?)''',
       variables: [
-        Variable(_randomId('snapshot')),
+        Variable(_snapshotOutboxId(localAccountId)),
         Variable(localAccountId),
         Variable(nowMicros),
         Variable(uid),

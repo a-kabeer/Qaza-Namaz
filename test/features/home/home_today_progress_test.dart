@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
+import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
@@ -109,13 +110,26 @@ Future<ProviderContainer> _containerFor({
             },
           ),
         ),
-      homeDailyProgressProvider.overrideWith(
-        (ref) {
+      homeDashboardActivityProvider.overrideWith(
+        (ref) async {
           onDailyProgressRead();
-          return dailyProgress?.call() ??
+          final value = await (dailyProgress?.call() ??
               Future.value(
                 const HomeDailyProgress(completed: 2, target: 5),
-              );
+              ));
+          final today = DateTime(2026, 9, 30);
+          final period = QazaActivityPeriod(
+            from: today,
+            toExclusive: today.add(const Duration(days: 1)),
+            today: today,
+            days: const [],
+            dailyTarget: value.target,
+          );
+          return HomeDashboardActivity(
+            dailyProgress: value,
+            currentWeek: period,
+            dailyGoals: period,
+          );
         },
       ),
     ],

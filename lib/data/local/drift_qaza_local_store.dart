@@ -6,6 +6,7 @@ import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/qaza_activity.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/repositories/qaza_bulk_delete_repository.dart';
 import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../../domain/services/qaza_availability_service.dart';
 import 'database/app_database.dart';
@@ -16,7 +17,8 @@ import 'qaza_local_store.dart';
 /// SharedPreferences is intentionally not part of the runtime persistence
 /// path. It is retained only by the one-time migration bootstrap so existing
 /// installations can be upgraded safely.
-class DriftQazaLocalStore extends QazaLocalStore {
+class DriftQazaLocalStore extends QazaLocalStore
+    implements QazaBulkDeleteRepository {
   DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
@@ -171,6 +173,28 @@ class DriftQazaLocalStore extends QazaLocalStore {
       );
 
   @override
+  Future<int> deleteRecords({
+    required String userId,
+    required List<String> recordIds,
+  }) async {
+    if (recordIds.isEmpty) return 0;
+    return _database.transaction(() async {
+      final unique = recordIds.toSet().toList(growable: false);
+      var deleted = 0;
+      for (var start = 0; start < unique.length; start += 400) {
+        final end = start + 400 < unique.length ? start + 400 : unique.length;
+        final ids = unique.sublist(start, end);
+        deleted += await _database.qazaRecordsDao.deleteByIds(
+          userId: userId,
+          ids: ids,
+        );
+        await _deleteProfilePlanProvenance(userId, ids);
+      }
+      return deleted;
+    });
+  }
+
+  @override
   Future<bool> updateRecord(QazaRecord record) => _database.transaction(() async {
         final changed = await _database.qazaRecordsDao.updateRecord(record);
         if (!changed) return false;
@@ -317,14 +341,16 @@ class DriftQazaLocalStore extends QazaLocalStore {
       var processedWork = 0;
       onProgress?.call(0, totalWork);
 
-      final removedIds = removed.map((record) => record.id).toList(growable: false);
-      for (var start = 0; start < removedIds.length; start += 500) {
+      final removedIds =
+          removed.map((record) => record.id).toList(growable: false);
+      for (var start = 0; start < removedIds.length; start += 400) {
         final end =
-            start + 500 < removedIds.length ? start + 500 : removedIds.length;
+            start + 400 < removedIds.length ? start + 400 : removedIds.length;
         final chunkIds = removedIds.sublist(start, end);
-        for (final id in chunkIds) {
-          await _database.qazaRecordsDao.deleteById(userId: userId, id: id);
-        }
+        await _database.qazaRecordsDao.deleteByIds(
+          userId: userId,
+          ids: chunkIds,
+        );
         await _deleteProfilePlanProvenance(userId, chunkIds);
         processedWork += chunkIds.length;
         onProgress?.call(processedWork, totalWork);
@@ -791,17 +817,29 @@ class DriftQazaLocalStore extends QazaLocalStore {
   Future<void> _upsertProfilePlanProvenance(
     Iterable<QazaRecord> records,
   ) async {
-    for (final record in records) {
-      final revisionId = record.profilePlanRevisionId;
-      final fingerprint = record.profilePlanFingerprint;
-      if (revisionId == null || fingerprint == null) continue;
+    final eligible = records
+        .where(
+          (record) =>
+              record.profilePlanRevisionId != null &&
+              record.profilePlanFingerprint != null,
+        )
+        .toList(growable: false);
+    for (var start = 0; start < eligible.length; start += 400) {
+      final end =
+          start + 400 < eligible.length ? start + 400 : eligible.length;
+      final chunk = eligible.sublist(start, end);
+      final values = chunk
+          .map(
+            (record) => '(${_sqlStringLiteral(record.id)}, '
+                '${_sqlStringLiteral(record.userId)}, '
+                '${_sqlStringLiteral(record.profilePlanRevisionId!)}, '
+                '${_sqlStringLiteral(record.profilePlanFingerprint!)})',
+          )
+          .join(', ');
       await _database.customStatement(
         'INSERT INTO qaza_profile_plan_provenance '
         '(record_id, user_id, plan_revision_id, plan_fingerprint) '
-        'VALUES (${_sqlStringLiteral(record.id)}, '
-        '${_sqlStringLiteral(record.userId)}, '
-        '${_sqlStringLiteral(revisionId)}, '
-        '${_sqlStringLiteral(fingerprint)}) '
+        'VALUES $values '
         'ON CONFLICT(record_id) DO UPDATE SET '
         'user_id = excluded.user_id, '
         'plan_revision_id = excluded.plan_revision_id, '

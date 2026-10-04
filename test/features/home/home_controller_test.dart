@@ -21,7 +21,7 @@ class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
 
 ProviderContainer _containerFor({
   required HomePrayerSelectionMode mode,
-  required void Function() onDailyProgressRead,
+  required void Function() onDashboardActivityRead,
 }) {
   return ProviderContainer(
     overrides: [
@@ -36,13 +36,24 @@ ProviderContainer _containerFor({
       progressSummaryProvider.overrideWith(
         (ref) async => QazaProgressSummary.empty(),
       ),
-      homeDailyProgressProvider.overrideWith(
-        (ref) => () {
-          onDailyProgressRead();
-          return Future.value(
-            const HomeDailyProgress(completed: 2, target: 5),
+      homeDashboardActivityProvider.overrideWith(
+        (ref) {
+          onDashboardActivityRead();
+          final period = QazaActivityPeriod(
+            from: DateTime(2026, 9, 27),
+            toExclusive: DateTime(2026, 10, 4),
+            today: DateTime(2026, 9, 30),
+            days: const [],
           );
-        }(),
+          return Future.value(
+            HomeDashboardActivity(
+              dailyProgress:
+                  const HomeDailyProgress(completed: 2, target: 5),
+              currentWeek: period,
+              dailyGoals: period,
+            ),
+          );
+        },
       ),
       sahibAlTartibProvider.overrideWith(
         (ref) async => const SahibAlTartibState(
@@ -82,32 +93,37 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          homeQazaActivityCurrentWeekProvider.overrideWith((ref) async {
+          homeDashboardActivityProvider.overrideWith((ref) async {
             reads++;
-            return period;
+            return HomeDashboardActivity(
+              dailyProgress:
+                  const HomeDailyProgress(completed: 2, target: 5),
+              currentWeek: period,
+              dailyGoals: period,
+            );
           }),
         ],
       );
       addTearDown(container.dispose);
 
-      await container.read(homeQazaActivityCurrentWeekProvider.future);
+      await container.read(homeDashboardActivityProvider.future);
       expect(reads, 1);
 
       container.read(homeControllerProvider).afterStaleCompletion();
 
-      await container.read(homeQazaActivityCurrentWeekProvider.future);
+      await container.read(homeDashboardActivityProvider.future);
       expect(reads, 2);
     },
   );
 
   for (final mode in HomePrayerSelectionMode.values) {
     test(
-      'HomeController.refresh reads daily progress in ${mode.name}',
+      'HomeController.refresh reads consolidated Home activity in ${mode.name}',
       () async {
         var dailyProgressReads = 0;
         final container = _containerFor(
           mode: mode,
-          onDailyProgressRead: () => dailyProgressReads++,
+          onDashboardActivityRead: () => dailyProgressReads++,
         );
         addTearDown(container.dispose);
 

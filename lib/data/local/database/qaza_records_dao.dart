@@ -561,11 +561,25 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (ids.isEmpty) return const <QazaRecord>[];
 
     return transaction(() async {
+      final unique = ids.toSet().toList(growable: false);
+      final rows = <QazaRecordRow>[];
+      for (var start = 0; start < unique.length; start += 400) {
+        final end = start + 400 < unique.length ? start + 400 : unique.length;
+        final chunk = unique.sublist(start, end);
+        rows.addAll(
+          await (select(qazaRecords)
+                ..where((row) =>
+                    row.userId.equals(userId) & row.id.isIn(chunk)))
+              .get(),
+        );
+      }
+      final byId = <String, QazaRecordRow>{
+        for (final row in rows) row.id: row,
+      };
+
       final changed = <QazaRecord>[];
-      for (final id in ids.toSet()) {
-        final current = await (select(qazaRecords)
-              ..where((row) => row.userId.equals(userId) & row.id.equals(id)))
-            .getSingleOrNull();
+      for (final id in unique) {
+        final current = byId[id];
         if (current == null || current.status != QazaStatus.pending.name) {
           continue;
         }
@@ -623,12 +637,22 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
 
     return transaction(() async {
+      final ids = expectedCompletionIds.keys.toList(growable: false);
+      final rows = <QazaRecordRow>[];
+      for (var start = 0; start < ids.length; start += 400) {
+        final end = start + 400 < ids.length ? start + 400 : ids.length;
+        rows.addAll(
+          await (select(qazaRecords)
+                ..where((row) =>
+                    row.userId.equals(userId) & row.id.isIn(ids.sublist(start, end))))
+              .get(),
+        );
+      }
+      final byId = <String, QazaRecordRow>{for (final row in rows) row.id: row};
       final changed = <QazaRecord>[];
+
       for (final entry in expectedCompletionIds.entries) {
-        final current = await (select(qazaRecords)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(entry.key)))
-            .getSingleOrNull();
+        final current = byId[entry.key];
         if (current == null ||
             current.status != QazaStatus.completed.name ||
             current.completionId != entry.value) {
@@ -682,12 +706,22 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
 
     return transaction(() async {
+      final ids = expectedCompletionIds.keys.toList(growable: false);
+      final rows = <QazaRecordRow>[];
+      for (var start = 0; start < ids.length; start += 400) {
+        final end = start + 400 < ids.length ? start + 400 : ids.length;
+        rows.addAll(
+          await (select(qazaRecords)
+                ..where((row) =>
+                    row.userId.equals(userId) & row.id.isIn(ids.sublist(start, end))))
+              .get(),
+        );
+      }
+      final byId = <String, QazaRecordRow>{for (final row in rows) row.id: row};
       final changed = <QazaRecord>[];
+
       for (final entry in expectedCompletionIds.entries) {
-        final current = await (select(qazaRecords)
-              ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(entry.key)))
-            .getSingleOrNull();
+        final current = byId[entry.key];
         if (current == null ||
             current.status != QazaStatus.completed.name ||
             current.completionId != entry.value) {
@@ -696,7 +730,10 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
         final updated = await (update(qazaRecords)
               ..where((row) =>
-                  row.userId.equals(userId) & row.id.equals(entry.key)))
+                  row.userId.equals(userId) &
+                  row.id.equals(entry.key) &
+                  row.status.equals(QazaStatus.completed.name) &
+                  row.completionId.equals(entry.value)))
             .write(QazaRecordsCompanion(
           status: Value(QazaStatus.pending.name),
           completedAt: const Value(null),
@@ -704,22 +741,25 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           recordVersion: Value(current.recordVersion + 1),
           updatedAt: Value(undoneAt),
         ));
+
         if (updated > 0) {
-          changed.add(QazaRecord(
-            id: current.id,
-            userId: current.userId,
-            prayerType: PrayerType.values.firstWhere(
-              (value) => value.name == current.prayerType,
+          changed.add(
+            QazaRecord(
+              id: current.id,
+              userId: current.userId,
+              prayerType: PrayerType.values.firstWhere(
+                (value) => value.name == current.prayerType,
+              ),
+              originalDate: current.originalDate,
+              status: QazaStatus.pending,
+              completedAt: null,
+              completionId: null,
+              additionId: current.additionId,
+              recordVersion: current.recordVersion + 1,
+              createdAt: current.createdAt,
+              updatedAt: undoneAt,
             ),
-            originalDate: current.originalDate,
-            status: QazaStatus.pending,
-            completedAt: null,
-            completionId: null,
-            additionId: current.additionId,
-            recordVersion: current.recordVersion + 1,
-            createdAt: current.createdAt,
-            updatedAt: undoneAt,
-          ));
+          );
         }
       }
       return changed;
@@ -778,13 +818,42 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<List<String>> insertRecordsReturningInsertedIds(
       List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return const <String>[];
-    final insertedIds = <String>[];
-    for (final record in records) {
-      if (await _insertIfAbsent(record)) {
-        insertedIds.add(record.id.value);
-      }
+
+    final userId = records.first.userId.value;
+    if (records.any((record) => record.userId.value != userId)) {
+      throw StateError('Cannot bulk insert Qaza records for different users.');
     }
-    return insertedIds;
+
+    final uniqueIds = records
+        .map((record) => record.id.value)
+        .toSet()
+        .toList(growable: false);
+    final existingIds = <String>{};
+
+    for (var start = 0; start < uniqueIds.length; start += 400) {
+      final end = start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
+      final chunk = uniqueIds.sublist(start, end);
+      final rows = await (select(qazaRecords)
+            ..where(
+              (row) =>
+                  row.userId.equals(userId) & row.id.isIn(chunk),
+            ))
+          .get();
+      existingIds.addAll(rows.map((row) => row.id));
+    }
+
+    await batch((batch) {
+      batch.insertAll(
+        qazaRecords,
+        records,
+        mode: InsertMode.insertOrIgnore,
+      );
+    });
+
+    return [
+      for (final id in uniqueIds)
+        if (!existingIds.contains(id)) id,
+    ];
   }
 
   /// Inserts records atomically. Each row is still constrained by its own
@@ -818,6 +887,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     );
     return updated > 0;
   }
+  Future<int> deleteByIds({
+    required String userId,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return 0;
+    final unique = ids.toSet().toList(growable: false);
+    var deleted = 0;
+    for (var start = 0; start < unique.length; start += 400) {
+      final end = start + 400 < unique.length ? start + 400 : unique.length;
+      final chunk = unique.sublist(start, end);
+      deleted += await (delete(qazaRecords)
+            ..where((row) =>
+                row.userId.equals(userId) & row.id.isIn(chunk)))
+          .go();
+    }
+    return deleted;
+  }
+
   Future<int> deleteById({required String userId, required String id}) =>
       (delete(qazaRecords)
             ..where((r) => r.userId.equals(userId) & r.id.equals(id)))

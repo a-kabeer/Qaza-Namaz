@@ -9,6 +9,7 @@ import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_undo_feedback.dart';
+import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeQazaUndoManager extends QazaUndoManager {
@@ -146,6 +147,11 @@ void main() {
         ProviderScope(
           overrides: [
             qazaUndoManagerProvider.overrideWithValue(manager),
+            prayerTimeClockProvider.overrideWith(
+              (ref) async* {
+                yield DateTime(2026, 10, 4, 12);
+              },
+            ),
           ],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -193,6 +199,11 @@ void main() {
         ProviderScope(
           overrides: [
             qazaUndoManagerProvider.overrideWithValue(manager),
+            prayerTimeClockProvider.overrideWith(
+              (ref) async* {
+                yield DateTime(2026, 10, 4, 12);
+              },
+            ),
           ],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -234,6 +245,11 @@ void main() {
         ProviderScope(
           overrides: [
             qazaUndoManagerProvider.overrideWithValue(manager),
+            prayerTimeClockProvider.overrideWith(
+              (ref) async* {
+                yield DateTime(2026, 10, 4, 12);
+              },
+            ),
           ],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -17,7 +17,7 @@ class HomeQazaGoals extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final activity = ref.watch(homeQazaActivityCurrentWeekProvider);
+    final activity = ref.watch(homeDashboardActivityProvider);
 
     return Card(
       key: const Key('home_qaza_goals'),
@@ -44,14 +44,13 @@ class HomeQazaGoals extends ConsumerWidget {
               Expanded(child: Text(l10n.homeProgressError)),
               TextButton(
                 key: const Key('home_qaza_goals_retry'),
-                onPressed: () => ref.invalidate(
-                  homeQazaActivityCurrentWeekProvider,
-                ),
+                onPressed: () => ref.invalidate(homeDashboardActivityProvider),
                 child: Text(l10n.commonRetry),
               ),
             ],
           ),
-          data: (period) {
+          data: (dashboard) {
+            final period = dashboard.currentWeek;
             final theme = Theme.of(context);
             final scheme = theme.colorScheme;
             final start = period.from;

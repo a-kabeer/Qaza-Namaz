@@ -671,7 +671,9 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
-      for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+      final changedPrayers =
+          receipt.entries.map((entry) => entry.prayerType).toSet();
+      for (final prayer in changedPrayers) {
         ref.invalidate(oldestPendingProvider(prayer));
       }
       await refresh();
@@ -742,7 +744,9 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         ref.invalidate(sahibAlTartibProvider);
-        for (final prayer in ref.read(enabledPrayerTypesProvider)) {
+        final changedPrayers =
+            changed.map((record) => record.prayerType).toSet();
+        for (final prayer in changedPrayers) {
           ref.invalidate(oldestPendingProvider(prayer));
         }
       }
@@ -777,9 +781,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       if (changed) {
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
-        for (final prayer in ref.read(enabledPrayerTypesProvider)) {
-          ref.invalidate(oldestPendingProvider(prayer));
-        }
+        ref.invalidate(oldestPendingProvider(state.records[index].prayerType));
         ref.invalidate(sahibAlTartibProvider);
         await refresh();
       }
@@ -806,16 +808,15 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     final ids = state.selected.toList(growable: false);
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
-      var count = 0;
-      for (final id in ids) {
-        await ref.read(qazaServiceProvider).deleteRecord(
-          userId: userId,
-          recordId: id,
-        );
-        count++;
-      }
+      final count = await ref.read(qazaServiceProvider).deleteRecords(
+        userId: userId,
+        recordIds: ids,
+      );
       exitSelectionMode();
-      ref.invalidate(progressSummaryProvider);
+      if (count > 0) {
+        ref.read(homeControllerProvider).invalidateDashboard();
+        ref.invalidate(progressSummaryProvider);
+      }
       await refresh();
       return count;
     } catch (error) {

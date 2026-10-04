@@ -53,11 +53,14 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Schema version 13 adds per-entity backup progress markers so normal
+  /// Google backups only transmit changed Qaza entities.
+  /// Schema version 12 adds versioning to deletion actions.
   /// Schema version 11 adds account/session and cloud-backup infrastructure.
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -114,6 +117,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 12) {
             await _ensureDeletionActionVersionColumn();
+          }
+          if (from < 13) {
+            await _ensureEntityMetadataSyncColumn();
           }
           if (from < 11) {
             await _ensureAccountSchema();
@@ -224,9 +230,25 @@ class AppDatabase extends _$AppDatabase {
         updated_at INTEGER NOT NULL,
         writer_device_id TEXT NOT NULL,
         operation_id TEXT NOT NULL,
+        synced_entity_version INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (local_account_id, entity_type, entity_id)
       )
     ''');
+    await _ensureEntityMetadataSyncColumn();
+    await customStatement(
+      '''INSERT OR IGNORE INTO entity_metadata
+         (local_account_id, entity_type, entity_id, entity_version,
+          updated_at, writer_device_id, operation_id, synced_entity_version)
+         SELECT r.user_id, 'qazaRecord', r.id, r.record_version,
+                r.updated_at,
+                COALESCE(
+                  (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+                  'unknown_device'
+                ),
+                'backfill_' || r.id,
+                0
+         FROM qaza_records r''',
+    );
     await customStatement('''
       CREATE TABLE IF NOT EXISTS qaza_record_tombstones (
         local_account_id TEXT NOT NULL,
@@ -239,6 +261,17 @@ class AppDatabase extends _$AppDatabase {
         PRIMARY KEY (local_account_id, record_id)
       )
     ''');
+    await customStatement(
+      '''INSERT OR IGNORE INTO entity_metadata
+         (local_account_id, entity_type, entity_id, entity_version,
+          updated_at, writer_device_id, operation_id, synced_entity_version)
+         SELECT t.local_account_id, 'qazaRecord', t.record_id, t.record_version,
+                t.deleted_at,
+                t.writer_device_id,
+                t.operation_id,
+                0
+         FROM qaza_record_tombstones t''',
+    );
 
     final columns = await customSelect('PRAGMA table_info(sync_outbox)').get();
     final existing = columns.map((row) => row.read<String>('name')).toSet();
@@ -269,14 +302,15 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _ensureBackupTriggers() async {
     const timestamp = "(CAST(strftime('%s','now') AS INTEGER) * 1000000)";
     const queue = '''
-      INSERT INTO sync_outbox
+      INSERT OR IGNORE INTO sync_outbox
         (id, user_id, type, queued_at, firebase_uid, cloud_generation,
          entity_type, operation, next_attempt_at, attempts,
-         writer_device_id)
-      SELECT lower(hex(randomblob(16))), local_account_id, 'account_snapshot',
+         writer_device_id, worker_id, lease_until)
+      SELECT 'account_snapshot_' || %USER%, %USER%, 'account_snapshot',
              $timestamp, firebase_uid, cloud_generation, 'account',
              'snapshot', $timestamp, 0,
-             (SELECT device_instance_id FROM device_metadata WHERE id = 1)
+             (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+             NULL, NULL
       FROM local_accounts
       WHERE local_account_id = %USER%
         AND account_mode = 'google'
@@ -313,14 +347,15 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
+           writer_device_id, operation_id, synced_entity_version)
         SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
                NEW.updated_at,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
+               lower(hex(randomblob(16))),
+               0;
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_update
@@ -335,14 +370,15 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         INSERT OR REPLACE INTO entity_metadata
           (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
+           writer_device_id, operation_id, synced_entity_version)
         SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
                NEW.updated_at,
                (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
+               lower(hex(randomblob(16))),
+               0;
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_records_backup_delete
@@ -352,6 +388,15 @@ class AppDatabase extends _$AppDatabase {
         WHERE local_account_id = OLD.user_id AND account_mode = 'google'
       )
       BEGIN
+        INSERT OR REPLACE INTO entity_metadata
+          (local_account_id, entity_type, entity_id, entity_version, updated_at,
+           writer_device_id, operation_id, synced_entity_version)
+        SELECT OLD.user_id, 'qazaRecord', OLD.id, OLD.record_version + 1,
+               $timestamp,
+               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
+               lower(hex(randomblob(16))),
+               0;
+
         INSERT OR REPLACE INTO qaza_record_tombstones
           (local_account_id, record_id, record_version, deleted_at,
            writer_device_id, operation_id, cloud_generation)
@@ -364,7 +409,7 @@ class AppDatabase extends _$AppDatabase {
                );
         $queue
       END
-    '''.replaceFirst('%USER%', 'OLD.user_id'));
+    '''.replaceAll('%USER%', 'OLD.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_insert
@@ -385,7 +430,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_update
@@ -406,7 +451,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_additions_backup_delete
@@ -421,7 +466,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'OLD.user_id'));
+    '''.replaceAll('%USER%', 'OLD.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_insert
@@ -442,7 +487,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_actions_backup_update
@@ -463,7 +508,7 @@ class AppDatabase extends _$AppDatabase {
                lower(hex(randomblob(16)));
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER qaza_deletion_snapshots_backup_insert
@@ -478,7 +523,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.user_id'));
+    '''.replaceAll('%USER%', 'NEW.user_id'));
 
     await customStatement('''
       CREATE TRIGGER account_plan_revisions_backup_insert
@@ -493,7 +538,7 @@ class AppDatabase extends _$AppDatabase {
       BEGIN
         $queue
       END
-    '''.replaceFirst('%USER%', 'NEW.local_account_id'));
+    '''.replaceAll('%USER%', 'NEW.local_account_id'));
   }
 
   Future<void> _removeLegacyQazaHistorySchema() async {
@@ -606,6 +651,20 @@ class AppDatabase extends _$AppDatabase {
         plan_fingerprint TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _ensureEntityMetadataSyncColumn() async {
+    final columns =
+        await customSelect('PRAGMA table_info(entity_metadata)').get();
+    final exists = columns.any(
+      (row) => row.read<String>('name') == 'synced_entity_version',
+    );
+    if (!exists) {
+      await customStatement(
+        'ALTER TABLE entity_metadata '
+        'ADD COLUMN synced_entity_version INTEGER NOT NULL DEFAULT 0',
+      );
+    }
   }
 
   Future<void> _ensureDeletionActionVersionColumn() async {

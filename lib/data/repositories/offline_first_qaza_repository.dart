@@ -7,6 +7,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
 import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
+import '../../domain/repositories/qaza_bulk_delete_repository.dart';
 import '../../domain/repositories/qaza_bulk_write_repository.dart';
 import '../../domain/repositories/qaza_undo_repository.dart';
 import '../local/qaza_local_store.dart';
@@ -22,6 +23,7 @@ class OfflineFirstQazaRepository
         QazaRepository,
         QazaProfilePlanMutationRepository,
         QazaBulkWriteRepository,
+        QazaBulkDeleteRepository,
         QazaUndoRepository,
         QazaActivityRepository {
   OfflineFirstQazaRepository({
@@ -292,6 +294,36 @@ class OfflineFirstQazaRepository
       recordId: recordId,
     );
   }
+  @override
+  Future<int> deleteRecords({
+    required String userId,
+    required List<String> recordIds,
+  }) async {
+    _validateActive(userId);
+    if (recordIds.isEmpty) return 0;
+    return _localStore is QazaBulkDeleteRepository
+        ? (_localStore as QazaBulkDeleteRepository).deleteRecords(
+            userId: userId,
+            recordIds: recordIds.toSet().toList(growable: false),
+          )
+        : _deleteRecordsFallback(userId, recordIds);
+  }
+
+  Future<int> _deleteRecordsFallback(
+    String userId,
+    List<String> recordIds,
+  ) async {
+    var deleted = 0;
+    for (final id in recordIds.toSet()) {
+      await _localStore.deleteRecord(
+        userId: userId,
+        recordId: id,
+      );
+      deleted++;
+    }
+    return deleted;
+  }
+
   @override
   Future<QazaCompletionResult> completeRecord({
     required String userId,

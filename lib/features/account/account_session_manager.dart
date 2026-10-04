@@ -82,7 +82,11 @@ class AccountSessionManager extends ChangeNotifier {
       }
 
       try {
-        if (await _firebase.initialize()) {
+        // A fresh Guest-only installation has no reason to initialize Firebase,
+        // Google Sign-In, or App Check during startup. Google connection can
+        // initialize the cloud stack on demand later.
+        if (await _accountStore.hasAnyGoogleAccount() &&
+            await _firebase.initialize()) {
           final firebaseUser = _auth.currentUser;
           final terminalMigrationState =
               migrationState == 'none' ||
@@ -411,6 +415,7 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> _restoreExisting(LocalAccount account) async {
     if (account.firebaseUid == null) return;
     try {
+      if (!account.cloudBackupEnabled) return;
       await _reconciliation.restore(
         localAccountId: account.localAccountId,
         uid: account.firebaseUid!,
