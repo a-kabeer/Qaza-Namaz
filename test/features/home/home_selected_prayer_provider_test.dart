@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
+import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
@@ -238,7 +239,9 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.unavailable);
     });
 
-    test('Sahib al-Tartib remains authoritative over pending fallback', () async {
+    test(
+        'Sahib al-Tartib remains authoritative over pending fallback',
+        () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'qaza_home_completion_mode':
             HomePrayerSelectionMode.autoSequence.name,
@@ -247,7 +250,6 @@ void main() {
 
       final summary = summaryFor({
         PrayerType.fajr: 10,
-        PrayerType.asr: 10,
         PrayerType.isha: 0,
       });
       final container = ProviderContainer(
@@ -255,10 +257,17 @@ void main() {
           progressSummaryProvider.overrideWith((ref) => Future.value(summary)),
           sahibAlTartibProvider.overrideWith(
             (ref) => Future.value(
-              const SahibAlTartibState(
-                pendingFarzCount: 2,
+              SahibAlTartibState(
+                pendingFarzCount: 1,
                 requiresOrder: true,
-                nextPending: null,
+                nextPending: QazaRecord(
+                  id: 'tartib-target',
+                  userId: 'test-user',
+                  prayerType: PrayerType.asr,
+                  originalDate: DateTime(2026, 1, 1),
+                  createdAt: DateTime(2026, 1, 1),
+                  updatedAt: DateTime(2026, 1, 1),
+                ),
               ),
             ),
           ),
@@ -270,8 +279,14 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      // A real tartib target is represented through nextPending/nextPrayer.
-      // Rebuild the override with a minimal pending record below.
+      container.read(homePrayerSelectionProvider);
+      await container.read(progressSummaryProvider.future);
+      await container.read(sahibAlTartibProvider.future);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+
+      final selected = container.read(homeSelectedPrayerProvider);
+      expect(selected.prayer, PrayerType.asr);
+      expect(selected.source, HomePrayerSelectionSource.sahibAlTartib);
     });
 
     test('Prayer Selection remains sticky and is not changed by pending fallback', () async {
