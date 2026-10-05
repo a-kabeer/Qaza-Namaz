@@ -669,7 +669,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
             exitSelectionModeOnSuccess ? const <String>{} : state.selected,
       );
       ref.read(homeControllerProvider).invalidateDashboard();
-      ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       final changedPrayers =
           receipt.entries.map((entry) => entry.prayerType).toSet();
@@ -680,7 +679,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       return receipt;
     } on QazaTartibViolationException {
       state = state.copyWith(completing: false, clearError: true);
-      ref.invalidate(sahibAlTartibProvider);
       return null;
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
@@ -743,8 +741,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       if (changedIds.isNotEmpty) {
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
-        ref.invalidate(sahibAlTartibProvider);
-        final changedPrayers =
+          final changedPrayers =
             changed.map((record) => record.prayerType).toSet();
         for (final prayer in changedPrayers) {
           ref.invalidate(oldestPendingProvider(prayer));
@@ -782,8 +779,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         ref.invalidate(oldestPendingProvider(state.records[index].prayerType));
-        ref.invalidate(sahibAlTartibProvider);
-        await refresh();
+          await refresh();
       }
       return changed;
     } catch (error, stack) {
