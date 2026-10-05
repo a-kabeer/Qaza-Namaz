@@ -78,8 +78,6 @@ Future<ProviderContainer> _containerFor({
       progressSummaryProvider.overrideWith(
         (ref) => Future.value(_summaryFor(targetRecord)),
       ),
-        ),
-      ),
       qazaCompletionRestrictedProvider.overrideWith((ref) => false),
       currentQazaPrayerTypeProvider.overrideWith(
         (ref) => targetRecord.prayerType,
