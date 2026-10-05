@@ -38,10 +38,10 @@ class SplashScreen extends StatelessWidget {
               Text(AppLocalizations.of(context).splashTagline,
                   style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 28),
-              const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
+              // Keep startup splash static. Required local work is performed
+              // before this gate becomes routable; remote restoration never
+              // owns the splash lifetime.
+              const SizedBox(height: 12),
             ],
           ),
         ),
