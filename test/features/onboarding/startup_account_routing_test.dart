@@ -161,7 +161,7 @@ void main() {
     'fresh local state reaches Account Choice after session initialization',
     (tester) async {
       final (database, manager) = await _newManager();
-      final container = _container(manager: manager);
+      final container = _container(manager: manager, database: database);
       addTearDown(container.dispose);
       addTearDown(database.close);
 
