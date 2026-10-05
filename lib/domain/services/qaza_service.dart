@@ -88,7 +88,7 @@ class QazaService {
     QazaAvailabilityService? availability,
     this.witrInclusionResolver,
     DiagnosticsService? diagnostics,
-  })  : availability = availability ?? const QazaAvailabilityService(),;
+  }) : availability = availability ?? const QazaAvailabilityService();
 
   final QazaRepository repository;
   final QazaAvailabilityService availability;
