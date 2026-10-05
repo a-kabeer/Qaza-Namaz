@@ -10,7 +10,6 @@ import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_today_progress.dart';
@@ -79,11 +78,6 @@ Future<ProviderContainer> _containerFor({
       progressSummaryProvider.overrideWith(
         (ref) => Future.value(_summaryFor(targetRecord)),
       ),
-      sahibAlTartibProvider.overrideWith(
-        (ref) async => const SahibAlTartibState(
-          pendingFarzCount: 6,
-          requiresOrder: false,
-          nextPending: null,
         ),
       ),
       qazaCompletionRestrictedProvider.overrideWith((ref) => false),
@@ -91,6 +85,9 @@ Future<ProviderContainer> _containerFor({
         (ref) => targetRecord.prayerType,
       ),
       oldestPendingProvider(targetRecord.prayerType).overrideWith(
+        (ref) => oldestPendingOverride?.call() ?? Future.value(targetRecord),
+      ),
+      homeFallbackPendingProvider.overrideWith(
         (ref) => oldestPendingOverride?.call() ?? Future.value(targetRecord),
       ),
       if (includeActiveUser) activeUserIdProvider.overrideWithValue('u1'),
@@ -367,7 +364,7 @@ void main() {
     );
 
     refreshing = true;
-    container.invalidate(oldestPendingProvider(record.prayerType));
+    container.invalidate(homeFallbackPendingProvider);
     await tester.pump();
 
     final after = tester.getSize(
