@@ -34,7 +34,7 @@ QazaProgressSummary summaryFor(Map<PrayerType, int> pending) {
 void main() {
   test(
     'Prayer Selection disables prayers with zero pending Qaza in canonical order',
-    () {
+    () async {
       final container = ProviderContainer(
         overrides: [
           progressSummaryProvider.overrideWith(
@@ -66,7 +66,7 @@ void main() {
 
   test(
     'Prayer Selection respects disabled Witr and keeps enabled prayers available',
-    () {
+    () async {
       final container = ProviderContainer(
         overrides: [
           progressSummaryProvider.overrideWith(
