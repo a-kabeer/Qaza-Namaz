@@ -17,7 +17,7 @@ class AccountChoiceScreen extends ConsumerWidget {
     final session = ref.watch(accountSessionManagerProvider);
     final busy = session.state.phase == AccountSessionPhase.connecting;
 
-    ref.listen<AccountSessionState>(
+    ref.listen(
       accountSessionManagerProvider,
       (previous, next) {
         if (previous?.state.phase == AccountSessionPhase.connecting &&
