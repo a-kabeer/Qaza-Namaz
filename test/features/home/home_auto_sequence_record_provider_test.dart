@@ -95,12 +95,6 @@ class _FakeRepository implements QazaRepository {
   Future<List<QazaRecord>> getPendingRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
-  }) => throw UnimplementedError();
-
-  @override
-  Future<List<QazaRecord>> getPendingRecordsByIds({
-    required String userId,
-    required Iterable<String> recordIds,
   }) async =>
       records
           .where(
