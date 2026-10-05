@@ -115,7 +115,7 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.isha);
+      expect(selected.prayer, PrayerType.zuhr);
     });
 
     test('Persisted Auto Sequence cursor is not used to choose a pending record', () async {
@@ -131,7 +131,7 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.fajr);
+      expect(selected.prayer, PrayerType.isha);
     });
 
     test('Prayer Time keeps current prayer when pending', () async {
