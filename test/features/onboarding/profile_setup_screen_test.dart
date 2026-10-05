@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/native.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
+import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
+import 'package:qaza_namaz/data/remote/firebase_services.dart';
+import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -17,6 +24,38 @@ import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
+
+Future<(AppDatabase, AccountSessionManager)> _readyGuestSession() async {
+  final database = AppDatabase(NativeDatabase.memory());
+  final store = AccountLocalStore(database: database);
+  await store.ensureInitialized(
+    hasLegacyProfile: false,
+    hasLegacyQaza: false,
+  );
+  await store.ensureGuestActive();
+
+  final firebase = FirebaseServices();
+  final backup = FirebaseBackupService(
+    firebase: firebase,
+    database: database,
+    accountStore: store,
+  );
+  final reconciliation = FirebaseReconciliationService(
+    firebase: firebase,
+    backupService: backup,
+    accountStore: store,
+    database: database,
+  );
+  final manager = AccountSessionManager(
+    accountStore: store,
+    firebase: firebase,
+    auth: GoogleFirebaseAuthService(firebase),
+    backup: backup,
+    reconciliation: reconciliation,
+  );
+  await manager.initialize();
+  return (database, manager);
+}
 
 class _FakeUserProfileRepository implements UserProfileRepository {
   UserProfile? stored;
@@ -109,6 +148,8 @@ void main() {
   testWidgets(
     'profile onboarding imports Qaza after activating the saved local ledger',
     (tester) async {
+      final (database, sessionManager) = await _readyGuestSession();
+      addTearDown(database.close);
       final repository = _FakeUserProfileRepository();
       final importController = _CompletingImportController();
       final initialProfile = UserProfile(
@@ -124,9 +165,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-            (ref) => UserProfile.localLedgerUserId,
-          ),
+              (ref) => UserProfile.localLedgerUserId,
+            ),
           userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
@@ -290,6 +333,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
+            activeLocalAccountIdStateProvider.overrideWith(
+              (ref) => UserProfile.localLedgerUserId,
+            ),
             userProfileRepositoryProvider.overrideWithValue(repository),
             progressSummaryProvider.overrideWith(
               (ref) async => QazaProgressSummary.empty(),
@@ -333,6 +381,11 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
+            activeLocalAccountIdStateProvider.overrideWith(
+              (ref) => UserProfile.localLedgerUserId,
+            ),
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],
           child: const MaterialApp(
