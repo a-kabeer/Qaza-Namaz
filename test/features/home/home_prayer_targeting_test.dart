@@ -232,7 +232,7 @@ void main() {
     });
   });
 
-    test('Qaza sequence skips Witr when Witr is disabled', () {
+  test('Qaza sequence skips Witr when Witr is disabled', () {
       expect(
         PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
         PrayerType.fajr,
@@ -241,10 +241,9 @@ void main() {
         PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
         PrayerType.fajr,
       );
-    });
+  });
 
-
-    test('Auto Sequence skips disabled Witr in Home state', () {
+  test('Auto Sequence skips disabled Witr in Home state', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.isha,
@@ -265,6 +264,5 @@ void main() {
         ).autoSequencePrayer,
         PrayerType.witr,
       );
-    });
-
+  });
 }
