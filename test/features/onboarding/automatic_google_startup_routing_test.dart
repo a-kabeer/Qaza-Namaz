@@ -12,7 +12,7 @@ import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
-import 'package:qaza_namaz/features/onboarding/account_choice_screen.dart';
+import 'package:qaza_namaz/features/account/account_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 
@@ -61,7 +61,8 @@ class _FakeReconciliation extends FirebaseReconciliationService {
     required AccountLocalStore accountStore,
     required AppDatabase database,
     this.profile,
-  }) : super(
+  })  : store = accountStore,
+        super(
           firebase: firebase,
           backupService: backupService,
           accountStore: accountStore,
@@ -69,6 +70,7 @@ class _FakeReconciliation extends FirebaseReconciliationService {
         );
 
   final UserProfile? profile;
+  final AccountLocalStore store;
 
   @override
   Future<ReconciliationResult> restore({
@@ -76,18 +78,11 @@ class _FakeReconciliation extends FirebaseReconciliationService {
     required String uid,
   }) async {
     if (profile != null) {
-      await accountStore.saveProfile(localAccountId, profile!);
+      await store.saveProfile(localAccountId, profile!);
     }
     return const ReconciliationResult(cloudAvailable: true);
   }
 
-  AccountLocalStore get accountStore => super.accountStoreForTest;
-}
-
-extension on FirebaseReconciliationService {
-  AccountLocalStore get accountStoreForTest {
-    throw UnimplementedError();
-  }
 }
 
 UserProfile _completeProfile() => UserProfile(
