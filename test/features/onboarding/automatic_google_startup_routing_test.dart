@@ -83,7 +83,6 @@ class _FakeReconciliation extends FirebaseReconciliationService {
     }
     return const ReconciliationResult(cloudAvailable: true);
   }
-
 }
 
 UserProfile _completeProfile() => UserProfile(
