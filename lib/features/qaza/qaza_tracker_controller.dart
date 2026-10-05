@@ -288,7 +288,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
 
     final generation = ++_queryGeneration;
-    ref.invalidate(sahibAlTartibProvider);
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) {
       state = state.copyWith(
