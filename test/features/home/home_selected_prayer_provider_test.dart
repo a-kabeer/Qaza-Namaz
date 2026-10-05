@@ -315,6 +315,25 @@ void main() {
     });
 
     test(
+      'Prayer Selection becomes unavailable when its selected prayer has no pending Qaza',
+      () async {
+        final selected = await resolve(
+          mode: HomePrayerSelectionMode.prayerSelection,
+          currentPrayer: PrayerType.asr,
+          selectedPrayer: PrayerType.isha,
+          pending: {
+            PrayerType.fajr: 10,
+            PrayerType.isha: 0,
+          },
+          witrEnabled: true,
+        );
+
+        expect(selected.prayer, isNull);
+        expect(selected.source, HomePrayerSelectionSource.unavailable);
+      },
+    );
+
+    test(
       'Prayer Selection remains sticky and is not changed by pending fallback',
       () async {
         final selected = await resolve(
