@@ -6,7 +6,6 @@ import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
-import '../account/account_choice_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
 
@@ -27,10 +26,9 @@ class StartupGate extends ConsumerWidget {
           if (session.state.phase == AccountSessionPhase.loading) {
             return const SplashScreen();
           }
-          if (session.initialChoiceRequired &&
-              session.activeLocalAccountId == null) {
-            return const AccountChoiceScreen();
-          }
+          // Normal startup never asks the user to choose an account. The
+          // session manager has already restored the local account and made a
+          // best-effort Google/Firebase restoration before this route resolves.
           return const LanguageSelectionScreen();
         }
 
