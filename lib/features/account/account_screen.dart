@@ -123,7 +123,7 @@ class _AccountIdentityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final google = account?.isGoogle == true;
-    final title = google ? l10n.accountGoogle : l10n.accountGuest;
+    final title = google ? l10n.accountGoogle : l10n.accountGuestTitle;
     final subtitle =
         google ? (account?.googleEmail ?? '') : l10n.accountGuestLocalDataSubtitle;
     final status = google
