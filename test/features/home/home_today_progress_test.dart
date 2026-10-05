@@ -367,7 +367,7 @@ void main() {
     );
   });
 
-  testWidgets('Qaza refresh keeps the cached Next Qaza footprint stable',
+  testWidgets('Prayer-specific Qaza refresh keeps the cached Next Qaza footprint stable',
       (tester) async {
     final record = _pendingRecord(
       id: 'fajr',
@@ -377,7 +377,10 @@ void main() {
     var refreshing = false;
     final refreshCompleter = Completer<QazaRecord?>();
     final container = await _containerFor(
-      selection: const HomePrayerSelectionState(),
+      selection: const HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.prayerSelection,
+        selectedPrayer: PrayerType.fajr,
+      ),
       targetRecord: record,
       onDailyProgressRead: () {},
       oldestPendingOverride: () =>
@@ -391,7 +394,7 @@ void main() {
     );
 
     refreshing = true;
-    container.invalidate(homeFallbackPendingProvider);
+    container.invalidate(oldestPendingProvider(record.prayerType));
     await tester.pump();
 
     final after = tester.getSize(
