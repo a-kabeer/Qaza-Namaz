@@ -654,6 +654,27 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountTitle => 'اکاؤنٹ';
 
   @override
+  String get accountChoiceHeadline => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
+
+  @override
+  String get accountChoiceDescription =>
+      'گوگل سے سائن اِن کریں تاکہ آپ کی پیش رفت مختلف ڈیوائسز پر محفوظ اور بحال ہو سکے۔';
+
+  @override
+  String get accountChoiceContinueGoogle => 'گوگل کے ساتھ جاری رکھیں';
+
+  @override
+  String get accountChoiceContinueGuest => 'مہمان کے طور پر جاری رکھیں';
+
+  @override
+  String get accountChoiceGuestDescription =>
+      'مہمان کا ڈیٹا اسی ڈیوائس پر محفوظ رہتا ہے۔ آپ بعد میں گوگل منسلک کر سکتے ہیں۔';
+
+  @override
+  String get accountChoiceGoogleFailed =>
+      'گوگل سائن اِن مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
   String get accountSignInMethod => 'سائن اِن کا طریقہ';
 
   @override

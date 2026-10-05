@@ -85,69 +85,80 @@ class AccountSessionManager extends ChangeNotifier {
         );
       }
 
-      try {
-        // Google/Firebase restoration is best-effort and bounded. It must not
-        // prevent a valid local Guest/Google account from opening offline.
-        final firebaseAvailable = await _firebase
-            .initialize()
-            .timeout(_startupAuthTimeout, onTimeout: () => false);
+      final terminalMigrationState =
+          migrationState == 'none' ||
+          migrationState == 'completed' ||
+          migrationState == 'failed';
 
-        if (firebaseAvailable) {
-          final firebaseUser = await _auth
-              .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
-              .timeout(_startupAuthTimeout, onTimeout: () => null);
-          final terminalMigrationState =
-              migrationState == 'none' ||
-              migrationState == 'completed' ||
-              migrationState == 'failed';
+      // A remembered Guest choice is authoritative. Do not initialize
+      // Firebase/Google on a normal offline Guest restart.
+      //
+      // For a genuinely new session (no active account), or an established
+      // Google account, perform bounded lightweight restoration. Interrupted
+      // migration states are also allowed to run their existing recovery path.
+      final shouldAttemptGoogleStartupRestore =
+          account == null || account.isGoogle || !terminalMigrationState;
 
-          if (firebaseUser != null) {
-            if (!terminalMigrationState) {
-              await _resumeInterruptedMigration(
-                firebaseUser.uid,
-                firebaseUser.email,
-              );
-            } else {
-              final local =
-                  await _accountStore.findGoogleByUid(firebaseUser.uid);
-              if (local?.lifecycleState == AccountLifecycleState.migrating) {
+      if (shouldAttemptGoogleStartupRestore) {
+        try {
+          final firebaseAvailable = await _firebase
+              .initialize()
+              .timeout(_startupAuthTimeout, onTimeout: () => false);
+
+          if (firebaseAvailable) {
+            final firebaseUser = await _auth
+                .attemptLightweightAuthentication(
+                  timeout: _startupAuthTimeout,
+                )
+                .timeout(_startupAuthTimeout, onTimeout: () => null);
+
+            if (firebaseUser != null) {
+              if (!terminalMigrationState) {
                 await _resumeInterruptedMigration(
                   firebaseUser.uid,
                   firebaseUser.email,
                 );
               } else {
-                await _restoreGoogleStartupAccount(
-                  uid: firebaseUser.uid,
-                  email: firebaseUser.email,
-                );
+                final local =
+                    await _accountStore.findGoogleByUid(firebaseUser.uid);
+                if (local?.lifecycleState == AccountLifecycleState.migrating) {
+                  await _resumeInterruptedMigration(
+                    firebaseUser.uid,
+                    firebaseUser.email,
+                  );
+                } else {
+                  await _restoreGoogleStartupAccount(
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email,
+                  );
+                }
+              }
+            } else if (!terminalMigrationState) {
+              // An interrupted Guest -> Google conversion without a recoverable
+              // Firebase session is rolled back exactly as before.
+              final migratingId = await _accountStore.migratingGoogleAccount();
+              if (migratingId != null) {
+                await _accountStore.rollbackGoogleMigration(migratingId);
               }
             }
-          } else if (!terminalMigrationState) {
-            // An interrupted Guest -> Google conversion without a recoverable
-            // Firebase session is rolled back exactly as before.
-            final migratingId = await _accountStore.migratingGoogleAccount();
-            if (migratingId != null) {
-              await _accountStore.rollbackGoogleMigration(migratingId);
-            }
+          }
+        } catch (error) {
+          // Never discard the local session because cloud/auth restoration failed.
+          if (_state.activeAccount != null) {
+            _setState(
+              AccountSessionState(
+                phase: AccountSessionPhase.ready,
+                activeLocalAccountId: _state.activeLocalAccountId,
+                activeAccount: _state.activeAccount,
+                initialChoiceRequired: false,
+                migrationState: await _accountStore.migrationState(),
+                restoreState: 'failed',
+                message: error.toString(),
+              ),
+            );
           }
         }
-      } catch (error) {
-        // Never discard the local session because cloud/auth restoration failed.
-        if (_state.activeAccount != null) {
-          _setState(
-            AccountSessionState(
-              phase: AccountSessionPhase.ready,
-              activeLocalAccountId: _state.activeLocalAccountId,
-              activeAccount: _state.activeAccount,
-              initialChoiceRequired: false,
-              migrationState: await _accountStore.migrationState(),
-              restoreState: 'failed',
-              message: error.toString(),
-            ),
-          );
-        }
       }
-
       final refreshed = await _accountStore.activeAccount();
       _setState(
         AccountSessionState(
@@ -340,7 +351,9 @@ class AccountSessionManager extends ChangeNotifier {
       if (guestWasActive && previous != null) {
         await _accountStore.rollbackGoogleMigration(previous.localAccountId);
       } else if (previous == null) {
-        await _accountStore.ensureGuestActive();
+        // A failed first-launch Google attempt must not silently choose Guest.
+        // Leave the session unselected so Account Choice remains available.
+        await _accountStore.setInitialChoiceRequired(true);
       }
       await _auth.signOut();
       await _accountStore.setMigrationState('failed');
@@ -350,7 +363,9 @@ class AccountSessionManager extends ChangeNotifier {
           phase: AccountSessionPhase.ready,
           activeLocalAccountId: restoredActive?.localAccountId,
           activeAccount: restoredActive,
-          initialChoiceRequired: false,
+          initialChoiceRequired: previous == null
+              ? true
+              : await _accountStore.initialChoiceRequired(),
           migrationState: 'failed',
           restoreState: 'none',
           message: 'Google connection could not be completed.',
