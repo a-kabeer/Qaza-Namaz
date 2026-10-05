@@ -153,7 +153,7 @@ void main() {
       );
     });
 
-    test('switching modes preserves the Auto Sequence cursor', () {
+    test('switching modes preserves the legacy Auto Sequence cursor', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -164,17 +164,17 @@ void main() {
       notifier.usePrayerTime();
       expect(
         container.read(homePrayerSelectionProvider).autoSequencePrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
 
       notifier.usePrayerSelection();
       expect(
         container.read(homePrayerSelectionProvider).autoSequencePrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
       expect(
         container.read(homePrayerSelectionProvider).selectedPrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
     });
 
