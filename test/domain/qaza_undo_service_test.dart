@@ -890,7 +890,6 @@ void main() {
     final records = {'fajr': completed};
     final service = QazaService(
       _FakeQazaRepository(records),
-      tartib: _NoopTartibService(),
     );
 
     final stale = await service.markCompletedRecordsAsPending(
