@@ -91,6 +91,8 @@ void main() {
     );
     addTearDown(container.dispose);
 
+    await container.read(progressSummaryProvider.future);
+
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -207,6 +209,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+
+    await container.read(progressSummaryProvider.future);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
