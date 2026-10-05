@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -48,6 +49,15 @@ class _FakeAuth extends GoogleFirebaseAuthService {
     Duration timeout = const Duration(seconds: 5),
   }) async =>
       identity;
+}
+
+class _FailingInteractiveAuth extends _FakeAuth {
+  _FailingInteractiveAuth(super.services, super.identity);
+
+  @override
+  Future<User?> signIn() async {
+    throw StateError('Google authentication canceled.');
+  }
 }
 
 class _FakeBackup extends FirebaseBackupService {
@@ -298,6 +308,43 @@ void main() {
     expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
     expect(firebase.initializeCalls, 0);
   });
+
+  test(
+    'first-launch Google failure keeps Account Choice required',
+    () async {
+      final firebase = _FakeFirebase();
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: _FailingInteractiveAuth(firebase, null),
+        backup: _FakeBackup(
+          firebase: firebase,
+          database: database,
+          accountStore: store,
+        ),
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: _FakeBackup(
+            firebase: firebase,
+            database: database,
+            accountStore: store,
+          ),
+          accountStore: store,
+          database: database,
+        ),
+      );
+
+      await manager.initialize();
+      expect(manager.activeAccount, isNull);
+      expect(manager.initialChoiceRequired, isTrue);
+
+      await manager.connectGoogle();
+
+      expect(manager.state.phase, AccountSessionPhase.ready);
+      expect(manager.activeAccount, isNull);
+      expect(manager.initialChoiceRequired, isTrue);
+    },
+  );
 
   test('Firebase failure preserves the completed local Guest account',
       () async {
