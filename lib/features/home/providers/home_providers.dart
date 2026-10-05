@@ -559,17 +559,24 @@ final homeFallbackPendingProvider =
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
-  final currentPrayer = ref.watch(currentQazaPrayerTypeProvider);
 
+  // Auto Sequence is record-first. Its persisted prayer cursor is retained
+  // only for backwards compatibility and never resolves the pending target.
+  if (selection.mode == HomePrayerSelectionMode.autoSequence) {
+    return HomeSelectedPrayerState(
+      mode: selection.mode,
+      prayer: selection.autoSequencePrayer,
+      source: HomePrayerSelectionSource.autoSequence,
+    );
+  }
+
+  final currentPrayer = ref.watch(currentQazaPrayerTypeProvider);
   final target = switch (selection.mode) {
     HomePrayerSelectionMode.prayerTime => currentPrayer,
     HomePrayerSelectionMode.autoSequence => selection.autoSequencePrayer,
     HomePrayerSelectionMode.prayerSelection => selection.selectedPrayer,
   };
 
-  final pendingAwareMode =
-      selection.mode == HomePrayerSelectionMode.prayerTime ||
-      selection.mode == HomePrayerSelectionMode.autoSequence;
   final summary = ref.watch(progressSummaryProvider).valueOrNull;
   final witrEnabled = ref.watch(effectiveWitrProvider);
   final resolvedTarget =
@@ -583,7 +590,7 @@ final homeSelectedPrayerProvider =
                   )
               ? target
               : null
-          : pendingAwareMode && target != null && summary != null
+          : target != null && summary != null
               ? const QazaTargetingService().resolveNextPendingPrayer(
                   summary: summary,
                   startPrayer: target,
@@ -591,11 +598,6 @@ final homeSelectedPrayerProvider =
                 )
               : target;
 
-  // An unavailable or zero-pending target is not actionable in the
-  // pending-aware modes. Returning unavailable here lets the existing Home
-  // all-completed/no-pending behavior take over without a false completion
-  // action. Prayer Selection is also guarded by the latest pending summary,
-  // but remains sticky when its selected prayer still has pending records.
   if (resolvedTarget == null) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
