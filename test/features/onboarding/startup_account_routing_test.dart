@@ -192,7 +192,8 @@ void main() {
 
       await tester.pumpWidget(_startupApp(container));
       await manager.initialize();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(AccountChoiceScreen), findsOneWidget);
     },
@@ -212,7 +213,8 @@ void main() {
       addTearDown(database.close);
 
       await tester.pumpWidget(_startupApp(container));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(LanguageSelectionScreen), findsOneWidget);
       expect(find.byType(WorkspaceShell), findsNothing);
@@ -244,7 +246,8 @@ void main() {
       addTearDown(database.close);
 
       await tester.pumpWidget(_startupApp(container));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
       expect(find.byType(WorkspaceShell), findsNothing);
@@ -276,7 +279,8 @@ void main() {
       addTearDown(database.close);
 
       await tester.pumpWidget(_startupApp(container));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(WorkspaceShell), findsOneWidget);
       expect(find.byType(LanguageSelectionScreen), findsNothing);
