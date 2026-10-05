@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../account/account_choice_screen.dart';
 import '../shell/workspace_shell.dart';
