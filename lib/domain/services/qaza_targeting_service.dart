@@ -9,6 +9,20 @@ import '../entities/qaza_progress.dart';
 class QazaTargetingService {
   const QazaTargetingService();
 
+  /// Returns whether [prayer] is currently actionable from the pending
+  /// Qaza summary.
+  ///
+  /// Witr is unavailable when the profile disables it, regardless of its
+  /// pending count.
+  bool isPrayerPending({
+    required QazaProgressSummary summary,
+    required PrayerType prayer,
+    required bool witrEnabled,
+  }) {
+    if (!witrEnabled && prayer == PrayerType.witr) return false;
+    return (summary.byPrayer[prayer]?.progress.pending ?? 0) > 0;
+  }
+
   /// Returns the first eligible prayer at or after [startPrayer] in canonical
   /// Qaza order whose current pending count is greater than zero.
   ///
@@ -33,9 +47,13 @@ class QazaTargetingService {
         continue;
       }
 
-      final pending =
-          summary.byPrayer[candidate]?.progress.pending ?? 0;
-      if (pending > 0) return candidate;
+      if (isPrayerPending(
+        summary: summary,
+        prayer: candidate,
+        witrEnabled: witrEnabled,
+      )) {
+        return candidate;
+      }
     }
 
     return null;
