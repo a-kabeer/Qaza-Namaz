@@ -123,11 +123,14 @@ Widget _startupApp(ProviderContainer container) {
 
 ProviderContainer _container({
   required AccountSessionManager manager,
+  required AppDatabase database,
   UserProfile? profile,
 }) {
   return ProviderContainer(
     overrides: [
+      appDatabaseProvider.overrideWithValue(database),
       accountSessionManagerProvider.overrideWithValue(manager),
+      activeUserIdProvider.overrideWith((ref) => manager.activeLocalAccountId),
       userProfileProvider.overrideWith((ref) async => profile),
     ],
   );
@@ -142,7 +145,7 @@ void main() {
     'StartupGate does not initialize the session from build',
     (tester) async {
       final (database, manager) = await _newManager();
-      final container = _container(manager: manager);
+      final container = _container(manager: manager, database: database);
       addTearDown(container.dispose);
       addTearDown(database.close);
 
@@ -182,6 +185,7 @@ void main() {
       );
       final container = _container(
         manager: manager,
+        database: database,
         profile: profile,
       );
       addTearDown(container.dispose);
