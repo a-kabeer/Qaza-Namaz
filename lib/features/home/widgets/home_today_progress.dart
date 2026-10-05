@@ -11,7 +11,6 @@ import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
-import '../../../domain/services/qaza_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
@@ -55,16 +54,6 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
             recordId: record.id,
             completedAt: completedAt,
           );
-    } on QazaTartibViolationException catch (error) {
-      ref.invalidate(sahibAlTartibProvider);
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context);
-      ref.read(appSnackbarServiceProvider).warning(
-            l10n.qazaTartibBlocked(
-              error.requiredPrayer.localizedLabel(l10n),
-            ),
-          );
-      return;
     } catch (error, stack) {
       diagnostics.recordFailure(
         DiagnosticArea.qazaCompletion,
@@ -338,7 +327,7 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
 }
 
-/// Prayer target is driven by the selected Home completion mode, while Sahib al-Tartib remains authoritative.
+/// Prayer target is driven by the selected Home completion mode.
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   QazaRecord? _cachedRecord;
   PrayerType? _cachedPrayer;
