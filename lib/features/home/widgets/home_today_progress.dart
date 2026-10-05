@@ -412,18 +412,22 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
 
               return state.when(
                 loading: () {
-                  final cached = _cachedRecord;
-                  final cachedPrayer = _cachedPrayer;
-                  if (cached != null && cachedPrayer != null) {
-                    return _HomeNextQazaRecord(
-                      record: cached,
-                      prayer: cachedPrayer,
-                      restricted: restricted,
-                      completionWorking: widget.working,
-                      refreshing: true,
-                      onComplete: widget.onComplete,
-                      selectionSource: widget.selected.source,
-                    );
+                  // Auto Sequence must never render a stale completed/previous
+                  // record while the chronological ledger is being refreshed.
+                  if (!isAutoSequence) {
+                    final cached = _cachedRecord;
+                    final cachedPrayer = _cachedPrayer;
+                    if (cached != null && cachedPrayer != null) {
+                      return _HomeNextQazaRecord(
+                        record: cached,
+                        prayer: cachedPrayer,
+                        restricted: restricted,
+                        completionWorking: widget.working,
+                        refreshing: true,
+                        onComplete: widget.onComplete,
+                        selectionSource: widget.selected.source,
+                      );
+                    }
                   }
                   return const HomeNextQazaSkeleton();
                 },
