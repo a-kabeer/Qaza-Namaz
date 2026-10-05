@@ -98,7 +98,7 @@ void main() {
 
   test(
     'Prayer Selection target becomes unavailable when selected prayer loses pending Qaza',
-    () {
+    () async {
       final summaryStateProvider =
           StateProvider<QazaProgressSummary>(
         (ref) => summaryFor({
