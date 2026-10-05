@@ -16,6 +16,7 @@ export '../entities/qaza_progress.dart';
 export '../repositories/qaza_repository.dart' show QazaPage;
 export 'qaza_availability_service.dart'
     show QazaAvailabilityAnalysis, QazaEligibility, QazaPrayerKey;
+
 class QazaRecordMutationConflictException implements Exception {
   const QazaRecordMutationConflictException();
 }
@@ -237,6 +238,7 @@ class QazaService {
     final summary = await repository.getProgressSummary(userId: userId);
     return _scopeProgress(summary);
   }
+
   Future<List<QazaRecord>> getPendingForUser({required String userId}) =>
       getRecords(userId: userId, status: QazaStatus.pending);
   Future<List<QazaRecord>> getPendingForPrayer(
