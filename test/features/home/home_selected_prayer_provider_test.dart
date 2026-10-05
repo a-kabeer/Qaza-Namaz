@@ -71,7 +71,7 @@ void main() {
   }
 
   group('homeSelectedPrayerProvider pending-aware target resolution', () {
-    test('Auto Sequence skips zero-pending Witr', () async {
+    test('Auto Sequence keeps the legacy cursor non-authoritative', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
@@ -84,11 +84,11 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.fajr);
+      expect(selected.prayer, PrayerType.isha);
       expect(selected.source, HomePrayerSelectionSource.autoSequence);
     });
 
-    test('Auto Sequence skips zero-pending middle and consecutive prayers', () async {
+    test('Auto Sequence does not resolve a later prayer type from pending counts', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.zuhr,
@@ -101,10 +101,10 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.maghrib);
+      expect(selected.prayer, PrayerType.zuhr);
     });
 
-    test('Auto Sequence selects the only pending prayer', () async {
+    test('Auto Sequence does not select by prayer-type availability', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.fajr,
@@ -115,10 +115,10 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.asr);
+      expect(selected.prayer, PrayerType.isha);
     });
 
-    test('persisted zero-pending cursor dynamically resolves to next available target', () async {
+    test('Persisted Auto Sequence cursor is not used to choose a pending record', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
