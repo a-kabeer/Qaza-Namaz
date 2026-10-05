@@ -298,7 +298,9 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     const calendarSpacing = _monthlyCalendarSpacing;
     const selectedDetailsSpacing = 12.0;
 
-    final gridWidth = math.max(width - 2, 0).toDouble();
+    // The inline monthly detail is not inside the 1px-padded activity
+    // content ListView, so its calendar uses the full available width.
+    final gridWidth = math.max(width, 0).toDouble();
     final gridHeight = _monthlyCalendarGridHeight(gridWidth);
 
     return dividerHeight +
