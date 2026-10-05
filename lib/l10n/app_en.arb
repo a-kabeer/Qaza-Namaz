@@ -497,6 +497,8 @@
   "accountChoiceGuestDescription": "Guest data stays on this device. You can connect Google later.",
   "accountChoiceGoogleFailed": "Google sign-in could not be completed. Please try again.",
   "accountTitle": "Account",
+  "accountGuest": "Guest",
+  "accountConnectGoogle": "Connect Google",
   "accountSignInMethod": "Sign-in method",
   "accountGoogleAuth": "Google",
   "accountSignedInWithGoogle": "Signed in with Google",
