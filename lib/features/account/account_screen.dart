@@ -171,7 +171,7 @@ class _AccountIdentityCard extends StatelessWidget {
 class _GuestAccountContent extends StatelessWidget {
   const _GuestAccountContent({required this.onConnectGoogle});
 
-  final Future<void> Function()? onConnectGoogle;
+  final VoidCallback? onConnectGoogle;
 
   @override
   Widget build(BuildContext context) {
