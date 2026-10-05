@@ -1172,6 +1172,13 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get accountTitle;
 
+  String get accountChoiceHeadline;
+  String get accountChoiceDescription;
+  String get accountChoiceContinueGoogle;
+  String get accountChoiceContinueGuest;
+  String get accountChoiceGuestDescription;
+  String get accountChoiceGoogleFailed;
+
   /// No description provided for @accountSignInMethod.
   ///
   /// In en, this message translates to:
