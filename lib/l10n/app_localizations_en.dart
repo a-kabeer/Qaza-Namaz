@@ -654,6 +654,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountTitle => 'Account';
 
   @override
+  String get accountChoiceHeadline => 'Keep your Qaza progress safe';
+
+  @override
+  String get accountChoiceDescription =>
+      'Sign in with Google to back up and restore your progress across devices.';
+
+  @override
+  String get accountChoiceContinueGoogle => 'Continue with Google';
+
+  @override
+  String get accountChoiceContinueGuest => 'Continue as Guest';
+
+  @override
+  String get accountChoiceGuestDescription =>
+      'Guest data stays on this device. You can connect Google later.';
+
+  @override
+  String get accountChoiceGoogleFailed =>
+      'Google sign-in could not be completed. Please try again.';
+
+  @override
   String get accountSignInMethod => 'Sign-in method';
 
   @override
