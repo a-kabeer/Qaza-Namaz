@@ -11,18 +11,23 @@ import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
-import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/account/account_choice_screen.dart';
+import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeFirebase extends FirebaseServices {
+  int initializeCalls = 0;
+
   @override
   bool get initialized => true;
 
   @override
-  Future<bool> initialize() async => true;
+  Future<bool> initialize() async {
+    initializeCalls++;
+    return true;
+  }
 }
 
 class _UnavailableFirebase extends FirebaseServices {
@@ -70,13 +75,13 @@ class _FakeReconciliation extends FirebaseReconciliationService {
     required AccountLocalStore accountStore,
     required AppDatabase database,
     this.profile,
-  })  : store = accountStore,
-        super(
-          firebase: firebase,
-          backupService: backupService,
-          accountStore: accountStore,
-          database: database,
-        );
+  }) : store = accountStore,
+       super(
+         firebase: firebase,
+         backupService: backupService,
+         accountStore: accountStore,
+         database: database,
+       );
 
   final UserProfile? profile;
   final AccountLocalStore store;
@@ -108,30 +113,58 @@ Future<AccountSessionManager> _manager({
   required AppDatabase database,
   required AccountLocalStore store,
   required GoogleFirebaseIdentity? identity,
+  FirebaseServices? firebase,
   Map<String, dynamic>? root,
   UserProfile? cloudProfile,
 }) async {
-  final firebase = _FakeFirebase();
+  final services = firebase ?? _FakeFirebase();
   final backup = _FakeBackup(
-    firebase: firebase,
+    firebase: services,
     database: database,
     accountStore: store,
     root: root,
   );
-  final reconciliation = FirebaseReconciliationService(
-    firebase: firebase,
-    backupService: backup,
-    accountStore: store,
-    database: database,
-  );
-  final auth = _FakeAuth(firebase, identity);
+  final reconciliation = cloudProfile == null
+      ? FirebaseReconciliationService(
+          firebase: services,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        )
+      : _FakeReconciliation(
+          firebase: services,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+          profile: cloudProfile,
+        );
   return AccountSessionManager(
     accountStore: store,
-    firebase: firebase,
-    auth: auth,
+    firebase: services,
+    auth: _FakeAuth(services, identity),
     backup: backup,
     reconciliation: reconciliation,
   );
+}
+
+Future<void> pumpStartupGate(
+  WidgetTester tester,
+  AccountSessionManager manager,
+) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        accountSessionManagerProvider.overrideWith((ref) => manager),
+        userProfileProvider.overrideWith((ref) => Future.value(null)),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const StartupGate(),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -149,6 +182,67 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'fresh installation with no Google identity keeps Account Choice required',
+    () async {
+      final firebase = _FakeFirebase();
+      final manager = await _manager(
+        database: database,
+        store: store,
+        identity: null,
+        firebase: firebase,
+      );
+
+      await manager.initialize();
+
+      expect(manager.activeAccount, isNull);
+      expect(manager.initialChoiceRequired, isTrue);
+      expect(firebase.initializeCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'fresh installation with no Google identity shows Account Choice',
+    (tester) async {
+      final manager = await _manager(
+        database: database,
+        store: store,
+        identity: null,
+      );
+      await manager.initialize();
+
+      await pumpStartupGate(tester, manager);
+
+      expect(find.byType(AccountChoiceScreen), findsOneWidget);
+      expect(find.byType(LanguageSelectionScreen), findsNothing);
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue as Guest'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'fresh installation with cached Google identity skips Account Choice',
+    (tester) async {
+      final manager = await _manager(
+        database: database,
+        store: store,
+        identity: const GoogleFirebaseIdentity(
+          uid: 'new-device-google',
+          email: 'user@example.com',
+        ),
+      );
+      await manager.initialize();
+
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(manager.initialChoiceRequired, isFalse);
+
+      await pumpStartupGate(tester, manager);
+
+      expect(find.byType(AccountChoiceScreen), findsNothing);
+      expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    },
+  );
 
   test('existing Google UID reuses the same local partition', () async {
     final id = await store.createGooglePartition(
@@ -182,70 +276,27 @@ void main() {
     expect(rows.single.read<int>('count'), 1);
   });
 
-  test('new Google UID creates one partition and restores cloud profile',
+  test('existing Guest account is authoritative and skips Google startup',
       () async {
-    final firebase = _FakeFirebase();
-    final backup = _FakeBackup(
-      firebase: firebase,
-      database: database,
-      accountStore: store,
-      root: {'cloudGeneration': 1, 'datasetState': 'ready'},
-    );
-    final reconciliation = _FakeReconciliation(
-      firebase: firebase,
-      backupService: backup,
-      accountStore: store,
-      database: database,
-      profile: _completeProfile(),
-    );
-    final manager = AccountSessionManager(
-      accountStore: store,
-      firebase: firebase,
-      auth: _FakeAuth(
-        firebase,
-        const GoogleFirebaseIdentity(
-          uid: 'recovered-uid',
-          email: 'recovered@example.com',
-        ),
-      ),
-      backup: backup,
-      reconciliation: reconciliation,
-    );
-
-    await manager.initialize();
-
-    final account = manager.activeAccount;
-    expect(account?.isGoogle, isTrue);
-    expect(account?.firebaseUid, 'recovered-uid');
-    final restored = await store.loadProfile(account!.localAccountId);
-    expect(restored?.isComplete, isTrue);
-    expect(restored?.languageCode, 'en');
-
-    final rows = await database
-        .customSelect(
-          "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'recovered-uid'",
-        )
-        .get();
-    expect(rows.single.read<int>('count'), 1);
-  });
-
-  test('no Google session preserves a completed Guest account', () async {
     final profile = _completeProfile();
     await store.saveProfile(UserProfile.localLedgerUserId, profile);
     await store.activate(UserProfile.localLedgerUserId);
+    final firebase = _FakeFirebase();
 
     final manager = await _manager(
       database: database,
       store: store,
-      identity: null,
+      identity: const GoogleFirebaseIdentity(
+        uid: 'cached-but-not-selected',
+        email: 'google@example.com',
+      ),
+      firebase: firebase,
     );
     await manager.initialize();
 
     expect(manager.activeAccount?.isGuest, isTrue);
     expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
-    final restored = await store.loadProfile(UserProfile.localLedgerUserId);
-    expect(restored?.isComplete, isTrue);
-    expect(restored?.languageCode, profile.languageCode);
+    expect(firebase.initializeCalls, 0);
   });
 
   test('Firebase failure preserves the completed local Guest account',
@@ -255,25 +306,11 @@ void main() {
     await store.activate(UserProfile.localLedgerUserId);
 
     final firebase = _UnavailableFirebase();
-    final manager = AccountSessionManager(
-      accountStore: store,
+    final manager = await _manager(
+      database: database,
+      store: store,
+      identity: null,
       firebase: firebase,
-      auth: _FakeAuth(firebase, null),
-      backup: _FakeBackup(
-        firebase: firebase,
-        database: database,
-        accountStore: store,
-      ),
-      reconciliation: FirebaseReconciliationService(
-        firebase: firebase,
-        backupService: _FakeBackup(
-          firebase: firebase,
-          database: database,
-          accountStore: store,
-        ),
-        accountStore: store,
-        database: database,
-      ),
     );
     await manager.initialize();
 
@@ -283,46 +320,35 @@ void main() {
     expect(restored?.languageCode, profile.languageCode);
   });
 
-  testWidgets('normal startup never shows AccountChoiceScreen', (tester) async {
-    final firebase = _FakeFirebase();
-    final manager = AccountSessionManager(
-      accountStore: store,
-      firebase: firebase,
-      auth: _FakeAuth(firebase, null),
-      backup: _FakeBackup(
-        firebase: firebase,
+  test(
+    'new Google UID creates one partition and restores cloud profile',
+    () async {
+      final manager = await _manager(
         database: database,
-        accountStore: store,
-      ),
-      reconciliation: FirebaseReconciliationService(
-        firebase: firebase,
-        backupService: _FakeBackup(
-          firebase: firebase,
-          database: database,
-          accountStore: store,
+        store: store,
+        identity: const GoogleFirebaseIdentity(
+          uid: 'recovered-uid',
+          email: 'recovered@example.com',
         ),
-        accountStore: store,
-        database: database,
-      ),
-    );
-    await manager.initialize();
+        root: {'cloudGeneration': 1, 'datasetState': 'ready'},
+        cloudProfile: _completeProfile(),
+      );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          accountSessionManagerProvider.overrideWith((ref) => manager),
-          userProfileProvider.overrideWith((ref) => Future.value(null)),
-        ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const StartupGate(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await manager.initialize();
 
-    expect(find.byType(AccountChoiceScreen), findsNothing);
-    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
-  });
+      final account = manager.activeAccount;
+      expect(account?.isGoogle, isTrue);
+      expect(account?.firebaseUid, 'recovered-uid');
+      final restored = await store.loadProfile(account!.localAccountId);
+      expect(restored?.isComplete, isTrue);
+      expect(restored?.languageCode, 'en');
+
+      final rows = await database
+          .customSelect(
+            "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'recovered-uid'",
+          )
+          .get();
+      expect(rows.single.read<int>('count'), 1);
+    },
+  );
 }
