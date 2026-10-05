@@ -138,20 +138,13 @@ Future<AccountSessionManager> _manager({
     accountStore: store,
     root: root,
   );
-  final reconciliation = cloudProfile == null
-      ? FirebaseReconciliationService(
-          firebase: services,
-          backupService: backup,
-          accountStore: store,
-          database: database,
-        )
-      : _FakeReconciliation(
-          firebase: services,
-          backupService: backup,
-          accountStore: store,
-          database: database,
-          profile: cloudProfile,
-        );
+  final reconciliation = _FakeReconciliation(
+    firebase: services,
+    backupService: backup,
+    accountStore: store,
+    database: database,
+    profile: cloudProfile,
+  );
   return AccountSessionManager(
     accountStore: store,
     firebase: services,
@@ -160,6 +153,12 @@ Future<AccountSessionManager> _manager({
     reconciliation: reconciliation,
   );
 }
+
+Future<void> waitForGoogleStartupRestore(
+    AccountSessionManager manager,
+  ) async {
+    await manager.startupRestoreFuture;
+  }
 
 Future<void> pumpStartupGate(
   WidgetTester tester,
@@ -178,7 +177,8 @@ Future<void> pumpStartupGate(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 void main() {
@@ -209,6 +209,7 @@ void main() {
       );
 
       await manager.initialize();
+      await Future<void>.delayed(Duration.zero);
 
       expect(manager.activeAccount, isNull);
       expect(manager.initialChoiceRequired, isTrue);
@@ -247,6 +248,7 @@ void main() {
         ),
       );
       await manager.initialize();
+      await waitForGoogleStartupRestore(manager);
 
       expect(manager.activeAccount?.isGoogle, isTrue);
       expect(manager.initialChoiceRequired, isFalse);
@@ -275,6 +277,7 @@ void main() {
       ),
     );
     await manager.initialize();
+    await waitForGoogleStartupRestore(manager);
 
     expect(manager.activeLocalAccountId, id);
     expect(manager.activeAccount?.isGoogle, isTrue);
@@ -386,6 +389,7 @@ void main() {
       );
 
       await manager.initialize();
+      await waitForGoogleStartupRestore(manager);
 
       final account = manager.activeAccount;
       expect(account?.isGoogle, isTrue);

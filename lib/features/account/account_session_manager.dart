@@ -1,8 +1,10 @@
-
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/diagnostics/diagnostics.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../data/remote/firebase_backup_service.dart';
@@ -34,6 +36,8 @@ class AccountSessionManager extends ChangeNotifier {
 
   AccountSessionState _state = const AccountSessionState.loading();
   bool _initialized = false;
+  Future<void>? _initializationFuture;
+  Future<void>? _startupRestoreFuture;
   int _operationEpoch = 0;
 
   AccountSessionState get state => _state;
@@ -41,12 +45,29 @@ class AccountSessionManager extends ChangeNotifier {
   LocalAccount? get activeAccount => _state.activeAccount;
   bool get initialChoiceRequired => _state.initialChoiceRequired;
 
+  /// Completes when the optional startup Google restoration has finished.
+  /// This remains non-blocking for production startup routing.
+  Future<void> get startupRestoreFuture =>
+      _startupRestoreFuture ?? Future<void>.value();
+
   static const Duration _startupAuthTimeout = Duration(seconds: 5);
   static const Duration _startupCloudTimeout = Duration(seconds: 8);
 
-  Future<void> initialize() async {
-    if (_initialized) return;
-    _initialized = true;
+  Future<void> initialize() {
+    if (_initialized) return Future<void>.value();
+    final running = _initializationFuture;
+    if (running != null) return running;
+
+    final future = _initializeLocalState();
+    _initializationFuture = future;
+    return future.whenComplete(() {
+      if (identical(_initializationFuture, future)) {
+        _initializationFuture = null;
+      }
+    });
+  }
+
+  Future<void> _initializeLocalState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final rawLegacyProfile = prefs.getString(UserProfile.storageKey);
@@ -61,7 +82,7 @@ class AccountSessionManager extends ChangeNotifier {
         } catch (_) {}
       }
 
-      // Local account/session restoration is always the first source of truth.
+      // Local account/session restoration is the first source of truth.
       await _accountStore.ensureInitialized(
         hasLegacyProfile: rawLegacyProfile != null,
         hasLegacyQaza:
@@ -69,109 +90,50 @@ class AccountSessionManager extends ChangeNotifier {
         legacyProfile: legacyProfile,
       );
 
-      final account = await _accountStore.activeAccount();
-      final initialChoice = await _accountStore.initialChoiceRequired();
+      var account = await _accountStore.activeAccount();
+      var initialChoice = await _accountStore.initialChoiceRequired();
       final migrationState = await _accountStore.migrationState();
-      if (account != null) {
-        _setState(
-          AccountSessionState(
-            phase: AccountSessionPhase.ready,
-            activeLocalAccountId: account.localAccountId,
-            activeAccount: account,
-            initialChoiceRequired: initialChoice,
-            migrationState: migrationState,
-            restoreState: 'local_restored',
-          ),
-        );
-      }
-
-      final terminalMigrationState =
-          migrationState == 'none' ||
+      final terminalMigrationState = migrationState == 'none' ||
           migrationState == 'completed' ||
           migrationState == 'failed';
 
-      // A remembered Guest choice is authoritative. Do not initialize
-      // Firebase/Google on a normal offline Guest restart.
-      //
-      // For a genuinely new session (no active account), or an established
-      // Google account, perform bounded lightweight restoration. Interrupted
-      // migration states are also allowed to run their existing recovery path.
-      final shouldAttemptGoogleStartupRestore =
-          account == null || account.isGoogle || !terminalMigrationState;
-
-      if (shouldAttemptGoogleStartupRestore) {
-        try {
-          final firebaseAvailable = await _firebase
-              .initialize()
-              .timeout(_startupAuthTimeout, onTimeout: () => false);
-
-          if (firebaseAvailable) {
-            final firebaseUser = await _auth
-                .attemptLightweightAuthentication(
-                  timeout: _startupAuthTimeout,
-                )
-                .timeout(_startupAuthTimeout, onTimeout: () => null);
-
-            if (firebaseUser != null) {
-              if (!terminalMigrationState) {
-                await _resumeInterruptedMigration(
-                  firebaseUser.uid,
-                  firebaseUser.email,
-                );
-              } else {
-                final local =
-                    await _accountStore.findGoogleByUid(firebaseUser.uid);
-                if (local?.lifecycleState == AccountLifecycleState.migrating) {
-                  await _resumeInterruptedMigration(
-                    firebaseUser.uid,
-                    firebaseUser.email,
-                  );
-                } else {
-                  await _restoreGoogleStartupAccount(
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                  );
-                }
-              }
-            } else if (!terminalMigrationState) {
-              // An interrupted Guest -> Google conversion without a recoverable
-              // Firebase session is rolled back exactly as before.
-              final migratingId = await _accountStore.migratingGoogleAccount();
-              if (migratingId != null) {
-                await _accountStore.rollbackGoogleMigration(migratingId);
-              }
-            }
-          }
-        } catch (error) {
-          // Never discard the local session because cloud/auth restoration failed.
-          if (_state.activeAccount != null) {
-            _setState(
-              AccountSessionState(
-                phase: AccountSessionPhase.ready,
-                activeLocalAccountId: _state.activeLocalAccountId,
-                activeAccount: _state.activeAccount,
-                initialChoiceRequired: false,
-                migrationState: await _accountStore.migrationState(),
-                restoreState: 'failed',
-                message: error.toString(),
-              ),
-            );
-          }
-        }
+      // Interrupted account migrations must be recovered before exposing
+      // account-scoped data. This is a safety boundary, not a performance
+      // optimization.
+      if (!terminalMigrationState) {
+        await _recoverInterruptedMigrationAtStartup(
+          migrationState: migrationState,
+        );
+        account = await _accountStore.activeAccount();
+        initialChoice = await _accountStore.initialChoiceRequired();
       }
-      final refreshed = await _accountStore.activeAccount();
+
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.ready,
-          activeLocalAccountId: refreshed?.localAccountId,
-          activeAccount: refreshed,
-          initialChoiceRequired:
-              await _accountStore.initialChoiceRequired(),
+          activeLocalAccountId: account?.localAccountId,
+          activeAccount: account,
+          initialChoiceRequired: initialChoice,
           migrationState: await _accountStore.migrationState(),
-          restoreState: 'complete',
+          restoreState: 'local_restored',
         ),
       );
-    } catch (error) {
+      _initialized = true;
+
+      final startupEpoch = _operationEpoch;
+      if (account?.isGoogle == true) {
+        _startupRestoreFuture = _restoreExistingGoogleInBackground(
+          account: account!,
+          startupEpoch: startupEpoch,
+        );
+        unawaited(_startupRestoreFuture!);
+      } else if (account == null && initialChoice) {
+        _startupRestoreFuture = _restoreUnselectedGoogleInBackground(
+          startupEpoch: startupEpoch,
+        );
+        unawaited(_startupRestoreFuture!);
+      }
+    } catch (error, stack) {
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.error,
@@ -186,66 +148,224 @@ class AccountSessionManager extends ChangeNotifier {
     }
   }
 
-  /// Restores the exact Firebase UID to its existing local partition, or
-  /// creates one partition when this is a new device/account. This path never
-  /// invokes Guest -> Google migration because startup restoration is not a
-  /// user-requested conversion operation.
-  Future<void> _restoreGoogleStartupAccount({
-    required String uid,
-    required String? email,
+  Future<void> _recoverInterruptedMigrationAtStartup({
+    required String migrationState,
   }) async {
-    var target = await _accountStore.findGoogleByUid(uid);
-    if (target == null) {
-      final targetId = await _accountStore.createGooglePartition(
-        firebaseUid: uid,
-        email: email,
+    try {
+      final firebaseAvailable = await _firebase
+          .initialize()
+          .timeout(_startupAuthTimeout, onTimeout: () => false);
+      if (firebaseAvailable) {
+        final identity = await _auth
+            .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+            .timeout(_startupAuthTimeout, onTimeout: () => null);
+        if (identity != null) {
+          final local = await _accountStore.findGoogleByUid(identity.uid);
+          if (local != null) {
+            await _resumeInterruptedMigration(identity.uid, identity.email);
+            return;
+          }
+        }
+      }
+
+      // No recoverable Firebase identity is available. Use the existing local
+      // migration rollback path rather than exposing a migrating partition.
+      final migratingId = await _accountStore.migratingGoogleAccount();
+      if (migratingId != null) {
+        await _accountStore.rollbackGoogleMigration(migratingId);
+      } else if (migrationState != 'none') {
+        await _accountStore.setMigrationState('failed');
+      }
+    } catch (error, stack) {
+      // Preserve fail-safe behavior: attempt the existing durable rollback
+      // path before surfacing the local session.
+      try {
+        final migratingId = await _accountStore.migratingGoogleAccount();
+        if (migratingId != null) {
+          await _accountStore.rollbackGoogleMigration(migratingId);
+        }
+        await _accountStore.setMigrationState('failed');
+      } catch (_) {
+        _setState(
+          AccountSessionState(
+            phase: AccountSessionPhase.error,
+            activeLocalAccountId: null,
+            activeAccount: null,
+            initialChoiceRequired: false,
+            migrationState: 'failed',
+            restoreState: 'failed',
+            message: 'Interrupted account migration recovery failed.',
+          ),
+        );
+        return;
+      }
+      DebugDiagnostics().recordFailure(
+        DiagnosticArea.startup,
+        'interrupted_migration_recovered_after_failure',
+        error,
+        stack: stack,
       );
-      target = await _accountStore.getAccount(targetId);
     }
-    if (target == null) {
-      throw StateError('Unable to restore Google account partition.');
-    }
+  }
 
-    // Identity is authoritative before any cloud work: the exact UID maps to
-    // exactly one local account and becomes the active account.
-    await _accountStore.activate(target.localAccountId);
-    await _accountStore.setInitialChoiceRequired(false);
-
-    Map<String, dynamic>? root;
+  Future<void> _restoreUnselectedGoogleInBackground({
+    required int startupEpoch,
+  }) async {
+    String? createdTargetId;
     try {
-      root = await _backup
-          .readCloudRoot(uid)
-          .timeout(_startupCloudTimeout);
-    } catch (_) {
-      // A cloud timeout/error must not invalidate the local Google partition.
-      return;
-    }
+      final initialized = await _firebase
+          .initialize()
+          .timeout(_startupAuthTimeout, onTimeout: () => false);
+      if (!initialized) return;
 
-    if (root == null) return;
+      final identity = await _auth
+          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+          .timeout(_startupAuthTimeout, onTimeout: () => null);
+      if (identity == null ||
+          !await _startupRestoreStillUnselected(startupEpoch)) {
+        return;
+      }
 
-    try {
-      await _reconciliation
-          .restore(localAccountId: target.localAccountId, uid: uid)
-          .timeout(_startupCloudTimeout);
+      var target = await _accountStore.findGoogleByUid(identity.uid);
+      if (target == null) {
+        final root = await _backup
+            .readCloudRoot(identity.uid)
+            .timeout(_startupCloudTimeout);
+
+        if (!await _startupRestoreStillUnselected(startupEpoch)) return;
+
+        final targetId = await _accountStore.createGooglePartition(
+          firebaseUid: identity.uid,
+          email: identity.email,
+        );
+        createdTargetId = targetId;
+        target = await _accountStore.getAccount(targetId);
+        if (target == null) return;
+
+        if (root != null) {
+          // A cloud-backed account is not considered restored until its
+          // account state has been reconciled successfully. Keep the
+          // partition unselected until that point.
+          await _reconciliation
+              .restore(
+                localAccountId: target.localAccountId,
+                uid: identity.uid,
+              )
+              .timeout(_startupCloudTimeout);
+        }
+      }
+
+      if (target == null ||
+          !await _startupRestoreStillUnselected(startupEpoch)) {
+        return;
+      }
+
       await _accountStore.activate(target.localAccountId);
-    } catch (_) {
-      // Existing local data remains authoritative when cloud reconciliation is
-      // unavailable or fails. The account still routes using its local profile.
+      await _accountStore.setInitialChoiceRequired(false);
+      await _refresh();
+    } catch (error, stack) {
+      // If this background attempt created a partition and no explicit
+      // operation has taken ownership of it, remove the incomplete partition.
+      // This prevents a transient cloud failure from becoming an apparent
+      // fresh Google account on the next startup.
+      if (createdTargetId != null) {
+        final activeId = await _accountStore.activeLocalAccountId();
+        final operationIsInteractive =
+            _state.phase == AccountSessionPhase.connecting;
+        if (activeId == null && !operationIsInteractive) {
+          try {
+            await _accountStore.deleteLocalAccount(createdTargetId);
+          } catch (_) {}
+        }
+      }
+
+      DebugDiagnostics().recordFailure(
+        DiagnosticArea.startup,
+        'background_google_restore_failed',
+        error,
+        stack: stack,
+      );
     }
+  }
+
+  Future<void> _restoreExistingGoogleInBackground({
+    required LocalAccount account,
+    required int startupEpoch,
+  }) async {
+    final uid = account.firebaseUid;
+    if (uid == null) return;
+
+    try {
+      final initialized = await _firebase
+          .initialize()
+          .timeout(_startupAuthTimeout, onTimeout: () => false);
+      if (!initialized) return;
+
+      final identity = await _auth
+          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+          .timeout(_startupAuthTimeout, onTimeout: () => null);
+      if (identity == null || identity.uid != uid) return;
+      if (!await _startupRestoreStillActive(
+        startupEpoch,
+        account.localAccountId,
+      )) {
+        return;
+      }
+
+      await _reconciliation
+          .restore(localAccountId: account.localAccountId, uid: uid)
+          .timeout(_startupCloudTimeout);
+
+      if (!await _startupRestoreStillActive(
+        startupEpoch,
+        account.localAccountId,
+      )) {
+        return;
+      }
+      await _refresh();
+    } catch (error, stack) {
+      // The local Google partition remains authoritative when background
+      // Firebase/cloud reconciliation is unavailable.
+      DebugDiagnostics().recordFailure(
+        DiagnosticArea.startup,
+        'background_google_reconciliation_failed',
+        error,
+        stack: stack,
+      );
+    }
+  }
+
+  Future<bool> _startupRestoreStillUnselected(int startupEpoch) async {
+    if (startupEpoch != _operationEpoch) return false;
+    if (_state.activeLocalAccountId != null) return false;
+
+    final activeId = await _accountStore.activeLocalAccountId();
+    if (startupEpoch != _operationEpoch) return false;
+    final choiceRequired = await _accountStore.initialChoiceRequired();
+    return activeId == null && choiceRequired;
+  }
+
+  Future<bool> _startupRestoreStillActive(
+    int startupEpoch,
+    String accountId,
+  ) async {
+    if (startupEpoch != _operationEpoch) return false;
+    if (_state.activeLocalAccountId != accountId) return false;
+    return await _accountStore.activeLocalAccountId() == accountId;
   }
 
   Future<void> continueAsGuest() async {
     final operationEpoch = ++_operationEpoch;
-    final operationAccountId = _state.activeLocalAccountId;
     await _accountStore.ensureGuestActive();
-    _ensureOperationCurrent(operationEpoch, activeLocalAccountId);
+    _ensureOperationEpochCurrent(operationEpoch);
     await _accountStore.setInitialChoiceRequired(false);
     await _refresh();
   }
 
   Future<void> connectGoogle() async {
-    _setBusy(AccountSessionPhase.connecting);
+    if (_state.phase == AccountSessionPhase.connecting) return;
     final operationEpoch = ++_operationEpoch;
+    _setBusy(AccountSessionPhase.connecting);
     final previous = await _accountStore.activeAccount();
     final operationAccountId = previous?.localAccountId;
     final guestWasActive = previous?.isGuest == true;
@@ -387,8 +507,7 @@ class AccountSessionManager extends ChangeNotifier {
       return;
     }
 
-    final guestMigration =
-        active?.isGuest == true &&
+    final guestMigration = active?.isGuest == true &&
         active?.localAccountId != target.localAccountId;
     if (!guestMigration && active?.localAccountId != target.localAccountId) {
       throw StateError('Interrupted Google migration has ambiguous ownership.');
@@ -452,7 +571,9 @@ class AccountSessionManager extends ChangeNotifier {
       email: email,
     );
     final target = await _accountStore.getAccount(targetId);
-    if (target == null) throw StateError('Google recovery partition unavailable.');
+    if (target == null) {
+      throw StateError('Google recovery partition unavailable.');
+    }
 
     try {
       final root = await _backup.readCloudRoot(uid);
@@ -568,7 +689,9 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> deleteCloudData() async {
     final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
-    if (account == null || !account.isGoogle || account.firebaseUid == null) return;
+    if (account == null || !account.isGoogle || account.firebaseUid == null) {
+      return;
+    }
     await _accountStore.setBackupEnabled(account.localAccountId, false);
     final nextGeneration = account.cloudGeneration + 1;
     await _backup.deleteCloudData(
@@ -604,8 +727,7 @@ class AccountSessionManager extends ChangeNotifier {
         phase: AccountSessionPhase.ready,
         activeLocalAccountId: account?.localAccountId,
         activeAccount: account,
-        initialChoiceRequired:
-            await _accountStore.initialChoiceRequired(),
+        initialChoiceRequired: await _accountStore.initialChoiceRequired(),
         migrationState: await _accountStore.migrationState(),
         restoreState: 'none',
       ),
@@ -624,6 +746,12 @@ class AccountSessionManager extends ChangeNotifier {
         restoreState: current.restoreState,
       ),
     );
+  }
+
+  void _ensureOperationEpochCurrent(int operationEpoch) {
+    if (operationEpoch != _operationEpoch) {
+      throw StateError('Stale account operation result rejected.');
+    }
   }
 
   void _ensureOperationCurrent(
