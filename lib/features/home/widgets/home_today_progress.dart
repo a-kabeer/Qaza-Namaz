@@ -11,6 +11,7 @@ import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
+import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
