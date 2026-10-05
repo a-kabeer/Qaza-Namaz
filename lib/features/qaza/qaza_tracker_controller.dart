@@ -676,9 +676,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       }
       await refresh();
       return receipt;
-    } on QazaTartibViolationException {
-      state = state.copyWith(completing: false, clearError: true);
-      return null;
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.qazaCompletion,
