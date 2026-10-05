@@ -129,7 +129,7 @@ ProviderContainer _container({
   return ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(database),
-      accountSessionManagerProvider.overrideWithValue(manager),
+      accountSessionManagerProvider.overrideWith((ref) => manager),
       activeUserIdProvider.overrideWith((ref) => manager.activeLocalAccountId),
       userProfileProvider.overrideWith((ref) async => profile),
     ],
@@ -242,6 +242,7 @@ void main() {
       );
       final container = _container(
         manager: manager,
+        database: database,
         profile: profile,
       );
       addTearDown(container.dispose);
@@ -273,6 +274,7 @@ void main() {
       );
       final container = _container(
         manager: manager,
+        database: database,
         profile: profile,
       );
       addTearDown(container.dispose);
