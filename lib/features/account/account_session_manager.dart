@@ -205,6 +205,7 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> _restoreUnselectedGoogleInBackground({
     required int startupEpoch,
   }) async {
+    String? createdTargetId;
     try {
       final initialized = await _firebase
           .initialize()
@@ -225,25 +226,20 @@ class AccountSessionManager extends ChangeNotifier {
             .readCloudRoot(identity.uid)
             .timeout(_startupCloudTimeout);
 
-        // A remote timeout/unavailability must not create an empty local
-        // Google partition and accidentally downgrade an existing cloud user
-        // into fresh onboarding.
-        if (root == null) {
-          if (!await _startupRestoreStillUnselected(startupEpoch)) return;
-          final targetId = await _accountStore.createGooglePartition(
-            firebaseUid: identity.uid,
-            email: identity.email,
-          );
-          target = await _accountStore.getAccount(targetId);
-        } else {
-          if (!await _startupRestoreStillUnselected(startupEpoch)) return;
-          final targetId = await _accountStore.createGooglePartition(
-            firebaseUid: identity.uid,
-            email: identity.email,
-          );
-          target = await _accountStore.getAccount(targetId);
-          if (target == null) return;
+        if (!await _startupRestoreStillUnselected(startupEpoch)) return;
 
+        final targetId = await _accountStore.createGooglePartition(
+          firebaseUid: identity.uid,
+          email: identity.email,
+        );
+        createdTargetId = targetId;
+        target = await _accountStore.getAccount(targetId);
+        if (target == null) return;
+
+        if (root != null) {
+          // A cloud-backed account is not considered restored until its
+          // account state has been reconciled successfully. Keep the
+          // partition unselected until that point.
           await _reconciliation
               .restore(
                 localAccountId: target.localAccountId,
@@ -262,8 +258,21 @@ class AccountSessionManager extends ChangeNotifier {
       await _accountStore.setInitialChoiceRequired(false);
       await _refresh();
     } catch (error, stack) {
-      // Background restoration is strictly best-effort. Keep Account Choice
-      // authoritative when the session remains unselected.
+      // If this background attempt created a partition and no explicit
+      // operation has taken ownership of it, remove the incomplete partition.
+      // This prevents a transient cloud failure from becoming an apparent
+      // fresh Google account on the next startup.
+      if (createdTargetId != null) {
+        final activeId = await _accountStore.activeLocalAccountId();
+        final operationIsInteractive =
+            _state.phase == AccountSessionPhase.connecting;
+        if (activeId == null && !operationIsInteractive) {
+          try {
+            await _accountStore.deleteLocalAccount(createdTargetId);
+          } catch (_) {}
+        }
+      }
+
       DebugDiagnostics().recordFailure(
         DiagnosticArea.startup,
         'background_google_restore_failed',
