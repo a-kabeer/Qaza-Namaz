@@ -30,7 +30,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 def configuredStoreFile = keystoreProperties.getProperty("storeFile")
-def releaseStoreFile = configuredStoreFile ? file(configuredStoreFile) : null
+def releaseStoreFile = configuredStoreFile ? rootProject.file(configuredStoreFile) : null
 def hasReleaseSigning = keystorePropertiesFile.exists() &&
     keystoreProperties.getProperty("keyAlias") &&
     keystoreProperties.getProperty("keyPassword") &&
