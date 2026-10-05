@@ -28,18 +28,18 @@ void main() {
       expect(state.autoSequencePrayer, PrayerType.fajr);
     });
 
-    test('successful Auto Sequence completion advances only its cursor prayer', () {
+    test('successful Auto Sequence completion does not advance its legacy cursor', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.fajr,
       );
 
-      final forcedByTartib = state.afterSuccessfulCompletion(PrayerType.zuhr);
-      expect(forcedByTartib.mode, HomePrayerSelectionMode.autoSequence);
-      expect(forcedByTartib.autoSequencePrayer, PrayerType.fajr);
+      final otherTarget = state.afterSuccessfulCompletion(PrayerType.zuhr);
+      expect(otherTarget.mode, HomePrayerSelectionMode.autoSequence);
+      expect(otherTarget.autoSequencePrayer, PrayerType.fajr);
 
       final next = state.afterSuccessfulCompletion(PrayerType.fajr);
-      expect(next.autoSequencePrayer, PrayerType.zuhr);
+      expect(next.autoSequencePrayer, PrayerType.fajr);
     });
 
     test('Prayer Selection remains sticky after successful completion', () {
@@ -56,7 +56,7 @@ void main() {
       expect(next.autoSequencePrayer, PrayerType.asr);
     });
 
-    test('Tartib completion does not mutate Auto Sequence cursor', () {
+    test('Completion of a non-cursor target does not mutate Auto Sequence cursor', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.asr,
@@ -69,7 +69,7 @@ void main() {
     });
 
     test(
-      'Auto Sequence fallback completion advances from the resolved prayer',
+      'Auto Sequence completion ignores the resolved prayer for cursor changes',
       () {
         const state = HomePrayerSelectionState(
           mode: HomePrayerSelectionMode.autoSequence,
@@ -81,7 +81,7 @@ void main() {
           targetWasAutoSequence: true,
         );
 
-        expect(next.autoSequencePrayer, PrayerType.zuhr);
+        expect(next.autoSequencePrayer, PrayerType.isha);
       },
     );
 
@@ -99,14 +99,14 @@ void main() {
       expect(next.autoSequencePrayer, PrayerType.maghrib);
     });
 
-    test('Auto Sequence follows the complete canonical cycle', () {
+    test('Auto Sequence cursor remains stable across completions', () {
       var state = const HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
       );
 
       for (final prayer in PrayerTypeX.qazaSequence) {
         state = state.afterSuccessfulCompletion(prayer);
-        expect(state.autoSequencePrayer, prayer.nextInQazaSequence);
+        expect(state.autoSequencePrayer, PrayerType.fajr);
       }
     });
 
@@ -153,7 +153,7 @@ void main() {
       );
     });
 
-    test('switching modes preserves the Auto Sequence cursor', () {
+    test('switching modes preserves the legacy Auto Sequence cursor', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -164,21 +164,21 @@ void main() {
       notifier.usePrayerTime();
       expect(
         container.read(homePrayerSelectionProvider).autoSequencePrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
 
       notifier.usePrayerSelection();
       expect(
         container.read(homePrayerSelectionProvider).autoSequencePrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
       expect(
         container.read(homePrayerSelectionProvider).selectedPrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
     });
 
-    test('Undo restores an Auto Sequence cursor changed by completion', () {
+    test('Undo leaves the non-authoritative Auto Sequence cursor unchanged', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -188,7 +188,7 @@ void main() {
 
       expect(
         container.read(homePrayerSelectionProvider).autoSequencePrayer,
-        PrayerType.zuhr,
+        PrayerType.fajr,
       );
 
       notifier.restoreAfterUndo();
@@ -217,7 +217,7 @@ void main() {
       final state = container.read(homePrayerSelectionProvider);
       expect(state.mode, HomePrayerSelectionMode.prayerSelection);
       expect(state.selectedPrayer, PrayerType.maghrib);
-      expect(state.autoSequencePrayer, PrayerType.zuhr);
+      expect(state.autoSequencePrayer, PrayerType.fajr);
     });
   });
 
@@ -232,8 +232,7 @@ void main() {
     });
   });
 
-
-    test('Qaza sequence skips Witr when Witr is disabled', () {
+  test('Qaza sequence skips Witr when Witr is disabled', () {
       expect(
         PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
         PrayerType.fajr,
@@ -242,30 +241,6 @@ void main() {
         PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
         PrayerType.fajr,
       );
-    });
-
-
-    test('Auto Sequence skips disabled Witr in Home state', () {
-      const state = HomePrayerSelectionState(
-        mode: HomePrayerSelectionMode.autoSequence,
-        autoSequencePrayer: PrayerType.isha,
-      );
-
-      expect(
-        state.afterSuccessfulCompletion(
-          PrayerType.isha,
-          witrEnabled: false,
-        ).autoSequencePrayer,
-        PrayerType.fajr,
-      );
-
-      expect(
-        state.afterSuccessfulCompletion(
-          PrayerType.isha,
-          witrEnabled: true,
-        ).autoSequencePrayer,
-        PrayerType.witr,
-      );
-    });
+  });
 
 }

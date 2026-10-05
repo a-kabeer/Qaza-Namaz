@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/utils/date_formatters.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_today_progress.dart';
@@ -79,18 +79,14 @@ Future<ProviderContainer> _containerFor({
       progressSummaryProvider.overrideWith(
         (ref) => Future.value(_summaryFor(targetRecord)),
       ),
-      sahibAlTartibProvider.overrideWith(
-        (ref) async => const SahibAlTartibState(
-          pendingFarzCount: 6,
-          requiresOrder: false,
-          nextPending: null,
-        ),
-      ),
       qazaCompletionRestrictedProvider.overrideWith((ref) => false),
       currentQazaPrayerTypeProvider.overrideWith(
         (ref) => targetRecord.prayerType,
       ),
       oldestPendingProvider(targetRecord.prayerType).overrideWith(
+        (ref) => oldestPendingOverride?.call() ?? Future.value(targetRecord),
+      ),
+      homeFallbackPendingProvider.overrideWith(
         (ref) => oldestPendingOverride?.call() ?? Future.value(targetRecord),
       ),
       if (includeActiveUser) activeUserIdProvider.overrideWithValue('u1'),
@@ -203,6 +199,34 @@ void main() {
     expect(find.byKey(const Key('home_estimated_completion')), findsOneWidget);
     expect(find.textContaining('5 per day'), findsNothing);
     expect(dailyReads, 1);
+  });
+
+  testWidgets(
+      'Auto Sequence displays the record returned by the chronological ledger',
+      (tester) async {
+    final record = _pendingRecord(
+      id: 'older-maghrib',
+      prayer: PrayerType.maghrib,
+      date: DateTime(2026, 10, 7),
+    );
+    final container = await _containerFor(
+      selection: const HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.autoSequence,
+        autoSequencePrayer: PrayerType.isha,
+      ),
+      targetRecord: record,
+      onDailyProgressRead: () {},
+    );
+    addTearDown(container.dispose);
+
+    await _pumpHomeTodayProgress(tester, container, record);
+
+    expect(find.text('Maghrib'), findsWidgets);
+    expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
+    expect(
+      find.text(DateFormatters.formatGregorianDatePadded(record.originalDate)),
+      findsOneWidget,
+    );
   });
 
   testWidgets(
@@ -343,7 +367,7 @@ void main() {
     );
   });
 
-  testWidgets('Qaza refresh keeps the cached Next Qaza footprint stable',
+  testWidgets('Prayer-specific Qaza refresh keeps the cached Next Qaza footprint stable',
       (tester) async {
     final record = _pendingRecord(
       id: 'fajr',
@@ -353,7 +377,10 @@ void main() {
     var refreshing = false;
     final refreshCompleter = Completer<QazaRecord?>();
     final container = await _containerFor(
-      selection: const HomePrayerSelectionState(),
+      selection: const HomePrayerSelectionState(
+        mode: HomePrayerSelectionMode.prayerSelection,
+        selectedPrayer: PrayerType.fajr,
+      ),
       targetRecord: record,
       onDailyProgressRead: () {},
       oldestPendingOverride: () =>

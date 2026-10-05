@@ -17,17 +17,20 @@ class HomeController {
     ref.invalidate(progressSummaryProvider);
     ref.invalidate(homeDashboardActivityProvider);
 
+    final selection = ref.read(homePrayerSelectionProvider);
+    if (selection.mode == HomePrayerSelectionMode.autoSequence) {
+      ref.invalidate(homeFallbackPendingProvider);
+      return;
+    }
+
     final selected = ref.read(homeSelectedPrayerProvider);
     if (selected.prayer != null) {
       ref.invalidate(oldestPendingProvider(selected.prayer!));
-    } else {
-      ref.invalidate(homeFallbackPendingProvider);
     }
   }
 
   Future<void> refresh() async {
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
 
     await Future.wait<void>([
@@ -39,22 +42,21 @@ class HomeController {
         homeDashboardActivityProvider,
         'home_dashboard_activity_refresh_failed',
       ),
-      _refreshOptional(
-        sahibAlTartibProvider,
-        'home_sahib_al_tartib_refresh_failed',
-      ),
     ]);
-    final selected = ref.read(homeSelectedPrayerProvider);
-    if (selected.prayer != null) {
-      await _refreshOptional(
-        oldestPendingProvider(selected.prayer!),
-        'home_next_qaza_refresh_failed',
-      );
-    } else {
+    final selection = ref.read(homePrayerSelectionProvider);
+    if (selection.mode == HomePrayerSelectionMode.autoSequence) {
       await _refreshOptional(
         homeFallbackPendingProvider,
-        'home_fallback_qaza_refresh_failed',
+        'home_auto_sequence_qaza_refresh_failed',
       );
+    } else {
+      final selected = ref.read(homeSelectedPrayerProvider);
+      if (selected.prayer != null) {
+        await _refreshOptional(
+          oldestPendingProvider(selected.prayer!),
+          'home_next_qaza_refresh_failed',
+        );
+      }
     }
   }
 
@@ -95,29 +97,18 @@ class HomeController {
     required PrayerType completedPrayer,
     required HomePrayerSelectionSource selectionSource,
   }) {
-    final witrEnabled = ref.read(effectiveWitrProvider);
-    if (selectionSource == HomePrayerSelectionSource.autoSequence) {
-      ref
-          .read(homePrayerSelectionProvider.notifier)
-          .afterSuccessfulCompletion(
-            completedPrayer,
-            witrEnabled: witrEnabled,
-            targetWasAutoSequence: true,
-          );
-    }
+    // Auto Sequence is record-first; the completed record is already
+    // removed by the completion pipeline. Recompute from the pending ledger.
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterStaleCompletion() {
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterUndo() {
     ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 }
 

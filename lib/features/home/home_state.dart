@@ -26,15 +26,6 @@ enum HomePrayerSelectionSource {
   prayerTime,
   autoSequence,
   prayerSelection,
-  sahibAlTartib,
-
-  /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
-  ///
-  /// Distinct from [unavailable]: there is nothing wrong with the ledger, the
-  /// ordering rule simply is not known yet. Retrying is worthwhile, which is
-  /// why the UI tells these two apart.
-  tartibUnavailable,
-
   unavailable,
 }
 
@@ -67,37 +58,16 @@ class HomePrayerSelectionState {
     );
   }
 
-  /// Updates targeting after a successful completion.
+  /// Compatibility hook for completion callers.
   ///
-  /// Prayer Selection is sticky. Prayer Time is resolved from the live
-  /// Prayer Time provider, so completion does not mutate its target.
-  /// Advances Auto Sequence from the prayer that was actually targeted.
-  ///
-  /// Normally that is the persisted cursor prayer. When pending-aware fallback
-  /// resolves past a zero-pending cursor, [targetWasAutoSequence] lets the
-  /// caller advance from the resolved prayer instead. Sahib al-Tartib callers
-  /// leave it false so the existing cursor remains untouched.
+  /// Auto Sequence no longer advances by prayer type. The next target is
+  /// recomputed from the pending record ledger, so completion never mutates the
+  /// persisted prayer cursor.
   HomePrayerSelectionState afterSuccessfulCompletion(
     PrayerType completedPrayer, {
     bool witrEnabled = true,
     bool targetWasAutoSequence = false,
-  }) {
-    switch (mode) {
-      case HomePrayerSelectionMode.prayerTime:
-      case HomePrayerSelectionMode.prayerSelection:
-        return this;
-      case HomePrayerSelectionMode.autoSequence:
-        if (!targetWasAutoSequence && completedPrayer != autoSequencePrayer) {
-          return this;
-        }
-        return copyWith(
-          autoSequencePrayer:
-              completedPrayer.nextInQazaSequenceSkippingWitr(
-            witrEnabled: witrEnabled,
-          ),
-        );
-    }
-  }
+  }) => this;
 }
 
 class HomeSelectedPrayerState {

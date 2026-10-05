@@ -12,14 +12,10 @@ import '../repositories/qaza_undo_repository.dart';
 import 'current_day_qaza_eligibility_service.dart';
 import 'qaza_availability_service.dart';
 import 'profile_rules.dart';
-import 'sahib_al_tartib_service.dart';
-
 export '../entities/qaza_progress.dart';
 export '../repositories/qaza_repository.dart' show QazaPage;
 export 'qaza_availability_service.dart'
     show QazaAvailabilityAnalysis, QazaEligibility, QazaPrayerKey;
-export 'sahib_al_tartib_service.dart'
-    show QazaTartibViolationException, SahibAlTartibState;
 
 class QazaRecordMutationConflictException implements Exception {
   const QazaRecordMutationConflictException();
@@ -91,15 +87,12 @@ class QazaService {
   QazaService(
     this.repository, {
     QazaAvailabilityService? availability,
-    SahibAlTartibService? tartib,
     this.witrInclusionResolver,
     DiagnosticsService? diagnostics,
-  })  : availability = availability ?? const QazaAvailabilityService(),
-        tartib = tartib ?? SahibAlTartibService(repository);
+  }) : availability = availability ?? const QazaAvailabilityService();
 
   final QazaRepository repository;
   final QazaAvailabilityService availability;
-  final SahibAlTartibService tartib;
   final bool Function()? witrInclusionResolver;
 
   bool get _witrAllowed => witrInclusionResolver?.call() ?? true;
@@ -197,24 +190,10 @@ class QazaService {
         recordIds: recordIds,
       );
 
-  /// Returns the next Qaza under the global Sahib al-Tartib rule.
-  ///
-  /// When fewer than six Fard Qaza remain, the tartib service chooses the
-  /// oldest pending Fard using date, Fard prayer order, and id. At six or more
-  /// pending Fard, tartib does not restrict completion and the repository's
-  /// normal oldest-first ordering is preserved.
+  /// Returns the next pending Qaza using the repository's normal ordering.
   Future<QazaRecord?> oldestPendingOverall({
     required String userId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
   }) async {
-    final tartibState = await tartib.evaluate(
-      userId: userId,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
-    );
-    if (tartibState.requiresOrder) return tartibState.nextPending;
-
     final page = await repository.getPage(
       userId: userId,
       limit: 1,
@@ -223,17 +202,6 @@ class QazaService {
     );
     return page.records.isEmpty ? null : page.records.first;
   }
-
-  Future<SahibAlTartibState> sahibAlTartibState({
-    required String userId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-  }) =>
-      tartib.evaluate(
-        userId: userId,
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-      );
 
   Future<int> countCompletedBetween({
     required String userId,
@@ -270,6 +238,7 @@ class QazaService {
     final summary = await repository.getProgressSummary(userId: userId);
     return _scopeProgress(summary);
   }
+
   Future<List<QazaRecord>> getPendingForUser({required String userId}) =>
       getRecords(userId: userId, status: QazaStatus.pending);
   Future<List<QazaRecord>> getPendingForPrayer(
@@ -471,15 +440,11 @@ class QazaService {
     required String userId,
     required String recordId,
     required DateTime completedAt,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
   }) async {
     final receipt = await completeRecordWithReceipt(
       userId: userId,
       recordId: recordId,
       completedAt: completedAt,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
     );
     return receipt.result;
   }
@@ -488,15 +453,11 @@ class QazaService {
     required String userId,
     required String recordId,
     required DateTime completedAt,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
   }) async {
     final batch = await completeRecordsWithReceipt(
       userId: userId,
       recordIds: [recordId],
       completedAt: completedAt,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
     );
     return QazaCompletionReceipt(
       result: batch.result,
@@ -511,8 +472,6 @@ class QazaService {
     required String userId,
     required List<String> recordIds,
     required DateTime completedAt,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
   }) async {
     final ids = recordIds.toSet().where((id) => id.isNotEmpty).toList();
     if (ids.isEmpty) {
@@ -540,23 +499,8 @@ class QazaService {
       );
     }
 
-    final pendingIds = pending.map((record) => record.id).toList(growable: false);
-    final tartibState = await tartib.evaluate(
-      userId: userId,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
-    );
-    if (tartibState.requiresOrder &&
-        !tartib.canCompletePendingRecords(
-          pendingRecords: pending,
-          recordIds: pendingIds,
-          evaluatedState: tartibState,
-        )) {
-      throw QazaTartibViolationException(
-        requiredPrayer: tartibState.nextPending!.prayerType,
-        pendingFarzCount: tartibState.pendingFarzCount,
-      );
-    }
+    final pendingIds =
+        pending.map((record) => record.id).toList(growable: false);
 
     final completionIds = <String, String>{
       for (final id in pendingIds) id: newQazaCompletionId(),

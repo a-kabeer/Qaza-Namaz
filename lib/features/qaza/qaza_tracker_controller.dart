@@ -288,7 +288,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
 
     final generation = ++_queryGeneration;
-    ref.invalidate(sahibAlTartibProvider);
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) {
       state = state.copyWith(
@@ -669,7 +668,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
             exitSelectionModeOnSuccess ? const <String>{} : state.selected,
       );
       ref.read(homeControllerProvider).invalidateDashboard();
-      ref.invalidate(sahibAlTartibProvider);
       ref.invalidate(progressSummaryProvider);
       final changedPrayers =
           receipt.entries.map((entry) => entry.prayerType).toSet();
@@ -678,10 +676,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       }
       await refresh();
       return receipt;
-    } on QazaTartibViolationException {
-      state = state.copyWith(completing: false, clearError: true);
-      ref.invalidate(sahibAlTartibProvider);
-      return null;
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.qazaCompletion,
@@ -743,7 +737,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       if (changedIds.isNotEmpty) {
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
-        ref.invalidate(sahibAlTartibProvider);
         final changedPrayers =
             changed.map((record) => record.prayerType).toSet();
         for (final prayer in changedPrayers) {
@@ -782,7 +775,6 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         ref.invalidate(oldestPendingProvider(state.records[index].prayerType));
-        ref.invalidate(sahibAlTartibProvider);
         await refresh();
       }
       return changed;

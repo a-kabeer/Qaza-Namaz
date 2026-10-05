@@ -11,7 +11,7 @@ import '../../../core/widgets/state_widgets.dart';
 import '../../../core/widgets/progress_widgets.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
 import '../../../domain/entities/qaza_record.dart';
-import '../../../domain/services/qaza_service.dart';
+import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../l10n/prayer_type_l10n.dart';
 import '../../qaza/completion/qaza_completion_controller.dart';
@@ -55,16 +55,6 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
             recordId: record.id,
             completedAt: completedAt,
           );
-    } on QazaTartibViolationException catch (error) {
-      ref.invalidate(sahibAlTartibProvider);
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context);
-      ref.read(appSnackbarServiceProvider).warning(
-            l10n.qazaTartibBlocked(
-              error.requiredPrayer.localizedLabel(l10n),
-            ),
-          );
-      return;
     } catch (error, stack) {
       diagnostics.recordFailure(
         DiagnosticArea.qazaCompletion,
@@ -338,77 +328,7 @@ class _NextQazaPanel extends ConsumerStatefulWidget {
   ConsumerState<_NextQazaPanel> createState() => _NextQazaPanelState();
 }
 
-/// Shown while the ordering rule is unknown, in place of any Fard action.
-///
-/// Two states rather than one, because they call for different things: a
-/// check still running is worth waiting for, a failed one is worth retrying.
-class _TartibUnavailable extends StatelessWidget {
-  const _TartibUnavailable({required this.loading, required this.onRetry});
-
-  final bool loading;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return Container(
-      key: const Key('home_tartib_unavailable'),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (loading)
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Icon(Icons.lock_clock_rounded, color: theme.colorScheme.error),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  loading
-                      ? l10n.homeTartibCheckingTitle
-                      : l10n.homeTartibFailedTitle,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  loading
-                      ? l10n.homeTartibCheckingBody
-                      : l10n.homeTartibFailedBody,
-                  style: theme.textTheme.bodySmall,
-                ),
-                if (!loading) ...[
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(
-                      key: const Key('home_tartib_retry'),
-                      onPressed: onRetry,
-                      child: Text(l10n.commonRetry),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Prayer target is driven by the selected Home completion mode, while Sahib al-Tartib remains authoritative.
+/// Prayer target is driven by the selected Home completion mode.
 class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   QazaRecord? _cachedRecord;
   PrayerType? _cachedPrayer;
@@ -416,14 +336,16 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final prayer = widget.selected.prayer;
-    if (_cachedPrayer != null && _cachedPrayer != prayer) {
+    final selection = ref.watch(homePrayerSelectionProvider);
+    final restricted = ref.watch(qazaCompletionRestrictedProvider);
+    final isAutoSequence =
+        selection.mode == HomePrayerSelectionMode.autoSequence;
+    final prayer = isAutoSequence ? null : widget.selected.prayer;
+
+    if (!isAutoSequence && _cachedPrayer != null && _cachedPrayer != prayer) {
       _cachedRecord = null;
       _cachedPrayer = null;
     }
-    final tartibAsync = ref.watch(sahibAlTartibProvider);
-    final restricted = ref.watch(qazaCompletionRestrictedProvider);
-    final selection = ref.watch(homePrayerSelectionProvider);
 
     final targetLabel = switch (selection.mode) {
       HomePrayerSelectionMode.prayerTime => l10n.prayerTimeTitle,
@@ -450,28 +372,11 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
       ),
     );
 
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.homeNextQaza,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        if (widget.selected.source == HomePrayerSelectionSource.sahibAlTartib &&
-            widget.selected.prayer != null)
-          Text(
-            l10n.homeSahibOrderLabel(
-              widget.selected.prayer!.localizedLabel(l10n),
-            ),
-            key: const Key('home_sahib_selection'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+    final header = Text(
+      l10n.homeNextQaza,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
-      ],
     );
 
     return Column(
@@ -486,13 +391,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
           ],
         ),
         const SizedBox(height: 10),
-        if (widget.selected.source ==
-            HomePrayerSelectionSource.tartibUnavailable)
-          _TartibUnavailable(
-            loading: tartibAsync.isLoading,
-            onRetry: () => ref.invalidate(sahibAlTartibProvider),
-          )
-        else if (prayer == null)
+        if (prayer == null && !isAutoSequence)
           Container(
             key: const Key('home_prayer_target_unavailable'),
             padding: const EdgeInsets.all(14),
@@ -508,33 +407,39 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
         else
           Consumer(
             builder: (context, ref, _) {
-              final AsyncValue<QazaRecord?> state =
-                  widget.selected.source ==
-                          HomePrayerSelectionSource.sahibAlTartib
-                      ? ref.watch(homeFallbackPendingProvider)
-                      : ref.watch(oldestPendingProvider(prayer));
+              final AsyncValue<QazaRecord?> state = isAutoSequence
+                  ? ref.watch(homeFallbackPendingProvider)
+                  : ref.watch(oldestPendingProvider(prayer!));
 
               return state.when(
                 loading: () {
-                  final cached = _cachedRecord;
-                  final cachedPrayer = _cachedPrayer;
-                  if (cached != null && cachedPrayer != null) {
-                    return _HomeNextQazaRecord(
-                      record: cached,
-                      prayer: cachedPrayer,
-                      restricted: restricted,
-                      completionWorking: widget.working,
-                      refreshing: true,
-                      onComplete: widget.onComplete,
-                      selectionSource: widget.selected.source,
-                    );
+                  // Auto Sequence must never render a stale completed/previous
+                  // record while the chronological ledger is being refreshed.
+                  if (!isAutoSequence) {
+                    final cached = _cachedRecord;
+                    final cachedPrayer = _cachedPrayer;
+                    if (cached != null && cachedPrayer != null) {
+                      return _HomeNextQazaRecord(
+                        record: cached,
+                        prayer: cachedPrayer,
+                        restricted: restricted,
+                        completionWorking: widget.working,
+                        refreshing: true,
+                        onComplete: widget.onComplete,
+                        selectionSource: widget.selected.source,
+                      );
+                    }
                   }
                   return const HomeNextQazaSkeleton();
                 },
                 error: (_, __) => ErrorState(
                   key: const Key('home_oldest_qaza_error'),
                   message: l10n.completeLoadError,
-                  onRetry: () => ref.invalidate(oldestPendingProvider(prayer)),
+                  onRetry: () => ref.invalidate(
+                    isAutoSequence
+                        ? homeFallbackPendingProvider
+                        : oldestPendingProvider(prayer!),
+                  ),
                 ),
                 data: (record) {
                   if (record == null) {
@@ -546,11 +451,12 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     );
                   }
 
+                  final targetPrayer = record.prayerType;
                   _cachedRecord = record;
-                  _cachedPrayer = prayer;
+                  _cachedPrayer = targetPrayer;
                   return _HomeNextQazaRecord(
                     record: record,
-                    prayer: prayer,
+                    prayer: targetPrayer,
                     restricted: restricted,
                     completionWorking: widget.working,
                     refreshing: state.isLoading || state.isRefreshing,

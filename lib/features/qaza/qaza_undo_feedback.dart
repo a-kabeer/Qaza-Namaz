@@ -330,7 +330,6 @@ class _QazaUndoSelectionSheetState
   Future<void> _refreshAfterUndo() async {
     ref.read(homeControllerProvider).invalidateDashboard();
     ref.invalidate(progressSummaryProvider);
-    ref.invalidate(sahibAlTartibProvider);
     await widget.onUndone?.call();
   }
 

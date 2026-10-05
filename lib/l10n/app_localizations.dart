@@ -284,29 +284,6 @@ abstract class AppLocalizations {
   /// **'Open Settings'**
   String get commonOpenSettings;
 
-  /// No description provided for @homeTartibCheckingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Checking the prayer order'**
-  String get homeTartibCheckingTitle;
-
-  /// No description provided for @homeTartibCheckingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Sahib al-Tartib decides which Fard prayer comes next. One moment.'**
-  String get homeTartibCheckingBody;
-
-  /// No description provided for @homeTartibFailedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not check the prayer order'**
-  String get homeTartibFailedTitle;
-
-  /// No description provided for @homeTartibFailedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Fard prayers are held back until the order is known, so nothing is completed out of sequence. Witr can still be completed from the prayer menu.'**
-  String get homeTartibFailedBody;
 
   /// No description provided for @qazaSortLabel.
   ///
@@ -902,23 +879,6 @@ abstract class AppLocalizations {
   /// **'Could not complete the selected Qaza: {error}'**
   String qazaCompleteError(String error);
 
-  /// No description provided for @qazaTartibRequiredTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza order is required'**
-  String get qazaTartibRequiredTitle;
-
-  /// No description provided for @qazaTartibRequiredMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You have {count} outstanding Fard prayers. According to this ruling, complete {prayer} Qaza before other pending prayers.'**
-  String qazaTartibRequiredMessage(int count, String prayer);
-
-  /// No description provided for @qazaTartibBlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'Qaza order is required. Complete {prayer} Qaza first.'**
-  String qazaTartibBlocked(String prayer);
 
   /// No description provided for @qazaCompletedOn.
   ///
@@ -2796,11 +2756,6 @@ abstract class AppLocalizations {
   /// **'Current prayer: {prayer}'**
   String homeCurrentPrayerLabel(String prayer);
 
-  /// No description provided for @homeSahibOrderLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Sahib al-Tartib: {prayer}'**
-  String homeSahibOrderLabel(String prayer);
 
   /// No description provided for @profileLanguageTitle.
   ///

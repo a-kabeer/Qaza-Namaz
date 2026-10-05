@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
-import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/application/prayer_time_providers.dart';
@@ -51,15 +49,6 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         progressSummaryProvider.overrideWith((ref) => Future.value(summary)),
-        sahibAlTartibProvider.overrideWith(
-          (ref) => Future.value(
-            const SahibAlTartibState(
-              pendingFarzCount: 0,
-              requiresOrder: false,
-              nextPending: null,
-            ),
-          ),
-        ),
         currentQazaPrayerTypeProvider.overrideWith(
           (ref) => currentPrayer,
         ),
@@ -72,24 +61,17 @@ void main() {
       (_, __) {},
       fireImmediately: true,
     );
-    final tartibSubscription = container.listen(
-      sahibAlTartibProvider,
-      (_, __) {},
-      fireImmediately: true,
-    );
     addTearDown(progressSubscription.close);
-    addTearDown(tartibSubscription.close);
 
     container.read(homePrayerSelectionProvider);
     await container.read(progressSummaryProvider.future);
-    await container.read(sahibAlTartibProvider.future);
     await Future<void>.delayed(const Duration(milliseconds: 1));
 
     return container.read(homeSelectedPrayerProvider);
   }
 
   group('homeSelectedPrayerProvider pending-aware target resolution', () {
-    test('Auto Sequence skips zero-pending Witr', () async {
+    test('Auto Sequence keeps the legacy cursor non-authoritative', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
@@ -102,11 +84,11 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.fajr);
+      expect(selected.prayer, PrayerType.isha);
       expect(selected.source, HomePrayerSelectionSource.autoSequence);
     });
 
-    test('Auto Sequence skips zero-pending middle and consecutive prayers', () async {
+    test('Auto Sequence does not resolve a later prayer type from pending counts', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.zuhr,
@@ -119,10 +101,10 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.maghrib);
+      expect(selected.prayer, PrayerType.zuhr);
     });
 
-    test('Auto Sequence selects the only pending prayer', () async {
+    test('Auto Sequence does not select by prayer-type availability', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.fajr,
@@ -133,10 +115,10 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.asr);
+      expect(selected.prayer, PrayerType.fajr);
     });
 
-    test('persisted zero-pending cursor dynamically resolves to next available target', () async {
+    test('Persisted Auto Sequence cursor is not used to choose a pending record', () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
@@ -149,7 +131,7 @@ void main() {
         witrEnabled: true,
       );
 
-      expect(selected.prayer, PrayerType.fajr);
+      expect(selected.prayer, PrayerType.isha);
     });
 
     test('Prayer Time keeps current prayer when pending', () async {
@@ -250,68 +232,6 @@ void main() {
 
       expect(selected.prayer, isNull);
       expect(selected.source, HomePrayerSelectionSource.unavailable);
-    });
-
-    test(
-        'Sahib al-Tartib remains authoritative over pending fallback',
-        () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'qaza_home_completion_mode':
-            HomePrayerSelectionMode.autoSequence.name,
-        'qaza_home_auto_sequence_prayer': PrayerType.isha.name,
-      });
-
-      final summary = summaryFor({
-        PrayerType.fajr: 10,
-        PrayerType.isha: 0,
-      });
-      final container = ProviderContainer(
-        overrides: [
-          progressSummaryProvider.overrideWith((ref) => Future.value(summary)),
-          sahibAlTartibProvider.overrideWith(
-            (ref) => Future.value(
-              SahibAlTartibState(
-                pendingFarzCount: 1,
-                requiresOrder: true,
-                nextPending: QazaRecord(
-                  id: 'tartib-target',
-                  userId: 'test-user',
-                  prayerType: PrayerType.asr,
-                  originalDate: DateTime(2026, 1, 1),
-                  createdAt: DateTime(2026, 1, 1),
-                  updatedAt: DateTime(2026, 1, 1),
-                ),
-              ),
-            ),
-          ),
-          currentQazaPrayerTypeProvider.overrideWith(
-            (ref) => PrayerType.isha,
-          ),
-          effectiveWitrProvider.overrideWith((ref) => true),
-        ],
-      );
-      addTearDown(container.dispose);
-      final progressSubscription = container.listen(
-        progressSummaryProvider,
-        (_, __) {},
-        fireImmediately: true,
-      );
-      final tartibSubscription = container.listen(
-        sahibAlTartibProvider,
-        (_, __) {},
-        fireImmediately: true,
-      );
-      addTearDown(progressSubscription.close);
-      addTearDown(tartibSubscription.close);
-
-      container.read(homePrayerSelectionProvider);
-      await container.read(progressSummaryProvider.future);
-      await container.read(sahibAlTartibProvider.future);
-      await Future<void>.delayed(const Duration(milliseconds: 1));
-
-      final selected = container.read(homeSelectedPrayerProvider);
-      expect(selected.prayer, PrayerType.asr);
-      expect(selected.source, HomePrayerSelectionSource.sahibAlTartib);
     });
 
     test(

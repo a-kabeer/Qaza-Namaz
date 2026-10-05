@@ -31,10 +31,6 @@
   "errorStorage": "ڈیوائس تبدیلی محفوظ نہیں کر سکا۔ کچھ جگہ خالی کر کے دوبارہ کوشش کریں۔",
   "errorUnknown": "کچھ غلط ہو گیا۔",
   "commonOpenSettings": "سیٹنگز کھولیں",
-  "homeTartibCheckingTitle": "نماز کی ترتیب جانچی جا رہی ہے",
-  "homeTartibCheckingBody": "صاحب الترتیب طے کرتا ہے کہ اگلی فرض نماز کون سی ہے۔ ایک لمحہ۔",
-  "homeTartibFailedTitle": "نماز کی ترتیب جانچی نہیں جا سکی",
-  "homeTartibFailedBody": "ترتیب معلوم ہونے تک فرض نمازیں روک لی گئی ہیں تاکہ کوئی نماز بے ترتیب مکمل نہ ہو۔ وتر اب بھی مینیو سے مکمل کی جا سکتی ہے۔",
   "qazaSortLabel": "ترتیب",
   "qazaSortOldestFirst": "پہلے پرانی",
   "qazaSortNewestFirst": "پہلے نئی",
@@ -173,26 +169,6 @@
   "qazaLoadError": "آپ کے قضا ریکارڈ لوڈ نہیں ہو سکے: {error}",
   "qazaLoadMoreError": "مزید ریکارڈ لوڈ نہیں ہو سکے: {error}",
   "qazaCompleteError": "منتخب قضا مکمل نہیں ہو سکی: {error}",
-  "qazaTartibRequiredTitle": "قضا میں ترتیب لازم ہے",
-  "qazaTartibRequiredMessage": "آپ کے ذمہ {count} فرض نمازیں قضا باقی ہیں۔ اس حکم کے مطابق دوسری باقی قضا نمازوں سے پہلے {prayer} کی قضا ادا کریں۔",
-  "@qazaTartibRequiredMessage": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
-  "qazaTartibBlocked": "قضا میں ترتیب لازم ہے۔ پہلے {prayer} کی قضا ادا کریں۔",
-  "@qazaTartibBlocked": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
   "qazaCompletedOn": "{date} کو مکمل",
   "qazaCompleteCount": "{count, plural, =1{1 قضا مکمل کریں} other{{count} قضا مکمل کریں}}",
   "qazaRecordActions": "ریکارڈ کے اعمال",
@@ -594,14 +570,6 @@
   "homeTodayDate": "آج",
   "homeCurrentPrayerLabel": "موجودہ نماز: {prayer}",
   "@homeCurrentPrayerLabel": {
-    "placeholders": {
-      "prayer": {
-        "type": "String"
-      }
-    }
-  },
-  "homeSahibOrderLabel": "صاحبِ ترتیب: {prayer}",
-  "@homeSahibOrderLabel": {
     "placeholders": {
       "prayer": {
         "type": "String"

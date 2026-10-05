@@ -242,21 +242,6 @@ final qazaAdditionDetailProvider =
   },
 );
 
-final sahibAlTartibProvider =
-    FutureProvider.autoDispose<SahibAlTartibState>((ref) {
-  final userId = ref.watch(activeUserIdProvider);
-  if (userId == null) {
-    return Future.value(
-      const SahibAlTartibState(
-        pendingFarzCount: 0,
-        requiresOrder: false,
-        nextPending: null,
-      ),
-    );
-  }
-  return ref.read(qazaServiceProvider).sahibAlTartibState(userId: userId);
-});
-
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
 );
