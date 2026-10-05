@@ -45,6 +45,8 @@ Future<(AppDatabase, AccountSessionManager)> _createSession({
       email: 'account@example.com',
     );
     await store.activate(googleId);
+  } else {
+    await store.ensureGuestActive();
   }
 
   final firebase = _UnavailableFirebaseServices();
