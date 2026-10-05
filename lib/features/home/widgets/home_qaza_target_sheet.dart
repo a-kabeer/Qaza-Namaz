@@ -75,6 +75,8 @@ class _HomeQazaTargetSheetState
     final selection = ref.watch(homePrayerSelectionProvider);
     final witrAllowed = ref.watch(effectiveWitrProvider);
     final availability = ref.watch(prayerTimeTargetAvailabilityProvider);
+    final disabledPrayers =
+        ref.watch(homePrayerSelectionDisabledPrayersProvider);
     final showSetup = _showPrayerTimeSetup ||
         (selection.mode == HomePrayerSelectionMode.prayerTime &&
             availability == PrayerTimeTargetAvailability.setupRequired);
@@ -183,6 +185,7 @@ class _HomeQazaTargetSheetState
                               selection.selectedPrayer ?? PrayerType.fajr,
                             },
                             witrAllowed: witrAllowed,
+                            disabledPrayers: disabledPrayers,
                             onPrayerSelected: (prayer) {
                               ref
                                   .read(
