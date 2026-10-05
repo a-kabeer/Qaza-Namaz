@@ -26,15 +26,6 @@ enum HomePrayerSelectionSource {
   prayerTime,
   autoSequence,
   prayerSelection,
-  sahibAlTartib,
-
-  /// Sahib al-Tartib has not resolved, so no Fard prayer may be offered.
-  ///
-  /// Distinct from [unavailable]: there is nothing wrong with the ledger, the
-  /// ordering rule simply is not known yet. Retrying is worthwhile, which is
-  /// why the UI tells these two apart.
-  tartibUnavailable,
-
   unavailable,
 }
 
@@ -75,8 +66,8 @@ class HomePrayerSelectionState {
   ///
   /// Normally that is the persisted cursor prayer. When pending-aware fallback
   /// resolves past a zero-pending cursor, [targetWasAutoSequence] lets the
-  /// caller advance from the resolved prayer instead. Sahib al-Tartib callers
-  /// leave it false so the existing cursor remains untouched.
+  /// caller advance from the resolved prayer instead. Callers completing a
+  /// target outside Auto Sequence leave it false.
   HomePrayerSelectionState afterSuccessfulCompletion(
     PrayerType completedPrayer, {
     bool witrEnabled = true,
