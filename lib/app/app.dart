@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
+import '../core/time/local_date_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../features/onboarding/startup_gate.dart';
@@ -26,11 +28,25 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(
+      ref.read(accountSessionManagerProvider.notifier).initialize(),
+    );
+    unawaited(_configureLocalTimezone());
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((_) {
       if (mounted && !_appVisible) {
         ref.read(backupWorkerProvider).runOnce();
       }
     });
+  }
+
+  Future<void> _configureLocalTimezone() async {
+    try {
+      final timezone = await FlutterTimezone.getLocalTimezone();
+      LocalDateService.configureLocalTimezone(timezone.identifier);
+    } catch (_) {
+      // Timezone configuration is useful runtime state but is not required
+      // to determine the first safe account/routing screen.
+    }
   }
 
   @override
