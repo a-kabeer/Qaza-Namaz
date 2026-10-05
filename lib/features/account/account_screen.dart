@@ -66,6 +66,20 @@ class AccountScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(accountSessionManagerProvider);
+
+    ref.listen(
+      accountSessionManagerProvider,
+      (previous, next) {
+        if (previous?.state.phase == AccountSessionPhase.connecting &&
+            next.state.phase == AccountSessionPhase.ready &&
+            next.state.message != null &&
+            context.mounted) {
+          ref
+              .read(appSnackbarServiceProvider)
+              .error(l10n.accountConnectFailed);
+        }
+      },
+    );
     final account = session.activeAccount;
 
     return AppScaffold(
