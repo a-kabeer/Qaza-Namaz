@@ -198,6 +198,15 @@ void main() {
   ) async {
     final container = ProviderContainer(
       overrides: [
+        progressSummaryProvider.overrideWith(
+          (ref) => Future.value(
+            summaryFor({
+              PrayerType.fajr: 1,
+              PrayerType.zuhr: 2,
+            }),
+          ),
+        ),
+        effectiveWitrProvider.overrideWith((ref) => true),
         homePrayerSelectionProvider.overrideWith(
           () => _TestHomePrayerSelectionNotifier(
             const HomePrayerSelectionState(
