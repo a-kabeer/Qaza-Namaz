@@ -343,7 +343,7 @@ class AccountSessionManager extends ChangeNotifier {
     final operationEpoch = ++_operationEpoch;
     final operationAccountId = _state.activeLocalAccountId;
     await _accountStore.ensureGuestActive();
-    _ensureOperationCurrent(operationEpoch, activeLocalAccountId);
+    _ensureOperationEpochCurrent(operationEpoch);
     await _accountStore.setInitialChoiceRequired(false);
     await _refresh();
   }
@@ -730,6 +730,12 @@ class AccountSessionManager extends ChangeNotifier {
         restoreState: current.restoreState,
       ),
     );
+  }
+
+  void _ensureOperationEpochCurrent(int operationEpoch) {
+    if (operationEpoch != _operationEpoch) {
+      throw StateError('Stale account operation result rejected.');
+    }
   }
 
   void _ensureOperationCurrent(
