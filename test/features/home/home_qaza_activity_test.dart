@@ -703,6 +703,223 @@ void main() {
     },
   );
 
+  testWidgets(
+    'yearly date selection keeps outer scroll position stable during transition',
+    (tester) async {
+      final outerScrollController = ScrollController();
+
+      addTearDown(outerScrollController.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeLocalDateProvider.overrideWithValue(DateTime(2026, 9, 30)),
+            activeUserIdProvider.overrideWithValue(null),
+            dailyQazaTargetProvider.overrideWithValue(5),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+              useMaterial3: true,
+            ),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                controller: outerScrollController,
+                child: const Column(
+                  children: [
+                    SizedBox(height: 12),
+                    HomeQazaActivity(),
+                    SizedBox(height: 800),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      final group = chart.data.barGroups[8];
+      final rod = group.barRods.first;
+
+      chart.data.barTouchData.touchCallback!(
+        FlTapUpEvent(
+          TapUpDetails(kind: PointerDeviceKind.touch),
+        ),
+        BarTouchResponse(
+          touchLocation: Offset.zero,
+          touchChartCoordinate: Offset.zero,
+          spot: BarTouchedSpot(
+            group,
+            8,
+            rod,
+            0,
+            null,
+            -1,
+            FlSpot(group.x.toDouble(), rod.toY),
+            Offset.zero,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final inlineDetail = find.byKey(
+        const Key('home_activity_inline_month_detail'),
+      );
+      expect(inlineDetail, findsOneWidget);
+
+      outerScrollController.jumpTo(500);
+      await tester.pump();
+
+      final grid = find.byKey(const Key('home_activity_month_grid'));
+      final dayOne = find.descendant(
+        of: grid,
+        matching: find.text('1'),
+      );
+      expect(dayOne, findsOneWidget);
+
+      final offsetBefore = outerScrollController.offset;
+      final detailHeightBefore = tester.getRect(inlineDetail).height;
+
+      await tester.tap(dayOne);
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(outerScrollController.offset, closeTo(offsetBefore, 0.01));
+
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(outerScrollController.offset, closeTo(offsetBefore, 0.01));
+
+      await tester.pumpAndSettle();
+      expect(outerScrollController.offset, closeTo(offsetBefore, 0.01));
+      expect(
+        tester.getRect(inlineDetail).height,
+        closeTo(detailHeightBefore, 0.01),
+      );
+      expect(
+        find.byKey(const Key('home_activity_day_details')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'repeated yearly month and date selections preserve outer scroll position',
+    (tester) async {
+      final outerScrollController = ScrollController();
+
+      addTearDown(outerScrollController.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeLocalDateProvider.overrideWithValue(DateTime(2026, 9, 30)),
+            activeUserIdProvider.overrideWithValue(null),
+            dailyQazaTargetProvider.overrideWithValue(5),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+              useMaterial3: true,
+            ),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                controller: outerScrollController,
+                child: const Column(
+                  children: [
+                    SizedBox(height: 12),
+                    HomeQazaActivity(),
+                    SizedBox(height: 800),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      Future<void> selectMonth(int index) async {
+        final chart = tester.widget<BarChart>(
+          find.descendant(
+            of: find.byKey(const Key('home_activity_year_chart')),
+            matching: find.byType(BarChart),
+          ),
+        );
+        final group = chart.data.barGroups[index];
+        final rod = group.barRods.first;
+        chart.data.barTouchData.touchCallback!(
+          FlTapUpEvent(
+            TapUpDetails(kind: PointerDeviceKind.touch),
+          ),
+          BarTouchResponse(
+            touchLocation: Offset.zero,
+            touchChartCoordinate: Offset.zero,
+            spot: BarTouchedSpot(
+              group,
+              index,
+              rod,
+              0,
+              null,
+              -1,
+              FlSpot(group.x.toDouble(), rod.toY),
+              Offset.zero,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> selectDay(int day) async {
+        final grid = find.byKey(const Key('home_activity_month_grid'));
+        final finder = find.descendant(
+          of: grid,
+          matching: find.text('$day'),
+        );
+        expect(finder, findsOneWidget);
+        await tester.tap(finder);
+        await tester.pumpAndSettle();
+      }
+
+      await selectMonth(8);
+      outerScrollController.jumpTo(500);
+      await tester.pump();
+      final offset = outerScrollController.offset;
+      await selectDay(12);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+
+      await selectMonth(9);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+      await selectDay(8);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+
+      await selectMonth(10);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+      await selectDay(16);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+
+      await selectMonth(8);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+      await selectDay(20);
+      expect(outerScrollController.offset, closeTo(offset, 0.01));
+    },
+  );
+
   testWidgets('current period blocks navigation into the future',
       (tester) async {
     await tester.pumpWidget(buildWidget());
