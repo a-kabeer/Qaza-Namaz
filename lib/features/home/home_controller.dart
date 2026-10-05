@@ -27,7 +27,6 @@ class HomeController {
 
   Future<void> refresh() async {
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
     ref.invalidate(homeFallbackPendingProvider);
 
     await Future.wait<void>([
@@ -38,10 +37,6 @@ class HomeController {
       _refreshOptional(
         homeDashboardActivityProvider,
         'home_dashboard_activity_refresh_failed',
-      ),
-      _refreshOptional(
-        sahibAlTartibProvider,
-        'home_sahib_al_tartib_refresh_failed',
       ),
     ]);
     final selected = ref.read(homeSelectedPrayerProvider);
@@ -106,18 +101,15 @@ class HomeController {
           );
     }
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterStaleCompletion() {
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 
   void afterUndo() {
     ref.read(homePrayerSelectionProvider.notifier).restoreAfterUndo();
     invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 }
 
