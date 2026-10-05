@@ -85,6 +85,13 @@ class FirebaseServices {
   FirebaseFirestore get firestore => FirebaseFirestore.instance;
 }
 
+class GoogleFirebaseIdentity {
+  const GoogleFirebaseIdentity({required this.uid, this.email});
+
+  final String uid;
+  final String? email;
+}
+
 class GoogleFirebaseAuthService {
   const GoogleFirebaseAuthService(this.services);
 
@@ -118,7 +125,7 @@ class GoogleFirebaseAuthService {
   /// Restores a cached Google/Firebase identity without invoking the
   /// interactive account picker. This is startup-only authentication; explicit
   /// user initiated sign-in continues to use [signIn].
-  Future<User?> attemptLightweightAuthentication({
+  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
     Duration timeout = const Duration(seconds: 5),
   }) async {
     if (!await services.initialize().timeout(timeout, onTimeout: () => false)) {
@@ -126,7 +133,12 @@ class GoogleFirebaseAuthService {
     }
 
     final firebaseUser = services.auth.currentUser;
-    if (firebaseUser != null) return firebaseUser;
+    if (firebaseUser != null) {
+      return GoogleFirebaseIdentity(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+      );
+    }
 
     try {
       final googleUser = await GoogleSignIn.instance
@@ -141,11 +153,16 @@ class GoogleFirebaseAuthService {
       final result = await services.auth
           .signInWithCredential(credential)
           .timeout(timeout);
-      return result.user;
+      final user = result.user;
+      if (user == null) return null;
+      return GoogleFirebaseIdentity(uid: user.uid, email: user.email);
     } catch (_) {
       // Lightweight restoration is best-effort. Startup must remain usable
       // with the local account when Google/Firebase is unavailable.
-      return services.auth.currentUser;
+      final user = services.auth.currentUser;
+      return user == null
+          ? null
+          : GoogleFirebaseIdentity(uid: user.uid, email: user.email);
     }
   }
 
