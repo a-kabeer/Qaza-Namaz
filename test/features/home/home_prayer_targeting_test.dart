@@ -34,9 +34,9 @@ void main() {
         autoSequencePrayer: PrayerType.fajr,
       );
 
-      final forcedByTartib = state.afterSuccessfulCompletion(PrayerType.zuhr);
-      expect(forcedByTartib.mode, HomePrayerSelectionMode.autoSequence);
-      expect(forcedByTartib.autoSequencePrayer, PrayerType.fajr);
+      final otherTarget = state.afterSuccessfulCompletion(PrayerType.zuhr);
+      expect(otherTarget.mode, HomePrayerSelectionMode.autoSequence);
+      expect(otherTarget.autoSequencePrayer, PrayerType.fajr);
 
       final next = state.afterSuccessfulCompletion(PrayerType.fajr);
       expect(next.autoSequencePrayer, PrayerType.zuhr);
@@ -56,7 +56,7 @@ void main() {
       expect(next.autoSequencePrayer, PrayerType.asr);
     });
 
-    test('Tartib completion does not mutate Auto Sequence cursor', () {
+    test('Completion of a non-cursor target does not mutate Auto Sequence cursor', () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.asr,
