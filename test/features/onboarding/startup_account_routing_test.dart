@@ -204,14 +204,9 @@ void main() {
       final (database, manager) = await _newManager(google: true);
       await manager.initialize();
 
-      final profile = const UserProfile(
-        languageCode: 'en',
-        onboardingCompleted: false,
-      );
       final container = _container(
         manager: manager,
         database: database,
-        profile: profile,
       );
       addTearDown(container.dispose);
       addTearDown(database.close);
