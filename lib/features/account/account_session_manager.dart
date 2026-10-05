@@ -179,7 +179,7 @@ class AccountSessionManager extends ChangeNotifier {
           await _accountStore.rollbackGoogleMigration(migratingId);
         }
         await _accountStore.setMigrationState('failed');
-      } catch (rollbackError, rollbackStack) {
+      } catch (_) {
         _setState(
           AccountSessionState(
             phase: AccountSessionPhase.error,
@@ -352,7 +352,6 @@ class AccountSessionManager extends ChangeNotifier {
     if (_state.phase == AccountSessionPhase.connecting) return;
     final operationEpoch = ++_operationEpoch;
     _setBusy(AccountSessionPhase.connecting);
-    final operationEpoch = ++_operationEpoch;
     final previous = await _accountStore.activeAccount();
     final operationAccountId = previous?.localAccountId;
     final guestWasActive = previous?.isGuest == true;
