@@ -269,8 +269,8 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-            (ref) => UserProfile.localLedgerUserId,
-          ),
+              (ref) => UserProfile.localLedgerUserId,
+            ),
           userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               const QazaPlanService(),
