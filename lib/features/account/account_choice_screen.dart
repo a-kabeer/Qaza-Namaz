@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
+import 'account_session_manager.dart';
 
 class AccountChoiceScreen extends ConsumerWidget {
   const AccountChoiceScreen({super.key});
