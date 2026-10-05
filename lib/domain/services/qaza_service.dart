@@ -497,7 +497,8 @@ class QazaService {
       );
     }
 
-    final pendingIds = pending.map((record) => record.id).toList(growable: false);
+    final pendingIds =
+        pending.map((record) => record.id).toList(growable: false);
 
     final completionIds = <String, String>{
       for (final id in pendingIds) id: newQazaCompletionId(),
