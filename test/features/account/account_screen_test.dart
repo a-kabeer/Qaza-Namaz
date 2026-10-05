@@ -87,7 +87,7 @@ Widget _app(ProviderContainer container, Widget home) {
 ProviderContainer _container(AccountSessionManager manager) {
   return ProviderContainer(
     overrides: [
-      accountSessionManagerProvider.overrideWithValue(manager),
+      accountSessionManagerProvider.overrideWith((ref) => manager),
       localeProvider.overrideWith(_EnglishLocaleNotifier.new),
       progressSummaryProvider.overrideWith(
         (ref) async => QazaProgressSummary.empty(),
