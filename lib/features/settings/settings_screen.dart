@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../domain/entities/local_account.dart';
 import '../../core/constants/app_metadata.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
@@ -18,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
+    final account = ref.watch(accountSessionManagerProvider).activeAccount;
 
     void open(Widget screen) {
       Navigator.push(
@@ -43,6 +45,12 @@ class SettingsScreen extends ConsumerWidget {
       ref.read(localeProvider.notifier).set(resolved);
     }
 
+    final accountSubtitle = switch (account?.accountMode) {
+      AccountMode.guest => l10n.settingsAccountGuestSubtitle,
+      AccountMode.google => l10n.settingsAccountGoogleSubtitle,
+      null => l10n.accountConnectGoogle,
+    };
+
     return AppScaffold(
       title: l10n.settingsTitle,
       body: ListView(
@@ -54,7 +62,7 @@ class SettingsScreen extends ConsumerWidget {
               key: const Key('settings_account'),
               icon: Icons.account_circle_outlined,
               title: l10n.accountTitle,
-              subtitle: l10n.accountConnectGoogle,
+              subtitle: accountSubtitle,
               onTap: () => open(const AccountScreen()),
             ),
           ),

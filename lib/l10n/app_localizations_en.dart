@@ -1410,6 +1410,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudDeleteSignInRequired => 'Sign in to manage cloud data.';
 
   @override
+  @override
+  String get accountGuestTitle => 'Guest account';
+
+  @override
+  String get accountGuestLocalDataSubtitle => 'Your data is stored on this device';
+
+  @override
+  String get accountNotConnectedGoogle => 'Not connected to Google';
+
+  @override
+  String get accountKeepProgressSafe => 'Keep your progress safe';
+
+  @override
+  String get accountKeepProgressSafeDescription => 'Connect a Google account to back up and restore your Qaza progress across devices.';
+
+  @override
+  String get accountGuestContinueMessage => 'You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.';
+
+  @override
+  String get accountBackupSection => 'Backup';
+
+  @override
+  String get accountBackupAutomaticDescription => 'Automatically back up your Qaza progress';
+
+  @override
+  String get accountAccountActions => 'Account actions';
+
+  @override
+  String get accountSignOutDescription => 'Sign out of your Google account. You can sign in again later.';
+
+  @override
+  String get accountDisconnectDescription => 'Remove the Google connection from Qaza Namaz and switch to Guest mode.';
+
+  @override
+  String get accountDangerZone => 'Danger zone';
+
+  @override
+  String get settingsAccountGuestSubtitle => 'Guest • This device only';
+
+  @override
+  String get settingsAccountGoogleSubtitle => 'Signed in with Google';
+
   String get accountGuest => 'Guest';
 
   @override

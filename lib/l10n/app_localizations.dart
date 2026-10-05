@@ -1251,6 +1251,21 @@ abstract class AppLocalizations {
   /// **'Signing out disconnects your Google account. Your Qaza progress remains on this device.'**
   String get accountSignOutExplanation;
 
+  String get accountGuestTitle;
+  String get accountGuestLocalDataSubtitle;
+  String get accountNotConnectedGoogle;
+  String get accountKeepProgressSafe;
+  String get accountKeepProgressSafeDescription;
+  String get accountGuestContinueMessage;
+  String get accountBackupSection;
+  String get accountBackupAutomaticDescription;
+  String get accountAccountActions;
+  String get accountSignOutDescription;
+  String get accountDisconnectDescription;
+  String get accountDangerZone;
+  String get settingsAccountGuestSubtitle;
+  String get settingsAccountGoogleSubtitle;
+
   /// No description provided for @dataTitle.
   ///
   /// In en, this message translates to:
