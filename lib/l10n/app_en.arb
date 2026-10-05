@@ -898,7 +898,7 @@
   "accountDeleteCloudDataAcknowledge": "I understand the cloud copy will be permanently deleted.",
   "accountCancel": "Cancel",
   "accountContinue": "Continue",
-  "accountConnectFailed": "Google connection could not be completed. Your local data is still safe.",
+  "accountGuestTitle": "Guest account",\n  "accountGuestLocalDataSubtitle": "Your data is stored on this device",\n  "accountNotConnectedGoogle": "Not connected to Google",\n  "accountKeepProgressSafe": "Keep your progress safe",\n  "accountKeepProgressSafeDescription": "Connect a Google account to back up and restore your Qaza progress across devices.",\n  "accountGuestContinueMessage": "You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.",\n  "accountBackupSection": "Backup",\n  "accountBackupAutomaticDescription": "Automatically back up your Qaza progress",\n  "accountAccountActions": "Account actions",\n  "accountSignOutDescription": "Sign out of your Google account. You can sign in again later.",\n  "accountDisconnectDescription": "Remove the Google connection from Qaza Namaz and switch to Guest mode.",\n  "accountDangerZone": "Danger zone",\n  "settingsAccountGuestSubtitle": "Guest • This device only",\n  "settingsAccountGoogleSubtitle": "Signed in with Google",\n  "accountConnectFailed": "Google connection could not be completed. Your local data is still safe.",
   "accountCloudDeleted": "Cloud data deleted. Your local Qaza data remains on this device.",
   "settingsTitle": "Settings",
   "settingsPreferences": "Preferences",
