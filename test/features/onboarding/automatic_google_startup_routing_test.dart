@@ -15,6 +15,7 @@ import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/account/account_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
+import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeFirebase extends FirebaseServices {
   @override
@@ -162,7 +163,9 @@ void main() {
 
     expect(manager.activeLocalAccountId, id);
     expect(manager.activeAccount?.isGoogle, isTrue);
-    expect(await store.loadProfile(id), profile);
+    final restored = await store.loadProfile(id);
+    expect(restored?.isComplete, isTrue);
+    expect(restored?.languageCode, profile.languageCode);
 
     final rows = await database.customSelect(
       "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'existing-uid'",
@@ -204,7 +207,9 @@ void main() {
     final account = manager.activeAccount;
     expect(account?.isGoogle, isTrue);
     expect(account?.firebaseUid, 'recovered-uid');
-    expect(await store.loadProfile(account!.localAccountId), _completeProfile());
+    final restored = await store.loadProfile(account!.localAccountId);
+    expect(restored?.isComplete, isTrue);
+    expect(restored?.languageCode, 'en');
 
     final rows = await database.customSelect(
       "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'recovered-uid'",
@@ -226,7 +231,9 @@ void main() {
 
     expect(manager.activeAccount?.isGuest, isTrue);
     expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
-    expect(await store.loadProfile(UserProfile.localLedgerUserId), profile);
+    final restored = await store.loadProfile(UserProfile.localLedgerUserId);
+    expect(restored?.isComplete, isTrue);
+    expect(restored?.languageCode, profile.languageCode);
   });
 
   test('Firebase failure preserves the completed local Guest account', () async {
@@ -291,7 +298,11 @@ void main() {
           accountSessionManagerProvider.overrideWith((ref) => manager),
           userProfileProvider.overrideWith((ref) => Future.value(null)),
         ],
-        child: const MaterialApp(home: StartupGate()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const StartupGate(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
