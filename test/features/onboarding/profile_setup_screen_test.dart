@@ -341,7 +341,13 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-undefined
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
+            activeLocalAccountIdStateProvider.overrideWith(
+              (ref) => UserProfile.localLedgerUserId,
+            ),
+            userProfileRepositoryProvider.overrideWithValue(repository),
             progressSummaryProvider.overrideWith(
               (ref) async => QazaProgressSummary.empty(),
             ),
