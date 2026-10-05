@@ -77,21 +77,21 @@ class AccountScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           if (account?.isGuest == true)
             _GuestAccountContent(
-              onConnectGoogle: session.state.phase ==
-                      AccountSessionPhase.connecting
-                  ? null
-                  : () async {
-                      try {
-                        await ref
-                            .read(accountSessionManagerProvider.notifier)
-                            .connectGoogle();
-                      } catch (_) {
-                        if (!context.mounted) return;
-                        ref
-                            .read(appSnackbarServiceProvider)
-                            .error(l10n.accountConnectFailed);
-                      }
-                    },
+              onConnectGoogle:
+                  session.state.phase == AccountSessionPhase.connecting
+                      ? null
+                      : () async {
+                          try {
+                            await ref
+                                .read(accountSessionManagerProvider.notifier)
+                                .connectGoogle();
+                          } catch (_) {
+                            if (!context.mounted) return;
+                            ref
+                                .read(appSnackbarServiceProvider)
+                                .error(l10n.accountConnectFailed);
+                          }
+                        },
             )
           else if (account?.isGoogle == true)
             _GoogleAccountContent(
@@ -126,9 +126,8 @@ class _AccountIdentityCard extends StatelessWidget {
     final title = google ? l10n.accountGoogle : l10n.accountGuestTitle;
     final subtitle =
         google ? (account?.googleEmail ?? '') : l10n.accountGuestLocalDataSubtitle;
-    final status = google
-        ? l10n.accountSignedIn
-        : l10n.accountNotConnectedGoogle;
+    final status =
+        google ? l10n.accountSignedIn : l10n.accountNotConnectedGoogle;
 
     return Card(
       child: Padding(
