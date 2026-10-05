@@ -473,11 +473,8 @@ class _PendingTrackerBody extends ConsumerWidget {
                     );
                   }
                   final record = state.records[index];
-                  final canAct = record.status == QazaStatus.pending &&
-                      !restricted &&
-                      (lockedRecordId == null ||
-                          record.id == lockedRecordId ||
-                          record.prayerType == PrayerType.witr);
+                  final canAct =
+                      record.status == QazaStatus.pending && !restricted;
                   return _RecordRow(
                     key: Key('qaza_record_row_${record.id}'),
                     record: record,
