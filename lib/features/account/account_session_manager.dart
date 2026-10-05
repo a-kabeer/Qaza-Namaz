@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -88,8 +87,7 @@ class AccountSessionManager extends ChangeNotifier {
       var account = await _accountStore.activeAccount();
       var initialChoice = await _accountStore.initialChoiceRequired();
       final migrationState = await _accountStore.migrationState();
-      final terminalMigrationState =
-          migrationState == 'none' ||
+      final terminalMigrationState = migrationState == 'none' ||
           migrationState == 'completed' ||
           migrationState == 'failed';
 
@@ -503,8 +501,7 @@ class AccountSessionManager extends ChangeNotifier {
       return;
     }
 
-    final guestMigration =
-        active?.isGuest == true &&
+    final guestMigration = active?.isGuest == true &&
         active?.localAccountId != target.localAccountId;
     if (!guestMigration && active?.localAccountId != target.localAccountId) {
       throw StateError('Interrupted Google migration has ambiguous ownership.');
@@ -568,7 +565,9 @@ class AccountSessionManager extends ChangeNotifier {
       email: email,
     );
     final target = await _accountStore.getAccount(targetId);
-    if (target == null) throw StateError('Google recovery partition unavailable.');
+    if (target == null) {
+      throw StateError('Google recovery partition unavailable.');
+    }
 
     try {
       final root = await _backup.readCloudRoot(uid);
@@ -684,7 +683,9 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> deleteCloudData() async {
     final operationEpoch = ++_operationEpoch;
     final account = activeAccount;
-    if (account == null || !account.isGoogle || account.firebaseUid == null) return;
+    if (account == null || !account.isGoogle || account.firebaseUid == null) {
+      return;
+    }
     await _accountStore.setBackupEnabled(account.localAccountId, false);
     final nextGeneration = account.cloudGeneration + 1;
     await _backup.deleteCloudData(
@@ -720,8 +721,7 @@ class AccountSessionManager extends ChangeNotifier {
         phase: AccountSessionPhase.ready,
         activeLocalAccountId: account?.localAccountId,
         activeAccount: account,
-        initialChoiceRequired:
-            await _accountStore.initialChoiceRequired(),
+        initialChoiceRequired: await _accountStore.initialChoiceRequired(),
         migrationState: await _accountStore.migrationState(),
         restoreState: 'none',
       ),
