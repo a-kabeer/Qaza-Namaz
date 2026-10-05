@@ -8,6 +8,7 @@ import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
@@ -149,6 +150,7 @@ void main() {
   late AccountSessionManager sessionManager;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     (database, sessionManager) = await _readyGuestSession();
   });
 
