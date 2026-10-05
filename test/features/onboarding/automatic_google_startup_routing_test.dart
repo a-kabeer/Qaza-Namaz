@@ -25,6 +25,14 @@ class _FakeFirebase extends FirebaseServices {
   Future<bool> initialize() async => true;
 }
 
+class _UnavailableFirebase extends FirebaseServices {
+  @override
+  bool get initialized => false;
+
+  @override
+  Future<bool> initialize() async => false;
+}
+
 class _FakeAuth extends GoogleFirebaseAuthService {
   _FakeAuth(super.services, this.identity);
 
@@ -246,7 +254,7 @@ void main() {
     await store.saveProfile(UserProfile.localLedgerUserId, profile);
     await store.activate(UserProfile.localLedgerUserId);
 
-    final firebase = _FakeFirebase();
+    final firebase = _UnavailableFirebase();
     final manager = AccountSessionManager(
       accountStore: store,
       firebase: firebase,
@@ -270,7 +278,9 @@ void main() {
     await manager.initialize();
 
     expect(manager.activeAccount?.isGuest, isTrue);
-    expect(await store.loadProfile(UserProfile.localLedgerUserId), profile);
+    final restored = await store.loadProfile(UserProfile.localLedgerUserId);
+    expect(restored?.isComplete, isTrue);
+    expect(restored?.languageCode, profile.languageCode);
   });
 
   testWidgets('normal startup never shows AccountChoiceScreen', (tester) async {
