@@ -115,6 +115,40 @@ class GoogleFirebaseAuthService {
     return result.user;
   }
 
+  /// Restores a cached Google/Firebase identity without invoking the
+  /// interactive account picker. This is startup-only authentication; explicit
+  /// user initiated sign-in continues to use [signIn].
+  Future<User?> attemptLightweightAuthentication({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (!await services.initialize().timeout(timeout, onTimeout: () => false)) {
+      return null;
+    }
+
+    final firebaseUser = services.auth.currentUser;
+    if (firebaseUser != null) return firebaseUser;
+
+    try {
+      final googleUser = await GoogleSignIn.instance
+          .attemptLightweightAuthentication()
+          .timeout(timeout);
+      if (googleUser == null) return null;
+
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) return null;
+
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final result = await services.auth
+          .signInWithCredential(credential)
+          .timeout(timeout);
+      return result.user;
+    } catch (_) {
+      // Lightweight restoration is best-effort. Startup must remain usable
+      // with the local account when Google/Firebase is unavailable.
+      return services.auth.currentUser;
+    }
+  }
+
   Future<void> signOut() async {
     if (!services.initialized) return;
     try {
