@@ -288,7 +288,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          accountSessionManagerProvider.overrideWithValue(manager),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
           userProfileProvider.overrideWith((ref) => Future.value(null)),
         ],
         child: const MaterialApp(home: StartupGate()),
