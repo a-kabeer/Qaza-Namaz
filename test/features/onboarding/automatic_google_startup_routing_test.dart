@@ -167,13 +167,16 @@ void main() {
     expect(restored?.isComplete, isTrue);
     expect(restored?.languageCode, profile.languageCode);
 
-    final rows = await database.customSelect(
-      "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'existing-uid'",
-    ).get();
+    final rows = await database
+        .customSelect(
+          "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'existing-uid'",
+        )
+        .get();
     expect(rows.single.read<int>('count'), 1);
   });
 
-  test('new Google UID creates one partition and restores cloud profile', () async {
+  test('new Google UID creates one partition and restores cloud profile',
+      () async {
     final firebase = _FakeFirebase();
     final backup = _FakeBackup(
       firebase: firebase,
@@ -211,9 +214,11 @@ void main() {
     expect(restored?.isComplete, isTrue);
     expect(restored?.languageCode, 'en');
 
-    final rows = await database.customSelect(
-      "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'recovered-uid'",
-    ).get();
+    final rows = await database
+        .customSelect(
+          "SELECT COUNT(*) AS count FROM local_accounts WHERE firebase_uid = 'recovered-uid'",
+        )
+        .get();
     expect(rows.single.read<int>('count'), 1);
   });
 
@@ -236,7 +241,8 @@ void main() {
     expect(restored?.languageCode, profile.languageCode);
   });
 
-  test('Firebase failure preserves the completed local Guest account', () async {
+  test('Firebase failure preserves the completed local Guest account',
+      () async {
     final profile = _completeProfile();
     await store.saveProfile(UserProfile.localLedgerUserId, profile);
     await store.activate(UserProfile.localLedgerUserId);
