@@ -10,6 +10,7 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/account/account_screen.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/settings/settings_screen.dart';
