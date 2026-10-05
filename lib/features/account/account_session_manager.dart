@@ -351,7 +351,9 @@ class AccountSessionManager extends ChangeNotifier {
       if (guestWasActive && previous != null) {
         await _accountStore.rollbackGoogleMigration(previous.localAccountId);
       } else if (previous == null) {
-        await _accountStore.ensureGuestActive();
+        // A failed first-launch Google attempt must not silently choose Guest.
+        // Leave the session unselected so Account Choice remains available.
+        await _accountStore.setInitialChoiceRequired(true);
       }
       await _auth.signOut();
       await _accountStore.setMigrationState('failed');
@@ -361,7 +363,9 @@ class AccountSessionManager extends ChangeNotifier {
           phase: AccountSessionPhase.ready,
           activeLocalAccountId: restoredActive?.localAccountId,
           activeAccount: restoredActive,
-          initialChoiceRequired: false,
+          initialChoiceRequired: previous == null
+              ? true
+              : await _accountStore.initialChoiceRequired(),
           migrationState: 'failed',
           restoreState: 'none',
           message: 'Google connection could not be completed.',
