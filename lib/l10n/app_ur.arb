@@ -255,6 +255,8 @@
   "accountChoiceGuestDescription": "مہمان کا ڈیٹا اسی ڈیوائس پر محفوظ رہتا ہے۔ آپ بعد میں گوگل منسلک کر سکتے ہیں۔",
   "accountChoiceGoogleFailed": "گوگل سائن اِن مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
   "accountTitle": "اکاؤنٹ",
+  "accountGuest": "مہمان",
+  "accountConnectGoogle": "گوگل سے منسلک کریں",
   "accountSignInMethod": "سائن اِن کا طریقہ",
   "accountGoogleAuth": "گوگل",
   "accountSignedInWithGoogle": "گوگل سے سائن اِن ہیں",
