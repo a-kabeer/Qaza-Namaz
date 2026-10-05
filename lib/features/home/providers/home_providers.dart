@@ -559,21 +559,7 @@ final homeFallbackPendingProvider =
 final homeSelectedPrayerProvider =
     Provider.autoDispose<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
-  final tartibAsync = ref.watch(sahibAlTartibProvider);
-  final tartib = tartibAsync.valueOrNull;
   final currentPrayer = ref.watch(currentQazaPrayerTypeProvider);
-
-  // Sahib al-Tartib remains the final authority. Targeting modes never bypass
-  // an active ordering requirement.
-  if (tartibAsync.hasValue &&
-      tartib?.requiresOrder == true &&
-      tartib?.nextPrayer != null) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: tartib!.nextPrayer,
-      source: HomePrayerSelectionSource.sahibAlTartib,
-    );
-  }
 
   final target = switch (selection.mode) {
     HomePrayerSelectionMode.prayerTime => currentPrayer,
@@ -611,18 +597,6 @@ final homeSelectedPrayerProvider =
   // action. Prayer Selection is also guarded by the latest pending summary,
   // but remains sticky when its selected prayer still has pending records.
   if (resolvedTarget == null) {
-    // Preserve the existing tartib-loading state for an unresolved Fard
-    // target; pending-aware fallback must never turn an authority problem into
-    // a generic no-target state.
-    if (target != null &&
-        target != PrayerType.witr &&
-        (!tartibAsync.hasValue || tartib == null)) {
-      return HomeSelectedPrayerState(
-        mode: selection.mode,
-        prayer: null,
-        source: HomePrayerSelectionSource.tartibUnavailable,
-      );
-    }
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
@@ -630,41 +604,11 @@ final homeSelectedPrayerProvider =
     );
   }
 
-  // Witr remains governed by the existing profile eligibility rule.
-  if (resolvedTarget == PrayerType.witr &&
-      !ref.watch(effectiveWitrProvider)) {
+  if (resolvedTarget == PrayerType.witr && !witrEnabled) {
     return HomeSelectedPrayerState(
       mode: selection.mode,
       prayer: null,
       source: HomePrayerSelectionSource.unavailable,
-    );
-  }
-
-  // A Fard target still requires the existing Sahib al-Tartib result to be
-  // known. We never use pending-aware fallback to bypass that authority.
-  if (resolvedTarget != PrayerType.witr &&
-      (!tartibAsync.hasValue || tartib == null)) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: null,
-      source: HomePrayerSelectionSource.tartibUnavailable,
-    );
-  }
-
-  // Witr is independent of Sahib al-Tartib and remains actionable even while
-  // the ordering check is temporarily unavailable.
-  if (resolvedTarget == PrayerType.witr) {
-    return HomeSelectedPrayerState(
-      mode: selection.mode,
-      prayer: resolvedTarget,
-      source: switch (selection.mode) {
-        HomePrayerSelectionMode.prayerTime =>
-          HomePrayerSelectionSource.prayerTime,
-        HomePrayerSelectionMode.autoSequence =>
-          HomePrayerSelectionSource.autoSequence,
-        HomePrayerSelectionMode.prayerSelection =>
-          HomePrayerSelectionSource.prayerSelection,
-      },
     );
   }
 
