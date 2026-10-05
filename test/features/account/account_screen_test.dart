@@ -171,6 +171,10 @@ void main() {
     expect(find.text('Guest • This device only'), findsOneWidget);
     expect(find.text('Connect Google'), findsNothing);
 
+    // Unmount the guest tree before disposing its ProviderContainer so
+    // Riverpod can finish any scheduled auto-dispose work cleanly.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     guestContainer.dispose();
     await guestDatabase.close();
 
