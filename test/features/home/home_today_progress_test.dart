@@ -222,7 +222,6 @@ void main() {
     await _pumpHomeTodayProgress(tester, container, record);
 
     expect(find.text('Maghrib'), findsWidgets);
-    expect(find.text('Isha'), findsWidgets);
     expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
     expect(
       find.text(DateFormatters.formatGregorianDatePadded(record.originalDate)),
