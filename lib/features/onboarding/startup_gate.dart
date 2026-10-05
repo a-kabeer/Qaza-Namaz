@@ -19,8 +19,7 @@ class StartupGate extends ConsumerWidget {
     // Startup initialization is owned by the app lifecycle, never by build.
     // The static splash is shown only while required local/session state is
     // being prepared.
-    if (session.state.phase == AccountSessionPhase.loading ||
-        session.state.phase == AccountSessionPhase.connecting) {
+    if (session.state.phase == AccountSessionPhase.loading) {
       return const SplashScreen();
     }
 
