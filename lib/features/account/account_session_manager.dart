@@ -159,22 +159,6 @@ class AccountSessionManager extends ChangeNotifier {
           }
         }
       }
-        // Never discard the local session because cloud/auth restoration failed.
-        if (_state.activeAccount != null) {
-          _setState(
-            AccountSessionState(
-              phase: AccountSessionPhase.ready,
-              activeLocalAccountId: _state.activeLocalAccountId,
-              activeAccount: _state.activeAccount,
-              initialChoiceRequired: false,
-              migrationState: await _accountStore.migrationState(),
-              restoreState: 'failed',
-              message: error.toString(),
-            ),
-          );
-        }
-      }
-
       final refreshed = await _accountStore.activeAccount();
       _setState(
         AccountSessionState(
