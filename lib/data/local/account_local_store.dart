@@ -238,8 +238,11 @@ class AccountLocalStore {
 
     final id = _randomId('google');
     final now = DateTime.now().microsecondsSinceEpoch;
+    // The partial unique index on firebase_uid is the final uniqueness
+    // guard. INSERT OR IGNORE makes repeated startup restoration idempotent
+    // even if two restoration paths race to create the same UID.
     await database.customInsert(
-      '''INSERT INTO local_accounts
+      '''INSERT OR IGNORE INTO local_accounts
          (local_account_id, account_mode, firebase_uid, google_email,
           lifecycle_state, cloud_backup_enabled, cloud_generation,
           created_at, updated_at)
@@ -252,7 +255,11 @@ class AccountLocalStore {
         Variable(now),
       ],
     );
-    return id;
+    final created = await findGoogleByUid(firebaseUid);
+    if (created == null) {
+      throw StateError('Unable to create Google partition for Firebase UID.');
+    }
+    return created.localAccountId;
   }
 
   Future<bool> hasAnyAccountData(String localAccountId) async {

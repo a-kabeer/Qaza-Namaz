@@ -41,6 +41,9 @@ class AccountSessionManager extends ChangeNotifier {
   LocalAccount? get activeAccount => _state.activeAccount;
   bool get initialChoiceRequired => _state.initialChoiceRequired;
 
+  static const Duration _startupAuthTimeout = Duration(seconds: 5);
+  static const Duration _startupCloudTimeout = Duration(seconds: 8);
+
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
@@ -58,6 +61,7 @@ class AccountSessionManager extends ChangeNotifier {
         } catch (_) {}
       }
 
+      // Local account/session restoration is always the first source of truth.
       await _accountStore.ensureInitialized(
         hasLegacyProfile: rawLegacyProfile != null,
         hasLegacyQaza:
@@ -76,18 +80,22 @@ class AccountSessionManager extends ChangeNotifier {
             activeAccount: account,
             initialChoiceRequired: initialChoice,
             migrationState: migrationState,
-            restoreState: 'none',
+            restoreState: 'local_restored',
           ),
         );
       }
 
       try {
-        // A fresh Guest-only installation has no reason to initialize Firebase,
-        // Google Sign-In, or App Check during startup. Google connection can
-        // initialize the cloud stack on demand later.
-        if (await _accountStore.hasAnyGoogleAccount() &&
-            await _firebase.initialize()) {
-          final firebaseUser = _auth.currentUser;
+        // Google/Firebase restoration is best-effort and bounded. It must not
+        // prevent a valid local Guest/Google account from opening offline.
+        final firebaseAvailable = await _firebase
+            .initialize()
+            .timeout(_startupAuthTimeout, onTimeout: () => false);
+
+        if (firebaseAvailable) {
+          final firebaseUser = await _auth
+              .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+              .timeout(_startupAuthTimeout, onTimeout: () => null);
           final terminalMigrationState =
               migrationState == 'none' ||
               migrationState == 'completed' ||
@@ -102,30 +110,21 @@ class AccountSessionManager extends ChangeNotifier {
             } else {
               final local =
                   await _accountStore.findGoogleByUid(firebaseUser.uid);
-              if (local != null) {
-                if (local.lifecycleState == AccountLifecycleState.migrating) {
-                  await _resumeInterruptedMigration(
-                    firebaseUser.uid,
-                    firebaseUser.email,
-                  );
-                } else {
-                  await _accountStore.activate(local.localAccountId);
-                  await _restoreExisting(local);
-                }
-              } else if (account == null || account.isGuest) {
-                await _resumeInterruptedGoogle(
+              if (local?.lifecycleState == AccountLifecycleState.migrating) {
+                await _resumeInterruptedMigration(
                   firebaseUser.uid,
                   firebaseUser.email,
                 );
               } else {
-                await _auth.signOut();
+                await _restoreGoogleStartupAccount(
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                );
               }
             }
           } else if (!terminalMigrationState) {
-            // No Firebase session remains after an interrupted in-place
-            // conversion. The converted local account can safely be restored
-            // to Guest because no second partition is created for the normal
-            // Guest -> Google migration path.
+            // An interrupted Guest -> Google conversion without a recoverable
+            // Firebase session is rolled back exactly as before.
             final migratingId = await _accountStore.migratingGoogleAccount();
             if (migratingId != null) {
               await _accountStore.rollbackGoogleMigration(migratingId);
@@ -133,6 +132,7 @@ class AccountSessionManager extends ChangeNotifier {
           }
         }
       } catch (error) {
+        // Never discard the local session because cloud/auth restoration failed.
         if (_state.activeAccount != null) {
           _setState(
             AccountSessionState(
@@ -157,7 +157,7 @@ class AccountSessionManager extends ChangeNotifier {
           initialChoiceRequired:
               await _accountStore.initialChoiceRequired(),
           migrationState: await _accountStore.migrationState(),
-          restoreState: 'none',
+          restoreState: 'complete',
         ),
       );
     } catch (error) {
@@ -172,6 +172,54 @@ class AccountSessionManager extends ChangeNotifier {
           message: error.toString(),
         ),
       );
+    }
+  }
+
+  /// Restores the exact Firebase UID to its existing local partition, or
+  /// creates one partition when this is a new device/account. This path never
+  /// invokes Guest -> Google migration because startup restoration is not a
+  /// user-requested conversion operation.
+  Future<void> _restoreGoogleStartupAccount({
+    required String uid,
+    required String? email,
+  }) async {
+    var target = await _accountStore.findGoogleByUid(uid);
+    if (target == null) {
+      final targetId = await _accountStore.createGooglePartition(
+        firebaseUid: uid,
+        email: email,
+      );
+      target = await _accountStore.getAccount(targetId);
+    }
+    if (target == null) {
+      throw StateError('Unable to restore Google account partition.');
+    }
+
+    // Identity is authoritative before any cloud work: the exact UID maps to
+    // exactly one local account and becomes the active account.
+    await _accountStore.activate(target.localAccountId);
+    await _accountStore.setInitialChoiceRequired(false);
+
+    Map<String, dynamic>? root;
+    try {
+      root = await _backup
+          .readCloudRoot(uid)
+          .timeout(_startupCloudTimeout);
+    } catch (_) {
+      // A cloud timeout/error must not invalidate the local Google partition.
+      return;
+    }
+
+    if (root == null) return;
+
+    try {
+      await _reconciliation
+          .restore(localAccountId: target.localAccountId, uid: uid)
+          .timeout(_startupCloudTimeout);
+      await _accountStore.activate(target.localAccountId);
+    } catch (_) {
+      // Existing local data remains authoritative when cloud reconciliation is
+      // unavailable or fails. The account still routes using its local profile.
     }
   }
 

@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,10 +10,8 @@ import '../../core/diagnostics/diagnostics.dart';
 class FirebaseConfiguration {
   static const projectId = 'qaza-nmz';
   static const projectNumber = '895430705174';
-  static const androidAppId =
-      '1:895430705174:android:1e8d352d65428a4a3c7537';
-  static const androidPackage =
-      'com.example.qaza_namaz_task1_flutter';
+  static const androidAppId = '1:895430705174:android:1e8d352d65428a4a3c7537';
+  static const androidPackage = 'com.example.qaza_namaz_task1_flutter';
   static const androidSha1 =
       '3a:b6:c8:b5:08:a6:85:79:25:4d:31:98:37:16:f5:d2:ba:bd:41:8d';
   static const androidSha256 =
@@ -85,6 +82,13 @@ class FirebaseServices {
   FirebaseFirestore get firestore => FirebaseFirestore.instance;
 }
 
+class GoogleFirebaseIdentity {
+  const GoogleFirebaseIdentity({required this.uid, this.email});
+
+  final String uid;
+  final String? email;
+}
+
 class GoogleFirebaseAuthService {
   const GoogleFirebaseAuthService(this.services);
 
@@ -108,11 +112,53 @@ class GoogleFirebaseAuthService {
       throw StateError('Google Sign-In did not return an ID token.');
     }
 
-    final credential =
-        GoogleAuthProvider.credential(idToken: idToken);
-    final result =
-        await services.auth.signInWithCredential(credential);
+    final credential = GoogleAuthProvider.credential(idToken: idToken);
+    final result = await services.auth.signInWithCredential(credential);
     return result.user;
+  }
+
+  /// Restores a cached Google/Firebase identity without invoking the
+  /// interactive account picker. This is startup-only authentication; explicit
+  /// user initiated sign-in continues to use [signIn].
+  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (!await services.initialize().timeout(timeout, onTimeout: () => false)) {
+      return null;
+    }
+
+    final firebaseUser = services.auth.currentUser;
+    if (firebaseUser != null) {
+      return GoogleFirebaseIdentity(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+      );
+    }
+
+    try {
+      final lightweightFuture =
+          GoogleSignIn.instance.attemptLightweightAuthentication();
+      if (lightweightFuture == null) return null;
+      final googleUser = await lightweightFuture.timeout(timeout);
+      if (googleUser == null) return null;
+
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) return null;
+
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final result =
+          await services.auth.signInWithCredential(credential).timeout(timeout);
+      final user = result.user;
+      if (user == null) return null;
+      return GoogleFirebaseIdentity(uid: user.uid, email: user.email);
+    } catch (_) {
+      // Lightweight restoration is best-effort. Startup must remain usable
+      // with the local account when Google/Firebase is unavailable.
+      final user = services.auth.currentUser;
+      return user == null
+          ? null
+          : GoogleFirebaseIdentity(uid: user.uid, email: user.email);
+    }
   }
 
   Future<void> signOut() async {
