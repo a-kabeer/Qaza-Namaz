@@ -234,8 +234,10 @@ void main() {
 
     expect(receipt.result, QazaCompletionResult.completed);
     expect(receipt.completionId, isNotNull);
-    expect(records.singleWhere((record) => record.id == 'isha').status,
-        QazaStatus.completed);
+    expect(
+      records.singleWhere((record) => record.id == 'isha').status,
+      QazaStatus.completed,
+    );
   });
 
   test('oldestPendingOverall uses normal date/prayer/id ordering', () async {
