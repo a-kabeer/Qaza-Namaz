@@ -107,7 +107,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     _renderedDate = current;
     ref.read(homeControllerProvider).invalidateDashboard();
-    ref.invalidate(sahibAlTartibProvider);
   }
 
   Future<void> _open(BuildContext context, WidgetRef ref, Widget page) async {
