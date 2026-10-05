@@ -131,7 +131,6 @@ void main() {
       });
       container.invalidate(progressSummaryProvider);
       await container.read(progressSummaryProvider.future);
-      await container.read(sahibAlTartibProvider.future);
 
       expect(
         container.read(homeSelectedPrayerProvider).prayer,
