@@ -158,6 +158,31 @@ void main() {
   );
 
   testWidgets(
+    'fresh install shows Account Choice before slow cached Google restoration',
+    (tester) async {
+      final firebaseGate = Completer<bool>();
+      final firebase = _ControlledFirebaseServices(firebaseGate);
+      final (database, manager) = await _newManager(firebase: firebase);
+      final container = _container(
+        manager: manager,
+        database: database,
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_startupApp(container));
+      await manager.initialize();
+      await tester.pump();
+
+      expect(find.byType(AccountChoiceScreen), findsOneWidget);
+      expect(firebase.initializeCalls, 1);
+
+      firebaseGate.complete(false);
+      await tester.pump();
+    },
+  );
+
+  testWidgets(
     'fresh local state reaches Account Choice after session initialization',
     (tester) async {
       final (database, manager) = await _newManager();
