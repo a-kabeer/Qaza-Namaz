@@ -222,7 +222,7 @@ class _GoogleAccountContent extends StatelessWidget {
   final VoidCallback onPauseBackup;
   final VoidCallback onSignOut;
   final VoidCallback onDisconnect;
-  final VoidCallback onDeleteCloudData;
+  final Future<void> Function() onDeleteCloudData;
 
   @override
   Widget build(BuildContext context) {
