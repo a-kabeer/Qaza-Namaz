@@ -5,7 +5,6 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
-import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/features/home/home_controller.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
@@ -54,13 +53,6 @@ ProviderContainer _containerFor({
             ),
           );
         },
-      ),
-      sahibAlTartibProvider.overrideWith(
-        (ref) async => const SahibAlTartibState(
-          pendingFarzCount: 0,
-          requiresOrder: false,
-          nextPending: null,
-        ),
       ),
       homeSelectedPrayerProvider.overrideWith(
         (ref) => const HomeSelectedPrayerState(
