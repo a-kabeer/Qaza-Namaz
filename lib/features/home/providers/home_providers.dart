@@ -527,6 +527,28 @@ final homePrayerSelectionProvider =
   HomePrayerSelectionNotifier.new,
 );
 
+final homePrayerSelectionDisabledPrayersProvider =
+    Provider<Set<PrayerType>>((ref) {
+  final summary = ref.watch(progressSummaryProvider).valueOrNull;
+  final witrEnabled = ref.watch(effectiveWitrProvider);
+
+  if (summary == null) {
+    // Never expose a false enabled target while pending data is unavailable.
+    return Set<PrayerType>.of(PrayerTypeX.qazaSequence);
+  }
+
+  const targeting = QazaTargetingService();
+  return {
+    for (final prayer in PrayerTypeX.qazaSequence)
+      if (!targeting.isPrayerPending(
+        summary: summary,
+        prayer: prayer,
+        witrEnabled: witrEnabled,
+      ))
+        prayer,
+  };
+});
+
 final homeFallbackPendingProvider =
     FutureProvider.autoDispose<QazaRecord?>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
@@ -559,24 +581,35 @@ final homeSelectedPrayerProvider =
     HomePrayerSelectionMode.prayerSelection => selection.selectedPrayer,
   };
 
-  final pendingAwareMode = selection.mode == HomePrayerSelectionMode.prayerTime ||
+  final pendingAwareMode =
+      selection.mode == HomePrayerSelectionMode.prayerTime ||
       selection.mode == HomePrayerSelectionMode.autoSequence;
-  final summary = pendingAwareMode
-      ? ref.watch(progressSummaryProvider).valueOrNull
-      : null;
+  final summary = ref.watch(progressSummaryProvider).valueOrNull;
+  final witrEnabled = ref.watch(effectiveWitrProvider);
   final resolvedTarget =
-      pendingAwareMode && target != null && summary != null
-          ? const QazaTargetingService().resolveNextPendingPrayer(
-              summary: summary,
-              startPrayer: target,
-              witrEnabled: ref.watch(effectiveWitrProvider),
-            )
-          : target;
+      selection.mode == HomePrayerSelectionMode.prayerSelection
+          ? target != null &&
+                  summary != null &&
+                  const QazaTargetingService().isPrayerPending(
+                    summary: summary,
+                    prayer: target,
+                    witrEnabled: witrEnabled,
+                  )
+              ? target
+              : null
+          : pendingAwareMode && target != null && summary != null
+              ? const QazaTargetingService().resolveNextPendingPrayer(
+                  summary: summary,
+                  startPrayer: target,
+                  witrEnabled: witrEnabled,
+                )
+              : target;
 
   // An unavailable or zero-pending target is not actionable in the
   // pending-aware modes. Returning unavailable here lets the existing Home
   // all-completed/no-pending behavior take over without a false completion
-  // action. Prayer Selection intentionally keeps its existing sticky behavior.
+  // action. Prayer Selection is also guarded by the latest pending summary,
+  // but remains sticky when its selected prayer still has pending records.
   if (resolvedTarget == null) {
     // Preserve the existing tartib-loading state for an unresolved Fard
     // target; pending-aware fallback must never turn an authority problem into
