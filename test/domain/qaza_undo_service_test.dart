@@ -6,7 +6,6 @@ import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_undo_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
-import 'package:qaza_namaz/domain/services/sahib_al_tartib_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 
 class _MemoryUndoStore extends QazaUndoStore {
@@ -840,7 +839,6 @@ void main() {
     final repository = _FakeQazaRepository(records);
     final service = QazaService(
       repository,
-      tartib: _NoopTartibService(),
     );
 
     final receipt = await service.completeRecordsWithReceipt(
@@ -869,7 +867,6 @@ void main() {
     final records = {'fajr': record};
     final service = QazaService(
       _FakeQazaRepository(records),
-      tartib: _NoopTartibService(),
     );
 
     final changed = await service.markCompletedAsPending(
@@ -917,41 +914,4 @@ void main() {
     expect(records['fajr']!.recordVersion, 2);
   });
 
-}
-
-/// This test-only tartib stub is never used for Undo itself; it keeps the
-/// shared completion service focused on persistence/receipt behavior.
-class _NoopTartibService extends SahibAlTartibService {
-  _NoopTartibService() : super(_NeverCalledRepository());
-
-  @override
-  Future<SahibAlTartibState> evaluate({
-    required String userId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-  }) =>
-      Future.value(
-        const SahibAlTartibState(
-          pendingFarzCount: 6,
-          requiresOrder: false,
-          nextPending: null,
-        ),
-      );
-
-  @override
-  Future<bool> canCompleteRecordIds({
-    required String userId,
-    required Iterable<String> recordIds,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-    SahibAlTartibState? evaluatedState,
-  }) =>
-      Future.value(true);
-}
-
-class _NeverCalledRepository implements QazaRepository {
-  Never _fail() => throw StateError('Should not be called');
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => _fail();
 }
