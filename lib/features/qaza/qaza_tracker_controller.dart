@@ -737,7 +737,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       if (changedIds.isNotEmpty) {
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
-          final changedPrayers =
+        final changedPrayers =
             changed.map((record) => record.prayerType).toSet();
         for (final prayer in changedPrayers) {
           ref.invalidate(oldestPendingProvider(prayer));
@@ -775,7 +775,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         ref.invalidate(oldestPendingProvider(state.records[index].prayerType));
-          await refresh();
+        await refresh();
       }
       return changed;
     } catch (error, stack) {
