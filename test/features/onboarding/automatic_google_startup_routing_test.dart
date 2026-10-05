@@ -161,6 +161,15 @@ Future<AccountSessionManager> _manager({
   );
 }
 
+Future<void> waitForGoogleStartupRestore(
+    AccountSessionManager manager,
+  ) async {
+    for (var i = 0; i < 50; i++) {
+      if (manager.activeAccount?.isGoogle == true) return;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+  }
+
 Future<void> pumpStartupGate(
   WidgetTester tester,
   AccountSessionManager manager,
@@ -247,6 +256,7 @@ void main() {
         ),
       );
       await manager.initialize();
+      await waitForGoogleStartupRestore(manager);
 
       expect(manager.activeAccount?.isGoogle, isTrue);
       expect(manager.initialChoiceRequired, isFalse);
@@ -275,6 +285,7 @@ void main() {
       ),
     );
     await manager.initialize();
+    await waitForGoogleStartupRestore(manager);
 
     expect(manager.activeLocalAccountId, id);
     expect(manager.activeAccount?.isGoogle, isTrue);
@@ -386,6 +397,7 @@ void main() {
       );
 
       await manager.initialize();
+      await waitForGoogleStartupRestore(manager);
 
       final account = manager.activeAccount;
       expect(account?.isGoogle, isTrue);
