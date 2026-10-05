@@ -341,7 +341,6 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> continueAsGuest() async {
     final operationEpoch = ++_operationEpoch;
-    final operationAccountId = _state.activeLocalAccountId;
     await _accountStore.ensureGuestActive();
     _ensureOperationEpochCurrent(operationEpoch);
     await _accountStore.setInitialChoiceRequired(false);
