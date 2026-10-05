@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../domain/entities/local_account.dart';
 import '../../l10n/app_localizations.dart';
-import 'account_session_manager.dart';
 
 class AccountChoiceScreen extends ConsumerWidget {
   const AccountChoiceScreen({super.key});
