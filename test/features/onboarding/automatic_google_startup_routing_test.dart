@@ -157,15 +157,7 @@ Future<AccountSessionManager> _manager({
 Future<void> waitForGoogleStartupRestore(
     AccountSessionManager manager,
   ) async {
-    for (var i = 0; i < 50; i++) {
-      if (manager.activeAccount?.isGoogle == true) {
-        break;
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-    }
-    // Let the already-started background reconciliation finish before the
-    // in-memory database is torn down by the test.
-    await Future<void>.delayed(const Duration(milliseconds: 25));
+    await manager.startupRestoreFuture;
   }
 
 Future<void> pumpStartupGate(
