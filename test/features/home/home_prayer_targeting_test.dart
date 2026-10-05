@@ -232,7 +232,6 @@ void main() {
     });
   });
 
-
     test('Qaza sequence skips Witr when Witr is disabled', () {
       expect(
         PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
