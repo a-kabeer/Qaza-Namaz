@@ -132,6 +132,7 @@ void main() {
       addTearDown(container.dispose);
 
       await container.read(progressSummaryProvider.future);
+      await container.read(sahibAlTartibProvider.future);
 
       final initiallySelected = container.read(homeSelectedPrayerProvider);
       expect(initiallySelected.prayer, PrayerType.isha);
