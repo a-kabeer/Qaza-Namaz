@@ -140,7 +140,9 @@ void main() {
       container.read(summaryStateProvider.notifier).state = summaryFor({
         PrayerType.fajr: 2,
       });
+      container.invalidate(progressSummaryProvider);
       await container.read(progressSummaryProvider.future);
+      await Future<void>.delayed(Duration.zero);
 
       expect(
         container.read(homeSelectedPrayerProvider).prayer,
