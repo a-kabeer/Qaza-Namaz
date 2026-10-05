@@ -343,7 +343,6 @@ class _PendingTrackerBody extends ConsumerWidget {
       BuildContext context, WidgetRef ref, QazaRecord record) async {
     final batch = await controller.completeRecordWithUndo(record.id);
     if (!context.mounted) return false;
-    final l10n = AppLocalizations.of(context);
     if (batch != null) {
       await showQazaUndoFeedback(
         context: context,
@@ -353,14 +352,6 @@ class _PendingTrackerBody extends ConsumerWidget {
         onUndone: controller.refresh,
       );
       return true;
-    }
-    final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
-    if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-      ref.read(appSnackbarServiceProvider).warning(
-            l10n.qazaTartibBlocked(
-              tartib!.nextPrayer!.localizedLabel(l10n),
-            ),
-          );
     }
     return false;
   }
@@ -387,17 +378,7 @@ class _PendingTrackerBody extends ConsumerWidget {
     final batch = await controller.completeSelectedWithUndo();
 
     if (!feedbackContext.mounted) return;
-    if (batch == null) {
-      final tartib = ref.read(sahibAlTartibProvider).valueOrNull;
-      if (tartib?.requiresOrder == true && tartib?.nextPrayer != null) {
-        ref.read(appSnackbarServiceProvider).warning(
-              l10n.qazaTartibBlocked(
-                tartib!.nextPrayer!.localizedLabel(l10n),
-              ),
-            );
-      }
-      return;
-    }
+    if (batch == null) return;
 
     await showQazaUndoFeedback(
       context: feedbackContext,
@@ -411,10 +392,7 @@ class _PendingTrackerBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final tartib = ref.watch(sahibAlTartibProvider).valueOrNull;
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
-    final lockedRecordId =
-        tartib?.requiresOrder == true ? tartib?.nextPending?.id : null;
 
     if (state.loading && state.records.isEmpty) {
       return const _TrackerSkeleton();
@@ -457,25 +435,6 @@ class _PendingTrackerBody extends ConsumerWidget {
             ),
             child: RestrictedTimeTimelineRow(
               onTap: () => openPrayerTime(ref),
-            ),
-          ),
-        if (tartib?.requiresOrder == true && tartib?.nextPrayer != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.sm,
-              AppSpacing.lg,
-              AppSpacing.xs,
-            ),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l10n.qazaTartibRequiredMessage(
-                  tartib!.pendingFarzCount,
-                  tartib.nextPrayer!.localizedLabel(l10n),
-                ),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
             ),
           ),
         Expanded(
@@ -532,10 +491,7 @@ class _PendingTrackerBody extends ConsumerWidget {
                             : null)
                         : null,
                     onLongPress: record.status == QazaStatus.pending &&
-                            !restricted &&
-                            (lockedRecordId == null ||
-                                record.id == lockedRecordId ||
-                                record.prayerType == PrayerType.witr)
+                            !restricted
                         ? () => controller.enterSelectionMode(record.id)
                         : null,
                     onSwipeComplete: state.selectionMode ||
