@@ -50,6 +50,9 @@ class _FakeAuth extends GoogleFirebaseAuthService {
     Duration timeout = const Duration(seconds: 5),
   }) async =>
       identity;
+
+  @override
+  Future<void> signOut() async {}
 }
 
 class _FailingInteractiveAuth extends _FakeAuth {
