@@ -124,8 +124,9 @@ class _AccountIdentityCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final google = account?.isGoogle == true;
     final title = google ? l10n.accountGoogle : l10n.accountGuestTitle;
-    final subtitle =
-        google ? (account?.googleEmail ?? '') : l10n.accountGuestLocalDataSubtitle;
+    final subtitle = google
+        ? (account?.googleEmail ?? '')
+        : l10n.accountGuestLocalDataSubtitle;
     final status =
         google ? l10n.accountSignedIn : l10n.accountNotConnectedGoogle;
 
