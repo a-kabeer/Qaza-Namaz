@@ -51,6 +51,8 @@ void main() {
       );
       addTearDown(container.dispose);
 
+      await container.read(progressSummaryProvider.future);
+
       expect(
         container.read(homePrayerSelectionDisabledPrayersProvider),
         {
@@ -79,6 +81,8 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+
+      await container.read(progressSummaryProvider.future);
 
       final disabled =
           container.read(homePrayerSelectionDisabledPrayersProvider);
@@ -126,6 +130,8 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+
+      await container.read(progressSummaryProvider.future);
 
       final initiallySelected = container.read(homeSelectedPrayerProvider);
       expect(initiallySelected.prayer, PrayerType.isha);
