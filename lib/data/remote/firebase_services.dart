@@ -141,9 +141,10 @@ class GoogleFirebaseAuthService {
     }
 
     try {
-      final googleUser = await GoogleSignIn.instance
-          .attemptLightweightAuthentication()
-          .timeout(timeout);
+      final lightweightFuture =
+          GoogleSignIn.instance.attemptLightweightAuthentication();
+      if (lightweightFuture == null) return null;
+      final googleUser = await lightweightFuture.timeout(timeout);
       if (googleUser == null) return null;
 
       final idToken = googleUser.authentication.idToken;
