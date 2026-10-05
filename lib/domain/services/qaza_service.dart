@@ -189,22 +189,10 @@ class QazaService {
         recordIds: recordIds,
       );
 
-  /// Returns the next Qaza under the global Sahib al-Tartib rule.
-  ///
-  /// When fewer than six Fard Qaza remain, the tartib service chooses the
-  /// oldest pending Fard using date, Fard prayer order, and id. At six or more
-  /// pending Fard, tartib does not restrict completion and the repository's
-  /// normal oldest-first ordering is preserved.
+  /// Returns the next pending Qaza using the repository's normal ordering.
   Future<QazaRecord?> oldestPendingOverall({
     required String userId,
   }) async {
-    final tartibState = await tartib.evaluate(
-      userId: userId,
-      currentDate: currentDate,
-      currentPrayer: currentPrayer,
-    );
-    if (tartibState.requiresOrder) return tartibState.nextPending;
-
     final page = await repository.getPage(
       userId: userId,
       limit: 1,
@@ -213,17 +201,6 @@ class QazaService {
     );
     return page.records.isEmpty ? null : page.records.first;
   }
-
-  Future<SahibAlTartibState> sahibAlTartibState({
-    required String userId,
-    DateTime? currentDate,
-    PrayerType? currentPrayer,
-  }) =>
-      tartib.evaluate(
-        userId: userId,
-        currentDate: currentDate,
-        currentPrayer: currentPrayer,
-      );
 
   Future<int> countCompletedBetween({
     required String userId,
