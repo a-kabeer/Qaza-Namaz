@@ -37,12 +37,18 @@ class AccountSessionManager extends ChangeNotifier {
   AccountSessionState _state = const AccountSessionState.loading();
   bool _initialized = false;
   Future<void>? _initializationFuture;
+  Future<void>? _startupRestoreFuture;
   int _operationEpoch = 0;
 
   AccountSessionState get state => _state;
   String? get activeLocalAccountId => _state.activeLocalAccountId;
   LocalAccount? get activeAccount => _state.activeAccount;
   bool get initialChoiceRequired => _state.initialChoiceRequired;
+
+  /// Completes when the optional startup Google restoration has finished.
+  /// This remains non-blocking for production startup routing.
+  Future<void> get startupRestoreFuture =>
+      _startupRestoreFuture ?? Future<void>.value();
 
   static const Duration _startupAuthTimeout = Duration(seconds: 5);
   static const Duration _startupCloudTimeout = Duration(seconds: 8);
@@ -116,16 +122,16 @@ class AccountSessionManager extends ChangeNotifier {
 
       final startupEpoch = _operationEpoch;
       if (account?.isGoogle == true) {
-        unawaited(
-          _restoreExistingGoogleInBackground(
-            account: account!,
-            startupEpoch: startupEpoch,
-          ),
+        _startupRestoreFuture = _restoreExistingGoogleInBackground(
+          account: account!,
+          startupEpoch: startupEpoch,
         );
+        unawaited(_startupRestoreFuture!);
       } else if (account == null && initialChoice) {
-        unawaited(
-          _restoreUnselectedGoogleInBackground(startupEpoch: startupEpoch),
+        _startupRestoreFuture = _restoreUnselectedGoogleInBackground(
+          startupEpoch: startupEpoch,
         );
+        unawaited(_startupRestoreFuture!);
       }
     } catch (error, stack) {
       _setState(
