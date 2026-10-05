@@ -145,11 +145,18 @@ class _CompletingImportController extends QazaImportController {
 }
 
 void main() {
+  late AppDatabase database;
+  late AccountSessionManager sessionManager;
+
+  setUp(() async {
+    (database, sessionManager) = await _readyGuestSession();
+  });
+
+  tearDown(() => database.close());
+
   testWidgets(
     'profile onboarding imports Qaza after activating the saved local ledger',
     (tester) async {
-      final (database, sessionManager) = await _readyGuestSession();
-      addTearDown(database.close);
       final repository = _FakeUserProfileRepository();
       final importController = _CompletingImportController();
       final initialProfile = UserProfile(
@@ -259,6 +266,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
             (ref) => UserProfile.localLedgerUserId,
           ),
@@ -332,13 +341,7 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-            activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
-            ),
-            userProfileRepositoryProvider.overrideWithValue(repository),
+undefined
             progressSummaryProvider.overrideWith(
               (ref) async => QazaProgressSummary.empty(),
             ),
