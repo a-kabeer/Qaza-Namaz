@@ -698,6 +698,7 @@ class FirebaseBackupService {
     String uid,
     int generation, {
     bool incremental = false,
+    Future<void> Function(int units)? onProgress,
   }) async {
     if (!incremental) {
       final rows = await _database.qazaRecordsDao.getAll(userId: localId);
@@ -726,6 +727,7 @@ class FirebaseBackupService {
         uid: uid,
         generation: generation,
         writes: writes,
+        onProgress: onProgress,
       );
       await _markQazaEntitiesSynced(localId, writes);
       return;
