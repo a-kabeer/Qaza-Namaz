@@ -1415,6 +1415,30 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountBackupStatusWaitingConnection => 'کنکشن کا انتظار ہے';
 
   @override
+  String get accountBackupStatusComplete => 'بیک اپ مکمل ہو گیا';
+
+  @override
+  String accountBackupStatusCompletedAt(String timestamp) => timestamp;
+
+  @override
+  String get accountBackupStatusWaitingConnectionMessage =>
+      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get accountBackupStatusFailedTitle => 'بیک اپ مکمل نہیں ہو سکا';
+
+  @override
+  String get accountBackupStatusFailedMessage =>
+      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get accountBackupStatusFailedAutomaticRetry =>
+      'ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
+
+  @override
+  String get accountBackupStatusRetry => 'دوبارہ کوشش کریں';
+
+  @override
   String get accountBackupStatusFailed =>
       'بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
 
