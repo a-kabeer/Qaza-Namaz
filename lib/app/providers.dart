@@ -108,6 +108,7 @@ final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
     firebase: ref.watch(firebaseServicesProvider),
     accountStore: ref.watch(accountLocalStoreProvider),
     backupService: ref.watch(firebaseBackupServiceProvider),
+    authService: ref.watch(googleFirebaseAuthServiceProvider),
   );
   return worker;
 });
