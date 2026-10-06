@@ -2,6 +2,8 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import 'firebase_backup_service.dart';
 import 'firebase_services.dart';
 import '../local/account_local_store.dart';
@@ -40,6 +42,11 @@ class FirebaseBackupWorker {
       if (currentUser != uid) return;
 
       final now = DateTime.now().microsecondsSinceEpoch;
+      final status = await _accountStore.readBackupStatus(account.localAccountId);
+      if (status.currentRevision > status.acknowledgedRevision) {
+        await _accountStore.enqueueSnapshot(account.localAccountId);
+      }
+
       final operations = await _accountStore.loadModernOutboxBatch(
         localAccountId: account.localAccountId,
         nowMicros: now,
@@ -85,11 +92,41 @@ class FirebaseBackupWorker {
         }
 
         try {
+          await _accountStore.setBackupState(
+            account.localAccountId,
+            'running',
+          );
+          final targetRevision =
+              await _accountStore.currentBackupRevision(account.localAccountId);
           await _backup.snapshotAccount(
             localAccountId: account.localAccountId,
             uid: uid,
             generation: generation,
           );
+          final acknowledged = await _accountStore.acknowledgeBackup(
+            localAccountId: account.localAccountId,
+            revision: targetRevision,
+            generation: generation,
+            completedAt: DateTime.now(),
+          );
+          if (!acknowledged) {
+            await _accountStore.setBackupState(
+              account.localAccountId,
+              'pending',
+            );
+            for (final op in matching) {
+              final attempts = (op['attempts'] as int?) ?? 0;
+              await _accountStore.markOutboxRetry(
+                localAccountId: account.localAccountId,
+                operationId: op['id']! as String,
+                workerId: _workerId,
+                attempts: attempts,
+                error: '',
+                nextAttemptMicros: DateTime.now().microsecondsSinceEpoch,
+              );
+            }
+            continue;
+          }
           for (final op in matching) {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
@@ -98,6 +135,20 @@ class FirebaseBackupWorker {
             );
           }
         } catch (error) {
+          try {
+            final connectivity = await Connectivity().checkConnectivity();
+            await _accountStore.setBackupState(
+              account.localAccountId,
+              connectivity.contains(ConnectivityResult.none)
+                  ? 'waitingForConnection'
+                  : 'failed',
+            );
+          } catch (_) {
+            await _accountStore.setBackupState(
+              account.localAccountId,
+              'failed',
+            );
+          }
           for (final op in matching) {
             final attempts = ((op['attempts'] as int?) ?? 0) + 1;
             final backoffSeconds = min(3600, 1 << min(attempts, 10));
