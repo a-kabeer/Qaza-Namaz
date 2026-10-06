@@ -15,11 +15,11 @@ void main() {
     );
     expect(
       FirebaseConfiguration.androidAppId,
-      FirebaseConfiguration.androidAppId,,
+      FirebaseConfiguration.androidAppId,
     );
     expect(
       FirebaseConfiguration.androidPackage,
-      FirebaseConfiguration.androidPackage,,
+      FirebaseConfiguration.androidPackage,
     );
     expect(
       FirebaseConfiguration.androidSha1,
