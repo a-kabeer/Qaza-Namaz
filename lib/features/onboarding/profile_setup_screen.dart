@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -89,6 +91,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
         ref.invalidate(userProfileProvider);
         ref.invalidate(progressSummaryProvider);
+        unawaited(ref.read(backupWorkerProvider).runOnce());
         _navigateHome();
       }
       return;
