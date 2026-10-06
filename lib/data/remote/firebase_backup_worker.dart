@@ -37,6 +37,11 @@ class FirebaseBackupWorker {
       final uid = account.firebaseUid;
       if (uid == null || uid.isEmpty) return;
 
+      // Onboarding drafts are intentionally local-only. Only a completed
+      // profile is eligible for cloud backup.
+      final profile = await _accountStore.loadProfile(account.localAccountId);
+      if (profile == null || !profile.onboardingCompleted) return;
+
       final currentUser = await (_currentFirebaseUidProvider?.call() ??
           _currentFirebaseUserId());
       if (currentUser != uid) return;
