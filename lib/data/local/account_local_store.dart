@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -15,6 +16,25 @@ class AccountLocalStore {
   AccountLocalStore({required this.database});
 
   final AppDatabase database;
+  final Map<String, StreamController<BackupStatusSnapshot>>
+      _backupStatusControllers = {};
+
+  StreamController<BackupStatusSnapshot> _backupStatusController(
+    String localAccountId,
+  ) {
+    return _backupStatusControllers.putIfAbsent(
+      localAccountId,
+      () => StreamController<BackupStatusSnapshot>.broadcast(sync: true),
+    );
+  }
+
+  Future<void> _notifyBackupStatus(String localAccountId) async {
+    final controller = _backupStatusControllers[localAccountId];
+    if (controller == null || controller.isClosed || !controller.hasListener) {
+      return;
+    }
+    controller.add(await readBackupStatus(localAccountId));
+  }
 
   Future<void> ensureInitialized({
     required bool hasLegacyProfile,
@@ -1718,6 +1738,7 @@ class AccountLocalStore {
          WHERE local_account_id = ?''',
       variables: [Variable(state), Variable(localAccountId)],
     );
+    await _notifyBackupStatus(localAccountId);
   }
 
   Future<void> setBackupProgress(
@@ -1741,6 +1762,7 @@ class AccountLocalStore {
         Variable(localAccountId),
       ],
     );
+    await _notifyBackupStatus(localAccountId);
   }
 
   Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
@@ -1836,6 +1858,9 @@ class AccountLocalStore {
         Variable(generation),
       ],
     );
+    if (changed > 0) {
+      await _notifyBackupStatus(localAccountId);
+    }
     return changed > 0;
   }
 
@@ -1862,6 +1887,7 @@ class AccountLocalStore {
         Variable(localAccountId),
       ],
     );
+    await _notifyBackupStatus(localAccountId);
   }
 
   Future<UserProfile?> loadProfile(String localAccountId) async {
