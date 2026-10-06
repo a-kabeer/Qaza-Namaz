@@ -261,11 +261,15 @@ class FirebaseServices {
       );
     } catch (error, stack) {
       _appCheckTokenAvailable = false;
+      final classified = classifyBackupFailure(error, stackTrace: stack);
       final failure = error is BackupFailure
           ? error
           : BackupFailure(
-              category: BackupFailureCategory.appCheckTokenUnavailable,
-              message: 'Firebase App Check token could not be obtained.',
+              category: classified.category ==
+                      BackupFailureCategory.networkUnavailable
+                  ? BackupFailureCategory.networkUnavailable
+                  : BackupFailureCategory.appCheckTokenUnavailable,
+              message: classified.message,
               cause: error,
               stackTrace: stack,
             );
