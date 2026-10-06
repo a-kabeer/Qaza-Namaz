@@ -89,6 +89,15 @@ void main() {
       ],
     );
 
+    await database.customInsert(
+      '''INSERT INTO account_backup_state
+         (local_account_id, current_dataset_revision,
+          acknowledged_dataset_revision, acknowledged_cloud_generation,
+          state)
+         VALUES (?, 0, 0, 1, 'pending')''',
+      variables: [Variable('google-revision')],
+    );
+
     final initial = await database.customSelect(
       '''SELECT current_dataset_revision, acknowledged_dataset_revision
          FROM account_backup_state
