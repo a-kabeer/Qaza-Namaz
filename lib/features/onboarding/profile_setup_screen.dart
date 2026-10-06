@@ -84,6 +84,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           );
       if (!mounted) return;
       if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(progressSummaryProvider);
         _navigateHome();
       }
       return;
@@ -117,6 +119,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted) return;
     if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
       _navigateHome();
     }
   }
