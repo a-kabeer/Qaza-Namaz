@@ -19,16 +19,18 @@ void main() {
     () async {
       final initializer = Completer<bool>();
       final firebase = _ControlledFirebaseServices(initializer);
-      final service = GoogleFirebaseAuthService(firebase);
+      final lightweightService = GoogleFirebaseAuthService(firebase);
+      final interactiveService = GoogleFirebaseAuthService(firebase);
 
-      final lightweight = service.attemptLightweightAuthentication(
+      final lightweight =
+          lightweightService.attemptLightweightAuthentication(
         timeout: const Duration(seconds: 1),
       );
 
       await Future<void>.delayed(Duration.zero);
 
       await expectLater(
-        service.signIn(),
+        interactiveService.signIn(),
         throwsA(
           isA<StateError>().having(
             (error) => error.message,
@@ -48,14 +50,15 @@ void main() {
     () async {
       final initializer = Completer<bool>();
       final firebase = _ControlledFirebaseServices(initializer);
-      final service = GoogleFirebaseAuthService(firebase);
+      final interactiveService = GoogleFirebaseAuthService(firebase);
+      final lightweightService = GoogleFirebaseAuthService(firebase);
 
-      final interactive = service.signIn();
+      final interactive = interactiveService.signIn();
 
       await Future<void>.delayed(Duration.zero);
 
       expect(
-        await service.attemptLightweightAuthentication(),
+        await lightweightService.attemptLightweightAuthentication(),
         isNull,
       );
 
