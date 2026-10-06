@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,42 @@ import '../../domain/services/conflict_resolver.dart';
 import '../local/account_local_store.dart';
 import '../local/database/app_database.dart';
 import 'firebase_services.dart';
+
+typedef BackupProgressCallback = FutureOr<void> Function(
+  int processed,
+  int total,
+);
+
+class _BackupProgressReporter {
+  _BackupProgressReporter({
+    required int total,
+    this.onProgress,
+  }) : total = total > 0 ? total : 1;
+
+  int processed = 0;
+  int total;
+  final BackupProgressCallback? onProgress;
+
+  Future<void> start() async {
+    await _emit();
+  }
+
+  Future<void> add(int units) async {
+    if (units <= 0) return;
+    processed += units;
+    if (processed > total) {
+      total = processed;
+    }
+    await _emit();
+  }
+
+  Future<void> _emit() async {
+    final callback = onProgress;
+    if (callback != null) {
+      await callback(processed, total);
+    }
+  }
+}
 
 class _VersionedWrite {
   const _VersionedWrite({
@@ -89,6 +126,7 @@ class FirebaseBackupService {
     required String localAccountId,
     required String uid,
     required int generation,
+    BackupProgressCallback? onProgress,
   }) async {
     final bootstrapCutoffMicros = DateTime.now().microsecondsSinceEpoch;
     await _ensureCloudGeneration(
@@ -101,6 +139,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       bootstrapCutoffMicros: bootstrapCutoffMicros,
+      onProgress: onProgress,
     );
   }
 
@@ -109,10 +148,21 @@ class FirebaseBackupService {
     required String uid,
     required int generation,
     int? bootstrapCutoffMicros,
+    BackupProgressCallback? onProgress,
   }) async {
     if (!await _firebase.initialize()) {
       throw StateError('Firebase is unavailable for account backup.');
     }
+
+    final incremental = bootstrapCutoffMicros == null;
+    final progress = _BackupProgressReporter(
+      total: await _calculateBackupWorkTotal(
+        localAccountId,
+        incremental: incremental,
+      ),
+      onProgress: onProgress,
+    );
+    await progress.start();
 
     final rootRef = _firebase.firestore.collection('users').doc(uid);
     final root = await rootRef.get();
@@ -162,21 +212,43 @@ class FirebaseBackupService {
       });
     }
 
-    await _writeProfile(localAccountId, uid, generation);
+    await _writeProfile(
+      localAccountId,
+      uid,
+      generation,
+      onProgress: progress.add,
+    );
     await _writeQazaRecords(
       localAccountId,
       uid,
       generation,
-      incremental: bootstrapCutoffMicros == null,
+      incremental: incremental,
+      onProgress: progress.add,
     );
-    await _writeQazaAdditions(localAccountId, uid, generation);
-    await _writeDeletionActions(localAccountId, uid, generation);
-    await _writePlanRevisions(localAccountId, uid, generation);
+    await _writeQazaAdditions(
+      localAccountId,
+      uid,
+      generation,
+      onProgress: progress.add,
+    );
+    await _writeDeletionActions(
+      localAccountId,
+      uid,
+      generation,
+      onProgress: progress.add,
+    );
+    await _writePlanRevisions(
+      localAccountId,
+      uid,
+      generation,
+      onProgress: progress.add,
+    );
     await _writeTombstones(
       localAccountId,
       uid,
       generation,
-      incremental: bootstrapCutoffMicros == null,
+      incremental: incremental,
+      onProgress: progress.add,
     );
 
     if (bootstrapCutoffMicros != null &&
@@ -221,6 +293,10 @@ class FirebaseBackupService {
         SetOptions(merge: true),
       );
     });
+
+    // Finalization is the last real unit of backup work. Report 100% only
+    // after the cloud root has been atomically marked ready.
+    await progress.add(1);
   }
 
 
@@ -493,7 +569,101 @@ class FirebaseBackupService {
     });
   }
 
-  Future<void> _writeProfile(String localId, String uid, int generation) async {
+  Future<int> _calculateBackupWorkTotal(
+    String localId, {
+    required bool incremental,
+  }) async {
+    final profile = await _countLocalRows(
+      'SELECT COUNT(*) AS count FROM account_profiles '
+      'WHERE local_account_id = ?',
+      localId,
+    );
+
+    final qazaRecords = incremental
+        ? await _countLocalRows(
+            '''SELECT COUNT(*) AS count
+               FROM qaza_records r
+               LEFT JOIN entity_metadata m
+                 ON m.local_account_id = r.user_id
+                AND m.entity_type = 'qazaRecord'
+                AND m.entity_id = r.id
+               WHERE r.user_id = ?
+                 AND (
+                   m.entity_id IS NULL
+                   OR m.synced_entity_version < m.entity_version
+                 )''',
+            localId,
+          )
+        : await _countLocalRows(
+            'SELECT COUNT(*) AS count FROM qaza_records WHERE user_id = ?',
+            localId,
+          );
+
+    final additions = await _countLocalRows(
+      'SELECT COUNT(*) AS count FROM qaza_additions WHERE user_id = ?',
+      localId,
+    );
+    final deletionActions = await _countLocalRows(
+      'SELECT COUNT(*) AS count FROM qaza_deletion_actions WHERE user_id = ?',
+      localId,
+    );
+    final deletionSnapshots = await _countLocalRows(
+      'SELECT COUNT(*) AS count '
+      'FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
+      localId,
+    );
+    final planRevisions = await _countLocalRows(
+      'SELECT COUNT(*) AS count '
+      'FROM account_plan_revisions WHERE local_account_id = ?',
+      localId,
+    );
+
+    final tombstones = incremental
+        ? await _countLocalRows(
+            '''SELECT COUNT(*) AS count
+               FROM qaza_record_tombstones t
+               LEFT JOIN entity_metadata m
+                 ON m.local_account_id = t.local_account_id
+                AND m.entity_type = 'qazaRecord'
+                AND m.entity_id = t.record_id
+               WHERE t.local_account_id = ?
+                 AND (
+                   m.entity_id IS NULL
+                   OR m.synced_entity_version < m.entity_version
+                 )''',
+            localId,
+          )
+        : await _countLocalRows(
+            'SELECT COUNT(*) AS count '
+            'FROM qaza_record_tombstones WHERE local_account_id = ?',
+            localId,
+          );
+
+    // One additional unit represents the final cloud-root finalization.
+    return profile +
+        qazaRecords +
+        additions +
+        deletionActions +
+        deletionSnapshots +
+        planRevisions +
+        tombstones +
+        1;
+  }
+
+  Future<int> _countLocalRows(String sql, String localId) async {
+    final rows = await _database.customSelect(
+      sql,
+      variables: [Variable(localId)],
+    ).get();
+    return rows.isEmpty ? 0 : rows.single.read<int>('count');
+  }
+
+  Future<void> _writeProfile(
+    String localId,
+    String uid,
+    int generation, {
+    Future<void> Function(int units)? onProgress,
+  }) async {
     final rows = await _database.customSelect(
       '''SELECT payload_json, entity_version, updated_at,
                 writer_device_id, operation_id
@@ -518,6 +688,9 @@ class FirebaseBackupService {
       generation: generation,
       immutable: false,
     );
+    if (onProgress != null) {
+      await onProgress(1);
+    }
   }
 
   Future<void> _writeQazaRecords(
@@ -632,6 +805,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       writes: writes,
+      onProgress: onProgress,
     );
     await _markQazaEntitiesSynced(localId, writes);
   }
@@ -685,6 +859,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       writes: writes,
+      onProgress: onProgress,
     );
   }
 
@@ -783,6 +958,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       writes: writes,
+      onProgress: onProgress,
     );
   }
 
@@ -814,6 +990,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       writes: writes,
+      onProgress: onProgress,
     );
   }
 
@@ -872,6 +1049,7 @@ class FirebaseBackupService {
       uid: uid,
       generation: generation,
       writes: writes,
+      onProgress: onProgress,
     );
     await _deleteRecordsCoveredByCloudTombstones(
       uid: uid,
@@ -999,6 +1177,7 @@ class FirebaseBackupService {
     required String uid,
     required int generation,
     required List<_VersionedWrite> writes,
+    Future<void> Function(int units)? onProgress,
   }) async {
     if (writes.isEmpty) return;
     final rootRef = _firebase.firestore.collection('users').doc(uid);
@@ -1097,6 +1276,9 @@ class FirebaseBackupService {
           );
         }
       });
+      if (onProgress != null) {
+        await onProgress(chunk.length);
+      }
     }
   }
 
