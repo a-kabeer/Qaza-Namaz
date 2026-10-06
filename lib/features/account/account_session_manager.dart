@@ -289,32 +289,32 @@ class AccountSessionManager extends ChangeNotifier {
 
     try {
       await _accountStore.setMigrationState('prepared');
-      final user = await _auth.signIn();
-      if (user == null) {
-        throw StateError('Google authentication returned no user.');
-      }
 
+      // Authentication returns a Firebase identity; no Firestore/App Check
+      // work is part of this foreground critical path.
+      final identity = await _auth.signInIdentity();
       await _accountStore.setMigrationState('authenticated');
       _ensureOperationCurrent(operationEpoch, operationAccountId);
       _ensureActiveAccount(
         operationAccountId,
-        user.uid,
+        identity.uid,
         allowGuestUid: true,
       );
-      var target = await _accountStore.findGoogleByUid(user.uid);
+
+      var target = await _accountStore.findGoogleByUid(identity.uid);
 
       if (guestWasActive) {
         await _accountStore.setMigrationState('localStateSnapshotSecured');
         final targetId = await _accountStore.cloneGuestToGoogle(
-          firebaseUid: user.uid,
-          email: user.email,
+          firebaseUid: identity.uid,
+          email: identity.email,
         );
         target = await _accountStore.getAccount(targetId);
         await _accountStore.setMigrationState('targetPartitionPrepared');
       } else if (target == null) {
         final targetId = await _accountStore.createGooglePartition(
-          firebaseUid: user.uid,
-          email: user.email,
+          firebaseUid: identity.uid,
+          email: identity.email,
         );
         createdTarget = true;
         createdTargetId = targetId;
@@ -326,52 +326,10 @@ class AccountSessionManager extends ChangeNotifier {
       }
       _ensureOperationCurrent(operationEpoch, operationAccountId);
 
-      await _accountStore.setInitialChoiceRequired(false);
-
-      final root = await _backup
-          .readCloudRoot(user.uid)
-          .timeout(_startupCloudTimeout);
-      await _accountStore.setMigrationState('cloudStateRead');
-
-      if (root == null) {
-        await _accountStore.setMigrationState('canonicalStateCalculated');
-        await _accountStore.setMigrationState('localCanonicalCommit');
-        await _accountStore.setMigrationState('cloudBackupInProgress');
-        await _backup
-            .bootstrapAccount(
-              localAccountId: target.localAccountId,
-              uid: user.uid,
-              generation: target.cloudGeneration,
-            )
-            .timeout(_startupCloudTimeout);
-      } else {
-        await _accountStore.setMigrationState('canonicalStateCalculated');
-        await _reconciliation
-            .restore(
-              localAccountId: target.localAccountId,
-              uid: user.uid,
-            )
-            .timeout(_startupCloudTimeout);
-        _ensureOperationCurrent(operationEpoch, operationAccountId);
-        final refreshedTarget =
-            await _accountStore.getAccount(target.localAccountId) ?? target;
-        await _accountStore.setMigrationState('localCanonicalCommit');
-        await _accountStore.setMigrationState('cloudBackupInProgress');
-        await _backup
-            .snapshotAccount(
-              localAccountId: refreshedTarget.localAccountId,
-              uid: user.uid,
-              generation: refreshedTarget.cloudGeneration,
-            )
-            .timeout(_startupCloudTimeout);
-        _ensureOperationCurrent(operationEpoch, operationAccountId);
-        target = refreshedTarget;
-      }
-
+      // Commit local account state before any optional cloud operation.
       if (guestWasActive && previous != null) {
         if (target.localAccountId == previous.localAccountId) {
           await _accountStore.activate(target.localAccountId);
-          await _accountStore.setMigrationState('completed');
         } else {
           await _accountStore.finalizeGuestMigration(
             guestLocalAccountId: previous.localAccountId,
@@ -380,11 +338,23 @@ class AccountSessionManager extends ChangeNotifier {
         }
       } else {
         await _accountStore.activate(target.localAccountId);
-        await _accountStore.setMigrationState('completed');
       }
+      await _accountStore.setInitialChoiceRequired(false);
       await _accountStore.completeMigration();
+
       _ensureOperationCurrent(operationEpoch, operationAccountId);
+      target =
+          await _accountStore.getAccount(target.localAccountId) ?? target;
       await _refresh();
+
+      // Cloud bootstrap/reconciliation is explicitly post-activation.
+      unawaited(
+        _syncGoogleCloudAfterActivation(
+          localAccountId: target.localAccountId,
+          uid: identity.uid,
+          operationEpoch: operationEpoch,
+        ),
+      );
     } catch (error, stack) {
       if (operationEpoch != _operationEpoch) return;
 
@@ -398,8 +368,6 @@ class AccountSessionManager extends ChangeNotifier {
         if (guestWasActive && previous != null) {
           await _accountStore.rollbackGoogleMigration(previous.localAccountId);
         } else if (previous == null) {
-          // A failed first-launch Google attempt must not silently choose Guest.
-          // Leave the session unselected so Account Choice remains available.
           await _accountStore.setInitialChoiceRequired(true);
         } else {
           choiceRequired = await _accountStore.initialChoiceRequired();
@@ -418,6 +386,8 @@ class AccountSessionManager extends ChangeNotifier {
           } catch (_) {}
         }
       } finally {
+        // Only genuine authentication/local failures reach this foreground
+        // rollback. Post-activation cloud failures are handled separately.
         try {
           await _auth.signOut().timeout(const Duration(seconds: 5));
         } catch (_) {}
@@ -450,6 +420,108 @@ class AccountSessionManager extends ChangeNotifier {
       DebugDiagnostics().recordFailure(
         DiagnosticArea.startup,
         'google_connection_failed',
+        error,
+        stack: stack,
+      );
+    }
+  }
+
+  Future<bool> _googleCloudOperationStillCurrent(
+    int operationEpoch,
+    String localAccountId,
+    String uid,
+  ) async {
+    if (operationEpoch != _operationEpoch) return false;
+    final active = await _accountStore.activeAccount();
+    return active?.localAccountId == localAccountId &&
+        active?.firebaseUid == uid &&
+        active?.isGoogle == true;
+  }
+
+  Future<void> _syncGoogleCloudAfterActivation({
+    required String localAccountId,
+    required String uid,
+    required int operationEpoch,
+  }) async {
+    try {
+      if (!await _googleCloudOperationStillCurrent(
+        operationEpoch,
+        localAccountId,
+        uid,
+      )) {
+        return;
+      }
+
+      final root = await _backup
+          .readCloudRootResult(uid)
+          .timeout(_startupCloudTimeout);
+
+      if (!root.isAvailable) {
+        DebugDiagnostics().recordFailure(
+          DiagnosticArea.startup,
+          'google_cloud_sync_deferred_unavailable',
+          StateError('Cloud is temporarily unavailable.'),
+        );
+        return;
+      }
+
+      if (root.status == CloudRootStatus.missing) {
+        await _accountStore.setRestoreState('none');
+        final account = await _accountStore.getAccount(localAccountId);
+        if (account == null) return;
+        await _accountStore.setMigrationState('cloudBackupInProgress');
+        await _backup
+            .bootstrapAccount(
+              localAccountId: localAccountId,
+              uid: uid,
+              generation: account.cloudGeneration,
+            )
+            .timeout(_startupCloudTimeout);
+      } else {
+        final result = await _reconciliation
+            .restore(
+              localAccountId: localAccountId,
+              uid: uid,
+            )
+            .timeout(_startupCloudTimeout);
+
+        if (result.skipped || result.partial) {
+          return;
+        }
+
+        if (!await _googleCloudOperationStillCurrent(
+          operationEpoch,
+          localAccountId,
+          uid,
+        )) {
+          return;
+        }
+
+        final account = await _accountStore.getAccount(localAccountId);
+        if (account == null) return;
+        await _backup
+            .snapshotAccount(
+              localAccountId: localAccountId,
+              uid: uid,
+              generation: account.cloudGeneration,
+            )
+            .timeout(_startupCloudTimeout);
+      }
+
+      if (await _googleCloudOperationStillCurrent(
+        operationEpoch,
+        localAccountId,
+        uid,
+      )) {
+        await _refresh();
+      }
+    } catch (error, stack) {
+      // Cloud failure after local activation never invalidates the local
+      // Google session. Existing outbox/retry infrastructure remains
+      // authoritative for later synchronization.
+      DebugDiagnostics().recordFailure(
+        DiagnosticArea.startup,
+        'google_cloud_sync_failed_after_activation',
         error,
         stack: stack,
       );
