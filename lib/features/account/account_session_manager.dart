@@ -706,17 +706,33 @@ class AccountSessionManager extends ChangeNotifier {
           await _accountStore.getAccount(account.localAccountId) ?? account;
       final targetRevision =
           await _accountStore.currentBackupRevision(refreshed.localAccountId);
+      await _accountStore.setBackupState(
+        refreshed.localAccountId,
+        'running',
+      );
       await _backup.bootstrapAccount(
         localAccountId: refreshed.localAccountId,
         uid: uid,
         generation: refreshed.cloudGeneration,
+        onProgress: (processed, total) =>
+            _accountStore.setBackupProgress(
+              refreshed.localAccountId,
+              processed,
+              total,
+            ),
       );
-      await _accountStore.acknowledgeBackup(
+      final acknowledged = await _accountStore.acknowledgeBackup(
         localAccountId: refreshed.localAccountId,
         revision: targetRevision,
         generation: refreshed.cloudGeneration,
         completedAt: DateTime.now(),
       );
+      if (!acknowledged) {
+        await _accountStore.setBackupState(
+          refreshed.localAccountId,
+          'pending',
+        );
+      }
       if (await _backupOperationStillCurrent(
         operationEpoch,
         refreshed.localAccountId,
