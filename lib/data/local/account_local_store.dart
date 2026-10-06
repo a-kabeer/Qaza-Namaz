@@ -2281,3 +2281,32 @@ class AccountLocalStore {
 
   String jsonEncode(Object value) => json.encode(value);
 }
+
+
+class BackupStatusSnapshot {
+  const BackupStatusSnapshot({
+    required this.currentRevision,
+    required this.acknowledgedRevision,
+    required this.acknowledgedGeneration,
+    required this.cloudGeneration,
+    required this.lastSuccessfulBackupAt,
+    required this.state,
+    required this.backupEnabled,
+  });
+
+  final int currentRevision;
+  final int acknowledgedRevision;
+  final int acknowledgedGeneration;
+  final int cloudGeneration;
+  final DateTime? lastSuccessfulBackupAt;
+  final String state;
+  final bool backupEnabled;
+
+  bool get isCurrent =>
+      backupEnabled &&
+      currentRevision == acknowledgedRevision &&
+      acknowledgedGeneration == cloudGeneration;
+
+  bool get hasPendingChanges =>
+      backupEnabled && currentRevision > acknowledgedRevision;
+}
