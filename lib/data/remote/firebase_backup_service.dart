@@ -110,7 +110,9 @@ class FirebaseBackupService {
     required int generation,
     int? bootstrapCutoffMicros,
   }) async {
-    if (!await _firebase.initialize()) return;
+    if (!await _firebase.initialize()) {
+      throw StateError('Firebase is unavailable for account backup.');
+    }
 
     final rootRef = _firebase.firestore.collection('users').doc(uid);
     final root = await rootRef.get();
