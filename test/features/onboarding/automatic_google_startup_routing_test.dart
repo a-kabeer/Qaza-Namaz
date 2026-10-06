@@ -1,10 +1,10 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -57,6 +57,14 @@ class _FakeAuth extends GoogleFirebaseAuthService {
   }
 
   @override
+  Future<GoogleFirebaseIdentity> signInIdentity() async {
+    if (identity == null) {
+      throw StateError('Google authentication returned no user.');
+    }
+    return identity!;
+  }
+
+  @override
   Future<void> signOut() async {}
 }
 
@@ -64,7 +72,7 @@ class _FailingInteractiveAuth extends _FakeAuth {
   _FailingInteractiveAuth(super.services, super.identity);
 
   @override
-  Future<User?> signIn() async {
+  Future<GoogleFirebaseIdentity> signInIdentity() async {
     throw StateError('Google authentication canceled.');
   }
 }
@@ -75,11 +83,12 @@ class _ControlledInteractiveAuth extends _FakeAuth {
     super.identity,
   );
 
-  final Completer<User?> signInCompleter = Completer<User?>();
+  final Completer<GoogleFirebaseIdentity> signInCompleter =
+      Completer<GoogleFirebaseIdentity>();
   int signInCalls = 0;
 
   @override
-  Future<User?> signIn() {
+  Future<GoogleFirebaseIdentity> signInIdentity() {
     signInCalls++;
     return signInCompleter.future;
   }
@@ -98,9 +107,71 @@ class _FakeBackup extends FirebaseBackupService {
         );
 
   final Map<String, dynamic>? root;
+  int bootstrapCalls = 0;
+  int snapshotCalls = 0;
 
   @override
   Future<Map<String, dynamic>?> readCloudRoot(String uid) async => root;
+
+  @override
+  Future<CloudRootReadResult> readCloudRootResult(String uid) async {
+    if (root == null) {
+      return const CloudRootReadResult(status: CloudRootStatus.missing);
+    }
+    return CloudRootReadResult(
+      status: CloudRootStatus.exists,
+      data: root,
+    );
+  }
+
+  @override
+  Future<void> bootstrapAccount({
+    required String localAccountId,
+    required String uid,
+    required int generation,
+  }) async {
+    bootstrapCalls++;
+  }
+
+  @override
+  Future<void> snapshotAccount({
+    required String localAccountId,
+    required String uid,
+    required int generation,
+    int? bootstrapCutoffMicros,
+  }) async {
+    snapshotCalls++;
+  }
+}
+
+class _UnavailableCloudBackup extends _FakeBackup {
+  _UnavailableCloudBackup({
+    required super.firebase,
+    required super.database,
+    required super.accountStore,
+  });
+
+  @override
+  Future<CloudRootReadResult> readCloudRootResult(String uid) async {
+    return const CloudRootReadResult(status: CloudRootStatus.unavailable);
+  }
+}
+
+class _FailingReconciliation extends FirebaseReconciliationService {
+  _FailingReconciliation({
+    required super.firebase,
+    required super.backupService,
+    required super.accountStore,
+    required super.database,
+  });
+
+  @override
+  Future<ReconciliationResult> restore({
+    required String localAccountId,
+    required String uid,
+  }) async {
+    throw StateError('Cloud restore failed.');
+  }
 }
 
 class _FakeReconciliation extends FirebaseReconciliationService {
@@ -500,16 +571,218 @@ void main() {
       expect(auth.signInCalls, 1);
       expect(manager.state.phase, AccountSessionPhase.connecting);
 
-      auth.signInCompleter.complete(null);
+      auth.signInCompleter.complete(
+        const GoogleFirebaseIdentity(
+          uid: 'single-flight-google',
+          email: 'single@example.com',
+        ),
+      );
       await first;
       await second;
+      await manager.postActivationCloudSyncFuture;
 
       expect(auth.signInCalls, 1);
       expect(manager.state.phase, AccountSessionPhase.ready);
-      expect(manager.activeAccount, isNull);
-      expect(manager.initialChoiceRequired, isTrue);
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(manager.activeAccount?.firebaseUid, 'single-flight-google');
+      expect(manager.initialChoiceRequired, isFalse);
     },
   );
 
+  test(
+    'new Google account activates locally before an unavailable cloud sync',
+    () async {
+      final firebase = _FakeFirebase();
+      final backup = _UnavailableCloudBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
+          uid: 'new-google-offline',
+          email: 'offline@example.com',
+        ),
+      );
+      final reconciliation = _FakeReconciliation(
+        firebase: firebase,
+        backupService: backup,
+        accountStore: store,
+        database: database,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: reconciliation,
+      );
+
+      await manager.initialize();
+      await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
+
+      expect(manager.state.phase, AccountSessionPhase.ready);
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(manager.activeAccount?.firebaseUid, 'new-google-offline');
+      expect(manager.initialChoiceRequired, isFalse);
+      expect(manager.state.migrationState, 'completed');
+
+      await Future<void>.delayed(Duration.zero);
+      expect(backup.bootstrapCalls, 0);
+    },
+  );
+
+  test(
+    'Guest → Google preserves local data when cloud is unavailable',
+    () async {
+      final firebase = _FakeFirebase();
+      final backup = _UnavailableCloudBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
+          uid: 'guest-google-offline',
+          email: 'guest@example.com',
+        ),
+      );
+      final reconciliation = _FakeReconciliation(
+        firebase: firebase,
+        backupService: backup,
+        accountStore: store,
+        database: database,
+      );
+      await store.saveProfile(
+        UserProfile.localLedgerUserId,
+        _completeProfile(),
+      );
+      await store.activate(UserProfile.localLedgerUserId);
+
+      await database.customInsert(
+        '''INSERT INTO qaza_records
+           (id, user_id, prayer_type, original_date, status, completed_at,
+            completion_id, addition_id, record_version, created_at, updated_at)
+           VALUES (?, ?, 'fajr', ?, 'pending', NULL, NULL, NULL, 1, ?, ?)''',
+        variables: [
+          Variable('guest-record-1'),
+          Variable(UserProfile.localLedgerUserId),
+          Variable(DateTime(2025, 1, 1)),
+          Variable(DateTime(2025, 1, 1)),
+          Variable(DateTime(2025, 1, 1)),
+        ],
+      );
+
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: reconciliation,
+      );
+
+      await manager.initialize();
+      await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
+
+      final active = manager.activeAccount;
+      expect(manager.state.phase, AccountSessionPhase.ready);
+      expect(active?.isGoogle, isTrue);
+      expect(active?.firebaseUid, 'guest-google-offline');
+      expect(active?.localAccountId, UserProfile.localLedgerUserId);
+      expect(await store.hasAnyQaza(UserProfile.localLedgerUserId), isTrue);
+      expect(manager.state.migrationState, 'completed');
+    },
+  );
+
+  test(
+    'existing Google account stays active when cloud restore fails',
+    () async {
+      final firebase = _FakeFirebase();
+      final id = await store.createGooglePartition(
+        firebaseUid: 'existing-google-offline',
+        email: 'existing@example.com',
+      );
+      await store.activate(id);
+      await store.saveProfile(id, _completeProfile());
+
+      final backup = _FakeBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+        root: {'cloudGeneration': 1, 'datasetState': 'ready'},
+      );
+      final reconciliation = _FailingReconciliation(
+        firebase: firebase,
+        backupService: backup,
+        accountStore: store,
+        database: database,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: _FakeAuth(
+          firebase,
+          const GoogleFirebaseIdentity(
+            uid: 'existing-google-offline',
+            email: 'existing@example.com',
+          ),
+        ),
+        backup: backup,
+        reconciliation: reconciliation,
+      );
+
+      await manager.initialize();
+      await waitForGoogleStartupRestore(manager);
+
+      expect(manager.state.phase, AccountSessionPhase.ready);
+      expect(manager.activeLocalAccountId, id);
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(manager.activeAccount?.firebaseUid, 'existing-google-offline');
+    },
+  );
+
+  test(
+    'cloud root unavailable never triggers bootstrap',
+    () async {
+      final firebase = _FakeFirebase();
+      final backup = _UnavailableCloudBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final reconciliation = _FakeReconciliation(
+        firebase: firebase,
+        backupService: backup,
+        accountStore: store,
+        database: database,
+      );
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
+          uid: 'cloud-unavailable-google',
+          email: 'cloud@example.com',
+        ),
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: reconciliation,
+      );
+
+      await manager.initialize();
+      await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
+
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(backup.bootstrapCalls, 0);
+      expect(manager.state.migrationState, 'completed');
+    },
+  );
 
 }
