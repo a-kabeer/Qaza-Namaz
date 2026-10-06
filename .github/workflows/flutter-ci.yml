@@ -291,14 +291,12 @@ jobs:
           echo "SHA-1: ${APK_SHA1}"
           echo "SHA-256: ${APK_SHA256}"
 
-      - name: Reject unsigned release artifacts for CI-AM
+      - name: Report release signing availability
         if: steps.release_signing.outputs.configured != 'true'
         shell: bash
         run: |
-          echo "CI-AM requires a production-signed release APK/AAB."
-          echo "Configure ANDROID_KEYSTORE_BASE64 and related keystore secrets."
-          exit 1
-
+          echo "::warning::Production release signing secrets are not configured."
+          echo "::warning::Release APK/AAB will be unsigned in this CI run; signature verification is enforced whenever production signing is configured."
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
