@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -131,6 +131,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 15) {
             await _ensureBackupProgressColumns();
           }
+          if (from < 16) {
+            await _ensureBackupFailureColumns();
+          }
           await _ensurePerformanceIndexes();
           await _ensureMigrationSnapshotSchema();
         },
@@ -153,6 +156,23 @@ class AppDatabase extends _$AppDatabase {
     if (!names.contains('migration_snapshot_id')) {
       await customStatement(
         'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureBackupFailureColumns() async {
+    final columns = await customSelect(
+      'PRAGMA table_info(sync_outbox)',
+    ).get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('failure_category')) {
+      await customStatement(
+        'ALTER TABLE sync_outbox ADD COLUMN failure_category TEXT',
+      );
+    }
+    if (!names.contains('last_attempt_at')) {
+      await customStatement(
+        'ALTER TABLE sync_outbox ADD COLUMN last_attempt_at INTEGER',
       );
     }
   }
@@ -308,6 +328,8 @@ class AppDatabase extends _$AppDatabase {
       'writer_device_id': 'TEXT',
       'lease_until': 'INTEGER',
       'worker_id': 'TEXT',
+      'failure_category': 'TEXT',
+      'last_attempt_at': 'INTEGER',
     };
     for (final entry in extensions.entries) {
       if (existing.contains(entry.key)) continue;
