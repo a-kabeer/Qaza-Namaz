@@ -338,7 +338,7 @@ void main() {
       );
       expect(acknowledged, isTrue);
 
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Backup complete'), findsOneWidget);
       expect(find.text('Today, 9:42 PM'), findsOneWidget);
