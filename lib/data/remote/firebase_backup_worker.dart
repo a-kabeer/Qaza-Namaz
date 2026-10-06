@@ -238,12 +238,6 @@ class FirebaseBackupWorker {
             );
           }
 
-          final diagnostics = failure.cause;
-          if (diagnostics != null) {
-            // The exception itself is retained only through the diagnostics
-            // boundary in FirebaseServices/other call sites; the outbox stores
-            // the already-redacted technical message above.
-          }
         }
       }
     } finally {
