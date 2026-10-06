@@ -87,8 +87,8 @@ class _BlockingBackupService extends FirebaseBackupService {
 
 void main() {
   test(
-    'worker retries the same durable operation and removes it only after success',
-    () async {
+      'worker retries the same durable operation and removes it only after success',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -346,8 +346,8 @@ void main() {
       final outbox = await store.loadModernOutboxBatch(
         localAccountId: accountId,
         nowMicros: DateTime.now().microsecondsSinceEpoch +
-          const Duration(minutes: 5).inMicroseconds +
-          1,
+            const Duration(minutes: 5).inMicroseconds +
+            1,
         limit: 10,
       );
       expect(outbox, hasLength(1));
