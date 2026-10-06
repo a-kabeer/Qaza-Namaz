@@ -114,7 +114,7 @@ void main() {
         '''SELECT id FROM sync_outbox WHERE user_id = ?''',
         variables: [Variable(accountId)],
       ).get(),
-      hasLength(outboxBeforeCommit.length),
+      isEmpty,
     );
   });
 
@@ -334,7 +334,7 @@ void main() {
         '''SELECT 1 FROM sync_outbox WHERE user_id = ?''',
         variables: [Variable(accountId)],
       ).get(),
-      isEmpty,
+      hasLength(outboxBeforeCommit.length),
     );
   });;
 }
