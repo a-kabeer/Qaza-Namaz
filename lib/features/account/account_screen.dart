@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
@@ -231,7 +232,7 @@ class _GoogleAccountContentState
     if (status.isCurrent && status.lastSuccessfulBackupAt != null) {
       final time = MaterialLocalizations.of(context).formatTimeOfDay(
         TimeOfDay.fromDateTime(status.lastSuccessfulBackupAt!),
-        alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+        alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat,
       );
       return l10n.accountBackupStatusBackedUp(
         l10n.commonToday + ', ' + time,
