@@ -75,7 +75,6 @@
       "year": {}
     }
   },
-
   "hijriMonthMuharram": "محرم",
   "hijriMonthSafar": "صفر",
   "hijriMonthRabiAlAwwal": "ربیع الاول",
@@ -480,7 +479,6 @@
   "accountAutomatic": "خودکار",
   "accountBackupPaused": "بیک اپ روک دیا گیا ہے",
   "accountEnableBackup": "بیک اپ فعال کریں",
-  "accountSignOut": "سائن آؤٹ",
   "accountDisconnect": "گوگل منقطع کریں",
   "accountDeleteCloudData": "کلاؤڈ ڈیٹا حذف کریں",
   "accountDeleteCloudDataMessage": "آپ کی کلاؤڈ نقل مستقل طور پر حذف ہو جائے گی۔ اس ڈیوائس پر آپ کا قضا ڈیٹا برقرار رہے گا۔",
@@ -533,7 +531,6 @@
   "homeRangeWeekly": "ہفتہ وار",
   "homeRangeMonthly": "ماہانہ",
   "homeRangeYearly": "سالانہ",
-  "homeDailyTarget": "روزانہ ہدف",
   "homeWeeklyTargetLabel": "ہفتہ وار ہدف",
   "homeMonthlyTarget": "ماہانہ ہدف",
   "homeProgressLabel": "پیش رفت",
@@ -633,8 +630,12 @@
   "profileQazaUpdatedCounts": "پروفائل اور قضا پلان اپ ڈیٹ ہوگئے۔ شامل کی گئی قضا: {added}؛ ہٹائی گئی قضا: {removed}۔",
   "@profileQazaUpdatedCounts": {
     "placeholders": {
-      "added": { "type": "int" },
-      "removed": { "type": "int" }
+      "added": {
+        "type": "int"
+      },
+      "removed": {
+        "type": "int"
+      }
     }
   },
   "profileQazaUpdatedNoChange": "پروفائل اپ ڈیٹ ہوگئی۔ قضا پلان میں کوئی تبدیلی نہیں ہوئی۔",
@@ -700,15 +701,45 @@
   "prayerTimeSetupBody": "اپنا موجودہ مقام استعمال کریں یا ملک اور شہر منتخب کریں۔ مقام محفوظ ہونے کے بعد یہ آف لائن کام کرے گا۔",
   "prayerTimeRefresh": "مقام تازہ کریں",
   "prayerTimeEndsIn": "اختتام میں {duration}",
-  "@prayerTimeEndsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeEndsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeRemaining": "باقی وقت {duration}",
-  "@prayerTimeRemaining": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeRemaining": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeStartsIn": "شروع ہونے میں {duration}",
-  "@prayerTimeStartsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeStartsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeNextRestricted": "اگلا: {name}",
-  "@prayerTimeNextRestricted": { "placeholders": { "name": { "type": "String" } } },
+  "@prayerTimeNextRestricted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "آپ کا محفوظ مقام استعمال ہو رہا ہے: {location}",
-  "@prayerTimeUsingSavedLocation": { "placeholders": { "location": { "type": "String" } } },
+  "@prayerTimeUsingSavedLocation": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeAngleHint": "درجات میں درج کریں۔",
   "prayerTimeAdjustmentMinutes": "منٹ",
   "prayerTimeSunrise": "طلوعِ آفتاب",
@@ -718,8 +749,7 @@
   "prayerTimeDhuhr": "ظہر",
   "prayerTimeAsr": "عصر",
   "prayerTimeMaghrib": "مغرب",
-  "prayerTimeIsha": "عشاء"
-,
+  "prayerTimeIsha": "عشاء",
   "qiblaTitle": "قبلہ",
   "qiblaDirection": "قبلہ کی سمت",
   "qiblaBearing": "قبلہ کا زاویہ",
@@ -731,6 +761,20 @@
   "qiblaHeadingUnavailable": "کمپاس کی سمت عارضی طور پر دستیاب نہیں۔",
   "qiblaTurnToDirection": "فون کو اس سمت گھمائیں۔",
   "qiblaCompassAccuracy": "کمپاس کی درستگی ±{degrees}°",
-  "@qiblaCompassAccuracy": { "placeholders": { "degrees": { "type": "String" } } },
-  "qiblaCalibrationHint": "کمپاس کی درستگی کم ہے۔ فون کو 8 کی شکل میں حرکت دے کر دوبارہ کیلیبریٹ کریں۔"
+  "@qiblaCompassAccuracy": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "qiblaCalibrationHint": "کمپاس کی درستگی کم ہے۔ فون کو 8 کی شکل میں حرکت دے کر دوبارہ کیلیبریٹ کریں۔",
+  "accountAutomaticBackup": "خودکار بیک اپ",
+  "accountBackupStatusChecking": "بیک اپ کی حالت دیکھی جا رہی ہے…",
+  "accountBackupStatusDisabled": "خودکار بیک اپ بند ہے",
+  "accountBackupStatusBackedUp": "✓ بیک اپ مکمل · {timestamp}",
+  "accountBackupStatusBackingUp": "آپ کی پیش رفت کا بیک اپ لیا جا رہا ہے…",
+  "accountBackupStatusPending": "بیک اپ زیرِ التوا ہے",
+  "accountBackupStatusWaitingConnection": "کنکشن کا انتظار ہے",
+  "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔"
 }
