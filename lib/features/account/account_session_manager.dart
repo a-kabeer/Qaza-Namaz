@@ -604,11 +604,10 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> signOut() async {
     final operationEpoch = ++_operationEpoch;
-    final operationAccountId = activeLocalAccountId;
     await _auth.signOut();
-    _ensureOperationCurrent(operationEpoch, operationAccountId);
-    await _accountStore.ensureGuestActive();
-    _ensureOperationCurrent(operationEpoch, operationAccountId);
+    _ensureOperationEpochCurrent(operationEpoch);
+    await _accountStore.prepareForSignOut();
+    _ensureOperationEpochCurrent(operationEpoch);
     await _refresh();
   }
 
@@ -617,6 +616,7 @@ class AccountSessionManager extends ChangeNotifier {
     final account = activeAccount;
     if (account == null || !account.isGoogle) return;
     await _accountStore.setBackupEnabled(account.localAccountId, false);
+    await _accountStore.setBackupState(account.localAccountId, 'disabled');
     _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
   }
@@ -639,44 +639,111 @@ class AccountSessionManager extends ChangeNotifier {
     if (account == null || !account.isGoogle || account.firebaseUid == null) {
       return;
     }
-    final root = await _backup.readCloudRoot(account.firebaseUid!);
-    _ensureOperationCurrent(operationEpoch, account.localAccountId);
-    var generation = account.cloudGeneration;
-    if (root != null) {
-      final remoteGeneration =
-          (root['cloudGeneration'] as num?)?.toInt() ?? generation;
-      if (remoteGeneration < account.cloudGeneration) {
-        throw StateError(
-          'Cloud generation is stale: local=' +
-              account.cloudGeneration.toString() +
-              ' remote=' +
-              remoteGeneration.toString() +
-              '.',
-        );
-      }
-      generation = remoteGeneration;
-      final state = root['datasetState'] as String? ?? 'empty';
-      if (state == 'deleted') {
-        final nextGeneration = generation + 1;
-        await _backup.startNewCloudGeneration(
-          uid: account.firebaseUid!,
-          previousGeneration: generation,
-          newGeneration: nextGeneration,
-        );
-        generation = nextGeneration;
-      }
-    }
-    await _accountStore.setCloudGeneration(account.localAccountId, generation);
+
+    // The local preference changes first. Cloud bootstrap is deliberately
+    // asynchronous so temporary Firebase/network failures cannot strand the
+    // account or leave the switch waiting on cloud work.
     await _accountStore.setBackupEnabled(account.localAccountId, true);
-    final refreshed =
-        await _accountStore.getAccount(account.localAccountId) ?? account;
-    await _backup.bootstrapAccount(
-      localAccountId: refreshed.localAccountId,
-      uid: refreshed.firebaseUid!,
-      generation: refreshed.cloudGeneration,
-    );
+    await _accountStore.setBackupState(account.localAccountId, 'pending');
     _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
+
+    unawaited(
+      _finishEnablingBackup(
+        account: account,
+        operationEpoch: operationEpoch,
+      ),
+    );
+  }
+
+  Future<void> _finishEnablingBackup({
+    required LocalAccount account,
+    required int operationEpoch,
+  }) async {
+    try {
+      final uid = account.firebaseUid;
+      if (uid == null) return;
+
+      final root = await _backup.readCloudRoot(uid);
+      if (!await _backupOperationStillCurrent(
+        operationEpoch,
+        account.localAccountId,
+      )) {
+        return;
+      }
+
+      var generation = account.cloudGeneration;
+      if (root != null) {
+        final remoteGeneration =
+            (root['cloudGeneration'] as num?)?.toInt() ?? generation;
+        if (remoteGeneration < generation) {
+          throw StateError(
+            'Cloud generation is stale: local=' +
+                generation.toString() +
+                ' remote=' +
+                remoteGeneration.toString() +
+                '.',
+          );
+        }
+        generation = remoteGeneration;
+        final state = root['datasetState'] as String? ?? 'empty';
+        if (state == 'deleted') {
+          final nextGeneration = generation + 1;
+          await _backup.startNewCloudGeneration(
+            uid: uid,
+            previousGeneration: generation,
+            newGeneration: nextGeneration,
+          );
+          generation = nextGeneration;
+        }
+      }
+
+      await _accountStore.setCloudGeneration(
+        account.localAccountId,
+        generation,
+      );
+      final refreshed =
+          await _accountStore.getAccount(account.localAccountId) ?? account;
+      final targetRevision =
+          await _accountStore.currentBackupRevision(refreshed.localAccountId);
+      await _backup.bootstrapAccount(
+        localAccountId: refreshed.localAccountId,
+        uid: uid,
+        generation: refreshed.cloudGeneration,
+      );
+      await _accountStore.acknowledgeBackup(
+        localAccountId: refreshed.localAccountId,
+        revision: targetRevision,
+        generation: refreshed.cloudGeneration,
+        completedAt: DateTime.now(),
+      );
+      if (await _backupOperationStillCurrent(
+        operationEpoch,
+        refreshed.localAccountId,
+      )) {
+        await _refresh();
+      }
+    } catch (_) {
+      try {
+        await _accountStore.setBackupState(account.localAccountId, 'failed');
+        if (await _backupOperationStillCurrent(
+          operationEpoch,
+          account.localAccountId,
+        )) {
+          await _refresh();
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<bool> _backupOperationStillCurrent(
+    int operationEpoch,
+    String localAccountId,
+  ) async {
+    if (operationEpoch != _operationEpoch) return false;
+    final active = await _accountStore.activeAccount();
+    return active?.localAccountId == localAccountId &&
+        active?.isGoogle == true;
   }
 
   Future<void> deleteCloudData() async {

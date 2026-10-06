@@ -1395,6 +1395,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountCloudBackup => 'Cloud backup';
 
   @override
+  String get accountAutomaticBackup => 'Automatic backup';
+
+  @override
+  String get accountBackupStatusChecking => 'Checking backup status…';
+
+  @override
+  String get accountBackupStatusDisabled => 'Automatic backup is off';
+
+  @override
+  String accountBackupStatusBackedUp(String timestamp) =>
+      '✓ Backed up · $timestamp';
+
+  @override
+  String get accountBackupStatusBackingUp => 'Backing up your progress…';
+
+  @override
+  String get accountBackupStatusPending => 'Backup pending';
+
+  @override
+  String get accountBackupStatusWaitingConnection => 'Waiting for connection';
+
+  @override
+  String get accountBackupStatusFailed =>
+      'Backup couldn’t complete. We’ll try again automatically.';
+
+
+  @override
   String get accountAutomatic => 'Automatic';
 
   @override

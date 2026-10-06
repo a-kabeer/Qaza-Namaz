@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -71,6 +71,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
           await _ensureMigrationSnapshotSchema();
+          await _ensureBackupStateSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -123,6 +124,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 11) {
             await _ensureAccountSchema();
+          }
+          if (from < 14) {
+            await _ensureBackupStateSchema();
           }
           await _ensurePerformanceIndexes();
           await _ensureMigrationSnapshotSchema();
@@ -651,6 +655,132 @@ class AppDatabase extends _$AppDatabase {
         plan_fingerprint TEXT NOT NULL
       )
     ''');
+  }
+
+  Future<void> _ensureBackupStateSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS account_backup_state (
+        local_account_id TEXT NOT NULL PRIMARY KEY,
+        current_dataset_revision INTEGER NOT NULL DEFAULT 0,
+        acknowledged_dataset_revision INTEGER NOT NULL DEFAULT 0,
+        acknowledged_cloud_generation INTEGER NOT NULL DEFAULT 1,
+        last_successful_backup_at INTEGER,
+        state TEXT NOT NULL DEFAULT 'pending'
+      )
+    ''');
+
+    await customStatement('''
+      INSERT OR IGNORE INTO account_backup_state
+        (local_account_id, current_dataset_revision,
+         acknowledged_dataset_revision, acknowledged_cloud_generation,
+         last_successful_backup_at, state)
+      SELECT
+        a.local_account_id,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM qaza_records r WHERE r.user_id = a.local_account_id
+        ) OR EXISTS (
+          SELECT 1 FROM qaza_additions qa WHERE qa.user_id = a.local_account_id
+        ) OR EXISTS (
+          SELECT 1 FROM account_profiles p
+          WHERE p.local_account_id = a.local_account_id
+        ) THEN 1 ELSE 0 END,
+        0,
+        a.cloud_generation,
+        NULL,
+        CASE
+          WHEN a.account_mode = 'google' AND a.cloud_backup_enabled = 1
+            THEN 'pending'
+          ELSE 'disabled'
+        END
+      FROM local_accounts a
+    ''');
+
+    await _ensureBackupRevisionTriggers(
+      table: 'account_profiles',
+      accountColumn: 'NEW.local_account_id',
+      deleteAccountColumn: 'OLD.local_account_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'account_plan_revisions',
+      accountColumn: 'NEW.local_account_id',
+      deleteAccountColumn: 'OLD.local_account_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_records',
+      accountColumn: 'NEW.user_id',
+      deleteAccountColumn: 'OLD.user_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_additions',
+      accountColumn: 'NEW.user_id',
+      deleteAccountColumn: 'OLD.user_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_deletion_actions',
+      accountColumn: 'NEW.user_id',
+      deleteAccountColumn: 'OLD.user_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_deletion_action_record_snapshots',
+      accountColumn: 'NEW.user_id',
+      deleteAccountColumn: 'OLD.user_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_profile_plan_provenance',
+      accountColumn: 'NEW.user_id',
+      deleteAccountColumn: 'OLD.user_id',
+    );
+    await _ensureBackupRevisionTriggers(
+      table: 'qaza_record_tombstones',
+      accountColumn: 'NEW.local_account_id',
+      deleteAccountColumn: 'OLD.local_account_id',
+    );
+  }
+
+  Future<void> _ensureBackupRevisionTriggers({
+    required String table,
+    required String accountColumn,
+    required String deleteAccountColumn,
+  }) async {
+    for (final operation in ['insert', 'update', 'delete']) {
+      await customStatement(
+        'DROP TRIGGER IF EXISTS account_backup_revision_' +
+            table +
+            '_' +
+            operation,
+      );
+    }
+
+    Future<void> createTrigger(
+      String operation,
+      String accountExpression,
+      String event,
+    ) {
+      return customStatement('''
+        CREATE TRIGGER account_backup_revision_${table}_${operation}
+        AFTER $event ON $table
+        WHEN EXISTS (
+          SELECT 1 FROM local_accounts
+          WHERE local_account_id = $accountExpression
+            AND account_mode = 'google'
+        )
+        BEGIN
+          UPDATE account_backup_state
+          SET current_dataset_revision = current_dataset_revision + 1,
+              state = CASE
+                WHEN (SELECT cloud_backup_enabled FROM local_accounts
+                      WHERE local_account_id = $accountExpression) = 1
+                  THEN 'pending'
+                ELSE 'disabled'
+              END
+          WHERE local_account_id = $accountExpression;
+        END
+      ''');
+    }
+
+    await createTrigger('insert', accountColumn, 'INSERT');
+    await createTrigger('update', accountColumn, 'UPDATE');
+    await createTrigger('delete', deleteAccountColumn, 'DELETE');
   }
 
   Future<void> _ensureEntityMetadataSyncColumn() async {

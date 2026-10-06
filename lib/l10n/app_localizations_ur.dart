@@ -1392,6 +1392,34 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountCloudBackup => 'کلاؤڈ بیک اپ';
 
   @override
+  String get accountAutomaticBackup => 'خودکار بیک اپ';
+
+  @override
+  String get accountBackupStatusChecking => 'بیک اپ کی حالت دیکھی جا رہی ہے…';
+
+  @override
+  String get accountBackupStatusDisabled => 'خودکار بیک اپ بند ہے';
+
+  @override
+  String accountBackupStatusBackedUp(String timestamp) =>
+      '✓ بیک اپ مکمل · $timestamp';
+
+  @override
+  String get accountBackupStatusBackingUp =>
+      'آپ کی پیش رفت کا بیک اپ لیا جا رہا ہے…';
+
+  @override
+  String get accountBackupStatusPending => 'بیک اپ زیرِ التوا ہے';
+
+  @override
+  String get accountBackupStatusWaitingConnection => 'کنکشن کا انتظار ہے';
+
+  @override
+  String get accountBackupStatusFailed =>
+      'بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
+
+
+  @override
   String get accountAutomatic => 'خودکار';
 
   @override

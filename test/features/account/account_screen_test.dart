@@ -119,7 +119,8 @@ void main() {
     expect(find.text('Not connected to Google'), findsOneWidget);
     expect(find.text('Keep your progress safe'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Cloud backup'), findsNothing);
+    expect(find.text('Automatic backup'), findsNothing);
+    expect(find.text('Backed up'), findsNothing);
     expect(find.text('Sign out'), findsNothing);
     expect(find.text('Disconnect Google'), findsNothing);
     expect(find.text('Delete cloud data'), findsNothing);
@@ -140,18 +141,18 @@ void main() {
     expect(find.text('account@example.com'), findsOneWidget);
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Backup'), findsOneWidget);
-    expect(find.text('Cloud backup'), findsOneWidget);
+    expect(find.text('Automatic backup'), findsOneWidget);
+    expect(find.text('Cloud backup'), findsNothing);
     expect(
       find.text('Automatically back up your Qaza progress'),
       findsOneWidget,
     );
     expect(find.byType(SwitchListTile), findsOneWidget);
     expect(find.text('Enable backup'), findsNothing);
-    expect(find.text('Account actions'), findsOneWidget);
     expect(find.text('Sign out'), findsOneWidget);
-    expect(find.text('Disconnect Google'), findsOneWidget);
-    expect(find.text('Danger zone'), findsOneWidget);
-    expect(find.text('Delete cloud data'), findsOneWidget);
+    expect(find.text('Disconnect Google'), findsNothing);
+    expect(find.text('Danger zone'), findsNothing);
+    expect(find.text('Delete cloud data'), findsNothing);
     expect(find.text('Keep your progress safe'), findsNothing);
     expect(find.text('Continue with Google'), findsNothing);
   });

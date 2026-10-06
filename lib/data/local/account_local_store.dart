@@ -259,6 +259,7 @@ class AccountLocalStore {
     if (created == null) {
       throw StateError('Unable to create Google partition for Firebase UID.');
     }
+    await _ensureBackupStateRow(created.localAccountId);
     return created.localAccountId;
   }
 
@@ -1093,6 +1094,17 @@ class AccountLocalStore {
           variables: [Variable(guest.localAccountId)],
         );
       });
+      await _ensureBackupStateRow(guest.localAccountId);
+      await database.customUpdate(
+        '''UPDATE account_backup_state
+           SET current_dataset_revision = CASE
+                 WHEN current_dataset_revision = 0 THEN 1
+                 ELSE current_dataset_revision
+               END,
+               state = 'pending'
+           WHERE local_account_id = ?''',
+        variables: [Variable(guest.localAccountId)],
+      );
       return guest.localAccountId;
     }
 
@@ -1521,6 +1533,144 @@ class AccountLocalStore {
         Variable(localAccountId),
       ],
     );
+  }
+
+  Future<BackupStatusSnapshot> readBackupStatus(
+    String localAccountId,
+  ) async {
+    await _ensureBackupStateRow(localAccountId);
+    final rows = await database.customSelect(
+      '''SELECT s.current_dataset_revision,
+                s.acknowledged_dataset_revision,
+                s.acknowledged_cloud_generation,
+                s.last_successful_backup_at,
+                s.state,
+                a.cloud_backup_enabled,
+                a.cloud_generation
+         FROM account_backup_state s
+         JOIN local_accounts a ON a.local_account_id = s.local_account_id
+         WHERE s.local_account_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId)],
+    ).get();
+    if (rows.isEmpty) {
+      return const BackupStatusSnapshot(
+        currentRevision: 0,
+        acknowledgedRevision: 0,
+        acknowledgedGeneration: 0,
+        cloudGeneration: 0,
+        lastSuccessfulBackupAt: null,
+        state: 'disabled',
+        backupEnabled: false,
+      );
+    }
+    final row = rows.first;
+    return BackupStatusSnapshot(
+      currentRevision: row.read<int>('current_dataset_revision'),
+      acknowledgedRevision: row.read<int>('acknowledged_dataset_revision'),
+      acknowledgedGeneration:
+          row.read<int>('acknowledged_cloud_generation'),
+      cloudGeneration: row.read<int>('cloud_generation'),
+      lastSuccessfulBackupAt: row.read<int?>('last_successful_backup_at') == null
+          ? null
+          : DateTime.fromMicrosecondsSinceEpoch(
+              row.read<int>('last_successful_backup_at')!,
+            ),
+      state: row.read<String>('state'),
+      backupEnabled: row.read<int>('cloud_backup_enabled') != 0,
+    );
+  }
+
+  Future<void> _ensureBackupStateRow(String localAccountId) async {
+    await database.customInsert(
+      '''INSERT OR IGNORE INTO account_backup_state
+         (local_account_id, current_dataset_revision,
+          acknowledged_dataset_revision, acknowledged_cloud_generation,
+          state)
+         SELECT local_account_id,
+                CASE WHEN EXISTS (
+                  SELECT 1 FROM qaza_records WHERE user_id = ?
+                ) OR EXISTS (
+                  SELECT 1 FROM qaza_additions WHERE user_id = ?
+                ) OR EXISTS (
+                  SELECT 1 FROM account_profiles WHERE local_account_id = ?
+                ) THEN 1 ELSE 0 END,
+                0,
+                cloud_generation,
+                CASE WHEN cloud_backup_enabled = 1 THEN 'pending'
+                     ELSE 'disabled' END
+         FROM local_accounts
+         WHERE local_account_id = ?''',
+      variables: [
+        Variable(localAccountId),
+        Variable(localAccountId),
+        Variable(localAccountId),
+        Variable(localAccountId),
+      ],
+    );
+  }
+
+  Future<void> setBackupState(
+    String localAccountId,
+    String state,
+  ) async {
+    await _ensureBackupStateRow(localAccountId);
+    await database.customUpdate(
+      '''UPDATE account_backup_state
+         SET state = ?
+         WHERE local_account_id = ?''',
+      variables: [Variable(state), Variable(localAccountId)],
+    );
+  }
+
+  Future<int> currentBackupRevision(String localAccountId) async {
+    await _ensureBackupStateRow(localAccountId);
+    final rows = await database.customSelect(
+      '''SELECT current_dataset_revision
+         FROM account_backup_state
+         WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId)],
+    ).get();
+    return rows.isEmpty ? 0 : rows.first.read<int>('current_dataset_revision');
+  }
+
+  Future<bool> acknowledgeBackup({
+    required String localAccountId,
+    required int revision,
+    required int generation,
+    required DateTime completedAt,
+  }) async {
+    await _ensureBackupStateRow(localAccountId);
+    final changed = await database.customUpdate(
+      '''UPDATE account_backup_state
+         SET acknowledged_dataset_revision = ?,
+             acknowledged_cloud_generation = ?,
+             last_successful_backup_at = ?,
+             state = 'idle'
+         WHERE local_account_id = ?
+           AND current_dataset_revision = ?
+           AND acknowledged_cloud_generation <= ?''',
+      variables: [
+        Variable(revision),
+        Variable(generation),
+        Variable(completedAt.microsecondsSinceEpoch),
+        Variable(localAccountId),
+        Variable(revision),
+        Variable(generation),
+      ],
+    );
+    return changed > 0;
+  }
+
+  Future<void> prepareForSignOut() async {
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = NULL,
+               initial_choice_required = 1,
+               restore_state = 'none'
+           WHERE id = 1''',
+      );
+    });
   }
 
   Future<void> setCloudGeneration(String localAccountId, int generation) async {
@@ -2142,4 +2292,33 @@ class AccountLocalStore {
   }
 
   String jsonEncode(Object value) => json.encode(value);
+}
+
+
+class BackupStatusSnapshot {
+  const BackupStatusSnapshot({
+    required this.currentRevision,
+    required this.acknowledgedRevision,
+    required this.acknowledgedGeneration,
+    required this.cloudGeneration,
+    required this.lastSuccessfulBackupAt,
+    required this.state,
+    required this.backupEnabled,
+  });
+
+  final int currentRevision;
+  final int acknowledgedRevision;
+  final int acknowledgedGeneration;
+  final int cloudGeneration;
+  final DateTime? lastSuccessfulBackupAt;
+  final String state;
+  final bool backupEnabled;
+
+  bool get isCurrent =>
+      backupEnabled &&
+      currentRevision == acknowledgedRevision &&
+      acknowledgedGeneration == cloudGeneration;
+
+  bool get hasPendingChanges =>
+      backupEnabled && currentRevision > acknowledgedRevision;
 }

@@ -2371,6 +2371,15 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloud backup'**
   String get accountCloudBackup;
+  String get accountAutomaticBackup;
+  String get accountBackupStatusChecking;
+  String get accountBackupStatusDisabled;
+  String accountBackupStatusBackedUp(String timestamp);
+  String get accountBackupStatusBackingUp;
+  String get accountBackupStatusPending;
+  String get accountBackupStatusWaitingConnection;
+  String get accountBackupStatusFailed;
+
 
   /// No description provided for @accountAutomatic.
   ///

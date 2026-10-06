@@ -114,7 +114,6 @@
       "year": {}
     }
   },
-
   "hijriMonthMuharram": "Muharram",
   "hijriMonthSafar": "Safar",
   "hijriMonthRabiAlAwwal": "Rabi al-Awwal",
@@ -177,7 +176,7 @@
   "homePrayerTimeUnavailable": "Prayer Time selection is unavailable until Prayer Times are set up.",
   "homeQazaTargetReachedTitle": "Alhamdulillah!",
   "homeQazaTargetReachedMessage": "You have completed your Qaza plan for today.\nMay Allah accept your efforts.",
-  "homeDailyTarget": "Daily target",
+  "homeDailyTarget": "Daily Target",
   "homePerDay": "{count} per day",
   "@homePerDay": {
     "placeholders": {
@@ -867,7 +866,6 @@
   "accountAutomatic": "Automatic",
   "accountBackupPaused": "Backup paused",
   "accountEnableBackup": "Enable backup",
-  "accountSignOut": "Sign out",
   "accountDisconnect": "Disconnect Google",
   "accountDeleteCloudData": "Delete cloud data",
   "accountDeleteCloudDataMessage": "Your cloud copy will be permanently deleted. Your Qaza data on this device will remain.",
@@ -920,7 +918,6 @@
   "homeRangeWeekly": "Weekly",
   "homeRangeMonthly": "Monthly",
   "homeRangeYearly": "Yearly",
-  "homeDailyTarget": "Daily Target",
   "homeWeeklyTargetLabel": "Weekly Target",
   "homeMonthlyTarget": "Monthly Target",
   "homeProgressLabel": "Progress",
@@ -1020,8 +1017,12 @@
   "profileQazaUpdatedCounts": "Profile and Qaza plan updated. Qaza added: {added}; Qaza removed: {removed}.",
   "@profileQazaUpdatedCounts": {
     "placeholders": {
-      "added": { "type": "int" },
-      "removed": { "type": "int" }
+      "added": {
+        "type": "int"
+      },
+      "removed": {
+        "type": "int"
+      }
     }
   },
   "profileQazaUpdatedNoChange": "Profile updated. Your Qaza plan was unchanged.",
@@ -1087,15 +1088,45 @@
   "prayerTimeSetupBody": "Choose your current location or select a country and city. It works offline after a location is saved.",
   "prayerTimeRefresh": "Refresh location",
   "prayerTimeEndsIn": "Ends in {duration}",
-  "@prayerTimeEndsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeEndsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeRemaining": "Remaining time {duration}",
-  "@prayerTimeRemaining": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeRemaining": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeStartsIn": "Starts in {duration}",
-  "@prayerTimeStartsIn": { "placeholders": { "duration": { "type": "String" } } },
+  "@prayerTimeStartsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeNextRestricted": "Next: {name}",
-  "@prayerTimeNextRestricted": { "placeholders": { "name": { "type": "String" } } },
+  "@prayerTimeNextRestricted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "Using your saved location: {location}",
-  "@prayerTimeUsingSavedLocation": { "placeholders": { "location": { "type": "String" } } },
+  "@prayerTimeUsingSavedLocation": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeAngleHint": "Use degrees.",
   "prayerTimeAdjustmentMinutes": "Minutes",
   "prayerTimeSunrise": "Sunrise",
@@ -1105,8 +1136,7 @@
   "prayerTimeDhuhr": "Zuhr",
   "prayerTimeAsr": "Asr",
   "prayerTimeMaghrib": "Maghrib",
-  "prayerTimeIsha": "Isha"
-,
+  "prayerTimeIsha": "Isha",
   "qiblaTitle": "Qibla",
   "qiblaDirection": "Qibla Direction",
   "qiblaBearing": "Qibla bearing",
@@ -1118,6 +1148,20 @@
   "qiblaHeadingUnavailable": "Compass heading is temporarily unavailable.",
   "qiblaTurnToDirection": "Rotate your phone in this direction.",
   "qiblaCompassAccuracy": "Compass accuracy ±{degrees}°",
-  "@qiblaCompassAccuracy": { "placeholders": { "degrees": { "type": "String" } } },
-  "qiblaCalibrationHint": "Compass accuracy is low. Move the phone in a figure-eight to recalibrate."
+  "@qiblaCompassAccuracy": {
+    "placeholders": {
+      "degrees": {
+        "type": "String"
+      }
+    }
+  },
+  "qiblaCalibrationHint": "Compass accuracy is low. Move the phone in a figure-eight to recalibrate.",
+  "accountAutomaticBackup": "Automatic backup",
+  "accountBackupStatusChecking": "Checking backup status…",
+  "accountBackupStatusDisabled": "Automatic backup is off",
+  "accountBackupStatusBackedUp": "✓ Backed up · {timestamp}",
+  "accountBackupStatusBackingUp": "Backing up your progress…",
+  "accountBackupStatusPending": "Backup pending",
+  "accountBackupStatusWaitingConnection": "Waiting for connection",
+  "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically."
 }

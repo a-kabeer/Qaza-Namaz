@@ -1,71 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
-import '../../core/widgets/section_header.dart';
 import '../../l10n/app_localizations.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    var acknowledged = false;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.accountDeleteCloudData),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.accountDeleteCloudDataMessage),
-              const SizedBox(height: 16),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: acknowledged,
-                onChanged: (value) =>
-                    setState(() => acknowledged = value ?? false),
-                title: Text(l10n.accountDeleteCloudDataAcknowledge),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text(l10n.accountCancel),
-            ),
-            FilledButton(
-              onPressed: acknowledged
-                  ? () => Navigator.pop(dialogContext, true)
-                  : null,
-              child: Text(l10n.accountDeleteCloudData),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (result != true || !context.mounted) return;
-
-    try {
-      await ref.read(accountSessionManagerProvider.notifier).deleteCloudData();
-      if (!context.mounted) return;
-      ref.read(appSnackbarServiceProvider).success(l10n.accountCloudDeleted);
-    } catch (_) {
-      if (!context.mounted) return;
-      ref.read(appSnackbarServiceProvider).error(l10n.cloudDeleteFailed);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(accountSessionManagerProvider);
+    final account = session.activeAccount;
 
     ref.listen(
       accountSessionManagerProvider,
@@ -80,7 +32,6 @@ class AccountScreen extends ConsumerWidget {
         }
       },
     );
-    final account = session.activeAccount;
 
     return AppScaffold(
       title: l10n.accountTitle,
@@ -108,20 +59,7 @@ class AccountScreen extends ConsumerWidget {
                         },
             )
           else if (account?.isGoogle == true)
-            _GoogleAccountContent(
-              account: account!,
-              onEnableBackup: () => ref
-                  .read(accountSessionManagerProvider.notifier)
-                  .enableBackup(),
-              onPauseBackup: () => ref
-                  .read(accountSessionManagerProvider.notifier)
-                  .pauseBackup(),
-              onSignOut: () =>
-                  ref.read(accountSessionManagerProvider.notifier).signOut(),
-              onDisconnect: () =>
-                  ref.read(accountSessionManagerProvider.notifier).disconnect(),
-              onDeleteCloudData: () => _confirmDelete(context, ref),
-            ),
+            _GoogleAccountContent(account: account!),
         ],
       ),
     );
@@ -141,8 +79,7 @@ class _AccountIdentityCard extends StatelessWidget {
     final subtitle = google
         ? (account?.googleEmail ?? '')
         : l10n.accountGuestLocalDataSubtitle;
-    final status =
-        google ? l10n.accountSignedIn : l10n.accountNotConnectedGoogle;
+    final status = google ? l10n.accountSignedIn : l10n.accountNotConnectedGoogle;
 
     return Card(
       child: Padding(
@@ -161,10 +98,7 @@ class _AccountIdentityCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
@@ -221,100 +155,167 @@ class _GuestAccountContent extends StatelessWidget {
   }
 }
 
-class _GoogleAccountContent extends StatelessWidget {
-  const _GoogleAccountContent({
-    required this.account,
-    required this.onEnableBackup,
-    required this.onPauseBackup,
-    required this.onSignOut,
-    required this.onDisconnect,
-    required this.onDeleteCloudData,
-  });
+class _GoogleAccountContent extends ConsumerStatefulWidget {
+  const _GoogleAccountContent({required this.account});
 
   final LocalAccount account;
-  final VoidCallback onEnableBackup;
-  final VoidCallback onPauseBackup;
-  final VoidCallback onSignOut;
-  final VoidCallback onDisconnect;
-  final Future<void> Function() onDeleteCloudData;
+
+  @override
+  ConsumerState<_GoogleAccountContent> createState() =>
+      _GoogleAccountContentState();
+}
+
+class _GoogleAccountContentState
+    extends ConsumerState<_GoogleAccountContent> {
+  BackupStatusSnapshot? _backupStatus;
+  Timer? _statusTimer;
+  bool _backupActionRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBackupStatus();
+    _statusTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _refreshBackupStatus(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refreshBackupStatus() async {
+    try {
+      final status = await ref
+          .read(accountLocalStoreProvider)
+          .readBackupStatus(widget.account.localAccountId);
+      if (mounted) setState(() => _backupStatus = status);
+    } catch (_) {}
+  }
+
+  Future<void> _setBackup(bool enabled) async {
+    if (_backupActionRunning) return;
+    setState(() => _backupActionRunning = true);
+    try {
+      final manager = ref.read(accountSessionManagerProvider.notifier);
+      if (enabled) {
+        await manager.enableBackup();
+      } else {
+        await manager.pauseBackup();
+      }
+      await _refreshBackupStatus();
+    } catch (_) {
+      await _refreshBackupStatus();
+    } finally {
+      if (mounted) setState(() => _backupActionRunning = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    if (_backupActionRunning) return;
+    setState(() => _backupActionRunning = true);
+    try {
+      await ref.read(accountSessionManagerProvider.notifier).signOut();
+    } catch (_) {
+      if (mounted) setState(() => _backupActionRunning = false);
+    }
+  }
+
+  String _statusText(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final status = _backupStatus;
+    if (status == null) return l10n.accountBackupStatusChecking;
+    if (!status.backupEnabled) return l10n.accountBackupStatusDisabled;
+    if (status.isCurrent && status.lastSuccessfulBackupAt != null) {
+      final time = MaterialLocalizations.of(context).formatTimeOfDay(
+        TimeOfDay.fromDateTime(status.lastSuccessfulBackupAt!),
+        alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat,
+      );
+      return l10n.accountBackupStatusBackedUp(
+        l10n.commonToday + ', ' + time,
+      );
+    }
+    switch (status.state) {
+      case 'running':
+        return l10n.accountBackupStatusBackingUp;
+      case 'waitingForConnection':
+        return l10n.accountBackupStatusWaitingConnection;
+      case 'failed':
+        return l10n.accountBackupStatusFailed;
+      default:
+        return l10n.accountBackupStatusPending;
+    }
+  }
+
+  bool get _isBackingUp => _backupStatus?.state == 'running';
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final status = _backupStatus;
+    final enabled = status?.backupEnabled ?? widget.account.cloudBackupEnabled;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SettingsSection(
           title: l10n.accountBackupSection,
-          child: SwitchListTile(
-            title: Text(l10n.accountCloudBackup),
-            subtitle: Text(
-              account.cloudBackupEnabled
-                  ? l10n.accountBackupAutomaticDescription
-                  : l10n.accountBackupPaused,
-            ),
-            value: account.cloudBackupEnabled,
-            onChanged: account.cloudBackupEnabled
-                ? (_) => onPauseBackup()
-                : (_) => onEnableBackup(),
-          ),
-        ),
-        const SizedBox(height: 20),
-        SettingsSection(
-          title: l10n.accountAccountActions,
           child: Column(
             children: [
-              ListTile(
-                leading: const Icon(Icons.logout_rounded),
-                title: Text(l10n.accountSignOut),
-                subtitle: Text(l10n.accountSignOutDescription),
-                onTap: onSignOut,
+              SwitchListTile(
+                key: const Key('account_automatic_backup_switch'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.accountAutomaticBackup),
+                subtitle: Text(l10n.accountBackupAutomaticDescription),
+                value: enabled,
+                onChanged: _backupActionRunning ? null : _setBackup,
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.link_off_rounded),
-                title: Text(l10n.accountDisconnect),
-                subtitle: Text(l10n.accountDisconnectDescription),
-                onTap: onDisconnect,
+              const SizedBox(height: 4),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Row(
+                  key: ValueKey(_statusText(context)),
+                  children: [
+                    if (_isBackingUp)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Icon(
+                        enabled && status?.isCurrent == true
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.cloud_outlined,
+                        size: 18,
+                      ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _statusText(context),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        SectionHeader(title: l10n.accountDangerZone),
-        const SizedBox(height: 8),
-        DestructiveActionRow(
-          key: const Key('account_delete_cloud_data'),
-          icon: Icons.delete_outline_rounded,
-          label: l10n.accountDeleteCloudData,
-          description: l10n.accountDeleteCloudDataMessage,
-          confirmationTitle: l10n.accountDeleteCloudData,
-          confirmationMessage: l10n.accountDeleteCloudDataMessage,
-          acknowledgeLabel: l10n.accountDeleteCloudDataAcknowledge,
-          confirmLabel: l10n.accountDeleteCloudData,
-          onConfirm: onDeleteCloudData,
+        const SizedBox(height: 28),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const Key('account_sign_out'),
+            onPressed: _backupActionRunning ? null : _signOut,
+            icon: const Icon(Icons.logout_rounded),
+            label: Text(l10n.accountSignOut),
+          ),
         ),
       ],
     );
   }
-}
-
-class DestructiveActionButton extends StatelessWidget {
-  const DestructiveActionButton({
-    required this.onPressed,
-    required this.label,
-    super.key,
-  });
-
-  final VoidCallback onPressed;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => FilledButton.tonal(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          foregroundColor: Theme.of(context).colorScheme.error,
-        ),
-        child: Text(label),
-      );
 }
