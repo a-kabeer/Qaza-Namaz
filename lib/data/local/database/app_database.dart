@@ -785,11 +785,7 @@ class AppDatabase extends _$AppDatabase {
               END
           WHERE local_account_id = $accountExpression;
         END
-      '''
-          .replaceAll('$table', table)
-          .replaceAll('$operation', operation)
-          .replaceAll('$event', event)
-          .replaceAll('$accountExpression', accountExpression));
+      ''');
     }
 
     await createTrigger('insert', accountColumn, 'INSERT');
