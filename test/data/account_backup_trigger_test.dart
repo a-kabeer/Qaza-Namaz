@@ -69,4 +69,90 @@ void main() {
     ).get();
     expect(updated.single.read<int>('entity_version'), 2);
   });
-}
+
+  test('account backup revision advances with Google data changes', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, firebase_uid, google_email,
+          lifecycle_state, cloud_backup_enabled, cloud_generation,
+          created_at, updated_at)
+         VALUES (?, 'google', ?, ?, 'active', 1, 1, ?, ?)''',
+      variables: [
+        Variable('google-revision'),
+        Variable('uid-revision'),
+        Variable('revision@example.com'),
+        Variable(DateTime(2026, 1, 1).microsecondsSinceEpoch),
+        Variable(DateTime(2026, 1, 1).microsecondsSinceEpoch),
+      ],
+    );
+
+    final initial = await database.customSelect(
+      '''SELECT current_dataset_revision, acknowledged_dataset_revision
+         FROM account_backup_state
+         WHERE local_account_id = ?''',
+      variables: [Variable('google-revision')],
+    ).get();
+    expect(initial.single.read<int>('current_dataset_revision'), 0);
+    expect(initial.single.read<int>('acknowledged_dataset_revision'), 0);
+
+    await database.customInsert(
+      '''INSERT INTO qaza_records
+         (id, user_id, prayer_type, original_date, status,
+          completion_id, addition_id, record_version, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'pending', NULL, NULL, 1, ?, ?)''',
+      variables: [
+        Variable('revision-record'),
+        Variable('google-revision'),
+        Variable('fajr'),
+        Variable(20260101),
+        Variable(DateTime(2026, 1, 1).microsecondsSinceEpoch),
+        Variable(DateTime(2026, 1, 1).microsecondsSinceEpoch),
+      ],
+    );
+
+    final changed = await database.customSelect(
+      '''SELECT current_dataset_revision
+         FROM account_backup_state
+         WHERE local_account_id = ?''',
+      variables: [Variable('google-revision')],
+    ).get();
+    expect(changed.single.read<int>('current_dataset_revision'), greaterThan(0));
+
+    final acknowledged = await database.customUpdate(
+      '''UPDATE account_backup_state
+         SET acknowledged_dataset_revision = current_dataset_revision,
+             acknowledged_cloud_generation = 1,
+             state = 'idle'
+         WHERE local_account_id = ?''',
+      variables: [Variable('google-revision')],
+    );
+    expect(acknowledged, 1);
+
+    await database.customUpdate(
+      '''UPDATE qaza_records
+         SET status = 'completed', completed_at = ?, record_version = 2,
+             updated_at = ?
+         WHERE id = ? AND user_id = ?''',
+      variables: [
+        Variable(DateTime(2026, 1, 2).microsecondsSinceEpoch),
+        Variable(DateTime(2026, 1, 2).microsecondsSinceEpoch),
+        Variable('revision-record'),
+        Variable('google-revision'),
+      ],
+    );
+
+    final newer = await database.customSelect(
+      '''SELECT current_dataset_revision, acknowledged_dataset_revision
+         FROM account_backup_state
+         WHERE local_account_id = ?''',
+      variables: [Variable('google-revision')],
+    ).get();
+    expect(
+      newer.single.read<int>('current_dataset_revision'),
+      greaterThan(newer.single.read<int>('acknowledged_dataset_revision')),
+    );
+  });
+
