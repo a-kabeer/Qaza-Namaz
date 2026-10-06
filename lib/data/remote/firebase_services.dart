@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,24 +31,47 @@ class FirebaseServices {
   bool _initialized = false;
   Future<void>? _initializing;
 
+  static const Duration initializationTimeout = Duration(seconds: 8);
+
   bool get initialized => _initialized;
 
   Future<bool> initialize() async {
     if (_initialized) return true;
+
     final running = _initializing;
     if (running != null) {
-      await running;
-      return _initialized;
+      return running
+          .then((_) => _initialized)
+          .timeout(initializationTimeout, onTimeout: () => false);
     }
 
     final future = _initializeInternal();
     _initializing = future;
+
+    unawaited(
+      future.then<void>(
+        (_) {
+          if (identical(_initializing, future)) {
+            _initializing = null;
+          }
+        },
+        onError: (Object _, StackTrace __) {
+          if (identical(_initializing, future)) {
+            _initializing = null;
+          }
+        },
+      ),
+    );
+
     try {
-      await future;
-    } finally {
-      _initializing = null;
+      await future.timeout(initializationTimeout);
+      return _initialized;
+    } on TimeoutException {
+      // Do not cancel the underlying initialization. Keep the shared future
+      // owned by the service so later callers cannot start a second Firebase /
+      // Google initialization while this attempt is still completing.
+      return false;
     }
-    return _initialized;
   }
 
   Future<void> _initializeInternal() async {
@@ -90,14 +115,22 @@ class GoogleFirebaseIdentity {
 }
 
 class GoogleFirebaseAuthService {
-  const GoogleFirebaseAuthService(this.services);
+  GoogleFirebaseAuthService(this.services);
 
   final FirebaseServices services;
+  static bool _authenticationInFlight = false;
 
   User? get currentUser =>
       services.initialized ? services.auth.currentUser : null;
 
   Future<User?> signIn() async {
+    _beginAuthentication();
+    final operation = _signInInternal();
+    _releaseAuthenticationWhenComplete(operation);
+    return operation;
+  }
+
+  Future<User?> _signInInternal() async {
     if (!await services.initialize()) {
       throw StateError('Firebase is not available.');
     }
@@ -106,6 +139,9 @@ class GoogleFirebaseAuthService {
       throw StateError('Google Sign-In authentication is unavailable.');
     }
 
+    // Never impose a Dart timeout on the interactive Credential Manager
+    // request. A timeout would not cancel the native request and could allow
+    // a retry to open a second authentication UI while the first remains alive.
     final googleUser = await GoogleSignIn.instance.authenticate();
     final idToken = googleUser.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
@@ -113,7 +149,9 @@ class GoogleFirebaseAuthService {
     }
 
     final credential = GoogleAuthProvider.credential(idToken: idToken);
-    final result = await services.auth.signInWithCredential(credential);
+    final result = await services.auth
+        .signInWithCredential(credential)
+        .timeout(const Duration(seconds: 15));
     return result.user;
   }
 
@@ -123,7 +161,20 @@ class GoogleFirebaseAuthService {
   Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
     Duration timeout = const Duration(seconds: 5),
   }) async {
-    if (!await services.initialize().timeout(timeout, onTimeout: () => false)) {
+    if (_authenticationInFlight) return null;
+
+    _beginAuthentication();
+    final operation = _attemptLightweightAuthenticationInternal(timeout);
+    _releaseAuthenticationWhenComplete(operation);
+    return operation;
+  }
+
+  Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
+    Duration timeout,
+  ) async {
+    if (!await services
+        .initialize()
+        .timeout(timeout, onTimeout: () => false)) {
       return null;
     }
 
@@ -159,6 +210,22 @@ class GoogleFirebaseAuthService {
           ? null
           : GoogleFirebaseIdentity(uid: user.uid, email: user.email);
     }
+  }
+
+  void _beginAuthentication() {
+    if (_authenticationInFlight) {
+      throw StateError('Google authentication is already in progress.');
+    }
+    _authenticationInFlight = true;
+  }
+
+  void _releaseAuthenticationWhenComplete(Future<Object?> operation) {
+    unawaited(
+      operation.then<void>(
+        (_) => _authenticationInFlight = false,
+        onError: (Object _, StackTrace __) => _authenticationInFlight = false,
+      ),
+    );
   }
 
   Future<void> signOut() async {

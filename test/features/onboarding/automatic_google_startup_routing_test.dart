@@ -2,6 +2,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,12 +46,15 @@ class _FakeAuth extends GoogleFirebaseAuthService {
   _FakeAuth(super.services, this.identity);
 
   final GoogleFirebaseIdentity? identity;
+  int lightweightAuthenticationCalls = 0;
 
   @override
   Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      identity;
+  }) async {
+    lightweightAuthenticationCalls++;
+    return identity;
+  }
 
   @override
   Future<void> signOut() async {}
@@ -61,6 +66,22 @@ class _FailingInteractiveAuth extends _FakeAuth {
   @override
   Future<User?> signIn() async {
     throw StateError('Google authentication canceled.');
+  }
+}
+
+class _ControlledInteractiveAuth extends _FakeAuth {
+  _ControlledInteractiveAuth(
+    super.services,
+    super.identity,
+  );
+
+  final Completer<User?> signInCompleter = Completer<User?>();
+  int signInCalls = 0;
+
+  @override
+  Future<User?> signIn() {
+    signInCalls++;
+    return signInCompleter.future;
   }
 }
 
@@ -201,11 +222,23 @@ void main() {
     'fresh installation with no Google identity keeps Account Choice required',
     () async {
       final firebase = _FakeFirebase();
-      final manager = await _manager(
-        database: database,
-        store: store,
-        identity: null,
+      final auth = _FakeAuth(firebase, null);
+      final backup = _FakeBackup(
         firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        ),
       );
 
       await manager.initialize();
@@ -213,7 +246,8 @@ void main() {
 
       expect(manager.activeAccount, isNull);
       expect(manager.initialChoiceRequired, isTrue);
-      expect(firebase.initializeCalls, 1);
+      expect(firebase.initializeCalls, 0);
+      expect(auth.lightweightAuthenticationCalls, 0);
     },
   );
 
@@ -237,26 +271,43 @@ void main() {
   );
 
   testWidgets(
-    'fresh installation with cached Google identity skips Account Choice',
+    'fresh installation with cached Google identity still shows Account Choice',
     (tester) async {
-      final manager = await _manager(
-        database: database,
-        store: store,
-        identity: const GoogleFirebaseIdentity(
+      final firebase = _FakeFirebase();
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
           uid: 'new-device-google',
           email: 'user@example.com',
         ),
       );
+      final backup = _FakeBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        ),
+      );
       await manager.initialize();
-      await waitForGoogleStartupRestore(manager);
 
-      expect(manager.activeAccount?.isGoogle, isTrue);
-      expect(manager.initialChoiceRequired, isFalse);
+      expect(manager.activeAccount, isNull);
+      expect(auth.lightweightAuthenticationCalls, 0);
+      expect(manager.initialChoiceRequired, isTrue);
 
       await pumpStartupGate(tester, manager);
 
-      expect(find.byType(AccountChoiceScreen), findsNothing);
-      expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+      expect(find.byType(AccountChoiceScreen), findsOneWidget);
+      expect(find.byType(LanguageSelectionScreen), findsNothing);
     },
   );
 
@@ -267,6 +318,7 @@ void main() {
     );
     final profile = _completeProfile();
     await store.saveProfile(id, profile);
+    await store.activate(id);
 
     final manager = await _manager(
       database: database,
@@ -375,8 +427,14 @@ void main() {
   });
 
   test(
-    'new Google UID creates one partition and restores cloud profile',
+    'existing Google UID restores the local partition from cloud profile',
     () async {
+      final id = await store.createGooglePartition(
+        firebaseUid: 'recovered-uid',
+        email: 'recovered@example.com',
+      );
+      await store.activate(id);
+
       final manager = await _manager(
         database: database,
         store: store,
@@ -406,4 +464,52 @@ void main() {
       expect(rows.single.read<int>('count'), 1);
     },
   );
+  test(
+    'duplicate connectGoogle calls start only one authentication operation',
+    () async {
+      final firebase = _FakeFirebase();
+      final auth = _ControlledInteractiveAuth(firebase, null);
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: _FakeBackup(
+          firebase: firebase,
+          database: database,
+          accountStore: store,
+        ),
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: _FakeBackup(
+            firebase: firebase,
+            database: database,
+            accountStore: store,
+          ),
+          accountStore: store,
+          database: database,
+        ),
+      );
+
+      await manager.initialize();
+      expect(manager.initialChoiceRequired, isTrue);
+
+      final first = manager.connectGoogle();
+      await Future<void>.delayed(Duration.zero);
+
+      final second = manager.connectGoogle();
+      expect(auth.signInCalls, 1);
+      expect(manager.state.phase, AccountSessionPhase.connecting);
+
+      auth.signInCompleter.complete(null);
+      await first;
+      await second;
+
+      expect(auth.signInCalls, 1);
+      expect(manager.state.phase, AccountSessionPhase.ready);
+      expect(manager.activeAccount, isNull);
+      expect(manager.initialChoiceRequired, isTrue);
+    },
+  );
+
+
 }

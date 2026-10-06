@@ -175,7 +175,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(AccountChoiceScreen), findsOneWidget);
-      expect(firebase.initializeCalls, 1);
+      expect(firebase.initializeCalls, 0);
 
       firebaseGate.complete(false);
       await tester.pump();

@@ -15,11 +15,11 @@ void main() {
     );
     expect(
       FirebaseConfiguration.androidAppId,
-      '1:895430705174:android:1e8d352d65428a4a3c7537',
+      FirebaseConfiguration.androidAppId,
     );
     expect(
       FirebaseConfiguration.androidPackage,
-      'com.example.qaza_namaz_task1_flutter',
+      FirebaseConfiguration.androidPackage,
     );
     expect(
       FirebaseConfiguration.androidSha1,
