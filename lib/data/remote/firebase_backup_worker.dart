@@ -15,21 +15,17 @@ class FirebaseBackupWorker {
     required FirebaseBackupService backupService,
     GoogleFirebaseAuthService? authService,
     Future<String?> Function()? currentFirebaseUidProvider,
-    Future<List<ConnectivityResult>> Function()? connectivityProvider,
   })  : _firebase = firebase,
         _accountStore = accountStore,
         _backup = backupService,
         _authService = authService,
-        _currentFirebaseUidProvider = currentFirebaseUidProvider,
-        _connectivityProvider =
-            connectivityProvider ?? Connectivity().checkConnectivity;
+        _currentFirebaseUidProvider = currentFirebaseUidProvider;
 
   final FirebaseServices _firebase;
   final AccountLocalStore _accountStore;
   final FirebaseBackupService _backup;
   final GoogleFirebaseAuthService? _authService;
   final Future<String?> Function()? _currentFirebaseUidProvider;
-  final Future<List<ConnectivityResult>> Function() _connectivityProvider;
   final String _workerId = 'worker_${Random.secure().nextInt(1 << 30)}';
   bool _running = false;
 
@@ -203,7 +199,7 @@ class FirebaseBackupWorker {
             stackTrace: stack,
           );
           final nowMicros = DateTime.now().microsecondsSinceEpoch;
-          final connectivity = await _connectivityProvider().catchError(
+          final connectivity = await Connectivity().checkConnectivity().catchError(
             (_) => const <ConnectivityResult>[],
           );
           final offline =
