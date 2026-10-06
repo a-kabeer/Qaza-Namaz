@@ -466,10 +466,8 @@ class AccountSessionManager extends ChangeNotifier {
       }
 
       if (root.status == CloudRootStatus.missing) {
-        await _accountStore.setRestoreState('none');
         final account = await _accountStore.getAccount(localAccountId);
         if (account == null) return;
-        await _accountStore.setMigrationState('cloudBackupInProgress');
         await _backup
             .bootstrapAccount(
               localAccountId: localAccountId,
