@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -235,13 +234,12 @@ void main() {
         accountStore: store,
         backupService: backup,
         currentFirebaseUidProvider: () async => 'retry-user',
-        connectivityProvider: () async => const [ConnectivityResult.wifi],
       );
 
       await worker.runOnce();
 
       final failed = await store.readBackupStatus(accountId);
-      expect(failed.state, 'failed');
+      expect(failed.state, 'waitingForConnection');
       expect(failed.failureCategory, 'networkUnavailable');
       expect(failed.attemptCount, 1);
       expect(failed.lastAttemptAt, isNotNull);
@@ -345,7 +343,9 @@ void main() {
 
       final outbox = await store.loadModernOutboxBatch(
         localAccountId: accountId,
-        nowMicros: DateTime.now().microsecondsSinceEpoch + 3600000,
+        nowMicros: DateTime.now().microsecondsSinceEpoch +
+          const Duration(minutes: 5).inMicroseconds +
+          1,
         limit: 10,
       );
       expect(outbox, hasLength(1));
