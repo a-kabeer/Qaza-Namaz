@@ -370,7 +370,12 @@ void main() {
         accountStore: store,
         backupService: backup,
       );
-      final container = _container(manager, backupWorker: worker);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+        backupWorker: worker,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
