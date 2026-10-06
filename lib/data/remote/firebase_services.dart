@@ -118,7 +118,7 @@ class GoogleFirebaseAuthService {
   GoogleFirebaseAuthService(this.services);
 
   final FirebaseServices services;
-  bool _authenticationInFlight = false;
+  static bool _authenticationInFlight = false;
 
   User? get currentUser =>
       services.initialized ? services.auth.currentUser : null;
