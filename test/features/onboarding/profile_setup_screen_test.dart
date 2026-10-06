@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/native.dart';
@@ -109,41 +112,6 @@ class _FakeQazaPlanRevisionRepository
   }
 }
 
-class _CompletingImportController extends QazaImportController {
-  String? startedUserId;
-  int startCount = 0;
-
-  @override
-  QazaImportTaskState build() => const QazaImportTaskState();
-
-  @override
-  bool start({
-    required String userId,
-    required Iterable<DateTime> dates,
-    required Iterable<PrayerType> prayers,
-    QazaAdditionMode? mode,
-    String? additionId,
-    int? expectedRevision,
-    DateTime? earliestDate,
-    DateTime? today,
-    bool witrAllowed = true,
-    CurrentDayQazaPrayerTimeContext? prayerTimeContext,
-    String? profilePlanRevisionId,
-    String? profilePlanFingerprint,
-  }) {
-    startCount++;
-    startedUserId = userId;
-    state = QazaImportTaskState(
-      phase: QazaImportTaskPhase.completed,
-      userId: userId,
-      processed: 5,
-      total: 5,
-      added: 5,
-      completedAt: DateTime.now(),
-    );
-    return true;
-  }
-}
 
 void main() {
   late AppDatabase database;
@@ -159,8 +127,6 @@ void main() {
   testWidgets(
     'profile onboarding imports Qaza after activating the saved local ledger',
     (tester) async {
-      final repository = _FakeUserProfileRepository();
-      final importController = _CompletingImportController();
       final initialProfile = UserProfile(
         languageCode: 'en',
         madhab: Madhab.hanafi,
@@ -232,14 +198,29 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      expect(importController.startedUserId, UserProfile.localLedgerUserId);
       expect(find.byType(WorkspaceShell), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+      final profileRows = await database.customSelect(
+        '''SELECT payload_json FROM account_profiles
+           WHERE local_account_id = ?''',
+        variables: [Variable(UserProfile.localLedgerUserId)],
+      ).get();
+      expect(profileRows, hasLength(1));
       expect(
-        find.text('Retry'),
-        findsNothing,
+        UserProfile.fromJson(
+          Map<String, dynamic>.from(
+            jsonDecode(profileRows.single.read<String>('payload_json')),
+          ),
+        ).onboardingCompleted,
+        isTrue,
       );
-      expect(repository.stored?.onboardingCompleted, isTrue);
-      expect(repository.saveCount, greaterThan(1));
+      expect(
+        await database.customSelect(
+          '''SELECT id FROM qaza_records WHERE user_id = ?''',
+          variables: [Variable(UserProfile.localLedgerUserId)],
+        ).get(),
+        hasLength(5),
+      );
     },
   );
 
@@ -247,8 +228,6 @@ void main() {
   testWidgets(
     'zero-Qaza onboarding completes directly from Profile Setup without review or import',
     (tester) async {
-      final repository = _FakeUserProfileRepository();
-      final importController = _CompletingImportController();
       final initialProfile = UserProfile(
         languageCode: 'en',
         gender: Gender.male,
@@ -315,9 +294,29 @@ void main() {
       }
 
       expect(find.byKey(const Key('qaza_review_add')), findsNothing);
-      expect(importController.startCount, 0);
       expect(find.byType(WorkspaceShell), findsOneWidget);
-      expect(repository.stored?.onboardingCompleted, isTrue);
+      final profileRows = await database.customSelect(
+        '''SELECT payload_json FROM account_profiles
+           WHERE local_account_id = ?''',
+        variables: [Variable(UserProfile.localLedgerUserId)],
+      ).get();
+      expect(profileRows, hasLength(1));
+      expect(
+        UserProfile.fromJson(
+          Map<String, dynamic>.from(
+            jsonDecode(profileRows.single.read<String>('payload_json')),
+          ),
+        ).onboardingCompleted,
+        isTrue,
+      );
+      expect(
+        await database.customSelect(
+          '''SELECT COUNT(*) AS count FROM account_plan_revisions
+             WHERE local_account_id = ?''',
+          variables: [Variable(UserProfile.localLedgerUserId)],
+        ).getSingle().then((row) => row.read<int>('count')),
+        1,
+      );
     },
   );
 
