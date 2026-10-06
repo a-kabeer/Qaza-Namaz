@@ -23,15 +23,13 @@ class _FakeBackupService extends FirebaseBackupService {
   bool failNext = true;
   int calls = 0;
 
-  List<(int, int)> progressUpdates = <(int, int)>[];
-
   @override
   Future<void> snapshotAccount({
     required String localAccountId,
     required String uid,
     required int generation,
     int? bootstrapCutoffMicros,
-    Future<void> Function(int processed, int total)? onProgress,
+    BackupProgressCallback? onProgress,
   }) async {
     calls++;
     if (failNext) {
@@ -42,6 +40,40 @@ class _FakeBackupService extends FirebaseBackupService {
       await onProgress(0, 4);
       await onProgress(2, 4);
       await onProgress(4, 4);
+    }
+  }
+}
+
+class _BlockingBackupService extends FirebaseBackupService {
+  _BlockingBackupService(
+    FirebaseServices firebase,
+    AppDatabase database,
+    AccountLocalStore accountStore,
+  ) : super(
+          firebase: firebase,
+          database: database,
+          accountStore: accountStore,
+        );
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> continueCompleter = Completer<void>();
+  int calls = 0;
+
+  @override
+  Future<void> snapshotAccount({
+    required String localAccountId,
+    required String uid,
+    required int generation,
+    int? bootstrapCutoffMicros,
+    BackupProgressCallback? onProgress,
+  }) async {
+    calls++;
+    if (!started.isCompleted) {
+      started.complete();
+    }
+    await continueCompleter.future;
+    if (onProgress != null) {
+      await onProgress(1, 1);
     }
   }
 }
@@ -233,11 +265,11 @@ void main() {
       await store.activate(accountId);
       await store.enqueueSnapshot(accountId);
 
-      final backup = _FakeBackupService(
+      final backup = _BlockingBackupService(
         FirebaseServices(),
         database,
         store,
-      )..failNext = false;
+      );
 
       final worker = FirebaseBackupWorker(
         firebase: FirebaseServices(),
@@ -246,11 +278,15 @@ void main() {
         currentFirebaseUidProvider: () async => 'concurrent-user',
       );
 
-      // The first run is awaited to completion; the worker's single-flight
-      // guard is also covered by the existing runOnce/lease test.
-      expect(await worker.retryNow(), isTrue);
-      expect(await worker.retryNow(), isTrue);
-      expect(backup.calls, 2);
+      final first = worker.runOnce();
+      await backup.started.future;
+
+      expect(await worker.retryNow(), isFalse);
+      expect(backup.calls, 1);
+
+      backup.continueCompleter.complete();
+      await first;
+      expect(backup.calls, 1);
     },
   );
 }
