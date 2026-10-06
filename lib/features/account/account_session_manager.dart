@@ -766,11 +766,16 @@ class AccountSessionManager extends ChangeNotifier {
     } catch (error, stack) {
       final failure = classifyBackupFailure(error, stackTrace: stack);
       try {
+        final retryState =
+            failure.category == BackupFailureCategory.networkUnavailable
+                ? 'waitingForConnection'
+                : 'failed';
         await _accountStore.recordBackupFailure(
           localAccountId: account.localAccountId,
           failureCategory: failure.category.name,
           message: failure.message,
           nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+          state: retryState,
         );
         if (await _backupOperationStillCurrent(
           operationEpoch,
