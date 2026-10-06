@@ -579,6 +579,7 @@ void main() {
       );
       await first;
       await second;
+      await manager.postActivationCloudSyncFuture;
 
       expect(auth.signInCalls, 1);
       expect(manager.state.phase, AccountSessionPhase.ready);
@@ -620,6 +621,7 @@ void main() {
 
       await manager.initialize();
       await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
 
       expect(manager.state.phase, AccountSessionPhase.ready);
       expect(manager.activeAccount?.isGoogle, isTrue);
@@ -684,6 +686,7 @@ void main() {
 
       await manager.initialize();
       await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
 
       final active = manager.activeAccount;
       expect(manager.state.phase, AccountSessionPhase.ready);
@@ -774,8 +777,8 @@ void main() {
 
       await manager.initialize();
       await manager.connectGoogle();
+      await manager.postActivationCloudSyncFuture;
 
-      await Future<void>.delayed(Duration.zero);
       expect(manager.activeAccount?.isGoogle, isTrue);
       expect(backup.bootstrapCalls, 0);
       expect(manager.state.migrationState, 'completed');
