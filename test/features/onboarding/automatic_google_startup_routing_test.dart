@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -745,6 +746,12 @@ void main() {
         database: database,
         accountStore: store,
       );
+      final reconciliation = _FakeReconciliation(
+        firebase: firebase,
+        backupService: backup,
+        accountStore: store,
+        database: database,
+      );
       final auth = _FakeAuth(
         firebase,
         const GoogleFirebaseIdentity(
@@ -752,17 +759,21 @@ void main() {
           email: 'cloud@example.com',
         ),
       );
-      final manager = await _manager(
-        database: database,
-        store: store,
-        identity: auth.identity,
+      final manager = AccountSessionManager(
+        accountStore: store,
         firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: reconciliation,
       );
+
+      await manager.initialize();
       await manager.connectGoogle();
 
       await Future<void>.delayed(Duration.zero);
       expect(manager.activeAccount?.isGoogle, isTrue);
       expect(backup.bootstrapCalls, 0);
+      expect(manager.state.migrationState, 'completed');
     },
   );
 
