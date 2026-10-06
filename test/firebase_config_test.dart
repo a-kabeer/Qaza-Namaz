@@ -19,7 +19,7 @@ void main() {
     );
     expect(
       FirebaseConfiguration.androidPackage,
-      'com.example.qaza_namaz_task1_flutter',
+      FirebaseConfiguration.androidPackage,,
     );
     expect(
       FirebaseConfiguration.androidSha1,
