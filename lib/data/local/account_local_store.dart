@@ -24,8 +24,18 @@ class AccountLocalStore {
   ) {
     return _backupStatusControllers.putIfAbsent(
       localAccountId,
-      () => StreamController<BackupStatusSnapshot>.broadcast(sync: true),
+      () => StreamController<BackupStatusSnapshot>.broadcast(
+        onListen: () {
+          unawaited(_emitInitialBackupStatus(localAccountId));
+        },
+      ),
     );
+  }
+
+  Future<void> _emitInitialBackupStatus(String localAccountId) async {
+    final controller = _backupStatusControllers[localAccountId];
+    if (controller == null || controller.isClosed) return;
+    controller.add(await readBackupStatus(localAccountId));
   }
 
   Future<void> _notifyBackupStatus(String localAccountId) async {
@@ -1752,20 +1762,11 @@ class AccountLocalStore {
       );
     }
     await _ensureBackupStateRow(localAccountId);
-    await database.customUpdate(
-      '''UPDATE account_backup_state
-         SET progress_completed = ?, progress_total = ?
-         WHERE local_account_id = ? AND state = 'running' ''',
-      variables: [
-        Variable(processed),
-        Variable(total),
-        Variable(localAccountId),
-      ],
-    );
-    await _notifyBackupStatus(localAccountId);
+    await   Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
+    return _backupStatusController(localAccountId).stream;
   }
 
-  Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
+g localAccountId) {
     return Stream.multi((multi) async {
       final controller = _backupStatusController(localAccountId);
       final subscription = controller.stream.listen(
