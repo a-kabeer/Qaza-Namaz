@@ -428,6 +428,7 @@ void main() {
       expect(find.text('Your Qaza data is safe on this device.'), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
 
+      await store.setBackupEnabled(accountId, false);
       await store.setBackupState(accountId, 'disabled');
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('Automatic backup is off'), findsOneWidget);
