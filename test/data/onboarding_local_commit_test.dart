@@ -276,7 +276,7 @@ void main() {
         Variable(existing.prayerType.name),
         Variable(existing.originalDate),
         Variable(existing.status.name),
-        const Variable(1),
+        Variable(1),
         Variable(existing.createdAt),
         Variable(existing.updatedAt),
       ],
