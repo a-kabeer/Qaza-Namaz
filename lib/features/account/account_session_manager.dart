@@ -604,7 +604,6 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> signOut() async {
     final operationEpoch = ++_operationEpoch;
-    final operationAccountId = activeLocalAccountId;
     await _auth.signOut();
     _ensureOperationEpochCurrent(operationEpoch);
     await _accountStore.prepareForSignOut();
