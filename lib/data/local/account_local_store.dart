@@ -1661,6 +1661,18 @@ class AccountLocalStore {
     return changed > 0;
   }
 
+  Future<void> prepareForSignOut() async {
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = NULL,
+               initial_choice_required = 1,
+               restore_state = 'none'
+           WHERE id = 1''',
+      );
+    });
+  }
+
   Future<void> setCloudGeneration(String localAccountId, int generation) async {
     await database.customUpdate(
       '''UPDATE local_accounts
