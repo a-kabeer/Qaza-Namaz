@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,11 +30,51 @@ class _FakeBackupService extends FirebaseBackupService {
     required String uid,
     required int generation,
     int? bootstrapCutoffMicros,
+    BackupProgressCallback? onProgress,
   }) async {
     calls++;
     if (failNext) {
       failNext = false;
       throw StateError('synthetic Firebase outage');
+    }
+    if (onProgress != null) {
+      await onProgress(0, 4);
+      await onProgress(2, 4);
+      await onProgress(4, 4);
+    }
+  }
+}
+
+class _BlockingBackupService extends FirebaseBackupService {
+  _BlockingBackupService(
+    FirebaseServices firebase,
+    AppDatabase database,
+    AccountLocalStore accountStore,
+  ) : super(
+          firebase: firebase,
+          database: database,
+          accountStore: accountStore,
+        );
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> continueCompleter = Completer<void>();
+  int calls = 0;
+
+  @override
+  Future<void> snapshotAccount({
+    required String localAccountId,
+    required String uid,
+    required int generation,
+    int? bootstrapCutoffMicros,
+    BackupProgressCallback? onProgress,
+  }) async {
+    calls++;
+    if (!started.isCompleted) {
+      started.complete();
+    }
+    await continueCompleter.future;
+    if (onProgress != null) {
+      await onProgress(1, 1);
     }
   }
 }
@@ -110,4 +151,143 @@ void main() {
     expect(afterSuccess, isEmpty);
     expect(backup.calls, 2);
   });
+
+  test(
+    'worker persists real determinate progress and clears it after success',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = AccountLocalStore(database: database);
+
+      await store.ensureInitialized(
+        hasLegacyProfile: false,
+        hasLegacyQaza: false,
+      );
+      final accountId = await store.createGooglePartition(
+        firebaseUid: 'progress-user',
+        email: 'progress@example.com',
+      );
+      await store.activate(accountId);
+      await store.enqueueSnapshot(accountId);
+
+      final backup = _FakeBackupService(
+        FirebaseServices(),
+        database,
+        store,
+      )..failNext = false;
+
+      final worker = FirebaseBackupWorker(
+        firebase: FirebaseServices(),
+        accountStore: store,
+        backupService: backup,
+        currentFirebaseUidProvider: () async => 'progress-user',
+      );
+
+      await worker.runOnce();
+
+      expect(backup.calls, 1);
+      final status = await store.readBackupStatus(accountId);
+      expect(status.state, 'idle');
+      expect(status.progressCompleted, isNull);
+      expect(status.progressTotal, isNull);
+    },
+  );
+
+  test(
+    'manual retry bypasses delayed backoff without creating a duplicate operation',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = AccountLocalStore(database: database);
+
+      await store.ensureInitialized(
+        hasLegacyProfile: false,
+        hasLegacyQaza: false,
+      );
+      final accountId = await store.createGooglePartition(
+        firebaseUid: 'retry-user',
+        email: 'retry@example.com',
+      );
+      await store.activate(accountId);
+      await store.enqueueSnapshot(accountId);
+
+      final backup = _FakeBackupService(
+        FirebaseServices(),
+        database,
+        store,
+      );
+
+      final worker = FirebaseBackupWorker(
+        firebase: FirebaseServices(),
+        accountStore: store,
+        backupService: backup,
+        currentFirebaseUidProvider: () async => 'retry-user',
+      );
+
+      await worker.runOnce();
+
+      final failed = await store.readBackupStatus(accountId);
+      expect(failed.state, 'failed');
+
+      final retryStarted = await worker.retryNow();
+      expect(retryStarted, isTrue);
+      expect(backup.calls, 2);
+
+      final operations = await store.loadModernOutboxBatch(
+        localAccountId: accountId,
+        nowMicros: DateTime.now().microsecondsSinceEpoch,
+        limit: 10,
+      );
+      expect(operations, isEmpty);
+
+      final success = await store.readBackupStatus(accountId);
+      expect(success.state, 'idle');
+    },
+  );
+
+  test(
+    'retryNow cannot start a second backup while the worker is running',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = AccountLocalStore(database: database);
+
+      await store.ensureInitialized(
+        hasLegacyProfile: false,
+        hasLegacyQaza: false,
+      );
+      final accountId = await store.createGooglePartition(
+        firebaseUid: 'concurrent-user',
+        email: 'concurrent@example.com',
+      );
+      await store.activate(accountId);
+      await store.enqueueSnapshot(accountId);
+
+      final backup = _BlockingBackupService(
+        FirebaseServices(),
+        database,
+        store,
+      );
+
+      final worker = FirebaseBackupWorker(
+        firebase: FirebaseServices(),
+        accountStore: store,
+        backupService: backup,
+        currentFirebaseUidProvider: () async => 'concurrent-user',
+      );
+
+      final first = worker.runOnce();
+      await backup.started.future;
+
+      expect(await worker.retryNow(), isFalse);
+      expect(backup.calls, 1);
+
+      backup.continueCompleter.complete();
+      await first;
+      expect(backup.calls, 1);
+    },
+  );
 }

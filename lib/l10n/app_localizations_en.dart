@@ -1417,6 +1417,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountBackupStatusWaitingConnection => 'Waiting for connection';
 
   @override
+  String get accountBackupStatusComplete => 'Backup complete';
+
+  @override
+  String accountBackupStatusCompletedAt(String timestamp) => timestamp;
+
+  @override
+  String get accountBackupStatusWaitingConnectionMessage =>
+      'Your Qaza data is safe on this device.';
+
+  @override
+  String get accountBackupStatusFailedTitle => 'Backup couldn\'t complete';
+
+  @override
+  String get accountBackupStatusFailedMessage =>
+      'Your Qaza data is safe on this device.';
+
+  @override
+  String get accountBackupStatusFailedAutomaticRetry =>
+      'We\'ll try again automatically.';
+
+  @override
+  String get accountBackupStatusRetry => 'Try again';
+
+  @override
   String get accountBackupStatusFailed =>
       'Backup couldn’t complete. We’ll try again automatically.';
 

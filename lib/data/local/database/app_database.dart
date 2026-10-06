@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -128,6 +128,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 14) {
             await _ensureBackupStateSchema();
           }
+          if (from < 15) {
+            await _ensureBackupProgressColumns();
+          }
           await _ensurePerformanceIndexes();
           await _ensureMigrationSnapshotSchema();
         },
@@ -150,6 +153,22 @@ class AppDatabase extends _$AppDatabase {
     if (!names.contains('migration_snapshot_id')) {
       await customStatement(
         'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureBackupProgressColumns() async {
+    final columns =
+        await customSelect('PRAGMA table_info(account_backup_state)').get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('progress_completed')) {
+      await customStatement(
+        'ALTER TABLE account_backup_state ADD COLUMN progress_completed INTEGER',
+      );
+    }
+    if (!names.contains('progress_total')) {
+      await customStatement(
+        'ALTER TABLE account_backup_state ADD COLUMN progress_total INTEGER',
       );
     }
   }
@@ -665,7 +684,9 @@ class AppDatabase extends _$AppDatabase {
         acknowledged_dataset_revision INTEGER NOT NULL DEFAULT 0,
         acknowledged_cloud_generation INTEGER NOT NULL DEFAULT 1,
         last_successful_backup_at INTEGER,
-        state TEXT NOT NULL DEFAULT 'pending'
+        state TEXT NOT NULL DEFAULT 'pending',
+        progress_completed INTEGER,
+        progress_total INTEGER
       )
     ''');
 

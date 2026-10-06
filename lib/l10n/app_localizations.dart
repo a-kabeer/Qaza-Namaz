@@ -2378,7 +2378,14 @@ abstract class AppLocalizations {
   String get accountBackupStatusBackingUp;
   String get accountBackupStatusPending;
   String get accountBackupStatusWaitingConnection;
-  String get accountBackupStatusFailed;
+  String get accountBackupStatusComplete;
+  String accountBackupStatusCompletedAt(String timestamp);
+  String get accountBackupStatusWaitingConnectionMessage;
+  String get accountBackupStatusFailedTitle;
+  String get accountBackupStatusFailedMessage;
+  String get accountBackupStatusFailedAutomaticRetry;
+  String get accountBackupStatusRetry;
+    String get accountBackupStatusFailed;
 
 
   /// No description provided for @accountAutomatic.

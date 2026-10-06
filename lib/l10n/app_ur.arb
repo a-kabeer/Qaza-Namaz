@@ -776,5 +776,12 @@
   "accountBackupStatusBackingUp": "آپ کی پیش رفت کا بیک اپ لیا جا رہا ہے…",
   "accountBackupStatusPending": "بیک اپ زیرِ التوا ہے",
   "accountBackupStatusWaitingConnection": "کنکشن کا انتظار ہے",
+  "accountBackupStatusComplete": "بیک اپ مکمل ہو گیا",
+  "accountBackupStatusCompletedAt": "{timestamp}",
+  "accountBackupStatusWaitingConnectionMessage": "آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
+  "accountBackupStatusFailedTitle": "بیک اپ مکمل نہیں ہو سکا",
+  "accountBackupStatusFailedMessage": "آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
+  "accountBackupStatusFailedAutomaticRetry": "ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
+  "accountBackupStatusRetry": "دوبارہ کوشش کریں",
   "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔"
 }

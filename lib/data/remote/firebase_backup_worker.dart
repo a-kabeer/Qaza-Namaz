@@ -26,7 +26,9 @@ class FirebaseBackupWorker {
   final String _workerId = 'worker_${Random.secure().nextInt(1 << 30)}';
   bool _running = false;
 
-  Future<void> runOnce() async {
+  Future<void> runOnce({
+    Future<void> Function(int processed, int total)? onProgress,
+  }) async {
     if (_running) return;
     _running = true;
     try {
@@ -107,6 +109,16 @@ class FirebaseBackupWorker {
             localAccountId: account.localAccountId,
             uid: uid,
             generation: generation,
+            onProgress: (processed, total) async {
+              await _accountStore.setBackupProgress(
+                account.localAccountId,
+                processed,
+                total,
+              );
+              if (onProgress != null) {
+                await onProgress(processed, total);
+              }
+            },
           );
           final acknowledged = await _accountStore.acknowledgeBackup(
             localAccountId: account.localAccountId,
@@ -174,6 +186,25 @@ class FirebaseBackupWorker {
     } finally {
       _running = false;
     }
+  }
+
+  Future<bool> retryNow({
+    Future<void> Function(int processed, int total)? onProgress,
+  }) async {
+    if (_running) return false;
+
+    final account = await _accountStore.activeAccount();
+    if (account == null ||
+        !account.isGoogle ||
+        !account.cloudBackupEnabled ||
+        account.firebaseUid == null ||
+        account.firebaseUid!.isEmpty) {
+      return false;
+    }
+
+    await _accountStore.prepareBackupRetry(account.localAccountId);
+    await runOnce(onProgress: onProgress);
+    return true;
   }
 
   Future<String?> _currentFirebaseUserId() async {

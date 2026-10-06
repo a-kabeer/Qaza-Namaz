@@ -129,6 +129,7 @@ class _FakeBackup extends FirebaseBackupService {
     required String localAccountId,
     required String uid,
     required int generation,
+    BackupProgressCallback? onProgress,
   }) async {
     bootstrapCalls++;
   }
@@ -139,6 +140,7 @@ class _FakeBackup extends FirebaseBackupService {
     required String uid,
     required int generation,
     int? bootstrapCutoffMicros,
+    BackupProgressCallback? onProgress,
   }) async {
     snapshotCalls++;
   }
