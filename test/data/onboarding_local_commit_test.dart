@@ -163,7 +163,7 @@ void main() {
     );
     expect(
       await database.customSelect(
-        '''SELECT user_id, profilePlanRevisionId FROM qaza_records
+        '''SELECT user_id, id FROM qaza_records
            WHERE user_id = ? AND id = ?''',
         variables: [Variable(accountId), Variable(record.id)],
       ).get(),
