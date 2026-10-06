@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "895430705174-97p5f0hg5rcmof2089jmvdhrta9ji6fa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.qaza_namaz.com",
+            "certificate_hash": "204dec07dcd8afbf7eab0915437d7629a54d252f"
+          }
+        },
+        {
           "client_id": "895430705174-mvi0h6u019m2fup9vncdka5dkhuoee6u.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
