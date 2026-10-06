@@ -87,8 +87,8 @@ class FirebaseServices {
 
       await FirebaseAppCheck.instance.activate(
         providerAndroid: kReleaseMode
-            ? AndroidProvider.playIntegrity
-            : AndroidProvider.debug,
+            ? const AndroidPlayIntegrityProvider()
+            : const AndroidDebugProvider(),
       );
 
       _initialized = true;
