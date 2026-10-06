@@ -10,6 +10,7 @@ enum BackupFailureCategory {
   firebaseInitializationFailed,
   appCheckInitializationFailed,
   appCheckTokenUnavailable,
+  appCheckRejected,
   authenticationUnavailable,
   authenticationUidMismatch,
   networkUnavailable,
@@ -49,8 +50,12 @@ BackupFailure classifyBackupFailure(
   if (error is FirebaseException) {
     switch (error.code) {
       case 'permission-denied':
+        final message = error.message?.toLowerCase() ?? '';
+        final category = message.contains('app check')
+            ? BackupFailureCategory.appCheckRejected
+            : BackupFailureCategory.firestorePermissionDenied;
         return BackupFailure(
-          category: BackupFailureCategory.firestorePermissionDenied,
+          category: category,
           message: _safeTechnicalMessage(error),
           cause: error,
           stackTrace: stackTrace,
