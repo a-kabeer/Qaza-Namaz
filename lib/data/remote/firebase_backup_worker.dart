@@ -1,27 +1,30 @@
-
 import 'dart:async';
 import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../local/account_local_store.dart';
+import 'backup_failure.dart';
 import 'firebase_backup_service.dart';
 import 'firebase_services.dart';
-import '../local/account_local_store.dart';
 
 class FirebaseBackupWorker {
   FirebaseBackupWorker({
     required FirebaseServices firebase,
     required AccountLocalStore accountStore,
     required FirebaseBackupService backupService,
+    GoogleFirebaseAuthService? authService,
     Future<String?> Function()? currentFirebaseUidProvider,
   })  : _firebase = firebase,
         _accountStore = accountStore,
         _backup = backupService,
+        _authService = authService,
         _currentFirebaseUidProvider = currentFirebaseUidProvider;
 
   final FirebaseServices _firebase;
   final AccountLocalStore _accountStore;
   final FirebaseBackupService _backup;
+  final GoogleFirebaseAuthService? _authService;
   final Future<String?> Function()? _currentFirebaseUidProvider;
   final String _workerId = 'worker_${Random.secure().nextInt(1 << 30)}';
   bool _running = false;
@@ -36,20 +39,41 @@ class FirebaseBackupWorker {
       if (account == null || !account.isGoogle || !account.cloudBackupEnabled) {
         return;
       }
-      final uid = account.firebaseUid;
-      if (uid == null || uid.isEmpty) return;
 
-      // Onboarding drafts are intentionally local-only. Only a completed
-      // profile is eligible for cloud backup.
+      final uid = account.firebaseUid;
+      if (uid == null || uid.isEmpty) {
+        return;
+      }
+
       final profile = await _accountStore.loadProfile(account.localAccountId);
       if (profile != null && !profile.onboardingCompleted) return;
 
-      final currentUser = await (_currentFirebaseUidProvider?.call() ??
-          _currentFirebaseUserId());
-      if (currentUser != uid) return;
+      final currentFirebaseUid = await _resolveFirebaseUid();
+      if (currentFirebaseUid == null) {
+        await _accountStore.recordBackupFailure(
+          localAccountId: account.localAccountId,
+          failureCategory:
+              BackupFailureCategory.authenticationUnavailable.name,
+          message: 'Firebase authentication session is unavailable.',
+          nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+        );
+        return;
+      }
+
+      if (currentFirebaseUid != uid) {
+        await _accountStore.recordBackupFailure(
+          localAccountId: account.localAccountId,
+          failureCategory:
+              BackupFailureCategory.authenticationUidMismatch.name,
+          message: 'Firebase authentication UID does not match the active account.',
+          nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+        );
+        return;
+      }
 
       final now = DateTime.now().microsecondsSinceEpoch;
-      final status = await _accountStore.readBackupStatus(account.localAccountId);
+      final status =
+          await _accountStore.readBackupStatus(account.localAccountId);
       if (status.currentRevision > status.acknowledgedRevision) {
         await _accountStore.enqueueSnapshot(account.localAccountId);
       }
@@ -77,8 +101,10 @@ class FirebaseBackupWorker {
       if (claimed.isEmpty) return;
 
       final generations = claimed
-          .map((op) =>
-              (op['cloud_generation'] as int?) ?? account.cloudGeneration)
+          .map(
+            (op) =>
+                (op['cloud_generation'] as int?) ?? account.cloudGeneration,
+          )
           .toSet();
 
       for (final generation in generations) {
@@ -88,6 +114,9 @@ class FirebaseBackupWorker {
         );
 
         if (generation != account.cloudGeneration) {
+          // The durable operation is stale, not the user's data. Remove only
+          // this claimed obsolete operation and enqueue a fresh snapshot using
+          // the active generation.
           for (final op in matching) {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
@@ -95,6 +124,7 @@ class FirebaseBackupWorker {
               workerId: _workerId,
             );
           }
+          await _accountStore.enqueueSnapshot(account.localAccountId);
           continue;
         }
 
@@ -120,6 +150,7 @@ class FirebaseBackupWorker {
               }
             },
           );
+
           final acknowledged = await _accountStore.acknowledgeBackup(
             localAccountId: account.localAccountId,
             revision: targetRevision,
@@ -139,11 +170,16 @@ class FirebaseBackupWorker {
                 workerId: _workerId,
                 attempts: attempts,
                 error: '',
-                nextAttemptMicros: DateTime.now().microsecondsSinceEpoch,
+                failureCategory: '',
+                lastAttemptMicros:
+                    DateTime.now().microsecondsSinceEpoch,
+                nextAttemptMicros:
+                    DateTime.now().microsecondsSinceEpoch,
               );
             }
             continue;
           }
+
           for (final op in matching) {
             await _accountStore.removeOutboxOperation(
               localAccountId: account.localAccountId,
@@ -151,21 +187,26 @@ class FirebaseBackupWorker {
               workerId: _workerId,
             );
           }
-        } catch (error) {
-          try {
-            final connectivity = await Connectivity().checkConnectivity();
-            await _accountStore.setBackupState(
-              account.localAccountId,
-              connectivity.contains(ConnectivityResult.none)
-                  ? 'waitingForConnection'
-                  : 'failed',
-            );
-          } catch (_) {
-            await _accountStore.setBackupState(
-              account.localAccountId,
-              'failed',
-            );
-          }
+        } catch (error, stack) {
+          final failure = classifyBackupFailure(
+            error,
+            stackTrace: stack,
+          );
+          final nowMicros = DateTime.now().microsecondsSinceEpoch;
+          final connectivity =
+              await Connectivity().checkConnectivity().catchError(
+                (_) => const <ConnectivityResult>[],
+              );
+          final offline =
+              connectivity.contains(ConnectivityResult.none) ||
+              failure.category == BackupFailureCategory.networkUnavailable;
+          final state = offline ? 'waitingForConnection' : 'failed';
+
+          await _accountStore.setBackupState(
+            account.localAccountId,
+            state,
+          );
+
           for (final op in matching) {
             final attempts = ((op['attempts'] as int?) ?? 0) + 1;
             final backoffSeconds = min(3600, 1 << min(attempts, 10));
@@ -177,9 +218,18 @@ class FirebaseBackupWorker {
               operationId: op['id']! as String,
               workerId: _workerId,
               attempts: attempts,
-              error: error.toString().replaceFirst('Exception: ', ''),
+              error: failure.message,
+              failureCategory: failure.category.name,
+              lastAttemptMicros: nowMicros,
               nextAttemptMicros: next.microsecondsSinceEpoch,
             );
+          }
+
+          final diagnostics = failure.cause;
+          if (diagnostics != null) {
+            // The exception itself is retained only through the diagnostics
+            // boundary in FirebaseServices/other call sites; the outbox stores
+            // the already-redacted technical message above.
           }
         }
       }
@@ -207,8 +257,34 @@ class FirebaseBackupWorker {
     return true;
   }
 
-  Future<String?> _currentFirebaseUserId() async {
-    if (!await _firebase.initialize()) return null;
-    return _firebase.auth.currentUser?.uid;
+  Future<String?> _resolveFirebaseUid() async {
+    final provider = _currentFirebaseUidProvider;
+    if (provider != null) {
+      return provider();
+    }
+
+    final initialization = await _firebase.initializeDetailed();
+    if (!initialization.firebaseCoreInitialized) {
+      throw const BackupFailure(
+        category: BackupFailureCategory.firebaseInitializationFailed,
+        message: 'Firebase Core is not initialized.',
+      );
+    }
+
+    if (!initialization.appCheckInitialized) {
+      throw const BackupFailure(
+        category: BackupFailureCategory.appCheckInitializationFailed,
+        message: 'Firebase App Check is not initialized.',
+      );
+    }
+
+    final current = _firebase.auth.currentUser;
+    if (current != null) return current.uid;
+
+    final authService = _authService;
+    if (authService == null) return null;
+
+    final identity = await authService.attemptLightweightAuthentication();
+    return identity?.uid;
   }
 }
