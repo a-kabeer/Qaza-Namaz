@@ -705,16 +705,16 @@ class AccountSessionManager extends ChangeNotifier {
       );
       final refreshed =
           await _accountStore.getAccount(account.localAccountId) ?? account;
+      final targetRevision =
+          await _accountStore.currentBackupRevision(refreshed.localAccountId);
       await _backup.bootstrapAccount(
         localAccountId: refreshed.localAccountId,
         uid: uid,
         generation: refreshed.cloudGeneration,
       );
-      final revision =
-          await _accountStore.currentBackupRevision(refreshed.localAccountId);
       await _accountStore.acknowledgeBackup(
         localAccountId: refreshed.localAccountId,
-        revision: revision,
+        revision: targetRevision,
         generation: refreshed.cloudGeneration,
         completedAt: DateTime.now(),
       );
