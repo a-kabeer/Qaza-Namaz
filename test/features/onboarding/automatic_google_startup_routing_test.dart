@@ -571,7 +571,12 @@ void main() {
       expect(auth.signInCalls, 1);
       expect(manager.state.phase, AccountSessionPhase.connecting);
 
-      auth.signInCompleter.complete(null);
+      auth.signInCompleter.complete(
+        const GoogleFirebaseIdentity(
+          uid: 'single-flight-google',
+          email: 'single@example.com',
+        ),
+      );
       await first;
       await second;
 
