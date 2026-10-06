@@ -11,6 +11,7 @@ import '../../domain/services/conflict_resolver.dart';
 import '../local/account_local_store.dart';
 import '../local/database/app_database.dart';
 import 'firebase_backup_service.dart';
+import 'backup_failure.dart';
 import 'firebase_services.dart';
 
 class FirebaseReconciliationService {
@@ -40,7 +41,15 @@ class FirebaseReconciliationService {
 
     await _accountStore.setRestoreState('inProgress');
     try {
-      final root = await _backup.readCloudRoot(uid);
+      final rootResult = await _backup.readCloudRootResult(uid);
+      if (!rootResult.isAvailable) {
+        await _accountStore.setRestoreState('none');
+        return ReconciliationResult(
+          cloudAvailable: false,
+          failure: rootResult.failure,
+        );
+      }
+      final root = rootResult.data;
       if (root == null) {
         await _accountStore.setRestoreState('none');
         return const ReconciliationResult(cloudAvailable: false);
@@ -884,10 +893,12 @@ class ReconciliationResult {
     this.generation,
     this.partial = false,
     this.skipped = false,
+    this.failure,
   });
 
   final bool cloudAvailable;
   final int? generation;
   final bool partial;
   final bool skipped;
+  final BackupFailure? failure;
 }
