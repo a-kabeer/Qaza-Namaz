@@ -100,9 +100,26 @@ class FirebaseBackupService {
 
   static const cloudSchemaVersion = 1;
 
+  Future<void> _ensureAuthenticatedUid(String uid) async {
+    final user = _firebase.auth.currentUser;
+    if (user == null) {
+      throw const BackupFailure(
+        category: BackupFailureCategory.authenticationUnavailable,
+        message: 'Firebase authentication session is unavailable.',
+      );
+    }
+    if (user.uid != uid) {
+      throw const BackupFailure(
+        category: BackupFailureCategory.authenticationUidMismatch,
+        message: 'Firebase authentication UID does not match the backup account.',
+      );
+    }
+  }
+
   Future<CloudRootReadResult> readCloudRootResult(String uid) async {
     try {
       await _firebase.ensureFirestoreReady();
+      await _ensureAuthenticatedUid(uid);
       final snap = await _firebase.firestore.collection('users').doc(uid).get();
       if (!snap.exists) {
         return const CloudRootReadResult(status: CloudRootStatus.missing);
@@ -162,6 +179,7 @@ class FirebaseBackupService {
     BackupProgressCallback? onProgress,
   }) async {
     await _firebase.ensureFirestoreReady();
+    await _ensureAuthenticatedUid(uid);
 
     final incremental = bootstrapCutoffMicros == null;
     final progress = _BackupProgressReporter(
@@ -318,6 +336,7 @@ class FirebaseBackupService {
     required int newGeneration,
   }) async {
     await _firebase.ensureFirestoreReady();
+    await _ensureAuthenticatedUid(uid);
 
     final rootRef = _firebase.firestore.collection('users').doc(uid);
     final root = await rootRef.get();
