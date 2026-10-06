@@ -781,6 +781,10 @@
   "accountBackupStatusWaitingConnectionMessage": "آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
   "accountBackupStatusFailedTitle": "بیک اپ مکمل نہیں ہو سکا",
   "accountBackupStatusFailedMessage": "آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔",
+  "accountBackupStatusAuthRequired": "گوگل سیشن بحال کرنے کی ضرورت ہے۔",
+  "accountBackupStatusSecurityRejected": "سیکیورٹی تصدیق نے کلاؤڈ رسائی مسترد کر دی۔",
+  "accountBackupStatusNetwork": "انٹرنیٹ کنکشن موجود نہیں۔ کنکشن بحال ہونے پر بیک اپ دوبارہ جاری ہوگا۔",
+  "accountBackupStatusCloudStateInvalid": "کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔",
   "accountBackupStatusFailedAutomaticRetry": "ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
   "accountBackupStatusRetry": "دوبارہ کوشش کریں",
   "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔"
