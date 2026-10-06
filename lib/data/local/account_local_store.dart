@@ -11,6 +11,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/conflict_resolver.dart';
 import 'database/app_database.dart';
+import 'database/tables/qaza_records.dart';
 
 class AccountLocalStore {
   AccountLocalStore({required this.database});
