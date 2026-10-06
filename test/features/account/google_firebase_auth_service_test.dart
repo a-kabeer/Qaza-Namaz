@@ -27,8 +27,8 @@ void main() {
 
       await Future<void>.delayed(Duration.zero);
 
-      expect(
-        () => service.signIn(),
+      await expectLater(
+        service.signIn(),
         throwsA(
           isA<StateError>().having(
             (error) => error.message,
@@ -55,8 +55,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(
-        () => service.attemptLightweightAuthentication(),
-        returnsNormally,
+        await service.attemptLightweightAuthentication(),
+        isNull,
       );
 
       initializer.complete(false);
