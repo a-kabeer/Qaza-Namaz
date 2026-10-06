@@ -316,8 +316,31 @@ class _AccountBackupStatusView extends StatelessWidget {
           break;
         case 'failed':
           title = l10n.accountBackupStatusFailedTitle;
-          message = l10n.accountBackupStatusFailedMessage;
-          secondaryMessage = l10n.accountBackupStatusFailedAutomaticRetry;
+          final category = status!.failureCategory;
+          switch (category) {
+            case 'authenticationUnavailable':
+            case 'authenticationUidMismatch':
+            case 'firestoreUnauthenticated':
+              message = l10n.accountBackupStatusAuthRequired;
+              break;
+            case 'appCheckInitializationFailed':
+            case 'appCheckTokenUnavailable':
+            case 'appCheckRejected':
+            case 'firestorePermissionDenied':
+              message = l10n.accountBackupStatusSecurityRejected;
+              break;
+            case 'networkUnavailable':
+              message = l10n.accountBackupStatusNetwork;
+              break;
+            case 'cloudGenerationMismatch':
+            case 'cloudDatasetInvalidState':
+              message = l10n.accountBackupStatusCloudStateInvalid;
+              break;
+            default:
+              message = l10n.accountBackupStatusFailedMessage;
+              break;
+          }
+          secondaryMessage = l10n.accountBackupStatusFailedMessage;
           icon = Icons.warning_amber_rounded;
           break;
         case 'idle':
@@ -374,7 +397,7 @@ class _AccountBackupStatusView extends StatelessWidget {
           ),
         ),
       ],
-      if (secondaryMessage != null) ...[
+      if (secondaryMessage != null && secondaryMessage != message) ...[
         const SizedBox(height: 2),
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 30),

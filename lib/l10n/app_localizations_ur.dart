@@ -1431,6 +1431,22 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountBackupStatusFailedMessage =>
       'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
 
+
+  @override
+  String get accountBackupStatusAuthRequired =>
+      'گوگل سیشن بحال کرنے کی ضرورت ہے۔';
+
+  @override
+  String get accountBackupStatusSecurityRejected =>
+      'سیکیورٹی تصدیق نے کلاؤڈ رسائی مسترد کر دی۔';
+
+  @override
+  String get accountBackupStatusNetwork =>
+      'انٹرنیٹ کنکشن موجود نہیں۔ کنکشن بحال ہونے پر بیک اپ دوبارہ جاری ہوگا۔';
+
+  @override
+  String get accountBackupStatusCloudStateInvalid =>
+      'کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔';
   @override
   String get accountBackupStatusFailedAutomaticRetry =>
       'ہم خودکار طور پر دوبارہ کوشش کریں گے۔';

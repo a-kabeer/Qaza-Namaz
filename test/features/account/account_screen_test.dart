@@ -389,8 +389,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text("We'll try again automatically."),
-        findsOneWidget,
+        find.text('Your Qaza data is safe on this device.'),
+        findsAtLeastNWidgets(1),
       );
       expect(find.byKey(const Key('account_backup_try_again')), findsOneWidget);
 

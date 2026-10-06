@@ -1433,6 +1433,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountBackupStatusFailedMessage =>
       'Your Qaza data is safe on this device.';
 
+
+  @override
+  String get accountBackupStatusAuthRequired =>
+      'Google session needs to be restored.';
+
+  @override
+  String get accountBackupStatusSecurityRejected =>
+      'Cloud access was rejected by security verification.';
+
+  @override
+  String get accountBackupStatusNetwork =>
+      'No internet connection. Backup will resume when a connection is available.';
+
+  @override
+  String get accountBackupStatusCloudStateInvalid =>
+      'Cloud backup state changed. Try again.';
   @override
   String get accountBackupStatusFailedAutomaticRetry =>
       'We\'ll try again automatically.';

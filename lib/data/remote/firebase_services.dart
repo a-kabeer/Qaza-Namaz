@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/diagnostics/diagnostics.dart';
+import 'backup_failure.dart';
 
 class FirebaseConfiguration {
   static const projectId = 'qaza-nmz';
@@ -22,32 +23,96 @@ class FirebaseConfiguration {
       '895430705174-alhhbpbn958gt8t7e3d0mr3bqogo19sv.apps.googleusercontent.com';
 }
 
+enum FirebaseInitializationFailure {
+  firebaseCoreFailure,
+  googleSignInFailure,
+  appCheckFailure,
+  timeout,
+}
+
+class FirebaseInitializationResult {
+  const FirebaseInitializationResult({
+    required this.firebaseCoreInitialized,
+    required this.googleSignInInitialized,
+    required this.appCheckInitialized,
+    this.failure,
+  });
+
+  final bool firebaseCoreInitialized;
+  final bool googleSignInInitialized;
+  final bool appCheckInitialized;
+  final FirebaseInitializationFailure? failure;
+
+  bool get authenticationReady =>
+      firebaseCoreInitialized && googleSignInInitialized;
+
+  bool get firestoreReady =>
+      firebaseCoreInitialized && appCheckInitialized;
+}
+
 class FirebaseServices {
   FirebaseServices({
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   }) : _diagnostics = diagnostics;
 
   final DiagnosticsService _diagnostics;
-  bool _initialized = false;
-  Future<void>? _initializing;
+  bool _firebaseCoreInitialized = false;
+  bool _googleSignInInitialized = false;
+  bool _appCheckInitialized = false;
+  bool _appCheckTokenAvailable = false;
+  Future<FirebaseInitializationResult>? _initializing;
+  FirebaseInitializationResult? _lastInitializationResult;
 
   static const Duration initializationTimeout = Duration(seconds: 8);
 
-  bool get initialized => _initialized;
+  bool get initialized => _firebaseCoreInitialized;
+
+  bool get firebaseCoreInitialized => _firebaseCoreInitialized;
+  bool get googleSignInInitialized => _googleSignInInitialized;
+  bool get appCheckInitialized => _appCheckInitialized;
+  bool get appCheckTokenAvailable => _appCheckTokenAvailable;
+
+  FirebaseInitializationResult get initializationResult =>
+      _lastInitializationResult ??
+      FirebaseInitializationResult(
+        firebaseCoreInitialized: _firebaseCoreInitialized,
+        googleSignInInitialized: _googleSignInInitialized,
+        appCheckInitialized: _appCheckInitialized,
+      );
 
   Future<bool> initialize() async {
-    if (_initialized) return true;
+    final result = await initializeDetailed();
+    return result.firebaseCoreInitialized;
+  }
 
+  Future<FirebaseInitializationResult> initializeDetailed() async {
     final running = _initializing;
     if (running != null) {
-      return running
-          .then((_) => _initialized)
-          .timeout(initializationTimeout, onTimeout: () => false);
+      try {
+        return await running.timeout(initializationTimeout);
+      } on TimeoutException {
+        return FirebaseInitializationResult(
+          firebaseCoreInitialized: _firebaseCoreInitialized,
+          googleSignInInitialized: _googleSignInInitialized,
+          appCheckInitialized: _appCheckInitialized,
+          failure: FirebaseInitializationFailure.timeout,
+        );
+      }
+    }
+
+    if (_firebaseCoreInitialized &&
+        _googleSignInInitialized &&
+        _appCheckInitialized) {
+      return _lastInitializationResult ??=
+          FirebaseInitializationResult(
+        firebaseCoreInitialized: true,
+        googleSignInInitialized: true,
+        appCheckInitialized: true,
+      );
     }
 
     final future = _initializeInternal();
     _initializing = future;
-
     unawaited(
       future.then<void>(
         (_) {
@@ -64,41 +129,157 @@ class FirebaseServices {
     );
 
     try {
-      await future.timeout(initializationTimeout);
-      return _initialized;
+      final result = await future.timeout(initializationTimeout);
+      _lastInitializationResult = result;
+      return result;
     } on TimeoutException {
-      // Do not cancel the underlying initialization. Keep the shared future
-      // owned by the service so later callers cannot start a second Firebase /
-      // Google initialization while this attempt is still completing.
-      return false;
+      return FirebaseInitializationResult(
+        firebaseCoreInitialized: _firebaseCoreInitialized,
+        googleSignInInitialized: _googleSignInInitialized,
+        appCheckInitialized: _appCheckInitialized,
+        failure: FirebaseInitializationFailure.timeout,
+      );
     }
   }
 
-  Future<void> _initializeInternal() async {
-    if (defaultTargetPlatform != TargetPlatform.android) return;
-    try {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
-      }
-
-      await GoogleSignIn.instance.initialize(
-        serverClientId: FirebaseConfiguration.webClientId,
+  Future<FirebaseInitializationResult> _initializeInternal() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      const result = FirebaseInitializationResult(
+        firebaseCoreInitialized: false,
+        googleSignInInitialized: false,
+        appCheckInitialized: false,
+        failure: FirebaseInitializationFailure.firebaseCoreFailure,
       );
-
-      await FirebaseAppCheck.instance.activate(
-        providerAndroid: kReleaseMode
-            ? const AndroidPlayIntegrityProvider()
-            : const AndroidDebugProvider(),
-      );
-
-      _initialized = true;
-    } catch (error, stack) {
-      _diagnostics.recordFailure(
+      _diagnostics.recordEvent(
         DiagnosticArea.startup,
-        'firebase_initialize_failed',
+        'firebase_android_initialization_skipped',
+      );
+      return result;
+    }
+
+    FirebaseInitializationFailure? failure;
+
+    if (!_firebaseCoreInitialized) {
+      try {
+        if (Firebase.apps.isEmpty) {
+          await Firebase.initializeApp();
+        }
+        _firebaseCoreInitialized = true;
+      } catch (error, stack) {
+        failure ??= FirebaseInitializationFailure.firebaseCoreFailure;
+        _diagnostics.recordFailure(
+          DiagnosticArea.startup,
+          'firebase_core_initialize_failed',
+          error,
+          stack: stack,
+        );
+      }
+    }
+
+    if (_firebaseCoreInitialized && !_googleSignInInitialized) {
+      try {
+        await GoogleSignIn.instance.initialize(
+          serverClientId: FirebaseConfiguration.webClientId,
+        );
+        _googleSignInInitialized = true;
+      } catch (error, stack) {
+        failure ??= FirebaseInitializationFailure.googleSignInFailure;
+        _diagnostics.recordFailure(
+          DiagnosticArea.startup,
+          'google_sign_in_initialize_failed',
+          error,
+          stack: stack,
+        );
+      }
+    }
+
+    if (_firebaseCoreInitialized && !_appCheckInitialized) {
+      try {
+        await FirebaseAppCheck.instance.activate(
+          providerAndroid: kReleaseMode
+              ? const AndroidPlayIntegrityProvider()
+              : const AndroidDebugProvider(),
+        );
+        _appCheckInitialized = true;
+        _diagnostics.recordEvent(
+          DiagnosticArea.startup,
+          kReleaseMode
+              ? 'app_check_play_integrity_provider_activated'
+              : 'app_check_debug_provider_activated',
+        );
+      } catch (error, stack) {
+        failure ??= FirebaseInitializationFailure.appCheckFailure;
+        _diagnostics.recordFailure(
+          DiagnosticArea.startup,
+          'app_check_initialize_failed',
+          error,
+          stack: stack,
+        );
+      }
+    }
+
+    final result = FirebaseInitializationResult(
+      firebaseCoreInitialized: _firebaseCoreInitialized,
+      googleSignInInitialized: _googleSignInInitialized,
+      appCheckInitialized: _appCheckInitialized,
+      failure: failure,
+    );
+    _lastInitializationResult = result;
+    return result;
+  }
+
+  Future<void> ensureFirestoreReady() async {
+    final result = await initializeDetailed();
+    if (!result.firebaseCoreInitialized) {
+      throw BackupFailure(
+        category: BackupFailureCategory.firebaseInitializationFailed,
+        message: 'Firebase Core initialization failed.',
+        cause: result.failure,
+      );
+    }
+    if (!result.appCheckInitialized) {
+      throw BackupFailure(
+        category: BackupFailureCategory.appCheckInitializationFailed,
+        message: 'Firebase App Check initialization failed.',
+        cause: result.failure,
+      );
+    }
+
+    try {
+      final token = await FirebaseAppCheck.instance.getToken(true);
+      if (token == null || token.isEmpty) {
+        _appCheckTokenAvailable = false;
+        throw const BackupFailure(
+          category: BackupFailureCategory.appCheckTokenUnavailable,
+          message: 'Firebase App Check token is unavailable.',
+        );
+      }
+      _appCheckTokenAvailable = true;
+      _diagnostics.recordEvent(
+        DiagnosticArea.sync,
+        'app_check_token_available',
+      );
+    } catch (error, stack) {
+      _appCheckTokenAvailable = false;
+      final classified = classifyBackupFailure(error, stackTrace: stack);
+      final failure = error is BackupFailure
+          ? error
+          : BackupFailure(
+              category: classified.category ==
+                      BackupFailureCategory.networkUnavailable
+                  ? BackupFailureCategory.networkUnavailable
+                  : BackupFailureCategory.appCheckTokenUnavailable,
+              message: classified.message,
+              cause: error,
+              stackTrace: stack,
+            );
+      _diagnostics.recordFailure(
+        DiagnosticArea.sync,
+        'app_check_token_failed',
         error,
         stack: stack,
       );
+      throw failure;
     }
   }
 

@@ -22,6 +22,7 @@ import '../data/local/onboarding_commit_repository.dart';
 import '../domain/repositories/onboarding_commit_repository.dart';
 import '../data/remote/firebase_services.dart';
 import '../data/remote/firebase_backup_service.dart';
+import '../data/remote/firebase_backup_health_service.dart';
 import '../data/remote/firebase_reconciliation_service.dart';
 import '../data/remote/firebase_backup_worker.dart';
 import '../features/account/account_session_manager.dart';
@@ -103,11 +104,21 @@ final accountSessionManagerProvider =
   return manager;
 });
 
+final firebaseBackupHealthServiceProvider =
+    Provider<FirebaseBackupHealthService>((ref) {
+  return FirebaseBackupHealthService(
+    firebase: ref.watch(firebaseServicesProvider),
+    backupService: ref.watch(firebaseBackupServiceProvider),
+    accountStore: ref.watch(accountLocalStoreProvider),
+  );
+});
+
 final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
   final worker = FirebaseBackupWorker(
     firebase: ref.watch(firebaseServicesProvider),
     accountStore: ref.watch(accountLocalStoreProvider),
     backupService: ref.watch(firebaseBackupServiceProvider),
+    authService: ref.watch(googleFirebaseAuthServiceProvider),
   );
   return worker;
 });

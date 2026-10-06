@@ -9,6 +9,7 @@ import '../core/time/local_date_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../features/onboarding/startup_gate.dart';
+import '../data/remote/firebase_backup_scheduler.dart';
 import '../l10n/app_localizations.dart';
 import 'providers.dart';
 
@@ -31,6 +32,9 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     unawaited(
       ref.read(accountSessionManagerProvider.notifier).initialize(),
     );
+    // Persistent scheduling is a safety net for the existing outbox worker.
+    // It does not own sync state and never bypasses account/auth/App Check checks.
+    unawaited(FirebaseBackupScheduler.initialize());
     unawaited(_configureLocalTimezone());
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((_) {
       if (mounted && !_appVisible) {
