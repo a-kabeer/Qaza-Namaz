@@ -132,7 +132,7 @@ class AccountSessionManager extends ChangeNotifier {
         );
         unawaited(_startupRestoreFuture!);
       }
-    } catch (error, stack) {
+    } catch (error) {
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.error,
@@ -259,16 +259,6 @@ class AccountSessionManager extends ChangeNotifier {
         stack: stack,
       );
     }
-  }
-
-  Future<bool> _startupRestoreStillUnselected(int startupEpoch) async {
-    if (startupEpoch != _operationEpoch) return false;
-    if (_state.activeLocalAccountId != null) return false;
-
-    final activeId = await _accountStore.activeLocalAccountId();
-    if (startupEpoch != _operationEpoch) return false;
-    final choiceRequired = await _accountStore.initialChoiceRequired();
-    return activeId == null && choiceRequired;
   }
 
   Future<bool> _startupRestoreStillActive(
@@ -610,53 +600,6 @@ class AccountSessionManager extends ChangeNotifier {
       await _accountStore.activate(target.localAccountId);
     }
     await _accountStore.completeMigration();
-  }
-
-  Future<void> _resumeInterruptedGoogle(
-    String uid,
-    String? email,
-  ) async {
-    final targetId = await _accountStore.createGooglePartition(
-      firebaseUid: uid,
-      email: email,
-    );
-    final target = await _accountStore.getAccount(targetId);
-    if (target == null) {
-      throw StateError('Google recovery partition unavailable.');
-    }
-
-    try {
-      final root = await _backup.readCloudRoot(uid);
-      if (root == null) {
-        await _backup.bootstrapAccount(
-          localAccountId: target.localAccountId,
-          uid: uid,
-          generation: target.cloudGeneration,
-        );
-      } else {
-        await _reconciliation.restore(
-          localAccountId: target.localAccountId,
-          uid: uid,
-        );
-      }
-      await _accountStore.activate(target.localAccountId);
-    } catch (_) {
-      await _accountStore.deleteLocalAccount(target.localAccountId);
-      await _auth.signOut();
-    }
-  }
-
-  Future<void> _restoreExisting(LocalAccount account) async {
-    if (account.firebaseUid == null) return;
-    try {
-      if (!account.cloudBackupEnabled) return;
-      await _reconciliation.restore(
-        localAccountId: account.localAccountId,
-        uid: account.firebaseUid!,
-      );
-    } catch (_) {
-      // Local Google data remains authoritative when cloud recovery fails.
-    }
   }
 
   Future<void> signOut() async {
