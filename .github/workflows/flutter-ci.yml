@@ -229,12 +229,13 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           source = Path("lib/data/remote/firebase_services.dart").read_text()
+          normalized = "".join(source.split())
           expected = (
-              "providerAndroid: kReleaseMode"
-              " ? const AndroidPlayIntegrityProvider()"
-              " : const AndroidDebugProvider(),"
+              "providerAndroid:kReleaseMode"
+              "?constAndroidPlayIntegrityProvider()"
+              ":constAndroidDebugProvider(),"
           )
-          if expected not in source:
+          if expected not in normalized:
               raise SystemExit(
                   "Firebase App Check provider policy is not explicitly release-safe."
               )
