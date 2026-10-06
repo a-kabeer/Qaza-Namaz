@@ -48,7 +48,20 @@ class FirebaseBackupWorker {
       final profile = await _accountStore.loadProfile(account.localAccountId);
       if (profile != null && !profile.onboardingCompleted) return;
 
-      final currentFirebaseUid = await _resolveFirebaseUid();
+      String? currentFirebaseUid;
+      try {
+        currentFirebaseUid = await _resolveFirebaseUid();
+      } catch (error, stack) {
+        final failure = classifyBackupFailure(error, stackTrace: stack);
+        await _accountStore.recordBackupFailure(
+          localAccountId: account.localAccountId,
+          failureCategory: failure.category.name,
+          message: failure.message,
+          nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+        );
+        return;
+      }
+
       if (currentFirebaseUid == null) {
         await _accountStore.recordBackupFailure(
           localAccountId: account.localAccountId,
