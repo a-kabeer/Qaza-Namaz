@@ -1678,8 +1678,23 @@ class AccountLocalStore {
           variables: [Variable(localAccountId)],
         )
         .watch()
-        .map(_mapBackupStatusRow);
+        .map(
+          (rows) => rows.isEmpty
+              ? const BackupStatusSnapshot(
+                  currentRevision: 0,
+                  acknowledgedRevision: 0,
+                  acknowledgedGeneration: 0,
+                  cloudGeneration: 0,
+                  lastSuccessfulBackupAt: null,
+                  state: 'disabled',
+                  backupEnabled: false,
+                  progressCompleted: null,
+                  progressTotal: null,
+                )
+              : _mapBackupStatusRow(rows.single),
+        );
   }
+
 
   Future<void> prepareBackupRetry(String localAccountId) async {
     await _ensureBackupStateRow(localAccountId);
