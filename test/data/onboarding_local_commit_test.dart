@@ -261,9 +261,9 @@ void main() {
     // Force the commit to fail after the profile write but before the Qaza
     // records/outbox are persisted. The revision is immutable, so a different
     // payload with the same ID is a deterministic transaction-local failure.
-    final conflictingRevision = revision.copyWith(
-      addedRecords: 999,
-    );
+    final conflictingPayload =
+        Map<String, dynamic>.from(revision.toJson())
+          ..['addedRecords'] = 999;
     await database.customInsert(
       '''INSERT INTO account_plan_revisions
          (local_account_id, revision_id, payload_json, created_at)
@@ -271,8 +271,8 @@ void main() {
       variables: [
         Variable(accountId),
         Variable(conflictingRevision.revisionId),
-        Variable(jsonEncode(conflictingRevision.toJson())),
-        Variable(conflictingRevision.createdAt.microsecondsSinceEpoch),
+        Variable(jsonEncode(conflictingPayload)),
+        Variable(revision.createdAt.microsecondsSinceEpoch),
       ],
     );
 
