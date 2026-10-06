@@ -253,6 +253,30 @@ class ProfileQazaPlanReconciliationService {
     }
   }
 
+  static QazaPlanRevision createInitialRevision({
+    required String revisionId,
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required int addedRecords,
+  }) {
+    return QazaPlanRevision.fromPlan(
+      revisionId: revisionId,
+      userId: userId,
+      createdAt: DateTime.now(),
+      plan: plan,
+      planFingerprint: planFingerprint(plan),
+      profileSnapshot: profileSnapshot(profile),
+      previousProfileSnapshot: const {},
+      changedFields: const [],
+      addedRecords: addedRecords,
+      removedRecords: 0,
+      ledgerDecision: QazaPlanLedgerDecision.applied,
+      ledgerPlan: plan,
+      ledgerPlanFingerprint: planFingerprint(plan),
+    );
+  }
+
   Future<QazaPlanRevision> recordInitialPlan({
     required String userId,
     required UserProfile profile,
