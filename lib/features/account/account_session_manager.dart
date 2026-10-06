@@ -8,6 +8,7 @@ import '../../core/diagnostics/diagnostics.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../data/remote/firebase_backup_service.dart';
+import '../../data/remote/backup_failure.dart';
 import '../../data/remote/firebase_reconciliation_service.dart';
 import '../../data/remote/firebase_services.dart';
 import '../../domain/entities/local_account.dart';
@@ -562,7 +563,15 @@ class AccountSessionManager extends ChangeNotifier {
       await _accountStore.setMigrationState('targetPartitionPrepared');
     }
 
-    final root = await _backup.readCloudRoot(uid);
+    final rootResult = await _backup.readCloudRootResult(uid);
+    if (!rootResult.isAvailable) {
+      throw rootResult.failure ??
+          const BackupFailure(
+            category: BackupFailureCategory.unknown,
+            message: 'Cloud root could not be read.',
+          );
+    }
+    final root = rootResult.data;
     await _accountStore.setMigrationState('cloudStateRead');
 
     if (root == null) {
@@ -645,6 +654,9 @@ class AccountSessionManager extends ChangeNotifier {
     // account or leave the switch waiting on cloud work.
     await _accountStore.setBackupEnabled(account.localAccountId, true);
     await _accountStore.setBackupState(account.localAccountId, 'pending');
+    // Keep a durable snapshot operation even when immediate cloud bootstrap
+    // fails, so a later retry/background run can recover without user action.
+    await _accountStore.enqueueSnapshot(account.localAccountId);
     _ensureOperationCurrent(operationEpoch, account.localAccountId);
     await _refresh();
 
@@ -664,7 +676,15 @@ class AccountSessionManager extends ChangeNotifier {
       final uid = account.firebaseUid;
       if (uid == null) return;
 
-      final root = await _backup.readCloudRoot(uid);
+      final rootResult = await _backup.readCloudRootResult(uid);
+      if (!rootResult.isAvailable) {
+        throw rootResult.failure ??
+            const BackupFailure(
+              category: BackupFailureCategory.unknown,
+              message: 'Cloud root could not be read.',
+            );
+      }
+      final root = rootResult.data;
       if (!await _backupOperationStillCurrent(
         operationEpoch,
         account.localAccountId,
@@ -739,9 +759,15 @@ class AccountSessionManager extends ChangeNotifier {
       )) {
         await _refresh();
       }
-    } catch (_) {
+    } catch (error, stack) {
+      final failure = classifyBackupFailure(error, stackTrace: stack);
       try {
-        await _accountStore.setBackupState(account.localAccountId, 'failed');
+        await _accountStore.recordBackupFailure(
+          localAccountId: account.localAccountId,
+          failureCategory: failure.category.name,
+          message: failure.message,
+          nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+        );
         if (await _backupOperationStillCurrent(
           operationEpoch,
           account.localAccountId,
