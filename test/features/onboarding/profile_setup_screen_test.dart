@@ -75,6 +75,9 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   }
 
   @override
+  Future<void> saveLocalOnly(UserProfile profile) => save(profile);
+
+  @override
   Future<void> clear() async {
     stored = null;
   }
@@ -145,12 +148,8 @@ void main() {
             activeLocalAccountIdStateProvider.overrideWith(
               (ref) => UserProfile.localLedgerUserId,
             ),
-          userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
-            ),
-            qazaImportProvider.overrideWith(
-              () => importController,
             ),
             qazaPlanRevisionRepositoryProvider.overrideWithValue(
               _FakeQazaPlanRevisionRepository(),
@@ -252,12 +251,8 @@ void main() {
             activeLocalAccountIdStateProvider.overrideWith(
               (ref) => UserProfile.localLedgerUserId,
             ),
-          userProfileRepositoryProvider.overrideWithValue(repository),
             qazaPlanServiceProvider.overrideWithValue(
               const QazaPlanService(),
-            ),
-            qazaImportProvider.overrideWith(
-              () => importController,
             ),
             qazaPlanRevisionRepositoryProvider.overrideWithValue(
               _FakeQazaPlanRevisionRepository(),
