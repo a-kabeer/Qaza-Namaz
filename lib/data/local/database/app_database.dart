@@ -122,11 +122,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 13) {
             await _ensureEntityMetadataSyncColumn();
           }
-          if (from < 14) {
-            await _ensureBackupStateSchema();
-          }
           if (from < 11) {
             await _ensureAccountSchema();
+          }
+          if (from < 14) {
+            await _ensureBackupStateSchema();
           }
           await _ensurePerformanceIndexes();
           await _ensureMigrationSnapshotSchema();
