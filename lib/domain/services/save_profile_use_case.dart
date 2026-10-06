@@ -38,7 +38,7 @@ class SaveProfileUseCase {
   final DiagnosticsService _diagnostics;
 
   Future<void> saveDraft(UserProfile profile) {
-    return _profileRepository.save(
+    return _profileRepository.saveLocalOnly(
       profile.copyWith(onboardingCompleted: false),
     );
   }
