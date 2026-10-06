@@ -127,15 +127,7 @@ class GoogleFirebaseAuthService {
     _beginAuthentication();
     final operation = _signInInternal();
     _releaseAuthenticationWhenComplete(operation);
-    return operation.timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        throw TimeoutException(
-          'Firebase Google sign-in timed out.',
-          const Duration(seconds: 15),
-        );
-      },
-    );
+    return operation;
   }
 
   Future<User?> _signInInternal() async {
