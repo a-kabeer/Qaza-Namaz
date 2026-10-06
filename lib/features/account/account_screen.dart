@@ -292,6 +292,7 @@ class _AccountBackupStatusView extends StatelessWidget {
 
     String title;
     String? message;
+    String? secondaryMessage;
     IconData icon;
     final showProgress = status?.hasDeterminateProgress == true;
     final runningWithoutProgress = status?.state == 'running' && !showProgress;
@@ -315,10 +316,8 @@ class _AccountBackupStatusView extends StatelessWidget {
           break;
         case 'failed':
           title = l10n.accountBackupStatusFailedTitle;
-          message =
-              l10n.accountBackupStatusFailedMessage +
-              '\n' +
-              l10n.accountBackupStatusFailedAutomaticRetry;
+          message = l10n.accountBackupStatusFailedMessage;
+          secondaryMessage = l10n.accountBackupStatusFailedAutomaticRetry;
           icon = Icons.warning_amber_rounded;
           break;
         case 'idle':
@@ -371,6 +370,16 @@ class _AccountBackupStatusView extends StatelessWidget {
           padding: const EdgeInsetsDirectional.only(start: 30),
           child: Text(
             message!,
+            style: textTheme.bodySmall,
+          ),
+        ),
+      ],
+      if (secondaryMessage != null) ...[
+        const SizedBox(height: 2),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 30),
+          child: Text(
+            secondaryMessage!,
             style: textTheme.bodySmall,
           ),
         ),
