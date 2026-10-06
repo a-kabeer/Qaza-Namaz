@@ -29,7 +29,7 @@ Future<(AppDatabase, AccountLocalStore, String)> _setupGoogle() async {
   return (database, store, accountId);
 }
 
-const _plan = QazaPlan(
+final _plan = QazaPlan(
   startDate: DateTime(2012, 1, 1),
   endDate: DateTime(2012, 1, 2),
   totalDays: 1,
@@ -193,7 +193,7 @@ void main() {
     final (database, store, accountId) = await _setupGoogle();
     addTearDown(database.close);
 
-    final zeroPlan = const QazaPlan(
+    final zeroPlan = QazaPlan(
       startDate: DateTime(2026, 10, 6),
       endDate: DateTime(2026, 10, 6),
       totalDays: 0,
