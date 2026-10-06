@@ -1762,20 +1762,21 @@ class AccountLocalStore {
       );
     }
     await _ensureBackupStateRow(localAccountId);
-    await   Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
-    return _backupStatusController(localAccountId).stream;
+    await database.customUpdate(
+      '''UPDATE account_backup_state
+         SET progress_completed = ?, progress_total = ?
+         WHERE local_account_id = ? AND state = 'running' ''',
+      variables: [
+        Variable(processed),
+        Variable(total),
+        Variable(localAccountId),
+      ],
+    );
+    await _notifyBackupStatus(localAccountId);
   }
 
-g localAccountId) {
-    return Stream.multi((multi) async {
-      final controller = _backupStatusController(localAccountId);
-      final subscription = controller.stream.listen(
-        multi.add,
-        onError: multi.addError,
-      );
-      multi.onCancel = subscription.cancel;
-      multi.add(await readBackupStatus(localAccountId));
-    });
+  Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
+    return _backupStatusController(localAccountId).stream;
   }
 
   Future<void> prepareBackupRetry(String localAccountId) async {
