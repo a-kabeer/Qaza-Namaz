@@ -1766,39 +1766,15 @@ class AccountLocalStore {
   }
 
   Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
-    return database
-        .customSelect(
-          '''SELECT s.current_dataset_revision,
-                    s.acknowledged_dataset_revision,
-                    s.acknowledged_cloud_generation,
-                    s.last_successful_backup_at,
-                    s.state,
-                    s.progress_completed,
-                    s.progress_total,
-                    a.cloud_backup_enabled,
-                    a.cloud_generation
-             FROM account_backup_state s
-             JOIN local_accounts a
-               ON a.local_account_id = s.local_account_id
-             WHERE s.local_account_id = ? LIMIT 1''',
-          variables: [Variable(localAccountId)],
-        )
-        .watch()
-        .map(
-          (rows) => rows.isEmpty
-              ? const BackupStatusSnapshot(
-                  currentRevision: 0,
-                  acknowledgedRevision: 0,
-                  acknowledgedGeneration: 0,
-                  cloudGeneration: 0,
-                  lastSuccessfulBackupAt: null,
-                  state: 'disabled',
-                  backupEnabled: false,
-                  progressCompleted: null,
-                  progressTotal: null,
-                )
-              : _mapBackupStatusRow(rows.single),
-        );
+    return Stream.multi((multi) async {
+      final controller = _backupStatusController(localAccountId);
+      final subscription = controller.stream.listen(
+        multi.add,
+        onError: multi.addError,
+      );
+      multi.onCancel = subscription.cancel;
+      multi.add(await readBackupStatus(localAccountId));
+    });
   }
 
   Future<void> prepareBackupRetry(String localAccountId) async {
