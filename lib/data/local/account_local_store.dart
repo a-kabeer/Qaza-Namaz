@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:math';
 
@@ -85,9 +84,11 @@ class AccountLocalStore {
   }
 
   Future<String> deviceInstanceId() async {
-    final rows = await database.customSelect(
-      'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT device_instance_id FROM device_metadata WHERE id = 1 LIMIT 1',
+        )
+        .get();
     if (rows.isNotEmpty) return rows.first.read<String>('device_instance_id');
 
     final id = _randomId('device');
@@ -145,16 +146,21 @@ class AccountLocalStore {
   }
 
   Future<bool> initialChoiceRequired() async {
-    final rows = await database.customSelect(
-      'SELECT initial_choice_required FROM app_session_state WHERE id = 1',
-    ).get();
-    return rows.isNotEmpty && rows.first.read<int>('initial_choice_required') != 0;
+    final rows = await database
+        .customSelect(
+          'SELECT initial_choice_required FROM app_session_state WHERE id = 1',
+        )
+        .get();
+    return rows.isNotEmpty &&
+        rows.first.read<int>('initial_choice_required') != 0;
   }
 
   Future<String?> activeLocalAccountId() async {
-    final rows = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     return rows.isEmpty
         ? null
         : rows.first.read<String?>('active_local_account_id');
@@ -175,12 +181,12 @@ class AccountLocalStore {
   }
 
   Future<String> migrationState() async {
-    final rows = await database.customSelect(
-      'SELECT migration_state FROM app_session_state WHERE id = 1',
-    ).get();
-    return rows.isEmpty
-        ? 'none'
-        : rows.first.read<String>('migration_state');
+    final rows = await database
+        .customSelect(
+          'SELECT migration_state FROM app_session_state WHERE id = 1',
+        )
+        .get();
+    return rows.isEmpty ? 'none' : rows.first.read<String>('migration_state');
   }
 
   Future<void> setRestoreState(String value) async {
@@ -192,7 +198,8 @@ class AccountLocalStore {
 
   Future<void> activate(String localAccountId) async {
     final account = await getAccount(localAccountId);
-    if (account == null) throw StateError('Local account not found: $localAccountId');
+    if (account == null)
+      throw StateError('Local account not found: $localAccountId');
     if (account.lifecycleState == AccountLifecycleState.archived) {
       throw StateError('Archived local account cannot become active.');
     }
@@ -412,13 +419,14 @@ class AccountLocalStore {
                     updatedAt: DateTime.fromMicrosecondsSinceEpoch(
                       googleProfileRows.first.read<int>('updated_at'),
                     ),
-                    writerDeviceId:
-                        googleProfileRows.first.read<String>('writer_device_id'),
+                    writerDeviceId: googleProfileRows.first
+                        .read<String>('writer_device_id'),
                     operationId:
                         googleProfileRows.first.read<String>('operation_id'),
                     entityId: 'profile',
                   ),
-                ) > 0;
+                ) >
+                0;
         if (keepGuest) {
           await database.customInsert(
             '''INSERT INTO account_profiles
@@ -641,7 +649,9 @@ class AccountLocalStore {
       final googleAdditionIds = (await database.customSelect(
         'SELECT id FROM qaza_additions WHERE user_id = ?',
         variables: [Variable(googleLocalAccountId)],
-      ).get()).map((row) => row.read<String>('id')).toSet();
+      ).get())
+          .map((row) => row.read<String>('id'))
+          .toSet();
 
       for (final row in guestAdditions) {
         final id = row.read<String>('id');
@@ -668,7 +678,8 @@ class AccountLocalStore {
              FROM qaza_additions
              WHERE user_id = ? AND id = ? LIMIT 1''',
           variables: [Variable(googleLocalAccountId), Variable(id)],
-        ).get()).first;
+        ).get())
+            .first;
         final guestStamp = await _localEntityStamp(
           guestLocalAccountId,
           'qazaAddition',
@@ -733,11 +744,11 @@ class AccountLocalStore {
           );
         } else {
           final googleRow = googleRows.first;
-          final guestUpdated =
-              DateTime.parse(row.read<String?>('resolved_at') ??
+          final guestUpdated = DateTime.parse(
+              row.read<String?>('resolved_at') ??
                   row.read<String>('created_at'));
-          final googleUpdated =
-              DateTime.parse(googleRow.read<String?>('resolved_at') ??
+          final googleUpdated = DateTime.parse(
+              googleRow.read<String?>('resolved_at') ??
                   googleRow.read<String>('created_at'));
           final guestStamp = await _localEntityStamp(
             guestLocalAccountId,
@@ -967,7 +978,8 @@ class AccountLocalStore {
              WHERE user_id = ? AND id = ? LIMIT 1''',
           variables: [Variable(googleLocalAccountId), Variable(id)],
         ).get();
-        if (records.isNotEmpty && version >= records.first.read<int>('record_version')) {
+        if (records.isNotEmpty &&
+            version >= records.first.read<int>('record_version')) {
           await database.qazaRecordsDao.deleteById(
             userId: googleLocalAccountId,
             id: id,
@@ -985,8 +997,7 @@ class AccountLocalStore {
           Variable(DateTime.now().microsecondsSinceEpoch),
           Variable(googleLocalAccountId),
         ],
-      );
-      await _enqueueSnapshotInsideTransaction(
+      );      await _enqueueSnapshotInsideTransaction(
         googleLocalAccountId,
         DateTime.now().microsecondsSinceEpoch,
         await deviceInstanceId(),
@@ -1217,9 +1228,11 @@ class AccountLocalStore {
   }
 
   Future<String?> migrationSnapshotId() async {
-    final rows = await database.customSelect(
-      'SELECT migration_snapshot_id FROM app_session_state WHERE id = 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT migration_snapshot_id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     if (rows.isEmpty) return null;
     return rows.first.read<String?>('migration_snapshot_id');
   }
@@ -1271,34 +1284,77 @@ class AccountLocalStore {
         '''SELECT local_account_id, payload_json, entity_version, updated_at,
                   writer_device_id, operation_id
            FROM account_profiles WHERE local_account_id = ?''',
-        ['local_account_id', 'payload_json', 'entity_version', 'updated_at',
-          'writer_device_id', 'operation_id'],
+        [
+          'local_account_id',
+          'payload_json',
+          'entity_version',
+          'updated_at',
+          'writer_device_id',
+          'operation_id'
+        ],
       ),
       'qaza_records': await queryMaps(
         '''SELECT id, user_id, prayer_type, original_date, status, completed_at,
                   completion_id, addition_id, record_version, created_at, updated_at
            FROM qaza_records WHERE user_id = ?''',
-        ['id', 'user_id', 'prayer_type', 'original_date', 'status', 'completed_at',
-          'completion_id', 'addition_id', 'record_version', 'created_at', 'updated_at'],
+        [
+          'id',
+          'user_id',
+          'prayer_type',
+          'original_date',
+          'status',
+          'completed_at',
+          'completion_id',
+          'addition_id',
+          'record_version',
+          'created_at',
+          'updated_at'
+        ],
       ),
       'qaza_additions': await queryMaps(
         '''SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at
            FROM qaza_additions WHERE user_id = ?''',
-        ['id', 'user_id', 'mode', 'input_snapshot', 'revision', 'created_at', 'updated_at'],
+        [
+          'id',
+          'user_id',
+          'mode',
+          'input_snapshot',
+          'revision',
+          'created_at',
+          'updated_at'
+        ],
       ),
       'qaza_deletion_actions': await queryMaps(
         '''SELECT id, user_id, addition_id, created_at, resolved_at, entity_version
            FROM qaza_deletion_actions WHERE user_id = ?''',
-        ['id', 'user_id', 'addition_id', 'created_at', 'resolved_at', 'entity_version'],
+        [
+          'id',
+          'user_id',
+          'addition_id',
+          'created_at',
+          'resolved_at',
+          'entity_version'
+        ],
       ),
       'qaza_deletion_action_record_snapshots': await queryMaps(
         '''SELECT deletion_action_id, record_id, user_id, addition_id,
                   prayer_type, original_date, status, completed_at,
                   completion_id, created_at, updated_at, record_version
            FROM qaza_deletion_action_record_snapshots WHERE user_id = ?''',
-        ['deletion_action_id', 'record_id', 'user_id', 'addition_id', 'prayer_type',
-          'original_date', 'status', 'completed_at', 'completion_id', 'created_at',
-          'updated_at', 'record_version'],
+        [
+          'deletion_action_id',
+          'record_id',
+          'user_id',
+          'addition_id',
+          'prayer_type',
+          'original_date',
+          'status',
+          'completed_at',
+          'completion_id',
+          'created_at',
+          'updated_at',
+          'record_version'
+        ],
       ),
       'account_plan_revisions': await queryMaps(
         '''SELECT local_account_id, revision_id, payload_json, created_at
@@ -1309,15 +1365,29 @@ class AccountLocalStore {
         '''SELECT local_account_id, entity_type, entity_id, entity_version,
                   updated_at, writer_device_id, operation_id
            FROM entity_metadata WHERE local_account_id = ?''',
-        ['local_account_id', 'entity_type', 'entity_id', 'entity_version',
-          'updated_at', 'writer_device_id', 'operation_id'],
+        [
+          'local_account_id',
+          'entity_type',
+          'entity_id',
+          'entity_version',
+          'updated_at',
+          'writer_device_id',
+          'operation_id'
+        ],
       ),
       'qaza_record_tombstones': await queryMaps(
         '''SELECT local_account_id, record_id, record_version, deleted_at,
                   writer_device_id, operation_id, cloud_generation
            FROM qaza_record_tombstones WHERE local_account_id = ?''',
-        ['local_account_id', 'record_id', 'record_version', 'deleted_at',
-          'writer_device_id', 'operation_id', 'cloud_generation'],
+        [
+          'local_account_id',
+          'record_id',
+          'record_version',
+          'deleted_at',
+          'writer_device_id',
+          'operation_id',
+          'cloud_generation'
+        ],
       ),
       'qaza_profile_plan_provenance': await queryMaps(
         '''SELECT record_id, user_id, plan_revision_id, plan_fingerprint
@@ -1329,9 +1399,22 @@ class AccountLocalStore {
                   entity_type, operation, payload_json, next_attempt_at, attempts,
                   worker_id, lease_until, writer_device_id
            FROM sync_outbox WHERE user_id = ?''',
-        ['id', 'user_id', 'type', 'queued_at', 'firebase_uid', 'cloud_generation',
-          'entity_type', 'operation', 'payload_json', 'next_attempt_at', 'attempts',
-          'worker_id', 'lease_until', 'writer_device_id'],
+        [
+          'id',
+          'user_id',
+          'type',
+          'queued_at',
+          'firebase_uid',
+          'cloud_generation',
+          'entity_type',
+          'operation',
+          'payload_json',
+          'next_attempt_at',
+          'attempts',
+          'worker_id',
+          'lease_until',
+          'writer_device_id'
+        ],
       ),
     };
 
@@ -1412,6 +1495,7 @@ class AccountLocalStore {
         variables: [Variable(targetId)],
       );
     }
+
     Future<void> insertRows(String table, List<dynamic> rawRows) async {
       for (final rawRow in rawRows) {
         final row = Map<String, dynamic>.from(rawRow as Map);
@@ -1454,6 +1538,7 @@ class AccountLocalStore {
       );
     });
   }
+
   Future<void> rollbackGoogleMigration(String localAccountId) async {
     // Existing Google-partition migrations are secured by a durable snapshot.
     // The caller may provide either the Guest or migrating Google ID after a
@@ -1574,8 +1659,7 @@ class AccountLocalStore {
     return BackupStatusSnapshot(
       currentRevision: row.read<int>('current_dataset_revision'),
       acknowledgedRevision: row.read<int>('acknowledged_dataset_revision'),
-      acknowledgedGeneration:
-          row.read<int>('acknowledged_cloud_generation'),
+      acknowledgedGeneration: row.read<int>('acknowledged_cloud_generation'),
       cloudGeneration: row.read<int>('cloud_generation'),
       lastSuccessfulBackupAt:
           row.read<int?>('last_successful_backup_at') == null
@@ -1694,7 +1778,6 @@ class AccountLocalStore {
               : _mapBackupStatusRow(rows.single),
         );
   }
-
 
   Future<void> prepareBackupRetry(String localAccountId) async {
     await _ensureBackupStateRow(localAccountId);
@@ -1913,7 +1996,6 @@ class AccountLocalStore {
       if (lifecycle == 'archived' || lifecycle == 'migrating') {
         throw StateError('Local onboarding account is not active.');
       }
-
       final now = DateTime.now().microsecondsSinceEpoch;
       final device = await deviceInstanceId();
       await _writeProfileRowInsideTransaction(
@@ -1959,8 +2041,8 @@ class AccountLocalStore {
         final end = start + 500 < records.length ? start + 500 : records.length;
         final chunk = records.sublist(start, end);
         if (chunk.isNotEmpty) {
-          final ids = await database.qazaRecordsDao
-              .insertRecordsReturningInsertedIds(
+          final ids =
+              await database.qazaRecordsDao.insertRecordsReturningInsertedIds(
             [
               for (final record in chunk)
                 QazaRecordsCompanion.insert(
@@ -2322,9 +2404,11 @@ class AccountLocalStore {
       );
     }
 
-    final sessionRows = await database.customSelect(
-      'SELECT id FROM app_session_state WHERE id = 1',
-    ).get();
+    final sessionRows = await database
+        .customSelect(
+          'SELECT id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     if (sessionRows.isEmpty) {
       final initialChoiceRequired = !hasLegacyProfile && !hasLegacyQaza;
       await database.customInsert(
@@ -2367,8 +2451,8 @@ class AccountLocalStore {
       accountMode: AccountMode.values.byName(row.read<String>('account_mode')),
       firebaseUid: row.read<String?>('firebase_uid'),
       googleEmail: row.read<String?>('google_email'),
-      lifecycleState:
-          AccountLifecycleState.values.byName(row.read<String>('lifecycle_state')),
+      lifecycleState: AccountLifecycleState.values
+          .byName(row.read<String>('lifecycle_state')),
       cloudBackupEnabled: row.read<int>('cloud_backup_enabled') != 0,
       cloudGeneration: row.read<int>('cloud_generation'),
       createdAt:
@@ -2388,7 +2472,6 @@ class AccountLocalStore {
 
   String jsonEncode(Object value) => json.encode(value);
 }
-
 
 class BackupStatusSnapshot {
   const BackupStatusSnapshot({
