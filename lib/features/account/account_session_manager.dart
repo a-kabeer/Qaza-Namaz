@@ -215,10 +215,10 @@ class AccountSessionManager extends ChangeNotifier {
     if (uid == null) return;
 
     try {
-    // A newly-created Google account has no completed onboarding dataset.
-    // Do not restore or bootstrap cloud state until onboarding commits locally.
+    // A local draft is not cloud-authoritative yet. A missing local profile
+    // may still belong to an existing Google account recoverable from cloud.
     final localProfile = await _accountStore.loadProfile(account.localAccountId);
-    if (localProfile == null || !localProfile.onboardingCompleted) {
+    if (localProfile != null && !localProfile.onboardingCompleted) {
       return;
     }
 
