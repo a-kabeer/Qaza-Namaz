@@ -1,7 +1,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/data/remote/firebase_services.dart';
 
 void main() {
   test('Task 1 Firebase Android configuration constants are fixed', () {
