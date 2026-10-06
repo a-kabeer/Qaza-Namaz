@@ -1163,5 +1163,12 @@
   "accountBackupStatusBackingUp": "Backing up your progress…",
   "accountBackupStatusPending": "Backup pending",
   "accountBackupStatusWaitingConnection": "Waiting for connection",
+  "accountBackupStatusComplete": "Backup complete",
+  "accountBackupStatusCompletedAt": "{timestamp}",
+  "accountBackupStatusWaitingConnectionMessage": "Your Qaza data is safe on this device.",
+  "accountBackupStatusFailedTitle": "Backup couldn't complete",
+  "accountBackupStatusFailedMessage": "Your Qaza data is safe on this device.",
+  "accountBackupStatusFailedAutomaticRetry": "We'll try again automatically.",
+  "accountBackupStatusRetry": "Try again",
   "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically."
 }
