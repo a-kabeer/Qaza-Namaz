@@ -177,14 +177,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
             const SizedBox(height: 8),
             LayoutBuilder(
               builder: (context, constraints) {
-                final periodAsync = switch (_range) {
-                  _ActivityRange.weekly =>
-                    ref.watch(homeQazaActivityWeekProvider(anchor)),
-                  _ActivityRange.monthly =>
-                    ref.watch(homeQazaActivityMonthProvider(anchor)),
-                  _ActivityRange.yearly =>
-                    ref.watch(homeQazaActivityYearProvider(anchor)),
-                };
                 final height = _activityViewportHeight(
                   constraints.maxWidth,
                 );
