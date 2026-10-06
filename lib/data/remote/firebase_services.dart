@@ -130,6 +130,17 @@ class GoogleFirebaseAuthService {
     return operation;
   }
 
+  Future<GoogleFirebaseIdentity> signInIdentity() async {
+    final user = await signIn();
+    if (user == null) {
+      throw StateError('Google authentication returned no user.');
+    }
+    return GoogleFirebaseIdentity(
+      uid: user.uid,
+      email: user.email,
+    );
+  }
+
   Future<User?> _signInInternal() async {
     if (!await services.initialize()) {
       throw StateError('Firebase is not available.');
