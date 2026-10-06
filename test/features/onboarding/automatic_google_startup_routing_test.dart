@@ -318,6 +318,7 @@ void main() {
     );
     final profile = _completeProfile();
     await store.saveProfile(id, profile);
+    await store.activate(id);
 
     final manager = await _manager(
       database: database,
@@ -426,8 +427,14 @@ void main() {
   });
 
   test(
-    'new Google UID creates one partition and restores cloud profile',
+    'existing Google UID restores the local partition from cloud profile',
     () async {
+      final id = await store.createGooglePartition(
+        firebaseUid: 'recovered-uid',
+        email: 'recovered@example.com',
+      );
+      await store.activate(id);
+
       final manager = await _manager(
         database: database,
         store: store,
