@@ -83,6 +83,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             revisionId: revisionId,
           );
       if (!mounted) return;
+      if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.failed) {
+        await _showImportProgress();
+      }
+      if (!mounted) return;
       if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
         ref.invalidate(userProfileProvider);
         ref.invalidate(progressSummaryProvider);
