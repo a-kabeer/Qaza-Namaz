@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -167,33 +165,15 @@ class _GoogleAccountContent extends ConsumerStatefulWidget {
 
 class _GoogleAccountContentState
     extends ConsumerState<_GoogleAccountContent> {
-  BackupStatusSnapshot? _backupStatus;
-  Timer? _statusTimer;
+  late final Stream<BackupStatusSnapshot> _backupStatusStream;
   bool _backupActionRunning = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshBackupStatus();
-    _statusTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _refreshBackupStatus(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _statusTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _refreshBackupStatus() async {
-    try {
-      final status = await ref
-          .read(accountLocalStoreProvider)
-          .readBackupStatus(widget.account.localAccountId);
-      if (mounted) setState(() => _backupStatus = status);
-    } catch (_) {}
+    _backupStatusStream = ref
+        .read(accountLocalStoreProvider)
+        .watchBackupStatus(widget.account.localAccountId);
   }
 
   Future<void> _setBackup(bool enabled) async {
@@ -206,9 +186,22 @@ class _GoogleAccountContentState
       } else {
         await manager.pauseBackup();
       }
-      await _refreshBackupStatus();
     } catch (_) {
-      await _refreshBackupStatus();
+      // The local preference/state write is authoritative. Any cloud failure
+      // remains represented by the reactive local backup status.
+    } finally {
+      if (mounted) setState(() => _backupActionRunning = false);
+    }
+  }
+
+  Future<void> _retryBackup() async {
+    if (_backupActionRunning) return;
+    setState(() => _backupActionRunning = true);
+    try {
+      await ref.read(backupWorkerProvider).retryNow();
+    } catch (_) {
+      // The worker persists failed/waiting state locally and keeps the
+      // automatic retry path available.
     } finally {
       if (mounted) setState(() => _backupActionRunning = false);
     }
@@ -224,98 +217,228 @@ class _GoogleAccountContentState
     }
   }
 
-  String _statusText(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final status = _backupStatus;
-    if (status == null) return l10n.accountBackupStatusChecking;
-    if (!status.backupEnabled) return l10n.accountBackupStatusDisabled;
-    if (status.isCurrent && status.lastSuccessfulBackupAt != null) {
-      final time = MaterialLocalizations.of(context).formatTimeOfDay(
-        TimeOfDay.fromDateTime(status.lastSuccessfulBackupAt!),
-        alwaysUse24HourFormat: MediaQuery.of(context).alwaysUse24HourFormat,
-      );
-      return l10n.accountBackupStatusBackedUp(
-        l10n.commonToday + ', ' + time,
-      );
-    }
-    switch (status.state) {
-      case 'running':
-        return l10n.accountBackupStatusBackingUp;
-      case 'waitingForConnection':
-        return l10n.accountBackupStatusWaitingConnection;
-      case 'failed':
-        return l10n.accountBackupStatusFailed;
-      default:
-        return l10n.accountBackupStatusPending;
-    }
-  }
 
-  bool get _isBackingUp => _backupStatus?.state == 'running';
+    return StreamBuilder<BackupStatusSnapshot>(
+      stream: _backupStatusStream,
+      builder: (context, snapshot) {
+        final status = snapshot.data;
+        final enabled =
+            status?.backupEnabled ?? widget.account.cloudBackupEnabled;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SettingsSection(
+              title: l10n.accountBackupSection,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SwitchListTile(
+                    key: const Key('account_automatic_backup_switch'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.accountAutomaticBackup),
+                    subtitle: Text(l10n.accountBackupAutomaticDescription),
+                    value: enabled,
+                    onChanged: _backupActionRunning ? null : _setBackup,
+                  ),
+                  const SizedBox(height: 8),
+                  _AccountBackupStatusView(
+                    status: status,
+                    enabled: enabled,
+                    retryEnabled:
+                        status?.state == 'failed' && !_backupActionRunning,
+                    onRetry: _retryBackup,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                key: const Key('account_sign_out'),
+                onPressed: _backupActionRunning ? null : _signOut,
+                icon: const Icon(Icons.logout_rounded),
+                label: Text(l10n.accountSignOut),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AccountBackupStatusView extends StatelessWidget {
+  const _AccountBackupStatusView({
+    required this.status,
+    required this.enabled,
+    required this.retryEnabled,
+    required this.onRetry,
+  });
+
+  final BackupStatusSnapshot? status;
+  final bool enabled;
+  final bool retryEnabled;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final status = _backupStatus;
-    final enabled = status?.backupEnabled ?? widget.account.cloudBackupEnabled;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SettingsSection(
-          title: l10n.accountBackupSection,
-          child: Column(
-            children: [
-              SwitchListTile(
-                key: const Key('account_automatic_backup_switch'),
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.accountAutomaticBackup),
-                subtitle: Text(l10n.accountBackupAutomaticDescription),
-                value: enabled,
-                onChanged: _backupActionRunning ? null : _setBackup,
-              ),
-              const SizedBox(height: 4),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: Row(
-                  key: ValueKey(_statusText(context)),
-                  children: [
-                    if (_isBackingUp)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      Icon(
-                        enabled && status?.isCurrent == true
-                            ? Icons.check_circle_outline_rounded
-                            : Icons.cloud_outlined,
-                        size: 18,
-                      ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _statusText(context),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    String title;
+    String? message;
+    IconData icon;
+    final showProgress = status?.hasDeterminateProgress == true;
+    final runningWithoutProgress = status?.state == 'running' && !showProgress;
+
+    if (status == null) {
+      title = l10n.accountBackupStatusChecking;
+      icon = Icons.cloud_outlined;
+    } else if (!enabled) {
+      title = l10n.accountBackupStatusDisabled;
+      icon = Icons.cloud_off_outlined;
+    } else {
+      switch (status!.state) {
+        case 'running':
+          title = l10n.accountBackupStatusBackingUp;
+          icon = Icons.cloud_upload_outlined;
+          break;
+        case 'waitingForConnection':
+          title = l10n.accountBackupStatusWaitingConnection;
+          message = l10n.accountBackupStatusWaitingConnectionMessage;
+          icon = Icons.cloud_outlined;
+          break;
+        case 'failed':
+          title = l10n.accountBackupStatusFailedTitle;
+          message =
+              l10n.accountBackupStatusFailedMessage +
+              '\n' +
+              l10n.accountBackupStatusFailedAutomaticRetry;
+          icon = Icons.warning_amber_rounded;
+          break;
+        case 'idle':
+          if (status!.isCurrent && status!.lastSuccessfulBackupAt != null) {
+            title = l10n.accountBackupStatusComplete;
+            final time = MaterialLocalizations.of(context).formatTimeOfDay(
+              TimeOfDay.fromDateTime(status!.lastSuccessfulBackupAt!),
+              alwaysUse24HourFormat:
+                  MediaQuery.of(context).alwaysUse24HourFormat,
+            );
+            message = l10n.accountBackupStatusCompletedAt(
+              l10n.commonToday + ', ' + time,
+            );
+            icon = Icons.check_circle_outline_rounded;
+          } else {
+            title = l10n.accountBackupStatusPending;
+            icon = Icons.cloud_outlined;
+          }
+          break;
+        case 'pending':
+        default:
+          title = l10n.accountBackupStatusPending;
+          icon = Icons.cloud_outlined;
+          break;
+      }
+    }
+
+    final statusChildren = <Widget>[
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 20),
           ),
-        ),
-        const SizedBox(height: 28),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            key: const Key('account_sign_out'),
-            onPressed: _backupActionRunning ? null : _signOut,
-            icon: const Icon(Icons.logout_rounded),
-            label: Text(l10n.accountSignOut),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+      if (message != null) ...[
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 30),
+          child: Text(
+            message!,
+            style: textTheme.bodySmall,
           ),
         ),
       ],
+      if (status?.state == 'running') ...[
+        const SizedBox(height: 10),
+        if (showProgress)
+          _BackupProgressIndicator(status: status!)
+        else if (runningWithoutProgress)
+          const LinearProgressIndicator(minHeight: 4),
+      ],
+      if (status?.state == 'failed') ...[
+        const SizedBox(height: 6),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            key: const Key('account_backup_try_again'),
+            onPressed: retryEnabled ? onRetry : null,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: Text(l10n.accountBackupStatusRetry),
+          ),
+        ),
+      ],
+    ];
+
+    return Semantics(
+      container: true,
+      label: title,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: statusChildren,
+      ),
+    );
+  }
+}
+
+class _BackupProgressIndicator extends StatelessWidget {
+  const _BackupProgressIndicator({required this.status});
+
+  final BackupStatusSnapshot status;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final percent = (status.progressFraction * 100).round();
+
+    return Semantics(
+      label: l10n.accountBackupStatusBackingUp,
+      value: '$percent%',
+      child: Row(
+        children: [
+          Expanded(
+            child: LinearProgressIndicator(
+              value: status.progressFraction,
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 44,
+            child: Text(
+              '$percent%',
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
