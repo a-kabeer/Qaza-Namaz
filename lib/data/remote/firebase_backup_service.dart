@@ -10,6 +10,7 @@ import '../../domain/services/conflict_resolver.dart';
 import '../local/account_local_store.dart';
 import '../local/database/app_database.dart';
 import 'firebase_services.dart';
+import 'backup_failure.dart';
 
 typedef BackupProgressCallback = FutureOr<void> Function(
   int processed,
@@ -71,10 +72,12 @@ class CloudRootReadResult {
   const CloudRootReadResult({
     required this.status,
     this.data,
+    this.failure,
   });
 
   final CloudRootStatus status;
   final Map<String, dynamic>? data;
+  final BackupFailure? failure;
 
   bool get isAvailable => status != CloudRootStatus.unavailable;
   bool get exists => status == CloudRootStatus.exists;
@@ -98,11 +101,8 @@ class FirebaseBackupService {
   static const cloudSchemaVersion = 1;
 
   Future<CloudRootReadResult> readCloudRootResult(String uid) async {
-    if (!await _firebase.initialize()) {
-      return const CloudRootReadResult(status: CloudRootStatus.unavailable);
-    }
-
     try {
+      await _firebase.ensureFirestoreReady();
       final snap = await _firebase.firestore.collection('users').doc(uid).get();
       if (!snap.exists) {
         return const CloudRootReadResult(status: CloudRootStatus.missing);
@@ -111,15 +111,26 @@ class FirebaseBackupService {
         status: CloudRootStatus.exists,
         data: snap.data(),
       );
-    } catch (_) {
-      return const CloudRootReadResult(status: CloudRootStatus.unavailable);
+    } catch (error, stack) {
+      final failure = classifyBackupFailure(error, stackTrace: stack);
+      return CloudRootReadResult(
+        status: CloudRootStatus.unavailable,
+        failure: failure,
+      );
     }
   }
 
+  @Deprecated('Use readCloudRootResult to distinguish missing from failure.')
   Future<Map<String, dynamic>?> readCloudRoot(String uid) async {
-    if (!await _firebase.initialize()) return null;
-    final snap = await _firebase.firestore.collection('users').doc(uid).get();
-    return snap.exists ? snap.data() : null;
+    final result = await readCloudRootResult(uid);
+    if (!result.isAvailable) {
+      throw result.failure ??
+          const BackupFailure(
+            category: BackupFailureCategory.unknown,
+            message: 'Cloud root could not be read.',
+          );
+    }
+    return result.data;
   }
 
   Future<void> bootstrapAccount({
@@ -150,9 +161,7 @@ class FirebaseBackupService {
     int? bootstrapCutoffMicros,
     BackupProgressCallback? onProgress,
   }) async {
-    if (!await _firebase.initialize()) {
-      throw StateError('Firebase is unavailable for account backup.');
-    }
+    await _firebase.ensureFirestoreReady();
 
     final incremental = bootstrapCutoffMicros == null;
     final progress = _BackupProgressReporter(
@@ -179,6 +188,9 @@ class FirebaseBackupService {
         throw StateError('Cloud dataset is not writable in state $remoteState.');
       }
     } else {
+      // A root can be recreated only after a successful Firestore read proved
+      // that the document is genuinely missing. Initialization/auth/App Check
+      // failures never reach this branch.
       await rootRef.set({
         'schemaVersion': cloudSchemaVersion,
         'cloudGeneration': generation,
@@ -305,9 +317,7 @@ class FirebaseBackupService {
     required int expectedGeneration,
     required int newGeneration,
   }) async {
-    if (!await _firebase.initialize()) {
-      throw StateError('Firebase is unavailable.');
-    }
+    await _firebase.ensureFirestoreReady();
 
     final rootRef = _firebase.firestore.collection('users').doc(uid);
     final root = await rootRef.get();
@@ -422,9 +432,7 @@ class FirebaseBackupService {
     required int previousGeneration,
     required int newGeneration,
   }) async {
-    if (!await _firebase.initialize()) {
-      throw StateError('Firebase is unavailable.');
-    }
+    await _firebase.ensureFirestoreReady();
     if (newGeneration <= previousGeneration) {
       throw StateError('New cloud generation must be greater.');
     }
@@ -1104,7 +1112,7 @@ class FirebaseBackupService {
     final tombstoneRef = rootRef.collection('qazaRecordTombstones');
     final recordRef = rootRef.collection('qazaRecords');
 
-    for (final ids in _chunks(recordIds, 200)) {
+    for (final ids in _chunks(recordIds, 10)) {
       await _firebase.firestore.runTransaction((transaction) async {
         final rootSnapshot = await transaction.get(rootRef);
         _assertCloudRootForWrite(
@@ -1188,9 +1196,11 @@ class FirebaseBackupService {
     if (writes.isEmpty) return;
     final rootRef = _firebase.firestore.collection('users').doc(uid);
 
-    // Firestore limits a transaction to 500 writes. Keep headroom so a
-    // transaction also remains safe if this method is extended later.
-    for (final chunk in _chunks(writes, 400)) {
+    // Keep backup transactions well below the 500-write ceiling. The smaller
+    // chunk also leaves headroom for transaction/rules/request-size overhead
+    // and avoids making a single transient Firestore failure discard a large
+    // portion of an account snapshot.
+    for (final chunk in _chunks(writes, 100)) {
       await _firebase.firestore.runTransaction((transaction) async {
         final rootSnapshot = await transaction.get(rootRef);
         _assertCloudRootForWrite(
