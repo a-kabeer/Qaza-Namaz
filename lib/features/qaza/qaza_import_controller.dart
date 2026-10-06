@@ -104,6 +104,20 @@ class QazaImportTaskState {
       );
 }
 
+class _OnboardingCommitRequest {
+  const _OnboardingCommitRequest({
+    required this.userId,
+    required this.profile,
+    required this.plan,
+    required this.revisionId,
+  });
+
+  final String userId;
+  final UserProfile profile;
+  final QazaPlan plan;
+  final String revisionId;
+}
+
 class _QazaImportRequest {
   const _QazaImportRequest({
     required this.userId,
@@ -142,6 +156,8 @@ final qazaImportProvider =
 /// Shared long-running task state for onboarding imports and Profile Qaza-plan applies.
 class QazaImportController extends Notifier<QazaImportTaskState> {
   _QazaImportRequest? _lastRequest;
+  _OnboardingCommitRequest? _lastOnboardingCommit;
+
   Future<void> Function(void Function(int processed, int total) onProgress)?
       _lastProfileApply;
   int _lastProfileApplyTotal = 0;
@@ -158,6 +174,13 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   }) {
     if (state.isActive) return false;
     if (userId.isEmpty || revisionId.isEmpty) return false;
+    final request = _OnboardingCommitRequest(
+      userId: userId,
+      profile: profile,
+      plan: plan,
+      revisionId: revisionId,
+    );
+    _lastOnboardingCommit = request;
     state = QazaImportTaskState(
       phase: QazaImportTaskPhase.preparing,
       userId: userId,
@@ -165,10 +188,10 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     );
     unawaited(
       _runOnboarding(
-        userId: userId,
-        profile: profile,
-        plan: plan,
-        revisionId: revisionId,
+        userId: request.userId,
+        profile: request.profile,
+        plan: request.plan,
+        revisionId: request.revisionId,
       ),
     );
     return true;
@@ -183,16 +206,23 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     if (state.isActive) {
       throw StateError('Another Qaza import is already active.');
     }
+    final request = _OnboardingCommitRequest(
+      userId: userId,
+      profile: profile,
+      plan: plan,
+      revisionId: revisionId,
+    );
+    _lastOnboardingCommit = request;
     state = QazaImportTaskState(
       phase: QazaImportTaskPhase.preparing,
       userId: userId,
       startedAt: DateTime.now(),
     );
     await _runOnboarding(
-      userId: userId,
-      profile: profile,
-      plan: plan,
-      revisionId: revisionId,
+      userId: request.userId,
+      profile: request.profile,
+      plan: request.plan,
+      revisionId: request.revisionId,
     );
   }
 
@@ -258,6 +288,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
           );
 
       stopwatch.stop();
+      _lastOnboardingCommit = null;
       state = state.copyWith(
         phase: QazaImportTaskPhase.completed,
         processed: records.length,
@@ -307,6 +338,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
     _cancelRequested = false;
     _lastProfileApply = null;
+    _lastOnboardingCommit = null;
 
     final request = _QazaImportRequest(
       userId: userId,
@@ -340,6 +372,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   }) {
     if (state.isActive || total < 0) return false;
     _lastRequest = null;
+    _lastOnboardingCommit = null;
     _lastProfileApply = operation;
     _lastProfileApplyTotal = total;
     state = QazaImportTaskState(
@@ -409,6 +442,24 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
   bool retry() {
     if (state.isActive) return false;
+    final onboarding = _lastOnboardingCommit;
+    if (onboarding != null) {
+      state = QazaImportTaskState(
+        phase: QazaImportTaskPhase.preparing,
+        userId: onboarding.userId,
+        startedAt: DateTime.now(),
+      );
+      unawaited(
+        _runOnboarding(
+          userId: onboarding.userId,
+          profile: onboarding.profile,
+          plan: onboarding.plan,
+          revisionId: onboarding.revisionId,
+        ),
+      );
+      return true;
+    }
+
     final profileApply = _lastProfileApply;
     if (profileApply != null) {
       state = QazaImportTaskState(
