@@ -582,11 +582,11 @@ void main() {
 
       expect(auth.signInCalls, 1);
       expect(manager.state.phase, AccountSessionPhase.ready);
-      expect(manager.activeAccount, isNull);
-      expect(manager.initialChoiceRequired, isTrue);
+      expect(manager.activeAccount?.isGoogle, isTrue);
+      expect(manager.activeAccount?.firebaseUid, 'single-flight-google');
+      expect(manager.initialChoiceRequired, isFalse);
     },
   );
-
 
   test(
     'new Google account activates locally before an unavailable cloud sync',
