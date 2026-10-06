@@ -247,7 +247,7 @@ void main() {
     );
   });
 
-  test('atomic onboarding rolls back earlier writes when any Qaza record cannot be inserted',
+  test('atomic onboarding rolls back earlier writes after an in-transaction revision conflict',
       () async {
     final (database, store, accountId) = await _setupGoogle();
     addTearDown(database.close);
@@ -255,43 +255,29 @@ void main() {
     final revision = _revision(
       accountId: accountId,
       id: 'rev-rollback',
-      addedRecords: 2,
+      addedRecords: 1,
     );
-    final existing = _record(
-      id: 'existing-qaza',
-      accountId: accountId,
-      revisionId: revision.revisionId,
-      fingerprint: revision.planFingerprint,
-      prayerType: PrayerType.fajr,
-      date: DateTime(2012, 1, 1),
+
+    // Force the commit to fail after the profile write but before the Qaza
+    // records/outbox are persisted. The revision is immutable, so a different
+    // payload with the same ID is a deterministic transaction-local failure.
+    final conflictingRevision = revision.copyWith(
+      addedRecords: 999,
     );
     await database.customInsert(
-      '''INSERT INTO qaza_records
-         (id, user_id, prayer_type, original_date, status, record_version,
-          created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      '''INSERT INTO account_plan_revisions
+         (local_account_id, revision_id, payload_json, created_at)
+         VALUES (?, ?, ?, ?)''',
       variables: [
-        Variable(existing.id),
-        Variable(existing.userId),
-        Variable(existing.prayerType.name),
-        Variable(existing.originalDate),
-        Variable(existing.status.name),
-        Variable(1),
-        Variable(existing.createdAt),
-        Variable(existing.updatedAt),
+        Variable(accountId),
+        Variable(conflictingRevision.revisionId),
+        Variable(jsonEncode(conflictingRevision.toJson())),
+        Variable(conflictingRevision.createdAt.microsecondsSinceEpoch),
       ],
     );
 
-    final newRecord = _record(
+    final record = _record(
       id: 'new-qaza',
-      accountId: accountId,
-      revisionId: revision.revisionId,
-      fingerprint: revision.planFingerprint,
-      prayerType: PrayerType.zuhr,
-      date: DateTime(2012, 1, 2),
-    );
-    final duplicateCombination = _record(
-      id: 'duplicate-combination',
       accountId: accountId,
       revisionId: revision.revisionId,
       fingerprint: revision.planFingerprint,
@@ -304,7 +290,7 @@ void main() {
         localAccountId: accountId,
         profile: _profile(),
         revision: revision,
-        records: [newRecord, duplicateCombination],
+        records: [record],
       ),
       throwsStateError,
     );
@@ -318,17 +304,18 @@ void main() {
     );
     expect(
       await database.customSelect(
-        '''SELECT 1 FROM account_plan_revisions WHERE local_account_id = ?''',
-        variables: [Variable(accountId)],
+        '''SELECT payload_json FROM account_plan_revisions
+           WHERE local_account_id = ? AND revision_id = ?''',
+        variables: [Variable(accountId), Variable(revision.revisionId)],
       ).get(),
-      isEmpty,
+      hasLength(1),
     );
     expect(
       await database.customSelect(
-        '''SELECT id FROM qaza_records WHERE user_id = ?''',
-        variables: [Variable(accountId)],
+        '''SELECT id FROM qaza_records WHERE user_id = ? AND id = ?''',
+        variables: [Variable(accountId), Variable(record.id)],
       ).get(),
-      hasLength(1),
+      isEmpty,
     );
     expect(
       await database.customSelect(
@@ -344,5 +331,5 @@ void main() {
       ).get(),
       isEmpty,
     );
-  });
+  });;
 }
