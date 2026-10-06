@@ -13,7 +13,9 @@ class FirebaseBackupHealthResult {
     required this.firestoreRead,
     required this.cloudRoot,
     required this.cloudGeneration,
-    required this.backup,
+    required this.backupProbe,
+    required this.firestoreWrite,
+    required this.rules,
     this.failure,
   });
 
@@ -25,7 +27,9 @@ class FirebaseBackupHealthResult {
   final bool firestoreRead;
   final CloudRootStatus cloudRoot;
   final int? cloudGeneration;
-  final bool backup;
+  final bool backupProbe;
+  final bool firestoreWrite;
+  final bool rules;
   final BackupFailure? failure;
 
   bool get passed =>
@@ -36,7 +40,9 @@ class FirebaseBackupHealthResult {
       appCheckToken &&
       firestoreRead &&
       cloudRoot != CloudRootStatus.unavailable &&
-      backup;
+      backupProbe &&
+      firestoreWrite &&
+      rules;
 }
 
 class FirebaseBackupHealthService {
@@ -138,7 +144,9 @@ class FirebaseBackupHealthService {
         firestoreRead: true,
         cloudRoot: root.status,
         cloudGeneration: generation,
-        backup: true,
+        backupProbe: runBackupProbe,
+        firestoreWrite: runBackupProbe,
+        rules: runBackupProbe,
       );
     } catch (error, stack) {
       final failure = classifyBackupFailure(error, stackTrace: stack);
@@ -160,7 +168,9 @@ class FirebaseBackupHealthService {
         cloudRoot: root.status,
         cloudGeneration:
             (root.data?['cloudGeneration'] as num?)?.toInt(),
-        backup: false,
+        backupProbe: false,
+        firestoreWrite: false,
+        rules: false,
         failure: failure,
       );
     }
