@@ -10,8 +10,8 @@ import '../../core/diagnostics/diagnostics.dart';
 class FirebaseConfiguration {
   static const projectId = 'qaza-nmz';
   static const projectNumber = '895430705174';
-  static const androidAppId = '1:895430705174:android:1e8d352d65428a4a3c7537';
-  static const androidPackage = 'com.example.qaza_namaz_task1_flutter';
+  static const androidAppId = '1:895430705174:android:83eb9e77acad787f3c7537';
+  static const androidPackage = 'com.qaza_namaz.com';
   static const androidSha1 =
       '3a:b6:c8:b5:08:a6:85:79:25:4d:31:98:37:16:f5:d2:ba:bd:41:8d';
   static const androidSha256 =

@@ -49,8 +49,8 @@ jobs:
           if data.get("project_info", {}).get("project_id") != "qaza-nmz":
               raise SystemExit("Unexpected Firebase project ID.")
           clients = data.get("client", [])
-          expected_package = "com.example.qaza_namaz_task1_flutter"
-          expected_app_id = "1:895430705174:android:1e8d352d65428a4a3c7537"
+          expected_package = "com.qaza_namaz.com"
+          expected_app_id = "1:895430705174:android:83eb9e77acad787f3c7537"
           matched = False
           for client in clients:
               info = client.get("client_info", {})

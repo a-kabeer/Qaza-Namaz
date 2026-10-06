@@ -284,7 +284,6 @@ abstract class AppLocalizations {
   /// **'Open Settings'**
   String get commonOpenSettings;
 
-
   /// No description provided for @qazaSortLabel.
   ///
   /// In en, this message translates to:
@@ -879,7 +878,6 @@ abstract class AppLocalizations {
   /// **'Could not complete the selected Qaza: {error}'**
   String qazaCompleteError(String error);
 
-
   /// No description provided for @qazaCompletedOn.
   ///
   /// In en, this message translates to:
@@ -1126,18 +1124,59 @@ abstract class AppLocalizations {
   /// **'A calm place for prayer accountability'**
   String get splashTagline;
 
+  /// No description provided for @accountChoiceHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your Qaza progress safe'**
+  String get accountChoiceHeadline;
+
+  /// No description provided for @accountChoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google to back up and restore your progress across devices.'**
+  String get accountChoiceDescription;
+
+  /// No description provided for @accountChoiceContinueGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get accountChoiceContinueGoogle;
+
+  /// No description provided for @accountChoiceContinueGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as Guest'**
+  String get accountChoiceContinueGuest;
+
+  /// No description provided for @accountChoiceGuestDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest data stays on this device. You can connect Google later.'**
+  String get accountChoiceGuestDescription;
+
+  /// No description provided for @accountChoiceGoogleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in could not be completed. Please try again.'**
+  String get accountChoiceGoogleFailed;
+
   /// No description provided for @accountTitle.
   ///
   /// In en, this message translates to:
   /// **'Account'**
   String get accountTitle;
 
-  String get accountChoiceHeadline;
-  String get accountChoiceDescription;
-  String get accountChoiceContinueGoogle;
-  String get accountChoiceContinueGuest;
-  String get accountChoiceGuestDescription;
-  String get accountChoiceGoogleFailed;
+  /// No description provided for @accountGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get accountGuest;
+
+  /// No description provided for @accountConnectGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google'**
+  String get accountConnectGoogle;
 
   /// No description provided for @accountSignInMethod.
   ///
@@ -1210,21 +1249,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Signing out disconnects your Google account. Your Qaza progress remains on this device.'**
   String get accountSignOutExplanation;
-
-  String get accountGuestTitle;
-  String get accountGuestLocalDataSubtitle;
-  String get accountNotConnectedGoogle;
-  String get accountKeepProgressSafe;
-  String get accountKeepProgressSafeDescription;
-  String get accountGuestContinueMessage;
-  String get accountBackupSection;
-  String get accountBackupAutomaticDescription;
-  String get accountAccountActions;
-  String get accountSignOutDescription;
-  String get accountDisconnectDescription;
-  String get accountDangerZone;
-  String get settingsAccountGuestSubtitle;
-  String get settingsAccountGoogleSubtitle;
 
   /// No description provided for @dataTitle.
   ///
@@ -2336,18 +2360,6 @@ abstract class AppLocalizations {
   /// **'Sign in to manage cloud data.'**
   String get cloudDeleteSignInRequired;
 
-  /// No description provided for @accountGuest.
-  ///
-  /// In en, this message translates to:
-  /// **'Guest'**
-  String get accountGuest;
-
-  /// No description provided for @accountConnectGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google'**
-  String get accountConnectGoogle;
-
   /// No description provided for @accountGoogle.
   ///
   /// In en, this message translates to:
@@ -2413,6 +2425,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get accountContinue;
+
+  /// No description provided for @accountGuestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest account'**
+  String get accountGuestTitle;
+
+  /// No description provided for @accountGuestLocalDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is stored on this device'**
+  String get accountGuestLocalDataSubtitle;
+
+  /// No description provided for @accountNotConnectedGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to Google'**
+  String get accountNotConnectedGoogle;
+
+  /// No description provided for @accountKeepProgressSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your progress safe'**
+  String get accountKeepProgressSafe;
+
+  /// No description provided for @accountKeepProgressSafeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a Google account to back up and restore your Qaza progress across devices.'**
+  String get accountKeepProgressSafeDescription;
+
+  /// No description provided for @accountGuestContinueMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.'**
+  String get accountGuestContinueMessage;
+
+  /// No description provided for @accountBackupSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup'**
+  String get accountBackupSection;
+
+  /// No description provided for @accountBackupAutomaticDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically back up your Qaza progress'**
+  String get accountBackupAutomaticDescription;
+
+  /// No description provided for @accountAccountActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Account actions'**
+  String get accountAccountActions;
+
+  /// No description provided for @accountSignOutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of your Google account. You can sign in again later.'**
+  String get accountSignOutDescription;
+
+  /// No description provided for @accountDisconnectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the Google connection from Qaza Namaz and switch to Guest mode.'**
+  String get accountDisconnectDescription;
+
+  /// No description provided for @accountDangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get accountDangerZone;
+
+  /// No description provided for @settingsAccountGuestSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest • This device only'**
+  String get settingsAccountGuestSubtitle;
+
+  /// No description provided for @settingsAccountGoogleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in with Google'**
+  String get settingsAccountGoogleSubtitle;
 
   /// No description provided for @accountConnectFailed.
   ///
@@ -2755,7 +2851,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current prayer: {prayer}'**
   String homeCurrentPrayerLabel(String prayer);
-
 
   /// No description provided for @profileLanguageTitle.
   ///

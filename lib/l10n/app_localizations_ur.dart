@@ -624,9 +624,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get splashTagline => 'نماز کی پابندی کے لیے ایک پُرسکون جگہ';
 
   @override
-  String get accountTitle => 'اکاؤنٹ';
-
-  @override
   String get accountChoiceHeadline => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
 
   @override
@@ -646,6 +643,15 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get accountChoiceGoogleFailed =>
       'گوگل سائن اِن مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get accountTitle => 'اکاؤنٹ';
+
+  @override
+  String get accountGuest => 'مہمان';
+
+  @override
+  String get accountConnectGoogle => 'گوگل سے منسلک کریں';
 
   @override
   String get accountSignInMethod => 'سائن اِن کا طریقہ';
@@ -1380,54 +1386,6 @@ class AppLocalizationsUr extends AppLocalizations {
       'کلاؤڈ ڈیٹا سنبھالنے کے لیے سائن اِن کریں۔';
 
   @override
-  @override
-  String get accountGuestTitle => 'مہمان اکاؤنٹ';
-
-  @override
-  String get accountGuestLocalDataSubtitle => 'آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے';
-
-  @override
-  String get accountNotConnectedGoogle => 'گوگل سے منسلک نہیں';
-
-  @override
-  String get accountKeepProgressSafe => 'اپنی پیش رفت محفوظ رکھیں';
-
-  @override
-  String get accountKeepProgressSafeDescription => 'اپنی قضا پیش رفت کو مختلف ڈیوائسز پر بیک اپ اور بحال کرنے کے لیے گوگل اکاؤنٹ منسلک کریں۔';
-
-  @override
-  String get accountGuestContinueMessage => 'آپ مہمان کے طور پر قضا نماز استعمال کرتے رہ سکتے ہیں۔ آپ کی لوکل پیش رفت اسی ڈیوائس پر محفوظ رہے گی۔';
-
-  @override
-  String get accountBackupSection => 'بیک اپ';
-
-  @override
-  String get accountBackupAutomaticDescription => 'اپنی قضا پیش رفت کا خودکار بیک اپ لیں';
-
-  @override
-  String get accountAccountActions => 'اکاؤنٹ کے اقدامات';
-
-  @override
-  String get accountSignOutDescription => 'اپنے گوگل اکاؤنٹ سے سائن آؤٹ کریں۔ آپ بعد میں دوبارہ سائن اِن کر سکتے ہیں۔';
-
-  @override
-  String get accountDisconnectDescription => 'قضا نماز سے گوگل کا کنکشن ہٹائیں اور مہمان موڈ پر واپس جائیں۔';
-
-  @override
-  String get accountDangerZone => 'خطرناک اقدامات';
-
-  @override
-  String get settingsAccountGuestSubtitle => 'مہمان • صرف یہ ڈیوائس';
-
-  @override
-  String get settingsAccountGoogleSubtitle => 'گوگل کے ساتھ سائن اِن';
-
-  String get accountGuest => 'مہمان';
-
-  @override
-  String get accountConnectGoogle => 'گوگل سے منسلک کریں';
-
-  @override
   String get accountGoogle => 'گوگل اکاؤنٹ';
 
   @override
@@ -1461,6 +1419,54 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountContinue => 'جاری رکھیں';
+
+  @override
+  String get accountGuestTitle => 'مہمان اکاؤنٹ';
+
+  @override
+  String get accountGuestLocalDataSubtitle =>
+      'آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے';
+
+  @override
+  String get accountNotConnectedGoogle => 'گوگل سے منسلک نہیں';
+
+  @override
+  String get accountKeepProgressSafe => 'اپنی پیش رفت محفوظ رکھیں';
+
+  @override
+  String get accountKeepProgressSafeDescription =>
+      'اپنی قضا پیش رفت کو مختلف ڈیوائسز پر بیک اپ اور بحال کرنے کے لیے گوگل اکاؤنٹ منسلک کریں۔';
+
+  @override
+  String get accountGuestContinueMessage =>
+      'آپ مہمان کے طور پر قضا نماز استعمال کرتے رہ سکتے ہیں۔ آپ کی لوکل پیش رفت اسی ڈیوائس پر محفوظ رہے گی۔';
+
+  @override
+  String get accountBackupSection => 'بیک اپ';
+
+  @override
+  String get accountBackupAutomaticDescription =>
+      'اپنی قضا پیش رفت کا خودکار بیک اپ لیں';
+
+  @override
+  String get accountAccountActions => 'اکاؤنٹ کے اقدامات';
+
+  @override
+  String get accountSignOutDescription =>
+      'اپنے گوگل اکاؤنٹ سے سائن آؤٹ کریں۔ آپ بعد میں دوبارہ سائن اِن کر سکتے ہیں۔';
+
+  @override
+  String get accountDisconnectDescription =>
+      'قضا نماز سے گوگل کا کنکشن ہٹائیں اور مہمان موڈ پر واپس جائیں۔';
+
+  @override
+  String get accountDangerZone => 'خطرناک اقدامات';
+
+  @override
+  String get settingsAccountGuestSubtitle => 'مہمان • صرف یہ ڈیوائس';
+
+  @override
+  String get settingsAccountGoogleSubtitle => 'گوگل کے ساتھ سائن اِن';
 
   @override
   String get accountConnectFailed =>
