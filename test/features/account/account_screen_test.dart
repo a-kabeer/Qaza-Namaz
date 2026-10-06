@@ -144,7 +144,9 @@ void main() {
     addTearDown(database.close);
 
     await tester.pumpWidget(_app(container, const AccountScreen()));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Guest account'), findsOneWidget);
     expect(find.text('Your data is stored on this device'), findsOneWidget);
@@ -167,7 +169,9 @@ void main() {
     addTearDown(database.close);
 
     await tester.pumpWidget(_app(container, const AccountScreen()));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Google account'), findsOneWidget);
     expect(find.text('account@example.com'), findsOneWidget);
@@ -199,7 +203,8 @@ void main() {
     await tester.pumpWidget(
       _app(guestContainer, const SettingsScreen()),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Guest • This device only'), findsOneWidget);
     expect(find.text('Connect Google'), findsNothing);
@@ -220,7 +225,8 @@ void main() {
     await tester.pumpWidget(
       _app(googleContainer, const SettingsScreen()),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Signed in with Google'), findsOneWidget);
     expect(find.text('Connect Google'), findsNothing);
@@ -245,6 +251,7 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
       await store.setBackupProgress(accountId, 68, 100);
       await tester.pump();
 
@@ -275,10 +282,11 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       for (final processed in [0, 99]) {
         await store.setBackupProgress(accountId, processed, 100);
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
         expect(find.text('$processed%'), findsOneWidget);
         expect(tester.takeException(), isNull);
       }
@@ -300,6 +308,7 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('100%'), findsOneWidget);
 
@@ -349,6 +358,7 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text("Backup couldn't complete"), findsOneWidget);
       expect(
@@ -362,7 +372,8 @@ void main() {
       expect(find.byKey(const Key('account_backup_try_again')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('account_backup_try_again')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
       expect(worker.retryCalls, 1);
       expect(tester.takeException(), isNull);
@@ -382,15 +393,16 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       await store.setBackupState(accountId, 'waitingForConnection');
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('Waiting for connection'), findsOneWidget);
       expect(find.text('Your Qaza data is safe on this device.'), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
 
       await store.setBackupState(accountId, 'disabled');
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.text('Automatic backup is off'), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
     },
@@ -423,6 +435,7 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('بیک اپ مکمل نہیں ہو سکا'), findsOneWidget);
       expect(find.text('دوبارہ کوشش کریں'), findsOneWidget);
