@@ -115,11 +115,17 @@ Widget _app(
 
 ProviderContainer _container(
   AccountSessionManager manager, {
+  AppDatabase? database,
+  AccountLocalStore? accountStore,
   FirebaseBackupWorker? backupWorker,
 }) {
   return ProviderContainer(
     overrides: [
       accountSessionManagerProvider.overrideWith((ref) => manager),
+      if (database != null)
+        appDatabaseProvider.overrideWithValue(database),
+      if (accountStore != null)
+        accountLocalStoreProvider.overrideWithValue(accountStore),
       if (backupWorker != null)
         backupWorkerProvider.overrideWithValue(backupWorker),
       localeProvider.overrideWith(_EnglishLocaleNotifier.new),
@@ -139,7 +145,7 @@ void main() {
     tester,
   ) async {
     final (database, manager) = await _createSession(google: false);
-    final container = _container(manager);
+    final container = _container(manager, database: database);
     addTearDown(container.dispose);
     addTearDown(database.close);
 
@@ -164,7 +170,7 @@ void main() {
     tester,
   ) async {
     final (database, manager) = await _createSession(google: true);
-    final container = _container(manager);
+    final container = _container(manager, database: database);
     addTearDown(container.dispose);
     addTearDown(database.close);
 
@@ -198,7 +204,7 @@ void main() {
   ) async {
     final (guestDatabase, guestManager) =
         await _createSession(google: false);
-    final guestContainer = _container(guestManager);
+    final guestContainer = _container(guestManager, database: guestDatabase);
 
     await tester.pumpWidget(
       _app(guestContainer, const SettingsScreen()),
@@ -218,7 +224,7 @@ void main() {
 
     final (googleDatabase, googleManager) =
         await _createSession(google: true);
-    final googleContainer = _container(googleManager);
+    final googleContainer = _container(googleManager, database: googleDatabase);
     addTearDown(googleContainer.dispose);
     addTearDown(googleDatabase.close);
 
@@ -245,7 +251,11 @@ void main() {
       final accountId = manager.activeAccount!.localAccountId;
       await store.setBackupState(accountId, 'running');
 
-      final container = _container(manager);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
@@ -276,7 +286,11 @@ void main() {
       final accountId = manager.activeAccount!.localAccountId;
       await store.setBackupState(accountId, 'running');
 
-      final container = _container(manager);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
@@ -302,7 +316,11 @@ void main() {
       await store.setBackupState(accountId, 'running');
       await store.setBackupProgress(accountId, 100, 100);
 
-      final container = _container(manager);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
@@ -387,7 +405,11 @@ void main() {
       final store = AccountLocalStore(database: database);
       final accountId = manager.activeAccount!.localAccountId;
 
-      final container = _container(manager);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
@@ -423,7 +445,11 @@ void main() {
         'failed',
       );
 
-      final container = _container(manager);
+      final container = _container(
+        manager,
+        database: database,
+        accountStore: store,
+      );
       addTearDown(container.dispose);
       addTearDown(database.close);
 
