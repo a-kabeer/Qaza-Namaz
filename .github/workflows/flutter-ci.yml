@@ -222,6 +222,29 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
+      - name: Verify production App Check provider policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("lib/data/remote/firebase_services.dart").read_text()
+          expected = (
+              "providerAndroid: kReleaseMode"
+              " ? const AndroidPlayIntegrityProvider()"
+              " : const AndroidDebugProvider(),"
+          )
+          if expected not in source:
+              raise SystemExit(
+                  "Firebase App Check provider policy is not explicitly release-safe."
+              )
+          if source.count("AndroidDebugProvider") != 1:
+              raise SystemExit(
+                  "Unexpected AndroidDebugProvider usage; release must not use it."
+              )
+          print("Production App Check provider policy OK.")
+          PY
+
       - name: Build release APK
         run: flutter build apk --release
 
