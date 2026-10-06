@@ -24,6 +24,26 @@ class _VersionedWrite {
   final bool immutable;
 }
 
+enum CloudRootStatus {
+  missing,
+  exists,
+  unavailable,
+}
+
+class CloudRootReadResult {
+  const CloudRootReadResult({
+    required this.status,
+    this.data,
+  });
+
+  final CloudRootStatus status;
+  final Map<String, dynamic>? data;
+
+  bool get isAvailable => status != CloudRootStatus.unavailable;
+  bool get exists => status == CloudRootStatus.exists;
+}
+
+
 class FirebaseBackupService {
   FirebaseBackupService({
     required FirebaseServices firebase,
@@ -40,10 +60,28 @@ class FirebaseBackupService {
 
   static const cloudSchemaVersion = 1;
 
+  Future<CloudRootReadResult> readCloudRootResult(String uid) async {
+    if (!await _firebase.initialize()) {
+      return const CloudRootReadResult(status: CloudRootStatus.unavailable);
+    }
+
+    try {
+      final snap = await _firebase.firestore.collection('users').doc(uid).get();
+      if (!snap.exists) {
+        return const CloudRootReadResult(status: CloudRootStatus.missing);
+      }
+      return CloudRootReadResult(
+        status: CloudRootStatus.exists,
+        data: snap.data(),
+      );
+    } catch (_) {
+      return const CloudRootReadResult(status: CloudRootStatus.unavailable);
+    }
+  }
+
   Future<Map<String, dynamic>?> readCloudRoot(String uid) async {
-    if (!await _firebase.initialize()) return null;
-    final snap = await _firebase.firestore.collection('users').doc(uid).get();
-    return snap.exists ? snap.data() : null;
+    final result = await readCloudRootResult(uid);
+    return result.exists ? result.data : null;
   }
 
   Future<void> bootstrapAccount({
