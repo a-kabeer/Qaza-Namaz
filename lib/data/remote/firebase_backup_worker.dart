@@ -176,20 +176,13 @@ class FirebaseBackupWorker {
               'pending',
             );
             for (final op in matching) {
-              final attempts = (op['attempts'] as int?) ?? 0;
-              await _accountStore.markOutboxRetry(
+              await _accountStore.removeOutboxOperation(
                 localAccountId: account.localAccountId,
                 operationId: op['id']! as String,
                 workerId: _workerId,
-                attempts: attempts,
-                error: '',
-                failureCategory: '',
-                lastAttemptMicros:
-                    DateTime.now().microsecondsSinceEpoch,
-                nextAttemptMicros:
-                    DateTime.now().microsecondsSinceEpoch,
               );
             }
+            await _accountStore.enqueueSnapshot(account.localAccountId);
             continue;
           }
 
