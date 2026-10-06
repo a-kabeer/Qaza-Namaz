@@ -35,16 +35,14 @@ class FirebaseServices {
 
   bool get initialized => _initialized;
 
-  Future<bool> initialize({
-    Duration timeout = initializationTimeout,
-  }) async {
+  Future<bool> initialize() async {
     if (_initialized) return true;
 
     final running = _initializing;
     if (running != null) {
       return running
           .then((_) => _initialized)
-          .timeout(timeout, onTimeout: () => false);
+          .timeout(initializationTimeout, onTimeout: () => false);
     }
 
     final future = _initializeInternal();
@@ -66,7 +64,7 @@ class FirebaseServices {
     );
 
     try {
-      await future.timeout(timeout);
+      await future.timeout(initializationTimeout);
       return _initialized;
     } on TimeoutException {
       // Do not cancel the underlying initialization. Keep the shared future
@@ -182,7 +180,7 @@ class GoogleFirebaseAuthService {
   Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
     Duration timeout,
   ) async {
-    if (!await services.initialize(timeout: timeout)) {
+    if (!await services.initialize()) {
       return null;
     }
 
