@@ -172,7 +172,9 @@ class GoogleFirebaseAuthService {
   Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
     Duration timeout,
   ) async {
-    if (!await services.initialize()) {
+    if (!await services
+        .initialize()
+        .timeout(timeout, onTimeout: () => false)) {
       return null;
     }
 
