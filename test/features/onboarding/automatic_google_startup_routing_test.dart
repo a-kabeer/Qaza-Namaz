@@ -44,12 +44,15 @@ class _FakeAuth extends GoogleFirebaseAuthService {
   _FakeAuth(super.services, this.identity);
 
   final GoogleFirebaseIdentity? identity;
+  int lightweightAuthenticationCalls = 0;
 
   @override
   Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
     Duration timeout = const Duration(seconds: 5),
-  }) async =>
-      identity;
+  }) async {
+    lightweightAuthenticationCalls++;
+    return identity;
+  }
 
   @override
   Future<void> signOut() async {}
@@ -217,11 +220,23 @@ void main() {
     'fresh installation with no Google identity keeps Account Choice required',
     () async {
       final firebase = _FakeFirebase();
-      final manager = await _manager(
-        database: database,
-        store: store,
-        identity: null,
+      final auth = _FakeAuth(firebase, null);
+      final backup = _FakeBackup(
         firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        ),
       );
 
       await manager.initialize();
@@ -230,6 +245,7 @@ void main() {
       expect(manager.activeAccount, isNull);
       expect(manager.initialChoiceRequired, isTrue);
       expect(firebase.initializeCalls, 0);
+      expect(auth.lightweightAuthenticationCalls, 0);
     },
   );
 
@@ -255,17 +271,35 @@ void main() {
   testWidgets(
     'fresh installation with cached Google identity still shows Account Choice',
     (tester) async {
-      final manager = await _manager(
-        database: database,
-        store: store,
-        identity: const GoogleFirebaseIdentity(
+      final firebase = _FakeFirebase();
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
           uid: 'new-device-google',
           email: 'user@example.com',
+        ),
+      );
+      final backup = _FakeBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
         ),
       );
       await manager.initialize();
 
       expect(manager.activeAccount, isNull);
+      expect(auth.lightweightAuthenticationCalls, 0);
       expect(manager.initialChoiceRequired, isTrue);
 
       await pumpStartupGate(tester, manager);
