@@ -2405,6 +2405,25 @@ class AccountLocalStore {
     final device = await deviceInstanceId();
     final now = DateTime.now().microsecondsSinceEpoch;
     final id = _snapshotOutboxId(localAccountId);
+
+    // A generation change must retarget a durable snapshot operation instead
+    // of leaving an old-generation operation that the worker later discards.
+    await database.customUpdate(
+      '''UPDATE sync_outbox
+         SET firebase_uid = ?, cloud_generation = ?
+         WHERE id = ? AND user_id = ? AND type = 'account_snapshot'
+           AND (lease_until IS NULL OR lease_until <= ?)
+           AND cloud_generation <> ?''',
+      variables: [
+        Variable(uid),
+        Variable(rows.first.read<int>('cloud_generation')),
+        Variable(id),
+        Variable(localAccountId),
+        Variable(now),
+        Variable(rows.first.read<int>('cloud_generation')),
+      ],
+    );
+
     await database.customInsert(
       '''INSERT OR IGNORE INTO sync_outbox
          (id, user_id, type, queued_at, firebase_uid, cloud_generation,
@@ -2423,6 +2442,7 @@ class AccountLocalStore {
       ],
     );
   }
+
 
   Future<void> _enqueueSnapshotInsideTransaction(
     String localAccountId,
