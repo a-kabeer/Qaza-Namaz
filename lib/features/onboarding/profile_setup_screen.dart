@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_import_progress_dialog.dart';
@@ -125,6 +126,21 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ref.invalidate(progressSummaryProvider);
       _navigateHome();
     }
+  }
+
+  Future<bool> _startQazaPlanImport(
+    QazaPlan plan,
+    UserProfile profile, {
+    String? revisionId,
+  }) async {
+    final userId = ref.read(requiredUserIdProvider);
+    if (revisionId == null) return false;
+    return ref.read(qazaImportProvider.notifier).startOnboarding(
+          userId: userId,
+          profile: profile,
+          plan: plan,
+          revisionId: revisionId,
+        );
   }
 
   Future<void> _showImportProgress() async {
