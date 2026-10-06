@@ -813,8 +813,9 @@ class FirebaseBackupService {
   Future<void> _writeQazaAdditions(
     String localId,
     String uid,
-    int generation,
-  ) async {
+    int generation, {
+    Future<void> Function(int units)? onProgress,
+  }) async {
     final rows = await _database.customSelect(
       '''SELECT id, mode, input_snapshot, revision, created_at, updated_at
          FROM qaza_additions WHERE user_id = ? ORDER BY created_at ASC''',
@@ -866,8 +867,9 @@ class FirebaseBackupService {
   Future<void> _writeDeletionActions(
     String localId,
     String uid,
-    int generation,
-  ) async {
+    int generation, {
+    Future<void> Function(int units)? onProgress,
+  }) async {
     final actions = await _database.customSelect(
       '''SELECT id, addition_id, created_at, resolved_at, entity_version
          FROM qaza_deletion_actions WHERE user_id = ? ORDER BY created_at ASC''',
@@ -965,8 +967,9 @@ class FirebaseBackupService {
   Future<void> _writePlanRevisions(
     String localId,
     String uid,
-    int generation,
-  ) async {
+    int generation, {
+    Future<void> Function(int units)? onProgress,
+  }) async {
     final revisions = await _accountStore.loadPlanRevisions(localId);
     if (revisions.isEmpty) return;
     final device = await _accountStore.deviceInstanceId();
@@ -999,6 +1002,7 @@ class FirebaseBackupService {
     String uid,
     int generation, {
     bool incremental = false,
+    Future<void> Function(int units)? onProgress,
   }) async {
     final where = incremental
         ? '''AND (
