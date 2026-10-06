@@ -80,8 +80,9 @@ class FirebaseBackupService {
   }
 
   Future<Map<String, dynamic>?> readCloudRoot(String uid) async {
-    final result = await readCloudRootResult(uid);
-    return result.exists ? result.data : null;
+    if (!await _firebase.initialize()) return null;
+    final snap = await _firebase.firestore.collection('users').doc(uid).get();
+    return snap.exists ? snap.data() : null;
   }
 
   Future<void> bootstrapAccount({
