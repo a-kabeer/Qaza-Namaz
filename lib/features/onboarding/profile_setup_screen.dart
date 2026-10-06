@@ -43,7 +43,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _draft = profile;
     final repository = ref.read(userProfileRepositoryProvider);
     _saveQueue = _saveQueue.then(
-      (_) => repository.save(profile.copyWith(onboardingCompleted: false)),
+      (_) => repository.saveLocalOnly(
+        profile.copyWith(onboardingCompleted: false),
+      ),
     );
   }
 
@@ -71,12 +73,21 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // QazaPlan currently represents exactly five Fard prayers per day plus
     // the optional Witr count, so this is the domain result's exact number
     // of records this onboarding import would generate before duplicates.
+    final revisionId = ProfileQazaPlanReconciliationService.newRevisionId();
+
     if (plan.totalWithWitr == 0) {
-      await _finishOnboarding(finalizedProfile);
+      await ref.read(qazaImportProvider.notifier).commitOnboarding(
+            userId: ref.read(requiredUserIdProvider),
+            profile: finalizedProfile,
+            plan: plan,
+            revisionId: revisionId,
+          );
+      if (!mounted) return;
+      if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
+        _navigateHome();
+      }
       return;
     }
-
-    final revisionId = ProfileQazaPlanReconciliationService.newRevisionId();
 
     // The onboarding profile was created/updated locally above, but the
     // shared provider may still hold the pre-onboarding cached value. Refresh
@@ -94,6 +105,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         plan: plan,
         onConfirm: () => _startQazaPlanImport(
           plan,
+          finalizedProfile,
           revisionId: revisionId,
         ),
       ),
@@ -105,11 +117,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (!mounted) return;
     if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
-      await _finishOnboarding(
-        finalizedProfile,
-        plan: plan,
-        revisionId: revisionId,
-      );
+      _navigateHome();
     }
   }
 
@@ -121,23 +129,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  Future<void> _finishOnboarding(
-    UserProfile profile, {
-    QazaPlan? plan,
-    String? revisionId,
-  }) async {
-    final completedProfile = profile.copyWith(onboardingCompleted: true);
-    if (plan == null || revisionId == null) {
-      await ref.read(userProfileRepositoryProvider).save(completedProfile);
-    } else {
-      await ref.read(saveProfileUseCaseProvider).completeOnboarding(
-            profile: completedProfile,
-            plan: plan,
-            revisionId: revisionId,
-          );
-    }
-    ref.invalidate(userProfileProvider);
-
+  void _navigateHome() {
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
@@ -146,35 +138,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       (_) => false,
     );
   }
-
-  Future<bool> _startQazaPlanImport(
-    QazaPlan plan, {
-    String? revisionId,
-  }) async {
-    final userId = ref.read(requiredUserIdProvider);
-    final dates = _planDates(plan).toList(growable: false);
-    final prayers = _planPrayerTypes(plan).toSet();
-    return ref.read(qazaImportProvider.notifier).start(
-          userId: userId,
-          dates: dates,
-          prayers: prayers,
-          profilePlanRevisionId: revisionId,
-          profilePlanFingerprint:
-              ProfileQazaPlanReconciliationService.planFingerprint(plan),
-        );
-  }
-
-  Iterable<DateTime> _planDates(QazaPlan plan) =>
-      QazaPlanService.datesFor(plan);
-
-  List<PrayerType> _planPrayerTypes(QazaPlan plan) => [
-        PrayerType.fajr,
-        PrayerType.zuhr,
-        PrayerType.asr,
-        PrayerType.maghrib,
-        PrayerType.isha,
-        if (plan.includeWitr) PrayerType.witr,
-      ];
 
   @override
   Widget build(BuildContext context) {
