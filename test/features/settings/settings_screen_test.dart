@@ -26,6 +26,9 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   }
 
   @override
+  Future<void> saveLocalOnly(UserProfile profile) => save(profile);
+
+  @override
   Future<void> clear() async {
     stored = null;
   }
