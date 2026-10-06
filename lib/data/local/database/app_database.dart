@@ -765,16 +765,6 @@ class AppDatabase extends _$AppDatabase {
             AND account_mode = 'google'
         )
         BEGIN
-          INSERT OR IGNORE INTO account_backup_state
-            (local_account_id, current_dataset_revision,
-             acknowledged_dataset_revision, acknowledged_cloud_generation,
-             state)
-          SELECT local_account_id, 0, 0, cloud_generation,
-                 CASE WHEN cloud_backup_enabled = 1
-                      THEN 'pending' ELSE 'disabled' END
-          FROM local_accounts
-          WHERE local_account_id = $accountExpression;
-
           UPDATE account_backup_state
           SET current_dataset_revision = current_dataset_revision + 1,
               state = CASE
