@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,7 +36,11 @@ class _FakeBackupService extends FirebaseBackupService {
     calls++;
     if (failNext) {
       failNext = false;
-      throw StateError('synthetic Firebase outage');
+      throw FirebaseException(
+        plugin: 'cloud_firestore',
+        code: 'unavailable',
+        message: 'synthetic Firebase outage',
+      );
     }
     if (onProgress != null) {
       await onProgress(0, 4);
@@ -129,6 +134,8 @@ void main() {
     expect(afterFailure.single['id'], operationId);
     expect(afterFailure.single['attempts'], 1);
     expect(afterFailure.single['last_error'], contains('synthetic Firebase outage'));
+    expect(afterFailure.single['failure_category'], 'networkUnavailable');
+    expect(afterFailure.single['last_attempt_at'], isNotNull);
 
     await database.customUpdate(
       '''UPDATE sync_outbox
@@ -230,6 +237,10 @@ void main() {
 
       final failed = await store.readBackupStatus(accountId);
       expect(failed.state, 'failed');
+      expect(failed.failureCategory, 'networkUnavailable');
+      expect(failed.attemptCount, 1);
+      expect(failed.lastAttemptAt, isNotNull);
+      expect(failed.nextRetryAt, isNotNull);
 
       final retryStarted = await worker.retryNow();
       expect(retryStarted, isTrue);
@@ -244,6 +255,95 @@ void main() {
 
       final success = await store.readBackupStatus(accountId);
       expect(success.state, 'idle');
+    },
+  );
+
+  test(
+    'worker refuses a Firebase UID mismatch without writing cloud data',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = AccountLocalStore(database: database);
+
+      await store.ensureInitialized(
+        hasLegacyProfile: false,
+        hasLegacyQaza: false,
+      );
+      final accountId = await store.createGooglePartition(
+        firebaseUid: 'owner-user',
+        email: 'owner@example.com',
+      );
+      await store.activate(accountId);
+      await store.enqueueSnapshot(accountId);
+
+      final backup = _FakeBackupService(
+        FirebaseServices(),
+        database,
+        store,
+      )..failNext = false;
+
+      final worker = FirebaseBackupWorker(
+        firebase: FirebaseServices(),
+        accountStore: store,
+        backupService: backup,
+        currentFirebaseUidProvider: () async => 'different-user',
+      );
+
+      await worker.runOnce();
+
+      final status = await store.readBackupStatus(accountId);
+      expect(status.state, 'failed');
+      expect(status.failureCategory, 'authenticationUidMismatch');
+      expect(backup.calls, 0);
+    },
+  );
+
+  test(
+    'worker records authentication unavailable and keeps the durable operation',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = AccountLocalStore(database: database);
+
+      await store.ensureInitialized(
+        hasLegacyProfile: false,
+        hasLegacyQaza: false,
+      );
+      final accountId = await store.createGooglePartition(
+        firebaseUid: 'offline-auth-user',
+        email: 'offline-auth@example.com',
+      );
+      await store.activate(accountId);
+      await store.enqueueSnapshot(accountId);
+
+      final backup = _FakeBackupService(
+        FirebaseServices(),
+        database,
+        store,
+      )..failNext = false;
+
+      final worker = FirebaseBackupWorker(
+        firebase: FirebaseServices(),
+        accountStore: store,
+        backupService: backup,
+        currentFirebaseUidProvider: () async => null,
+      );
+
+      await worker.runOnce();
+
+      final status = await store.readBackupStatus(accountId);
+      expect(status.state, 'failed');
+      expect(status.failureCategory, 'authenticationUnavailable');
+      expect(backup.calls, 0);
+
+      final outbox = await store.loadModernOutboxBatch(
+        localAccountId: accountId,
+        nowMicros: DateTime.now().microsecondsSinceEpoch + 3600000,
+        limit: 10,
+      );
+      expect(outbox, hasLength(1));
     },
   );
 
