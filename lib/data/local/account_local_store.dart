@@ -1831,6 +1831,7 @@ class AccountLocalStore {
     required String failureCategory,
     required String message,
     required DateTime nextRetryAt,
+    String state = 'failed',
   }) async {
     await _ensureBackupStateRow(localAccountId);
     await enqueueSnapshot(localAccountId);
@@ -1858,7 +1859,7 @@ class AccountLocalStore {
         Variable(now),
       ],
     );
-    await setBackupState(localAccountId, 'failed');
+    await setBackupState(localAccountId, state);
   }
 
   Future<int> currentBackupRevision(String localAccountId) async {
