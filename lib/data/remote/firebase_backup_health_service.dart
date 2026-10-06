@@ -94,19 +94,32 @@ class FirebaseBackupHealthService {
       }
 
       final generation = (root.data?['cloudGeneration'] as num?)?.toInt();
-      
+      final account = await _accountStore.getAccount(localAccountId);
+      if (account == null) {
+        throw const BackupFailure(
+          category: BackupFailureCategory.authenticationUnavailable,
+          message: 'Local backup account is unavailable.',
+        );
+      }
+      if (generation != null && generation != account.cloudGeneration) {
+        throw const BackupFailure(
+          category: BackupFailureCategory.cloudGenerationMismatch,
+          message: 'Cloud generation does not match the active local account.',
+        );
+      }
+      final datasetState = root.data?['datasetState'] as String? ?? 'empty';
+      if (datasetState == 'deleting' || datasetState == 'deleted') {
+        throw BackupFailure(
+          category: BackupFailureCategory.cloudDatasetInvalidState,
+          message: 'Cloud dataset is not writable in state $datasetState.',
+        );
+      }
+
       if (runBackupProbe) {
         if (root.status == CloudRootStatus.missing) {
           throw const BackupFailure(
             category: BackupFailureCategory.firestoreNotFound,
             message: 'A backup probe requires an existing cloud root.',
-          );
-        }
-        final account = await _accountStore.getAccount(localAccountId);
-        if (account == null) {
-          throw const BackupFailure(
-            category: BackupFailureCategory.authenticationUnavailable,
-            message: 'Local backup account is unavailable.',
           );
         }
         await _backup.snapshotAccount(
