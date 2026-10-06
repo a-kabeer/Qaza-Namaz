@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
-import '../../domain/services/qaza_plan_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_import_progress_dialog.dart';
