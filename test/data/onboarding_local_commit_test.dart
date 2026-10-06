@@ -111,10 +111,10 @@ void main() {
     );
     expect(
       await database.customSelect(
-        '''SELECT 1 FROM sync_outbox WHERE user_id = ?''',
+        '''SELECT id FROM sync_outbox WHERE user_id = ?''',
         variables: [Variable(accountId)],
       ).get(),
-      isEmpty,
+      hasLength(outboxBeforeCommit.length),
     );
   });
 
@@ -275,6 +275,11 @@ void main() {
         Variable(revision.createdAt.microsecondsSinceEpoch),
       ],
     );
+
+    final outboxBeforeCommit = await database.customSelect(
+      'SELECT id FROM sync_outbox WHERE user_id = ?',
+      variables: [Variable(accountId)],
+    ).get();
 
     final record = _record(
       id: 'new-qaza',
