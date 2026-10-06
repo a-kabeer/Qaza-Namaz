@@ -1828,6 +1828,35 @@ class AccountLocalStore {
     });
   }
 
+  Future<void> _upsertProfilePlanProvenance(
+    Iterable<QazaRecord> records,
+  ) async {
+    final eligible = records
+        .where(
+          (record) =>
+              record.profilePlanRevisionId != null &&
+              record.profilePlanFingerprint != null,
+        )
+        .toList(growable: false);
+    for (final record in eligible) {
+      await database.customInsert(
+        '''INSERT INTO qaza_profile_plan_provenance
+           (record_id, user_id, plan_revision_id, plan_fingerprint)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(record_id) DO UPDATE SET
+             user_id = excluded.user_id,
+             plan_revision_id = excluded.plan_revision_id,
+             plan_fingerprint = excluded.plan_fingerprint''',
+        variables: [
+          Variable(record.id),
+          Variable(record.userId),
+          Variable(record.profilePlanRevisionId!),
+          Variable(record.profilePlanFingerprint!),
+        ],
+      );
+    }
+  }
+
   Future<List<Map<String, Object?>>> loadModernOutboxBatch({
     required String localAccountId,
     required int nowMicros,
