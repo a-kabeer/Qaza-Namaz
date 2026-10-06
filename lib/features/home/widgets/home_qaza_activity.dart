@@ -185,7 +185,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                   _ActivityRange.yearly =>
                     ref.watch(homeQazaActivityYearProvider(anchor)),
                 };
-                final period = periodAsync.valueOrNull;
                 final height = _activityViewportHeight(
                   constraints.maxWidth,
                 );
