@@ -752,6 +752,10 @@ class AccountSessionManager extends ChangeNotifier {
           refreshed.localAccountId,
           'pending',
         );
+      } else {
+        await _accountStore.removeSnapshotOperation(
+          refreshed.localAccountId,
+        );
       }
       if (await _backupOperationStillCurrent(
         operationEpoch,
