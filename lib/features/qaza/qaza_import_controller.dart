@@ -7,6 +7,9 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/entities/user_profile.dart';
+import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../../domain/services/qaza_plan_service.dart';
 import '../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../domain/services/qaza_service.dart';
 
@@ -146,6 +149,141 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
   @override
   QazaImportTaskState build() => const QazaImportTaskState();
+
+  bool startOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) {
+    if (state.isActive) return false;
+    if (userId.isEmpty || revisionId.isEmpty) return false;
+    state = QazaImportTaskState(
+      phase: QazaImportTaskPhase.preparing,
+      userId: userId,
+      startedAt: DateTime.now(),
+    );
+    unawaited(
+      _runOnboarding(
+        userId: userId,
+        profile: profile,
+        plan: plan,
+        revisionId: revisionId,
+      ),
+    );
+    return true;
+  }
+
+  Future<void> commitOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) async {
+    if (state.isActive) {
+      throw StateError('Another Qaza import is already active.');
+    }
+    state = QazaImportTaskState(
+      phase: QazaImportTaskPhase.preparing,
+      userId: userId,
+      startedAt: DateTime.now(),
+    );
+    await _runOnboarding(
+      userId: userId,
+      profile: profile,
+      plan: plan,
+      revisionId: revisionId,
+    );
+  }
+
+  Future<void> _runOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      final fingerprint =
+          ProfileQazaPlanReconciliationService.planFingerprint(plan);
+      final records = await ref
+          .read(qazaServiceProvider)
+          .buildOnboardingQazaRecords(
+            userId: userId,
+            dates: QazaPlanService.datesFor(plan),
+            prayerTypes: [
+              PrayerType.fajr,
+              PrayerType.zuhr,
+              PrayerType.asr,
+              PrayerType.maghrib,
+              PrayerType.isha,
+              if (plan.includeWitr) PrayerType.witr,
+            ],
+            profilePlanRevisionId: revisionId,
+            profilePlanFingerprint: fingerprint,
+            witrAllowed: plan.includeWitr,
+          );
+
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.importing,
+        processed: 0,
+        total: records.length,
+        added: 0,
+        skipped: 0,
+      );
+
+      final revision =
+          ProfileQazaPlanReconciliationService.createInitialRevision(
+        revisionId: revisionId,
+        userId: userId,
+        profile: profile,
+        plan: plan,
+        addedRecords: records.length,
+      );
+
+      await ref.read(onboardingCommitRepositoryProvider).commit(
+            localAccountId: userId,
+            profile: profile,
+            revision: revision,
+            records: records,
+            onProgress: (processed, total) {
+              if (state.phase != QazaImportTaskPhase.importing) return;
+              state = state.copyWith(
+                processed: processed,
+                total: total,
+                added: processed,
+                skipped: 0,
+              );
+            },
+          );
+
+      stopwatch.stop();
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.completed,
+        processed: records.length,
+        total: records.length,
+        added: records.length,
+        skipped: 0,
+        completedAt: DateTime.now(),
+        elapsed: stopwatch.elapsed,
+        clearError: true,
+      );
+    } catch (error, stack) {
+      stopwatch.stop();
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.importData,
+            'onboarding_local_commit_failed',
+            error,
+            stack: stack,
+          );
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.failed,
+        completedAt: DateTime.now(),
+        elapsed: stopwatch.elapsed,
+        error: error,
+      );
+    }
+  }
 
   bool start({
     required String userId,
