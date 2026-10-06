@@ -2383,6 +2383,12 @@ abstract class AppLocalizations {
   String get accountBackupStatusWaitingConnectionMessage;
   String get accountBackupStatusFailedTitle;
   String get accountBackupStatusFailedMessage;
+
+  /// No description provided for @accountBackupStatusAuthRequired.
+  String get accountBackupStatusAuthRequired;
+  String get accountBackupStatusSecurityRejected;
+  String get accountBackupStatusNetwork;
+  String get accountBackupStatusCloudStateInvalid;
   String get accountBackupStatusFailedAutomaticRetry;
   String get accountBackupStatusRetry;
     String get accountBackupStatusFailed;
