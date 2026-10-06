@@ -86,8 +86,9 @@ class _BlockingBackupService extends FirebaseBackupService {
 }
 
 void main() {
-  test('worker retries the same durable operation and removes it only after success',
-      () async {
+  test(
+    'worker retries the same durable operation and removes it only after success',
+    () async {
     SharedPreferences.setMockInitialValues({});
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -136,7 +137,8 @@ void main() {
     expect(afterFailure, hasLength(1));
     expect(afterFailure.single['id'], operationId);
     expect(afterFailure.single['attempts'], 1);
-    expect(afterFailure.single['last_error'], contains('synthetic Firebase outage'));
+    expect(afterFailure.single['last_error'],
+        contains('synthetic Firebase outage'));
     expect(afterFailure.single['failure_category'], 'networkUnavailable');
     expect(afterFailure.single['last_attempt_at'], isNotNull);
 
