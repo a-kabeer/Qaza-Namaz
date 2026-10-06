@@ -1545,6 +1545,8 @@ class AccountLocalStore {
                 s.acknowledged_cloud_generation,
                 s.last_successful_backup_at,
                 s.state,
+                s.progress_completed,
+                s.progress_total,
                 a.cloud_backup_enabled,
                 a.cloud_generation
          FROM account_backup_state s
@@ -1561,22 +1563,30 @@ class AccountLocalStore {
         lastSuccessfulBackupAt: null,
         state: 'disabled',
         backupEnabled: false,
+        progressCompleted: null,
+        progressTotal: null,
       );
     }
-    final row = rows.first;
+    return _mapBackupStatusRow(rows.first);
+  }
+
+  BackupStatusSnapshot _mapBackupStatusRow(QueryRow row) {
     return BackupStatusSnapshot(
       currentRevision: row.read<int>('current_dataset_revision'),
       acknowledgedRevision: row.read<int>('acknowledged_dataset_revision'),
       acknowledgedGeneration:
           row.read<int>('acknowledged_cloud_generation'),
       cloudGeneration: row.read<int>('cloud_generation'),
-      lastSuccessfulBackupAt: row.read<int?>('last_successful_backup_at') == null
-          ? null
-          : DateTime.fromMicrosecondsSinceEpoch(
-              row.read<int>('last_successful_backup_at')!,
-            ),
+      lastSuccessfulBackupAt:
+          row.read<int?>('last_successful_backup_at') == null
+              ? null
+              : DateTime.fromMicrosecondsSinceEpoch(
+                  row.read<int>('last_successful_backup_at')!,
+                ),
       state: row.read<String>('state'),
       backupEnabled: row.read<int>('cloud_backup_enabled') != 0,
+      progressCompleted: row.read<int?>('progress_completed'),
+      progressTotal: row.read<int?>('progress_total'),
     );
   }
 
@@ -1585,7 +1595,7 @@ class AccountLocalStore {
       '''INSERT OR IGNORE INTO account_backup_state
          (local_account_id, current_dataset_revision,
           acknowledged_dataset_revision, acknowledged_cloud_generation,
-          state)
+          state, progress_completed, progress_total)
          SELECT local_account_id,
                 CASE WHEN EXISTS (
                   SELECT 1 FROM qaza_records WHERE user_id = ?
@@ -1597,7 +1607,9 @@ class AccountLocalStore {
                 0,
                 cloud_generation,
                 CASE WHEN cloud_backup_enabled = 1 THEN 'pending'
-                     ELSE 'disabled' END
+                     ELSE 'disabled' END,
+                NULL,
+                NULL
          FROM local_accounts
          WHERE local_account_id = ?''',
       variables: [
@@ -1616,10 +1628,76 @@ class AccountLocalStore {
     await _ensureBackupStateRow(localAccountId);
     await database.customUpdate(
       '''UPDATE account_backup_state
-         SET state = ?
+         SET state = ?,
+             progress_completed = NULL,
+             progress_total = NULL
          WHERE local_account_id = ?''',
       variables: [Variable(state), Variable(localAccountId)],
     );
+  }
+
+  Future<void> setBackupProgress(
+    String localAccountId,
+    int processed,
+    int total,
+  ) async {
+    if (processed < 0 || total <= 0 || processed > total) {
+      throw ArgumentError(
+        'Invalid backup progress: processed=$processed total=$total',
+      );
+    }
+    await _ensureBackupStateRow(localAccountId);
+    await database.customUpdate(
+      '''UPDATE account_backup_state
+         SET progress_completed = ?, progress_total = ?
+         WHERE local_account_id = ? AND state = 'running' ''',
+      variables: [
+        Variable(processed),
+        Variable(total),
+        Variable(localAccountId),
+      ],
+    );
+  }
+
+  Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
+    return database
+        .customSelect(
+          '''SELECT s.current_dataset_revision,
+                    s.acknowledged_dataset_revision,
+                    s.acknowledged_cloud_generation,
+                    s.last_successful_backup_at,
+                    s.state,
+                    s.progress_completed,
+                    s.progress_total,
+                    a.cloud_backup_enabled,
+                    a.cloud_generation
+             FROM account_backup_state s
+             JOIN local_accounts a
+               ON a.local_account_id = s.local_account_id
+             WHERE s.local_account_id = ? LIMIT 1''',
+          variables: [Variable(localAccountId)],
+        )
+        .watch()
+        .map(_mapBackupStatusRow);
+  }
+
+  Future<void> prepareBackupRetry(String localAccountId) async {
+    await _ensureBackupStateRow(localAccountId);
+    await enqueueSnapshot(localAccountId);
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customUpdate(
+      '''UPDATE sync_outbox
+         SET next_attempt_at = ?, worker_id = NULL, lease_until = NULL
+         WHERE user_id = ?
+           AND type = 'account_snapshot'
+           AND (lease_until IS NULL OR lease_until <= ?)''',
+      variables: [
+        Variable(now),
+        Variable(localAccountId),
+        Variable(now),
+      ],
+    );
+    await setBackupState(localAccountId, 'pending');
   }
 
   Future<int> currentBackupRevision(String localAccountId) async {
@@ -1645,7 +1723,9 @@ class AccountLocalStore {
          SET acknowledged_dataset_revision = ?,
              acknowledged_cloud_generation = ?,
              last_successful_backup_at = ?,
-             state = 'idle'
+             state = 'idle',
+             progress_completed = NULL,
+             progress_total = NULL
          WHERE local_account_id = ?
            AND current_dataset_revision = ?
            AND acknowledged_cloud_generation <= ?''',
@@ -2304,6 +2384,8 @@ class BackupStatusSnapshot {
     required this.lastSuccessfulBackupAt,
     required this.state,
     required this.backupEnabled,
+    required this.progressCompleted,
+    required this.progressTotal,
   });
 
   final int currentRevision;
@@ -2313,6 +2395,8 @@ class BackupStatusSnapshot {
   final DateTime? lastSuccessfulBackupAt;
   final String state;
   final bool backupEnabled;
+  final int? progressCompleted;
+  final int? progressTotal;
 
   bool get isCurrent =>
       backupEnabled &&
@@ -2321,4 +2405,17 @@ class BackupStatusSnapshot {
 
   bool get hasPendingChanges =>
       backupEnabled && currentRevision > acknowledgedRevision;
+
+  bool get hasDeterminateProgress =>
+      state == 'running' &&
+      progressCompleted != null &&
+      progressTotal != null &&
+      progressTotal! > 0 &&
+      progressCompleted! >= 0 &&
+      progressCompleted! <= progressTotal!;
+
+  double get progressFraction {
+    if (!hasDeterminateProgress) return 0;
+    return progressCompleted! / progressTotal!;
+  }
 }
