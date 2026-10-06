@@ -1168,6 +1168,10 @@
   "accountBackupStatusWaitingConnectionMessage": "Your Qaza data is safe on this device.",
   "accountBackupStatusFailedTitle": "Backup couldn't complete",
   "accountBackupStatusFailedMessage": "Your Qaza data is safe on this device.",
+  "accountBackupStatusAuthRequired": "Google session needs to be restored.",
+  "accountBackupStatusSecurityRejected": "Cloud access was rejected by security verification.",
+  "accountBackupStatusNetwork": "No internet connection. Backup will resume when a connection is available.",
+  "accountBackupStatusCloudStateInvalid": "Cloud backup state changed. Try again.",
   "accountBackupStatusFailedAutomaticRetry": "We'll try again automatically.",
   "accountBackupStatusRetry": "Try again",
   "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically."
