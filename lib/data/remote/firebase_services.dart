@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/diagnostics/diagnostics.dart';
+import 'backup_failure.dart';
 
 class FirebaseConfiguration {
   static const projectId = 'qaza-nmz';
