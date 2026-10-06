@@ -38,6 +38,7 @@ class AccountSessionManager extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initializationFuture;
   Future<void>? _startupRestoreFuture;
+  Future<void>? _postActivationCloudSyncFuture;
   int _operationEpoch = 0;
 
   AccountSessionState get state => _state;
@@ -49,6 +50,9 @@ class AccountSessionManager extends ChangeNotifier {
   /// This remains non-blocking for production startup routing.
   Future<void> get startupRestoreFuture =>
       _startupRestoreFuture ?? Future<void>.value();
+
+  Future<void> get postActivationCloudSyncFuture =>
+      _postActivationCloudSyncFuture ?? Future<void>.value();
 
   static const Duration _startupAuthTimeout = Duration(seconds: 5);
   static const Duration _startupCloudTimeout = Duration(seconds: 8);
@@ -348,13 +352,12 @@ class AccountSessionManager extends ChangeNotifier {
       await _refresh();
 
       // Cloud bootstrap/reconciliation is explicitly post-activation.
-      unawaited(
-        _syncGoogleCloudAfterActivation(
-          localAccountId: target.localAccountId,
-          uid: identity.uid,
-          operationEpoch: operationEpoch,
-        ),
+      _postActivationCloudSyncFuture = _syncGoogleCloudAfterActivation(
+        localAccountId: target.localAccountId,
+        uid: identity.uid,
+        operationEpoch: operationEpoch,
       );
+      unawaited(_postActivationCloudSyncFuture!);
     } catch (error, stack) {
       if (operationEpoch != _operationEpoch) return;
 
