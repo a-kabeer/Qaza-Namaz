@@ -127,7 +127,9 @@ void main() {
 
     final afterFailure = await store.loadModernOutboxBatch(
       localAccountId: accountId,
-      nowMicros: DateTime.now().microsecondsSinceEpoch + 3600000,
+      nowMicros: DateTime.now().microsecondsSinceEpoch +
+          const Duration(minutes: 5).inMicroseconds +
+          1,
       limit: 10,
     );
     expect(afterFailure, hasLength(1));
@@ -231,6 +233,7 @@ void main() {
         accountStore: store,
         backupService: backup,
         currentFirebaseUidProvider: () async => 'retry-user',
+        connectivityProvider: () async => const [ConnectivityResult.wifi],
       );
 
       await worker.runOnce();
