@@ -568,6 +568,8 @@ class FirebaseBackupService {
     required int expectedGeneration,
     required bool allowCreate,
   }) async {
+    await _firebase.ensureFirestoreReady();
+    await _ensureAuthenticatedUid(uid);
     final ref = _firebase.firestore.collection('users').doc(uid);
     await _firebase.firestore.runTransaction((transaction) async {
       final snap = await transaction.get(ref);
