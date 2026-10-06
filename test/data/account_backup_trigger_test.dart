@@ -98,6 +98,12 @@ void main() {
       variables: [Variable('google-revision')],
     );
 
+    await database.customInsert(
+      '''INSERT INTO device_metadata (id, device_instance_id)
+         VALUES (1, ?)''',
+      variables: [Variable('revision-device')],
+    );
+
     final initial = await database.customSelect(
       '''SELECT current_dataset_revision, acknowledged_dataset_revision
          FROM account_backup_state
