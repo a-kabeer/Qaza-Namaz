@@ -1826,6 +1826,17 @@ class AccountLocalStore {
     await setBackupState(localAccountId, 'pending');
   }
 
+  Future<void> removeSnapshotOperation(String localAccountId) async {
+    await database.customUpdate(
+      '''DELETE FROM sync_outbox
+         WHERE user_id = ? AND id = ? AND type = 'account_snapshot' ''',
+      variables: [
+        Variable(localAccountId),
+        Variable(_snapshotOutboxId(localAccountId)),
+      ],
+    );
+  }
+
   Future<void> recordBackupFailure({
     required String localAccountId,
     required String failureCategory,
