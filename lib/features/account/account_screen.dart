@@ -397,7 +397,7 @@ class _AccountBackupStatusView extends StatelessWidget {
           ),
         ),
       ],
-      if (secondaryMessage != null) ...[
+      if (secondaryMessage != null && secondaryMessage != message) ...[
         const SizedBox(height: 2),
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 30),
