@@ -618,7 +618,7 @@ class FirebaseBackupService {
                   entityId: row.read<String>('id'),
                 )
               : VersionedEntity(
-                  entityVersion: row.read<int>('entity_version')!,
+                  entityVersion: row.read<int>('entity_version'),
                   updatedAt: _microsToDate(row.read<int>('meta_updated_at')),
                   writerDeviceId: row.read<String>('writer_device_id'),
                   operationId: row.read<String>('operation_id'),
@@ -993,29 +993,6 @@ class FirebaseBackupService {
           entityId: row.read<String>('entity_id'),
         ),
     };
-  }
-
-  Future<VersionedEntity?> _metadata(
-    String localId,
-    String type,
-    String entityId,
-  ) async {
-    final rows = await _database.customSelect(
-      '''SELECT entity_version, updated_at, writer_device_id, operation_id
-         FROM entity_metadata
-         WHERE local_account_id = ? AND entity_type = ? AND entity_id = ?
-         LIMIT 1''',
-      variables: [Variable(localId), Variable(type), Variable(entityId)],
-    ).get();
-    if (rows.isEmpty) return null;
-    final row = rows.first;
-    return VersionedEntity(
-      entityVersion: row.read<int>('entity_version'),
-      updatedAt: _microsToDate(row.read<int>('updated_at')),
-      writerDeviceId: row.read<String>('writer_device_id'),
-      operationId: row.read<String>('operation_id'),
-      entityId: entityId,
-    );
   }
 
   Future<void> _writeVersionedBatch({
