@@ -1826,6 +1826,41 @@ class AccountLocalStore {
     await setBackupState(localAccountId, 'pending');
   }
 
+  Future<void> recordBackupFailure({
+    required String localAccountId,
+    required String failureCategory,
+    required String message,
+    required DateTime nextRetryAt,
+  }) async {
+    await _ensureBackupStateRow(localAccountId);
+    await enqueueSnapshot(localAccountId);
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customUpdate(
+      '''UPDATE sync_outbox
+         SET attempts = attempts + 1,
+             last_error = ?,
+             failure_category = ?,
+             last_attempt_at = ?,
+             next_attempt_at = ?,
+             worker_id = NULL,
+             lease_until = NULL
+         WHERE user_id = ?
+           AND id = ?
+           AND type = 'account_snapshot'
+           AND (lease_until IS NULL OR lease_until <= ?)''',
+      variables: [
+        Variable(message),
+        Variable(failureCategory),
+        Variable(now),
+        Variable(nextRetryAt.microsecondsSinceEpoch),
+        Variable(localAccountId),
+        Variable(_snapshotOutboxId(localAccountId)),
+        Variable(now),
+      ],
+    );
+    await setBackupState(localAccountId, 'failed');
+  }
+
   Future<int> currentBackupRevision(String localAccountId) async {
     await _ensureBackupStateRow(localAccountId);
     final rows = await database.customSelect(
