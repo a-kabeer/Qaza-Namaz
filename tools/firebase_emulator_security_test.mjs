@@ -13,6 +13,7 @@ import {
   getDoc,
   getFirestore,
   setDoc,
+  writeBatch,
   Timestamp,
 } from 'firebase/firestore';
 
@@ -120,6 +121,31 @@ async function main() {
   await setDoc(root, rootFields('initializing', 1));
   await setDoc(root, rootFields('ready', 1));
   await setDoc(record, childFields(1));
+
+  // Exercise a realistic backup batch. The production worker now chunks
+  // versioned writes at 100 operations, well below Firestore's 500-write
+  // limit, while keeping the rules evaluation bounded and repeatable.
+  const ownerBatch = writeBatch(userA.db);
+  for (let i = 0; i < 100; i += 1) {
+    ownerBatch.set(
+      doc(
+        userA.db,
+        'users',
+        userA.uid,
+        'qazaRecords',
+        'batch-' + i,
+      ),
+      {
+        ...childFields(1),
+        payload: {
+          id: 'batch-' + i,
+          recordVersion: 1,
+        },
+      },
+    );
+  }
+  await ownerBatch.commit();
+
   const ownerRead = await getDoc(record);
   if (!ownerRead.exists()) {
     throw new Error('Owner could not read their own record.');
@@ -151,6 +177,27 @@ async function main() {
       childFields(1),
     ),
   );
+
+  const crossUserBatch = writeBatch(userB.db);
+  for (let i = 0; i < 25; i += 1) {
+    crossUserBatch.set(
+      doc(
+        userB.db,
+        'users',
+        userA.uid,
+        'qazaRecords',
+        'cross-batch-' + i,
+      ),
+      {
+        ...childFields(1),
+        payload: {
+          id: 'cross-batch-' + i,
+          recordVersion: 1,
+        },
+      },
+    );
+  }
+  await expectDenied('Cross-user batched write', () => crossUserBatch.commit());
 
   // Unauthenticated access is denied.
   const anonymousApp = initializeApp(
