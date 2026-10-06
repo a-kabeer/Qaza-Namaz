@@ -26,8 +26,6 @@ import '../data/remote/firebase_reconciliation_service.dart';
 import '../data/remote/firebase_backup_worker.dart';
 import '../features/account/account_session_manager.dart';
 import '../data/local/qaza_local_store.dart';
-import '../data/local/qaza_plan_revision_repository.dart';
-import '../data/local/user_profile_repository.dart';
 import '../data/local/database/qaza_addition_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
 import '../domain/entities/qaza_record.dart';

@@ -333,23 +333,6 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     return const HomePrayerSelectionState();
   }
 
-  void _normalizeDisabledWitr() {
-    final selectedPrayer = state.selectedPrayer == PrayerType.witr
-        ? PrayerType.fajr
-        : state.selectedPrayer;
-    state = state.copyWith(
-      autoSequencePrayer: PrayerType.fajr,
-      selectedPrayer: selectedPrayer,
-      clearSelectedPrayer: selectedPrayer == null,
-    );
-    _persistSequence(PrayerType.fajr);
-    if (selectedPrayer != null) {
-      _persistSelectedPrayer(selectedPrayer);
-    } else {
-      _clearPersistedSelectedPrayer();
-    }
-  }
-
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
   void selectPrayer(
     PrayerType prayer, {

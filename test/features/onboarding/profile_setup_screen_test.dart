@@ -16,16 +16,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
-import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_plan_revision_repository.dart';
-import 'package:qaza_namaz/domain/services/current_day_qaza_eligibility_service.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
-import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
