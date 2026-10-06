@@ -94,9 +94,7 @@ class FirebaseBackupHealthService {
       }
 
       final generation = (root.data?['cloudGeneration'] as num?)?.toInt();
-      final cloudState = (root.data?['datasetState'] as String?) ?? 'missing';
-
-      var backupPassed = true;
+      
       if (runBackupProbe) {
         if (root.status == CloudRootStatus.missing) {
           throw const BackupFailure(
@@ -127,7 +125,7 @@ class FirebaseBackupHealthService {
         firestoreRead: true,
         cloudRoot: root.status,
         cloudGeneration: generation,
-        backup: backupPassed,
+        backup: true,
       );
     } catch (error, stack) {
       final failure = classifyBackupFailure(error, stackTrace: stack);
