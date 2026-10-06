@@ -1663,9 +1663,18 @@ class AccountLocalStore {
                 s.progress_completed,
                 s.progress_total,
                 a.cloud_backup_enabled,
-                a.cloud_generation
+                a.cloud_generation,
+                o.failure_category,
+                o.last_error,
+                o.attempts,
+                o.last_attempt_at,
+                o.next_attempt_at
          FROM account_backup_state s
          JOIN local_accounts a ON a.local_account_id = s.local_account_id
+         LEFT JOIN sync_outbox o
+           ON o.user_id = s.local_account_id
+          AND o.type = 'account_snapshot'
+          AND o.id = 'account_snapshot_' || s.local_account_id
          WHERE s.local_account_id = ? LIMIT 1''',
       variables: [Variable(localAccountId)],
     ).get();
@@ -1680,6 +1689,11 @@ class AccountLocalStore {
         backupEnabled: false,
         progressCompleted: null,
         progressTotal: null,
+        failureCategory: null,
+        failureMessage: null,
+        attemptCount: 0,
+        lastAttemptAt: null,
+        nextRetryAt: null,
       );
     }
     return _mapBackupStatusRow(rows.first);
@@ -1701,6 +1715,19 @@ class AccountLocalStore {
       backupEnabled: row.read<int>('cloud_backup_enabled') != 0,
       progressCompleted: row.read<int?>('progress_completed'),
       progressTotal: row.read<int?>('progress_total'),
+      failureCategory: row.read<String?>('failure_category'),
+      failureMessage: row.read<String?>('last_error'),
+      attemptCount: row.read<int?>('attempts') ?? 0,
+      lastAttemptAt: row.read<int?>('last_attempt_at') == null
+          ? null
+          : DateTime.fromMicrosecondsSinceEpoch(
+              row.read<int>('last_attempt_at'),
+            ),
+      nextRetryAt: row.read<int?>('next_attempt_at') == null
+          ? null
+          : DateTime.fromMicrosecondsSinceEpoch(
+              row.read<int>('next_attempt_at'),
+            ),
     );
   }
 
@@ -1785,7 +1812,8 @@ class AccountLocalStore {
     final now = DateTime.now().microsecondsSinceEpoch;
     await database.customUpdate(
       '''UPDATE sync_outbox
-         SET next_attempt_at = ?, worker_id = NULL, lease_until = NULL
+         SET next_attempt_at = ?, worker_id = NULL, lease_until = NULL,
+             failure_category = NULL, last_error = NULL, last_attempt_at = NULL
          WHERE user_id = ?
            AND type = 'account_snapshot'
            AND (lease_until IS NULL OR lease_until <= ?)''',
@@ -2195,7 +2223,8 @@ class AccountLocalStore {
     final rows = await database.customSelect(
       '''SELECT id, user_id, firebase_uid, cloud_generation,
                 entity_type, operation, payload_json, queued_at,
-                next_attempt_at, attempts, last_error
+                next_attempt_at, attempts, last_error,
+                failure_category, last_attempt_at
          FROM sync_outbox
          WHERE user_id = ?
            AND type = 'account_snapshot'
@@ -2224,6 +2253,8 @@ class AccountLocalStore {
           'next_attempt_at': row.read<int?>('next_attempt_at'),
           'attempts': row.read<int>('attempts'),
           'last_error': row.read<String?>('last_error'),
+          'failure_category': row.read<String?>('failure_category'),
+          'last_attempt_at': row.read<int?>('last_attempt_at'),
         },
     ];
   }
@@ -2299,16 +2330,21 @@ class AccountLocalStore {
     required String workerId,
     required int attempts,
     required String error,
+    required String failureCategory,
+    required int lastAttemptMicros,
     required int nextAttemptMicros,
   }) async {
     await database.customUpdate(
       '''UPDATE sync_outbox
-         SET attempts = ?, last_error = ?, next_attempt_at = ?,
+         SET attempts = ?, last_error = ?, failure_category = ?,
+             last_attempt_at = ?, next_attempt_at = ?,
              worker_id = NULL, lease_until = NULL
          WHERE user_id = ? AND id = ? AND worker_id = ?''',
       variables: [
         Variable(attempts),
         Variable(error),
+        Variable(failureCategory),
+        Variable(lastAttemptMicros),
         Variable(nextAttemptMicros),
         Variable(localAccountId),
         Variable(operationId),
@@ -2488,6 +2524,11 @@ class BackupStatusSnapshot {
     required this.backupEnabled,
     required this.progressCompleted,
     required this.progressTotal,
+    required this.failureCategory,
+    required this.failureMessage,
+    required this.attemptCount,
+    required this.lastAttemptAt,
+    required this.nextRetryAt,
   });
 
   final int currentRevision;
@@ -2499,6 +2540,11 @@ class BackupStatusSnapshot {
   final bool backupEnabled;
   final int? progressCompleted;
   final int? progressTotal;
+  final String? failureCategory;
+  final String? failureMessage;
+  final int attemptCount;
+  final DateTime? lastAttemptAt;
+  final DateTime? nextRetryAt;
 
   bool get isCurrent =>
       backupEnabled &&
