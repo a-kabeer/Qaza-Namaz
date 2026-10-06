@@ -32,6 +32,15 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
   }
 
   @override
+  Future<void> saveLocalOnly(UserProfile profile) async {
+    final id = _activeAccountId();
+    if (id == null) {
+      throw StateError('No active local account exists.');
+    }
+    await _store.saveProfileLocalOnly(id, profile);
+  }
+
+  @override
   Future<void> clear() async {
     final id = _activeAccountId();
     if (id == null) return;

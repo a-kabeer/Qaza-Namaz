@@ -281,6 +281,46 @@ class QazaService {
     return result;
   }
 
+  /// Builds onboarding records without writing them. The final persistence
+  /// is performed by the atomic onboarding transaction.
+  Future<List<QazaRecord>> buildOnboardingQazaRecords({
+    required String userId,
+    required Iterable<DateTime> dates,
+    required Iterable<PrayerType> prayerTypes,
+    required String profilePlanRevisionId,
+    required String profilePlanFingerprint,
+    bool witrAllowed = true,
+  }) async {
+    if (userId.isEmpty) {
+      throw ArgumentError.value(userId, 'userId');
+    }
+    final selectedPrayers = prayerTypes.toSet();
+    if (selectedPrayers.contains(PrayerType.witr) && !witrAllowed) {
+      throw const QazaWitrNotIncludedException();
+    }
+
+    final analysis = await analyzeAvailability(
+      userId: userId,
+      dates: dates,
+      prayerTypes: selectedPrayers,
+    );
+    final now = DateTime.now();
+    return [
+      for (final candidate in analysis.newCandidates)
+        QazaRecord(
+          id: candidate.value,
+          userId: userId,
+          prayerType: candidate.prayerType,
+          originalDate: candidate.date,
+          status: QazaStatus.pending,
+          profilePlanRevisionId: profilePlanRevisionId,
+          profilePlanFingerprint: profilePlanFingerprint,
+          createdAt: now,
+          updatedAt: now,
+        ),
+    ];
+  }
+
   Future<QazaAvailabilityAnalysis> analyzeAvailability(
       {required String userId,
       required Iterable<DateTime> dates,

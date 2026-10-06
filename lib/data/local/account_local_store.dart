@@ -11,6 +11,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/conflict_resolver.dart';
 import 'database/app_database.dart';
+import 'database/tables/qaza_records.dart';
 
 class AccountLocalStore {
   AccountLocalStore({required this.database});
@@ -1557,25 +1558,203 @@ class AccountLocalStore {
     final device = await deviceInstanceId();
     final opId = _randomId('op');
     await database.transaction(() async {
-      await database.customUpdate(
-        '''INSERT INTO account_profiles
-           (local_account_id, payload_json, entity_version, updated_at,
-            writer_device_id, operation_id)
-           VALUES (?, ?, 1, ?, ?, ?)
-           ON CONFLICT(local_account_id) DO UPDATE SET
-             payload_json = excluded.payload_json,
-             entity_version = account_profiles.entity_version + 1,
-             updated_at = excluded.updated_at,
-             writer_device_id = excluded.writer_device_id,
-             operation_id = excluded.operation_id''',
+      await _writeProfileRowInsideTransaction(
+        localAccountId: localAccountId,
+        profile: profile,
+        nowMicros: now,
+        writerDeviceId: device,
+        operationId: opId,
+      );
+      await _enqueueSnapshotInsideTransaction(localAccountId, now, device);
+    });
+  }
+
+  /// Persists a draft locally without creating a cloud backup operation.
+  Future<void> saveProfileLocalOnly(
+    String localAccountId,
+    UserProfile profile,
+  ) async {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final device = await deviceInstanceId();
+    final opId = _randomId('op');
+    await database.transaction(() async {
+      await _writeProfileRowInsideTransaction(
+        localAccountId: localAccountId,
+        profile: profile,
+        nowMicros: now,
+        writerDeviceId: device,
+        operationId: opId,
+      );
+    });
+  }
+
+  Future<void> _writeProfileRowInsideTransaction({
+    required String localAccountId,
+    required UserProfile profile,
+    required int nowMicros,
+    required String writerDeviceId,
+    required String operationId,
+  }) {
+    return database.customUpdate(
+      '''INSERT INTO account_profiles
+         (local_account_id, payload_json, entity_version, updated_at,
+          writer_device_id, operation_id)
+         VALUES (?, ?, 1, ?, ?, ?)
+         ON CONFLICT(local_account_id) DO UPDATE SET
+           payload_json = excluded.payload_json,
+           entity_version = account_profiles.entity_version + 1,
+           updated_at = excluded.updated_at,
+           writer_device_id = excluded.writer_device_id,
+           operation_id = excluded.operation_id''',
+      variables: [
+        Variable(localAccountId),
+        Variable(jsonEncode(profile.toJson())),
+        Variable(nowMicros),
+        Variable(writerDeviceId),
+        Variable(operationId),
+      ],
+    );
+  }
+
+  /// Atomically commits profile, initial plan revision, Qaza records,
+  /// provenance and the durable cloud snapshot handoff.
+  Future<void> commitOnboarding({
+    required String localAccountId,
+    required UserProfile profile,
+    required QazaPlanRevision revision,
+    required List<QazaRecord> records,
+    void Function(int processed, int total)? onProgress,
+  }) async {
+    if (localAccountId.isEmpty) {
+      throw StateError('Onboarding requires a local account ID.');
+    }
+    if (revision.userId != localAccountId) {
+      throw StateError('Onboarding revision is for a different local account.');
+    }
+    for (final record in records) {
+      if (record.userId != localAccountId) {
+        throw StateError('Onboarding Qaza record is for a different account.');
+      }
+      if (record.profilePlanRevisionId != revision.revisionId ||
+          record.profilePlanFingerprint != revision.planFingerprint) {
+        throw StateError('Onboarding Qaza record has invalid plan provenance.');
+      }
+    }
+
+    await database.transaction(() async {
+      final activeRows = await database.customSelect(
+        '''SELECT active_local_account_id
+           FROM app_session_state
+           WHERE id = 1
+           LIMIT 1''',
+      ).get();
+      final activeId = activeRows.isEmpty
+          ? null
+          : activeRows.first.read<String?>('active_local_account_id');
+      if (activeId != localAccountId) {
+        throw StateError('Onboarding account is not the active local account.');
+      }
+
+      final accountRows = await database.customSelect(
+        '''SELECT lifecycle_state
+           FROM local_accounts
+           WHERE local_account_id = ?
+           LIMIT 1''',
+        variables: [Variable(localAccountId)],
+      ).get();
+      if (accountRows.isEmpty) {
+        throw StateError('Local onboarding account does not exist.');
+      }
+      final lifecycle = accountRows.first.read<String>('lifecycle_state');
+      if (lifecycle == 'archived' || lifecycle == 'migrating') {
+        throw StateError('Local onboarding account is not active.');
+      }
+
+      final now = DateTime.now().microsecondsSinceEpoch;
+      final device = await deviceInstanceId();
+      await _writeProfileRowInsideTransaction(
+        localAccountId: localAccountId,
+        profile: profile.copyWith(onboardingCompleted: true),
+        nowMicros: now,
+        writerDeviceId: device,
+        operationId: _randomId('onboarding_profile'),
+      );
+
+      final revisionPayload = jsonEncode(revision.toJson());
+      final existingRevision = await database.customSelect(
+        '''SELECT payload_json
+           FROM account_plan_revisions
+           WHERE local_account_id = ? AND revision_id = ?
+           LIMIT 1''',
         variables: [
           Variable(localAccountId),
-          Variable(jsonEncode(profile.toJson())),
-          Variable(now),
-          Variable(device),
-          Variable(opId),
+          Variable(revision.revisionId),
         ],
-      );
+      ).get();
+      if (existingRevision.isNotEmpty) {
+        if (existingRevision.first.read<String>('payload_json') !=
+            revisionPayload) {
+          throw StateError('Immutable onboarding plan revision conflict.');
+        }
+      } else {
+        await database.customInsert(
+          '''INSERT INTO account_plan_revisions
+             (local_account_id, revision_id, payload_json, created_at)
+             VALUES (?, ?, ?, ?)''',
+          variables: [
+            Variable(localAccountId),
+            Variable(revision.revisionId),
+            Variable(revisionPayload),
+            Variable(revision.createdAt.microsecondsSinceEpoch),
+          ],
+        );
+      }
+
+      var insertedTotal = 0;
+      for (var start = 0; start < records.length; start += 500) {
+        final end = start + 500 < records.length ? start + 500 : records.length;
+        final chunk = records.sublist(start, end);
+        if (chunk.isNotEmpty) {
+          final ids = await database.qazaRecordsDao
+              .insertRecordsReturningInsertedIds(
+            [
+              for (final record in chunk)
+                QazaRecordsCompanion.insert(
+                  id: record.id,
+                  userId: record.userId,
+                  prayerType: record.prayerType.name,
+                  originalDate: record.originalDate,
+                  status: record.status.name,
+                  completedAt: record.completedAt == null
+                      ? const Value.absent()
+                      : Value(record.completedAt),
+                  completionId: record.completionId == null
+                      ? const Value.absent()
+                      : Value(record.completionId),
+                  additionId: record.additionId == null
+                      ? const Value.absent()
+                      : Value(record.additionId),
+                  recordVersion: Value(record.recordVersion),
+                  createdAt: record.createdAt,
+                  updatedAt: record.updatedAt,
+                ),
+            ],
+          );
+          insertedTotal += ids.length;
+          await _upsertProfilePlanProvenance(
+            chunk.where((record) => ids.contains(record.id)),
+          );
+        }
+        onProgress?.call(end, records.length);
+      }
+
+      if (insertedTotal != records.length) {
+        throw StateError(
+          'Onboarding Qaza dataset is incomplete: inserted '
+          '${insertedTotal} of ${records.length} records.',
+        );
+      }
+
       await _enqueueSnapshotInsideTransaction(localAccountId, now, device);
     });
   }
@@ -1647,6 +1826,35 @@ class AccountLocalStore {
         await deviceInstanceId(),
       );
     });
+  }
+
+  Future<void> _upsertProfilePlanProvenance(
+    Iterable<QazaRecord> records,
+  ) async {
+    final eligible = records
+        .where(
+          (record) =>
+              record.profilePlanRevisionId != null &&
+              record.profilePlanFingerprint != null,
+        )
+        .toList(growable: false);
+    for (final record in eligible) {
+      await database.customInsert(
+        '''INSERT INTO qaza_profile_plan_provenance
+           (record_id, user_id, plan_revision_id, plan_fingerprint)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(record_id) DO UPDATE SET
+             user_id = excluded.user_id,
+             plan_revision_id = excluded.plan_revision_id,
+             plan_fingerprint = excluded.plan_fingerprint''',
+        variables: [
+          Variable(record.id),
+          Variable(record.userId),
+          Variable(record.profilePlanRevisionId!),
+          Variable(record.profilePlanFingerprint!),
+        ],
+      );
+    }
   }
 
   Future<List<Map<String, Object?>>> loadModernOutboxBatch({

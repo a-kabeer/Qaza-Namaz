@@ -7,6 +7,9 @@ import '../../app/providers.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../domain/entities/qaza_addition.dart';
+import '../../domain/entities/user_profile.dart';
+import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
+import '../../domain/services/qaza_plan_service.dart';
 import '../../domain/services/current_day_qaza_eligibility_service.dart';
 import '../../domain/services/qaza_service.dart';
 
@@ -101,6 +104,20 @@ class QazaImportTaskState {
       );
 }
 
+class _OnboardingCommitRequest {
+  const _OnboardingCommitRequest({
+    required this.userId,
+    required this.profile,
+    required this.plan,
+    required this.revisionId,
+  });
+
+  final String userId;
+  final UserProfile profile;
+  final QazaPlan plan;
+  final String revisionId;
+}
+
 class _QazaImportRequest {
   const _QazaImportRequest({
     required this.userId,
@@ -139,6 +156,8 @@ final qazaImportProvider =
 /// Shared long-running task state for onboarding imports and Profile Qaza-plan applies.
 class QazaImportController extends Notifier<QazaImportTaskState> {
   _QazaImportRequest? _lastRequest;
+  _OnboardingCommitRequest? _lastOnboardingCommit;
+
   Future<void> Function(void Function(int processed, int total) onProgress)?
       _lastProfileApply;
   int _lastProfileApplyTotal = 0;
@@ -146,6 +165,156 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
   @override
   QazaImportTaskState build() => const QazaImportTaskState();
+
+  bool startOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) {
+    if (state.isActive) return false;
+    if (userId.isEmpty || revisionId.isEmpty) return false;
+    final request = _OnboardingCommitRequest(
+      userId: userId,
+      profile: profile,
+      plan: plan,
+      revisionId: revisionId,
+    );
+    _lastOnboardingCommit = request;
+    state = QazaImportTaskState(
+      phase: QazaImportTaskPhase.preparing,
+      userId: userId,
+      startedAt: DateTime.now(),
+    );
+    unawaited(
+      _runOnboarding(
+        userId: request.userId,
+        profile: request.profile,
+        plan: request.plan,
+        revisionId: request.revisionId,
+      ),
+    );
+    return true;
+  }
+
+  Future<void> commitOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) async {
+    if (state.isActive) {
+      throw StateError('Another Qaza import is already active.');
+    }
+    final request = _OnboardingCommitRequest(
+      userId: userId,
+      profile: profile,
+      plan: plan,
+      revisionId: revisionId,
+    );
+    _lastOnboardingCommit = request;
+    state = QazaImportTaskState(
+      phase: QazaImportTaskPhase.preparing,
+      userId: userId,
+      startedAt: DateTime.now(),
+    );
+    await _runOnboarding(
+      userId: request.userId,
+      profile: request.profile,
+      plan: request.plan,
+      revisionId: request.revisionId,
+    );
+  }
+
+  Future<void> _runOnboarding({
+    required String userId,
+    required UserProfile profile,
+    required QazaPlan plan,
+    required String revisionId,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      final fingerprint =
+          ProfileQazaPlanReconciliationService.planFingerprint(plan);
+      final records = await ref
+          .read(qazaServiceProvider)
+          .buildOnboardingQazaRecords(
+            userId: userId,
+            dates: QazaPlanService.datesFor(plan),
+            prayerTypes: [
+              PrayerType.fajr,
+              PrayerType.zuhr,
+              PrayerType.asr,
+              PrayerType.maghrib,
+              PrayerType.isha,
+              if (plan.includeWitr) PrayerType.witr,
+            ],
+            profilePlanRevisionId: revisionId,
+            profilePlanFingerprint: fingerprint,
+            witrAllowed: plan.includeWitr,
+          );
+
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.importing,
+        processed: 0,
+        total: records.length,
+        added: 0,
+        skipped: 0,
+      );
+
+      final revision =
+          ProfileQazaPlanReconciliationService.createInitialRevision(
+        revisionId: revisionId,
+        userId: userId,
+        profile: profile,
+        plan: plan,
+        addedRecords: records.length,
+      );
+
+      await ref.read(onboardingCommitRepositoryProvider).commit(
+            localAccountId: userId,
+            profile: profile,
+            revision: revision,
+            records: records,
+            onProgress: (processed, total) {
+              if (state.phase != QazaImportTaskPhase.importing) return;
+              state = state.copyWith(
+                processed: processed,
+                total: total,
+                added: processed,
+                skipped: 0,
+              );
+            },
+          );
+
+      stopwatch.stop();
+      _lastOnboardingCommit = null;
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.completed,
+        processed: records.length,
+        total: records.length,
+        added: records.length,
+        skipped: 0,
+        completedAt: DateTime.now(),
+        elapsed: stopwatch.elapsed,
+        clearError: true,
+      );
+    } catch (error, stack) {
+      stopwatch.stop();
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.importData,
+            'onboarding_local_commit_failed',
+            error,
+            stack: stack,
+          );
+      state = state.copyWith(
+        phase: QazaImportTaskPhase.failed,
+        completedAt: DateTime.now(),
+        elapsed: stopwatch.elapsed,
+        error: error,
+      );
+    }
+  }
 
   bool start({
     required String userId,
@@ -169,6 +338,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
     _cancelRequested = false;
     _lastProfileApply = null;
+    _lastOnboardingCommit = null;
 
     final request = _QazaImportRequest(
       userId: userId,
@@ -202,6 +372,7 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
   }) {
     if (state.isActive || total < 0) return false;
     _lastRequest = null;
+    _lastOnboardingCommit = null;
     _lastProfileApply = operation;
     _lastProfileApplyTotal = total;
     state = QazaImportTaskState(
@@ -271,6 +442,24 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
 
   bool retry() {
     if (state.isActive) return false;
+    final onboarding = _lastOnboardingCommit;
+    if (onboarding != null) {
+      state = QazaImportTaskState(
+        phase: QazaImportTaskPhase.preparing,
+        userId: onboarding.userId,
+        startedAt: DateTime.now(),
+      );
+      unawaited(
+        _runOnboarding(
+          userId: onboarding.userId,
+          profile: onboarding.profile,
+          plan: onboarding.plan,
+          revisionId: onboarding.revisionId,
+        ),
+      );
+      return true;
+    }
+
     final profileApply = _lastProfileApply;
     if (profileApply != null) {
       state = QazaImportTaskState(

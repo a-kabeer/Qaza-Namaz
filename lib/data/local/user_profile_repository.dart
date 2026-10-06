@@ -28,6 +28,9 @@ class SharedPreferencesUserProfileRepository implements UserProfileRepository {
   }
 
   @override
+  Future<void> saveLocalOnly(UserProfile profile) => save(profile);
+
+  @override
   Future<void> clear() async {
     final prefs = preferences ?? await SharedPreferences.getInstance();
     await prefs.remove(UserProfile.storageKey);

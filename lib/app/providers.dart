@@ -18,6 +18,8 @@ import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/account_local_store.dart';
 import '../data/local/account_scoped_user_profile_repository.dart';
 import '../data/local/account_scoped_qaza_plan_revision_repository.dart';
+import '../data/local/onboarding_commit_repository.dart';
+import '../domain/repositories/onboarding_commit_repository.dart';
 import '../data/remote/firebase_services.dart';
 import '../data/remote/firebase_backup_service.dart';
 import '../data/remote/firebase_reconciliation_service.dart';
@@ -154,6 +156,13 @@ final qazaPlanRevisionRepositoryProvider =
     ref.watch(accountLocalStoreProvider),
   ),
 );
+
+final onboardingCommitRepositoryProvider =
+    Provider<OnboardingCommitRepository>((ref) {
+  return AccountLocalOnboardingCommitRepository(
+    ref.watch(accountLocalStoreProvider),
+  );
+});
 
 final profileQazaPlanReconciliationServiceProvider =
     Provider<ProfileQazaPlanReconciliationService>((ref) {

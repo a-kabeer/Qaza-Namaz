@@ -215,6 +215,13 @@ class AccountSessionManager extends ChangeNotifier {
     if (uid == null) return;
 
     try {
+    // A local draft is not cloud-authoritative yet. A missing local profile
+    // may still belong to an existing Google account recoverable from cloud.
+    final localProfile = await _accountStore.loadProfile(account.localAccountId);
+    if (localProfile != null && !localProfile.onboardingCompleted) {
+      return;
+    }
+
       final initialized = await _firebase
           .initialize()
           .timeout(_startupAuthTimeout, onTimeout: () => false);
@@ -447,6 +454,14 @@ class AccountSessionManager extends ChangeNotifier {
     required int operationEpoch,
   }) async {
     try {
+    // Do not bootstrap/restore cloud state for an account whose onboarding
+    // has not completed locally. The final onboarding transaction enqueues
+    // the authoritative snapshot after all local data is committed.
+    final localProfile = await _accountStore.loadProfile(localAccountId);
+    if (localProfile == null || !localProfile.onboardingCompleted) {
+      return;
+    }
+
       if (!await _googleCloudOperationStillCurrent(
         operationEpoch,
         localAccountId,
