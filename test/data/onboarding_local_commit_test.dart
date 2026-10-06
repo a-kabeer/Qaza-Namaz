@@ -270,7 +270,7 @@ void main() {
          VALUES (?, ?, ?, ?)''',
       variables: [
         Variable(accountId),
-        Variable(conflictingRevision.revisionId),
+        Variable(revision.revisionId),
         Variable(jsonEncode(conflictingPayload)),
         Variable(revision.createdAt.microsecondsSinceEpoch),
       ],
