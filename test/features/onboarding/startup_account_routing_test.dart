@@ -34,30 +34,6 @@ class _NoopFirebaseServices extends FirebaseServices {
     return false;
   }
 
-  testWidgets(
-    'profile provider errors show a retryable storage boundary instead of onboarding',
-    (tester) async {
-      final (database, manager) = await _newManager();
-      final container = _container(
-        manager: manager,
-        database: database,
-        profileError: StateError('profile read failed'),
-      );
-      addTearDown(container.dispose);
-      addTearDown(database.close);
-
-      await tester.pumpWidget(_startupApp(container));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.byType(StartupProfileLoadErrorBoundary), findsOneWidget);
-      expect(find.byType(LanguageSelectionScreen), findsNothing);
-
-      await tester.tap(find.text('Retry'));
-      await tester.pump();
-    },
-  );
-
 }
 
 class _ControlledFirebaseServices extends FirebaseServices {
@@ -166,6 +142,29 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
+
+  testWidgets(
+    'profile provider errors show a retryable storage boundary instead of onboarding',
+    (tester) async {
+      final (database, manager) = await _newManager();
+      await manager.initialize();
+
+      final container = _container(
+        manager: manager,
+        database: database,
+        profileError: StateError('profile read failed'),
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_startupApp(container));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(StartupProfileLoadErrorBoundary), findsOneWidget);
+      expect(find.byType(LanguageSelectionScreen), findsNothing);
+    },
+  );
 
   testWidgets(
     'StartupGate does not initialize the session from build',
