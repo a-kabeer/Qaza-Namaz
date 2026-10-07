@@ -273,31 +273,40 @@ class AccountSessionManager extends ChangeNotifier {
           return;
         }
         await _accountStore.setInitialChoiceRequired(true);
-        await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
         await _refresh();
         return;
       }
 
-        final identity = await _auth
-            .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
-            .timeout(_startupAuthTimeout, onTimeout: () => null);
-        if (identity == null) {
-          if (startupEpoch != _operationEpoch ||
-              await _accountStore.activeLocalAccountId() != null) {
-            return;
-          }
+      final identity = await _auth
+          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+          .timeout(_startupAuthTimeout, onTimeout: () => null);
+      if (identity == null) {
+        if (startupEpoch != _operationEpoch ||
+            await _accountStore.activeLocalAccountId() != null) {
+          return;
+        }
         await _accountStore.setInitialChoiceRequired(true);
-        await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
         await _refresh();
+        return;
+      }
+
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
         return;
       }
 
       final local = await _accountStore.findGoogleByUid(identity.uid);
-      if (local == null ||
-          startupEpoch != _operationEpoch ||
-          await _accountStore.activeLocalAccountId() != null) {
+      if (local == null) {
         await _accountStore.setInitialChoiceRequired(true);
-        await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
         await _refresh();
         return;
       }
@@ -327,7 +336,9 @@ class AccountSessionManager extends ChangeNotifier {
       );
       try {
         await _accountStore.setInitialChoiceRequired(true);
-        await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
         await _refresh();
       } catch (_) {}
     }
