@@ -1,6 +1,5 @@
 plugins {
     id "com.android.application"
-    id "com.google.gms.google-services"
     // No Kotlin Gradle Plugin: `android.builtInKotlin=true` means AGP 9
     // compiles this module's Kotlin itself.
     // The Flutter Gradle Plugin must be applied after the Android plugin.
