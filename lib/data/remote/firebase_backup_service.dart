@@ -192,31 +192,15 @@ class FirebaseBackupService {
     await progress.start();
 
     final rootRef = _firebase.firestore.collection('users').doc(uid);
-    final root = await rootRef.get();
-    if (root.exists) {
-      final data = root.data() ?? const <String, dynamic>{};
-      final remoteGeneration = (data['cloudGeneration'] as num?)?.toInt() ?? 1;
-      final remoteState = data['datasetState'] as String? ?? 'empty';
-      if (remoteGeneration != generation) {
-        throw StateError(
-          'Cloud generation mismatch: local=$generation remote=$remoteGeneration.',
-        );
-      }
-      if (remoteState == 'deleting' || remoteState == 'deleted') {
-        throw StateError('Cloud dataset is not writable in state $remoteState.');
-      }
-    } else {
-      // A root can be recreated only after a successful Firestore read proved
-      // that the document is genuinely missing. Initialization/auth/App Check
-      // failures never reach this branch.
-      await rootRef.set({
-        'schemaVersion': cloudSchemaVersion,
-        'cloudGeneration': generation,
-        'datasetState': 'initializing',
-        'updatedAt': FieldValue.serverTimestamp(),
-        'bootstrapComplete': false,
-      });
-    }
+
+    // Every backup, including an incremental one, must normalize the cloud
+    // root before any child write. In particular, an existing empty root is
+    // valid historical state and must transition atomically to initializing.
+    await _ensureCloudGeneration(
+      uid: uid,
+      expectedGeneration: generation,
+      allowCreate: true,
+    );
 
     if (bootstrapCutoffMicros != null) {
       await _firebase.firestore.runTransaction((transaction) async {
@@ -303,12 +287,17 @@ class FirebaseBackupService {
           (state != 'initializing' && state != 'ready') ||
           (bootstrapCutoffMicros != null &&
               storedCutoff != bootstrapCutoffMicros)) {
-        throw StateError(
-          'Cloud dataset changed before backup completion: '
-          'generation=' +
-              currentGeneration.toString() +
-              ' state=' +
-              state,
+        if (currentGeneration != generation) {
+          throw const BackupFailure(
+            category: BackupFailureCategory.cloudGenerationMismatch,
+            message:
+                'Cloud generation changed before backup completion.',
+          );
+        }
+        throw const BackupFailure(
+          category: BackupFailureCategory.cloudDatasetInvalidState,
+          message:
+              'Cloud dataset changed before backup completion.',
         );
       }
       transaction.set(
@@ -574,7 +563,12 @@ class FirebaseBackupService {
     await _firebase.firestore.runTransaction((transaction) async {
       final snap = await transaction.get(ref);
       if (!snap.exists) {
-        if (!allowCreate) throw StateError('Cloud account does not exist.');
+        if (!allowCreate) {
+          throw const BackupFailure(
+            category: BackupFailureCategory.firestoreNotFound,
+            message: 'Cloud account root does not exist.',
+          );
+        }
         transaction.set(ref, {
           'schemaVersion': cloudSchemaVersion,
           'cloudGeneration': expectedGeneration,
@@ -584,16 +578,50 @@ class FirebaseBackupService {
         });
         return;
       }
+
       final data = snap.data() ?? const <String, dynamic>{};
       final actual = (data['cloudGeneration'] as num?)?.toInt() ?? 1;
       if (actual != expectedGeneration) {
-        throw StateError(
-          'Cloud generation mismatch: expected=$expectedGeneration actual=$actual.',
+        throw BackupFailure(
+          category: BackupFailureCategory.cloudGenerationMismatch,
+          message:
+              'Cloud generation does not match the active local generation.',
         );
       }
+
       final state = data['datasetState'] as String? ?? 'empty';
-      if (state == 'deleted' || state == 'deleting') {
-        throw StateError('Cloud dataset state is $state.');
+      switch (state) {
+        case 'empty':
+          // Rules explicitly allow empty -> initializing. Do this transition
+          // atomically in the same transaction that validates generation so
+          // child writes cannot race ahead of the lifecycle state.
+          transaction.set(
+            ref,
+            {
+              'schemaVersion': cloudSchemaVersion,
+              'cloudGeneration': expectedGeneration,
+              'datasetState': 'initializing',
+              'updatedAt': FieldValue.serverTimestamp(),
+              'bootstrapComplete': false,
+            },
+            SetOptions(merge: true),
+          );
+          return;
+        case 'initializing':
+        case 'ready':
+          return;
+        case 'deleting':
+        case 'deleted':
+          throw BackupFailure(
+            category: BackupFailureCategory.cloudDatasetInvalidState,
+            message:
+                'The cloud backup dataset is currently unavailable for writing.',
+          );
+        default:
+          throw const BackupFailure(
+            category: BackupFailureCategory.cloudDatasetInvalidState,
+            message: 'The cloud backup dataset has an invalid lifecycle state.',
+          );
       }
     });
   }
