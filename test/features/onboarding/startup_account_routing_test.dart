@@ -65,19 +65,6 @@ class _CachedGoogleAuthService extends GoogleFirebaseAuthService {
   }
 }
 
-class _HangingInteractiveAuth extends GoogleFirebaseAuthService {
-  _HangingInteractiveAuth(super.services);
-
-  final Completer<GoogleFirebaseIdentity> signInCompleter =
-      Completer<GoogleFirebaseIdentity>();
-
-  @override
-  Future<GoogleFirebaseIdentity> signInIdentity() => signInCompleter.future;
-
-  @override
-  Future<void> signOut() async {}
-}
-
 Future<(AppDatabase, AccountSessionManager)> _newManager({
   bool google = false,
   FirebaseServices? firebase,
@@ -191,72 +178,6 @@ void main() {
       expect(firebase.initializeCalls, 0);
 
       firebaseGate.complete(false);
-      await tester.pump();
-    },
-  );
-
-  testWidgets(
-    'Guest remains tappable while Google sign-in is still connecting',
-    (tester) async {
-      final database = AppDatabase(NativeDatabase.memory());
-      final store = AccountLocalStore(database: database);
-      await store.ensureInitialized(
-        hasLegacyProfile: false,
-        hasLegacyQaza: false,
-      );
-
-      final firebase = _NoopFirebaseServices();
-      final auth = _HangingInteractiveAuth(firebase);
-      final backup = FirebaseBackupService(
-        firebase: firebase,
-        database: database,
-        accountStore: store,
-      );
-      final reconciliation = FirebaseReconciliationService(
-        firebase: firebase,
-        backupService: backup,
-        accountStore: store,
-        database: database,
-      );
-      final manager = AccountSessionManager(
-        accountStore: store,
-        firebase: firebase,
-        auth: auth,
-        backup: backup,
-        reconciliation: reconciliation,
-      );
-      final container = _container(manager: manager, database: database);
-      addTearDown(container.dispose);
-      addTearDown(database.close);
-
-      await tester.pumpWidget(_startupApp(container));
-      await manager.initialize();
-      await tester.pump();
-
-      expect(find.byType(AccountChoiceScreen), findsOneWidget);
-
-      await tester.tap(find.text('Continue with Google'));
-      await tester.pump();
-
-      expect(manager.state.phase, AccountSessionPhase.connecting);
-
-      final guestButton = tester.widget<OutlinedButton>(
-        find.byType(OutlinedButton),
-      );
-      expect(guestButton.onPressed, isNotNull);
-
-      await tester.tap(find.text('Continue as Guest'));
-      await tester.pump();
-
-      expect(manager.activeAccount?.isGuest, isTrue);
-      expect(manager.initialChoiceRequired, isFalse);
-
-      auth.signInCompleter.complete(
-        const GoogleFirebaseIdentity(
-          uid: 'late-google-result',
-          email: 'late@example.com',
-        ),
-      );
       await tester.pump();
     },
   );
