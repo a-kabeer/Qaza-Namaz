@@ -3,7 +3,6 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  connectFirestoreEmulator,
   deleteDoc,
   doc,
   getDoc,
@@ -17,12 +16,6 @@ const PROJECT = 'qaza-nmz';
 const FIRESTORE_HOST = '127.0.0.1';
 const FIRESTORE_PORT = 8080;
 
-const appConfig = {
-  apiKey: 'fake-api-key',
-  authDomain: PROJECT + '.firebaseapp.com',
-  projectId: PROJECT,
-  appId: '1:895430705174:web:security-regression',
-};
 
 async function expectDenied(label, operation) {
   try {
