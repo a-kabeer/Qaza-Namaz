@@ -366,9 +366,7 @@ class AccountSessionManager extends ChangeNotifier {
 
       final identity = verifiedIdentity ??
           await _auth
-              .attemptLightweightAuthentication(
-                timeout: _startupAuthTimeout,
-              )
+              .attemptLightweightAuthentication()
               .timeout(_startupAuthTimeout, onTimeout: () => null);
       if (identity == null || identity.uid != uid) return;
       if (!await _startupRestoreStillActive(
