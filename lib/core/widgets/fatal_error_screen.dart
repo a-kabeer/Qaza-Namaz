@@ -19,6 +19,12 @@ class FatalDatabaseErrorApp extends StatefulWidget {
 
 class _FatalDatabaseErrorAppState extends State<FatalDatabaseErrorApp> {
   Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _error = widget.error;
+  }
   bool _retrying = false;
 
   @override
