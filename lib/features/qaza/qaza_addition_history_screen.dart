@@ -608,10 +608,11 @@ class _DeletedActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     if (state.deleted.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 120),
+        children: [
+          const SizedBox(height: 120),
           Center(child: Text(l10n.qazaHistoryNoRecentlyDeleted)),
         ],
       );
