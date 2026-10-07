@@ -21,7 +21,9 @@ class _ControlledFirebaseServices extends FirebaseServices {
 }
 
 void main() {
-  test('lightweight authentication owns the shared auth gate and blocks interactive auth', () async {
+  test(
+      'lightweight authentication owns the shared auth gate and blocks interactive auth',
+      () async {
     final initializer = Completer<bool>();
     final firebase = _ControlledFirebaseServices(initializer);
     final lightweightService = GoogleFirebaseAuthService(firebase);
@@ -48,7 +50,9 @@ void main() {
     expect(await lightweight, isNull);
   });
 
-  test('interactive authentication owns the shared auth gate until the operation completes', () async {
+  test(
+      'interactive authentication owns the shared auth gate until the operation completes',
+      () async {
     final initializer = Completer<bool>();
     final firebase = _ControlledFirebaseServices(initializer);
     final interactiveService = GoogleFirebaseAuthService(firebase);
