@@ -242,9 +242,10 @@ class _RecentAdditions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.additions.isEmpty) {
+      final l10n = AppLocalizations.of(context);
       return ListView(
-        children: const [
-          SizedBox(height: 120),
+        children: [
+          const SizedBox(height: 120),
           Center(child: Text(l10n.qazaHistoryNoAdditions)),
         ],
       );
