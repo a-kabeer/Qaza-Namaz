@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/data/remote/firebase_services.dart';
 
+// CI-AM regression coverage for the split Google/Firebase initialization path.
 class _ControlledFirebaseServices extends FirebaseServices {
   _ControlledFirebaseServices(this.initializer);
 
