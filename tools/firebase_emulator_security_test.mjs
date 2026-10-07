@@ -1,13 +1,8 @@
 #!/usr/bin/env node
 
-import { initializeApp, deleteApp } from 'firebase/app';
+import { readFileSync } from 'node:fs';
+import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  connectAuthEmulator,
-  createUserWithEmailAndPassword,
-  getAuth,
-} from 'firebase/auth';
-import {
-  connectFirestoreEmulator,
   deleteDoc,
   doc,
   getDoc,
@@ -18,17 +13,9 @@ import {
 } from 'firebase/firestore';
 
 const PROJECT = 'qaza-nmz';
-const AUTH_HOST = '127.0.0.1';
-const AUTH_PORT = 9099;
 const FIRESTORE_HOST = '127.0.0.1';
 const FIRESTORE_PORT = 8080;
 
-const appConfig = {
-  apiKey: 'fake-api-key',
-  authDomain: PROJECT + '.firebaseapp.com',
-  projectId: PROJECT,
-  appId: '1:895430705174:web:security-regression',
-};
 
 async function expectDenied(label, operation) {
   try {
@@ -52,7 +39,7 @@ function rootFields(state = 'ready', generation = 1) {
   };
 }
 
-function childFields(generation = 1) {
+function childFields(generation = 1, recordId = 'record-1') {
   return {
     schemaVersion: 1,
     cloudGeneration: generation,
@@ -61,39 +48,65 @@ function childFields(generation = 1) {
     writerDeviceId: 'device-test',
     operationId: 'op-test',
     payload: {
-      id: 'record-1',
+      id: recordId,
       recordVersion: 1,
     },
   };
 }
 
-async function createEmulatorUser(label) {
-  const app = initializeApp(appConfig, 'security-' + label + '-' + Date.now());
-  const auth = getAuth(app);
-  connectAuthEmulator(auth, 'http://' + AUTH_HOST + ':' + AUTH_PORT, {
-    disableWarnings: true,
-  });
-  const db = getFirestore(app);
-  connectFirestoreEmulator(db, FIRESTORE_HOST, FIRESTORE_PORT);
-
-  const credential = await createUserWithEmailAndPassword(
-    auth,
-    label + '@example.com',
-    'Passw0rd!123456',
-  );
-
-  return {
-    app,
-    db,
-    uid: credential.user.uid,
-  };
+async function createTestUser(testEnv, uid) {
+  const context = testEnv.authenticatedContext(uid);
+  const db = context.firestore();
+  return { context, db, uid };
 }
 
 async function main() {
-  const userA = await createEmulatorUser('a');
-  const userB = await createEmulatorUser('b');
+  const testEnv = await initializeTestEnvironment({
+    projectId: PROJECT,
+    firestore: {
+      host: FIRESTORE_HOST,
+      port: FIRESTORE_PORT,
+      rules: readFileSync('firestore.rules', 'utf8'),
+    },
+  });
+
+  const userA = await createTestUser(testEnv, 'security-user-a');
+  const userB = await createTestUser(testEnv, 'security-user-b');
+  const emptyStateUser = await createTestUser(testEnv, 'security-empty-state');
 
   const root = doc(userA.db, 'users', userA.uid);
+  const emptyRoot = doc(
+    emptyStateUser.db,
+    'users',
+    emptyStateUser.uid,
+  );
+  const emptyRecord = doc(
+    emptyStateUser.db,
+    'users',
+    emptyStateUser.uid,
+    'qazaRecords',
+    'empty-state-record',
+  );
+
+  // An existing empty root is a valid historical state. It must transition
+  // through initializing before child writes are allowed.
+  await setDoc(emptyRoot, rootFields('empty', 1));
+  await expectDenied(
+    'Empty to ready without initialization',
+    () => setDoc(emptyRoot, rootFields('ready', 1)),
+  );
+  await expectDenied(
+    'Child write while root is empty',
+    () => setDoc(emptyRecord, childFields(1)),
+  );
+  await setDoc(emptyRoot, rootFields('initializing', 1));
+  await setDoc(emptyRecord, childFields(1, 'empty-state-record'));
+  await setDoc(emptyRoot, rootFields('ready', 1));
+  await expectDenied(
+    'Ready to initializing in the same generation',
+    () => setDoc(emptyRoot, rootFields('initializing', 1)),
+  );
+
   const record = doc(userA.db, 'users', userA.uid, 'qazaRecords', 'record-1');
   const badGeneration = doc(
     userA.db,
@@ -200,16 +213,7 @@ async function main() {
   await expectDenied('Cross-user batched write', () => crossUserBatch.commit());
 
   // Unauthenticated access is denied.
-  const anonymousApp = initializeApp(
-    appConfig,
-    'security-anonymous-' + Date.now(),
-  );
-  const anonymousDb = getFirestore(anonymousApp);
-  connectFirestoreEmulator(
-    anonymousDb,
-    FIRESTORE_HOST,
-    FIRESTORE_PORT,
-  );
+  const anonymousDb = testEnv.unauthenticatedContext().firestore();
   await expectDenied(
     'Unauthenticated read',
     () => getDoc(doc(
@@ -258,13 +262,9 @@ async function main() {
   // Root deletion is always denied.
   await expectDenied('Root deletion', () => deleteDoc(root));
 
-  await Promise.all([
-    deleteApp(userA.app),
-    deleteApp(userB.app),
-    deleteApp(anonymousApp),
-  ]);
+  await testEnv.cleanup();
 
-  console.log('Firebase Auth + Firestore Emulator security tests passed.');
+  console.log('Firestore Security Rules emulator tests passed.');
 }
 
 main().catch((error) => {

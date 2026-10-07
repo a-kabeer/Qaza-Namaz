@@ -88,7 +88,10 @@ class FirebaseBackupHealthService {
         );
       }
 
-      await _firebase.ensureFirestoreReady();
+      // Health checks are explicit diagnostics, so they may inspect the
+      // current cached App Check token without force-refreshing it. Normal
+      // backup operations do not perform this preflight.
+      await _firebase.ensureAppCheckTokenAvailable(forceRefresh: false);
 
       final root = await _backup.readCloudRootResult(uid);
       if (!root.isAvailable) {

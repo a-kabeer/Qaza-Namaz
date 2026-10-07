@@ -50,8 +50,7 @@ BackupFailure classifyBackupFailure(
   if (error is FirebaseException) {
     switch (error.code) {
       case 'permission-denied':
-        final message = error.message?.toLowerCase() ?? '';
-        final category = message.contains('app check')
+        final category = _isExplicitAppCheckFailure(error)
             ? BackupFailureCategory.appCheckRejected
             : BackupFailureCategory.firestorePermissionDenied;
         return BackupFailure(
@@ -149,6 +148,26 @@ BackupFailure classifyBackupFailure(
     cause: error,
     stackTrace: stackTrace,
   );
+}
+
+bool _isExplicitAppCheckFailure(FirebaseException error) {
+  final text = [
+    error.plugin,
+    error.code,
+    error.message ?? '',
+  ].join(' ').toLowerCase();
+
+  // Firestore returns permission-denied for both Rules failures and App Check
+  // enforcement. Only classify this as App Check when the underlying error
+  // explicitly identifies App Check/attestation/token verification.
+  const markers = <String>[
+    'app check',
+    'appcheck',
+    'app attestation',
+    'app check token',
+    'token verification',
+  ];
+  return markers.any(text.contains);
 }
 
 String _safeTechnicalMessage(Object error) =>

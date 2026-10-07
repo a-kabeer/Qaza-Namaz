@@ -60,4 +60,36 @@ void main() {
     expect(failure.message, isNot(contains('user@example.com')));
     expect(failure.message, isNot(contains('abcdefghijklmnop1234567890')));
   });
+
+  test(
+    'generic Firestore permission-denied is not mislabeled as App Check',
+    () {
+      final failure = classifyBackupFailure(
+        FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'permission-denied',
+          message:
+              'The caller does not have permission to execute the specified operation.',
+        ),
+      );
+      expect(
+        failure.category,
+        BackupFailureCategory.firestorePermissionDenied,
+      );
+    },
+  );
+
+  test('explicit App Check rejection is classified as App Check', () {
+    final failure = classifyBackupFailure(
+      FirebaseException(
+        plugin: 'cloud_firestore',
+        code: 'permission-denied',
+        message: 'App Check token was rejected by the backend.',
+      ),
+    );
+    expect(
+      failure.category,
+      BackupFailureCategory.appCheckRejected,
+    );
+  });
 }
