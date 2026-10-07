@@ -40,6 +40,12 @@ dependencies:
   connectivity_plus: ^7.3.1
   workmanager: ^0.10.10
 
+dependency_overrides:
+  # Known Android Credential Manager picker regression: 7.2.11+ can
+  # launch the hidden activity without showing the account picker on some
+  # physical devices, leaving authenticate() pending indefinitely.
+  google_sign_in_android: 7.2.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
