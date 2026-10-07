@@ -146,6 +146,7 @@ jobs:
           set -euo pipefail
           timeout 5m npm install --no-save --package-lock=false firebase@12.19.0 @firebase/rules-unit-testing@5.0.2
           timeout 10m npx --yes firebase-tools emulators:exec             --only firestore             --project qaza-nmz             "node tools/firebase_emulator_security_test.mjs"
+          timeout 10m npx --yes firebase-tools emulators:exec             --only firestore             --project qaza-nmz             "node test/firestore_rules_test.js"
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
