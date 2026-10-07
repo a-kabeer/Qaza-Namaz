@@ -34,14 +34,13 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
         error: (error, _) => Center(child: Text(error.toString())),
         data: (detail) {
           if (detail == null) {
-            return const Center(
+            return Center(
               child: Text(l10n.qazaAdditionNotFound),
             );
           }
 
           final addition = detail.addition;
           final snapshot = addition.currentInputSnapshot;
-          final l10n = AppLocalizations.of(context);
           final theme = Theme.of(context);
           final orderedPrayers = _orderedPrayers(snapshot.selectedPrayers);
           final dateCount = _dateCount(snapshot);
@@ -196,11 +195,11 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem<_AdditionAction>(
+                        PopupMenuItem<_AdditionAction>(
                           value: _AdditionAction.edit,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: Icon(Icons.edit_rounded),
+                            leading: const Icon(Icons.edit_rounded),
                             title: Text(l10n.qazaAdditionEdit),
                           ),
                         ),
@@ -249,6 +248,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String id,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await confirmDestructive(
       context,
       title: l10n.qazaAdditionDeleteConfirmTitle,
