@@ -293,6 +293,12 @@ class FirebaseBackupWorker {
         category == BackupFailureCategory.appCheckRejected.name;
   }
 
+  bool _isAppCheckFailureCategory(String? category) {
+    return category == BackupFailureCategory.appCheckInitializationFailed.name ||
+        category == BackupFailureCategory.appCheckTokenUnavailable.name ||
+        category == BackupFailureCategory.appCheckRejected.name;
+  }
+
   Future<bool> _activeAccountStillMatches({
     required String localAccountId,
     required String? firebaseUid,
@@ -306,15 +312,6 @@ class FirebaseBackupWorker {
         active.cloudGeneration == cloudGeneration &&
         active.cloudBackupEnabled &&
         cloudBackupEnabled;
-  }
-
-
-    final active = await _accountStore.activeAccount();
-    return active != null &&
-        active.localAccountId == account.localAccountId &&
-        active.firebaseUid == account.firebaseUid &&
-        active.cloudGeneration == account.cloudGeneration &&
-        active.cloudBackupEnabled;
   }
 
   Future<String?> _resolveFirebaseUid() async {
