@@ -251,7 +251,7 @@ async function main() {
     'Missing Qaza userId',
     () => setDoc(
       badSchema,
-      childFields(1, 'bad-schema', userA.uid, { userId: undefined }),
+      childFields(1, 'bad-schema', userA.uid, { userId: null }),
     ),
   );
   await expectDenied(
