@@ -12,7 +12,6 @@ import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../l10n/app_localizations.dart';
-import '../data/data_transfer/qaza_data_transfer_service.dart';
 import '../data/local/database/app_database.dart';
 import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/account_local_store.dart';
@@ -266,10 +265,6 @@ final qazaAdditionDetailProvider =
 
 final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
-);
-
-final qazaDataTransferServiceProvider = Provider<QazaDataTransferService>(
-  (ref) => QazaDataTransferService(ref.watch(qazaRepositoryProvider)),
 );
 
 final requiredUserIdProvider = Provider<String>((ref) {
