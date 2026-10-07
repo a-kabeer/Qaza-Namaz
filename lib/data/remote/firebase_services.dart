@@ -62,7 +62,8 @@ class FirebaseServices {
   bool _appCheckTokenAvailable = false;
   bool _appCheckTokenListenerAttached = false;
   Future<FirebaseInitializationResult>? _initializing;
-  Future<FirebaseInitializationResult>? _authenticationInitializing;
+  Future<bool>? _firebaseCoreInitializing;
+  Future<bool>? _googleSignInInitializing;
   FirebaseInitializationResult? _lastInitializationResult;
 
   static const Duration initializationTimeout = Duration(seconds: 8);
@@ -144,109 +145,133 @@ class FirebaseServices {
     }
   }
 
-  /// Initializes only the prerequisites needed for Google/Firebase
-  /// authentication. App Check is intentionally excluded because it protects
-  /// Firestore/other cloud resources, not the OAuth account-picker flow.
+  /// Initializes Firebase Core only.
   ///
-  /// This is safe to call during app startup and from an interactive sign-in
-  /// tap concurrently; all callers share the same in-flight initialization.
-  Future<bool> initializeAuthentication() async {
-    final running = _authenticationInitializing;
+  /// Google Sign-In's native account picker does not need App Check or
+  /// Firestore, and the plugin can be prepared independently of Firebase
+  /// Core. Keeping this initialization separate lets the interactive picker
+  /// start without waiting for unrelated Firebase startup work.
+  Future<bool> initializeFirebaseCore() async {
+    if (_firebaseCoreInitialized) return true;
+
+    final running = _firebaseCoreInitializing;
     if (running != null) {
       try {
-        final result = await running.timeout(initializationTimeout);
-        return result.authenticationReady;
+        return await running.timeout(initializationTimeout);
       } on TimeoutException {
-        return _firebaseCoreInitialized && _googleSignInInitialized;
+        return _firebaseCoreInitialized;
       }
     }
 
-    if (_firebaseCoreInitialized && _googleSignInInitialized) {
-      return true;
-    }
-
-    final future = _initializeAuthenticationInternal();
-    _authenticationInitializing = future;
+    final future = _initializeFirebaseCoreInternal();
+    _firebaseCoreInitializing = future;
     unawaited(
       future.then<void>(
         (_) {
-          if (identical(_authenticationInitializing, future)) {
-            _authenticationInitializing = null;
+          if (identical(_firebaseCoreInitializing, future)) {
+            _firebaseCoreInitializing = null;
           }
         },
         onError: (Object _, StackTrace __) {
-          if (identical(_authenticationInitializing, future)) {
-            _authenticationInitializing = null;
+          if (identical(_firebaseCoreInitializing, future)) {
+            _firebaseCoreInitializing = null;
           }
         },
       ),
     );
 
     try {
-      final result = await future.timeout(initializationTimeout);
-      return result.authenticationReady;
+      return await future.timeout(initializationTimeout);
     } on TimeoutException {
-      return _firebaseCoreInitialized && _googleSignInInitialized;
+      return _firebaseCoreInitialized;
     }
   }
 
-  Future<FirebaseInitializationResult> _initializeAuthenticationInternal() async {
-    if (defaultTargetPlatform != TargetPlatform.android) {
-      const result = FirebaseInitializationResult(
-        firebaseCoreInitialized: false,
-        googleSignInInitialized: false,
-        appCheckInitialized: false,
-        failure: FirebaseInitializationFailure.firebaseCoreFailure,
-      );
-      _diagnostics.recordEvent(
+  Future<bool> _initializeFirebaseCoreInternal() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+      _firebaseCoreInitialized = true;
+      return true;
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
         DiagnosticArea.startup,
-        'firebase_android_initialization_skipped',
+        'firebase_core_initialize_failed',
+        error,
+        stack: stack,
       );
-      return result;
+      return false;
     }
+  }
 
-    FirebaseInitializationFailure? failure;
+  /// Initializes the native Google Sign-In plugin independently from Firebase
+  /// Core so the Android Credential Manager picker can be reached promptly.
+  Future<bool> initializeGoogleSignIn() async {
+    if (_googleSignInInitialized) return true;
 
-    if (!_firebaseCoreInitialized) {
+    final running = _googleSignInInitializing;
+    if (running != null) {
       try {
-        if (Firebase.apps.isEmpty) {
-          await Firebase.initializeApp();
-        }
-        _firebaseCoreInitialized = true;
-      } catch (error, stack) {
-        failure ??= FirebaseInitializationFailure.firebaseCoreFailure;
-        _diagnostics.recordFailure(
-          DiagnosticArea.startup,
-          'firebase_core_initialize_failed',
-          error,
-          stack: stack,
-        );
+        return await running.timeout(initializationTimeout);
+      } on TimeoutException {
+        return _googleSignInInitialized;
       }
     }
 
-    if (_firebaseCoreInitialized && !_googleSignInInitialized) {
-      try {
-        await GoogleSignIn.instance.initialize(
-          serverClientId: FirebaseConfiguration.webClientId,
-        );
-        _googleSignInInitialized = true;
-      } catch (error, stack) {
-        failure ??= FirebaseInitializationFailure.googleSignInFailure;
-        _diagnostics.recordFailure(
-          DiagnosticArea.startup,
-          'google_sign_in_initialize_failed',
-          error,
-          stack: stack,
-        );
-      }
-    }
-
-    return FirebaseInitializationResult(
-      firebaseCoreInitialized: _firebaseCoreInitialized,
-      googleSignInInitialized: _googleSignInInitialized,
-      appCheckInitialized: _appCheckInitialized,
-      failure: failure,
+    final future = _initializeGoogleSignInInternal();
+    _googleSignInInitializing = future;
+    unawaited(
+      future.then<void>(
+        (_) {
+          if (identical(_googleSignInInitializing, future)) {
+            _googleSignInInitializing = null;
+          }
+        },
+        onError: (Object _, StackTrace __) {
+          if (identical(_googleSignInInitializing, future)) {
+            _googleSignInInitializing = null;
+          }
+        },
+      ),
     );
+
+    try {
+      return await future.timeout(initializationTimeout);
+    } on TimeoutException {
+      return _googleSignInInitialized;
+    }
+  }
+
+  Future<bool> _initializeGoogleSignInInternal() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    try {
+      await GoogleSignIn.instance.initialize(
+        serverClientId: FirebaseConfiguration.webClientId,
+      );
+      _googleSignInInitialized = true;
+      return true;
+    } catch (error, stack) {
+      _diagnostics.recordFailure(
+        DiagnosticArea.startup,
+        'google_sign_in_initialize_failed',
+        error,
+        stack: stack,
+      );
+      return false;
+    }
+  }
+
+  /// Warms the two authentication prerequisites concurrently. This is used
+  /// for background startup warm-up; interactive sign-in uses the lighter
+  /// Google-only path so the native picker is not delayed by Firebase Core.
+  Future<bool> initializeAuthentication() async {
+    final results = await Future.wait<bool>([
+      initializeFirebaseCore(),
+      initializeGoogleSignIn(),
+    ]);
+    return results.every((ready) => ready);
   }
 
   Future<FirebaseInitializationResult> _initializeInternal() async {
@@ -436,8 +461,8 @@ class GoogleFirebaseAuthService {
   }
 
   Future<User?> _signInInternal() async {
-    if (!await services.initializeAuthentication()) {
-      throw StateError('Firebase/Google authentication is not available.');
+    if (!await services.initializeGoogleSignIn()) {
+      throw StateError('Google Sign-In is not available.');
     }
 
     if (!GoogleSignIn.instance.supportsAuthenticate()) {
@@ -451,6 +476,10 @@ class GoogleFirebaseAuthService {
     final idToken = googleUser.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Google Sign-In did not return an ID token.');
+    }
+
+    if (!await services.initializeFirebaseCore()) {
+      throw StateError('Firebase Core is not available.');
     }
 
     final credential = GoogleAuthProvider.credential(idToken: idToken);
@@ -477,10 +506,17 @@ class GoogleFirebaseAuthService {
   Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
     Duration timeout,
   ) async {
-    if (!await services.initializeAuthentication().timeout(
-      timeout,
-      onTimeout: () => false,
-    )) {
+    final ready = await Future.wait<bool>([
+      services.initializeFirebaseCore().timeout(
+        timeout,
+        onTimeout: () => false,
+      ),
+      services.initializeGoogleSignIn().timeout(
+        timeout,
+        onTimeout: () => false,
+      ),
+    ]);
+    if (!ready.every((value) => value)) {
       return null;
     }
 
