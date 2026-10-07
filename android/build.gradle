@@ -10,7 +10,12 @@ allprojects {
 // regression. Keep the AGP-9-compatible plugin while resolving the two
 // Credential Manager artifacts back to the 1.5.0 line used by the known
 // working Android implementation.
-subprojects {
+//
+// Scope this override to the app's final dependency graph only. Applying it
+// to every Android subproject also changes firebase_auth's own AAR metadata
+// resolution, where credentials 1.5.0 requires compileSdk 35+ and the plugin
+// module still compiles against its own configured SDK.
+project(":app") {
     configurations.configureEach {
         resolutionStrategy.force(
             "androidx.credentials:credentials:1.5.0",
@@ -19,7 +24,7 @@ subprojects {
     }
 }
 
-// Gradle 9 removed the `buildDir` setter; the build directory is configured
+// Gradle 9 removed the buildDir setter; the build directory is configured
 // through the layout instead.
 rootProject.layout.buildDirectory = rootProject.file("../build")
 subprojects {
@@ -31,20 +36,20 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// AGP 8.11+ wires JavaCompile compatibility from `android.compileOptions`
+// AGP 8.11+ wires JavaCompile compatibility from android.compileOptions
 // during each subproject's own evaluation, which overrides rules registered
 // earlier from the root project. Enforce JVM target 17 for every Android
 // plugin module after all projects are evaluated (but before any task runs)
 // so the Java and Kotlin tasks always agree on the same JVM target.
 //
 // 17 rather than 11 because that is what plugins built for AGP 9 compile at,
-// and because built-in Kotlin takes its own target from `compileOptions`.
+// and because built-in Kotlin takes its own target from compileOptions.
 gradle.projectsEvaluated {
     subprojects.each { sub ->
         // Covers both ways a module's Kotlin can be compiled: its own Kotlin
         // Gradle Plugin, and AGP's built-in Kotlin, which uses the same task
-        // type. `kotlinOptions` is gone in Kotlin 2.3; the same setting lives
-        // on `compilerOptions` now.
+        // type. kotlinOptions is gone in Kotlin 2.3; the same setting lives
+        // on compilerOptions now.
         sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
             compilerOptions {
                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
