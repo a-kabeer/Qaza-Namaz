@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
