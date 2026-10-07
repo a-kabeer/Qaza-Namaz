@@ -77,6 +77,7 @@ final firebaseReconciliationServiceProvider =
     backupService: ref.watch(firebaseBackupServiceProvider),
     accountStore: ref.watch(accountLocalStoreProvider),
     database: ref.watch(appDatabaseProvider),
+    diagnostics: ref.watch(diagnosticsProvider),
   );
 });
 
