@@ -202,7 +202,7 @@ class AccountSessionManager extends ChangeNotifier {
           .timeout(_startupAuthTimeout, onTimeout: () => false);
       if (firebaseAvailable) {
         final identity = await _auth
-            .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+            .attemptLightweightAuthentication()
             .timeout(_startupAuthTimeout, onTimeout: () => null);
         if (identity != null) {
           final local = await _accountStore.findGoogleByUid(identity.uid);
@@ -281,7 +281,7 @@ class AccountSessionManager extends ChangeNotifier {
       }
 
       final identity = await _auth
-          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+          .attemptLightweightAuthentication()
           .timeout(_startupAuthTimeout, onTimeout: () => null);
       if (identity == null) {
         if (startupEpoch != _operationEpoch ||
