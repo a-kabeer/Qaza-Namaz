@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../local/account_local_store.dart';
 import 'backup_failure.dart';
@@ -164,6 +163,16 @@ class FirebaseBackupWorker {
             },
           );
 
+          // A backup can take long enough for the active account to change.
+          // Never acknowledge or remove an operation after that change.
+          if (!await _activeAccountStillMatches(account)) {
+            await _accountStore.setBackupState(
+              account.localAccountId,
+              'pending',
+            );
+            return;
+          }
+
           final acknowledged = await _accountStore.acknowledgeBackup(
             localAccountId: account.localAccountId,
             revision: targetRevision,
@@ -199,13 +208,12 @@ class FirebaseBackupWorker {
             stackTrace: stack,
           );
           final nowMicros = DateTime.now().microsecondsSinceEpoch;
-          final connectivity = await Connectivity().checkConnectivity().catchError(
-            (_) => const <ConnectivityResult>[],
-          );
-          final offline =
-              connectivity.contains(ConnectivityResult.none) ||
-              failure.category == BackupFailureCategory.networkUnavailable;
-          final state = offline ? 'waitingForConnection' : 'failed';
+          // Connectivity is only advisory. A connection being absent must not
+          // mask a more specific App Check, auth, rules, or cloud-state error.
+          final state = failure.category ==
+                  BackupFailureCategory.networkUnavailable
+              ? 'waitingForConnection'
+              : 'failed';
 
           await _accountStore.setBackupState(
             account.localAccountId,
@@ -254,6 +262,17 @@ class FirebaseBackupWorker {
     await _accountStore.prepareBackupRetry(account.localAccountId);
     await runOnce(onProgress: onProgress);
     return true;
+  }
+
+  Future<bool> _activeAccountStillMatches(
+    dynamic account,
+  ) async {
+    final active = await _accountStore.activeAccount();
+    return active != null &&
+        active.localAccountId == account.localAccountId &&
+        active.firebaseUid == account.firebaseUid &&
+        active.cloudGeneration == account.cloudGeneration &&
+        active.cloudBackupEnabled;
   }
 
   Future<String?> _resolveFirebaseUid() async {
