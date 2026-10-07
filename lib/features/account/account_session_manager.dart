@@ -97,6 +97,7 @@ class AccountSessionManager extends ChangeNotifier {
 
       var account = await _accountStore.activeAccount();
       var initialChoice = await _accountStore.initialChoiceRequired();
+      var sessionMode = await _accountStore.sessionMode();
       final migrationState = await _accountStore.migrationState();
       final terminalMigrationState = migrationState == 'none' ||
           migrationState == 'completed' ||
@@ -109,6 +110,50 @@ class AccountSessionManager extends ChangeNotifier {
         await _recoverInterruptedMigrationAtStartup(
           migrationState: migrationState,
         );
+        account = await _accountStore.activeAccount();
+        initialChoice = await _accountStore.initialChoiceRequired();
+        sessionMode = await _accountStore.sessionMode();
+      }
+
+      // Normalize the durable startup intent for existing installations
+      // whose session row predates the account-session mode column.
+      if (account != null) {
+        final normalizedMode = account.isGoogle
+            ? AccountLocalStore.sessionModeGoogle
+            : AccountLocalStore.sessionModeGuest;
+        if (sessionMode != normalizedMode) {
+          await _accountStore.setSessionMode(normalizedMode);
+          sessionMode = normalizedMode;
+        }
+      }
+
+      if (account == null &&
+          !initialChoice &&
+          sessionMode == AccountLocalStore.sessionModeGoogle) {
+        _setState(
+          AccountSessionState(
+            phase: AccountSessionPhase.ready,
+            activeLocalAccountId: null,
+            activeAccount: null,
+            initialChoiceRequired: false,
+            migrationState: await _accountStore.migrationState(),
+            restoreState: googleRestorePendingState,
+          ),
+        );
+        _initialized = true;
+
+        final startupEpoch = _operationEpoch;
+        _startupRestoreFuture = _restoreGoogleAfterMissingActiveAccount(
+          startupEpoch: startupEpoch,
+        );
+        unawaited(_startupRestoreFuture!);
+        return;
+      }
+
+      if (account == null &&
+          !initialChoice &&
+          sessionMode == AccountLocalStore.sessionModeGuest) {
+        await _accountStore.ensureGuestActive();
         account = await _accountStore.activeAccount();
         initialChoice = await _accountStore.initialChoiceRequired();
       }
@@ -208,9 +253,100 @@ class AccountSessionManager extends ChangeNotifier {
     }
   }
 
+  static const googleRestorePendingState = 'google_restore_pending';
+
+  Future<void> _restoreGoogleAfterMissingActiveAccount({
+    required int startupEpoch,
+  }) async {
+    try {
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
+        return;
+      }
+
+      final initialized = await _firebase
+          .initialize()
+          .timeout(_startupAuthTimeout, onTimeout: () => false);
+      if (!initialized) {
+        if (startupEpoch != _operationEpoch ||
+            await _accountStore.activeLocalAccountId() != null) {
+          return;
+        }
+        await _accountStore.setInitialChoiceRequired(true);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
+        await _refresh();
+        return;
+      }
+
+      final identity = await _auth
+          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+          .timeout(_startupAuthTimeout, onTimeout: () => null);
+      if (identity == null) {
+        if (startupEpoch != _operationEpoch ||
+            await _accountStore.activeLocalAccountId() != null) {
+          return;
+        }
+        await _accountStore.setInitialChoiceRequired(true);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
+        await _refresh();
+        return;
+      }
+
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
+        return;
+      }
+
+      final local = await _accountStore.findGoogleByUid(identity.uid);
+      if (local == null) {
+        await _accountStore.setInitialChoiceRequired(true);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
+        await _refresh();
+        return;
+      }
+
+      await _accountStore.activate(local.localAccountId);
+      await _refresh();
+
+      // Local routing is complete before cloud work starts. Awaiting this
+      // optional task here does not block StartupGate, which already saw the
+      // activated local account and can route directly to Home/onboarding.
+      await _restoreExistingGoogleInBackground(
+        account: local,
+        startupEpoch: startupEpoch,
+        verifiedIdentity: identity,
+      );
+    } catch (error, stack) {
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
+        return;
+      }
+      DebugDiagnostics().recordFailure(
+        DiagnosticArea.startup,
+        'missing_google_account_restore_failed',
+        error,
+        stack: stack,
+      );
+      try {
+        await _accountStore.setInitialChoiceRequired(true);
+        await _accountStore.setSessionMode(
+          AccountLocalStore.sessionModeNone,
+        );
+        await _refresh();
+      } catch (_) {}
+    }
+  }
+
   Future<void> _restoreExistingGoogleInBackground({
     required LocalAccount account,
     required int startupEpoch,
+    GoogleFirebaseIdentity? verifiedIdentity,
   }) async {
     final uid = account.firebaseUid;
     if (uid == null) return;
@@ -228,9 +364,12 @@ class AccountSessionManager extends ChangeNotifier {
           .timeout(_startupAuthTimeout, onTimeout: () => false);
       if (!initialized) return;
 
-      final identity = await _auth
-          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
-          .timeout(_startupAuthTimeout, onTimeout: () => null);
+      final identity = verifiedIdentity ??
+          await _auth
+              .attemptLightweightAuthentication(
+                timeout: _startupAuthTimeout,
+              )
+              .timeout(_startupAuthTimeout, onTimeout: () => null);
       if (identity == null || identity.uid != uid) return;
       if (!await _startupRestoreStillActive(
         startupEpoch,

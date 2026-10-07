@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../account/account_session_manager.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -27,6 +28,12 @@ class StartupGate extends ConsumerWidget {
     }
 
     final activeAccount = session.activeAccount;
+    if (activeAccount == null &&
+        session.state.restoreState ==
+            AccountSessionManager.googleRestorePendingState) {
+      return const SplashScreen();
+    }
+
     if (activeAccount == null && session.initialChoiceRequired) {
       return const AccountChoiceScreen();
     }
