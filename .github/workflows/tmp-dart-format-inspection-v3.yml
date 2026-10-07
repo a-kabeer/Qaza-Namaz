@@ -1,0 +1,24 @@
+name: Temporary Dart Format Inspection v3
+
+on:
+  push:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Format and print current test
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="test/features/account/google_firebase_auth_service_test.dart"
+          dart format "$file"
+          echo "----- FORMATTED FILE -----"
+          cat "$file"
+          echo "----- END FORMATTED FILE -----"
