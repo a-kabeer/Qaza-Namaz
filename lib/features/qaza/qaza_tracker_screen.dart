@@ -1074,7 +1074,7 @@ class _CompletedRecordDetails extends ConsumerWidget {
     final confirmed = await confirmDestructive(
       context,
       title: l10n.qazaMarkAsPending,
-      message: l10n.qazaMarkAsPendingMessage ?? 'This Qaza will return to Pending and will no longer count as completed.',
+      message: l10n.qazaMarkAsPendingMessage,
       confirmLabel: l10n.qazaMarkAsPending,
     );
     if (!confirmed || !context.mounted) return;
