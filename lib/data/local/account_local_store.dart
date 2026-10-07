@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:drift/drift.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../domain/entities/local_account.dart';
 import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/qaza_record.dart';
