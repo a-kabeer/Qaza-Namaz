@@ -150,7 +150,7 @@ void main() {
   testWidgets(
     'profile provider errors show a retryable storage boundary instead of onboarding',
     (tester) async {
-      final (database, manager) = await _newManager();
+      final (database, manager) = await _newManager(google: true);
       await manager.initialize();
 
       final container = _container(
