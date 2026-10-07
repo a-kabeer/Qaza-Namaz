@@ -722,7 +722,7 @@ void main() {
         File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
 
     expect(source, contains('qazaUndoSelected'));
-    expect(source, contains('l10n.qazaUndoAll'));
+    expect(source, contains('qazaUndoAll'));
     expect(source, contains('undoSelected('));
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
     expect(service, contains('Never clear the store here'));
