@@ -265,7 +265,7 @@ class FirebaseServices {
     }
 
     final authReady = await initializeAuthentication();
-    final FirebaseInitializationFailure? failure = authReady
+    FirebaseInitializationFailure? failure = authReady
         ? null
         : !_firebaseCoreInitialized
             ? FirebaseInitializationFailure.firebaseCoreFailure
