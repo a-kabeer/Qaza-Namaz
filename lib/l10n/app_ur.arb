@@ -936,4 +936,5 @@
   "@qazaRequestedSlots": {
     "placeholders": {"count": {"type": "int"}}
   },
+  "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا",
 }
