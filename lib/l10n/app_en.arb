@@ -1323,5 +1323,5 @@
   "@qazaRequestedSlots": {
     "placeholders": {"count": {"type": "int"}}
   },
-  "qazaAdditionUpdated": "Qaza addition updated",
+  "qazaAdditionUpdated": "Qaza addition updated"
 }
