@@ -39,7 +39,12 @@ function rootFields(state = 'ready', generation = 1) {
   };
 }
 
-function childFields(generation = 1, recordId = 'record-1') {
+function childFields(
+  generation = 1,
+  recordId = 'record-1',
+  uid = 'security-user-a',
+  overrides = {},
+) {
   return {
     schemaVersion: 1,
     cloudGeneration: generation,
@@ -49,7 +54,19 @@ function childFields(generation = 1, recordId = 'record-1') {
     operationId: 'op-test',
     payload: {
       id: recordId,
+      userId: uid,
+      prayerType: 'fajr',
+      status: 'pending',
+      originalDate: Timestamp.fromDate(new Date('2025-12-31T00:00:00Z')),
+      createdAt: Timestamp.fromDate(new Date('2025-12-31T00:00:00Z')),
+      updatedAt: Timestamp.fromDate(new Date('2026-01-01T00:00:00Z')),
       recordVersion: 1,
+      completedAt: null,
+      completionId: null,
+      additionId: null,
+      profilePlanRevisionId: null,
+      profilePlanFingerprint: null,
+      ...overrides,
     },
   };
 }
@@ -100,7 +117,7 @@ async function main() {
     () => setDoc(emptyRecord, childFields(1)),
   );
   await setDoc(emptyRoot, rootFields('initializing', 1));
-  await setDoc(emptyRecord, childFields(1, 'empty-state-record'));
+  await setDoc(emptyRecord, childFields(1, 'empty-state-record', emptyStateUser.uid));
   await setDoc(emptyRoot, rootFields('ready', 1));
   await expectDenied(
     'Ready to initializing in the same generation',
@@ -133,7 +150,7 @@ async function main() {
   // Owner can create and read their root and child data.
   await setDoc(root, rootFields('initializing', 1));
   await setDoc(root, rootFields('ready', 1));
-  await setDoc(record, childFields(1));
+  await setDoc(record, childFields(1, 'record-1', userA.uid));
 
   // Exercise a realistic backup batch. The production worker now chunks
   // versioned writes at 100 operations, well below Firestore's 500-write
@@ -229,6 +246,40 @@ async function main() {
   await expectDenied(
     'Invalid generation',
     () => setDoc(badGeneration, childFields(2)),
+  );
+  await expectDenied(
+    'Missing Qaza userId',
+    () => setDoc(
+      badSchema,
+      childFields(1, 'bad-schema', userA.uid, { userId: undefined }),
+    ),
+  );
+  await expectDenied(
+    'Invalid Qaza prayer type',
+    () => setDoc(
+      badSchema,
+      childFields(1, 'bad-schema-prayer', userA.uid, {
+        prayerType: 'dhuhr',
+      }),
+    ),
+  );
+  await expectDenied(
+    'Invalid Qaza status',
+    () => setDoc(
+      badSchema,
+      childFields(1, 'bad-schema-status', userA.uid, {
+        status: 'done',
+      }),
+    ),
+  );
+  await expectDenied(
+    'Invalid Qaza originalDate',
+    () => setDoc(
+      badSchema,
+      childFields(1, 'bad-schema-date', userA.uid, {
+        originalDate: '2025-12-31',
+      }),
+    ),
   );
   await expectDenied(
     'Missing metadata',
