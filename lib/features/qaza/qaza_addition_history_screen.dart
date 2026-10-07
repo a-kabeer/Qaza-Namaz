@@ -241,8 +241,8 @@ class _RecentAdditions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (state.additions.isEmpty) {
-      final l10n = AppLocalizations.of(context);
       return ListView(
         children: [
           const SizedBox(height: 120),
