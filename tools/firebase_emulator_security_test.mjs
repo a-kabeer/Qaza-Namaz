@@ -92,8 +92,37 @@ async function createEmulatorUser(label) {
 async function main() {
   const userA = await createEmulatorUser('a');
   const userB = await createEmulatorUser('b');
+  const emptyStateUser = await createEmulatorUser('empty-state');
 
   const root = doc(userA.db, 'users', userA.uid);
+  const emptyRoot = doc(
+    emptyStateUser.db,
+    'users',
+    emptyStateUser.uid,
+  );
+  const emptyRecord = doc(
+    emptyStateUser.db,
+    'users',
+    emptyStateUser.uid,
+    'qazaRecords',
+    'empty-state-record',
+  );
+
+  // An existing empty root is a valid historical state. It must transition
+  // through initializing before child writes are allowed.
+  await setDoc(emptyRoot, rootFields('empty', 1));
+  await expectDenied(
+    'Child write while root is empty',
+    () => setDoc(emptyRecord, childFields(1)),
+  );
+  await setDoc(emptyRoot, rootFields('initializing', 1));
+  await setDoc(emptyRecord, childFields(1));
+  await setDoc(emptyRoot, rootFields('ready', 1));
+  await expectDenied(
+    'Ready to initializing in the same generation',
+    () => setDoc(emptyRoot, rootFields('initializing', 1)),
+  );
+
   const record = doc(userA.db, 'users', userA.uid, 'qazaRecords', 'record-1');
   const badGeneration = doc(
     userA.db,
@@ -261,6 +290,7 @@ async function main() {
   await Promise.all([
     deleteApp(userA.app),
     deleteApp(userB.app),
+    deleteApp(emptyStateUser.app),
     deleteApp(anonymousApp),
   ]);
 
