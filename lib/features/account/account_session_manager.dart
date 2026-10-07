@@ -286,15 +286,23 @@ class AccountSessionManager extends ChangeNotifier {
     final previous = await _accountStore.activeAccount();
     final operationAccountId = previous?.localAccountId;
     final guestWasActive = previous?.isGuest == true;
+    var identityAcquired = false;
+    var migrationCommitted = false;
+    var cleanupCompleted = false;
     var createdTarget = false;
     String? createdTargetId;
 
     try {
+      // Interactive authentication is the ownership boundary. Until a
+      // Firebase-backed Google identity has been returned, this operation
+      // must not mutate durable migration state or create a Google partition.
+      final identity = await _auth.signInIdentity();
+      identityAcquired = true;
+
       await _accountStore.setMigrationState('prepared');
 
       // Authentication returns a Firebase identity; no Firestore/App Check
       // work is part of this foreground critical path.
-      final identity = await _auth.signInIdentity();
       await _accountStore.setMigrationState('authenticated');
       _ensureOperationCurrent(operationEpoch, operationAccountId);
       _ensureActiveAccount(
@@ -343,6 +351,7 @@ class AccountSessionManager extends ChangeNotifier {
       }
       await _accountStore.setInitialChoiceRequired(false);
       await _accountStore.completeMigration();
+      migrationCommitted = true;
 
       _ensureOperationCurrent(operationEpoch, operationAccountId);
       target =
@@ -360,63 +369,89 @@ class AccountSessionManager extends ChangeNotifier {
       if (operationEpoch != _operationEpoch) return;
 
       LocalAccount? restoredActive;
-      var choiceRequired = previous == null;
-      try {
-        await _accountStore.setMigrationState('rollbackRequired');
-        if (createdTarget && createdTargetId != null) {
-          await _accountStore.deleteLocalAccount(createdTargetId);
-        }
-        if (guestWasActive && previous != null) {
-          await _accountStore.rollbackGoogleMigration(previous.localAccountId);
-        } else if (previous == null) {
-          await _accountStore.setInitialChoiceRequired(true);
-        } else {
-          choiceRequired = await _accountStore.initialChoiceRequired();
-        }
-      } catch (cleanupError, cleanupStack) {
-        DebugDiagnostics().recordFailure(
-          DiagnosticArea.startup,
-          'google_connection_cleanup_failed',
-          cleanupError,
-          stack: cleanupStack,
-        );
+      var choiceRequired = await _accountStore.initialChoiceRequired();
+
+      // Authentication failures before identity acquisition are intentionally
+      // not treated as interrupted migrations. Leave durable migration state
+      // exactly as it was and keep the fresh account-selection boundary.
+      if (!identityAcquired) {
         if (previous == null) {
           choiceRequired = true;
           try {
-            await _accountStore.setInitialChoiceRequired(true);
+            if (!await _accountStore.initialChoiceRequired()) {
+              await _accountStore.setInitialChoiceRequired(true);
+            }
           } catch (_) {}
         }
-      } finally {
-        // Only genuine authentication/local failures reach this foreground
-        // rollback. Post-activation cloud failures are handled separately.
+      } else if (!migrationCommitted) {
         try {
-          await _auth.signOut().timeout(const Duration(seconds: 5));
-        } catch (_) {}
-
-        try {
-          await _accountStore.setMigrationState('failed');
-        } catch (_) {}
-
-        try {
-          restoredActive = await _accountStore.activeAccount();
-        } catch (_) {}
-
-        if (previous == null) {
-          choiceRequired = true;
+          await _accountStore.setMigrationState('rollbackRequired');
+          if (createdTarget && createdTargetId != null) {
+            await _accountStore.deleteLocalAccount(createdTargetId);
+          }
+          if (guestWasActive && previous != null) {
+            await _accountStore.rollbackGoogleMigration(previous.localAccountId);
+          } else if (previous == null) {
+            await _accountStore.setInitialChoiceRequired(true);
+          } else {
+            choiceRequired = await _accountStore.initialChoiceRequired();
+          }
+          cleanupCompleted = true;
+        } catch (cleanupError, cleanupStack) {
+          DebugDiagnostics().recordFailure(
+            DiagnosticArea.startup,
+            'google_connection_cleanup_failed',
+            cleanupError,
+            stack: cleanupStack,
+          );
+          if (previous == null) {
+            choiceRequired = true;
+            try {
+              await _accountStore.setInitialChoiceRequired(true);
+            } catch (_) {}
+          }
         }
 
-        _setState(
-          AccountSessionState(
-            phase: AccountSessionPhase.ready,
-            activeLocalAccountId: restoredActive?.localAccountId,
-            activeAccount: restoredActive,
-            initialChoiceRequired: choiceRequired,
-            migrationState: 'failed',
-            restoreState: 'none',
-            message: 'Google connection could not be completed.',
-          ),
-        );
+        // A completed rollback is terminal. When cleanup itself fails, retain
+        // rollbackRequired so the existing durable startup recovery can retry.
+        if (cleanupCompleted) {
+          try {
+            await _accountStore.setMigrationState('failed');
+          } catch (_) {}
+        }
       }
+
+      try {
+        // If a user was obtained before a later local failure, disconnecting
+        // the authentication session is still safe. Cloud failures after
+        // migrationCommitted are handled outside this foreground rollback.
+        await _auth.signOut().timeout(const Duration(seconds: 5));
+      } catch (_) {}
+
+      try {
+        restoredActive = await _accountStore.activeAccount();
+      } catch (_) {}
+
+      try {
+        choiceRequired = await _accountStore.initialChoiceRequired();
+      } catch (_) {
+        if (previous == null) choiceRequired = true;
+      }
+
+      final persistedMigrationState =
+          await _accountStore.migrationState();
+
+      _setState(
+        AccountSessionState(
+          phase: AccountSessionPhase.ready,
+          activeLocalAccountId: restoredActive?.localAccountId,
+          activeAccount: restoredActive,
+          initialChoiceRequired: choiceRequired,
+          migrationState: persistedMigrationState,
+          restoreState: 'none',
+          message: 'Google connection could not be completed.',
+        ),
+      );
 
       DebugDiagnostics().recordFailure(
         DiagnosticArea.startup,
