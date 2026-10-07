@@ -31,7 +31,11 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
       title: l10n.qazaAdditionTitle,
       body: asyncDetail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
+        error: (error, stack) {
+          return Center(
+            child: Text(l10n.homeProgressError),
+          );
+        },
         data: (detail) {
           if (detail == null) {
             return Center(
