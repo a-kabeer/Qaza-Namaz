@@ -165,13 +165,7 @@ async function main() {
         'qazaRecords',
         'batch-' + i,
       ),
-      {
-        ...childFields(1),
-        payload: {
-          id: 'batch-' + i,
-          recordVersion: 1,
-        },
-      },
+      childFields(1, 'batch-' + i, userA.uid),
     );
   }
   await ownerBatch.commit();
@@ -218,13 +212,7 @@ async function main() {
         'qazaRecords',
         'cross-batch-' + i,
       ),
-      {
-        ...childFields(1),
-        payload: {
-          id: 'cross-batch-' + i,
-          recordVersion: 1,
-        },
-      },
+      childFields(1, 'cross-batch-' + i, userA.uid),
     );
   }
   await expectDenied('Cross-user batched write', () => crossUserBatch.commit());
