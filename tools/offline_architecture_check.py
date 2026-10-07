@@ -3,7 +3,6 @@
 
 from pathlib import Path
 import re
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,11 +24,16 @@ BANNED_RUNTIME = (
     "GoogleSignIn",
 )
 
+# Generated localization sources may legitimately contain historical
+# user-facing provider names. They are not executable online runtime paths.
 RUNTIME_ROOTS = [ROOT / "lib", ROOT / "android"]
+RUNTIME_EXCLUDED_PARTS = {Path("lib/l10n")}
+
 
 def fail(message: str) -> None:
     print(f"OFFLINE POLICY ERROR: {message}")
     raise SystemExit(1)
+
 
 for forbidden in (
     ROOT / "android/app/google-services.json",
@@ -68,9 +72,15 @@ for root in RUNTIME_ROOTS:
             continue
         if path.suffix not in {".dart", ".gradle", ".xml", ".kts"}:
             continue
-        text = path.read_text(errors="ignore")
+        relative = path.relative_to(ROOT)
+        if any(
+            relative == excluded or excluded in relative.parents
+            for excluded in RUNTIME_EXCLUDED_PARTS
+        ):
+            continue
+        file_text = path.read_text(errors="ignore")
         for token in BANNED_RUNTIME:
-            if token in text:
-                fail(f"{token} found in {path.relative_to(ROOT)}")
+            if token in file_text:
+                fail(f"{token} found in {relative}")
 
 print("Offline architecture policy: PASS")
