@@ -314,14 +314,13 @@ class AccountSessionManager extends ChangeNotifier {
       await _accountStore.activate(local.localAccountId);
       await _refresh();
 
-      // Local routing is now complete. Cloud reconciliation remains optional
-      // and must never block Home/onboarding.
-      unawaited(
-        _restoreExistingGoogleInBackground(
-          account: local,
-          startupEpoch: startupEpoch,
-          verifiedIdentity: identity,
-        ),
+      // Local routing is complete before cloud work starts. Awaiting this
+      // optional task here does not block StartupGate, which already saw the
+      // activated local account and can route directly to Home/onboarding.
+      await _restoreExistingGoogleInBackground(
+        account: local,
+        startupEpoch: startupEpoch,
+        verifiedIdentity: identity,
       );
     } catch (error, stack) {
       if (startupEpoch != _operationEpoch ||
