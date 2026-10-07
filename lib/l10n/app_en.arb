@@ -1291,4 +1291,30 @@
     }
   },
   "addQazaManageAddition": "Manage this addition",
+  "qazaCompletionSingle": "{prayer} Qaza for {date} completed.",
+  "@qazaCompletionSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaCompletionMultiple": "{count} Qaza completed.",
+  "@qazaCompletionMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoSingle": "{prayer} Qaza for {date} restored.",
+  "@qazaUndoSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaUndoMultiple": "{count} Qaza restored.",
+  "@qazaUndoMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoExpired": "Undo is no longer available because the 5-second window has ended.",
+  "qazaUndoStaleBatch": "Undo is no longer available because a newer Undo action replaced it.",
+  "qazaUndoTargetChanged": "Undo is no longer available because the Qaza record changed or was removed.",
+  "qazaUndoFailed": "Undo could not be completed. Please try again.",
 }
