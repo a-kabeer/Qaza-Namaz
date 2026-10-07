@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../account/account_choice_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
@@ -40,7 +41,7 @@ class StartupGate extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
     return profileAsync.when(
       loading: () => const SplashScreen(),
-      error: (error, stack) => StartupProfileLoadErrorBoundary(
+      error: (_, __) => StartupProfileLoadErrorBoundary(
         key: const Key('startup_profile_load_error'),
         onRetry: () => ref.invalidate(userProfileProvider),
       ),
