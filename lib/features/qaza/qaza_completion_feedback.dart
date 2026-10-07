@@ -38,6 +38,7 @@ String qazaUndoFailureMessage(
   BuildContext context,
   QazaUndoFailureReason reason,
 ) {
+  final l10n = AppLocalizations.of(context);
   return switch (reason) {
     QazaUndoFailureReason.expired => l10n.qazaUndoExpired,
     QazaUndoFailureReason.staleBatch => l10n.qazaUndoStaleBatch,
