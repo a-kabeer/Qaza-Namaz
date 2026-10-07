@@ -1174,7 +1174,7 @@
   "accountBackupStatusCloudStateInvalid": "Cloud backup state changed. Try again.",
   "accountBackupStatusFailedAutomaticRetry": "We'll try again automatically.",
   "accountBackupStatusRetry": "Try again",
-  "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically."
+  "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically.",
   "startupProfileLoadErrorTitle": "Could not load your local profile",
   "startupProfileLoadErrorMessage": "Your local storage could not be read safely. Your existing Qaza data has not been replaced. Please try again.",
   "qazaHistoryTitle": "Qaza History",
