@@ -49,7 +49,7 @@ void main() {
     await tester.pumpWidget(_app(container, const AccountScreen()));
     await tester.pump();
 
-    expect(find.text('Guest account'), findsOneWidget);
+    expect(find.text('This device'), findsOneWidget);
     expect(find.text('Your data is stored on this device'), findsOneWidget);
     expect(find.text('Continue with Google'), findsNothing);
     expect(find.text('Automatic backup'), findsNothing);
@@ -70,7 +70,7 @@ void main() {
     await tester.pumpWidget(_app(container, const SettingsScreen()));
     await tester.pump();
 
-    expect(find.text('Guest • This device only'), findsOneWidget);
+    expect(find.text('Local • This device only'), findsOneWidget);
     expect(find.text('Signed in with Google'), findsNothing);
     expect(find.text('Connect Google'), findsNothing);
   });
