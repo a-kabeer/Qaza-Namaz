@@ -357,7 +357,7 @@ jobs:
           echo "Release APK signature matches the configured release keystore and Firebase Android identity."
           echo "Package: ${APK_PACKAGE}"
           echo "SHA-1: ${APK_SHA1}"
-          echo "SHA-256: ${APK_SHA256}"          echo "SHA-1: ${APK_SHA1}"
+          echo "SHA-1: ${APK_SHA1}"
           echo "SHA-256: ${APK_SHA256}"
 
       - name: Report release signing availability
