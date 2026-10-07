@@ -71,6 +71,8 @@ jobs:
         run: flutter pub get
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
+      - name: Dead code and dependency audit
+        run: python3 tools/dead_code_audit.py
       - name: Check formatting
         id: formatting
         shell: bash
