@@ -22,6 +22,16 @@ async function main() {
     return {
       schemaVersion: 1,
       cloudGeneration: 1,
+      datasetState: 'empty',
+      updatedAt: Timestamp.fromDate(new Date('2026-01-01T00:00:00Z')),
+      bootstrapComplete: false,
+    };
+  }
+
+  function readyRootFields() {
+    return {
+      schemaVersion: 1,
+      cloudGeneration: 1,
       datasetState: 'ready',
       updatedAt: Timestamp.fromDate(new Date('2026-01-01T00:00:00Z')),
       bootstrapComplete: true,
@@ -63,6 +73,11 @@ async function main() {
     const record = doc(db, 'users', UID, 'qazaRecords', 'record-1');
 
     await assertSucceeds(setDoc(root, rootFields()));
+    await assertSucceeds(setDoc(root, {
+      ...rootFields(),
+      datasetState: 'initializing',
+    }));
+    await assertSucceeds(setDoc(root, readyRootFields()));
     await assertSucceeds(setDoc(record, {
       schemaVersion: 1,
       cloudGeneration: 1,
