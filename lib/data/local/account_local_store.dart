@@ -120,7 +120,6 @@ class AccountLocalStore {
       'SELECT 1 FROM qaza_deletion_action_record_snapshots WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
       'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
-      'SELECT 1 FROM qaza_record_tombstones WHERE local_account_id = ? LIMIT 1',
     ];
     for (final query in queries) {
       final rows = await database.customSelect(
