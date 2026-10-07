@@ -1,5 +1,8 @@
 name: Flutter CI
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -43,18 +46,20 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Check Dart formatting
+      - name: Apply Dart formatting
         shell: bash
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
             diff_base="origin/$GITHUB_BASE_REF"
+            target_ref="$GITHUB_HEAD_REF"
           else
             diff_base="${{ github.event.before }}"
             if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
               diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
             fi
+            target_ref="$GITHUB_REF_NAME"
           fi
 
           mapfile -t files < <(
@@ -65,11 +70,23 @@ jobs:
           )
 
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "No changed Dart files to format-check."
+            echo "No changed Dart files to format."
             exit 0
           fi
 
-          dart format --output=none --set-exit-if-changed "${files[@]}"
+          dart format "${files[@]}"
+
+          if git diff --quiet -- "${files[@]}"; then
+            echo "Changed Dart files are already formatted."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${files[@]}"
+          git commit -m "style: format offline conversion changes"
+          git push origin "HEAD:${target_ref}"
+
 
       - name: Test with coverage
         run: flutter test --coverage
