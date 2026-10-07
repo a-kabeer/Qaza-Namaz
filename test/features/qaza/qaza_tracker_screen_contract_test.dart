@@ -722,7 +722,7 @@ void main() {
         File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
 
     expect(source, contains('l10n.qazaUndoSelected'));
-    expect(source, contains('Undo All'));
+    expect(source, contains('l10n.qazaUndoAll'));
     expect(source, contains('undoSelected('));
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
     expect(service, contains('Never clear the store here'));
@@ -769,7 +769,7 @@ void main() {
     expect(controller, contains('toggleCompletedSelection'));
     expect(controller, contains('markSelectedCompletedAsPending'));
     expect(screen, contains("qaza_completed_mark_pending"));
-    expect(screen, contains('Mark as Pending'));
+    expect(screen, contains('l10n.qazaMarkAsPending'));
     expect(screen, contains('key: const Key(\'qaza_completed_batch_action_bar\')'));
   });
 
