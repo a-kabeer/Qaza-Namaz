@@ -666,7 +666,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountStatus => 'Account status';
 
   @override
-  String get accountSignedIn => 'Signed in';
+  String get accountSignedIn => 'Local';
 
   @override
   String get accountRecordsRetained =>
@@ -1491,7 +1491,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountContinue => 'Continue';
 
   @override
-  String get accountGuestTitle => 'Guest account';
+  String get accountGuestTitle => 'This device';
 
   @override
   String get accountGuestLocalDataSubtitle =>
@@ -1509,7 +1509,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountGuestContinueMessage =>
-      'You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.';
+      'Your local progress remains on this device.';
 
   @override
   String get accountBackupSection => 'Backup';
@@ -1533,7 +1533,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDangerZone => 'Danger zone';
 
   @override
-  String get settingsAccountGuestSubtitle => 'Guest • This device only';
+  String get settingsAccountGuestSubtitle => 'Local • This device only';
 
   @override
   String get settingsAccountGoogleSubtitle => 'Signed in with Google';
