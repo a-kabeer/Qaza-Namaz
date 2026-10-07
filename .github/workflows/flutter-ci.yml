@@ -110,8 +110,7 @@ jobs:
             exit 0
           fi
 
-          dart format "${files[@]}"
-          git diff -- "${files[@]}"
+          dart format --output=none --set-exit-if-changed "${files[@]}"
 
       - name: Test with coverage
         run: flutter test --coverage
