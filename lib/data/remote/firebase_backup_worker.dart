@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-
 import '../local/account_local_store.dart';
 import 'backup_failure.dart';
 import 'firebase_backup_service.dart';
@@ -285,12 +284,6 @@ class FirebaseBackupWorker {
     await _accountStore.prepareBackupRetry(account.localAccountId);
     await runOnce(onProgress: onProgress);
     return true;
-  }
-
-  bool _isAppCheckFailureCategory(String? category) {
-    return category == BackupFailureCategory.appCheckInitializationFailed.name ||
-        category == BackupFailureCategory.appCheckTokenUnavailable.name ||
-        category == BackupFailureCategory.appCheckRejected.name;
   }
 
   bool _isAppCheckFailureCategory(String? category) {
