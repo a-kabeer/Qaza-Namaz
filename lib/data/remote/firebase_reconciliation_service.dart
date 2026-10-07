@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../core/diagnostics/diagnostics.dart';
+
 import '../../core/constants/prayer_types.dart';
 import 'package:drift/drift.dart' show Value, Variable;
 
@@ -20,15 +22,18 @@ class FirebaseReconciliationService {
     required FirebaseBackupService backupService,
     required AccountLocalStore accountStore,
     required AppDatabase database,
+    DiagnosticsService? diagnostics,
   })  : _firebase = firebase,
         _backup = backupService,
         _accountStore = accountStore,
-        _database = database;
+        _database = database,
+        _diagnostics = diagnostics ?? const NoopDiagnostics();
 
   final FirebaseServices _firebase;
   final FirebaseBackupService _backup;
   final AccountLocalStore _accountStore;
   final AppDatabase _database;
+  final DiagnosticsService _diagnostics;
   final ConflictResolver _resolver = const ConflictResolver();
 
   Future<ReconciliationResult> restore({
@@ -267,7 +272,16 @@ class FirebaseReconciliationService {
     for (final raw in cloudRecords) {
       final payload = _payload(raw);
       final record = _cloudRecord(localAccountId, payload);
-      if (record == null) continue;
+      if (record == null) {
+        _diagnostics.recordFailure(
+          DiagnosticArea.sync,
+          'invalid_remote_qaza_record',
+          const FormatException(
+            'Remote Qaza record failed local schema validation.',
+          ),
+        );
+        continue;
+      }
 
       final existingId = byId[record.id];
       if (existingId != null) {
@@ -829,10 +843,27 @@ class FirebaseReconciliationService {
     Map<String, dynamic> payload,
   ) {
     try {
-      final prayer = payload['prayerType'] as String;
-      final status = payload['status'] as String? ?? 'pending';
+      final id = payload['id'];
+      final cloudUserId = payload['userId'];
+      final prayer = payload['prayerType'];
+      final status = payload['status'];
+      if (id is! String ||
+          id.isEmpty ||
+          cloudUserId is! String ||
+          cloudUserId.isEmpty ||
+          prayer is! String ||
+          status is! String ||
+          !['pending', 'completed'].contains(status) ||
+          !_validPrayerType(prayer) ||
+          _date(payload['originalDate']) == null ||
+          _date(payload['createdAt']) == null ||
+          _date(payload['updatedAt']) == null ||
+          payload['recordVersion'] is! num ||
+          (payload['recordVersion'] as num).toInt() < 1) {
+        throw const FormatException('Remote Qaza record payload is malformed.');
+      }
       return QazaRecord(
-        id: payload['id'] as String,
+        id: id,
         userId: localAccountId,
         prayerType:
             PrayerType.values.firstWhere((value) => value.name == prayer),
@@ -851,6 +882,9 @@ class FirebaseReconciliationService {
       return null;
     }
   }
+
+  bool _validPrayerType(String value) =>
+      PrayerType.values.any((candidate) => candidate.name == value);
 
   String _businessKey(String userId, String prayer, DateTime date) =>
       userId + '|' + prayer + '|' + date.year.toString() + '-' +
