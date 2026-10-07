@@ -408,20 +408,76 @@ class GoogleFirebaseIdentity {
   final String? email;
 }
 
+class GoogleAuthenticationCoordinator {
+  Future<Object?>? _activeOperation;
+
+  bool get isBusy => _activeOperation != null;
+
+  Future<Object?>? get activeOperation => _activeOperation;
+
+  /// Serializes every Google authentication operation while tracking the
+  /// actual underlying Future. A caller may time out its own wait without
+  /// releasing this coordinator; ownership ends only when [operation]
+  /// completes.
+  Future<T> run<T>(Future<T> Function() operation) async {
+    while (true) {
+      final active = _activeOperation;
+      if (active != null) {
+        try {
+          await active;
+        } catch (_) {
+          // A failed/cancelled operation still releases the serialization
+          // boundary when its real Future completes.
+        }
+        continue;
+      }
+
+      final operationFuture = operation();
+      final trackedOperation = operationFuture.then<Object?>(
+        (value) => value,
+        onError: (Object error, StackTrace stack) =>
+            Error.throwWithStackTrace(error, stack),
+      );
+      _activeOperation = trackedOperation;
+
+      try {
+        return await operationFuture;
+      } finally {
+        if (identical(_activeOperation, trackedOperation)) {
+          _activeOperation = null;
+        }
+      }
+    }
+  }
+}
+
 class GoogleFirebaseAuthService {
   GoogleFirebaseAuthService(this.services);
 
   final FirebaseServices services;
-  static bool _authenticationInFlight = false;
+  static final GoogleAuthenticationCoordinator _authenticationCoordinator =
+      GoogleAuthenticationCoordinator();
 
   User? get currentUser =>
       services.initialized ? services.auth.currentUser : null;
 
   Future<User?> signIn() async {
-    _beginAuthentication();
-    final operation = _signInInternal();
-    _releaseAuthenticationWhenComplete(operation);
-    return operation;
+    while (true) {
+      final active = _authenticationCoordinator.activeOperation;
+      if (active != null) {
+        try {
+          await active;
+        } catch (_) {}
+
+        final restoredUser = _currentFirebaseUserOrNull();
+        if (restoredUser != null) {
+          return restoredUser;
+        }
+        continue;
+      }
+
+      return _authenticationCoordinator.run(_signInInternal);
+    }
   }
 
   Future<GoogleFirebaseIdentity> signInIdentity() async {
@@ -466,34 +522,53 @@ class GoogleFirebaseAuthService {
 
   /// Restores a cached Google/Firebase identity without invoking the
   /// interactive account picker. This is startup-only authentication; explicit
-  /// user initiated sign-in continues to use [signIn].
-  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
-    if (_authenticationInFlight) return null;
+  /// user initiated sign-in waits for this operation when necessary.
+  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication() async {
+    final existingUser = _currentFirebaseUserOrNull();
+    if (existingUser != null) {
+      return GoogleFirebaseIdentity(
+        uid: existingUser.uid,
+        email: existingUser.email,
+      );
+    }
 
-    _beginAuthentication();
-    final operation = _attemptLightweightAuthenticationInternal(timeout);
-    _releaseAuthenticationWhenComplete(operation);
-    return operation;
+    while (true) {
+      final active = _authenticationCoordinator.activeOperation;
+      if (active != null) {
+        try {
+          await active;
+        } catch (_) {}
+
+        final restoredUser = _currentFirebaseUserOrNull();
+        if (restoredUser != null) {
+          return GoogleFirebaseIdentity(
+            uid: restoredUser.uid,
+            email: restoredUser.email,
+          );
+        }
+        continue;
+      }
+
+      return _authenticationCoordinator.run(
+        _attemptLightweightAuthenticationInternal,
+      );
+    }
   }
 
-  Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
-    Duration timeout,
-  ) async {
+  Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal()
+      async {
+    // Intentionally do not apply a timeout to any part of this operation.
+    // Startup routing may time out its own wait, but the coordinator must keep
+    // ownership until the native Credential Manager Future really completes.
     final ready = await Future.wait<bool>([
-      services
-          .initializeFirebaseCore()
-          .timeout(timeout, onTimeout: () => false),
-      services
-          .initializeGoogleSignIn()
-          .timeout(timeout, onTimeout: () => false),
+      services.initializeFirebaseCore(),
+      services.initializeGoogleSignIn(),
     ]);
     if (!ready.every((value) => value)) {
       return null;
     }
 
-    final firebaseUser = services.auth.currentUser;
+    final firebaseUser = _currentFirebaseUserOrNull();
     if (firebaseUser != null) {
       return GoogleFirebaseIdentity(
         uid: firebaseUser.uid,
@@ -505,42 +580,36 @@ class GoogleFirebaseAuthService {
       final lightweightFuture =
           GoogleSignIn.instance.attemptLightweightAuthentication();
       if (lightweightFuture == null) return null;
-      final googleUser = await lightweightFuture.timeout(timeout);
+
+      // This await must not have a Dart timeout: the returned Future owns the
+      // native Credential Manager operation and is the serialization boundary.
+      final googleUser = await lightweightFuture;
       if (googleUser == null) return null;
 
       final idToken = googleUser.authentication.idToken;
       if (idToken == null || idToken.isEmpty) return null;
 
       final credential = GoogleAuthProvider.credential(idToken: idToken);
-      final result =
-          await services.auth.signInWithCredential(credential).timeout(timeout);
+      final result = await services.auth.signInWithCredential(credential);
       final user = result.user;
       if (user == null) return null;
       return GoogleFirebaseIdentity(uid: user.uid, email: user.email);
     } catch (_) {
       // Lightweight restoration is best-effort. Startup must remain usable
       // with the local account when Google/Firebase is unavailable.
-      final user = services.auth.currentUser;
+      final user = _currentFirebaseUserOrNull();
       return user == null
           ? null
           : GoogleFirebaseIdentity(uid: user.uid, email: user.email);
     }
   }
 
-  void _beginAuthentication() {
-    if (_authenticationInFlight) {
-      throw StateError('Google authentication is already in progress.');
+  User? _currentFirebaseUserOrNull() {
+    try {
+      return services.auth.currentUser;
+    } catch (_) {
+      return null;
     }
-    _authenticationInFlight = true;
-  }
-
-  void _releaseAuthenticationWhenComplete(Future<Object?> operation) {
-    unawaited(
-      operation.then<void>(
-        (_) => _authenticationInFlight = false,
-        onError: (Object _, StackTrace __) => _authenticationInFlight = false,
-      ),
-    );
   }
 
   Future<void> signOut() async {
