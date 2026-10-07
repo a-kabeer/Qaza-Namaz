@@ -96,12 +96,11 @@ class AccountChoiceScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  // Guest is an independent local path. It must remain usable
-                  // even when the interactive Google Credential Manager flow is
-                  // still waiting for the native platform to return.
-                  onPressed: () => ref
-                      .read(accountSessionManagerProvider.notifier)
-                      .continueAsGuest(),
+                  onPressed: busy
+                      ? null
+                      : () => ref
+                          .read(accountSessionManagerProvider.notifier)
+                          .continueAsGuest(),
                   child: Text(l10n.accountChoiceContinueGuest),
                 ),
                 const SizedBox(height: 10),
