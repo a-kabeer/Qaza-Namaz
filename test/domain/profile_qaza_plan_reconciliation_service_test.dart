@@ -308,7 +308,7 @@ void main() {
     expect(qaza.records.single.profilePlanFingerprint, isNull);
   });
 
-  test('Drift removal queues an idempotent delete outbox operation', () async {
+  test('Drift removal is idempotent without sync outbox side effects', () async {
     final database = AppDatabase(NativeDatabase.memory());
     final store = DriftQazaLocalStore(database: database);
     final record = profileRecord(
@@ -338,13 +338,10 @@ void main() {
     );
     expect(second.removed, isEmpty);
 
-    final outbox = await store.loadOutbox(UserProfile.localLedgerUserId);
-    final deletes = outbox.where(
-      (operation) =>
-          operation.type == SyncOpType.delete &&
-          operation.targetRecordId == 'removable',
+    expect(
+      await store.loadOutbox(UserProfile.localLedgerUserId),
+      isEmpty,
     );
-    expect(deletes, hasLength(1));
     await database.close();
   });
 
