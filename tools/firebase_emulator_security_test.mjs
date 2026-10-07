@@ -39,7 +39,7 @@ function rootFields(state = 'ready', generation = 1) {
   };
 }
 
-function childFields(generation = 1) {
+function childFields(generation = 1, recordId = 'record-1') {
   return {
     schemaVersion: 1,
     cloudGeneration: generation,
@@ -48,7 +48,7 @@ function childFields(generation = 1) {
     writerDeviceId: 'device-test',
     operationId: 'op-test',
     payload: {
-      id: 'record-1',
+      id: recordId,
       recordVersion: 1,
     },
   };
