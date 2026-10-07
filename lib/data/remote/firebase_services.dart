@@ -60,6 +60,7 @@ class FirebaseServices {
   bool _googleSignInInitialized = false;
   bool _appCheckInitialized = false;
   bool _appCheckTokenAvailable = false;
+  bool _appCheckTokenListenerAttached = false;
   Future<FirebaseInitializationResult>? _initializing;
   FirebaseInitializationResult? _lastInitializationResult;
 
@@ -201,6 +202,29 @@ class FirebaseServices {
               : const AndroidDebugProvider(),
         );
         _appCheckInitialized = true;
+        if (!_appCheckTokenListenerAttached) {
+          _appCheckTokenListenerAttached = true;
+          FirebaseAppCheck.instance.onTokenChange.listen(
+            (token) {
+              _appCheckTokenAvailable = token?.isNotEmpty == true;
+              _diagnostics.recordEvent(
+                DiagnosticArea.sync,
+                _appCheckTokenAvailable
+                    ? 'app_check_token_available'
+                    : 'app_check_token_unavailable',
+              );
+            },
+            onError: (Object error, StackTrace stack) {
+              _appCheckTokenAvailable = false;
+              _diagnostics.recordFailure(
+                DiagnosticArea.sync,
+                'app_check_token_listener_failed',
+                error,
+                stack: stack,
+              );
+            },
+          );
+        }
         _diagnostics.recordEvent(
           DiagnosticArea.startup,
           kReleaseMode
@@ -245,8 +269,24 @@ class FirebaseServices {
       );
     }
 
+    // Firebase SDKs automatically attach and refresh App Check tokens for
+    // protected requests. Do not force-refresh a token before every cloud
+    // operation: that adds attestation latency/quota pressure and can race a
+    // normal token acquisition.
+    if (!_appCheckTokenAvailable) {
+      _diagnostics.recordEvent(
+        DiagnosticArea.sync,
+        'app_check_token_not_yet_available',
+      );
+    }
+  }
+
+  Future<void> ensureAppCheckTokenAvailable({
+    bool forceRefresh = false,
+  }) async {
+    await ensureFirestoreReady();
     try {
-      final token = await FirebaseAppCheck.instance.getToken(true);
+      final token = await FirebaseAppCheck.instance.getToken(forceRefresh);
       if (token == null || token.isEmpty) {
         _appCheckTokenAvailable = false;
         throw const BackupFailure(
@@ -261,27 +301,24 @@ class FirebaseServices {
       );
     } catch (error, stack) {
       _appCheckTokenAvailable = false;
-      final classified = classifyBackupFailure(error, stackTrace: stack);
       final failure = error is BackupFailure
           ? error
           : BackupFailure(
-              category: classified.category ==
-                      BackupFailureCategory.networkUnavailable
-                  ? BackupFailureCategory.networkUnavailable
-                  : BackupFailureCategory.appCheckTokenUnavailable,
-              message: classified.message,
+              category: BackupFailureCategory.appCheckTokenUnavailable,
+              message: 'Firebase App Check token could not be obtained.',
               cause: error,
               stackTrace: stack,
             );
       _diagnostics.recordFailure(
         DiagnosticArea.sync,
-        'app_check_token_failed',
+        'app_check_token_request_failed',
         error,
         stack: stack,
       );
       throw failure;
     }
   }
+
 
   FirebaseAuth get auth => FirebaseAuth.instance;
 
