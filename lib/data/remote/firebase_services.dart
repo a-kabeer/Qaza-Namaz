@@ -264,8 +264,12 @@ class FirebaseServices {
       return result;
     }
 
-    final authResult = await _initializeAuthenticationInternal();
-    FirebaseInitializationFailure? failure = authResult.failure;
+    final authReady = await initializeAuthentication();
+    final FirebaseInitializationFailure? failure = authReady
+        ? null
+        : !_firebaseCoreInitialized
+            ? FirebaseInitializationFailure.firebaseCoreFailure
+            : FirebaseInitializationFailure.googleSignInFailure;
 
     if (_firebaseCoreInitialized && !_appCheckInitialized) {
       try {
