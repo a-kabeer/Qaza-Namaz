@@ -11,6 +11,12 @@ class _ControlledFirebaseServices extends FirebaseServices {
 
   @override
   Future<bool> initializeAuthentication() => initializer.future;
+
+  @override
+  Future<bool> initializeFirebaseCore() => initializer.future;
+
+  @override
+  Future<bool> initializeGoogleSignIn() => initializer.future;
 }
 
 void main() {
