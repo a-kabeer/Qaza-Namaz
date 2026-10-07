@@ -207,21 +207,15 @@ class _QazaUndoSelectionSheetState
 
 
   String _title(BuildContext context) {
-    return Localizations.localeOf(context).languageCode == 'ur'
-        ? 'مکمل کی گئی نمازیں واپس کریں'
-        : 'Undo completions';
+    return AppLocalizations.of(context).qazaUndoCompletions;
   }
 
   String _undoSelectedLabel(BuildContext context) {
-    return Localizations.localeOf(context).languageCode == 'ur'
-        ? 'منتخب واپس کریں'
-        : 'Undo Selected';
+    return AppLocalizations.of(context).qazaUndoSelected;
   }
 
   String _undoAllLabel(BuildContext context) {
-    return Localizations.localeOf(context).languageCode == 'ur'
-        ? 'سب واپس کریں'
-        : 'Undo All';
+    return AppLocalizations.of(context).qazaUndoAll;
   }
 
   Future<void> _undoSelected() async {
@@ -363,7 +357,7 @@ class _QazaUndoSelectionSheetState
           ),
           const SizedBox(height: 8),
           Text(
-            '${_batch.entries.length} Qaza',
+            l10n.qazaUndoQazaCount(_batch.entries.length),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
