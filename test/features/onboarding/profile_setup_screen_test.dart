@@ -6,9 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/native.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
-import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
-import 'package:qaza_namaz/data/remote/firebase_services.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,34 +23,10 @@ import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
-Future<(AppDatabase, AccountSessionManager)> _readyGuestSession() async {
+Future<(AppDatabase, AccountSessionManager)> _readyLocalSession() async {
   final database = AppDatabase(NativeDatabase.memory());
   final store = AccountLocalStore(database: database);
-  await store.ensureInitialized(
-    hasLegacyProfile: false,
-    hasLegacyQaza: false,
-  );
-  await store.ensureGuestActive();
-
-  final firebase = FirebaseServices();
-  final backup = FirebaseBackupService(
-    firebase: firebase,
-    database: database,
-    accountStore: store,
-  );
-  final reconciliation = FirebaseReconciliationService(
-    firebase: firebase,
-    backupService: backup,
-    accountStore: store,
-    database: database,
-  );
-  final manager = AccountSessionManager(
-    accountStore: store,
-    firebase: firebase,
-    auth: GoogleFirebaseAuthService(firebase),
-    backup: backup,
-    reconciliation: reconciliation,
-  );
+  final manager = AccountSessionManager(accountStore: store);
   await manager.initialize();
   return (database, manager);
 }
@@ -119,7 +92,7 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    (database, sessionManager) = await _readyGuestSession();
+    (database, sessionManager) = await _readyLocalSession();
   });
 
   tearDown(() => database.close());
