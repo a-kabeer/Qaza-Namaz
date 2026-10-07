@@ -103,7 +103,10 @@ def extract_analyzer_diagnostics(path: Path | None) -> list[str]:
     diagnostics: list[str] = []
     for line in output.splitlines():
         normalized = line.casefold()
-        if any(f"|{code}|" in normalized for code in DEAD_DIAGNOSTIC_CODES):
+        if any(
+            re.search(rf"\b{re.escape(code)}\b", normalized)
+            for code in DEAD_DIAGNOSTIC_CODES
+        ):
             diagnostics.append(line)
     return diagnostics
 
