@@ -1,11 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
-import '../../domain/entities/user_profile.dart';
 
 class AccountSessionManager extends ChangeNotifier {
   AccountSessionManager({
@@ -40,28 +36,9 @@ class AccountSessionManager extends ChangeNotifier {
 
   Future<void> _initializeLocalState() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      UserProfile? legacyProfile;
-      final raw = prefs.getString(UserProfile.storageKey);
-      if (raw != null) {
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map) {
-            legacyProfile =
-                UserProfile.fromJson(Map<String, dynamic>.from(decoded));
-          }
-        } catch (_) {}
-      }
-
-      await _accountStore.ensureInitialized(
-        hasLegacyProfile: raw != null,
-        hasLegacyQaza:
-            await _accountStore.hasAnyQaza(UserProfile.localLedgerUserId),
-        legacyProfile: legacyProfile,
-      );
-
-      final accountId = await _accountStore.ensureGuestActive();
-      final account = await _accountStore.getAccount(accountId);
+      await _accountStore.ensureInitialized();
+      final localAccountId = await _accountStore.ensureLocalAccountActive();
+      final account = await _accountStore.getAccount(localAccountId);
       if (account == null) {
         throw StateError('Unable to initialize the local device account.');
       }
@@ -71,9 +48,6 @@ class AccountSessionManager extends ChangeNotifier {
           phase: AccountSessionPhase.ready,
           activeLocalAccountId: account.localAccountId,
           activeAccount: account,
-          initialChoiceRequired: false,
-          migrationState: 'none',
-          restoreState: 'local_only',
         ),
       );
       _initialized = true;
@@ -83,39 +57,40 @@ class AccountSessionManager extends ChangeNotifier {
           phase: AccountSessionPhase.error,
           activeLocalAccountId: null,
           activeAccount: null,
-          initialChoiceRequired: false,
-          migrationState: 'failed',
-          restoreState: 'failed',
           message: error.toString(),
         ),
       );
     }
   }
 
-  void _setState(AccountSessionState next) {
-    _state = next;
-    onActiveLocalAccountChanged?.call(next.activeLocalAccountId);
-    notifyListeners();
-  }
-
   Future<void> refresh() async {
     final accountId = await _accountStore.activeLocalAccountId();
     final account =
         accountId == null ? null : await _accountStore.getAccount(accountId);
+    if (account == null) {
+      _setState(
+        const AccountSessionState(
+          phase: AccountSessionPhase.error,
+          activeLocalAccountId: null,
+          activeAccount: null,
+          message: 'The local device account could not be restored.',
+        ),
+      );
+      return;
+    }
+
     _setState(
       AccountSessionState(
-        phase: account == null
-            ? AccountSessionPhase.error
-            : AccountSessionPhase.ready,
-        activeLocalAccountId: account?.localAccountId,
+        phase: AccountSessionPhase.ready,
+        activeLocalAccountId: account.localAccountId,
         activeAccount: account,
-        initialChoiceRequired: false,
-        migrationState: 'none',
-        restoreState: 'local_only',
-        message: account == null
-            ? 'The local device account could not be restored.'
-            : null,
       ),
     );
+  }
+
+  void _setState(AccountSessionState next) {
+    _state = next;
+    onActiveLocalAccountChanged?.call(next.activeLocalAccountId);
+    notifyListeners();
   }
 }
