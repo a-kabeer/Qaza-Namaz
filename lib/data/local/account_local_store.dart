@@ -159,7 +159,7 @@ class AccountLocalStore {
         writerDeviceId: device,
         operationId: opId,
       );
-});
+    });
   }
 
   /// Persists a draft locally.
@@ -346,7 +346,7 @@ class AccountLocalStore {
           '${insertedTotal} of ${records.length} records.',
         );
       }
-});
+    });
   }
 
   Future<void> clearProfile(String localAccountId) async {
@@ -410,7 +410,7 @@ class AccountLocalStore {
           Variable(revision.createdAt.microsecondsSinceEpoch),
         ],
       );
-});
+    });
   }
 
   Future<void> _upsertProfilePlanProvenance(
