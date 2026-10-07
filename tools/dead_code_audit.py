@@ -102,8 +102,8 @@ def extract_analyzer_diagnostics(path: Path | None) -> list[str]:
     output = read_text(path)
     diagnostics: list[str] = []
     for line in output.splitlines():
-        parts = line.split("|")
-        if len(parts) >= 3 and parts[2] in DEAD_DIAGNOSTIC_CODES:
+        normalized = line.casefold()
+        if any(f"|{code}|" in normalized for code in DEAD_DIAGNOSTIC_CODES):
             diagnostics.append(line)
     return diagnostics
 
@@ -136,8 +136,6 @@ def main() -> int:
     }
 
     graph: dict[Path, set[Path]] = defaultdict(set)
-    reverse: dict[Path, set[Path]] = defaultdict(set)
-
     for source, text in texts.items():
         for uri in IMPORT_RE.findall(text):
             target = local_target(source, uri)
@@ -145,12 +143,10 @@ def main() -> int:
                 continue
             if target.exists() and target.suffix == ".dart":
                 graph[source].add(target)
-                reverse[target].add(source)
             else:
                 candidate = target.with_suffix(".dart")
                 if candidate.exists():
                     graph[source].add(candidate)
-                    reverse[candidate].add(source)
 
     def reachable_from(root: Path) -> set[Path]:
         seen: set[Path] = set()
