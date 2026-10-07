@@ -35,7 +35,7 @@ class QazaTrackerScreen extends ConsumerWidget {
         ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final l10n = AppLocalizations.of(context);
     final title = state.selectionMode
-        ? '${state.selected.length} selected'
+        ? l10n.qazaSelectedCount(state.selected.length)
         : l10n.qazaTitle;
 
     return PopScope(
@@ -50,7 +50,7 @@ class QazaTrackerScreen extends ConsumerWidget {
         actions: [
           if (!state.selectionMode && state.additionId == null)
             IconButton(
-              tooltip: 'Qaza History',
+              tooltip: l10n.qazaTrackerHistoryTooltip,
               onPressed: () => openQazaAdditionHistory(context),
               icon: const Icon(Icons.history_rounded),
             ),
@@ -103,6 +103,7 @@ class _QazaTrackerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         const SizedBox(height: AppSpacing.sm),
@@ -115,14 +116,14 @@ class _QazaTrackerHeader extends StatelessWidget {
                   child: SegmentedButton<QazaStatusFilter>(
                     key: const Key('qaza_status_switch'),
                     showSelectedIcon: false,
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: QazaStatusFilter.pending,
-                        label: Text('Pending'),
+                        label: Text(l10n.statusPending),
                       ),
                       ButtonSegment(
                         value: QazaStatusFilter.completed,
-                        label: Text('Completed'),
+                        label: Text(l10n.statusCompleted),
                       ),
                     ],
                     selected: {statusFilter},
@@ -185,6 +186,7 @@ class _ProgressHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final content = additionId != null
         ? ref.watch(qazaAdditionDetailProvider(additionId!)).when(
               loading: () => _buildLoading(context),
@@ -196,7 +198,7 @@ class _ProgressHeader extends ConsumerWidget {
                     total == 0 ? 0.0 : detail.completedCount / total;
                 return _buildProgress(
                   context,
-                  label: 'Addition progress',
+                  label: l10n.qazaTrackerAdditionProgress,
                   percentage: percentage,
                   completed: detail.completedCount,
                   pending: detail.pendingCount,
@@ -612,8 +614,8 @@ class _RecordRow extends StatelessWidget {
           '${record.prayerType.localizedLabel(l10n)}, $originalDate, $hijriDate',
       hint: record.status == QazaStatus.pending
           ? (selectionMode
-              ? 'Tap to select or unselect.'
-              : 'Swipe left or right to complete. Long press to select.')
+              ? l10n.qazaTrackerSelectionHint
+              : l10n.qazaTrackerSwipeHint)
           : null,
       child: SizedBox(
         height: _rowHeight,
@@ -752,15 +754,15 @@ class _CompletedTrackerBody extends StatelessWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final count = state.selected.length;
     if (count == 0 || state.recordMutating) return;
 
     final confirmed = await confirmDestructive(
       context,
-      title: 'Mark selected as Pending?',
-      message:
-          '$count completed Qaza records will return to Pending and will no longer count as completed.',
-      confirmLabel: 'Mark as Pending',
+      title: l10n.qazaMarkSelectedPendingTitle,
+      message: l10n.qazaMarkSelectedPendingMessage(count),
+      confirmLabel: l10n.qazaMarkAsPending,
     );
     if (!confirmed || !context.mounted) return;
 
@@ -769,11 +771,11 @@ class _CompletedTrackerBody extends StatelessWidget {
 
     if (changed > 0) {
       ref.read(appSnackbarServiceProvider).success(
-            '$changed Qaza returned to Pending.',
+            l10n.qazaReturnedToPending,
           );
     } else {
       ref.read(appSnackbarServiceProvider).info(
-            'No selected Qaza records were changed.',
+            l10n.qazaSelectedPendingNothingChanged,
           );
     }
   }
@@ -803,10 +805,10 @@ class _CompletedTrackerBody extends StatelessWidget {
                 child: Text(l10n.qazaResetFilters),
               ),
             )
-          : const EmptyState(
-              key: Key('qaza_completed_empty'),
-              title: 'No completed Qaza',
-              message: 'Completed Qaza will appear here.',
+          : EmptyState(
+              key: const Key('qaza_completed_empty'),
+              title: l10n.qazaNoCompletedTitle,
+              message: l10n.qazaNoCompletedMessage,
             );
     }
 
@@ -1036,14 +1038,18 @@ class _CompletedBatchActionBar extends ConsumerWidget {
               TextButton(
                 key: const Key('qaza_completed_clear_selection'),
                 onPressed: busy ? null : onClear,
-                child: const Text('Clear'),
+                child: Text(AppLocalizations.of(context).commonClear),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: FilledButton(
                   key: const Key('qaza_completed_mark_pending'),
                   onPressed: busy ? null : () => onMarkPending(ref),
-                  child: Text('Mark as Pending ($selectedCount)'),
+                  child: Text(
+                    AppLocalizations.of(context).qazaMarkAsPendingCount(
+                      selectedCount,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1064,12 +1070,12 @@ class _CompletedRecordDetails extends ConsumerWidget {
   final QazaTrackerController controller;
 
   Future<void> _markPending(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await confirmDestructive(
       context,
-      title: 'Mark as Pending?',
-      message:
-          'This Qaza will return to Pending and will no longer count as completed.',
-      confirmLabel: 'Mark as Pending',
+      title: l10n.qazaMarkAsPending,
+      message: l10n.qazaMarkAsPendingMessage,
+      confirmLabel: l10n.qazaMarkAsPending,
     );
     if (!confirmed || !context.mounted) return;
 
@@ -1077,14 +1083,14 @@ class _CompletedRecordDetails extends ConsumerWidget {
     if (!context.mounted) return;
     if (!changed) {
       ref.read(appSnackbarServiceProvider).error(
-            'This Qaza could not be corrected because it has changed.',
+            l10n.qazaCorrectionChanged,
           );
       return;
     }
 
     Navigator.of(context).pop();
     ref.read(appSnackbarServiceProvider).success(
-          'Qaza returned to Pending.',
+          l10n.qazaReturnedToPending,
         );
   }
 
@@ -1107,12 +1113,12 @@ class _CompletedRecordDetails extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Qaza Date', style: theme.textTheme.labelMedium),
+          Text(l10n.qazaOriginalDateLabel, style: theme.textTheme.labelMedium),
           Text(DateFormatters.formatGregorianDatePadded(record.originalDate)),
           Text(l10n.formatHijriDate(record.originalDate)),
           const SizedBox(height: 12),
           if (completedAt != null) ...[
-            Text('Completed', style: theme.textTheme.labelMedium),
+            Text(l10n.statusCompleted, style: theme.textTheme.labelMedium),
             Text(
               '${DateFormatters.formatGregorianDatePadded(completedAt)} · ${DateFormatters.formatClockTime(completedAt)}',
             ),
@@ -1122,7 +1128,7 @@ class _CompletedRecordDetails extends ConsumerWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: () => _markPending(context, ref),
-              child: const Text('Mark as Pending'),
+              child: Text(l10n.qazaMarkAsPending),
             ),
           ),
         ],
@@ -1285,8 +1291,8 @@ class _FilterSheet extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             state.statusFilter == QazaStatusFilter.completed
-                ? 'Completed Date'
-                : 'Qaza Date',
+                ? l10n.qazaCompletedDateLabel
+                : l10n.qazaOriginalDateLabel,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),

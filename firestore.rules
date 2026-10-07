@@ -89,6 +89,55 @@ service cloud.firestore {
         );
     }
 
+
+
+    function isValidQazaRecord(uid, recordId) {
+      return request.resource.data.payload is map
+        && request.resource.data.payload.keys().hasAll([
+          'id', 'userId', 'prayerType', 'status', 'originalDate',
+          'updatedAt', 'createdAt', 'recordVersion'
+        ])
+        && request.resource.data.payload.keys().hasOnly([
+          'id', 'userId', 'prayerType', 'status', 'originalDate',
+          'updatedAt', 'createdAt', 'recordVersion', 'completedAt',
+          'completionId', 'additionId', 'profilePlanRevisionId',
+          'profilePlanFingerprint'
+        ])
+        && request.resource.data.payload.id is string
+        && request.resource.data.payload.id == recordId
+        && request.resource.data.payload.userId is string
+        && request.resource.data.payload.userId == uid
+        && request.resource.data.payload.prayerType in [
+          'fajr', 'zuhr', 'asr', 'maghrib', 'isha', 'witr'
+        ]
+        && request.resource.data.payload.status in ['pending', 'completed']
+        && request.resource.data.payload.originalDate is timestamp
+        && request.resource.data.payload.createdAt is timestamp
+        && request.resource.data.payload.updatedAt is timestamp
+        && request.resource.data.payload.recordVersion is int
+        && request.resource.data.payload.recordVersion >= 1
+        && (
+          request.resource.data.payload.completedAt == null
+          || request.resource.data.payload.completedAt is timestamp
+        )
+        && (
+          request.resource.data.payload.completionId == null
+          || request.resource.data.payload.completionId is string
+        )
+        && (
+          request.resource.data.payload.additionId == null
+          || request.resource.data.payload.additionId is string
+        )
+        && (
+          request.resource.data.payload.profilePlanRevisionId == null
+          || request.resource.data.payload.profilePlanRevisionId is string
+        )
+        && (
+          request.resource.data.payload.profilePlanFingerprint == null
+          || request.resource.data.payload.profilePlanFingerprint is string
+        );
+    }
+
     function authorizedRecordDelete(uid, recordId) {
       return writableDataset(uid)
         && exists(
@@ -158,7 +207,7 @@ service cloud.firestore {
         allow read: if signedIn(uid);
         allow create, update: if writableDataset(uid)
           && validMetadata(uid)
-          && request.resource.data.payload.id == recordId;
+          && isValidQazaRecord(uid, recordId);
         allow delete: if deletingDataset(uid) || authorizedRecordDelete(uid, recordId);
       }
 

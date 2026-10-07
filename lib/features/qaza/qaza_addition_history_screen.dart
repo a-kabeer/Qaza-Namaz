@@ -183,24 +183,25 @@ class QazaAdditionHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(qazaAdditionHistoryControllerProvider);
     final controller = ref.read(qazaAdditionHistoryControllerProvider.notifier);
+    final l10n = AppLocalizations.of(context);
     return AppScaffold(
-      title: 'Qaza History',
+      title: l10n.qazaHistoryTitle,
       body: SafeArea(
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: SegmentedButton<QazaAdditionHistoryTab>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: QazaAdditionHistoryTab.recent,
-                    label: Text('Recent Additions'),
-                    icon: Icon(Icons.playlist_add_rounded),
+                    label: Text(l10n.qazaHistoryRecentAdditions),
+                    icon: const Icon(Icons.playlist_add_rounded),
                   ),
                   ButtonSegment(
                     value: QazaAdditionHistoryTab.deleted,
-                    label: Text('Recently Deleted'),
-                    icon: Icon(Icons.delete_sweep_rounded),
+                    label: Text(l10n.qazaHistoryRecentlyDeleted),
+                    icon: const Icon(Icons.delete_sweep_rounded),
                   ),
                 ],
                 selected: {state.tab},
@@ -240,11 +241,12 @@ class _RecentAdditions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (state.additions.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 120),
-          Center(child: Text('No Qaza additions yet.')),
+        children: [
+          const SizedBox(height: 120),
+          Center(child: Text(l10n.qazaHistoryNoAdditions)),
         ],
       );
     }
@@ -257,7 +259,7 @@ class _RecentAdditions extends StatelessWidget {
           return Center(
             child: FilledButton.tonal(
               onPressed: state.loadingMore ? null : controller.loadMore,
-              child: const Text('Load more'),
+              child: Text(l10n.qazaHistoryLoadMore),
             ),
           );
         }
@@ -606,11 +608,12 @@ class _DeletedActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     if (state.deleted.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 120),
-          Center(child: Text('No recently deleted Qaza.')),
+        children: [
+          const SizedBox(height: 120),
+          Center(child: Text(l10n.qazaHistoryNoRecentlyDeleted)),
         ],
       );
     }
@@ -622,13 +625,13 @@ class _DeletedActions extends ConsumerWidget {
           return Center(
             child: FilledButton.tonal(
               onPressed: state.loadingMore ? null : controller.loadMore,
-              child: const Text('Load more'),
+              child: Text(l10n.qazaHistoryLoadMore),
             ),
           );
         }
         final item = state.deleted[index];
         final dateText = item.firstOriginalDate == null
-            ? 'Original date unavailable'
+            ? l10n.qazaHistoryOriginalDateUnavailable
             : item.firstOriginalDate == item.lastOriginalDate
                 ? _date(context, item.firstOriginalDate!)
                 : '${_date(context, item.firstOriginalDate!)} – '
@@ -639,9 +642,9 @@ class _DeletedActions extends ConsumerWidget {
             leading: const CircleAvatar(
               child: Icon(Icons.delete_outline_rounded),
             ),
-            title: const Text('Deleted Qaza'),
+            title: Text(l10n.qazaHistoryDeletedQaza),
             subtitle: Text(
-              '$dateText\n${item.deletedCount} Qaza deleted',
+              dateText + '\n' + l10n.qazaHistoryDeletedQazaCount(item.deletedCount),
             ),
             isThreeLine: true,
             onTap: () => openQazaAdditionDetail(context, item.additionId),
@@ -652,16 +655,18 @@ class _DeletedActions extends ConsumerWidget {
                   if (!context.mounted) return;
                   ref.read(appSnackbarServiceProvider).success(
                         result.conflictCount == 0
-                            ? '${result.restoredCount} Qaza restored'
-                            : '${result.restoredCount} restored, '
-                                '${result.conflictCount} skipped',
+                            ? l10n.qazaHistoryRestoreSuccess(result.restoredCount)
+                            : l10n.qazaHistoryRestoreConflict(
+                                result.restoredCount,
+                                result.conflictCount,
+                              ),
                       );
                 } catch (error) {
                   if (!context.mounted) return;
                   ref.read(appSnackbarServiceProvider).error(error.toString());
                 }
               },
-              child: const Text('Restore'),
+              child: Text(l10n.qazaHistoryRestore),
             ),
           ),
         );

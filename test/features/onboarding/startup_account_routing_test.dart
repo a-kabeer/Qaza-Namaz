@@ -33,6 +33,7 @@ class _NoopFirebaseServices extends FirebaseServices {
     initializeCalls++;
     return false;
   }
+
 }
 
 class _ControlledFirebaseServices extends FirebaseServices {
@@ -125,13 +126,18 @@ ProviderContainer _container({
   required AccountSessionManager manager,
   required AppDatabase database,
   UserProfile? profile,
+  Object? profileError,
 }) {
   return ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(database),
       accountSessionManagerProvider.overrideWith((ref) => manager),
       activeUserIdProvider.overrideWith((ref) => manager.activeLocalAccountId),
-      userProfileProvider.overrideWith((ref) async => profile),
+      userProfileProvider.overrideWith(
+        (ref) => profileError == null
+            ? Future<UserProfile?>.value(profile)
+            : Future<UserProfile?>.error(profileError, StackTrace.current),
+      ),
     ],
   );
 }
@@ -140,6 +146,29 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
+
+  testWidgets(
+    'profile provider errors show a retryable storage boundary instead of onboarding',
+    (tester) async {
+      final (database, manager) = await _newManager(google: true);
+      await manager.initialize();
+
+      final container = _container(
+        manager: manager,
+        database: database,
+        profileError: StateError('profile read failed'),
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_startupApp(container));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(StartupProfileLoadErrorBoundary), findsOneWidget);
+      expect(find.byType(LanguageSelectionScreen), findsNothing);
+    },
+  );
 
   testWidgets(
     'StartupGate does not initialize the session from build',

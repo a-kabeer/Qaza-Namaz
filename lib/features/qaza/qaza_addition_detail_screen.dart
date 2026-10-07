@@ -26,21 +26,25 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncDetail = ref.watch(qazaAdditionDetailProvider(additionId));
+    final l10n = AppLocalizations.of(context);
     return AppScaffold(
-      title: 'Qaza Addition',
+      title: l10n.qazaAdditionTitle,
       body: asyncDetail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
+        error: (_, __) {
+          return Center(
+            child: Text(l10n.homeProgressError),
+          );
+        },
         data: (detail) {
           if (detail == null) {
-            return const Center(
-              child: Text('This Qaza addition could not be found.'),
+            return Center(
+              child: Text(l10n.qazaAdditionNotFound),
             );
           }
 
           final addition = detail.addition;
           final snapshot = addition.currentInputSnapshot;
-          final l10n = AppLocalizations.of(context);
           final theme = Theme.of(context);
           final orderedPrayers = _orderedPrayers(snapshot.selectedPrayers);
           final dateCount = _dateCount(snapshot);
@@ -57,13 +61,13 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                     children: [
                       Semantics(
                         header: true,
-                        label: '${detail.activeCount} Records',
+                        label: l10n.qazaAdditionRecordsCount(detail.activeCount),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Text(
-                                '${detail.activeCount} Records',
+                                l10n.qazaAdditionRecordsCount(detail.activeCount),
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -116,7 +120,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       if (orderedPrayers.isEmpty)
                         Text(
-                          'No prayers',
+                          l10n.qazaAdditionNoPrayers,
                           style: theme.textTheme.bodyMedium,
                         )
                       else
@@ -137,7 +141,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       if (requestedSlots > 0) ...[
                         const SizedBox(height: 12),
                         Text(
-                          '$requestedSlots requested slots',
+                          l10n.qazaRequestedSlots(requestedSlots),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -178,14 +182,14 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.view_list_rounded),
-                      label: const Text('View Records'),
+                      label: Text(l10n.qazaAdditionViewRecords),
                     ),
                   ),
                   if (!detail.isDeleted && detail.pendingCount > 0) ...[
                     const SizedBox(width: 8),
                     PopupMenuButton<_AdditionAction>(
                       key: const Key('qaza-addition-more-actions'),
-                      tooltip: 'More actions',
+                      tooltip: l10n.qazaAdditionMoreActions,
                       onSelected: (action) {
                         switch (action) {
                           case _AdditionAction.edit:
@@ -195,12 +199,12 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem<_AdditionAction>(
+                        PopupMenuItem<_AdditionAction>(
                           value: _AdditionAction.edit,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: Icon(Icons.edit_rounded),
-                            title: Text('Edit Addition'),
+                            leading: const Icon(Icons.edit_rounded),
+                            title: Text(l10n.qazaAdditionEdit),
                           ),
                         ),
                         PopupMenuItem<_AdditionAction>(
@@ -211,7 +215,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                               Icons.delete_outline_rounded,
                               color: Theme.of(context).colorScheme.error,
                             ),
-                            title: const Text('Delete Addition'),
+                            title: Text(l10n.qazaAdditionDelete),
                           ),
                         ),
                       ],
@@ -248,12 +252,12 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String id,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await confirmDestructive(
       context,
-      title: 'Delete this Qaza addition?',
-      message:
-          'Only unchanged pending records will be removed. Completed or modified records are protected and remain active.',
-      confirmLabel: 'Delete',
+      title: l10n.qazaAdditionDeleteConfirmTitle,
+      message: l10n.qazaAdditionDeleteConfirmMessage,
+      confirmLabel: l10n.commonDelete,
     );
     if (!confirmed || !context.mounted) return;
 
@@ -270,14 +274,14 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
 
       if (!result.createdAction) {
         ref.read(appSnackbarServiceProvider).info(
-              'Nothing eligible was deleted. Protected records remain.',
+              l10n.qazaAdditionDeletedNothing,
             );
         return;
       }
 
       ref.read(appSnackbarServiceProvider).undo(
-            message: '${result.deletedCount} Qaza deleted',
-            actionLabel: 'Undo',
+            message: l10n.qazaAdditionDeletedCount(result.deletedCount),
+            actionLabel: l10n.qazaUndoAction,
             onUndo: () {
               unawaited(_restore(
                 context,
@@ -297,6 +301,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String actionId,
   ) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final result =
           await ref.read(qazaAdditionRepositoryProvider).restoreDeletionAction(
@@ -309,9 +314,11 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
       if (!context.mounted) return;
       ref.read(appSnackbarServiceProvider).success(
             result.conflictCount == 0
-                ? '${result.restoredCount} Qaza restored'
-                : '${result.restoredCount} restored; '
-                    '${result.conflictCount} skipped due to conflict',
+                ? l10n.qazaAdditionRestoredCount(result.restoredCount)
+                : l10n.qazaHistoryRestoreConflict(
+                    result.restoredCount,
+                    result.conflictCount,
+                  ),
           );
     } catch (error) {
       if (!context.mounted) return;

@@ -1174,5 +1174,158 @@
   "accountBackupStatusCloudStateInvalid": "Cloud backup state changed. Try again.",
   "accountBackupStatusFailedAutomaticRetry": "We'll try again automatically.",
   "accountBackupStatusRetry": "Try again",
-  "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically."
+  "accountBackupStatusFailed": "Backup couldn’t complete. We’ll try again automatically.",
+  "startupProfileLoadErrorTitle": "Could not load your local profile",
+  "startupProfileLoadErrorMessage": "Your local storage could not be read safely. Your existing Qaza data has not been replaced. Please try again.",
+  "qazaHistoryTitle": "Qaza History",
+  "qazaHistoryRecentAdditions": "Recent Additions",
+  "qazaHistoryRecentlyDeleted": "Recently Deleted",
+  "qazaHistoryNoAdditions": "No Qaza additions yet.",
+  "qazaHistoryNoRecentlyDeleted": "No recently deleted Qaza.",
+  "qazaHistoryLoadMore": "Load more",
+  "qazaHistoryOriginalDateUnavailable": "Original date unavailable",
+  "qazaHistoryDeletedQaza": "Deleted Qaza",
+  "qazaHistoryDeletedQazaCount": "{count} Qaza deleted",
+  "@qazaHistoryDeletedQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryRestore": "Restore",
+  "qazaHistoryRestoreSuccess": "{count} Qaza restored",
+  "@qazaHistoryRestoreSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryRestoreConflict": "{restored} restored, {skipped} skipped",
+  "@qazaHistoryRestoreConflict": {
+    "placeholders": {
+      "restored": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionTitle": "Qaza Addition",
+  "qazaAdditionNotFound": "This Qaza addition could not be found.",
+  "qazaAdditionRecordsCount": "{count} Records",
+  "@qazaAdditionRecordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionNoPrayers": "No prayers",
+  "qazaAdditionViewRecords": "View Records",
+  "qazaAdditionMoreActions": "More actions",
+  "qazaAdditionEdit": "Edit Addition",
+  "qazaAdditionDelete": "Delete Addition",
+  "qazaAdditionDeleteConfirmTitle": "Delete this Qaza addition?",
+  "qazaAdditionDeleteConfirmMessage": "Only unchanged pending records will be removed. Completed or modified records are protected and remain active.",
+  "qazaAdditionDeletedNothing": "Nothing eligible was deleted. Protected records remain.",
+  "qazaAdditionDeletedCount": "{count} Qaza deleted",
+  "@qazaAdditionDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionRestoredCount": "{count} Qaza restored",
+  "@qazaAdditionRestoredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaTrackerHistoryTooltip": "Qaza History",
+  "qazaTrackerAdditionProgress": "Addition progress",
+  "qazaTrackerSelectionHint": "Tap to select or unselect.",
+  "qazaTrackerSwipeHint": "Swipe left or right to complete. Long press to select.",
+  "qazaMarkSelectedPendingTitle": "Mark selected as Pending?",
+  "qazaMarkSelectedPendingMessage": "{count} completed Qaza records will return to Pending and will no longer count as completed.",
+  "@qazaMarkSelectedPendingMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaMarkAsPending": "Mark as Pending",
+  "qazaMarkAsPendingCount": "Mark as Pending ({count})",
+  "@qazaMarkAsPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaNoCompletedTitle": "No completed Qaza",
+  "qazaNoCompletedMessage": "Completed Qaza will appear here.",
+  "qazaReturnedToPending": "Qaza returned to Pending.",
+  "qazaSelectedPendingNothingChanged": "No selected Qaza records were changed.",
+  "qazaCorrectionChanged": "This Qaza could not be corrected because it has changed.",
+  "qazaFilter": "Filter",
+  "qazaFiltersActive": "Filters active",
+  "qazaOriginalDateLabel": "Qaza Date",
+  "qazaCompletedDateLabel": "Completed Date",
+  "qazaFilterCompletedDateHelp": "Filter by completion date",
+  "qazaUndoCompletions": "Undo completions",
+  "qazaUndoSelected": "Undo Selected",
+  "qazaUndoAll": "Undo All",
+  "qazaUndoQazaCount": "{count} Qaza",
+  "@qazaUndoQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addQazaManageAddition": "Manage this addition",
+  "qazaCompletionSingle": "{prayer} Qaza for {date} completed.",
+  "@qazaCompletionSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaCompletionMultiple": "{count} Qaza completed.",
+  "@qazaCompletionMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoSingle": "{prayer} Qaza for {date} restored.",
+  "@qazaUndoSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaUndoMultiple": "{count} Qaza restored.",
+  "@qazaUndoMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoExpired": "Undo is no longer available because the 5-second window has ended.",
+  "qazaUndoStaleBatch": "Undo is no longer available because a newer Undo action replaced it.",
+  "qazaUndoTargetChanged": "Undo is no longer available because the Qaza record changed or was removed.",
+  "qazaUndoFailed": "Undo could not be completed. Please try again.",
+  "qazaMarkAsPendingMessage": "This Qaza will return to Pending and will no longer count as completed.",
+  "commonDelete": "Delete",
+  "qazaRequestedSlots": "{count} requested slots",
+  "@qazaRequestedSlots": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaAdditionUpdated": "Qaza addition updated",
+  "qazaSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
+  "@qazaSelectedCount": {
+    "placeholders": {"count": {"type": "int"}}
+  }
 }

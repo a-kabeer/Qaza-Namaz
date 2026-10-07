@@ -787,5 +787,158 @@
   "accountBackupStatusCloudStateInvalid": "کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔",
   "accountBackupStatusFailedAutomaticRetry": "ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
   "accountBackupStatusRetry": "دوبارہ کوشش کریں",
-  "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔"
+  "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
+  "startupProfileLoadErrorTitle": "مقامی پروفائل لوڈ نہیں ہو سکا",
+  "startupProfileLoadErrorMessage": "آپ کی مقامی اسٹوریج کو محفوظ طریقے سے پڑھا نہیں جا سکا۔ آپ کا موجودہ قضا ڈیٹا تبدیل نہیں کیا گیا۔ دوبارہ کوشش کریں۔",
+  "qazaHistoryTitle": "قضا کی تاریخ",
+  "qazaHistoryRecentAdditions": "حالیہ اضافے",
+  "qazaHistoryRecentlyDeleted": "حال ہی میں حذف شدہ",
+  "qazaHistoryNoAdditions": "ابھی کوئی قضا اضافہ موجود نہیں۔",
+  "qazaHistoryNoRecentlyDeleted": "حال ہی میں حذف شدہ کوئی قضا نہیں۔",
+  "qazaHistoryLoadMore": "مزید لوڈ کریں",
+  "qazaHistoryOriginalDateUnavailable": "اصل تاریخ دستیاب نہیں",
+  "qazaHistoryDeletedQaza": "حذف شدہ قضا",
+  "qazaHistoryDeletedQazaCount": "{count} قضا حذف ہوئیں",
+  "@qazaHistoryDeletedQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryRestore": "بحال کریں",
+  "qazaHistoryRestoreSuccess": "{count} قضا بحال ہوئیں",
+  "@qazaHistoryRestoreSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryRestoreConflict": "{restored} بحال ہوئیں، {skipped} چھوڑ دی گئیں",
+  "@qazaHistoryRestoreConflict": {
+    "placeholders": {
+      "restored": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionTitle": "قضا اضافہ",
+  "qazaAdditionNotFound": "یہ قضا اضافہ نہیں مل سکا۔",
+  "qazaAdditionRecordsCount": "{count} ریکارڈز",
+  "@qazaAdditionRecordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionNoPrayers": "کوئی نماز نہیں",
+  "qazaAdditionViewRecords": "ریکارڈز دیکھیں",
+  "qazaAdditionMoreActions": "مزید اقدامات",
+  "qazaAdditionEdit": "اضافے میں ترمیم",
+  "qazaAdditionDelete": "اضافہ حذف کریں",
+  "qazaAdditionDeleteConfirmTitle": "یہ قضا اضافہ حذف کریں؟",
+  "qazaAdditionDeleteConfirmMessage": "صرف غیر تبدیل شدہ زیرِ التوا ریکارڈز حذف ہوں گے۔ مکمل یا تبدیل شدہ ریکارڈز محفوظ رہیں گے۔",
+  "qazaAdditionDeletedNothing": "حذف کرنے کے لیے کوئی اہل ریکارڈ نہیں ملا۔ محفوظ ریکارڈز برقرار ہیں۔",
+  "qazaAdditionDeletedCount": "{count} قضا حذف ہوئیں",
+  "@qazaAdditionDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionRestoredCount": "{count} قضا بحال ہوئیں",
+  "@qazaAdditionRestoredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaTrackerHistoryTooltip": "قضا کی تاریخ",
+  "qazaTrackerAdditionProgress": "قضا اضافے کی پیش رفت",
+  "qazaTrackerSelectionHint": "منتخب یا غیر منتخب کرنے کے لیے ٹچ کریں۔",
+  "qazaTrackerSwipeHint": "مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔",
+  "qazaMarkSelectedPendingTitle": "منتخب قضا کو زیرِ التوا کریں؟",
+  "qazaMarkSelectedPendingMessage": "{count} مکمل قضا دوبارہ زیرِ التوا ہو جائیں گی اور مکمل شدہ شمار نہیں ہوں گی۔",
+  "@qazaMarkSelectedPendingMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaMarkAsPending": "زیرِ التوا کریں",
+  "qazaMarkAsPendingCount": "زیرِ التوا کریں ({count})",
+  "@qazaMarkAsPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaNoCompletedTitle": "کوئی مکمل قضا نہیں",
+  "qazaNoCompletedMessage": "مکمل قضا یہاں دکھائی دیں گی۔",
+  "qazaReturnedToPending": "قضا دوبارہ زیرِ التوا ہو گئی۔",
+  "qazaSelectedPendingNothingChanged": "منتخب قضا میں کوئی تبدیلی نہیں ہوئی۔",
+  "qazaCorrectionChanged": "یہ قضا درست نہیں کی جا سکی کیونکہ یہ تبدیل ہو گئی ہے۔",
+  "qazaFilter": "فلٹر",
+  "qazaFiltersActive": "فلٹر فعال ہیں",
+  "qazaOriginalDateLabel": "قضا کی تاریخ",
+  "qazaCompletedDateLabel": "مکمل ہونے کی تاریخ",
+  "qazaFilterCompletedDateHelp": "مکمل ہونے کی تاریخ کے مطابق فلٹر کریں",
+  "qazaUndoCompletions": "مکمل قضا واپس کریں",
+  "qazaUndoSelected": "منتخب واپس کریں",
+  "qazaUndoAll": "سب واپس کریں",
+  "qazaUndoQazaCount": "{count} قضا",
+  "@qazaUndoQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addQazaManageAddition": "اس اضافے کو منظم کریں",
+  "qazaCompletionSingle": "{prayer} کی قضا، {date} مکمل ہو گئی۔",
+  "@qazaCompletionSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaCompletionMultiple": "{count} قضا نمازیں مکمل ہو گئیں۔",
+  "@qazaCompletionMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoSingle": "{prayer} کی قضا، {date} دوبارہ باقی میں شامل ہو گئی۔",
+  "@qazaUndoSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaUndoMultiple": "{count} قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔",
+  "@qazaUndoMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoExpired": "واپس کرنے کا 5 سیکنڈ کا وقت ختم ہو گیا۔",
+  "qazaUndoStaleBatch": "واپس کرنے کا یہ اختیار اب دستیاب نہیں کیونکہ اس کے بعد ایک نیا Undo عمل ہوا ہے۔",
+  "qazaUndoTargetChanged": "واپس کرنے کا اختیار دستیاب نہیں کیونکہ قضا ریکارڈ بدل چکا یا حذف ہو چکا ہے۔",
+  "qazaUndoFailed": "قضا واپس نہیں ہو سکی۔ براہِ کرم دوبارہ کوشش کریں۔",
+  "qazaMarkAsPendingMessage": "یہ قضا دوبارہ زیرِ التوا ہو جائے گی اور مکمل شدہ شمار نہیں ہوگی۔",
+  "commonDelete": "حذف کریں",
+  "qazaRequestedSlots": "{count} مطلوبہ جگہیں",
+  "@qazaRequestedSlots": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا",
+  "qazaSelectedCount": "{count, plural, =1{1 منتخب} other{{count} منتخب}}",
+  "@qazaSelectedCount": {
+    "placeholders": {"count": {"type": "int"}}
+  }
 }

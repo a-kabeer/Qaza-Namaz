@@ -767,7 +767,7 @@ class FirebaseBackupService {
           _VersionedWrite(
             ref: _firebase.firestore.collection('users').doc(uid)
                 .collection('qazaRecords').doc(record.id),
-            payload: _qazaRecordPayload(record),
+            payload: _qazaRecordPayload(record, uid),
             version: metadata[record.id] ??
                 VersionedEntity(
                   entityVersion: record.recordVersion,
@@ -822,6 +822,7 @@ class FirebaseBackupService {
               .collection('qazaRecords').doc(row.read<String>('id')),
           payload: {
             'id': row.read<String>('id'),
+            'userId': uid,
             'prayerType': row.read<String>('prayer_type'),
             'originalDate': _microsToDate(
               row.read<int>('original_date'),
@@ -1465,8 +1466,9 @@ class FirebaseBackupService {
     });
   }
 
-  Map<String, dynamic> _qazaRecordPayload(QazaRecord record) => {
+  Map<String, dynamic> _qazaRecordPayload(QazaRecord record, String uid) => {
         'id': record.id,
+        'userId': uid,
         'prayerType': record.prayerType.name,
         'originalDate': record.originalDate,
         'status': record.status.name,

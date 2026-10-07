@@ -186,6 +186,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   Future<AddQazaAnalysis?> _finalValidateAndStart() async {
+    final l10n = AppLocalizations.of(context);
     final controller = ref.read(addQazaControllerProvider.notifier);
 
     try {
@@ -231,6 +232,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   Future<void> _showImportProgress() async {
+    final l10n = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -254,7 +256,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               Icons.check_circle_outline_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text('Qaza addition updated'),
+            title: Text(l10n.qazaAdditionUpdated),
             content: Text(
               '${result.added} added • ${result.removed} removed • '
               '${result.protected} protected',
@@ -312,7 +314,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
                         result.additionId!,
                       );
                     },
-              child: const Text('Manage this addition'),
+              child: Text(l10n.addQazaManageAddition),
             ),
             FilledButton(
               onPressed: () {

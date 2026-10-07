@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
+import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
@@ -47,17 +48,43 @@ Future<void> main() async {
     LocalDateService.configureLocalTimezone(timezone.identifier);
   });
 
-  await _step('database', () async {
-    final database = AppDatabase();
-    try {
-      await bootstrapQazaDatabase(
-        database: database,
-        preferences: await SharedPreferences.getInstance(),
-      );
-    } finally {
-      await database.close();
-    }
-  });
+  try {
+    await _initializeDatabase();
+  } catch (error, stack) {
+    diagnostics.recordFailure(
+      DiagnosticArea.databaseMigration,
+      'database_initialization_failed',
+      error,
+      stack: stack,
+      fatal: true,
+    );
+    runApp(
+      FatalDatabaseErrorApp(
+        error: error,
+        onRetry: () async {
+          try {
+            await _initializeDatabase();
+            await _step('profile_migration', () async {
+              await const UserProfileMigration().migrateLegacyProfileData(
+                preferences: await SharedPreferences.getInstance(),
+              );
+            });
+            runApp(const ProviderScope(child: QazaNamazApp()));
+          } catch (retryError, retryStack) {
+            diagnostics.recordFailure(
+              DiagnosticArea.databaseMigration,
+              'database_retry_failed',
+              retryError,
+              stack: retryStack,
+              fatal: true,
+            );
+            Error.throwWithStackTrace(retryError, retryStack);
+          }
+        },
+      ),
+    );
+    return;
+  }
 
   await _step('profile_migration', () async {
     await const UserProfileMigration().migrateLegacyProfileData(
@@ -66,6 +93,21 @@ Future<void> main() async {
   });
 
   runApp(const ProviderScope(child: QazaNamazApp()));
+}
+
+Future<void> _initializeDatabase() async {
+  final database = AppDatabase();
+  try {
+    // Awaiting the bootstrap forces the LazyDatabase executor to open the
+    // sqlite3mc-backed encrypted connection, decrypt with the secure key, and
+    // complete all Drift migrations inside this explicit safety boundary.
+    await bootstrapQazaDatabase(
+      database: database,
+      preferences: await SharedPreferences.getInstance(),
+    );
+  } finally {
+    await database.close();
+  }
 }
 
 Future<void> _step(String name, Future<void> Function() body) async {
