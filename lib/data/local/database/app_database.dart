@@ -51,12 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 13 adds per-entity backup progress markers so normal
-  /// Google backups only transmit changed Qaza entities.
-  /// Schema version 12 adds versioning to deletion actions.
-  /// Schema version 11 adds account/session and cloud-backup infrastructure.
-  /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
-  /// Existing pending/completed records and completion markers are preserved.
+  /// Schema version 17 is the current local-only database schema.
+  /// Qaza records, additions, profile data, and completion markers are stored
+  /// exclusively in the local encrypted SQLite database.
   @override
   int get schemaVersion => 17;
 
@@ -68,7 +65,6 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
-          await _ensureMigrationSnapshotSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -115,105 +111,39 @@ class AppDatabase extends _$AppDatabase {
           if (from < 12) {
             await _ensureDeletionActionVersionColumn();
           }
-          if (from < 13) {
-            await _ensureEntityMetadataSyncColumn();
-          }
           if (from < 11) {
             await _ensureAccountSchema();
           }
-          if (from < 17) {
-            await _ensureAccountSessionModeColumn();
-          }
           await _ensurePerformanceIndexes();
-          await _ensureMigrationSnapshotSchema();
         },
       );
 
-
-  Future<void> _ensureMigrationSnapshotSchema() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
-        migration_id TEXT NOT NULL,
-        local_account_id TEXT NOT NULL,
-        snapshot_json TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        PRIMARY KEY (migration_id, local_account_id)
-      )
-    ''');
-    final columns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('migration_snapshot_id')) {
-      await customStatement(
-        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
-      );
-    }
-  }
-
-  Future<void> _ensureAccountSessionModeColumn() async {
-    final columns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('account_session_mode')) {
-      await customStatement(
-        "ALTER TABLE app_session_state ADD COLUMN account_session_mode TEXT NOT NULL DEFAULT 'none'",
-      );
-    }
-  }
 
   Future<void> _ensureAccountSchema() async {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS local_accounts (
         local_account_id TEXT NOT NULL PRIMARY KEY,
-        account_mode TEXT NOT NULL,
-        firebase_uid TEXT,
-        google_email TEXT,
-        lifecycle_state TEXT NOT NULL,
-        cloud_backup_enabled INTEGER NOT NULL DEFAULT 0,
-        cloud_generation INTEGER NOT NULL DEFAULT 1,
+        account_mode TEXT NOT NULL DEFAULT 'local',
+        lifecycle_state TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
     ''');
-    await customStatement(
-      'CREATE UNIQUE INDEX IF NOT EXISTS local_accounts_uid_idx '
-      'ON local_accounts (firebase_uid) WHERE firebase_uid IS NOT NULL',
-    );
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS app_session_state (
         id INTEGER NOT NULL PRIMARY KEY,
-        active_local_account_id TEXT,
-        initial_choice_required INTEGER NOT NULL DEFAULT 0,
-        migration_state TEXT NOT NULL DEFAULT 'none',
-        restore_state TEXT NOT NULL DEFAULT 'none',
-        account_session_mode TEXT NOT NULL DEFAULT 'none',
-        migration_snapshot_id TEXT
+        active_local_account_id TEXT
       )
     ''');
-    final sessionColumns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final sessionColumnNames =
-        sessionColumns.map((row) => row.read<String>('name')).toSet();
-    if (!sessionColumnNames.contains('migration_snapshot_id')) {
-      await customStatement(
-        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
-      );
-    }
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS device_metadata (
         id INTEGER NOT NULL PRIMARY KEY,
         device_instance_id TEXT NOT NULL
       )
     ''');
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
-        migration_id TEXT NOT NULL,
-        local_account_id TEXT NOT NULL,
-        snapshot_json TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        PRIMARY KEY (migration_id, local_account_id)
-      )
-    ''');
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_profiles (
         local_account_id TEXT NOT NULL PRIMARY KEY,
@@ -224,6 +154,7 @@ class AppDatabase extends _$AppDatabase {
         operation_id TEXT NOT NULL
       )
     ''');
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_plan_revisions (
         local_account_id TEXT NOT NULL,
@@ -233,58 +164,6 @@ class AppDatabase extends _$AppDatabase {
         PRIMARY KEY (local_account_id, revision_id)
       )
     ''');
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS entity_metadata (
-        local_account_id TEXT NOT NULL,
-        entity_type TEXT NOT NULL,
-        entity_id TEXT NOT NULL,
-        entity_version INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        writer_device_id TEXT NOT NULL,
-        operation_id TEXT NOT NULL,
-        synced_entity_version INTEGER NOT NULL DEFAULT 0,
-        PRIMARY KEY (local_account_id, entity_type, entity_id)
-      )
-    ''');
-    await _ensureEntityMetadataSyncColumn();
-    await customStatement(
-      '''INSERT OR IGNORE INTO entity_metadata
-         (local_account_id, entity_type, entity_id, entity_version,
-          updated_at, writer_device_id, operation_id, synced_entity_version)
-         SELECT r.user_id, 'qazaRecord', r.id, r.record_version,
-                r.updated_at,
-                COALESCE(
-                  (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-                  'unknown_device'
-                ),
-                'backfill_' || r.id,
-                0
-         FROM qaza_records r''',
-    );
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS qaza_record_tombstones (
-        local_account_id TEXT NOT NULL,
-        record_id TEXT NOT NULL,
-        record_version INTEGER NOT NULL,
-        deleted_at INTEGER NOT NULL,
-        writer_device_id TEXT NOT NULL,
-        operation_id TEXT NOT NULL,
-        cloud_generation INTEGER NOT NULL,
-        PRIMARY KEY (local_account_id, record_id)
-      )
-    ''');
-    await customStatement(
-      '''INSERT OR IGNORE INTO entity_metadata
-         (local_account_id, entity_type, entity_id, entity_version,
-          updated_at, writer_device_id, operation_id, synced_entity_version)
-         SELECT t.local_account_id, 'qazaRecord', t.record_id, t.record_version,
-                t.deleted_at,
-                t.writer_device_id,
-                t.operation_id,
-                0
-         FROM qaza_record_tombstones t''',
-    );
-
   }
 
   Future<void> _removeLegacyQazaHistorySchema() async {
@@ -389,20 +268,6 @@ class AppDatabase extends _$AppDatabase {
         plan_fingerprint TEXT NOT NULL
       )
     ''');
-  }
-
-  Future<void> _ensureEntityMetadataSyncColumn() async {
-    final columns =
-        await customSelect('PRAGMA table_info(entity_metadata)').get();
-    final exists = columns.any(
-      (row) => row.read<String>('name') == 'synced_entity_version',
-    );
-    if (!exists) {
-      await customStatement(
-        'ALTER TABLE entity_metadata '
-        'ADD COLUMN synced_entity_version INTEGER NOT NULL DEFAULT 0',
-      );
-    }
   }
 
   Future<void> _ensureDeletionActionVersionColumn() async {
