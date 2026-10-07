@@ -1,41 +1,92 @@
 # Platform Setup
 
-This package contains the Dart/Flutter application source and project configuration.
+## Android
 
-After extracting it, run:
+The current Android application ID and namespace are:
 
-~~~bash
-flutter create .
+`com.qaza_namaz.com`
+
+The production baseline is:
+
+- compileSdk 36
+- targetSdk 36
+- NDK 28.2.13676358
+- Java 17
+- Flutter 3.47.4 in CI
+
+Do not change the NDK version as part of routine maintenance; it is part of the verified build baseline.
+
+## Firebase project
+
+The Android app uses Firebase project:
+
+`qaza-nmz`
+
+Firebase services used by the app are:
+
+- Firebase Authentication
+- Google Sign-In
+- Cloud Firestore
+- Firebase App Check
+
+Firebase is optional at startup. The local encrypted Drift database is authoritative and the normal application can remain usable without network access.
+
+## Google Sign-In
+
+The production Android app must be registered in Firebase using package name `com.qaza_namaz.com`.
+
+Register the production SHA-1 and SHA-256 fingerprints from the official release keystore in Firebase Console. Debug/test fingerprints should be registered separately for local development.
+
+Google Sign-In authentication should be tested on a physical device using the signed release artifact, not only a debug build.
+
+## Firebase App Check
+
+The app activates App Check differently by build context:
+
+- **Release:** Android Play Integrity provider.
+- **Debug/test:** Android Debug provider.
+
+In Firebase Console:
+
+1. Register/verify the Android app with package `com.qaza_namaz.com`.
+2. Configure the Android App Check provider for Play Integrity for production.
+3. Register debug App Check tokens for emulator/developer testing when needed.
+4. Verify that the production SHA-256 and Play Integrity configuration correspond to the app distributed for testing.
+5. Keep Firestore enforcement enabled only after the physical release build has successfully obtained valid App Check tokens.
+
+The application itself checks that Firebase and App Check are ready before Firestore operations. A failed App Check initialization/token is surfaced as a cloud backup/reconciliation failure while preserving local Qaza state.
+
+## Encrypted local database
+
+The local database is Drift over SQLite with sqlite3/sqlite3mc-backed encryption.
+
+The database key is generated once and stored with `flutter_secure_storage`. Plaintext legacy SQLite files are migrated to an encrypted copy before the normal Drift database is exposed.
+
+A key corruption, sqlite3mc decryption failure, or database migration exception is a fatal local-persistence error and must render the standalone database recovery screen rather than continuing into the main application.
+
+## Commands
+
+```bash
 flutter pub get
+flutter analyze
 flutter test
-flutter run
-~~~
+flutter build apk --release
+flutter build appbundle --release
+```
 
-## Android Google Authentication
+## Release signing
 
-The Android applicationId is:
+Release credentials are provided through `android/key.properties` in secure CI/local environments. `android/app/build.gradle` intentionally does not fall back to debug signing when release credentials are unavailable.
 
-~~~text
-com.example.qaza_namaz_task1_flutter
-~~~
+Before a production release, verify:
 
-android/app/google-services.json contains the matching Firebase Android client and an Android OAuth client for that package. lib/firebase_options.dart uses the same Firebase project/app ID.
+- AAB builds successfully in CI.
+- The official release SHA-256 is registered in Firebase.
+- Google Sign-In works on a physical signed release device.
+- App Check/Play Integrity succeeds on that signed release device.
+- Firestore writes and restore complete without authorization failures.
 
-The Firebase Console must also have the Google provider enabled for the qaza-nmz project. The signing certificate fingerprints registered in Firebase must match the key actually used to install the APK:
+## Repository governance
 
-- debug APK: the local/CI debug signing certificate
-- release APK: the production release keystore certificate
+The `main` branch should be protected in GitHub with required CI status checks, required pull-request reviews, and no direct pushes. These are repository settings and must be applied by an administrator in GitHub.
 
-The Google server/web OAuth client used by the app is explicit in
-lib/data/auth/google_auth_config.dart and must match the type-3 client in
-android/app/google-services.json.
-
-The repository intentionally does not contain the release keystore, so the release SHA-1/SHA-256 fingerprints cannot be verified from source alone. Release builds now refuse to fall back to the debug key: android/key.properties and the production keystore must be supplied for a release build. Register both fingerprints for every signing certificate used to distribute the app, then download/update google-services.json when Firebase configuration changes. CI also inspects the actual debug APK certificate and fails when it is not registered for this Android package.
-
-Useful failure codes are no longer hidden by the app. Examples:
-
-- firebase-auth/operation-not-allowed: check that Google is enabled in Firebase Authentication.
-- Android Google sign-in platform errors such as sign_in_failed: check package ID, OAuth client, and SHA-1/SHA-256 fingerprints.
-- Missing Google ID token: check the Android OAuth configuration and Firebase Google provider setup.
-
-The regression suite checks that the Android application ID, Firebase Android client, OAuth package, and generated Firebase app ID remain internally consistent.
