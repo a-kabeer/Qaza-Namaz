@@ -13,14 +13,14 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
-      - name: Capture formatted production files
+      - name: Capture formatter diffs
         shell: bash
         run: |
           set -euo pipefail
           flutter pub get
           dart run build_runner build --delete-conflicting-outputs
           dart format lib/app/app.dart lib/data/remote/firebase_services.dart
-          echo "===== APP ====="
-          cat lib/app/app.dart
-          echo "===== FIREBASE ====="
-          cat lib/data/remote/firebase_services.dart
+          echo "===== APP DIFF ====="
+          git diff -- lib/app/app.dart
+          echo "===== FIREBASE DIFF ====="
+          git diff -- lib/data/remote/firebase_services.dart
