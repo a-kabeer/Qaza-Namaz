@@ -118,7 +118,6 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
-
   Future<void> _ensureAccountSchema() async {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS local_accounts (
@@ -285,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-    Future<void> _ensurePerformanceIndexes() async {
+  Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
       'ON qaza_records (user_id, original_date)',

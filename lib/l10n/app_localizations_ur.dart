@@ -1392,74 +1392,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountCloudBackup => 'کلاؤڈ بیک اپ';
 
   @override
-  String get accountAutomaticBackup => 'خودکار بیک اپ';
-
-  @override
-  String get accountBackupStatusChecking => 'بیک اپ کی حالت دیکھی جا رہی ہے…';
-
-  @override
-  String get accountBackupStatusDisabled => 'خودکار بیک اپ بند ہے';
-
-  @override
-  String accountBackupStatusBackedUp(String timestamp) =>
-      '✓ بیک اپ مکمل · $timestamp';
-
-  @override
-  String get accountBackupStatusBackingUp =>
-      'آپ کی پیش رفت کا بیک اپ لیا جا رہا ہے…';
-
-  @override
-  String get accountBackupStatusPending => 'بیک اپ زیرِ التوا ہے';
-
-  @override
-  String get accountBackupStatusWaitingConnection => 'کنکشن کا انتظار ہے';
-
-  @override
-  String get accountBackupStatusComplete => 'بیک اپ مکمل ہو گیا';
-
-  @override
-  String accountBackupStatusCompletedAt(String timestamp) => timestamp;
-
-  @override
-  String get accountBackupStatusWaitingConnectionMessage =>
-      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
-
-  @override
-  String get accountBackupStatusFailedTitle => 'بیک اپ مکمل نہیں ہو سکا';
-
-  @override
-  String get accountBackupStatusFailedMessage =>
-      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
-
-
-  @override
-  String get accountBackupStatusAuthRequired =>
-      'گوگل سیشن بحال کرنے کی ضرورت ہے۔';
-
-  @override
-  String get accountBackupStatusSecurityRejected =>
-      'سیکیورٹی تصدیق نے کلاؤڈ رسائی مسترد کر دی۔';
-
-  @override
-  String get accountBackupStatusNetwork =>
-      'انٹرنیٹ کنکشن موجود نہیں۔ کنکشن بحال ہونے پر بیک اپ دوبارہ جاری ہوگا۔';
-
-  @override
-  String get accountBackupStatusCloudStateInvalid =>
-      'کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔';
-  @override
-  String get accountBackupStatusFailedAutomaticRetry =>
-      'ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
-
-  @override
-  String get accountBackupStatusRetry => 'دوبارہ کوشش کریں';
-
-  @override
-  String get accountBackupStatusFailed =>
-      'بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
-
-
-  @override
   String get accountAutomatic => 'خودکار';
 
   @override
@@ -2165,4 +2097,312 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get qiblaCalibrationHint =>
       'کمپاس کی درستگی کم ہے۔ فون کو 8 کی شکل میں حرکت دے کر دوبارہ کیلیبریٹ کریں۔';
+
+  @override
+  String get accountAutomaticBackup => 'خودکار بیک اپ';
+
+  @override
+  String get accountBackupStatusChecking => 'بیک اپ کی حالت دیکھی جا رہی ہے…';
+
+  @override
+  String get accountBackupStatusDisabled => 'خودکار بیک اپ بند ہے';
+
+  @override
+  String accountBackupStatusBackedUp(Object timestamp) {
+    return '✓ بیک اپ مکمل · $timestamp';
+  }
+
+  @override
+  String get accountBackupStatusBackingUp =>
+      'آپ کی پیش رفت کا بیک اپ لیا جا رہا ہے…';
+
+  @override
+  String get accountBackupStatusPending => 'بیک اپ زیرِ التوا ہے';
+
+  @override
+  String get accountBackupStatusWaitingConnection => 'کنکشن کا انتظار ہے';
+
+  @override
+  String get accountBackupStatusComplete => 'بیک اپ مکمل ہو گیا';
+
+  @override
+  String accountBackupStatusCompletedAt(Object timestamp) {
+    return '$timestamp';
+  }
+
+  @override
+  String get accountBackupStatusWaitingConnectionMessage =>
+      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get accountBackupStatusFailedTitle => 'بیک اپ مکمل نہیں ہو سکا';
+
+  @override
+  String get accountBackupStatusFailedMessage =>
+      'آپ کا قضا ڈیٹا اس ڈیوائس پر محفوظ ہے۔';
+
+  @override
+  String get accountBackupStatusAuthRequired =>
+      'گوگل سیشن بحال کرنے کی ضرورت ہے۔';
+
+  @override
+  String get accountBackupStatusSecurityRejected =>
+      'سیکیورٹی تصدیق نے کلاؤڈ رسائی مسترد کر دی۔';
+
+  @override
+  String get accountBackupStatusNetwork =>
+      'انٹرنیٹ کنکشن موجود نہیں۔ کنکشن بحال ہونے پر بیک اپ دوبارہ جاری ہوگا۔';
+
+  @override
+  String get accountBackupStatusCloudStateInvalid =>
+      'کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get accountBackupStatusFailedAutomaticRetry =>
+      'ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
+
+  @override
+  String get accountBackupStatusRetry => 'دوبارہ کوشش کریں';
+
+  @override
+  String get accountBackupStatusFailed =>
+      'بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔';
+
+  @override
+  String get startupProfileLoadErrorTitle => 'مقامی پروفائل لوڈ نہیں ہو سکا';
+
+  @override
+  String get startupProfileLoadErrorMessage =>
+      'آپ کی مقامی اسٹوریج کو محفوظ طریقے سے پڑھا نہیں جا سکا۔ آپ کا موجودہ قضا ڈیٹا تبدیل نہیں کیا گیا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get qazaHistoryTitle => 'قضا کی تاریخ';
+
+  @override
+  String get qazaHistoryRecentAdditions => 'حالیہ اضافے';
+
+  @override
+  String get qazaHistoryRecentlyDeleted => 'حال ہی میں حذف شدہ';
+
+  @override
+  String get qazaHistoryNoAdditions => 'ابھی کوئی قضا اضافہ موجود نہیں۔';
+
+  @override
+  String get qazaHistoryNoRecentlyDeleted =>
+      'حال ہی میں حذف شدہ کوئی قضا نہیں۔';
+
+  @override
+  String get qazaHistoryLoadMore => 'مزید لوڈ کریں';
+
+  @override
+  String get qazaHistoryOriginalDateUnavailable => 'اصل تاریخ دستیاب نہیں';
+
+  @override
+  String get qazaHistoryDeletedQaza => 'حذف شدہ قضا';
+
+  @override
+  String qazaHistoryDeletedQazaCount(int count) {
+    return '$count قضا حذف ہوئیں';
+  }
+
+  @override
+  String get qazaHistoryRestore => 'بحال کریں';
+
+  @override
+  String qazaHistoryRestoreSuccess(int count) {
+    return '$count قضا بحال ہوئیں';
+  }
+
+  @override
+  String qazaHistoryRestoreConflict(int restored, int skipped) {
+    return '$restored بحال ہوئیں، $skipped چھوڑ دی گئیں';
+  }
+
+  @override
+  String get qazaAdditionTitle => 'قضا اضافہ';
+
+  @override
+  String get qazaAdditionNotFound => 'یہ قضا اضافہ نہیں مل سکا۔';
+
+  @override
+  String qazaAdditionRecordsCount(int count) {
+    return '$count ریکارڈز';
+  }
+
+  @override
+  String get qazaAdditionNoPrayers => 'کوئی نماز نہیں';
+
+  @override
+  String get qazaAdditionViewRecords => 'ریکارڈز دیکھیں';
+
+  @override
+  String get qazaAdditionMoreActions => 'مزید اقدامات';
+
+  @override
+  String get qazaAdditionEdit => 'اضافے میں ترمیم';
+
+  @override
+  String get qazaAdditionDelete => 'اضافہ حذف کریں';
+
+  @override
+  String get qazaAdditionDeleteConfirmTitle => 'یہ قضا اضافہ حذف کریں؟';
+
+  @override
+  String get qazaAdditionDeleteConfirmMessage =>
+      'صرف غیر تبدیل شدہ زیرِ التوا ریکارڈز حذف ہوں گے۔ مکمل یا تبدیل شدہ ریکارڈز محفوظ رہیں گے۔';
+
+  @override
+  String get qazaAdditionDeletedNothing =>
+      'حذف کرنے کے لیے کوئی اہل ریکارڈ نہیں ملا۔ محفوظ ریکارڈز برقرار ہیں۔';
+
+  @override
+  String qazaAdditionDeletedCount(int count) {
+    return '$count قضا حذف ہوئیں';
+  }
+
+  @override
+  String qazaAdditionRestoredCount(int count) {
+    return '$count قضا بحال ہوئیں';
+  }
+
+  @override
+  String get qazaTrackerHistoryTooltip => 'قضا کی تاریخ';
+
+  @override
+  String get qazaTrackerAdditionProgress => 'قضا اضافے کی پیش رفت';
+
+  @override
+  String get qazaTrackerSelectionHint =>
+      'منتخب یا غیر منتخب کرنے کے لیے ٹچ کریں۔';
+
+  @override
+  String get qazaTrackerSwipeHint =>
+      'مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔';
+
+  @override
+  String get qazaMarkSelectedPendingTitle => 'منتخب قضا کو زیرِ التوا کریں؟';
+
+  @override
+  String qazaMarkSelectedPendingMessage(int count) {
+    return '$count مکمل قضا دوبارہ زیرِ التوا ہو جائیں گی اور مکمل شدہ شمار نہیں ہوں گی۔';
+  }
+
+  @override
+  String get qazaMarkAsPending => 'زیرِ التوا کریں';
+
+  @override
+  String qazaMarkAsPendingCount(int count) {
+    return 'زیرِ التوا کریں ($count)';
+  }
+
+  @override
+  String get qazaNoCompletedTitle => 'کوئی مکمل قضا نہیں';
+
+  @override
+  String get qazaNoCompletedMessage => 'مکمل قضا یہاں دکھائی دیں گی۔';
+
+  @override
+  String get qazaReturnedToPending => 'قضا دوبارہ زیرِ التوا ہو گئی۔';
+
+  @override
+  String get qazaSelectedPendingNothingChanged =>
+      'منتخب قضا میں کوئی تبدیلی نہیں ہوئی۔';
+
+  @override
+  String get qazaCorrectionChanged =>
+      'یہ قضا درست نہیں کی جا سکی کیونکہ یہ تبدیل ہو گئی ہے۔';
+
+  @override
+  String get qazaFilter => 'فلٹر';
+
+  @override
+  String get qazaFiltersActive => 'فلٹر فعال ہیں';
+
+  @override
+  String get qazaOriginalDateLabel => 'قضا کی تاریخ';
+
+  @override
+  String get qazaCompletedDateLabel => 'مکمل ہونے کی تاریخ';
+
+  @override
+  String get qazaFilterCompletedDateHelp =>
+      'مکمل ہونے کی تاریخ کے مطابق فلٹر کریں';
+
+  @override
+  String get qazaUndoCompletions => 'مکمل قضا واپس کریں';
+
+  @override
+  String get qazaUndoSelected => 'منتخب واپس کریں';
+
+  @override
+  String get qazaUndoAll => 'سب واپس کریں';
+
+  @override
+  String qazaUndoQazaCount(int count) {
+    return '$count قضا';
+  }
+
+  @override
+  String get addQazaManageAddition => 'اس اضافے کو منظم کریں';
+
+  @override
+  String qazaCompletionSingle(String prayer, String date) {
+    return '$prayer کی قضا، $date مکمل ہو گئی۔';
+  }
+
+  @override
+  String qazaCompletionMultiple(int count) {
+    return '$count قضا نمازیں مکمل ہو گئیں۔';
+  }
+
+  @override
+  String qazaUndoSingle(String prayer, String date) {
+    return '$prayer کی قضا، $date دوبارہ باقی میں شامل ہو گئی۔';
+  }
+
+  @override
+  String qazaUndoMultiple(int count) {
+    return '$count قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔';
+  }
+
+  @override
+  String get qazaUndoExpired => 'واپس کرنے کا 5 سیکنڈ کا وقت ختم ہو گیا۔';
+
+  @override
+  String get qazaUndoStaleBatch =>
+      'واپس کرنے کا یہ اختیار اب دستیاب نہیں کیونکہ اس کے بعد ایک نیا Undo عمل ہوا ہے۔';
+
+  @override
+  String get qazaUndoTargetChanged =>
+      'واپس کرنے کا اختیار دستیاب نہیں کیونکہ قضا ریکارڈ بدل چکا یا حذف ہو چکا ہے۔';
+
+  @override
+  String get qazaUndoFailed =>
+      'قضا واپس نہیں ہو سکی۔ براہِ کرم دوبارہ کوشش کریں۔';
+
+  @override
+  String get qazaMarkAsPendingMessage =>
+      'یہ قضا دوبارہ زیرِ التوا ہو جائے گی اور مکمل شدہ شمار نہیں ہوگی۔';
+
+  @override
+  String get commonDelete => 'حذف کریں';
+
+  @override
+  String qazaRequestedSlots(int count) {
+    return '$count مطلوبہ جگہیں';
+  }
+
+  @override
+  String get qazaAdditionUpdated => 'قضا کا اضافہ اپ ڈیٹ ہو گیا';
+
+  @override
+  String qazaSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منتخب',
+      one: '1 منتخب',
+    );
+    return '$_temp0';
+  }
 }

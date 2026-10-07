@@ -461,9 +461,11 @@ class AccountLocalStore {
       );
     }
 
-    final sessionRows = await database.customSelect(
-      'SELECT id FROM app_session_state WHERE id = 1',
-    ).get();
+    final sessionRows = await database
+        .customSelect(
+          'SELECT id FROM app_session_state WHERE id = 1',
+        )
+        .get();
 
     if (sessionRows.isEmpty) {
       await database.customInsert(
@@ -506,4 +508,3 @@ class AccountLocalStore {
 
   String jsonEncode(Object value) => json.encode(value);
 }
-

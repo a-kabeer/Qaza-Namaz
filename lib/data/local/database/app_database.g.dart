@@ -318,13 +318,13 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   QazaRecordRow copyWith(
           {String? id,
           String? userId,
-               String? prayerType,
+          String? prayerType,
           DateTime? originalDate,
           String? status,
           Value<DateTime?> completedAt = const Value.absent(),
           Value<String?> completionId = const Value.absent(),
           Value<String?> additionId = const Value.absent(),
-          Value<int> recordVersion = const Value.absent(),
+          int? recordVersion,
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       QazaRecordRow(
@@ -337,8 +337,7 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
         completionId:
             completionId.present ? completionId.value : this.completionId,
         additionId: additionId.present ? additionId.value : this.additionId,
-        recordVersion:
-            recordVersion.present ? recordVersion.value : this.recordVersion,
+        recordVersion: recordVersion ?? this.recordVersion,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -386,8 +385,18 @@ class QazaRecordRow extends DataClass implements Insertable<QazaRecordRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, prayerType, originalDate, status,
-      completedAt, completionId, additionId, recordVersion, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+      id,
+      userId,
+      prayerType,
+      originalDate,
+      status,
+      completedAt,
+      completionId,
+      additionId,
+      recordVersion,
+      createdAt,
+      updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -594,6 +603,9 @@ typedef $$QazaRecordsTableCreateCompanionBuilder = QazaRecordsCompanion
   required DateTime originalDate,
   required String status,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
+  Value<String?> additionId,
+  Value<int> recordVersion,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -606,6 +618,9 @@ typedef $$QazaRecordsTableUpdateCompanionBuilder = QazaRecordsCompanion
   Value<DateTime> originalDate,
   Value<String> status,
   Value<DateTime?> completedAt,
+  Value<String?> completionId,
+  Value<String?> additionId,
+  Value<int> recordVersion,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -637,6 +652,15 @@ class $$QazaRecordsTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get additionId => $composableBuilder(
+      column: $table.additionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get recordVersion => $composableBuilder(
+      column: $table.recordVersion, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -673,6 +697,17 @@ class $$QazaRecordsTableOrderingComposer
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get completionId => $composableBuilder(
+      column: $table.completionId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get additionId => $composableBuilder(
+      column: $table.additionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get recordVersion => $composableBuilder(
+      column: $table.recordVersion,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -706,6 +741,15 @@ class $$QazaRecordsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get completionId => $composableBuilder(
+      column: $table.completionId, builder: (column) => column);
+
+  GeneratedColumn<String> get additionId => $composableBuilder(
+      column: $table.additionId, builder: (column) => column);
+
+  GeneratedColumn<int> get recordVersion => $composableBuilder(
+      column: $table.recordVersion, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -742,10 +786,13 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
             Value<String> userId = const Value.absent(),
-             Value<String> prayerType = const Value.absent(),
+            Value<String> prayerType = const Value.absent(),
             Value<DateTime> originalDate = const Value.absent(),
             Value<String> status = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
+            Value<String?> additionId = const Value.absent(),
+            Value<int> recordVersion = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -757,6 +804,9 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             originalDate: originalDate,
             status: status,
             completedAt: completedAt,
+            completionId: completionId,
+            additionId: additionId,
+            recordVersion: recordVersion,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -768,6 +818,9 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             required DateTime originalDate,
             required String status,
             Value<DateTime?> completedAt = const Value.absent(),
+            Value<String?> completionId = const Value.absent(),
+            Value<String?> additionId = const Value.absent(),
+            Value<int> recordVersion = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<int> rowid = const Value.absent(),
@@ -779,6 +832,9 @@ class $$QazaRecordsTableTableManager extends RootTableManager<
             originalDate: originalDate,
             status: status,
             completedAt: completedAt,
+            completionId: completionId,
+            additionId: additionId,
+            recordVersion: recordVersion,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -809,9 +865,10 @@ typedef $$QazaRecordsTableProcessedTableManager = ProcessedTableManager<
     ),
     QazaRecordRow,
     PrefetchHooks Function()>;
+
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $QazaRecordsTableTableManager get qazaRecords =>
-      $QazaRecordsTableTableManager(_db, _db.qazaRecords);
+  $$QazaRecordsTableTableManager get qazaRecords =>
+      $$QazaRecordsTableTableManager(_db, _db.qazaRecords);
 }

@@ -1,4 +1,3 @@
-
 import 'package:drift/drift.dart';
 
 import '../../core/constants/prayer_types.dart';
@@ -29,10 +28,9 @@ class DriftQazaLocalStore extends QazaLocalStore
 
     for (final userId in users) {
       final rawRecords = await _database.qazaRecordsDao.getAll(userId: userId);
-      recordsByUser[userId] =
-          List<QazaRecord>.unmodifiable(
-            await _withProfilePlanProvenance(userId, rawRecords),
-          );
+      recordsByUser[userId] = List<QazaRecord>.unmodifiable(
+        await _withProfilePlanProvenance(userId, rawRecords),
+      );
     }
 
     return OfflineCacheSnapshot(recordsByUser: recordsByUser);
@@ -183,7 +181,8 @@ class DriftQazaLocalStore extends QazaLocalStore
   }
 
   @override
-  Future<bool> updateRecord(QazaRecord record) => _database.transaction(() async {
+  Future<bool> updateRecord(QazaRecord record) =>
+      _database.transaction(() async {
         final changed = await _database.qazaRecordsDao.updateRecord(record);
         if (!changed) return false;
         await _syncProfilePlanProvenance(record);
@@ -340,12 +339,11 @@ class DriftQazaLocalStore extends QazaLocalStore
 
       final inserted = <QazaRecord>[];
       for (var start = 0; start < insertable.length; start += 500) {
-        final end = start + 500 < insertable.length
-            ? start + 500
-            : insertable.length;
+        final end =
+            start + 500 < insertable.length ? start + 500 : insertable.length;
         final chunk = insertable.sublist(start, end);
-        final insertedIds = await _database.qazaRecordsDao
-            .insertRecordsReturningInsertedIds(
+        final insertedIds =
+            await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
           chunk.map(_toCompanion).toList(growable: false),
         );
         final insertedChunk = chunk
@@ -402,7 +400,6 @@ class DriftQazaLocalStore extends QazaLocalStore
         );
         await _upsertProfilePlanProvenance(mutation.removed);
       }
-
     });
   }
 
@@ -503,8 +500,8 @@ class DriftQazaLocalStore extends QazaLocalStore
       }
     }
     await _database.transaction(() async {
-      final insertedIds = await _database.qazaRecordsDao
-          .insertRecordsReturningInsertedIds(
+      final insertedIds =
+          await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
         records.map(_toCompanion).toList(growable: false),
       );
       final inserted = records
@@ -569,8 +566,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     ];
   }
 
-  String _sqlStringLiteral(String value) =>
-      "'${value.replaceAll("'", "''")}'";
+  String _sqlStringLiteral(String value) => "'${value.replaceAll("'", "''")}'";
 
   Future<void> _upsertProfilePlanProvenance(
     Iterable<QazaRecord> records,
@@ -583,8 +579,7 @@ class DriftQazaLocalStore extends QazaLocalStore
         )
         .toList(growable: false);
     for (var start = 0; start < eligible.length; start += 400) {
-      final end =
-          start + 400 < eligible.length ? start + 400 : eligible.length;
+      final end = start + 400 < eligible.length ? start + 400 : eligible.length;
       final chunk = eligible.sublist(start, end);
       final values = chunk
           .map(
@@ -614,8 +609,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     if (ids.isEmpty) return;
     for (var start = 0; start < ids.length; start += 400) {
       final chunk = ids.skip(start).take(400).toList(growable: false);
-      final placeholders =
-          chunk.map(_sqlStringLiteral).join(', ');
+      final placeholders = chunk.map(_sqlStringLiteral).join(', ');
       await _database.customStatement(
         'DELETE FROM qaza_profile_plan_provenance '
         'WHERE user_id = ${_sqlStringLiteral(userId)} '
@@ -663,5 +657,4 @@ class DriftQazaLocalStore extends QazaLocalStore
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       );
-
 }

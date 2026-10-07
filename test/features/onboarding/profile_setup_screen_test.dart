@@ -72,8 +72,7 @@ class _OneDayQazaPlanService extends QazaPlanService {
   }
 }
 
-class _FakeQazaPlanRevisionRepository
-    implements QazaPlanRevisionRepository {
+class _FakeQazaPlanRevisionRepository implements QazaPlanRevisionRepository {
   QazaPlanRevision? stored;
 
   @override
@@ -84,7 +83,6 @@ class _FakeQazaPlanRevisionRepository
     stored = revision;
   }
 }
-
 
 void main() {
   late AppDatabase database;
@@ -193,7 +191,6 @@ void main() {
     },
   );
 
-
   testWidgets(
     'zero-Qaza onboarding completes directly from Profile Setup without review or import',
     (tester) async {
@@ -275,11 +272,14 @@ void main() {
         isTrue,
       );
       expect(
-        await database.customSelect(
-          '''SELECT COUNT(*) AS count FROM account_plan_revisions
+        await database
+            .customSelect(
+              '''SELECT COUNT(*) AS count FROM account_plan_revisions
              WHERE local_account_id = ?''',
-          variables: [Variable(UserProfile.localLedgerUserId)],
-        ).getSingle().then((row) => row.read<int>('count')),
+              variables: [Variable(UserProfile.localLedgerUserId)],
+            )
+            .getSingle()
+            .then((row) => row.read<int>('count')),
         1,
       );
     },
@@ -336,7 +336,8 @@ void main() {
 
       expect(find.byType(WorkspaceShell), findsOneWidget);
       for (var i = 0;
-          i < 20 && find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
+          i < 20 &&
+              find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
           i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -377,6 +378,4 @@ void main() {
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
     },
   );
-
-
 }

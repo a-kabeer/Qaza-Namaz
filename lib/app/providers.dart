@@ -104,8 +104,7 @@ final qazaPlanServiceProvider = Provider<QazaPlanService>(
   (ref) => const QazaPlanService(),
 );
 
-final qazaPlanRevisionRepositoryProvider =
-    Provider<QazaPlanRevisionRepository>(
+final qazaPlanRevisionRepositoryProvider = Provider<QazaPlanRevisionRepository>(
   (ref) => AccountScopedQazaPlanRevisionRepository(
     ref.watch(accountLocalStoreProvider),
   ),
