@@ -222,14 +222,42 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
-      - name: Verify production App Check provider policy
+      - name: Verify Firebase Android identity and App Check provider policy
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import re
           from pathlib import Path
-          source = Path("lib/data/remote/firebase_services.dart").read_text()
-          normalized = "".join(source.split())
+
+          service = Path("lib/data/remote/firebase_services.dart").read_text()
+          build_gradle = Path("android/app/build.gradle").read_text()
+
+          package_match = re.search(
+              r"androidPackage\s*=\s*'([^']+)'", service
+          )
+          sha256_match = re.search(
+              r"androidSha256\s*=\s*\n\s*'([^']+)'", service
+          )
+          app_id_match = re.search(
+              r'applicationId\s*=\s*"([^"]+)"', build_gradle
+          )
+          if not package_match or not sha256_match or not app_id_match:
+              raise SystemExit(
+                  "Could not resolve the canonical Firebase Android identity."
+              )
+
+          firebase_package = package_match.group(1)
+          firebase_sha256 = sha256_match.group(1).replace(":", "").upper()
+          application_id = app_id_match.group(1).strip()
+
+          if application_id != firebase_package:
+              raise SystemExit(
+                  f"Android applicationId {application_id} does not match "
+                  f"Firebase package {firebase_package}."
+              )
+
+          normalized = "".join(service.split())
           expected = (
               "providerAndroid:kReleaseMode"
               "?constAndroidPlayIntegrityProvider()"
@@ -239,10 +267,13 @@ jobs:
               raise SystemExit(
                   "Firebase App Check provider policy is not explicitly release-safe."
               )
-          if source.count("AndroidDebugProvider") != 1:
+          if service.count("AndroidDebugProvider") != 1:
               raise SystemExit(
                   "Unexpected AndroidDebugProvider usage; release must not use it."
               )
+
+          print(f"Firebase Android package OK: {firebase_package}")
+          print(f"Canonical Firebase SHA-256: {firebase_sha256}")
           print("Production App Check provider policy OK.")
           PY
 
@@ -287,8 +318,46 @@ jobs:
           test "${KEY_SHA1}" = "${APK_SHA1}"
           test "${KEY_SHA256}" = "${APK_SHA256}"
 
-          echo "Release APK signature matches the configured release keystore."
+          FIREBASE_SHA256=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("lib/data/remote/firebase_services.dart").read_text()
+          match = re.search(r"androidSha256\s*=\s*\n\s*'([^']+)'", source)
+          if not match:
+              raise SystemExit("Canonical Firebase SHA-256 is missing.")
+          print(match.group(1).replace(":", "").upper())
+          PY
+          )
+          test "${FIREBASE_SHA256}" = "${APK_SHA256}"
+
+          APK_PACKAGE=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("android/app/build.gradle").read_text()
+          match = re.search(r'applicationId\s*=\s*"([^"]+)"', source)
+          if not match:
+              raise SystemExit("Could not determine Android applicationId.")
+          print(match.group(1))
+          PY
+          )
+
+          FIREBASE_PACKAGE=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("lib/data/remote/firebase_services.dart").read_text()
+          match = re.search(r"androidPackage\s*=\s*'([^']+)'", source)
+          if not match:
+              raise SystemExit("Canonical Firebase package is missing.")
+          print(match.group(1))
+          PY
+          )
+
+          test "${APK_PACKAGE}" = "${FIREBASE_PACKAGE}"
+
+          echo "Release APK signature matches the configured release keystore and Firebase Android identity."
+          echo "Package: ${APK_PACKAGE}"
           echo "SHA-1: ${APK_SHA1}"
+          echo "SHA-256: ${APK_SHA256}"          echo "SHA-1: ${APK_SHA1}"
           echo "SHA-256: ${APK_SHA256}"
 
       - name: Report release signing availability
