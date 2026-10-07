@@ -226,6 +226,27 @@ class AccountLocalStore {
     );
   }
 
+  static const sessionModeNone = 'none';
+  static const sessionModeGuest = 'guest';
+  static const sessionModeGoogle = 'google';
+  static const sessionModeSignedOut = 'signed_out';
+
+  Future<String> sessionMode() async {
+    final rows = await database.customSelect(
+      'SELECT account_session_mode FROM app_session_state WHERE id = 1',
+    ).get();
+    return rows.isEmpty
+        ? sessionModeNone
+        : rows.first.read<String>('account_session_mode');
+  }
+
+  Future<void> setSessionMode(String value) async {
+    await database.customUpdate(
+      'UPDATE app_session_state SET account_session_mode = ? WHERE id = 1',
+      variables: [Variable(value)],
+    );
+  }
+
   Future<void> activate(String localAccountId) async {
     final account = await getAccount(localAccountId);
     if (account == null)
@@ -233,11 +254,15 @@ class AccountLocalStore {
     if (account.lifecycleState == AccountLifecycleState.archived) {
       throw StateError('Archived local account cannot become active.');
     }
+    final sessionMode =
+        account.isGoogle ? sessionModeGoogle : sessionModeGuest;
     await database.customUpdate(
       '''UPDATE app_session_state
-         SET active_local_account_id = ?, initial_choice_required = 0
+         SET active_local_account_id = ?,
+             initial_choice_required = 0,
+             account_session_mode = ?
          WHERE id = 1''',
-      variables: [Variable(localAccountId)],
+      variables: [Variable(localAccountId), Variable(sessionMode)],
     );
   }
 
@@ -1923,8 +1948,10 @@ class AccountLocalStore {
         '''UPDATE app_session_state
            SET active_local_account_id = NULL,
                initial_choice_required = 1,
-               restore_state = 'none'
+               restore_state = 'none',
+               account_session_mode = ?
            WHERE id = 1''',
+        variables: [Variable(sessionModeSignedOut)],
       );
     });
   }
@@ -2521,13 +2548,16 @@ class AccountLocalStore {
       await database.customInsert(
         '''INSERT INTO app_session_state
            (id, active_local_account_id, initial_choice_required,
-            migration_state, restore_state)
-           VALUES (1, ?, ?, 'none', 'none')''',
+            migration_state, restore_state, account_session_mode)
+           VALUES (1, ?, ?, 'none', 'none', ?)''',
         variables: [
           Variable(
             initialChoiceRequired ? null : UserProfile.localLedgerUserId,
           ),
           Variable(initialChoiceRequired ? 1 : 0),
+          Variable(
+            initialChoiceRequired ? 'none' : 'guest',
+          ),
         ],
       );
     }
