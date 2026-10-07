@@ -937,4 +937,8 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا"
+  "qazaSelectedCount": "{count, plural, =1{1 منتخب} other{{count} منتخب}}",
+  "@qazaSelectedCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
 }
