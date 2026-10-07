@@ -103,6 +103,7 @@ class _QazaTrackerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         const SizedBox(height: AppSpacing.sm),
@@ -185,6 +186,7 @@ class _ProgressHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final content = additionId != null
         ? ref.watch(qazaAdditionDetailProvider(additionId!)).when(
               loading: () => _buildLoading(context),
@@ -752,6 +754,7 @@ class _CompletedTrackerBody extends StatelessWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final count = state.selected.length;
     if (count == 0 || state.recordMutating) return;
 
@@ -1067,6 +1070,7 @@ class _CompletedRecordDetails extends ConsumerWidget {
   final QazaTrackerController controller;
 
   Future<void> _markPending(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await confirmDestructive(
       context,
       title: l10n.qazaMarkAsPending,
