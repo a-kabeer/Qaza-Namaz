@@ -9,7 +9,7 @@ void main() {
 
     expect(
       source,
-      contains(r"? '${state.selected.length} selected'"),
+      contains('l10n.qazaSelectedCount(state.selected.length)'),
     );
     expect(
       source,
@@ -31,9 +31,7 @@ void main() {
     );
     expect(
       source,
-      contains(
-        'Swipe left or right to complete. Long press to select.',
-      ),
+      contains('l10n.qazaTrackerSwipeHint'),
     );
     expect(source, contains('showQazaUndoFeedback('));
     expect(source, contains('onTap: onTap'));
@@ -681,7 +679,7 @@ void main() {
     final controller =
         File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
 
-    expect(source, contains('Mark as Pending'));
+    expect(source, contains('l10n.qazaMarkAsPending'));
     expect(source, contains('confirmDestructive'));
     expect(controller, contains('markCompletedAsPending'));
     expect(service, contains('Future<bool> markCompletedAsPending'));
@@ -723,7 +721,7 @@ void main() {
     final service =
         File('lib/domain/services/qaza_undo_service.dart').readAsStringSync();
 
-    expect(source, contains('Undo Selected'));
+    expect(source, contains('l10n.qazaUndoSelected'));
     expect(source, contains('Undo All'));
     expect(source, contains('undoSelected('));
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
@@ -800,8 +798,8 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-    expect(source, contains("? 'Completed Date'"));
-    expect(source, contains(": 'Qaza Date'"));
+    expect(source, contains('l10n.qazaCompletedDateLabel'));
+    expect(source, contains('l10n.qazaOriginalDateLabel'));
   });
 
   test('Recent Addition View Records pushes the scoped tracker route without clearing the back stack', () {
