@@ -1,8 +1,5 @@
 name: Flutter CI
 
-permissions:
-  contents: write
-
 on:
   push:
     branches:
@@ -46,55 +43,33 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Apply Dart formatting
+      - name: Check Dart formatting
         shell: bash
         run: |
           set -euo pipefail
-          target_ref="$GITHUB_HEAD_REF"
-          if [ -z "$target_ref" ]; then
-            target_ref="$GITHUB_REF_NAME"
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+            diff_base="origin/$GITHUB_BASE_REF"
+          else
+            diff_base="${{ github.event.before }}"
+            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
+              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            fi
           fi
 
-          for attempt in 1 2 3; do
-            git reset --hard HEAD
-            git clean -fd
-            git fetch --no-tags origin main "$target_ref"
-            git checkout -B "$target_ref" "origin/$target_ref"
+          mapfile -t files < <(
+            git diff --name-only "$diff_base" HEAD -- '*.dart' |
+            while IFS= read -r file; do
+              [ -f "$file" ] && printf '%s\n' "$file"
+            done
+          )
 
-            mapfile -t files < <(
-              git diff --name-only origin/main HEAD -- '*.dart' |
-              while IFS= read -r file; do
-                [ -f "$file" ] && printf '%s\n' "$file"
-              done
-            )
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed Dart files to format-check."
+            exit 0
+          fi
 
-            if [ "${#files[@]}" -eq 0 ]; then
-              echo "No changed Dart files to format."
-              exit 0
-            fi
-
-            dart format "${files[@]}"
-
-            if git diff --quiet -- "${files[@]}"; then
-              echo "Changed Dart files are already formatted."
-              exit 0
-            fi
-
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -- "${files[@]}"
-            git commit -m "style: format offline conversion changes"
-
-            if git push origin "HEAD:${target_ref}"; then
-              echo "Formatting commit pushed successfully."
-              exit 0
-            fi
-
-            echo "Formatting push raced with another run; retrying against latest remote."
-          done
-
-          echo "Unable to push formatting commit after 3 attempts."
-          exit 1
+          dart format --output=none --set-exit-if-changed "${files[@]}"
 
 
       - name: Test with coverage
