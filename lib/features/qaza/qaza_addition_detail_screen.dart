@@ -31,7 +31,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
       title: l10n.qazaAdditionTitle,
       body: asyncDetail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) {
+        error: (_, __) {
           return Center(
             child: Text(l10n.homeProgressError),
           );
@@ -120,7 +120,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       if (orderedPrayers.isEmpty)
                         Text(
-                          'No prayers',
+                          l10n.qazaAdditionNoPrayers,
                           style: theme.textTheme.bodyMedium,
                         )
                       else
