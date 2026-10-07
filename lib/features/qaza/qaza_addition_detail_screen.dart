@@ -301,6 +301,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String actionId,
   ) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final result =
           await ref.read(qazaAdditionRepositoryProvider).restoreDeletionAction(
