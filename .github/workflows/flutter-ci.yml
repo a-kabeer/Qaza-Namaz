@@ -79,10 +79,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          flutter analyze --format machine --no-fatal-infos --no-fatal-warnings | tee /tmp/flutter-analyze.machine
+          flutter analyze --no-fatal-infos --no-fatal-warnings | tee /tmp/flutter-analyze.txt
 
       - name: Dead code and dependency audit
-        run: python3 tools/dead_code_audit.py --analyzer-output /tmp/flutter-analyze.machine
+        run: python3 tools/dead_code_audit.py --analyzer-output /tmp/flutter-analyze.txt
 
       - name: Check Dart formatting
         shell: bash
