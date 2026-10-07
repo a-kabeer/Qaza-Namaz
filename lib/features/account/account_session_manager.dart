@@ -64,9 +64,7 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    final accountId = await _accountStore.activeLocalAccountId();
-    final account =
-        accountId == null ? null : await _accountStore.getAccount(accountId);
+    final account = await _accountStore.activeAccount();
     if (account == null) {
       _setState(
         const AccountSessionState(
