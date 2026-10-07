@@ -931,4 +931,9 @@
   "qazaUndoTargetChanged": "واپس کرنے کا اختیار دستیاب نہیں کیونکہ قضا ریکارڈ بدل چکا یا حذف ہو چکا ہے۔",
   "qazaUndoFailed": "قضا واپس نہیں ہو سکی۔ براہِ کرم دوبارہ کوشش کریں۔",
   "qazaMarkAsPendingMessage": "یہ قضا دوبارہ زیرِ التوا ہو جائے گی اور مکمل شدہ شمار نہیں ہوگی۔",
+  "commonDelete": "حذف کریں",
+  "qazaRequestedSlots": "{count} مطلوبہ جگہیں",
+  "@qazaRequestedSlots": {
+    "placeholders": {"count": {"type": "int"}}
+  },
 }
