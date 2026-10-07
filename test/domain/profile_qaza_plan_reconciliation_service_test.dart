@@ -308,7 +308,9 @@ void main() {
     expect(qaza.records.single.profilePlanFingerprint, isNull);
   });
 
-  test('Drift removal is idempotent without sync outbox side effects', () async {
+  test(
+    'Drift removal is idempotent without sync outbox side effects',
+    () async {
     final database = AppDatabase(NativeDatabase.memory());
     final store = DriftQazaLocalStore(database: database);
     final record = profileRecord(
