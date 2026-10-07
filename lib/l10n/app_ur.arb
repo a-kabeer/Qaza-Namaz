@@ -787,7 +787,7 @@
   "accountBackupStatusCloudStateInvalid": "کلاؤڈ بیک اپ کی حالت بدل گئی ہے۔ دوبارہ کوشش کریں۔",
   "accountBackupStatusFailedAutomaticRetry": "ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
   "accountBackupStatusRetry": "دوبارہ کوشش کریں",
-  "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔"
+  "accountBackupStatusFailed": "بیک اپ مکمل نہیں ہو سکا۔ ہم خودکار طور پر دوبارہ کوشش کریں گے۔",
   "startupProfileLoadErrorTitle": "مقامی پروفائل لوڈ نہیں ہو سکا",
   "startupProfileLoadErrorMessage": "آپ کی مقامی اسٹوریج کو محفوظ طریقے سے پڑھا نہیں جا سکا۔ آپ کا موجودہ قضا ڈیٹا تبدیل نہیں کیا گیا۔ دوبارہ کوشش کریں۔",
   "qazaHistoryTitle": "قضا کی تاریخ",
@@ -936,5 +936,5 @@
   "@qazaRequestedSlots": {
     "placeholders": {"count": {"type": "int"}}
   },
-  "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا",
+  "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا"
 }
