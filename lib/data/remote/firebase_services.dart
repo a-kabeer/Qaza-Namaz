@@ -553,8 +553,8 @@ class GoogleFirebaseAuthService {
     }
   }
 
-  Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal()
-      async {
+  Future<GoogleFirebaseIdentity?>
+      _attemptLightweightAuthenticationInternal() async {
     // Intentionally do not apply a timeout to any part of this operation.
     // Startup routing may time out its own wait, but the coordinator must keep
     // ownership until the native Credential Manager Future really completes.
