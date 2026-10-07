@@ -90,6 +90,24 @@ class FirebaseBackupWorker {
         await _accountStore.enqueueSnapshot(account.localAccountId);
       }
 
+      if (_isAppCheckFailureCategory(status.failureCategory)) {
+        try {
+          await _firebase.ensureAppCheckTokenAvailable(forceRefresh: false);
+        } catch (error, stack) {
+          final failure = classifyBackupFailure(
+            error,
+            stackTrace: stack,
+          );
+          await _accountStore.recordBackupFailure(
+            localAccountId: account.localAccountId,
+            failureCategory: failure.category.name,
+            message: failure.message,
+            nextRetryAt: DateTime.now().add(const Duration(minutes: 5)),
+          );
+          return;
+        }
+      }
+
       final operations = await _accountStore.loadModernOutboxBatch(
         localAccountId: account.localAccountId,
         nowMicros: now,
@@ -165,7 +183,12 @@ class FirebaseBackupWorker {
 
           // A backup can take long enough for the active account to change.
           // Never acknowledge or remove an operation after that change.
-          if (!await _activeAccountStillMatches(account)) {
+          if (!await _activeAccountStillMatches(
+            localAccountId: account.localAccountId,
+            firebaseUid: account.firebaseUid,
+            cloudGeneration: account.cloudGeneration,
+            cloudBackupEnabled: account.cloudBackupEnabled,
+          )) {
             await _accountStore.setBackupState(
               account.localAccountId,
               'pending',
@@ -264,9 +287,28 @@ class FirebaseBackupWorker {
     return true;
   }
 
-  Future<bool> _activeAccountStillMatches(
-    dynamic account,
-  ) async {
+  bool _isAppCheckFailureCategory(String? category) {
+    return category == BackupFailureCategory.appCheckInitializationFailed.name ||
+        category == BackupFailureCategory.appCheckTokenUnavailable.name ||
+        category == BackupFailureCategory.appCheckRejected.name;
+  }
+
+  Future<bool> _activeAccountStillMatches({
+    required String localAccountId,
+    required String? firebaseUid,
+    required int cloudGeneration,
+    required bool cloudBackupEnabled,
+  }) async {
+    final active = await _accountStore.activeAccount();
+    return active != null &&
+        active.localAccountId == localAccountId &&
+        active.firebaseUid == firebaseUid &&
+        active.cloudGeneration == cloudGeneration &&
+        active.cloudBackupEnabled &&
+        cloudBackupEnabled;
+  }
+
+
     final active = await _accountStore.activeAccount();
     return active != null &&
         active.localAccountId == account.localAccountId &&
