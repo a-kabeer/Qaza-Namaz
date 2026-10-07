@@ -89,10 +89,4 @@ void main() {
     );
   });
 
-  test('App Check provider policy is release-safe', () {
-    // Keep this regression near the provider implementation so accidental
-    // provider swaps are caught by the unit suite as well as CI source checks.
-    expect(FirebaseServices, isNotNull);
-  });
-
 }
