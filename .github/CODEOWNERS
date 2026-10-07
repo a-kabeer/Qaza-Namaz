@@ -1,0 +1,3 @@
+# Repository-wide review ownership.
+# Keep branch protection configured to require CODEOWNERS review.
+* @a-kabeer
