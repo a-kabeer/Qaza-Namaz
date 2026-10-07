@@ -1,0 +1,26 @@
+name: Temporary Dart Format Inspection
+
+on:
+  push:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+      - name: Format and print diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="test/features/account/google_firebase_auth_service_test.dart"
+          dart format "$file"
+          echo "----- BEGIN FORMAT DIFF -----"
+          git diff --no-ext-diff -- "$file"
+          echo "----- END FORMAT DIFF -----"
