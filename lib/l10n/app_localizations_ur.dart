@@ -666,7 +666,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountStatus => 'اکاؤنٹ کی حالت';
 
   @override
-  String get accountSignedIn => 'سائن اِن ہیں';
+  String get accountSignedIn => 'مقامی';
 
   @override
   String get accountRecordsRetained =>
@@ -1489,7 +1489,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountContinue => 'جاری رکھیں';
 
   @override
-  String get accountGuestTitle => 'مہمان اکاؤنٹ';
+  String get accountGuestTitle => 'یہ ڈیوائس';
 
   @override
   String get accountGuestLocalDataSubtitle =>
@@ -1507,7 +1507,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountGuestContinueMessage =>
-      'آپ مہمان کے طور پر قضا نماز استعمال کرتے رہ سکتے ہیں۔ آپ کی لوکل پیش رفت اسی ڈیوائس پر محفوظ رہے گی۔';
+      'آپ کی مقامی پیش رفت اسی ڈیوائس پر محفوظ رہتی ہے۔';
 
   @override
   String get accountBackupSection => 'بیک اپ';
@@ -1531,7 +1531,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get accountDangerZone => 'خطرناک اقدامات';
 
   @override
-  String get settingsAccountGuestSubtitle => 'مہمان • صرف یہ ڈیوائس';
+  String get settingsAccountGuestSubtitle => 'مقامی • صرف یہ ڈیوائس';
 
   @override
   String get settingsAccountGoogleSubtitle => 'گوگل کے ساتھ سائن اِن';
