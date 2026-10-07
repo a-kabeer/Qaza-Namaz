@@ -13,13 +13,18 @@ jobs:
           flutter-version: '3.47.4'
           channel: stable
           cache: true
-      - name: Format and print current test
+      - name: Exact CI formatter command
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           file="test/features/account/google_firebase_auth_service_test.dart"
-          dart format "$file"
-          echo "----- FORMATTED FILE -----"
+          dart format --output=none --set-exit-if-changed "$file"
+          status=$?
+          echo "FORMAT_EXIT=$status"
+          echo "----- DIFF -----"
+          git diff --no-ext-diff -- "$file"
+          echo "----- END DIFF -----"
+          echo "----- FILE -----"
           cat "$file"
-          echo "formatter-v3"
-echo "----- END FORMATTED FILE -----"
+          echo "----- END FILE -----"
+          exit 0
