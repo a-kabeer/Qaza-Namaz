@@ -1318,4 +1318,9 @@
   "qazaUndoTargetChanged": "Undo is no longer available because the Qaza record changed or was removed.",
   "qazaUndoFailed": "Undo could not be completed. Please try again.",
   "qazaMarkAsPendingMessage": "This Qaza will return to Pending and will no longer count as completed.",
+  "commonDelete": "Delete",
+  "qazaRequestedSlots": "{count} requested slots",
+  "@qazaRequestedSlots": {
+    "placeholders": {"count": {"type": "int"}}
+  },
 }
