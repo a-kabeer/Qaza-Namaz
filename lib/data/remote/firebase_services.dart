@@ -433,17 +433,15 @@ class GoogleAuthenticationCoordinator {
       }
 
       final operationFuture = operation();
-      final trackedOperation = operationFuture.then<Object?>(
-        (value) => value,
-        onError: (Object error, StackTrace stack) =>
-            Error.throwWithStackTrace(error, stack),
-      );
-      _activeOperation = trackedOperation;
+      // Keep the exact operation Future as the ownership token. No wrapper
+      // Future is created, so an authentication error cannot become an
+      // unhandled secondary Future error.
+      _activeOperation = operationFuture;
 
       try {
         return await operationFuture;
       } finally {
-        if (identical(_activeOperation, trackedOperation)) {
+        if (identical(_activeOperation, operationFuture)) {
           _activeOperation = null;
         }
       }
