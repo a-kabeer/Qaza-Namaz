@@ -100,7 +100,7 @@ async function main() {
     () => setDoc(emptyRecord, childFields(1)),
   );
   await setDoc(emptyRoot, rootFields('initializing', 1));
-  await setDoc(emptyRecord, childFields(1));
+  await setDoc(emptyRecord, childFields(1, 'empty-state-record'));
   await setDoc(emptyRoot, rootFields('ready', 1));
   await expectDenied(
     'Ready to initializing in the same generation',
