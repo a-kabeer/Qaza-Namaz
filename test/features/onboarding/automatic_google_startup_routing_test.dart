@@ -384,6 +384,168 @@ void main() {
     },
   );
 
+  test(
+    'missing active Google pointer restores the same local partition after relaunch',
+    () async {
+      final id = await store.createGooglePartition(
+        firebaseUid: 'force-stop-google',
+        email: 'force-stop@example.com',
+      );
+      await store.saveProfile(id, _completeProfile());
+      await store.activate(id);
+
+      // Simulate process relaunch with a lost active-account pointer while
+      // retaining the durable Google startup intent.
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = NULL,
+               initial_choice_required = 0,
+               account_session_mode = 'google'
+           WHERE id = 1''',
+      );
+
+      final firebase = _FakeFirebase();
+      final manager = await _manager(
+        database: database,
+        store: store,
+        identity: const GoogleFirebaseIdentity(
+          uid: 'force-stop-google',
+          email: 'force-stop@example.com',
+        ),
+        firebase: firebase,
+      );
+
+      await manager.initialize();
+      expect(
+        manager.state.restoreState,
+        AccountSessionManager.googleRestorePendingState,
+      );
+
+      await waitForGoogleStartupRestore(manager);
+
+      expect(manager.activeLocalAccountId, id);
+      expect(manager.activeAccount?.firebaseUid, 'force-stop-google');
+      expect(manager.initialChoiceRequired, isFalse);
+
+      final rows = await database
+          .customSelect(
+            "SELECT COUNT(*) AS count FROM local_accounts "
+            "WHERE firebase_uid = 'force-stop-google'",
+          )
+          .get();
+      expect(rows.single.read<int>('count'), 1);
+    },
+  );
+
+  test(
+    'explicit sign-out prevents cached Google restoration on relaunch',
+    () async {
+      final id = await store.createGooglePartition(
+        firebaseUid: 'signed-out-google',
+        email: 'signed-out@example.com',
+      );
+      await store.saveProfile(id, _completeProfile());
+      await store.activate(id);
+
+      final firebase = _FakeFirebase();
+      final firstManager = await _manager(
+        database: database,
+        store: store,
+        identity: const GoogleFirebaseIdentity(
+          uid: 'signed-out-google',
+          email: 'signed-out@example.com',
+        ),
+        firebase: firebase,
+      );
+      await firstManager.initialize();
+      await firstManager.signOut();
+
+      expect(
+        await store.sessionMode(),
+        AccountLocalStore.sessionModeSignedOut,
+      );
+      expect(firstManager.initialChoiceRequired, isTrue);
+
+      final relaunchAuth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
+          uid: 'signed-out-google',
+          email: 'signed-out@example.com',
+        ),
+      );
+      final backup = _FakeBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final relaunchedManager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: relaunchAuth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        ),
+      );
+
+      await relaunchedManager.initialize();
+
+      expect(relaunchedManager.activeAccount, isNull);
+      expect(relaunchedManager.initialChoiceRequired, isTrue);
+      expect(relaunchAuth.lightweightAuthenticationCalls, 0);
+    },
+  );
+
+  test(
+    'missing active Guest pointer restores Guest without touching Google auth',
+    () async {
+      await store.activate(UserProfile.localLedgerUserId);
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = NULL,
+               initial_choice_required = 0,
+               account_session_mode = 'guest'
+           WHERE id = 1''',
+      );
+
+      final firebase = _FakeFirebase();
+      final auth = _FakeAuth(
+        firebase,
+        const GoogleFirebaseIdentity(
+          uid: 'cached-google',
+          email: 'cached@example.com',
+        ),
+      );
+      final backup = _FakeBackup(
+        firebase: firebase,
+        database: database,
+        accountStore: store,
+      );
+      final manager = AccountSessionManager(
+        accountStore: store,
+        firebase: firebase,
+        auth: auth,
+        backup: backup,
+        reconciliation: FirebaseReconciliationService(
+          firebase: firebase,
+          backupService: backup,
+          accountStore: store,
+          database: database,
+        ),
+      );
+
+      await manager.initialize();
+
+      expect(manager.activeAccount?.isGuest, isTrue);
+      expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
+      expect(auth.lightweightAuthenticationCalls, 0);
+      expect(firebase.initializeCalls, 0);
+    },
+  );
+
   test('existing Google UID reuses the same local partition', () async {
     final id = await store.createGooglePartition(
       firebaseUid: 'existing-uid',
