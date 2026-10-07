@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../account/account_choice_screen.dart';
+import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
@@ -39,7 +40,10 @@ class StartupGate extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
     return profileAsync.when(
       loading: () => const SplashScreen(),
-      error: (_, __) => const LanguageSelectionScreen(),
+      error: (error, stack) => StartupProfileLoadErrorBoundary(
+        key: const Key('startup_profile_load_error'),
+        onRetry: () => ref.invalidate(userProfileProvider),
+      ),
       data: (profile) {
         if (profile == null) {
           return const LanguageSelectionScreen();
@@ -68,6 +72,32 @@ class StartupGate extends ConsumerWidget {
 
         return const WorkspaceShell();
       },
+    );
+  }
+}
+
+
+/// Storage/provider failures are distinct from a legitimate null profile.
+class StartupProfileLoadErrorBoundary extends StatelessWidget {
+  const StartupProfileLoadErrorBoundary({
+    super.key,
+    required this.onRetry,
+  });
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: ErrorState(
+          title: l10n.startupProfileLoadErrorTitle,
+          message: l10n.startupProfileLoadErrorMessage,
+          onRetry: onRetry,
+          icon: Icons.storage_rounded,
+        ),
+      ),
     );
   }
 }
