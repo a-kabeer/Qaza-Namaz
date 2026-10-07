@@ -186,6 +186,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   Future<AddQazaAnalysis?> _finalValidateAndStart() async {
+    final l10n = AppLocalizations.of(context);
     final controller = ref.read(addQazaControllerProvider.notifier);
 
     try {
@@ -231,6 +232,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   Future<void> _showImportProgress() async {
+    final l10n = AppLocalizations.of(context);
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
