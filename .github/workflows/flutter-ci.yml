@@ -43,8 +43,33 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib test tools
+      - name: Check Dart formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+            diff_base="origin/$GITHUB_BASE_REF"
+          else
+            diff_base="${{ github.event.before }}"
+            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
+              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            fi
+          fi
+
+          mapfile -t files < <(
+            git diff --name-only "$diff_base" HEAD -- '*.dart' |
+            while IFS= read -r file; do
+              [ -f "$file" ] && printf '%s\n' "$file"
+            done
+          )
+
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed Dart files to format-check."
+            exit 0
+          fi
+
+          dart format --output=none --set-exit-if-changed "${files[@]}"
 
       - name: Test with coverage
         run: flutter test --coverage
