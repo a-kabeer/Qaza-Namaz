@@ -15,53 +15,9 @@ class AccountLocalStore {
 
   final AppDatabase database;
 
-  Future<void> ensureInitialized({
-    required bool hasLegacyProfile,
-    required bool hasLegacyQaza,
-    UserProfile? legacyProfile,
-  }) async {
+  Future<void> ensureInitialized() async {
     await _ensureDeviceId();
-    final legacy = legacyProfile ?? await _readLegacyProfile();
-    await _ensureGuestAccount(
-      hasLegacyProfile: hasLegacyProfile || legacy != null,
-      hasLegacyQaza: hasLegacyQaza,
-      legacyProfile: legacy,
-    );
-    await _migrateLegacyPlanRevisions();
-  }
-
-  Future<UserProfile?> _readLegacyProfile() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(UserProfile.storageKey);
-      if (raw == null) return null;
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map) return null;
-      return UserProfile.fromJson(Map<String, dynamic>.from(decoded));
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _migrateLegacyPlanRevisions() async {
-    final prefs = await SharedPreferences.getInstance();
-    const prefix = 'qaza_plan_revision_v1_guest_';
-    for (final key in prefs.getKeys()) {
-      if (!key.startsWith(prefix)) continue;
-      final raw = prefs.getString(key);
-      if (raw == null) continue;
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is! Map) continue;
-        final revision = QazaPlanRevision.fromJson(
-          Map<String, dynamic>.from(decoded),
-        );
-        await savePlanRevision(UserProfile.localLedgerUserId, revision);
-      } catch (_) {
-        // Preserve the legacy key; a malformed historical revision must not
-        // block the rest of account initialization.
-      }
-    }
+    await _ensureLocalAccount();
   }
 
   Future<bool> hasAnyQaza(String localAccountId) async {
@@ -92,8 +48,7 @@ class AccountLocalStore {
 
   Future<LocalAccount?> getAccount(String localAccountId) async {
     final rows = await database.customSelect(
-      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
-                lifecycle_state, cloud_backup_enabled, cloud_generation,
+      '''SELECT local_account_id, account_mode, lifecycle_state,
                 created_at, updated_at
          FROM local_accounts
          WHERE local_account_id = ?
@@ -105,9 +60,8 @@ class AccountLocalStore {
 
   Future<LocalAccount?> activeAccount() async {
     final rows = await database.customSelect(
-      '''SELECT a.local_account_id, a.account_mode, a.firebase_uid,
-                a.google_email, a.lifecycle_state, a.cloud_backup_enabled,
-                a.cloud_generation, a.created_at, a.updated_at
+      '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
+                a.created_at, a.updated_at
          FROM app_session_state s
          LEFT JOIN local_accounts a
            ON a.local_account_id = s.active_local_account_id
@@ -120,120 +74,42 @@ class AccountLocalStore {
     return _mapAccount(rows.first);
   }
 
-  Future<bool> initialChoiceRequired() async {
-    final rows = await database
-        .customSelect(
-          'SELECT initial_choice_required FROM app_session_state WHERE id = 1',
-        )
-        .get();
-    return rows.isNotEmpty &&
-        rows.first.read<int>('initial_choice_required') != 0;
-  }
-
-  Future<String?> activeLocalAccountId() async {
-    final rows = await database
-        .customSelect(
-          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
-        )
-        .get();
-    return rows.isEmpty
-        ? null
-        : rows.first.read<String?>('active_local_account_id');
-  }
-
-  Future<void> setInitialChoiceRequired(bool required) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET initial_choice_required = ? WHERE id = 1',
-      variables: [Variable(required ? 1 : 0)],
-    );
-  }
-
-  Future<void> setMigrationState(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET migration_state = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
-
-  Future<String> migrationState() async {
-    final rows = await database
-        .customSelect(
-          'SELECT migration_state FROM app_session_state WHERE id = 1',
-        )
-        .get();
-    return rows.isEmpty ? 'none' : rows.first.read<String>('migration_state');
-  }
-
-  Future<void> setRestoreState(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET restore_state = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
-
-  static const sessionModeNone = 'none';
-  static const sessionModeGuest = 'guest';
-  static const sessionModeGoogle = 'google';
-  static const sessionModeSignedOut = 'signed_out';
-
-  Future<String> sessionMode() async {
-    final rows = await database.customSelect(
-      'SELECT account_session_mode FROM app_session_state WHERE id = 1',
-    ).get();
-    return rows.isEmpty
-        ? sessionModeNone
-        : rows.first.read<String>('account_session_mode');
-  }
-
-  Future<void> setSessionMode(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET account_session_mode = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
-
   Future<void> activate(String localAccountId) async {
     final account = await getAccount(localAccountId);
-    if (account == null)
+    if (account == null) {
       throw StateError('Local account not found: $localAccountId');
+    }
     if (account.lifecycleState == AccountLifecycleState.archived) {
       throw StateError('Archived local account cannot become active.');
     }
-    final sessionMode =
-        account.isGoogle ? sessionModeGoogle : sessionModeGuest;
+
     await database.customUpdate(
       '''UPDATE app_session_state
-         SET active_local_account_id = ?,
-             initial_choice_required = 0,
-             account_session_mode = ?
+         SET active_local_account_id = ?
          WHERE id = 1''',
-      variables: [Variable(localAccountId), Variable(sessionMode)],
+      variables: [Variable(localAccountId)],
     );
   }
 
-  Future<String> ensureGuestActive() async {
-    final now = DateTime.now().microsecondsSinceEpoch;
-    final guest = await getAccount(UserProfile.localLedgerUserId);
-
-    if (guest == null ||
-        !guest.isGuest ||
-        guest.lifecycleState == AccountLifecycleState.archived) {
-      final freshGuestId =
-          guest == null ? UserProfile.localLedgerUserId : _randomId('guest');
+  Future<String> ensureLocalAccountActive() async {
+    final account = await getAccount(UserProfile.localLedgerUserId);
+    if (account == null) {
+      final now = DateTime.now().microsecondsSinceEpoch;
       await database.customInsert(
         '''INSERT INTO local_accounts
-           (local_account_id, account_mode, firebase_uid, google_email,
-            lifecycle_state, cloud_backup_enabled, cloud_generation,
+           (local_account_id, account_mode, lifecycle_state,
             created_at, updated_at)
-           VALUES (?, 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
-        variables: [Variable(freshGuestId), Variable(now), Variable(now)],
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [
+          Variable(UserProfile.localLedgerUserId),
+          Variable(now),
+          Variable(now),
+        ],
       );
-      await activate(freshGuestId);
-      return freshGuestId;
     }
 
-    await activate(guest.localAccountId);
-    return guest.localAccountId;
+    await activate(UserProfile.localLedgerUserId);
+    return UserProfile.localLedgerUserId;
   }
 
   Future<bool> hasAnyAccountData(String localAccountId) async {
@@ -255,33 +131,6 @@ class AccountLocalStore {
     }
     return false;
   }
-
-  VersionedEntity _rowEntityStamp({
-    required String entityId,
-    required int version,
-    required DateTime updatedAt,
-    String writerDeviceId = '',
-    String operationId = '',
-  }) {
-    return VersionedEntity(
-      entityVersion: version,
-      updatedAt: updatedAt,
-      writerDeviceId: writerDeviceId,
-      operationId: operationId.isEmpty ? 'legacy_' + entityId : operationId,
-      entityId: entityId,
-    );
-  }
-  String _mergeBusinessKey(
-    String prayerType,
-    DateTime date,
-  ) =>
-      prayerType +
-      '|' +
-      date.year.toString() +
-      '-' +
-      date.month.toString().padLeft(2, '0') +
-      '-' +
-      date.day.toString().padLeft(2, '0');
 
   Future<UserProfile?> loadProfile(String localAccountId) async {
     final rows = await database.customSelect(
@@ -594,81 +443,55 @@ class AccountLocalStore {
     }
   }
 
-  Future<void> _ensureGuestAccount({
-    required bool hasLegacyProfile,
-    required bool hasLegacyQaza,
-    UserProfile? legacyProfile,
-  }) async {
+  Future<void> _ensureLocalAccount() async {
     final rows = await database.customSelect(
       'SELECT local_account_id FROM local_accounts WHERE local_account_id = ?',
       variables: [Variable(UserProfile.localLedgerUserId)],
     ).get();
+
     if (rows.isEmpty) {
       final now = DateTime.now().microsecondsSinceEpoch;
       await database.customInsert(
         '''INSERT INTO local_accounts
-           (local_account_id, account_mode, firebase_uid, google_email,
-            lifecycle_state, cloud_backup_enabled, cloud_generation,
+           (local_account_id, account_mode, lifecycle_state,
             created_at, updated_at)
-           VALUES ('guest', 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
-        variables: [Variable(now), Variable(now)],
-      );
-    }
-
-    final sessionRows = await database
-        .customSelect(
-          'SELECT id FROM app_session_state WHERE id = 1',
-        )
-        .get();
-    if (sessionRows.isEmpty) {
-      final initialChoiceRequired = !hasLegacyProfile && !hasLegacyQaza;
-      await database.customInsert(
-        '''INSERT INTO app_session_state
-           (id, active_local_account_id, initial_choice_required,
-            migration_state, restore_state, account_session_mode)
-           VALUES (1, ?, ?, 'none', 'none', ?)''',
+           VALUES (?, 'local', 'active', ?, ?)''',
         variables: [
-          Variable(
-            initialChoiceRequired ? null : UserProfile.localLedgerUserId,
-          ),
-          Variable(initialChoiceRequired ? 1 : 0),
-          Variable(
-            initialChoiceRequired ? 'none' : 'guest',
-          ),
+          Variable(UserProfile.localLedgerUserId),
+          Variable(now),
+          Variable(now),
         ],
       );
     }
 
-    if (legacyProfile != null) {
-      final existing = await loadProfile(UserProfile.localLedgerUserId);
-      if (existing == null) {
-        await database.customInsert(
-          '''INSERT OR IGNORE INTO account_profiles
-             (local_account_id, payload_json, entity_version, updated_at,
-              writer_device_id, operation_id)
-             VALUES (?, ?, 1, ?, ?, ?)''',
-          variables: [
-            Variable(UserProfile.localLedgerUserId),
-            Variable(jsonEncode(legacyProfile.toJson())),
-            Variable(DateTime.now().microsecondsSinceEpoch),
-            Variable(await deviceInstanceId()),
-            Variable(_randomId('migrate')),
-          ],
-        );
-      }
+    final sessionRows = await database.customSelect(
+      'SELECT id FROM app_session_state WHERE id = 1',
+    ).get();
+
+    if (sessionRows.isEmpty) {
+      await database.customInsert(
+        '''INSERT INTO app_session_state
+           (id, active_local_account_id)
+           VALUES (1, ?)''',
+        variables: [Variable(UserProfile.localLedgerUserId)],
+      );
+    } else {
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = ?
+           WHERE id = 1
+             AND active_local_account_id IS NULL''',
+        variables: [Variable(UserProfile.localLedgerUserId)],
+      );
     }
   }
 
   LocalAccount _mapAccount(QueryRow row) {
     return LocalAccount(
       localAccountId: row.read<String>('local_account_id'),
-      accountMode: AccountMode.values.byName(row.read<String>('account_mode')),
-      firebaseUid: row.read<String?>('firebase_uid'),
-      googleEmail: row.read<String?>('google_email'),
+      accountMode: AccountMode.local,
       lifecycleState: AccountLifecycleState.values
           .byName(row.read<String>('lifecycle_state')),
-      cloudBackupEnabled: row.read<int>('cloud_backup_enabled') != 0,
-      cloudGeneration: row.read<int>('cloud_generation'),
       createdAt:
           DateTime.fromMicrosecondsSinceEpoch(row.read<int>('created_at')),
       updatedAt:
