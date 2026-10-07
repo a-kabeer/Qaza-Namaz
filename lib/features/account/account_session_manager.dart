@@ -259,20 +259,33 @@ class AccountSessionManager extends ChangeNotifier {
     required int startupEpoch,
   }) async {
     try {
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
+        return;
+      }
+
       final initialized = await _firebase
           .initialize()
           .timeout(_startupAuthTimeout, onTimeout: () => false);
       if (!initialized) {
+        if (startupEpoch != _operationEpoch ||
+            await _accountStore.activeLocalAccountId() != null) {
+          return;
+        }
         await _accountStore.setInitialChoiceRequired(true);
         await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
         await _refresh();
         return;
       }
 
-      final identity = await _auth
-          .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
-          .timeout(_startupAuthTimeout, onTimeout: () => null);
-      if (identity == null) {
+        final identity = await _auth
+            .attemptLightweightAuthentication(timeout: _startupAuthTimeout)
+            .timeout(_startupAuthTimeout, onTimeout: () => null);
+        if (identity == null) {
+          if (startupEpoch != _operationEpoch ||
+              await _accountStore.activeLocalAccountId() != null) {
+            return;
+          }
         await _accountStore.setInitialChoiceRequired(true);
         await _accountStore.setSessionMode(AccountLocalStore.sessionModeNone);
         await _refresh();
@@ -302,6 +315,10 @@ class AccountSessionManager extends ChangeNotifier {
         ),
       );
     } catch (error, stack) {
+      if (startupEpoch != _operationEpoch ||
+          await _accountStore.activeLocalAccountId() != null) {
+        return;
+      }
       DebugDiagnostics().recordFailure(
         DiagnosticArea.startup,
         'missing_google_account_restore_failed',
