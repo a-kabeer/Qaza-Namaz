@@ -10,7 +10,7 @@ class _ControlledFirebaseServices extends FirebaseServices {
   final Completer<bool> initializer;
 
   @override
-  Future<bool> initialize() => initializer.future;
+  Future<bool> initializeAuthentication() => initializer.future;
 }
 
 void main() {

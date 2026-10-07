@@ -32,6 +32,11 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     unawaited(
       ref.read(accountSessionManagerProvider.notifier).initialize(),
     );
+    // Warm the authentication stack independently from App Check/Firestore so
+    // the first Google tap can open the Android account picker immediately.
+    unawaited(
+      ref.read(firebaseServicesProvider).initializeAuthentication(),
+    );
     // Persistent scheduling is a safety net for the existing outbox worker.
     // It does not own sync state and never bypasses account/auth/App Check checks.
     unawaited(FirebaseBackupScheduler.initialize());

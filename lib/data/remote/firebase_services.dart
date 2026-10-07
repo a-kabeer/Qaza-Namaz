@@ -62,6 +62,7 @@ class FirebaseServices {
   bool _appCheckTokenAvailable = false;
   bool _appCheckTokenListenerAttached = false;
   Future<FirebaseInitializationResult>? _initializing;
+  Future<FirebaseInitializationResult>? _authenticationInitializing;
   FirebaseInitializationResult? _lastInitializationResult;
 
   static const Duration initializationTimeout = Duration(seconds: 8);
@@ -143,7 +144,53 @@ class FirebaseServices {
     }
   }
 
-  Future<FirebaseInitializationResult> _initializeInternal() async {
+  /// Initializes only the prerequisites needed for Google/Firebase
+  /// authentication. App Check is intentionally excluded because it protects
+  /// Firestore/other cloud resources, not the OAuth account-picker flow.
+  ///
+  /// This is safe to call during app startup and from an interactive sign-in
+  /// tap concurrently; all callers share the same in-flight initialization.
+  Future<bool> initializeAuthentication() async {
+    final running = _authenticationInitializing;
+    if (running != null) {
+      try {
+        final result = await running.timeout(initializationTimeout);
+        return result.authenticationReady;
+      } on TimeoutException {
+        return _firebaseCoreInitialized && _googleSignInInitialized;
+      }
+    }
+
+    if (_firebaseCoreInitialized && _googleSignInInitialized) {
+      return true;
+    }
+
+    final future = _initializeAuthenticationInternal();
+    _authenticationInitializing = future;
+    unawaited(
+      future.then<void>(
+        (_) {
+          if (identical(_authenticationInitializing, future)) {
+            _authenticationInitializing = null;
+          }
+        },
+        onError: (Object _, StackTrace __) {
+          if (identical(_authenticationInitializing, future)) {
+            _authenticationInitializing = null;
+          }
+        },
+      ),
+    );
+
+    try {
+      final result = await future.timeout(initializationTimeout);
+      return result.authenticationReady;
+    } on TimeoutException {
+      return _firebaseCoreInitialized && _googleSignInInitialized;
+    }
+  }
+
+  Future<FirebaseInitializationResult> _initializeAuthenticationInternal() async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       const result = FirebaseInitializationResult(
         firebaseCoreInitialized: false,
@@ -193,6 +240,36 @@ class FirebaseServices {
         );
       }
     }
+
+    return FirebaseInitializationResult(
+      firebaseCoreInitialized: _firebaseCoreInitialized,
+      googleSignInInitialized: _googleSignInInitialized,
+      appCheckInitialized: _appCheckInitialized,
+      failure: failure,
+    );
+  }
+
+  Future<FirebaseInitializationResult> _initializeInternal() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      const result = FirebaseInitializationResult(
+        firebaseCoreInitialized: false,
+        googleSignInInitialized: false,
+        appCheckInitialized: false,
+        failure: FirebaseInitializationFailure.firebaseCoreFailure,
+      );
+      _diagnostics.recordEvent(
+        DiagnosticArea.startup,
+        'firebase_android_initialization_skipped',
+      );
+      return result;
+    }
+
+    final authReady = await initializeAuthentication();
+    FirebaseInitializationFailure? failure = authReady
+        ? null
+        : !_firebaseCoreInitialized
+            ? FirebaseInitializationFailure.firebaseCoreFailure
+            : FirebaseInitializationFailure.googleSignInFailure;
 
     if (_firebaseCoreInitialized && !_appCheckInitialized) {
       try {
@@ -359,8 +436,8 @@ class GoogleFirebaseAuthService {
   }
 
   Future<User?> _signInInternal() async {
-    if (!await services.initialize()) {
-      throw StateError('Firebase is not available.');
+    if (!await services.initializeAuthentication()) {
+      throw StateError('Firebase/Google authentication is not available.');
     }
 
     if (!GoogleSignIn.instance.supportsAuthenticate()) {
@@ -400,7 +477,10 @@ class GoogleFirebaseAuthService {
   Future<GoogleFirebaseIdentity?> _attemptLightweightAuthenticationInternal(
     Duration timeout,
   ) async {
-    if (!await services.initialize().timeout(timeout, onTimeout: () => false)) {
+    if (!await services.initializeAuthentication().timeout(
+      timeout,
+      onTimeout: () => false,
+    )) {
       return null;
     }
 
