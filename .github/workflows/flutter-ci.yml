@@ -75,6 +75,15 @@ jobs:
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
 
+      - name: Analyze
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter analyze --format machine --no-fatal-infos --no-fatal-warnings | tee /tmp/flutter-analyze.machine
+
+      - name: Dead code and dependency audit
+        run: python3 tools/dead_code_audit.py --analyzer-output /tmp/flutter-analyze.machine
+
       - name: Check Dart formatting
         shell: bash
         run: |
@@ -131,8 +140,6 @@ jobs:
           timeout 10m npx --yes firebase-tools emulators:exec             --only firestore             --project qaza-nmz             "node tools/firebase_emulator_security_test.mjs"
           timeout 10m npx --yes firebase-tools emulators:exec             --only firestore             --project qaza-nmz             "node test/firestore_rules_test.js"
 
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
   build_android:
     name: Android release artifacts
