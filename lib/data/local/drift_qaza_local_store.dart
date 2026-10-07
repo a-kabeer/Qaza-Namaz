@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
@@ -665,26 +664,4 @@ class DriftQazaLocalStore extends QazaLocalStore
         updatedAt: record.updatedAt,
       );
 
-  SyncOutboxCompanion _toOpCompanion(PendingSyncOp op) =>
-      SyncOutboxCompanion.insert(
-        id: op.id,
-        userId: op.userId,
-        type: op.type.name,
-        queuedAt: op.queuedAt,
-        recordJson: op.record == null
-            ? const Value.absent()
-            : Value(jsonEncode(op.record!.toJson())),
-        targetRecordId: op.targetRecordId == null
-            ? const Value.absent()
-            : Value(op.targetRecordId),
-        completedAt: op.completedAt == null
-            ? const Value.absent()
-            : Value(op.completedAt),
-        completionId: op.completionId == null
-            ? const Value.absent()
-            : Value(op.completionId),
-        attempts: Value(op.attempts),
-        lastError:
-            op.lastError == null ? const Value.absent() : Value(op.lastError),
-      );
 }
