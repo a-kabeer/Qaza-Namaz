@@ -858,8 +858,8 @@ void main() {
       detail,
       contains('if (!detail.isDeleted && detail.pendingCount > 0) ...['),
     );
-    expect(detail, contains('Edit Addition'));
-    expect(detail, contains('Delete Addition'));
+    expect(detail, contains('l10n.qazaAdditionEdit'));
+    expect(detail, contains('l10n.qazaAdditionDelete'));
   });
 
   test('Addition filter survives Pending/Completed status switching', () {
