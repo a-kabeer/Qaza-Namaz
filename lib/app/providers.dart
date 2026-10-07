@@ -130,6 +130,9 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
   );
 });
 
+/// A null profile is a legitimate first-time-user state. Repository/provider
+/// failures intentionally propagate as AsyncError so StartupGate can route them
+/// to a retryable storage boundary instead of onboarding.
 final userProfileProvider = FutureProvider<UserProfile?>((ref) {
   ref.watch(activeUserIdProvider);
   return ref.read(userProfileRepositoryProvider).load();
