@@ -46,8 +46,7 @@ class FirebaseInitializationResult {
   bool get authenticationReady =>
       firebaseCoreInitialized && googleSignInInitialized;
 
-  bool get firestoreReady =>
-      firebaseCoreInitialized && appCheckInitialized;
+  bool get firestoreReady => firebaseCoreInitialized && appCheckInitialized;
 }
 
 class FirebaseServices {
@@ -106,8 +105,7 @@ class FirebaseServices {
     if (_firebaseCoreInitialized &&
         _googleSignInInitialized &&
         _appCheckInitialized) {
-      return _lastInitializationResult ??=
-          FirebaseInitializationResult(
+      return _lastInitializationResult ??= FirebaseInitializationResult(
         firebaseCoreInitialized: true,
         googleSignInInitialized: true,
         appCheckInitialized: true,
@@ -484,8 +482,12 @@ class GoogleFirebaseAuthService {
     Duration timeout,
   ) async {
     final ready = await Future.wait<bool>([
-      services.initializeFirebaseCore().timeout(timeout, onTimeout: () => false),
-      services.initializeGoogleSignIn().timeout(timeout, onTimeout: () => false),
+      services
+          .initializeFirebaseCore()
+          .timeout(timeout, onTimeout: () => false),
+      services
+          .initializeGoogleSignIn()
+          .timeout(timeout, onTimeout: () => false),
     ]);
     if (!ready.every((value) => value)) {
       return null;
