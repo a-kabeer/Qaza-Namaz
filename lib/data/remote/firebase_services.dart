@@ -521,7 +521,14 @@ class GoogleFirebaseAuthService {
   /// Restores a cached Google/Firebase identity without invoking the
   /// interactive account picker. This is startup-only authentication; explicit
   /// user initiated sign-in waits for this operation when necessary.
-  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication() async {
+  /// [timeout] is retained for startup API compatibility. It intentionally
+  /// does not cancel or release ownership of the underlying native operation.
+  Future<GoogleFirebaseIdentity?> attemptLightweightAuthentication({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    // The caller may time out its own await; the coordinator must continue
+    // owning the underlying authentication until its Future truly completes.
+    assert(timeout >= Duration.zero);
     final existingUser = _currentFirebaseUserOrNull();
     if (existingUser != null) {
       return GoogleFirebaseIdentity(
