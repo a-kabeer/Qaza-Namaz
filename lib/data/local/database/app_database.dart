@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
   /// Existing pending/completed records and completion markers are preserved.
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -134,6 +134,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 16) {
             await _ensureBackupFailureColumns();
           }
+          if (from < 17) {
+            await _ensureAccountSessionModeColumn();
+          }
           await _ensurePerformanceIndexes();
           await _ensureMigrationSnapshotSchema();
         },
@@ -156,6 +159,17 @@ class AppDatabase extends _$AppDatabase {
     if (!names.contains('migration_snapshot_id')) {
       await customStatement(
         'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureAccountSessionModeColumn() async {
+    final columns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('account_session_mode')) {
+      await customStatement(
+        "ALTER TABLE app_session_state ADD COLUMN account_session_mode TEXT NOT NULL DEFAULT 'none'",
       );
     }
   }
@@ -218,6 +232,7 @@ class AppDatabase extends _$AppDatabase {
         initial_choice_required INTEGER NOT NULL DEFAULT 0,
         migration_state TEXT NOT NULL DEFAULT 'none',
         restore_state TEXT NOT NULL DEFAULT 'none',
+        account_session_mode TEXT NOT NULL DEFAULT 'none',
         migration_snapshot_id TEXT
       )
     ''');
