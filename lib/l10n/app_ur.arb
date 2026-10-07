@@ -904,4 +904,30 @@
     }
   },
   "addQazaManageAddition": "اس اضافے کو منظم کریں",
+  "qazaCompletionSingle": "{prayer} کی قضا، {date} مکمل ہو گئی۔",
+  "@qazaCompletionSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaCompletionMultiple": "{count} قضا نمازیں مکمل ہو گئیں۔",
+  "@qazaCompletionMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoSingle": "{prayer} کی قضا، {date} دوبارہ باقی میں شامل ہو گئی۔",
+  "@qazaUndoSingle": {
+    "placeholders": {
+      "prayer": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "qazaUndoMultiple": "{count} قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔",
+  "@qazaUndoMultiple": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "qazaUndoExpired": "واپس کرنے کا 5 سیکنڈ کا وقت ختم ہو گیا۔",
+  "qazaUndoStaleBatch": "واپس کرنے کا یہ اختیار اب دستیاب نہیں کیونکہ اس کے بعد ایک نیا Undo عمل ہوا ہے۔",
+  "qazaUndoTargetChanged": "واپس کرنے کا اختیار دستیاب نہیں کیونکہ قضا ریکارڈ بدل چکا یا حذف ہو چکا ہے۔",
+  "qazaUndoFailed": "قضا واپس نہیں ہو سکی۔ براہِ کرم دوبارہ کوشش کریں۔",
 }
