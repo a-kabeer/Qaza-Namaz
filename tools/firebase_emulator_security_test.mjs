@@ -112,6 +112,10 @@ async function main() {
   // through initializing before child writes are allowed.
   await setDoc(emptyRoot, rootFields('empty', 1));
   await expectDenied(
+    'Empty to ready without initialization',
+    () => setDoc(emptyRoot, rootFields('ready', 1)),
+  );
+  await expectDenied(
     'Child write while root is empty',
     () => setDoc(emptyRecord, childFields(1)),
   );
