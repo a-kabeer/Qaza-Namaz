@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/utils/qaza_date.dart';
@@ -36,10 +37,10 @@ extension QazaStatusFilterX on QazaStatusFilter {
         QazaStatusFilter.completed => QazaStatus.completed,
       };
 
-  String get label => switch (this) {
-        QazaStatusFilter.all => 'All',
-        QazaStatusFilter.pending => 'Pending',
-        QazaStatusFilter.completed => 'Completed',
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        QazaStatusFilter.all => l10n.filterAll,
+        QazaStatusFilter.pending => l10n.statusPending,
+        QazaStatusFilter.completed => l10n.statusCompleted,
       };
 
   /// Default sort direction for each status workspace.
