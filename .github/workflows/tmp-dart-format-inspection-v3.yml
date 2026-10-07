@@ -21,4 +21,5 @@ jobs:
           dart format "$file"
           echo "----- FORMATTED FILE -----"
           cat "$file"
-          echo "----- END FORMATTED FILE -----"
+          echo "formatter-v3"
+echo "----- END FORMATTED FILE -----"
