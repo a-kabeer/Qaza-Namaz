@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -9,15 +8,12 @@ import '../../domain/entities/local_account.dart';
 import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
-import '../../domain/services/conflict_resolver.dart';
 import 'database/app_database.dart';
 
 class AccountLocalStore {
   AccountLocalStore({required this.database});
 
   final AppDatabase database;
-  final Map<String, StreamController<BackupStatusSnapshot>>
-      _backupStatusControllers = {};
 
   StreamController<BackupStatusSnapshot> _backupStatusController(
     String localAccountId,
@@ -32,10 +28,6 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> _emitInitialBackupStatus(String localAccountId) async {
-    final controller = _backupStatusControllers[localAccountId];
-    if (controller == null || controller.isClosed) return;
-    controller.add(await readBackupStatus(localAccountId));
   }
 
   Future<void> _notifyBackupStatus(String localAccountId) async {
@@ -103,15 +95,6 @@ class AccountLocalStore {
     return rows.isNotEmpty;
   }
 
-  Future<bool> hasAnyGoogleAccount() async {
-    final rows = await database.customSelect(
-      '''SELECT 1 FROM local_accounts
-         WHERE account_mode = 'google'
-           AND lifecycle_state <> 'archived'
-         LIMIT 1''',
-    ).get();
-    return rows.isNotEmpty;
-  }
 
   Future<String> deviceInstanceId() async {
     final rows = await database
@@ -133,8 +116,7 @@ class AccountLocalStore {
 
   Future<LocalAccount?> getAccount(String localAccountId) async {
     final rows = await database.customSelect(
-      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
-                lifecycle_state, cloud_backup_enabled, cloud_generation,
+      '''SELECT local_account_id, account_mode, lifecycle_state,
                 created_at, updated_at
          FROM local_accounts
          WHERE local_account_id = ?
@@ -144,25 +126,11 @@ class AccountLocalStore {
     return rows.isEmpty ? null : _mapAccount(rows.first);
   }
 
-  Future<LocalAccount?> findGoogleByUid(String uid) async {
-    final rows = await database.customSelect(
-      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
-                lifecycle_state, cloud_backup_enabled, cloud_generation,
-                created_at, updated_at
-         FROM local_accounts
-         WHERE firebase_uid = ? AND account_mode = 'google'
-           AND lifecycle_state <> 'archived'
-         LIMIT 1''',
-      variables: [Variable(uid)],
-    ).get();
-    return rows.isEmpty ? null : _mapAccount(rows.first);
-  }
 
   Future<LocalAccount?> activeAccount() async {
     final rows = await database.customSelect(
-      '''SELECT a.local_account_id, a.account_mode, a.firebase_uid,
-                a.google_email, a.lifecycle_state, a.cloud_backup_enabled,
-                a.cloud_generation, a.created_at, a.updated_at
+      '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
+                a.created_at, a.updated_at
          FROM app_session_state s
          LEFT JOIN local_accounts a
            ON a.local_account_id = s.active_local_account_id
@@ -203,49 +171,15 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> setMigrationState(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET migration_state = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
 
-  Future<String> migrationState() async {
-    final rows = await database
-        .customSelect(
-          'SELECT migration_state FROM app_session_state WHERE id = 1',
-        )
-        .get();
-    return rows.isEmpty ? 'none' : rows.first.read<String>('migration_state');
-  }
 
-  Future<void> setRestoreState(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET restore_state = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
 
   static const sessionModeNone = 'none';
   static const sessionModeGuest = 'guest';
   static const sessionModeGoogle = 'google';
   static const sessionModeSignedOut = 'signed_out';
 
-  Future<String> sessionMode() async {
-    final rows = await database.customSelect(
-      'SELECT account_session_mode FROM app_session_state WHERE id = 1',
-    ).get();
-    return rows.isEmpty
-        ? sessionModeNone
-        : rows.first.read<String>('account_session_mode');
-  }
 
-  Future<void> setSessionMode(String value) async {
-    await database.customUpdate(
-      'UPDATE app_session_state SET account_session_mode = ? WHERE id = 1',
-      variables: [Variable(value)],
-    );
-  }
 
   Future<void> activate(String localAccountId) async {
     final account = await getAccount(localAccountId);
@@ -254,15 +188,12 @@ class AccountLocalStore {
     if (account.lifecycleState == AccountLifecycleState.archived) {
       throw StateError('Archived local account cannot become active.');
     }
-    final sessionMode =
-        account.isGoogle ? sessionModeGoogle : sessionModeGuest;
     await database.customUpdate(
       '''UPDATE app_session_state
          SET active_local_account_id = ?,
-             initial_choice_required = 0,
-             account_session_mode = ?
+             initial_choice_required = 0
          WHERE id = 1''',
-      variables: [Variable(localAccountId), Variable(sessionMode)],
+      variables: [Variable(localAccountId)],
     );
   }
 
@@ -277,10 +208,9 @@ class AccountLocalStore {
           guest == null ? UserProfile.localLedgerUserId : _randomId('guest');
       await database.customInsert(
         '''INSERT INTO local_accounts
-           (local_account_id, account_mode, firebase_uid, google_email,
-            lifecycle_state, cloud_backup_enabled, cloud_generation,
+           (local_account_id, account_mode, lifecycle_state,
             created_at, updated_at)
-           VALUES (?, 'guest', NULL, NULL, 'active', 0, 1, ?, ?)''',
+           VALUES (?, 'local', 'active', ?, ?)''',
         variables: [Variable(freshGuestId), Variable(now), Variable(now)],
       );
       await activate(freshGuestId);
@@ -291,37 +221,10 @@ class AccountLocalStore {
     return guest.localAccountId;
   }
 
-  Future<String> createGooglePartition({
-    required String firebaseUid,
-    required String? email,
-  }) async {
+) async {
     final existing = await findGoogleByUid(firebaseUid);
     if (existing != null) return existing.localAccountId;
 
-    final id = _randomId('google');
-    final now = DateTime.now().microsecondsSinceEpoch;
-    // The partial unique index on firebase_uid is the final uniqueness
-    // guard. INSERT OR IGNORE makes repeated startup restoration idempotent
-    // even if two restoration paths race to create the same UID.
-    await database.customInsert(
-      '''INSERT OR IGNORE INTO local_accounts
-         (local_account_id, account_mode, firebase_uid, google_email,
-          lifecycle_state, cloud_backup_enabled, cloud_generation,
-          created_at, updated_at)
-         VALUES (?, 'google', ?, ?, 'active', 1, 1, ?, ?)''',
-      variables: [
-        Variable(id),
-        Variable(firebaseUid),
-        Variable(email),
-        Variable(now),
-        Variable(now),
-      ],
-    );
-    final created = await findGoogleByUid(firebaseUid);
-    if (created == null) {
-      throw StateError('Unable to create Google partition for Firebase UID.');
-    }
-    await _ensureBackupStateRow(created.localAccountId);
     return created.localAccountId;
   }
 
@@ -345,13 +248,7 @@ class AccountLocalStore {
     return false;
   }
 
-  Future<VersionedEntity> _localEntityStamp(
-    String localAccountId,
-    String entityType,
-    String entityId, {
-    required int fallbackVersion,
-    required DateTime fallbackUpdatedAt,
-  }) async {
+) async {
     final rows = await database.customSelect(
       '''SELECT entity_version, updated_at, writer_device_id, operation_id
          FROM entity_metadata
@@ -400,22 +297,8 @@ class AccountLocalStore {
     );
   }
 
-  String _mergeBusinessKey(
-    String prayerType,
-    DateTime date,
-  ) =>
-      prayerType +
-      '|' +
-      date.year.toString() +
-      '-' +
-      date.month.toString().padLeft(2, '0') +
-      '-' +
-      date.day.toString().padLeft(2, '0');
 
-  Future<void> mergeGuestIntoGooglePartition({
-    required String guestLocalAccountId,
-    required String googleLocalAccountId,
-  }) async {
+) async {
     if (guestLocalAccountId == googleLocalAccountId) return;
 
     final guest = await getAccount(guestLocalAccountId);
@@ -1041,42 +924,11 @@ class AccountLocalStore {
           );
         }
       }
-
-      // Backup triggers stay disabled during the cross-partition merge
-      // so copied Qaza rows do not enqueue duplicate snapshots.
-      await database.customUpdate(
-        '''UPDATE local_accounts
-           SET cloud_backup_enabled = 1, updated_at = ?
-           WHERE local_account_id = ?''',
-        variables: [
-          Variable(DateTime.now().microsecondsSinceEpoch),
-          Variable(googleLocalAccountId),
-        ],
-      );      await _enqueueSnapshotInsideTransaction(
-        googleLocalAccountId,
-        DateTime.now().microsecondsSinceEpoch,
-        await deviceInstanceId(),
-      );
     });
   }
 
-  Future<String?> migratingGoogleAccount() async {
-    final rows = await database.customSelect(
-      '''SELECT local_account_id, account_mode, firebase_uid, google_email,
-                lifecycle_state, cloud_backup_enabled, cloud_generation,
-                created_at, updated_at
-         FROM local_accounts
-         WHERE account_mode = 'google' AND lifecycle_state = 'migrating'
-         ORDER BY updated_at DESC
-         LIMIT 1''',
-    ).get();
-    return rows.isEmpty ? null : rows.first.read<String>('local_account_id');
-  }
 
-  Future<String> cloneGuestToGoogle({
-    required String firebaseUid,
-    required String? email,
-  }) async {
+) async {
     final existing = await findGoogleByUid(firebaseUid);
     final guest = await getAccount(UserProfile.localLedgerUserId);
     if (guest == null) {
@@ -1174,7 +1026,6 @@ class AccountLocalStore {
       return guest.localAccountId;
     }
 
-    await createMigrationSnapshot(existing.localAccountId);
     await mergeGuestIntoGooglePartition(
       guestLocalAccountId: guest.localAccountId,
       googleLocalAccountId: existing.localAccountId,
@@ -1182,10 +1033,7 @@ class AccountLocalStore {
     return existing.localAccountId;
   }
 
-  Future<void> finalizeGuestMigration({
-    required String guestLocalAccountId,
-    required String googleLocalAccountId,
-  }) async {
+) async {
     await database.transaction(() async {
       final guest = await getAccount(guestLocalAccountId);
       final google = await getAccount(googleLocalAccountId);
@@ -1217,18 +1065,6 @@ class AccountLocalStore {
     });
   }
 
-  Future<void> unarchiveAccount(String localAccountId) async {
-    await database.customUpdate(
-      '''UPDATE local_accounts
-         SET lifecycle_state = 'active', updated_at = ?
-         WHERE local_account_id = ?''',
-      variables: [
-        Variable(DateTime.now().microsecondsSinceEpoch),
-        Variable(localAccountId),
-      ],
-    );
-    await activate(localAccountId);
-  }
 
   Future<void> deleteLocalAccount(String localAccountId) async {
     if (localAccountId == UserProfile.localLedgerUserId) {
@@ -1495,152 +1331,11 @@ class AccountLocalStore {
     return migrationId;
   }
 
-  Future<void> completeMigration() async {
-    await database.transaction(() async {
-      final id = await migrationSnapshotId();
-      if (id != null) {
-        await database.customUpdate(
-          'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
-          variables: [Variable(id)],
-        );
-      }
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET migration_snapshot_id = NULL, migration_state = 'completed'
-           WHERE id = 1''',
-      );
-    });
-  }
 
-  Future<void> clearMigrationSnapshot() async {
-    final id = await migrationSnapshotId();
-    if (id == null) return;
-    await database.transaction(() async {
-      await database.customUpdate(
-        'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
-        variables: [Variable(id)],
-      );
-      await database.customUpdate(
-        'UPDATE app_session_state SET migration_snapshot_id = NULL WHERE id = 1',
-      );
-    });
-  }
 
-  Future<void> restoreMigrationSnapshotIfPresent() async {
-    final id = await migrationSnapshotId();
-    if (id == null) return;
-    final rows = await database.customSelect(
-      '''SELECT local_account_id, snapshot_json
-         FROM account_migration_snapshots WHERE migration_id = ? LIMIT 1''',
-      variables: [Variable(id)],
-    ).get();
-    if (rows.isEmpty) return;
-    final snapshot = Map<String, dynamic>.from(
-      jsonDecode(rows.first.read<String>('snapshot_json')) as Map,
-    );
-    final accounts = (snapshot['local_accounts'] as List)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .toList(growable: false);
-    if (accounts.isEmpty) throw StateError('Migration snapshot is empty.');
-    final targetId = accounts.first['local_account_id'] as String;
 
-    Future<void> deleteRows(String table, String column) async {
-      await database.customUpdate(
-        'DELETE FROM $table WHERE $column = ?',
-        variables: [Variable(targetId)],
-      );
-    }
 
-    Future<void> insertRows(String table, List<dynamic> rawRows) async {
-      for (final rawRow in rawRows) {
-        final row = Map<String, dynamic>.from(rawRow as Map);
-        final columns = row.keys.toList(growable: false);
-        if (columns.isEmpty) continue;
-        final placeholders = List.filled(columns.length, '?').join(', ');
-        await database.customInsert(
-          'INSERT OR REPLACE INTO $table (${columns.join(', ')}) VALUES ($placeholders)',
-          variables: columns.map((column) => Variable(row[column])).toList(),
-        );
-      }
-    }
-
-    await database.transaction(() async {
-      await deleteRows('qaza_profile_plan_provenance', 'user_id');
-      await deleteRows('qaza_deletion_action_record_snapshots', 'user_id');
-      await deleteRows('qaza_deletion_actions', 'user_id');
-      await deleteRows('qaza_additions', 'user_id');
-      await deleteRows('qaza_records', 'user_id');
-      await deleteRows('account_plan_revisions', 'local_account_id');
-      await deleteRows('entity_metadata', 'local_account_id');
-      await deleteRows('qaza_record_tombstones', 'local_account_id');
-      await deleteRows('sync_outbox', 'user_id');
-      await database.customUpdate(
-        'DELETE FROM local_accounts WHERE local_account_id = ?',
-        variables: [Variable(targetId)],
-      );
-      for (final entry in snapshot.entries) {
-        if (entry.key == 'local_accounts') continue;
-        final value = entry.value;
-        if (value is List) await insertRows(entry.key, value);
-      }
-      await insertRows('local_accounts', accounts);
-      await database.customUpdate(
-        'DELETE FROM account_migration_snapshots WHERE migration_id = ?',
-        variables: [Variable(id)],
-      );
-      await database.customUpdate(
-        'UPDATE app_session_state SET migration_snapshot_id = NULL WHERE id = 1',
-      );
-    });
-  }
-
-  Future<void> rollbackGoogleMigration(String localAccountId) async {
-    // Existing Google-partition migrations are secured by a durable snapshot.
-    // The caller may provide either the Guest or migrating Google ID after a
-    // restart, so snapshot-backed rollback must always restore the target and
-    // explicitly reactivate the canonical Guest partition.
-    if (await migrationSnapshotId() != null) {
-      await restoreMigrationSnapshotIfPresent();
-      await ensureGuestActive();
-      await setMigrationState('failed');
-      return;
-    }
-
-    // Normal Guest -> Google in-place migration has no second partition and can
-    // safely be reverted by converting the migrating account back to Guest.
-    await database.transaction(() async {
-      await database.customUpdate(
-        '''UPDATE local_accounts
-           SET account_mode = 'guest',
-               firebase_uid = NULL,
-               google_email = NULL,
-               lifecycle_state = 'active',
-               cloud_backup_enabled = 0,
-               cloud_generation = 1,
-               updated_at = ?
-           WHERE local_account_id = ?''',
-        variables: [
-          Variable(DateTime.now().microsecondsSinceEpoch),
-          Variable(localAccountId),
-        ],
-      );
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?,
-               migration_state = 'failed'
-           WHERE id = 1''',
-        variables: [Variable(localAccountId)],
-      );
-    });
-  }
-
-  Future<void> updateGoogleAccount({
-    required String localAccountId,
-    required String uid,
-    required String? email,
-    required bool backupEnabled,
-    required int generation,
-  }) async {
+) async {
     await database.customUpdate(
       '''UPDATE local_accounts
          SET account_mode = 'google',
@@ -1662,18 +1357,6 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> setBackupEnabled(String localAccountId, bool enabled) async {
-    await database.customUpdate(
-      '''UPDATE local_accounts
-         SET cloud_backup_enabled = ?, updated_at = ?
-         WHERE local_account_id = ?''',
-      variables: [
-        Variable(enabled ? 1 : 0),
-        Variable(DateTime.now().microsecondsSinceEpoch),
-        Variable(localAccountId),
-      ],
-    );
-  }
 
   Future<BackupStatusSnapshot> readBackupStatus(
     String localAccountId,
@@ -1787,134 +1470,16 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> setBackupState(
-    String localAccountId,
-    String state,
-  ) async {
-    await _ensureBackupStateRow(localAccountId);
-    await database.customUpdate(
-      '''UPDATE account_backup_state
-         SET state = ?,
-             progress_completed = NULL,
-             progress_total = NULL
-         WHERE local_account_id = ?''',
-      variables: [Variable(state), Variable(localAccountId)],
-    );
-    await _notifyBackupStatus(localAccountId);
-  }
 
-  Future<void> setBackupProgress(
-    String localAccountId,
-    int processed,
-    int total,
-  ) async {
-    if (processed < 0 || total <= 0 || processed > total) {
-      throw ArgumentError(
-        'Invalid backup progress: processed=$processed total=$total',
-      );
-    }
-    await _ensureBackupStateRow(localAccountId);
-    await database.customUpdate(
-      '''UPDATE account_backup_state
-         SET progress_completed = ?, progress_total = ?
-         WHERE local_account_id = ? AND state = 'running' ''',
-      variables: [
-        Variable(processed),
-        Variable(total),
-        Variable(localAccountId),
-      ],
-    );
-    await _notifyBackupStatus(localAccountId);
-  }
 
-  Stream<BackupStatusSnapshot> watchBackupStatus(String localAccountId) {
-    return _backupStatusController(localAccountId).stream;
-  }
 
-  Future<void> prepareBackupRetry(String localAccountId) async {
-    await _ensureBackupStateRow(localAccountId);
-    await enqueueSnapshot(localAccountId);
-    final now = DateTime.now().microsecondsSinceEpoch;
-    await database.customUpdate(
-      '''UPDATE sync_outbox
-         SET next_attempt_at = ?, worker_id = NULL, lease_until = NULL,
-             failure_category = NULL, last_error = NULL, last_attempt_at = NULL
-         WHERE user_id = ?
-           AND type = 'account_snapshot'
-           AND (lease_until IS NULL OR lease_until <= ?)''',
-      variables: [
-        Variable(now),
-        Variable(localAccountId),
-        Variable(now),
-      ],
-    );
-    await setBackupState(localAccountId, 'pending');
-  }
 
-  Future<void> removeSnapshotOperation(String localAccountId) async {
-    await database.customUpdate(
-      '''DELETE FROM sync_outbox
-         WHERE user_id = ? AND id = ? AND type = 'account_snapshot' ''',
-      variables: [
-        Variable(localAccountId),
-        Variable(_snapshotOutboxId(localAccountId)),
-      ],
-    );
-  }
 
-  Future<void> recordBackupFailure({
-    required String localAccountId,
-    required String failureCategory,
-    required String message,
-    required DateTime nextRetryAt,
-    String state = 'failed',
-  }) async {
-    await _ensureBackupStateRow(localAccountId);
-    await enqueueSnapshot(localAccountId);
-    final now = DateTime.now().microsecondsSinceEpoch;
-    await database.customUpdate(
-      '''UPDATE sync_outbox
-         SET attempts = attempts + 1,
-             last_error = ?,
-             failure_category = ?,
-             last_attempt_at = ?,
-             next_attempt_at = ?,
-             worker_id = NULL,
-             lease_until = NULL
-         WHERE user_id = ?
-           AND id = ?
-           AND type = 'account_snapshot'
-           AND (lease_until IS NULL OR lease_until <= ?)''',
-      variables: [
-        Variable(message),
-        Variable(failureCategory),
-        Variable(now),
-        Variable(nextRetryAt.microsecondsSinceEpoch),
-        Variable(localAccountId),
-        Variable(_snapshotOutboxId(localAccountId)),
-        Variable(now),
-      ],
-    );
     await setBackupState(localAccountId, state);
   }
 
-  Future<int> currentBackupRevision(String localAccountId) async {
-    await _ensureBackupStateRow(localAccountId);
-    final rows = await database.customSelect(
-      '''SELECT current_dataset_revision
-         FROM account_backup_state
-         WHERE local_account_id = ? LIMIT 1''',
-      variables: [Variable(localAccountId)],
-    ).get();
-    return rows.isEmpty ? 0 : rows.first.read<int>('current_dataset_revision');
-  }
 
-  Future<bool> acknowledgeBackup({
-    required String localAccountId,
-    required int revision,
-    required int generation,
-    required DateTime completedAt,
-  }) async {
+) async {
     await _ensureBackupStateRow(localAccountId);
     final changed = await database.customUpdate(
       '''UPDATE account_backup_state
@@ -1942,33 +1507,7 @@ class AccountLocalStore {
     return changed > 0;
   }
 
-  Future<void> prepareForSignOut() async {
-    await database.transaction(() async {
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = NULL,
-               initial_choice_required = 1,
-               restore_state = 'none',
-               account_session_mode = ?
-           WHERE id = 1''',
-        variables: [Variable(sessionModeSignedOut)],
-      );
-    });
-  }
 
-  Future<void> setCloudGeneration(String localAccountId, int generation) async {
-    await database.customUpdate(
-      '''UPDATE local_accounts
-         SET cloud_generation = ?, updated_at = ?
-         WHERE local_account_id = ?''',
-      variables: [
-        Variable(generation),
-        Variable(DateTime.now().microsecondsSinceEpoch),
-        Variable(localAccountId),
-      ],
-    );
-    await _notifyBackupStatus(localAccountId);
-  }
 
   Future<UserProfile?> loadProfile(String localAccountId) async {
     final rows = await database.customSelect(
@@ -1998,11 +1537,10 @@ class AccountLocalStore {
         writerDeviceId: device,
         operationId: opId,
       );
-      await _enqueueSnapshotInsideTransaction(localAccountId, now, device);
     });
   }
 
-  /// Persists a draft locally without creating a cloud backup operation.
+  /// Persists a draft locally.
   Future<void> saveProfileLocalOnly(
     String localAccountId,
     UserProfile profile,
@@ -2049,8 +1587,7 @@ class AccountLocalStore {
     );
   }
 
-  /// Atomically commits profile, initial plan revision, Qaza records,
-  /// provenance and the durable cloud snapshot handoff.
+  /// Atomically commits profile, initial plan revision, Qaza records, and provenance.
   Future<void> commitOnboarding({
     required String localAccountId,
     required UserProfile profile,
@@ -2186,8 +1723,6 @@ class AccountLocalStore {
           '${insertedTotal} of ${records.length} records.',
         );
       }
-
-      await _enqueueSnapshotInsideTransaction(localAccountId, now, device);
     });
   }
 
@@ -2251,11 +1786,6 @@ class AccountLocalStore {
           Variable(payload),
           Variable(revision.createdAt.microsecondsSinceEpoch),
         ],
-      );
-      await _enqueueSnapshotInsideTransaction(
-        localAccountId,
-        DateTime.now().microsecondsSinceEpoch,
-        await deviceInstanceId(),
       );
     });
   }
@@ -2356,24 +1886,8 @@ class AccountLocalStore {
     return changed > 0;
   }
 
-  Future<void> clearBackupOperations(String localAccountId) async {
-    final rows = await database.customSelect(
-      '''SELECT cloud_generation FROM local_accounts
-         WHERE local_account_id = ? LIMIT 1''',
-      variables: [Variable(localAccountId)],
-    ).get();
-    if (rows.isEmpty) return;
-    await removeAllOutboxForGeneration(
-      localAccountId: localAccountId,
-      generation: rows.first.read<int>('cloud_generation'),
-    );
-  }
 
-  Future<void> removeOutboxOperation({
-    required String localAccountId,
-    required String operationId,
-    required String workerId,
-  }) async {
+) async {
     await database.customUpdate(
       '''DELETE FROM sync_outbox
          WHERE user_id = ? AND id = ? AND worker_id = ?''',
@@ -2385,10 +1899,7 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> removeAllOutboxForGeneration({
-    required String localAccountId,
-    required int generation,
-  }) async {
+) async {
     await database.customUpdate(
       '''DELETE FROM sync_outbox
          WHERE user_id = ? AND
@@ -2398,16 +1909,7 @@ class AccountLocalStore {
     );
   }
 
-  Future<void> markOutboxRetry({
-    required String localAccountId,
-    required String operationId,
-    required String workerId,
-    required int attempts,
-    required String error,
-    required String failureCategory,
-    required int lastAttemptMicros,
-    required int nextAttemptMicros,
-  }) async {
+) async {
     await database.customUpdate(
       '''UPDATE sync_outbox
          SET attempts = ?, last_error = ?, failure_category = ?,
@@ -2430,57 +1932,6 @@ class AccountLocalStore {
   String _snapshotOutboxId(String localAccountId) =>
       'account_snapshot_$localAccountId';
 
-  Future<void> enqueueSnapshot(String localAccountId) async {
-    final rows = await database.customSelect(
-      '''SELECT firebase_uid, cloud_generation, cloud_backup_enabled
-         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
-      variables: [Variable(localAccountId)],
-    ).get();
-    if (rows.isEmpty) return;
-    final enabled = rows.first.read<int>('cloud_backup_enabled') != 0;
-    final uid = rows.first.read<String?>('firebase_uid');
-    if (!enabled || uid == null || uid.isEmpty) return;
-
-    final device = await deviceInstanceId();
-    final now = DateTime.now().microsecondsSinceEpoch;
-    final id = _snapshotOutboxId(localAccountId);
-
-    // A generation change must retarget a durable snapshot operation instead
-    // of leaving an old-generation operation that the worker later discards.
-    await database.customUpdate(
-      '''UPDATE sync_outbox
-         SET firebase_uid = ?, cloud_generation = ?
-         WHERE id = ? AND user_id = ? AND type = 'account_snapshot'
-           AND (lease_until IS NULL OR lease_until <= ?)
-           AND cloud_generation <> ?''',
-      variables: [
-        Variable(uid),
-        Variable(rows.first.read<int>('cloud_generation')),
-        Variable(id),
-        Variable(localAccountId),
-        Variable(now),
-        Variable(rows.first.read<int>('cloud_generation')),
-      ],
-    );
-
-    await database.customInsert(
-      '''INSERT OR IGNORE INTO sync_outbox
-         (id, user_id, type, queued_at, firebase_uid, cloud_generation,
-          entity_type, operation, next_attempt_at, attempts, worker_id,
-          lease_until, writer_device_id)
-         VALUES (?, ?, 'account_snapshot', ?, ?, ?, 'account', 'snapshot',
-                 ?, 0, NULL, NULL, ?)''',
-      variables: [
-        Variable(id),
-        Variable(localAccountId),
-        Variable(now),
-        Variable(uid),
-        Variable(rows.first.read<int>('cloud_generation')),
-        Variable(now),
-        Variable(device),
-      ],
-    );
-  }
 
 
   Future<void> _enqueueSnapshotInsideTransaction(
