@@ -14,21 +14,6 @@ class AccountLocalStore {
   AccountLocalStore({required this.database});
 
   final AppDatabase database;
-  final Map<String, StreamController<BackupStatusSnapshot>>
-      _backupStatusControllers = {};
-
-  StreamController<BackupStatusSnapshot> _backupStatusController(
-    String localAccountId,
-  ) {
-    return _backupStatusControllers.putIfAbsent(
-      localAccountId,
-      () => StreamController<BackupStatusSnapshot>.broadcast(
-        onListen: () {
-          unawaited(_emitInitialBackupStatus(localAccountId));
-        },
-      ),
-    );
-  }
 
   Future<void> ensureInitialized({
     required bool hasLegacyProfile,
@@ -298,38 +283,6 @@ class AccountLocalStore {
       '-' +
       date.day.toString().padLeft(2, '0');
 
-  BackupStatusSnapshot _mapBackupStatusRow(QueryRow row) {
-    return BackupStatusSnapshot(
-      currentRevision: row.read<int>('current_dataset_revision'),
-      acknowledgedRevision: row.read<int>('acknowledged_dataset_revision'),
-      acknowledgedGeneration: row.read<int>('acknowledged_cloud_generation'),
-      cloudGeneration: row.read<int>('cloud_generation'),
-      lastSuccessfulBackupAt:
-          row.read<int?>('last_successful_backup_at') == null
-              ? null
-              : DateTime.fromMicrosecondsSinceEpoch(
-                  row.read<int>('last_successful_backup_at')!,
-                ),
-      state: row.read<String>('state'),
-      backupEnabled: row.read<int>('cloud_backup_enabled') != 0,
-      progressCompleted: row.read<int?>('progress_completed'),
-      progressTotal: row.read<int?>('progress_total'),
-      failureCategory: row.read<String?>('failure_category'),
-      failureMessage: row.read<String?>('last_error'),
-      attemptCount: row.read<int?>('attempts') ?? 0,
-      lastAttemptAt: row.read<int?>('last_attempt_at') == null
-          ? null
-          : DateTime.fromMicrosecondsSinceEpoch(
-              row.read<int>('last_attempt_at'),
-            ),
-      nextRetryAt: row.read<int?>('next_attempt_at') == null
-          ? null
-          : DateTime.fromMicrosecondsSinceEpoch(
-              row.read<int>('next_attempt_at'),
-            ),
-    );
-  }
-
   Future<UserProfile?> loadProfile(String localAccountId) async {
     final rows = await database.customSelect(
       '''SELECT payload_json FROM account_profiles
@@ -361,7 +314,7 @@ class AccountLocalStore {
 });
   }
 
-  /// Persists a draft locally without creating a cloud backup operation.
+  /// Persists a draft locally.
   Future<void> saveProfileLocalOnly(
     String localAccountId,
     UserProfile profile,
@@ -409,7 +362,7 @@ class AccountLocalStore {
   }
 
   /// Atomically commits profile, initial plan revision, Qaza records,
-  /// provenance and the durable cloud snapshot handoff.
+  /// provenance.
   Future<void> commitOnboarding({
     required String localAccountId,
     required UserProfile profile,
@@ -641,53 +594,6 @@ class AccountLocalStore {
     }
   }
 
-  Future<List<Map<String, Object?>>> loadModernOutboxBatch({
-    required String localAccountId,
-    required int nowMicros,
-    int limit = 20,
-  }) async {
-    final rows = await database.customSelect(
-      '''SELECT id, user_id, firebase_uid, cloud_generation,
-                entity_type, operation, payload_json, queued_at,
-                next_attempt_at, attempts, last_error,
-                failure_category, last_attempt_at
-         FROM sync_outbox
-         WHERE user_id = ?
-           AND type = 'account_snapshot'
-           AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
-           AND (lease_until IS NULL OR lease_until <= ?)
-         ORDER BY queued_at ASC, id ASC
-         LIMIT ?''',
-      variables: [
-        Variable(localAccountId),
-        Variable(nowMicros),
-        Variable(nowMicros),
-        Variable(limit),
-      ],
-    ).get();
-    return [
-      for (final row in rows)
-        {
-          'id': row.read<String>('id'),
-          'user_id': row.read<String>('user_id'),
-          'firebase_uid': row.read<String?>('firebase_uid'),
-          'cloud_generation': row.read<int?>('cloud_generation'),
-          'entity_type': row.read<String?>('entity_type'),
-          'operation': row.read<String?>('operation'),
-          'payload_json': row.read<String?>('payload_json'),
-          'queued_at': row.read<int>('queued_at'),
-          'next_attempt_at': row.read<int?>('next_attempt_at'),
-          'attempts': row.read<int>('attempts'),
-          'last_error': row.read<String?>('last_error'),
-          'failure_category': row.read<String?>('failure_category'),
-          'last_attempt_at': row.read<int?>('last_attempt_at'),
-        },
-    ];
-  }
-  String _snapshotOutboxId(String localAccountId) =>
-      'account_snapshot_$localAccountId';
-
-
   Future<void> _ensureGuestAccount({
     required bool hasLegacyProfile,
     required bool hasLegacyQaza,
@@ -781,57 +687,3 @@ class AccountLocalStore {
   String jsonEncode(Object value) => json.encode(value);
 }
 
-class BackupStatusSnapshot {
-  const BackupStatusSnapshot({
-    required this.currentRevision,
-    required this.acknowledgedRevision,
-    required this.acknowledgedGeneration,
-    required this.cloudGeneration,
-    required this.lastSuccessfulBackupAt,
-    required this.state,
-    required this.backupEnabled,
-    required this.progressCompleted,
-    required this.progressTotal,
-    required this.failureCategory,
-    required this.failureMessage,
-    required this.attemptCount,
-    required this.lastAttemptAt,
-    required this.nextRetryAt,
-  });
-
-  final int currentRevision;
-  final int acknowledgedRevision;
-  final int acknowledgedGeneration;
-  final int cloudGeneration;
-  final DateTime? lastSuccessfulBackupAt;
-  final String state;
-  final bool backupEnabled;
-  final int? progressCompleted;
-  final int? progressTotal;
-  final String? failureCategory;
-  final String? failureMessage;
-  final int attemptCount;
-  final DateTime? lastAttemptAt;
-  final DateTime? nextRetryAt;
-
-  bool get isCurrent =>
-      backupEnabled &&
-      currentRevision == acknowledgedRevision &&
-      acknowledgedGeneration == cloudGeneration;
-
-  bool get hasPendingChanges =>
-      backupEnabled && currentRevision > acknowledgedRevision;
-
-  bool get hasDeterminateProgress =>
-      state == 'running' &&
-      progressCompleted != null &&
-      progressTotal != null &&
-      progressTotal! > 0 &&
-      progressCompleted! >= 0 &&
-      progressCompleted! <= progressTotal!;
-
-  double get progressFraction {
-    if (!hasDeterminateProgress) return 0;
-    return progressCompleted! / progressTotal!;
-  }
-}
