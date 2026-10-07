@@ -41,7 +41,8 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     // It does not own sync state and never bypasses account/auth/App Check checks.
     unawaited(FirebaseBackupScheduler.initialize());
     unawaited(_configureLocalTimezone());
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((_) {
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((_) {
       if (mounted && !_appVisible) {
         ref.read(backupWorkerProvider).runOnce();
       }
@@ -82,6 +83,7 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
         }
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
