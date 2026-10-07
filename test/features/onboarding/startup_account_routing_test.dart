@@ -133,7 +133,11 @@ ProviderContainer _container({
       appDatabaseProvider.overrideWithValue(database),
       accountSessionManagerProvider.overrideWith((ref) => manager),
       activeUserIdProvider.overrideWith((ref) => manager.activeLocalAccountId),
-      userProfileProvider.overrideWith((ref) async => profile),
+      userProfileProvider.overrideWith(
+        (ref) => profileError == null
+            ? Future<UserProfile?>.value(profile)
+            : Future<UserProfile?>.error(profileError, StackTrace.current),
+      ),
     ],
   );
 }
