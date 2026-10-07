@@ -29,8 +29,7 @@ void main() {
       final lightweightService = GoogleFirebaseAuthService(firebase);
       final interactiveService = GoogleFirebaseAuthService(firebase);
 
-      final lightweight =
-          lightweightService.attemptLightweightAuthentication();
+      final lightweight = lightweightService.attemptLightweightAuthentication();
       await Future<void>.delayed(Duration.zero);
 
       var interactiveCompleted = false;
