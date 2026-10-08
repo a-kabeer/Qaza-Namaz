@@ -384,8 +384,8 @@ class DriftQazaLocalStore extends QazaLocalStore
   @override
   Future<void> rollbackProfilePlanChanges(
     QazaProfilePlanMutationResult mutation,
-  ) {
-    return _database.transactionWithRevision(() async {
+  ) async {
+    await _database.transactionWithRevision<bool>(() async {
       var mutated = false;
       for (final record in mutation.added) {
         final rawCurrent = await _database.qazaRecordsDao.getByIds(
