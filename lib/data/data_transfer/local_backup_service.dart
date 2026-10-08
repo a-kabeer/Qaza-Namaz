@@ -36,15 +36,16 @@ class LocalBackupService {
   final AppDatabase database;
 
   Future<String> exportJson({DateTime? exportedAt}) async {
-    final dbRevision = await database.readDbRevision();
-    final users = await database.qazaRecordsDao.userIds();
-    final records = <Map<String, dynamic>>[];
-    for (final userId in users) {
-      final rows = await database.qazaRecordsDao.getAll(userId: userId);
-      records.addAll(rows.map((row) => row.toJson()));
-    }
+    return database.transaction(() async {
+      final dbRevision = await database.readDbRevision();
+      final users = await database.qazaRecordsDao.userIds();
+      final records = <Map<String, dynamic>>[];
+      for (final userId in users) {
+        final rows = await database.qazaRecordsDao.getAll(userId: userId);
+        records.addAll(rows.map((row) => row.toJson()));
+      }
 
-    final document = <String, dynamic>{
+      final document = <String, dynamic>{
       'metadata': {
         'app_id': _appId,
         'backup_schema_version': _backupSchemaVersion,
@@ -145,7 +146,8 @@ class LocalBackupService {
       },
     };
 
-    return const JsonEncoder.withIndent('  ').convert(document);
+      return const JsonEncoder.withIndent('  ').convert(document);
+    });
   }
 
   Future<LocalBackupAnalysis> analyzeImport(String jsonText) async {
@@ -329,6 +331,12 @@ class LocalBackupService {
     if (revision is! int || revision < 1) {
       throw const LocalBackupException('Backup database revision is invalid.');
     }
+    final databaseSchema = header['database_schema_version'];
+    if (databaseSchema is! int || databaseSchema < 1) {
+      throw const LocalBackupException(
+        'Backup database schema version is invalid.',
+      );
+    }
     final timestamp = header['export_timestamp'];
     if (timestamp is! String || DateTime.tryParse(timestamp) == null) {
       throw const LocalBackupException('Backup export timestamp is invalid.');
@@ -347,10 +355,30 @@ class LocalBackupService {
       'account_plan_revisions',
     ];
     for (final key in requiredLists) {
-      if (payload[key] is! List<dynamic>) {
+      final value = payload[key];
+      if (value is! List<dynamic>) {
         throw LocalBackupException('Backup data section is missing "$key".');
       }
+      for (final row in value) {
+        if (row is! Map) {
+          throw LocalBackupException(
+            'Backup data section "$key" contains an invalid row.',
+          );
+        }
+      }
     }
+
+    final rawRecords = payload['qaza_records'] as List<dynamic>;
+    for (final raw in rawRecords) {
+      try {
+        QazaRecord.fromJson(Map<String, dynamic>.from(raw as Map));
+      } catch (error) {
+        throw LocalBackupException(
+          'Backup contains an invalid Qaza record: $error',
+        );
+      }
+    }
+
     final meta = payload['meta_store'];
     if (meta is! Map || meta['is_onboarding_completed'] is! bool) {
       throw const LocalBackupException(
