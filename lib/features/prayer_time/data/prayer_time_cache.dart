@@ -48,7 +48,7 @@ class PrayerTimeCache {
   }
 
   Future<void> clear() async {
-    await database.customDelete(
+    await database.customUpdate(
       'DELETE FROM meta_store WHERE key = ?',
       variables: [Variable.withString(_key)],
     );
