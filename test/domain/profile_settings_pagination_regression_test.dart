@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/utils/qaza_date.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
+import 'package:qaza_namaz/data/local/account_scoped_qaza_plan_revision_repository.dart';
+import 'package:qaza_namaz/data/local/account_scoped_user_profile_repository.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
-import 'package:qaza_namaz/data/local/qaza_plan_revision_repository.dart';
-import 'package:qaza_namaz/data/local/user_profile_repository.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
@@ -52,7 +52,7 @@ class _Harness {
 
   final AppDatabase database;
   final OfflineFirstQazaRepository qaza;
-  final SharedPreferencesUserProfileRepository profiles;
+  final AccountScopedUserProfileRepository profiles;
   final SaveProfileUseCase useCase;
   final BufferedDiagnostics diagnostics;
 
@@ -63,17 +63,20 @@ Future<_Harness> _createHarness({
   required UserProfile oldProfile,
   required int missingOffset,
 }) async {
-  SharedPreferences.setMockInitialValues({});
-  final prefs = await SharedPreferences.getInstance();
-  final profiles = SharedPreferencesUserProfileRepository(preferences: prefs);
+  final database = AppDatabase(NativeDatabase.memory());
+  final accountStore = AccountLocalStore(database: database);
+  await accountStore.ensureLocalAccountActive();
+  final profiles = AccountScopedUserProfileRepository(
+    store: accountStore,
+    activeAccountId: () => _userId,
+  );
   await profiles.save(oldProfile);
 
-  final database = AppDatabase(NativeDatabase.memory());
   final store = DriftQazaLocalStore(database: database);
   final qaza = OfflineFirstQazaRepository(localStore: store);
   await qaza.setActiveUser(_userId);
 
-  final revisions = SharedPreferencesQazaPlanRevisionRepository();
+  final revisions = AccountScopedQazaPlanRevisionRepository(accountStore);
   final plan = const QazaPlanService().planFor(oldProfile)!;
   final fingerprint =
       ProfileQazaPlanReconciliationService.planFingerprint(plan);
