@@ -37,7 +37,6 @@ RUNTIME_EXCLUDED_PARTS = {Path("lib/l10n")}
 # in the app state composition root so business state cannot silently bypass Drift.
 SHARED_PREFERENCES_ALLOWED_FILES = {
     Path("lib/app/providers.dart"),
-    Path("lib/features/knowledge_base/presentation/providers/knowledge_base_providers.dart"),
 }
 
 
