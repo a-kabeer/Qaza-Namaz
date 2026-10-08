@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 /// Where a diagnostic came from.
 ///
 /// A closed set on purpose: a report can only be filed against a part of the

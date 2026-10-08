@@ -113,10 +113,9 @@ class UserProfile {
         value is String ? DateTime.tryParse(value) : null;
 
     return UserProfile(
-      languageCode:
-          (json['languageCode'] as String?)?.trim().isNotEmpty == true
-              ? json['languageCode'] as String
-              : 'en',
+      languageCode: (json['languageCode'] as String?)?.trim().isNotEmpty == true
+          ? json['languageCode'] as String
+          : 'en',
       dailyQazaTarget: normalizeDailyQazaTarget(
         (json['dailyQazaTarget'] as num?)?.toInt() ?? defaultDailyQazaTarget,
       ),

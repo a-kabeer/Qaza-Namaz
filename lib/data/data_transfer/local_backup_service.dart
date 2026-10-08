@@ -46,105 +46,104 @@ class LocalBackupService {
       }
 
       final document = <String, dynamic>{
-      'metadata': {
-        'app_id': _appId,
-        'backup_schema_version': _backupSchemaVersion,
-        'database_schema_version': database.schemaVersion,
-        'db_revision': dbRevision,
-        'export_timestamp':
-            (exportedAt ?? DateTime.now().toUtc()).toIso8601String(),
-      },
-      'data': {
-        'qaza_records': records,
-        'qaza_additions': await _selectMaps(
-          'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
-          'FROM qaza_additions ORDER BY id',
-          [
-            'id',
-            'user_id',
-            'mode',
-            'input_snapshot',
-            'revision',
-            'created_at',
-            'updated_at',
-          ],
-        ),
-        'qaza_deletion_actions': await _selectMaps(
-          'SELECT id, user_id, addition_id, created_at, resolved_at, entity_version '
-          'FROM qaza_deletion_actions ORDER BY id',
-          [
-            'id',
-            'user_id',
-            'addition_id',
-            'created_at',
-            'resolved_at',
-            'entity_version',
-          ],
-        ),
-        'qaza_deletion_action_record_snapshots': await _selectMaps(
-          'SELECT deletion_action_id, record_id, user_id, addition_id, prayer_type, '
-          'original_date, status, completed_at, completion_id, created_at, '
-          'updated_at, record_version '
-          'FROM qaza_deletion_action_record_snapshots '
-          'ORDER BY deletion_action_id, record_id',
-          [
-            'deletion_action_id',
-            'record_id',
-            'user_id',
-            'addition_id',
-            'prayer_type',
-            'original_date',
-            'status',
-            'completed_at',
-            'completion_id',
-            'created_at',
-            'updated_at',
-            'record_version',
-          ],
-        ),
-        'qaza_profile_plan_provenance': await _selectMaps(
-          'SELECT record_id, user_id, plan_revision_id, plan_fingerprint '
-          'FROM qaza_profile_plan_provenance ORDER BY record_id',
-          ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
-        ),
-        'local_accounts': await _selectMaps(
-          'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
-          'FROM local_accounts ORDER BY local_account_id',
-          [
-            'local_account_id',
-            'account_mode',
-            'lifecycle_state',
-            'created_at',
-            'updated_at',
-          ],
-        ),
-        'app_session_state': await _selectMaps(
-          'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
-          ['id', 'active_local_account_id'],
-        ),
-        'account_profiles': await _selectMaps(
-          'SELECT local_account_id, payload_json, entity_version, updated_at, '
-          'writer_device_id, operation_id FROM account_profiles ORDER BY local_account_id',
-          [
-            'local_account_id',
-            'payload_json',
-            'entity_version',
-            'updated_at',
-            'writer_device_id',
-            'operation_id',
-          ],
-        ),
-        'account_plan_revisions': await _selectMaps(
-          'SELECT local_account_id, revision_id, payload_json, created_at '
-          'FROM account_plan_revisions ORDER BY local_account_id, revision_id',
-          ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
-        ),
-        'meta_store': {
-          'is_onboarding_completed':
-              await database.isOnboardingCompleted(),
+        'metadata': {
+          'app_id': _appId,
+          'backup_schema_version': _backupSchemaVersion,
+          'database_schema_version': database.schemaVersion,
+          'db_revision': dbRevision,
+          'export_timestamp':
+              (exportedAt ?? DateTime.now().toUtc()).toIso8601String(),
         },
-      },
-    };
+        'data': {
+          'qaza_records': records,
+          'qaza_additions': await _selectMaps(
+            'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
+            'FROM qaza_additions ORDER BY id',
+            [
+              'id',
+              'user_id',
+              'mode',
+              'input_snapshot',
+              'revision',
+              'created_at',
+              'updated_at',
+            ],
+          ),
+          'qaza_deletion_actions': await _selectMaps(
+            'SELECT id, user_id, addition_id, created_at, resolved_at, entity_version '
+            'FROM qaza_deletion_actions ORDER BY id',
+            [
+              'id',
+              'user_id',
+              'addition_id',
+              'created_at',
+              'resolved_at',
+              'entity_version',
+            ],
+          ),
+          'qaza_deletion_action_record_snapshots': await _selectMaps(
+            'SELECT deletion_action_id, record_id, user_id, addition_id, prayer_type, '
+            'original_date, status, completed_at, completion_id, created_at, '
+            'updated_at, record_version '
+            'FROM qaza_deletion_action_record_snapshots '
+            'ORDER BY deletion_action_id, record_id',
+            [
+              'deletion_action_id',
+              'record_id',
+              'user_id',
+              'addition_id',
+              'prayer_type',
+              'original_date',
+              'status',
+              'completed_at',
+              'completion_id',
+              'created_at',
+              'updated_at',
+              'record_version',
+            ],
+          ),
+          'qaza_profile_plan_provenance': await _selectMaps(
+            'SELECT record_id, user_id, plan_revision_id, plan_fingerprint '
+            'FROM qaza_profile_plan_provenance ORDER BY record_id',
+            ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
+          ),
+          'local_accounts': await _selectMaps(
+            'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
+            'FROM local_accounts ORDER BY local_account_id',
+            [
+              'local_account_id',
+              'account_mode',
+              'lifecycle_state',
+              'created_at',
+              'updated_at',
+            ],
+          ),
+          'app_session_state': await _selectMaps(
+            'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
+            ['id', 'active_local_account_id'],
+          ),
+          'account_profiles': await _selectMaps(
+            'SELECT local_account_id, payload_json, entity_version, updated_at, '
+            'writer_device_id, operation_id FROM account_profiles ORDER BY local_account_id',
+            [
+              'local_account_id',
+              'payload_json',
+              'entity_version',
+              'updated_at',
+              'writer_device_id',
+              'operation_id',
+            ],
+          ),
+          'account_plan_revisions': await _selectMaps(
+            'SELECT local_account_id, revision_id, payload_json, created_at '
+            'FROM account_plan_revisions ORDER BY local_account_id, revision_id',
+            ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
+          ),
+          'meta_store': {
+            'is_onboarding_completed': await database.isOnboardingCompleted(),
+          },
+        },
+      };
 
       return const JsonEncoder.withIndent('  ').convert(document);
     });
@@ -175,8 +174,10 @@ class LocalBackupService {
       // Read and advance the authoritative local revision under the same
       // transaction that replaces the database contents.
       final currentRevision = await database.readDbRevision();
-      final newRevision =
-          (currentRevision > backupRevision ? currentRevision : backupRevision) + 1;
+      final newRevision = (currentRevision > backupRevision
+              ? currentRevision
+              : backupRevision) +
+          1;
 
       await _clearBusinessState();
 
@@ -403,15 +404,33 @@ class LocalBackupService {
 
   Object? _readValue(QueryRow row, String column) {
     return switch (column) {
-      'id' || 'user_id' || 'mode' || 'input_snapshot' || 'created_at' ||
-      'updated_at' || 'resolved_at' || 'addition_id' || 'deletion_action_id' ||
-      'record_id' || 'prayer_type' || 'original_date' ||
-      'completed_at' || 'completion_id' || 'plan_revision_id' ||
-      'plan_fingerprint' || 'local_account_id' || 'account_mode' ||
-      'lifecycle_state' || 'active_local_account_id' || 'payload_json' ||
-      'writer_device_id' || 'operation_id' =>
+      'id' ||
+      'user_id' ||
+      'mode' ||
+      'input_snapshot' ||
+      'created_at' ||
+      'updated_at' ||
+      'resolved_at' ||
+      'addition_id' ||
+      'deletion_action_id' ||
+      'record_id' ||
+      'prayer_type' ||
+      'original_date' ||
+      'completed_at' ||
+      'completion_id' ||
+      'plan_revision_id' ||
+      'plan_fingerprint' ||
+      'local_account_id' ||
+      'account_mode' ||
+      'lifecycle_state' ||
+      'active_local_account_id' ||
+      'payload_json' ||
+      'writer_device_id' ||
+      'operation_id' =>
         row.read<String?>(column),
-      'revision' || 'entity_version' || 'record_version' =>
+      'revision' ||
+      'entity_version' ||
+      'record_version' =>
         row.read<int?>(column),
       _ => throw StateError('Unsupported backup column: $column'),
     };

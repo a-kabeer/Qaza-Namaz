@@ -310,8 +310,7 @@ class LocaleNotifier extends Notifier<Locale> {
   @override
   Locale build() {
     Future.microtask(restore);
-    final systemLocale =
-        WidgetsBinding.instance.platformDispatcher.locale;
+    final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
     return resolve(systemLocale.languageCode) ?? fallback;
   }
 
