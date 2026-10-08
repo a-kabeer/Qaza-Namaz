@@ -510,8 +510,9 @@ class QazaTrackerController
       return;
     }
     final matches = state.records.where((record) => record.id == recordId);
-    if (matches.isEmpty || matches.single.status != QazaStatus.completed)
+    if (matches.isEmpty || matches.single.status != QazaStatus.completed) {
       return;
+    }
     final record = matches.single;
     final next = Set<String>.of(state.selected);
     if (!next.remove(recordId)) {
