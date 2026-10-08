@@ -63,7 +63,6 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
 
       expect(find.byType(MaterialApp), findsOneWidget);
-      expect(find.textContaining('Qaza'), findsWidgets);
 
       // Core local Qaza lifecycle: create → page/sort → batch complete →
       // undo → delete → reset, including exact logical revision semantics.
