@@ -154,6 +154,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: AVD cache
         uses: actions/cache@v5
         id: avd-cache
@@ -190,9 +193,16 @@ jobs:
           disable-animations: true
           script: |
             adb wait-for-device
+
+            # Build the debug APK while the GitHub runner still has network
+            # access. The APK itself is then exercised with emulator networking
+            # disabled, so the runtime test does not require an online build.
+            flutter pub get
+            flutter build apk --debug
+
             adb shell svc wifi disable
             adb shell svc data disable || true
             adb shell settings put global airplane_mode_on 1
             adb shell dumpsys connectivity | grep -E 'NetworkAgentInfo|TRANSPORT_WIFI|TRANSPORT_CELLULAR' || true
-            flutter pub get
-            timeout 180s flutter test integration_test/offline_startup_test.dart
+
+            timeout 180s flutter test integration_test/offline_startup_test.dart               --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk
