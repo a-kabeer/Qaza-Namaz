@@ -1,5 +1,4 @@
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:geolocator/geolocator.dart';
 
 import '../../../core/platform/app_location_settings.dart';
 import '../domain/prayer_location.dart';
@@ -15,19 +14,17 @@ class PrayerLocationRepository {
   final AppLocationSettings _locationSettings;
 
   Future<PrayerLocationRequirement> currentLocationRequirement() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
+    if (!await _locationSettings.isLocationServiceEnabled()) {
       return PrayerLocationRequirement.locationServiceDisabled;
     }
 
-    return switch (await Geolocator.checkPermission()) {
-      LocationPermission.denied => PrayerLocationRequirement.permissionRequired,
-      LocationPermission.deniedForever =>
-        PrayerLocationRequirement.permissionDeniedForever,
-      LocationPermission.whileInUse ||
-      LocationPermission.always =>
-        PrayerLocationRequirement.ready,
-      LocationPermission.unableToDetermine =>
+    return switch (await _locationSettings.checkPermission()) {
+      AppLocationPermission.denied =>
         PrayerLocationRequirement.permissionRequired,
+      AppLocationPermission.deniedForever =>
+        PrayerLocationRequirement.permissionDeniedForever,
+      AppLocationPermission.whileInUse || AppLocationPermission.always =>
+        PrayerLocationRequirement.ready,
     };
   }
 
@@ -36,38 +33,32 @@ class PrayerLocationRepository {
   /// Performs a single explicit GPS acquisition. No other code path should
   /// call this method automatically.
   Future<PrayerLocation> getCurrent() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
+    if (!await _locationSettings.isLocationServiceEnabled()) {
       final enabled = await _locationSettings.ensureLocationServicesEnabled();
-      if (!enabled || !await Geolocator.isLocationServiceEnabled()) {
+      if (!enabled || !await _locationSettings.isLocationServiceEnabled()) {
         throw const PrayerLocationSetupException(
           PrayerLocationSetupFailure.locationServiceResolutionCancelled,
         );
       }
     }
 
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.unableToDetermine) {
-      permission = await Geolocator.requestPermission();
+    var permission = await _locationSettings.checkPermission();
+    if (permission == AppLocationPermission.denied) {
+      permission = await _locationSettings.requestPermission();
     }
 
-    if (permission == LocationPermission.denied) {
+    if (permission == AppLocationPermission.denied) {
       throw const PrayerLocationSetupException(
         PrayerLocationSetupFailure.permissionDenied,
       );
     }
-    if (permission == LocationPermission.deniedForever) {
+    if (permission == AppLocationPermission.deniedForever) {
       throw const PrayerLocationSetupException(
         PrayerLocationSetupFailure.permissionDeniedForever,
       );
     }
 
-    final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-        timeLimit: Duration(seconds: 8),
-      ),
-    );
+    final position = await _locationSettings.getCurrentPosition();
     final timezone = await FlutterTimezone.getLocalTimezone();
 
     return _resolver.resolveCurrent(
