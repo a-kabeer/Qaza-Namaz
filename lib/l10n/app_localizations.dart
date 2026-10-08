@@ -1358,6 +1358,21 @@ abstract class AppLocalizations {
   /// **'Import complete: {added} added, {completed} completed, {unchanged} unchanged.'**
   String dataImportComplete(int added, int completed, int unchanged);
 
+  String dataImportRestored(int count);
+
+  String dataImportRestoreSummary(
+    int records,
+    int accounts,
+    int revision,
+    String onboarding,
+  );
+
+  String get dataImportOnboardingComplete;
+
+  String get dataImportOnboardingIncomplete;
+
+  String get dataLocalOnlyNote;
+
   /// No description provided for @dataProcessing.
   ///
   /// In en, this message translates to:

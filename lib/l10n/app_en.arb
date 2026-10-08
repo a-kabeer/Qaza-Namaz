@@ -1294,24 +1294,40 @@
   "qazaCompletionSingle": "{prayer} Qaza for {date} completed.",
   "@qazaCompletionSingle": {
     "placeholders": {
-      "prayer": {"type": "String"},
-      "date": {"type": "String"}
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "qazaCompletionMultiple": "{count} Qaza completed.",
   "@qazaCompletionMultiple": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaUndoSingle": "{prayer} Qaza for {date} restored.",
   "@qazaUndoSingle": {
     "placeholders": {
-      "prayer": {"type": "String"},
-      "date": {"type": "String"}
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "qazaUndoMultiple": "{count} Qaza restored.",
   "@qazaUndoMultiple": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaUndoExpired": "Undo is no longer available because the 5-second window has ended.",
   "qazaUndoStaleBatch": "Undo is no longer available because a newer Undo action replaced it.",
@@ -1321,11 +1337,47 @@
   "commonDelete": "Delete",
   "qazaRequestedSlots": "{count} requested slots",
   "@qazaRequestedSlots": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaAdditionUpdated": "Qaza addition updated",
   "qazaSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
   "@qazaSelectedCount": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportRestored": "Backup restored successfully. {count} Qaza records restored.",
+  "dataImportRestoreSummary": "This backup contains {records} Qaza records and {accounts} local account(s).\\n\\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\\n\\nBackup revision: {revision}\\nOnboarding: {onboarding}",
+  "dataImportOnboardingComplete": "completed",
+  "dataImportOnboardingIncomplete": "not completed",
+  "dataLocalOnlyNote": "Local backup only. Your Qaza data stays on this device unless you explicitly export it.",
+  "@dataImportRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@dataImportRestoreSummary": {
+    "placeholders": {
+      "records": {
+        "type": "int"
+      },
+      "accounts": {
+        "type": "int"
+      },
+      "revision": {
+        "type": "int"
+      },
+      "onboarding": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -69,7 +69,7 @@ void main() {
   });
 
   testWidgets(
-    'Settings language change persists profile and locale together',
+    'Settings language change persists presentation locale without modifying the profile',
     (tester) async {
       final repository = _FakeUserProfileRepository(
         stored: const UserProfile(
@@ -89,15 +89,15 @@ void main() {
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
-      expect(repository.stored?.languageCode, 'en');
-      expect(repository.saveCount, 1);
+      expect(repository.stored?.languageCode, 'ur');
+      expect(repository.saveCount, 0);
       expect(container.read(localeProvider).languageCode, 'en');
       expect(prefs.getString(LocaleNotifier.storageKey), 'en');
     },
   );
 
   testWidgets(
-    'selected language stays English after reloading UserProfile',
+    'selected language stays independent from UserProfile persistence',
     (tester) async {
       final repository = _FakeUserProfileRepository(
         stored: const UserProfile(
@@ -119,7 +119,7 @@ void main() {
       container.invalidate(userProfileProvider);
       final reloaded = await container.read(userProfileProvider.future);
 
-      expect(reloaded?.languageCode, 'en');
+      expect(reloaded?.languageCode, 'ur');
       expect(container.read(localeProvider).languageCode, 'en');
     },
   );
@@ -145,7 +145,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
-      expect(repository.stored?.languageCode, 'ur');
+      expect(repository.stored?.languageCode, 'en');
+      expect(repository.saveCount, 0);
       expect(container.read(localeProvider).languageCode, 'ur');
       expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
     },
