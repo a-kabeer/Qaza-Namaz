@@ -109,7 +109,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Build debug APK for offline integration test
-        run: flutter build apk --debug
+        run: flutter build apk --debug --target=integration_test/offline_startup_test.dart
 
       - name: Build release AAB
         run: flutter build appbundle --release
