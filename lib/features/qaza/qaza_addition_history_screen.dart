@@ -642,9 +642,7 @@ class _DeletedActions extends ConsumerWidget {
             ),
             title: Text(l10n.qazaHistoryDeletedQaza),
             subtitle: Text(
-              dateText +
-                  '\n' +
-                  l10n.qazaHistoryDeletedQazaCount(item.deletedCount),
+              '$dateText\n${l10n.qazaHistoryDeletedQazaCount(item.deletedCount)}',
             ),
             isThreeLine: true,
             onTap: () => openQazaAdditionDetail(context, item.additionId),
