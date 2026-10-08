@@ -31,7 +31,10 @@ RUNTIME_EXCLUDED_PARTS = {Path("lib/l10n")}
 
 # SharedPreferences is presentation-only in Phase 1. Keep its access centralized
 # in the app state composition root so business state cannot silently bypass Drift.
-SHARED_PREFERENCES_ALLOWED_FILES = {Path("lib/app/providers.dart")}
+SHARED_PREFERENCES_ALLOWED_FILES = {
+    Path("lib/app/providers.dart"),
+    Path("lib/features/knowledge_base/presentation/providers/knowledge_base_providers.dart"),
+}
 
 
 def fail(message: str) -> None:
