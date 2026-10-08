@@ -62,7 +62,8 @@ void main() {
     expect(plan.endDate, ProfileRules.startPrayingDate(profile));
   });
 
-  test('planDateAt and datesFor produce exactly totalDays consecutive dates', () {
+  test('planDateAt and datesFor produce exactly totalDays consecutive dates',
+      () {
     final profile = UserProfile(
       languageCode: 'en',
       gender: Gender.male,
@@ -82,8 +83,8 @@ void main() {
       expect(dates.last, QazaPlanService.planDateAt(plan, plan.totalDays - 1));
       expect(
         dates.every(
-          (date) => !date.isBefore(plan.startDate) &&
-              date.isBefore(plan.endDate),
+          (date) =>
+              !date.isBefore(plan.startDate) && date.isBefore(plan.endDate),
         ),
         isTrue,
       );

@@ -63,7 +63,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     final rows = await (select(qazaRecords)
           ..where(
-            (row) => row.userId.equals(userId) & row.additionId.equals(additionId),
+            (row) =>
+                row.userId.equals(userId) & row.additionId.equals(additionId),
           )
           ..orderBy([
             (row) => OrderingTerm.asc(row.originalDate),
@@ -210,9 +211,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           }
         } else if (afterOriginalDate != null) {
           final prayerRank = afterPrayerRank ??
-              (throw StateError('Pending pagination cursor is missing prayer rank.'));
+              (throw StateError(
+                  'Pending pagination cursor is missing prayer rank.'));
           final recordId = afterId ??
-              (throw StateError('Pending pagination cursor is missing record id.'));
+              (throw StateError(
+                  'Pending pagination cursor is missing record id.'));
           predicates.add(
             row.originalDate.isBiggerThanValue(afterOriginalDate) |
                 (row.originalDate.equals(afterOriginalDate) &
@@ -222,9 +225,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           );
         } else if (beforeOriginalDate != null) {
           final prayerRank = beforePrayerRank ??
-              (throw StateError('Pending pagination cursor is missing prayer rank.'));
+              (throw StateError(
+                  'Pending pagination cursor is missing prayer rank.'));
           final recordId = beforeId ??
-              (throw StateError('Pending pagination cursor is missing record id.'));
+              (throw StateError(
+                  'Pending pagination cursor is missing record id.'));
           predicates.add(
             row.originalDate.isSmallerThanValue(beforeOriginalDate) |
                 (row.originalDate.equals(beforeOriginalDate) &
@@ -245,18 +250,14 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
                 ? OrderingTerm.desc(r.originalDate)
                 : OrderingTerm.asc(r.originalDate)),
         if (completedMode)
-          (r) => descending
-              ? OrderingTerm.desc(r.id)
-              : OrderingTerm.asc(r.id)
+          (r) => descending ? OrderingTerm.desc(r.id) : OrderingTerm.asc(r.id)
         else
           (r) => OrderingTerm(
                 expression: qazaPrayerRank,
                 mode: descending ? OrderingMode.desc : OrderingMode.asc,
               ),
         if (!completedMode)
-          (r) => descending
-              ? OrderingTerm.desc(r.id)
-              : OrderingTerm.asc(r.id),
+          (r) => descending ? OrderingTerm.desc(r.id) : OrderingTerm.asc(r.id),
       ])
       ..limit(limit + 1);
 
@@ -360,8 +361,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
               )
         else
           (r) => OrderingTerm.asc(r.id),
-        if (!completedMode)
-          (r) => OrderingTerm.asc(r.id),
+        if (!completedMode) (r) => OrderingTerm.asc(r.id),
       ])
       ..limit(limit, offset: offset);
     final rows = await query.get();
@@ -431,7 +431,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       final completedAt = row.read(qazaRecords.completedAt);
       final prayerName = row.read(qazaRecords.prayerType);
       if (completedAt == null || prayerName == null) {
-        throw StateError('Completed Qaza activity row is missing required data.');
+        throw StateError(
+            'Completed Qaza activity row is missing required data.');
       }
       final prayerType = PrayerType.values.firstWhere(
         (value) => value.name == prayerName,
@@ -568,8 +569,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         final chunk = unique.sublist(start, end);
         rows.addAll(
           await (select(qazaRecords)
-                ..where((row) =>
-                    row.userId.equals(userId) & row.id.isIn(chunk)))
+                ..where(
+                    (row) => row.userId.equals(userId) & row.id.isIn(chunk)))
               .get(),
         );
       }
@@ -644,7 +645,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         rows.addAll(
           await (select(qazaRecords)
                 ..where((row) =>
-                    row.userId.equals(userId) & row.id.isIn(ids.sublist(start, end))))
+                    row.userId.equals(userId) &
+                    row.id.isIn(ids.sublist(start, end))))
               .get(),
         );
       }
@@ -713,7 +715,8 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         rows.addAll(
           await (select(qazaRecords)
                 ..where((row) =>
-                    row.userId.equals(userId) & row.id.isIn(ids.sublist(start, end))))
+                    row.userId.equals(userId) &
+                    row.id.isIn(ids.sublist(start, end))))
               .get(),
         );
       }
@@ -831,12 +834,12 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     final existingIds = <String>{};
 
     for (var start = 0; start < uniqueIds.length; start += 400) {
-      final end = start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
+      final end =
+          start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
       final chunk = uniqueIds.sublist(start, end);
       final rows = await (select(qazaRecords)
             ..where(
-              (row) =>
-                  row.userId.equals(userId) & row.id.isIn(chunk),
+              (row) => row.userId.equals(userId) & row.id.isIn(chunk),
             ))
           .get();
       existingIds.addAll(rows.map((row) => row.id));
@@ -887,6 +890,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     );
     return updated > 0;
   }
+
   Future<int> deleteByIds({
     required String userId,
     required List<String> ids,
@@ -898,8 +902,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       final end = start + 400 < unique.length ? start + 400 : unique.length;
       final chunk = unique.sublist(start, end);
       deleted += await (delete(qazaRecords)
-            ..where((row) =>
-                row.userId.equals(userId) & row.id.isIn(chunk)))
+            ..where((row) => row.userId.equals(userId) & row.id.isIn(chunk)))
           .go();
     }
     return deleted;
@@ -930,6 +933,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       'ELSE ${PrayerTypeX.qazaSequence.length} END',
     );
   }
+
   QazaRecord _toDomain(QazaRecordRow row) => QazaRecord(
         id: row.id,
         userId: row.userId,

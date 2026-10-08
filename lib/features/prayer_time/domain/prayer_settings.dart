@@ -8,7 +8,6 @@ enum PrayerCalculationMethod {
   custom,
 }
 
-
 enum PrayerHighLatitudeRule {
   automatic,
   middleOfTheNight,

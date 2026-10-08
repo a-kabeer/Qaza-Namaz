@@ -84,7 +84,9 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
     if (destination == WorkspaceDestination.qaza) {
       final qazaState = ref.read(qazaTrackerControllerProvider(null));
       if (qazaState.selectionMode) {
-        ref.read(qazaTrackerControllerProvider(null).notifier).exitSelectionMode();
+        ref
+            .read(qazaTrackerControllerProvider(null).notifier)
+            .exitSelectionMode();
         return;
       }
     }

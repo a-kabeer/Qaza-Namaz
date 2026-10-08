@@ -108,17 +108,13 @@ class AppSnackbarService {
   String? _lastFingerprint;
   DateTime? _lastShownAt;
 
-  void success(String message) =>
-      _show(AppSnackbarSeverity.success, message);
+  void success(String message) => _show(AppSnackbarSeverity.success, message);
 
-  void error(String message) =>
-      _show(AppSnackbarSeverity.error, message);
+  void error(String message) => _show(AppSnackbarSeverity.error, message);
 
-  void info(String message) =>
-      _show(AppSnackbarSeverity.info, message);
+  void info(String message) => _show(AppSnackbarSeverity.info, message);
 
-  void warning(String message) =>
-      _show(AppSnackbarSeverity.warning, message);
+  void warning(String message) => _show(AppSnackbarSeverity.warning, message);
 
   void undo({
     required String message,
@@ -196,8 +192,7 @@ class _AppSnackbarContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final snackTheme = theme.snackBarTheme;
-    final foreground =
-        snackTheme.contentTextStyle?.color ??
+    final foreground = snackTheme.contentTextStyle?.color ??
         theme.colorScheme.onInverseSurface;
 
     return Row(

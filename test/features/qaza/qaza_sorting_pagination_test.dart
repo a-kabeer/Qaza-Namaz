@@ -19,7 +19,8 @@ QazaRecordsCompanion _record({
     prayerType: prayerType.name,
     originalDate: originalDate,
     status: status.name,
-    completedAt: completedAt == null ? const Value.absent() : Value(completedAt),
+    completedAt:
+        completedAt == null ? const Value.absent() : Value(completedAt),
     createdAt: originalDate,
     updatedAt: completedAt ?? originalDate,
   );
@@ -184,7 +185,8 @@ void main() {
     );
   });
 
-  test('Completed oldest/newest sorting uses completedAt keysets only', () async {
+  test('Completed oldest/newest sorting uses completedAt keysets only',
+      () async {
     final sameCompletion = DateTime(2026, 9, 10, 8);
     await database.qazaRecordsDao.insertRecords([
       _record(
@@ -254,7 +256,9 @@ void main() {
     expect(newestNext.records.map((record) => record.id), ['b', 'a']);
   });
 
-  test('Sorting stays inside active filters and preserves date-field separation', () async {
+  test(
+      'Sorting stays inside active filters and preserves date-field separation',
+      () async {
     await database.qazaRecordsDao.insertRecords([
       _record(
         id: 'pending-in-range',

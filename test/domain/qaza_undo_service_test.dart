@@ -163,8 +163,7 @@ class _FakeQazaRepository implements QazaRepository, QazaUndoRepository {
               record.completedAt != null &&
               !record.completedAt!.isBefore(from) &&
               record.completedAt!.isBefore(to) &&
-              (prayerTypes == null ||
-                  prayerTypes.contains(record.prayerType)),
+              (prayerTypes == null || prayerTypes.contains(record.prayerType)),
         )
         .length;
   }
@@ -590,7 +589,8 @@ void main() {
 
     expect(partial.count, 1);
     expect(partial.remainingBatch, isNotNull);
-    expect(manager.activeSelection(userId: 'local'), same(partial.remainingBatch));
+    expect(
+        manager.activeSelection(userId: 'local'), same(partial.remainingBatch));
 
     now = now.add(const Duration(minutes: 1));
     final remainder = await manager.undo(
@@ -880,7 +880,8 @@ void main() {
     expect(records['fajr']!.completionId, isNull);
     expect(records['fajr']!.recordVersion, 2);
   });
-  test('stale Completed correction marker is ignored and version increments once',
+  test(
+      'stale Completed correction marker is ignored and version increments once',
       () async {
     final completed = _completedRecord(
       id: 'fajr',
@@ -912,5 +913,4 @@ void main() {
     expect(records['fajr']!.completionId, isNull);
     expect(records['fajr']!.recordVersion, 2);
   });
-
 }

@@ -56,9 +56,8 @@ class QazaAdditionHistoryState {
       );
 }
 
-final qazaAdditionHistoryControllerProvider =
-    AutoDisposeNotifierProvider<QazaAdditionHistoryController,
-        QazaAdditionHistoryState>(
+final qazaAdditionHistoryControllerProvider = AutoDisposeNotifierProvider<
+    QazaAdditionHistoryController, QazaAdditionHistoryState>(
   QazaAdditionHistoryController.new,
 );
 
@@ -146,14 +145,13 @@ class QazaAdditionHistoryController
     if (!initial && !state.deletedHasMore) return;
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) return;
-    final page = await ref
-        .read(qazaAdditionRepositoryProvider)
-        .getRecentDeletionActions(
-          userId: userId,
-          limit: pageSize,
-          afterCreatedAt: initial ? null : _deletedCursorDate,
-          afterId: initial ? null : _deletedCursorId,
-        );
+    final page =
+        await ref.read(qazaAdditionRepositoryProvider).getRecentDeletionActions(
+              userId: userId,
+              limit: pageSize,
+              afterCreatedAt: initial ? null : _deletedCursorDate,
+              afterId: initial ? null : _deletedCursorId,
+            );
     _deletedCursorDate = page.nextCreatedAt;
     _deletedCursorId = page.nextId;
     state = state.copyWith(
@@ -164,12 +162,11 @@ class QazaAdditionHistoryController
   }
 
   Future<QazaRestoreResult> restore(String deletionActionId) async {
-    final result = await ref
-        .read(qazaAdditionRepositoryProvider)
-        .restoreDeletionAction(
-          userId: ref.read(requiredUserIdProvider),
-          deletionActionId: deletionActionId,
-        );
+    final result =
+        await ref.read(qazaAdditionRepositoryProvider).restoreDeletionAction(
+              userId: ref.read(requiredUserIdProvider),
+              deletionActionId: deletionActionId,
+            );
     ref.invalidate(progressSummaryProvider);
     await loadInitial();
     return result;
@@ -205,8 +202,7 @@ class QazaAdditionHistoryScreen extends ConsumerWidget {
                   ),
                 ],
                 selected: {state.tab},
-                onSelectionChanged: (value) =>
-                    controller.setTab(value.first),
+                onSelectionChanged: (value) => controller.setTab(value.first),
               ),
             ),
             Expanded(
@@ -222,8 +218,10 @@ class QazaAdditionHistoryScreen extends ConsumerWidget {
                       : RefreshIndicator(
                           onRefresh: controller.refresh,
                           child: state.tab == QazaAdditionHistoryTab.recent
-                              ? _RecentAdditions(state: state, controller: controller)
-                              : _DeletedActions(state: state, controller: controller),
+                              ? _RecentAdditions(
+                                  state: state, controller: controller)
+                              : _DeletedActions(
+                                  state: state, controller: controller),
                         ),
             ),
           ],
@@ -644,7 +642,9 @@ class _DeletedActions extends ConsumerWidget {
             ),
             title: Text(l10n.qazaHistoryDeletedQaza),
             subtitle: Text(
-              dateText + '\n' + l10n.qazaHistoryDeletedQazaCount(item.deletedCount),
+              dateText +
+                  '\n' +
+                  l10n.qazaHistoryDeletedQazaCount(item.deletedCount),
             ),
             isThreeLine: true,
             onTap: () => openQazaAdditionDetail(context, item.additionId),
@@ -655,7 +655,8 @@ class _DeletedActions extends ConsumerWidget {
                   if (!context.mounted) return;
                   ref.read(appSnackbarServiceProvider).success(
                         result.conflictCount == 0
-                            ? l10n.qazaHistoryRestoreSuccess(result.restoredCount)
+                            ? l10n
+                                .qazaHistoryRestoreSuccess(result.restoredCount)
                             : l10n.qazaHistoryRestoreConflict(
                                 result.restoredCount,
                                 result.conflictCount,

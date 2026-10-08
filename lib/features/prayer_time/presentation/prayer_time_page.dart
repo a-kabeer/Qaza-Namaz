@@ -284,8 +284,7 @@ class _PrayerTimeContent extends ConsumerWidget {
   IconData _prayerIcon(PrayerSlot prayer) =>
       prayer.qazaPrayerType?.icon ?? Icons.wb_twilight_rounded;
 
-  IconData _restrictedIcon(RestrictedTimeType type) =>
-      switch (type) {
+  IconData _restrictedIcon(RestrictedTimeType type) => switch (type) {
         RestrictedTimeType.sunrise => Icons.wb_twilight_rounded,
         RestrictedTimeType.zawal => Icons.wb_sunny_outlined,
         RestrictedTimeType.sunset => Icons.nights_stay_outlined,
@@ -328,11 +327,9 @@ class _PrayerTimeContent extends ConsumerWidget {
         window.timelineDisplayAt;
 
     final activeRestriction = restricted?.active;
-    final restrictedRemaining = activeRestriction == null
-        ? null
-        : restricted?.remainingAt(localNow);
-    final visibleRestrictions =
-        restrictedCalculator.timelineWindowsForSchedule(
+    final restrictedRemaining =
+        activeRestriction == null ? null : restricted?.remainingAt(localNow);
+    final visibleRestrictions = restrictedCalculator.timelineWindowsForSchedule(
       schedule: contentSchedule,
       location: location,
       now: localNow,
@@ -350,9 +347,8 @@ class _PrayerTimeContent extends ConsumerWidget {
         // row. Outside its applicable window, Sunrise is hidden.
         if (visibleSunrise != null) {
           final active = visibleSunrise.contains(localNow);
-          final remaining = active
-              ? visibleSunrise.endsAt.difference(localNow)
-              : null;
+          final remaining =
+              active ? visibleSunrise.endsAt.difference(localNow) : null;
           timeline.add(
             _PrayerTimelineItem(
               at: visibleSunrise.displayAt.toUtc(),
@@ -382,9 +378,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           name: _prayerLabel(l10n, prayer),
           time: _formatTime(context, prayerTimeUtc, snapshot),
           icon: _prayerIcon(prayer),
-          active: activeRestriction != null
-              ? false
-              : prayer == currentPrayer,
+          active: activeRestriction != null ? false : prayer == currentPrayer,
           countdown: null,
           isRestricted: false,
           prayer: prayer,
@@ -395,8 +389,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     for (final restriction in visibleRestrictions) {
       if (restriction.type == RestrictedTimeType.sunrise) continue;
       final active = restriction.contains(localNow);
-      final remaining =
-          active ? restriction.endsAt.difference(localNow) : null;
+      final remaining = active ? restriction.endsAt.difference(localNow) : null;
       final displayAt = restrictedTimelineDisplayAt(restriction);
       timeline.add(
         _PrayerTimelineItem(
@@ -437,8 +430,7 @@ class _PrayerTimeContent extends ConsumerWidget {
         snapshot,
       );
       focusIcon = _restrictedIcon(activeRestriction.type);
-      focusCountdown =
-          DateFormatters.formatDurationHhMmSs(restrictedRemaining);
+      focusCountdown = DateFormatters.formatDurationHhMmSs(restrictedRemaining);
     } else if (countdownPrayer != null) {
       for (final item in timeline) {
         if (!item.isRestricted && item.prayer == countdownPrayer) {

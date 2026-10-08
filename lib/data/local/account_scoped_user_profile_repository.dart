@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 
-
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import 'account_local_store.dart';

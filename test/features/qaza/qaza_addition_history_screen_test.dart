@@ -37,7 +37,8 @@ void main() {
     expect(multiple.selectedDates, hasLength(3));
   });
 
-  test('Multiple date grouping stays shared and preview expansion is bounded', () {
+  test('Multiple date grouping stays shared and preview expansion is bounded',
+      () {
     final dates = [
       for (var day = 1; day <= 10; day++) DateTime(2025, 3, day),
     ];
@@ -54,9 +55,10 @@ void main() {
     expect(summary.selectedDates, hasLength(10));
   });
 
-  test('History summary is current-record based and supports inline expansion', () {
-    final source =
-        File('lib/features/qaza/qaza_addition_history_screen.dart').readAsStringSync();
+  test('History summary is current-record based and supports inline expansion',
+      () {
+    final source = File('lib/features/qaza/qaza_addition_history_screen.dart')
+        .readAsStringSync();
 
     expect(source, contains('QazaAdditionDateSummary(snapshot)'));
     expect(
@@ -64,8 +66,14 @@ void main() {
       contains('final total = item.pendingCount + item.completedCount;'),
     );
     expect(source, contains('LinearProgressIndicator('));
-    expect(source, contains('final progress = total == 0 ? 0.0 : item.completedCount / total;'));
-    expect(source, contains('final percent = total == 0 ? 0 : item.completedCount * 100 ~/ total;'));
+    expect(
+        source,
+        contains(
+            'final progress = total == 0 ? 0.0 : item.completedCount / total;'));
+    expect(
+        source,
+        contains(
+            'final percent = total == 0 ? 0 : item.completedCount * 100 ~/ total;'));
     expect(source, contains('qazaHistoryTrackedRecords(total)'));
     expect(source, contains('ValueKey(item.addition.id)'));
     expect(source, contains('TextButton.icon('));
@@ -90,7 +98,8 @@ void main() {
     expect(source, contains('summary.consecutiveGroups'));
     expect(source, contains('summary.formatConsecutiveRange('));
     expect(source, contains('summary.formatHijri(l10n, date)'));
-    expect(source, isNot(contains('List<List<DateTime>> _groupConsecutiveDates')));
+    expect(
+        source, isNot(contains('List<List<DateTime>> _groupConsecutiveDates')));
     expect(source, isNot(contains('String _rangeLabel(')));
   });
 }

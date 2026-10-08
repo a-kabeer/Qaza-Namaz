@@ -84,6 +84,7 @@ class OfflineFirstQazaRepository
       }
     }
   }
+
   @override
   Future<QazaPage> getPage({
     required String userId,
@@ -294,6 +295,7 @@ class OfflineFirstQazaRepository
       recordId: recordId,
     );
   }
+
   @override
   Future<int> deleteRecords({
     required String userId,

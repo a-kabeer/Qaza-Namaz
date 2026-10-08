@@ -58,7 +58,8 @@ class KnowledgeLanguageNotifier extends Notifier<KnowledgeLanguage> {
         variables: [Variable.withString(storageKey)],
       ).get();
       if (rows.isEmpty) return;
-      final stored = KnowledgeLanguage.fromCode(rows.first.read<String>('value'));
+      final stored =
+          KnowledgeLanguage.fromCode(rows.first.read<String>('value'));
       if (stored == null) return;
       _chosen = stored;
       state = stored;

@@ -30,7 +30,9 @@ void main() {
       expect(state.autoSequencePrayer, PrayerType.fajr);
     });
 
-    test('successful Auto Sequence completion does not advance its legacy cursor', () {
+    test(
+        'successful Auto Sequence completion does not advance its legacy cursor',
+        () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.fajr,
@@ -58,7 +60,9 @@ void main() {
       expect(next.autoSequencePrayer, PrayerType.asr);
     });
 
-    test('Completion of a non-cursor target does not mutate Auto Sequence cursor', () {
+    test(
+        'Completion of a non-cursor target does not mutate Auto Sequence cursor',
+        () {
       const state = HomePrayerSelectionState(
         mode: HomePrayerSelectionMode.autoSequence,
         autoSequencePrayer: PrayerType.asr,
@@ -126,7 +130,8 @@ void main() {
   });
 
   group('HomePrayerSelectionNotifier', () {
-    test('new state starts in Auto Sequence and persists mode changes', () async {
+    test('new state starts in Auto Sequence and persists mode changes',
+        () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       final container = ProviderContainer(
@@ -144,12 +149,16 @@ void main() {
       notifier.selectPrayer(PrayerType.zuhr);
       await Future<void>.delayed(Duration.zero);
 
-      final modeRows = await database.customSelect(
-        "SELECT value FROM meta_store WHERE key = 'qaza_home_completion_mode'",
-      ).get();
-      final selectedRows = await database.customSelect(
-        "SELECT value FROM meta_store WHERE key = 'qaza_home_selected_prayer'",
-      ).get();
+      final modeRows = await database
+          .customSelect(
+            "SELECT value FROM meta_store WHERE key = 'qaza_home_completion_mode'",
+          )
+          .get();
+      final selectedRows = await database
+          .customSelect(
+            "SELECT value FROM meta_store WHERE key = 'qaza_home_selected_prayer'",
+          )
+          .get();
       expect(
         modeRows.single.read<String>('value'),
         HomePrayerSelectionMode.prayerSelection.name,
@@ -189,7 +198,8 @@ void main() {
       );
     });
 
-    test('Undo leaves the non-authoritative Auto Sequence cursor unchanged', () {
+    test('Undo leaves the non-authoritative Auto Sequence cursor unchanged',
+        () {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       final container = ProviderContainer(
@@ -252,14 +262,13 @@ void main() {
   });
 
   test('Qaza sequence skips Witr when Witr is disabled', () {
-      expect(
-        PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
-        PrayerType.fajr,
-      );
-      expect(
-        PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
-        PrayerType.fajr,
-      );
+    expect(
+      PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+      PrayerType.fajr,
+    );
+    expect(
+      PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+      PrayerType.fajr,
+    );
   });
-
 }

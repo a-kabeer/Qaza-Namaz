@@ -6,7 +6,9 @@ import 'package:qaza_namaz/domain/services/qaza_availability_service.dart';
 import 'package:qaza_namaz/features/qaza/add_qaza_controller.dart';
 
 void main() {
-  test('CalendarPicker uses shared calendar package and synchronizes month navigation', () {
+  test(
+      'CalendarPicker uses shared calendar package and synchronizes month navigation',
+      () {
     final source =
         File('lib/features/calendar/calendar_picker.dart').readAsStringSync();
 
@@ -21,7 +23,8 @@ void main() {
     expect(source, contains('selectableDayPredicate'));
     expect(source, contains('_hijriMonthLabel(month, l10n)'));
     expect(source, contains('displayedMonthDate: month'));
-    expect(source, contains('onDisplayedMonthChanged: _handleDisplayedMonthChanged'));
+    expect(source,
+        contains('onDisplayedMonthChanged: _handleDisplayedMonthChanged'));
     expect(source, contains('widget.onMonthChanged?.call(next)'));
     expect(source, contains('previousMonthTooltip'));
     expect(source, contains('nextMonthTooltip'));
@@ -37,7 +40,9 @@ void main() {
     );
   });
 
-  test('Add Qaza uses compact prayer chips, selection summary and sticky review action', () {
+  test(
+      'Add Qaza uses compact prayer chips, selection summary and sticky review action',
+      () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
 
@@ -70,7 +75,9 @@ void main() {
     expect(source, isNot(contains('_ReviewDateGroup')));
   });
 
-  test('Add Qaza centralizes analysis counts and keeps status counts exhaustive', () {
+  test(
+      'Add Qaza centralizes analysis counts and keeps status counts exhaustive',
+      () {
     final items = [
       AddQazaCandidate(
         key: QazaPrayerKey(
@@ -118,16 +125,18 @@ void main() {
       PrayerType.zuhr,
       PrayerType.asr,
       PrayerType.maghrib,
-    ].map(
-      (prayer) => AddQazaCandidate(
-        key: QazaPrayerKey(
-          userId: 'user',
-          date: date,
-          prayerType: prayer,
-        ),
-        status: AddQazaCandidateStatus.alreadyAdded,
-      ),
-    ).toList()
+    ]
+        .map(
+          (prayer) => AddQazaCandidate(
+            key: QazaPrayerKey(
+              userId: 'user',
+              date: date,
+              prayerType: prayer,
+            ),
+            status: AddQazaCandidateStatus.alreadyAdded,
+          ),
+        )
+        .toList()
       ..addAll([
         for (final prayer in [PrayerType.isha, PrayerType.witr])
           AddQazaCandidate(
@@ -200,8 +209,8 @@ void main() {
   test('Add Qaza starts the addition pipeline without operation logging', () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_import_controller.dart')
+        .readAsStringSync();
 
     expect(source, contains('qazaImportProvider.notifier).start('));
     expect(source, isNot(contains('QazaOperationType')));
@@ -213,7 +222,9 @@ void main() {
     expect(controller, contains('expectedRevision'));
   });
 
-  test('Add Qaza edit mode passes ownership context and preserves edit-only review', () {
+  test(
+      'Add Qaza edit mode passes ownership context and preserves edit-only review',
+      () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
     final controller =
@@ -221,13 +232,18 @@ void main() {
     final service =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();
     final availability =
-        File('lib/domain/services/qaza_availability_service.dart').readAsStringSync();
+        File('lib/domain/services/qaza_availability_service.dart')
+            .readAsStringSync();
 
     expect(source, contains('editingAdditionId: addition.id'));
-    expect(source, contains('widget.editAddition == null || !currentState.hasEditChanges'));
+    expect(
+        source,
+        contains(
+            'widget.editAddition == null || !currentState.hasEditChanges'));
     expect(source, contains('allowEditWithoutNewRecords:'));
     expect(source, contains('qazaSaveChanges'));
-    expect(source, contains('witrAllowed: ProfileRules.effectiveWitr(profile) ||'));
+    expect(source,
+        contains('witrAllowed: ProfileRules.effectiveWitr(profile) ||'));
     expect(controller, contains('QazaAdditionInputSnapshot? editSnapshot'));
     expect(controller, contains('bool get hasEditChanges'));
     expect(controller, contains('currentAdditionEditableCandidates'));
@@ -262,12 +278,15 @@ void main() {
     );
     expect(
       source,
-      contains('selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet())'),
+      contains(
+          'selectedPrayers: Set.unmodifiable(snapshot.selectedPrayers.toSet())'),
     );
     expect(source, contains('editSnapshot: snapshot'));
   });
 
-  test('Add Qaza uses shared determinate import progress without a cancel action', () {
+  test(
+      'Add Qaza uses shared determinate import progress without a cancel action',
+      () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
     final progress = File(
@@ -284,8 +303,8 @@ void main() {
     expect(progress, contains('qazaImportSkipped'));
     expect(progress, isNot(contains('commonCancel')));
 
-    final controller =
-        File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_import_controller.dart')
+        .readAsStringSync();
     expect(controller, contains('bool cancel()'));
     expect(controller, contains('QazaImportTaskPhase.cancelled'));
     expect(controller, contains('_cancelRequested = false;'));
@@ -300,8 +319,8 @@ void main() {
     final navigation =
         File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
     final home = File('lib/features/home/home_screen.dart').readAsStringSync();
-    final empty =
-        File('lib/features/home/widgets/home_empty_state.dart').readAsStringSync();
+    final empty = File('lib/features/home/widgets/home_empty_state.dart')
+        .readAsStringSync();
     final tracker =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -309,10 +328,13 @@ void main() {
     expect(navigation, contains('Future<void> openAddQaza'));
     expect(home, contains('const AddQazaFab()'));
     expect(empty, contains('home_empty_add_qaza'));
-    expect(tracker, contains('state.selectionMode ? null : const AddQazaFab()'));
+    expect(
+        tracker, contains('state.selectionMode ? null : const AddQazaFab()'));
   });
 
-  test('Add Qaza exposes the shared Restricted Time row and Prayer Time navigation', () {
+  test(
+      'Add Qaza exposes the shared Restricted Time row and Prayer Time navigation',
+      () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
     final navigation =
@@ -324,7 +346,8 @@ void main() {
     expect(source, contains('qazaCompletionRestrictedProvider'));
     expect(source, contains('_RestrictedTimeAddQazaRow'));
     expect(source, contains('RestrictedTimeTimelineRow('));
-    expect(source, contains('onTap: () => openPrayerTimeFromRoute(context, ref)'));
+    expect(
+        source, contains('onTap: () => openPrayerTimeFromRoute(context, ref)'));
     expect(navigation, contains('WorkspaceDestination.prayerTime'));
     expect(navigation, contains('openPrayerTimeFromRoute'));
     expect(navigation, contains('if (navigator.canPop()) navigator.pop();'));
@@ -368,11 +391,13 @@ void main() {
     expect(source, contains('++_analysisRequest'));
     expect(
       source,
-      contains('if (_disposed || request != _analysisRequest) return analysis;'),
+      contains(
+          'if (_disposed || request != _analysisRequest) return analysis;'),
     );
   });
 
-  test('Add Qaza separates Range date validity from target-mode availability', () {
+  test('Add Qaza separates Range date validity from target-mode availability',
+      () {
     final source =
         File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
 
@@ -405,17 +430,20 @@ void main() {
     expect(source, contains('final prayer = prayers[index];'));
   });
 
-  test('Add Qaza uses centralized current-day prayer-time eligibility everywhere', () {
+  test(
+      'Add Qaza uses centralized current-day prayer-time eligibility everywhere',
+      () {
     final controller =
         File('lib/features/qaza/add_qaza_controller.dart').readAsStringSync();
-    final service =
-        File('lib/domain/services/qaza_availability_service.dart').readAsStringSync();
+    final service = File('lib/domain/services/qaza_availability_service.dart')
+        .readAsStringSync();
     final qazaService =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();
-    final addition =
-        File('lib/domain/services/qaza_addition_service.dart').readAsStringSync();
+    final addition = File('lib/domain/services/qaza_addition_service.dart')
+        .readAsStringSync();
     final importController =
-        File('lib/features/qaza/qaza_import_controller.dart').readAsStringSync();
+        File('lib/features/qaza/qaza_import_controller.dart')
+            .readAsStringSync();
     final prayerTime =
         File('lib/features/prayer_time/application/prayer_time_providers.dart')
             .readAsStringSync();
@@ -425,9 +453,11 @@ void main() {
     expect(service, contains('CurrentDayQazaEligibilityService'));
     expect(service, contains('QazaEligibility.notYetDue'));
     expect(service, contains('QazaEligibility.timeDataUnavailable'));
-    expect(qazaService, contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
+    expect(qazaService,
+        contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
     expect(qazaService, contains('prayerTimeContext: prayerTimeContext'));
-    expect(addition, contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
+    expect(addition,
+        contains('CurrentDayQazaPrayerTimeContext? prayerTimeContext'));
     expect(addition, contains('prayerTimeContext: prayerTimeContext'));
     expect(importController, contains('request.prayerTimeContext'));
     expect(controller, contains('qazaPrayerTimeEligibilitySignatureProvider'));

@@ -228,9 +228,8 @@ void main() {
       () async {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
-    final additions =
-        (decoded['data'] as Map<String, dynamic>)['qaza_additions']
-            as List<dynamic>;
+    final additions = (decoded['data']
+        as Map<String, dynamic>)['qaza_additions'] as List<dynamic>;
     additions.add({
       'id': 'addition-1',
       'user_id': 'guest',
@@ -254,9 +253,8 @@ void main() {
     );
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
-    final records =
-        (decoded['data'] as Map<String, dynamic>)['qaza_records']
-            as List<dynamic>;
+    final records = (decoded['data'] as Map<String, dynamic>)['qaza_records']
+        as List<dynamic>;
     records.add(Map<String, dynamic>.from(records.single as Map));
 
     expect(
@@ -333,7 +331,8 @@ void main() {
 
       expect(await database.readDbRevision(), beforeRevision);
       expect(
-        (await database.qazaRecordsDao.getAll(userId: 'guest')).map((r) => r.id),
+        (await database.qazaRecordsDao.getAll(userId: 'guest'))
+            .map((r) => r.id),
         ['existing_record'],
       );
     } finally {

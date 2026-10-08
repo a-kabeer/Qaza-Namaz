@@ -8,14 +8,14 @@ import 'package:qaza_namaz/domain/entities/qaza_addition.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 QazaRecord record(String id, String additionId, DateTime date) => QazaRecord(
-  id: id,
-  userId: 'u',
-  additionId: additionId,
-  prayerType: PrayerType.fajr,
-  originalDate: date,
-  createdAt: date,
-  updatedAt: date,
-);
+      id: id,
+      userId: 'u',
+      additionId: additionId,
+      prayerType: PrayerType.fajr,
+      originalDate: date,
+      createdAt: date,
+      updatedAt: date,
+    );
 
 QazaAddition addition(String id, DateTime date) {
   final s = QazaAdditionInputSnapshot(
@@ -45,7 +45,8 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('create links inserted records and does not create empty additions', () async {
+  test('create links inserted records and does not create empty additions',
+      () async {
     final date = DateTime(2026, 9, 1);
     final a = addition('a1', date);
 
@@ -60,7 +61,11 @@ void main() {
     expect(result.additionId, 'a1');
     expect(result.addedCount, 1);
     expect(result.insertedRecordIds, ['r1']);
-    expect((await repo.getRecordsForAddition(userId: 'u', additionId: 'a1')).single.id, 'r1');
+    expect(
+        (await repo.getRecordsForAddition(userId: 'u', additionId: 'a1'))
+            .single
+            .id,
+        'r1');
 
     final duplicate = addition('a2', date);
     final zero = await repo.createAddition(
@@ -82,7 +87,8 @@ void main() {
     final deleted = await repo.deleteAddition(userId: 'u', additionId: 'a3');
     expect(deleted.deletedCount, 1);
     expect(deleted.deletionActionId, isNotNull);
-    expect(await repo.getRecordsForAddition(userId: 'u', additionId: 'a3'), isEmpty);
+    expect(await repo.getRecordsForAddition(userId: 'u', additionId: 'a3'),
+        isEmpty);
 
     final restored = await repo.restoreDeletionAction(
       userId: 'u',
@@ -90,11 +96,13 @@ void main() {
     );
     expect(restored.restoredCount, 1);
     expect(restored.alreadyResolved, isFalse);
-    final rows = await repo.getRecordsForAddition(userId: 'u', additionId: 'a3');
+    final rows =
+        await repo.getRecordsForAddition(userId: 'u', additionId: 'a3');
     expect(rows.single.id, 'r3');
     expect(rows.single.additionId, 'a3');
 
-    final deletedAfterRestore = await repo.getRecentDeletionActions(userId: 'u');
+    final deletedAfterRestore =
+        await repo.getRecentDeletionActions(userId: 'u');
     expect(deletedAfterRestore.items, isEmpty);
 
     final again = await repo.restoreDeletionAction(
@@ -127,7 +135,9 @@ void main() {
     );
   });
 
-  test('unresolved deletion hides Recent Additions even when protected records remain', () async {
+  test(
+      'unresolved deletion hides Recent Additions even when protected records remain',
+      () async {
     final date1 = DateTime(2026, 9, 21);
     final date2 = DateTime(2026, 9, 22);
     final a = addition('a-lifecycle', date1);
@@ -147,8 +157,8 @@ void main() {
 
     expect(
       (await repo.getRecentAdditions(userId: 'u')).items.map(
-        (item) => item.addition.id,
-      ),
+            (item) => item.addition.id,
+          ),
       contains(a.id),
     );
 
@@ -182,8 +192,8 @@ void main() {
     expect(restoredA.restoredCount, 1);
     expect(
       (await repo.getRecentAdditions(userId: 'u')).items.map(
-        (item) => item.addition.id,
-      ),
+            (item) => item.addition.id,
+          ),
       contains(a.id),
     );
 
@@ -202,8 +212,7 @@ void main() {
       (await repo.getRecentAdditions(userId: 'u')).items,
       isEmpty,
     );
-    final unresolvedActions =
-        await repo.getRecentDeletionActions(userId: 'u');
+    final unresolvedActions = await repo.getRecentDeletionActions(userId: 'u');
     expect(unresolvedActions.items, hasLength(1));
     expect(unresolvedActions.items.single.id, deletedB.deletionActionId);
 
@@ -226,13 +235,14 @@ void main() {
     expect(finalDetail!.isDeleted, isFalse);
     expect(
       (await repo.getRecentAdditions(userId: 'u')).items.map(
-        (item) => item.addition.id,
-      ),
+            (item) => item.addition.id,
+          ),
       contains(a.id),
     );
   });
 
-  test('edit and delete reject mutations while a deletion action is unresolved', () async {
+  test('edit and delete reject mutations while a deletion action is unresolved',
+      () async {
     final date = DateTime(2026, 9, 24);
     final a = addition('a-guard', date);
     await repo.createAddition(
@@ -276,13 +286,13 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    final unresolvedActions =
-        await repo.getRecentDeletionActions(userId: 'u');
+    final unresolvedActions = await repo.getRecentDeletionActions(userId: 'u');
     expect(unresolvedActions.items, hasLength(1));
     expect(unresolvedActions.items.single.id, deleted.deletionActionId);
   });
 
-  test('partial restore resolves the deletion action after conflicts', () async {
+  test('partial restore resolves the deletion action after conflicts',
+      () async {
     final date1 = DateTime(2026, 9, 6);
     final date2 = DateTime(2026, 9, 7);
     final a = addition('a5', date1);
@@ -400,13 +410,17 @@ void main() {
     expect(result.revision, 2);
     expect(result.addedCount, 0);
     expect(result.removedCount, 0);
-    expect((await repo.getRecordsForAddition(
-      userId: 'u',
-      additionId: a.id,
-    )), hasLength(1));
+    expect(
+        (await repo.getRecordsForAddition(
+          userId: 'u',
+          additionId: a.id,
+        )),
+        hasLength(1));
   });
 
-  test('edit performs add and remove atomically while preserving completed records', () async {
+  test(
+      'edit performs add and remove atomically while preserving completed records',
+      () async {
     final date1 = DateTime(2026, 9, 14);
     final date2 = DateTime(2026, 9, 15);
     final date3 = DateTime(2026, 9, 16);
@@ -462,8 +476,7 @@ void main() {
       userId: 'u',
       additionId: a.id,
     );
-    expect(rows.map((row) => row.id).toSet(),
-        {'r-completed', 'r-new'});
+    expect(rows.map((row) => row.id).toSet(), {'r-completed', 'r-new'});
   });
 
   test('edit counts a deselected completed record as protected', () async {
@@ -503,10 +516,12 @@ void main() {
 
     expect(result.removedCount, 0);
     expect(result.protectedCount, 1);
-    expect((await repo.getRecordsForAddition(
-      userId: 'u',
-      additionId: a.id,
-    )), hasLength(2));
+    expect(
+        (await repo.getRecordsForAddition(
+          userId: 'u',
+          additionId: a.id,
+        )),
+        hasLength(2));
   });
 
   test('edit removes only unchanged pending linked records', () async {
@@ -546,9 +561,13 @@ void main() {
     expect(result.revision, 2);
     expect(result.removedCount, 0);
     expect(result.protectedCount, 1);
-    expect((await repo.getRecordsForAddition(userId: 'u', additionId: a.id)).length, 2);
+    expect(
+        (await repo.getRecordsForAddition(userId: 'u', additionId: a.id))
+            .length,
+        2);
   });
-  test('delete includes records changed from completed back to pending', () async {
+  test('delete includes records changed from completed back to pending',
+      () async {
     final start = DateTime(2026, 10, 1);
     final a = addition('a-delete-repending', start);
     final records = [
@@ -567,10 +586,7 @@ void main() {
 
     final completed = await db.qazaRecordsDao.completeByIds(
       userId: 'u',
-      ids: records
-          .take(6)
-          .map((item) => item.id)
-          .toList(growable: false),
+      ids: records.take(6).map((item) => item.id).toList(growable: false),
       completedAt: DateTime(2026, 10, 12),
     );
     expect(completed, hasLength(6));
@@ -628,8 +644,7 @@ void main() {
       completed.skip(1).map((item) => item.id).toSet(),
     );
 
-    final deletedActions =
-        await repo.getRecentDeletionActions(userId: 'u');
+    final deletedActions = await repo.getRecentDeletionActions(userId: 'u');
     expect(deletedActions.items, hasLength(1));
     expect(deletedActions.items.single.deletedCount, 5);
     expect(
@@ -654,5 +669,4 @@ void main() {
     expect(restoredReturnedToPending.status, QazaStatus.pending);
     expect(restoredReturnedToPending.recordVersion, greaterThan(1));
   });
-
 }

@@ -757,34 +757,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dataImportRestored(int count) {
-    return 'Backup restored successfully. $count Qaza records restored.';
-  }
-
-  @override
-  String dataImportRestoreSummary(
-    int records,
-    int accounts,
-    int revision,
-    String onboarding,
-  ) {
-    return 'This backup contains $records Qaza records and $accounts local account(s).\n\n'
-        'Restoring replaces the current local application data on this device. '
-        'Your device identity remains on this device.\n\n'
-        'Backup revision: $revision\nOnboarding: $onboarding';
-  }
-
-  @override
-  String get dataImportOnboardingComplete => 'completed';
-
-  @override
-  String get dataImportOnboardingIncomplete => 'not completed';
-
-  @override
-  String get dataLocalOnlyNote =>
-      'Local backup only. Your Qaza data stays on this device unless you explicitly export it.';
-
-  @override
   String get dataProcessing => 'Processing data…';
 
   @override
@@ -2434,4 +2406,25 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String dataImportRestored(int count) {
+    return 'Backup restored successfully. $count Qaza records restored.';
+  }
+
+  @override
+  String dataImportRestoreSummary(
+      int records, int accounts, int revision, String onboarding) {
+    return 'This backup contains $records Qaza records and $accounts local account(s).\\n\\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\\n\\nBackup revision: $revision\\nOnboarding: $onboarding';
+  }
+
+  @override
+  String get dataImportOnboardingComplete => 'completed';
+
+  @override
+  String get dataImportOnboardingIncomplete => 'not completed';
+
+  @override
+  String get dataLocalOnlyNote =>
+      'Local backup only. Your Qaza data stays on this device unless you explicitly export it.';
 }

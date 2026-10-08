@@ -38,8 +38,7 @@ class _ProfileQazaChangeDialog extends StatefulWidget {
       _ProfileQazaChangeDialogState();
 }
 
-class _ProfileQazaChangeDialogState
-    extends State<_ProfileQazaChangeDialog> {
+class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
   ProfileQazaPlanPreview? _resolvedPreview;
   Object? _error;
   bool _loading = true;

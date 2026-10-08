@@ -259,5 +259,5 @@ void main() {
       container.read(homePrayerSelectionProvider).mode,
       HomePrayerSelectionMode.prayerSelection,
     );
-   });
+  });
 }

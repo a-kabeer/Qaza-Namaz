@@ -18,7 +18,9 @@ void main() {
     tzdata.initializeTimeZones();
   });
 
-  test('PrayerLocation persists GeoNames identifier without changing legacy fields', () {
+  test(
+      'PrayerLocation persists GeoNames identifier without changing legacy fields',
+      () {
     const original = PrayerLocation(
       latitude: 24.861234,
       longitude: 67.002345,
@@ -40,7 +42,8 @@ void main() {
     expect(restored.source, PrayerLocationSource.current);
   });
 
-  test('offline city catalog is bundled and contains worldwide city records', () async {
+  test('offline city catalog is bundled and contains worldwide city records',
+      () async {
     final catalog = OfflineCityCatalog();
     await catalog.load();
 
@@ -88,7 +91,6 @@ void main() {
     }
   });
 
-
   test('city search is case-insensitive and trims whitespace', () async {
     final catalog = OfflineCityCatalog();
     await catalog.load();
@@ -126,7 +128,8 @@ void main() {
     expect(
       results.every((city) => city.city == 'Karachi'),
       isTrue,
-      reason: 'All Pakistani cities must not match just because they share Asia/Karachi.',
+      reason:
+          'All Pakistani cities must not match just because they share Asia/Karachi.',
     );
   });
 
@@ -143,7 +146,8 @@ void main() {
     );
   });
 
-  test('city search matches region while preserving country restriction', () async {
+  test('city search matches region while preserving country restriction',
+      () async {
     final catalog = OfflineCityCatalog();
     await catalog.load();
 
@@ -157,7 +161,8 @@ void main() {
     expect(emptyCountry, isEmpty);
   });
 
-  test('empty and whitespace-only city queries preserve the initial city list', () async {
+  test('empty and whitespace-only city queries preserve the initial city list',
+      () async {
     final catalog = OfflineCityCatalog();
     await catalog.load();
 
@@ -186,7 +191,8 @@ void main() {
     );
   });
 
-  test('reverse GeoNames lookup keeps the actual requested GPS coordinates', () {
+  test('reverse GeoNames lookup keeps the actual requested GPS coordinates',
+      () {
     final resolver = OfflineCityResolver(
       geocoder: GeonamesReverseGeocoder.cities15000(),
     );
@@ -208,7 +214,8 @@ void main() {
     expect(location.timezoneId, 'Asia/Karachi');
   });
 
-  test('invalid GPS timezone fails instead of selecting a country fallback', () {
+  test('invalid GPS timezone fails instead of selecting a country fallback',
+      () {
     final resolver = OfflineCityResolver(
       geocoder: GeonamesReverseGeocoder.cities15000(),
     );
@@ -223,7 +230,8 @@ void main() {
     );
   });
 
-  test('automatic GPS acquisition is absent from refresh and lifecycle paths', () {
+  test('automatic GPS acquisition is absent from refresh and lifecycle paths',
+      () {
     final controller = File(
       'lib/features/prayer_time/application/prayer_time_controller.dart',
     ).readAsStringSync();
@@ -257,14 +265,14 @@ void main() {
     final raw = await rootBundle.loadString(
       'assets/data/geonames_cities15000.tsv',
     );
-    final header = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n').first;
+    final header =
+        raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n').first;
 
     expect(
       header,
       'geonameId\tcity\tregion\tcountry\tcountryCode\tlatitude\tlongitude\ttimezoneId',
     );
   });
-
 
   test('manual city coordinates drive distinct prayer calculations', () async {
     final catalog = OfflineCityCatalog();
@@ -273,7 +281,7 @@ void main() {
     final tokyo = catalog.citiesForCountry('JP', query: 'Tokyo').first;
     const calculator = PrayerTimeCalculator();
     final date = DateTime(2026, 9, 29);
-  
+
     const madhab = Madhab.hanafi;
     final karachiSchedule = calculator.calculate(
       location: PrayerLocation(
@@ -305,7 +313,7 @@ void main() {
       madhab: madhab,
       localDate: date,
     );
-  
+
     expect(
       karachiSchedule.utcFor(PrayerSlot.fajr),
       isNot(tokyoSchedule.utcFor(PrayerSlot.fajr)),

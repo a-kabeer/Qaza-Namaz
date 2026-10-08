@@ -89,7 +89,8 @@ void main() {
     expect(restored.removedRecords, 0);
   });
 
-  test('legacy ledger fingerprint remains distinguishable for history safety', () {
+  test('legacy ledger fingerprint remains distinguishable for history safety',
+      () {
     final profile = UserProfile(
       gender: Gender.male,
       madhab: Madhab.hanafi,

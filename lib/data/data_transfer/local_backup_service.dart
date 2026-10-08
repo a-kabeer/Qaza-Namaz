@@ -535,8 +535,8 @@ class LocalBackupService {
         );
       }
     }
-    for (final row in payload['qaza_deletion_action_record_snapshots']
-        as List<dynamic>) {
+    for (final row
+        in payload['qaza_deletion_action_record_snapshots'] as List<dynamic>) {
       final map = row as Map;
       if ((map['record_version'] as int) < 1) {
         throw const LocalBackupException(
@@ -621,7 +621,8 @@ class LocalBackupService {
         'id',
       )!;
       if (!additionIds.add(id)) {
-        throw LocalBackupException('Duplicate qaza_additions ID in backup: $id.');
+        throw LocalBackupException(
+            'Duplicate qaza_additions ID in backup: $id.');
       }
     }
 
@@ -864,8 +865,7 @@ class LocalBackupService {
     final activeAccountId =
         (sessionRows.single as Map)['active_local_account_id'];
     if (activeAccountId != null) {
-      if (activeAccountId is! String ||
-          !accountIds.contains(activeAccountId)) {
+      if (activeAccountId is! String || !accountIds.contains(activeAccountId)) {
         throw const LocalBackupException(
           'Backup session references an unknown active local account.',
         );

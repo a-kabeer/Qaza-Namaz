@@ -240,9 +240,9 @@ class DriftQazaLocalStore extends QazaLocalStore
       final after = [...records]..sort((a, b) => a.id.compareTo(b.id));
       final unchanged = before.length == after.length &&
           List.generate(
-            before.length,
-            (index) => before[index].toJson(),
-          ).toString() ==
+                before.length,
+                (index) => before[index].toJson(),
+              ).toString() ==
               List.generate(
                 after.length,
                 (index) => after[index].toJson(),
@@ -378,7 +378,9 @@ class DriftQazaLocalStore extends QazaLocalStore
         removed: List.unmodifiable(removed),
         operationIds: const <String>[],
       );
-    }, mutationPredicate: (result) => result.added.isNotEmpty || result.removed.isNotEmpty);
+    },
+        mutationPredicate: (result) =>
+            result.added.isNotEmpty || result.removed.isNotEmpty);
   }
 
   @override
@@ -414,7 +416,8 @@ class DriftQazaLocalStore extends QazaLocalStore
       }
 
       if (mutation.removed.isNotEmpty) {
-        final insertedIds = await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
+        final insertedIds =
+            await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
           mutation.removed.map(_toCompanion).toList(growable: false),
         );
         if (insertedIds.isNotEmpty) mutated = true;

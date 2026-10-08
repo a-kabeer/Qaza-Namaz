@@ -205,19 +205,16 @@ class QazaActivityService {
         date,
         () => <PrayerType, int>{},
       );
-      perPrayer[row.prayerType] =
-          (perPrayer[row.prayerType] ?? 0) + 1;
+      perPrayer[row.prayerType] = (perPrayer[row.prayerType] ?? 0) + 1;
     }
 
     final effectiveTarget =
         targetAvailable && dailyTarget > 0 ? dailyTarget : 0;
 
     final days = <QazaDailyActivity>[];
-    for (
-      var date = normalizedFrom;
-      date.isBefore(normalizedTo);
-      date = _nextDate(date)
-    ) {
+    for (var date = normalizedFrom;
+        date.isBefore(normalizedTo);
+        date = _nextDate(date)) {
       final perPrayer = <PrayerType, int>{
         for (final prayer in enabled) prayer: 0,
       };
@@ -282,8 +279,7 @@ class QazaActivityService {
         month,
         () => <PrayerType, int>{},
       );
-      perPrayer[row.prayerType] =
-          (perPrayer[row.prayerType] ?? 0) + 1;
+      perPrayer[row.prayerType] = (perPrayer[row.prayerType] ?? 0) + 1;
       activeDays.add(date);
       activeMonths.add(month);
     }

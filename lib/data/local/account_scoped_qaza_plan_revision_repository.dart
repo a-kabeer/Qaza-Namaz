@@ -1,4 +1,3 @@
-
 import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/repositories/qaza_plan_revision_repository.dart';
 import 'account_local_store.dart';

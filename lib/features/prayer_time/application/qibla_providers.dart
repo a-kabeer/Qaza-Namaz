@@ -14,8 +14,8 @@ final magneticDeclinationServiceProvider = Provider<MagneticDeclinationService>(
   (ref) => MagneticDeclinationService(),
 );
 
-final qiblaLocationProvider = Provider<PrayerLocation?>((ref) =>
-    ref.watch(prayerTimeControllerProvider).valueOrNull?.location);
+final qiblaLocationProvider = Provider<PrayerLocation?>(
+    (ref) => ref.watch(prayerTimeControllerProvider).valueOrNull?.location);
 
 final qiblaBearingProvider = Provider<double?>((ref) {
   final location = ref.watch(qiblaLocationProvider);
@@ -79,19 +79,23 @@ class MagneticDeclinationService {
     }
 
     if (date.isUtc == false) {
-      return _model.calculate(
-        latitude,
-        longitude,
-        0,
-        date.toUtc(),
-      ).dec;
+      return _model
+          .calculate(
+            latitude,
+            longitude,
+            0,
+            date.toUtc(),
+          )
+          .dec;
     }
 
-    return _model.calculate(
-      latitude,
-      longitude,
-      0,
-      date,
-    ).dec;
+    return _model
+        .calculate(
+          latitude,
+          longitude,
+          0,
+          date,
+        )
+        .dec;
   }
 }

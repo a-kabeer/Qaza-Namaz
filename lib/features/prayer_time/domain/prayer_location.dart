@@ -142,7 +142,6 @@ class CityOption {
   final double longitude;
   final int geonameId;
 
-  String get displayName => region.trim().isEmpty
-      ? '$city, $country'
-      : '$city, $region, $country';
+  String get displayName =>
+      region.trim().isEmpty ? '$city, $country' : '$city, $region, $country';
 }

@@ -49,8 +49,7 @@ class PrayerTimelineRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final labelColor = active ? scheme.onPrimaryContainer : scheme.onSurface;
     final timeColor = active ? scheme.onPrimaryContainer : scheme.onSurface;
-    final countdownColor =
-        active ? scheme.onPrimaryContainer : scheme.primary;
+    final countdownColor = active ? scheme.onPrimaryContainer : scheme.primary;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -62,45 +61,45 @@ class PrayerTimelineRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
-            Expanded(
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                      color: labelColor,
-                    ),
-              ),
-            ),
-            SizedBox(
-              width: _countdownWidth,
-              child: Text(
-                countdown ?? '',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: countdownColor,
-                    ),
-              ),
-            ),
-            SizedBox(
-              width: _timeWidth,
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
+              Expanded(
                 child: Text(
-                  time,
+                  name,
                   maxLines: 1,
-                  overflow: TextOverflow.clip,
-                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: timeColor,
+                        fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                        color: labelColor,
                       ),
                 ),
               ),
-            ),
+              SizedBox(
+                width: _countdownWidth,
+                child: Text(
+                  countdown ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: countdownColor,
+                      ),
+                ),
+              ),
+              SizedBox(
+                width: _timeWidth,
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Text(
+                    time,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: timeColor,
+                        ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -114,11 +113,12 @@ class PrayerTimelineRow extends StatelessWidget {
     final textTheme = theme.textTheme;
     final accent = restricted ? scheme.tertiary : scheme.primary;
     final background = active
-        ? (restricted ? scheme.surfaceContainerHighest : scheme.primaryContainer)
+        ? (restricted
+            ? scheme.surfaceContainerHighest
+            : scheme.primaryContainer)
         : null;
-    final nameColor = active && !restricted
-        ? scheme.onPrimaryContainer
-        : scheme.onSurface;
+    final nameColor =
+        active && !restricted ? scheme.onPrimaryContainer : scheme.onSurface;
     final timeColor = active && !restricted
         ? scheme.onPrimaryContainer
         : scheme.onSurfaceVariant;

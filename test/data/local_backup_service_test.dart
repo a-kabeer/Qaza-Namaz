@@ -198,9 +198,8 @@ void main() {
       exportedAt: DateTime(2026, 10, 8, 12, 34, 56),
     );
     final decoded = jsonDecode(json) as Map<String, dynamic>;
-    final timestamp =
-        (decoded['metadata'] as Map<String, dynamic>)['export_timestamp']
-            as String;
+    final timestamp = (decoded['metadata']
+        as Map<String, dynamic>)['export_timestamp'] as String;
 
     expect(timestamp, '2026-10-08T12:34:56.000Z');
   });

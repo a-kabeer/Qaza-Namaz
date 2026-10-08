@@ -254,9 +254,7 @@ class ProfileRules {
     final dob = next.dateOfBirth;
     final validGender = next.gender;
     final validPuberty = next.pubertyAge;
-    if (dob != null &&
-        validGender != null &&
-        validPuberty != null) {
+    if (dob != null && validGender != null && validPuberty != null) {
       final today = LocalDateService.today();
       final maxAge = currentAge(dob, today);
       if (!isPubertyAgeAllowed(validGender, validPuberty) ||
@@ -298,8 +296,7 @@ class ProfileRules {
     required DateTime today,
   }) {
     final birthIndex = FixedHijriArithmeticService.dayIndexForGregorian(dob);
-    final todayIndex =
-        FixedHijriArithmeticService.dayIndexForGregorian(today);
+    final todayIndex = FixedHijriArithmeticService.dayIndexForGregorian(today);
     final milestoneIndex =
         birthIndex + age * FixedHijriArithmeticService.daysPerYear;
     if (milestoneIndex > todayIndex) return false;

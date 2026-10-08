@@ -25,6 +25,7 @@ class _FatalDatabaseErrorAppState extends State<FatalDatabaseErrorApp> {
     super.initState();
     _error = widget.error;
   }
+
   bool _retrying = false;
 
   @override

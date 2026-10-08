@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qaza_namaz/features/qaza/qaza_import_controller.dart';
 
 void main() {
-  test('profile Qaza apply reports progress through the shared controller', () async {
+  test('profile Qaza apply reports progress through the shared controller',
+      () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
@@ -36,7 +37,6 @@ void main() {
           await Future<void>.value();
           onProgress(10, 10);
           progress.add((10, 10));
-
         },
       ),
       isTrue,

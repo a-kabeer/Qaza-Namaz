@@ -48,8 +48,7 @@ ProviderContainer _containerFor({
           );
           return Future.value(
             HomeDashboardActivity(
-              dailyProgress:
-                  const HomeDailyProgress(completed: 2, target: 5),
+              dailyProgress: const HomeDailyProgress(completed: 2, target: 5),
               currentWeek: period,
               dailyGoals: period,
             ),
@@ -93,8 +92,7 @@ void main() {
           homeDashboardActivityProvider.overrideWith((ref) async {
             reads++;
             return HomeDashboardActivity(
-              dailyProgress:
-                  const HomeDailyProgress(completed: 2, target: 5),
+              dailyProgress: const HomeDailyProgress(completed: 2, target: 5),
               currentWeek: period,
               dailyGoals: period,
             );

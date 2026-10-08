@@ -125,8 +125,9 @@ void main() {
     expect(result.newCandidates, hasLength(1));
   });
 
-
-  test('edit context distinguishes editable, protected, and other-addition records', () {
+  test(
+      'edit context distinguishes editable, protected, and other-addition records',
+      () {
     final date = DateTime(2026, 9, 10);
     final currentPending = _record(
       id: 'current-pending',
@@ -183,14 +184,17 @@ void main() {
     expect(result.currentAdditionProtectedCandidates, contains(completedKey));
     expect(result.currentAdditionProtectedCandidates, contains(versionedKey));
     expect(result.currentAdditionEditableCandidates, isNot(contains(otherKey)));
-    expect(result.currentAdditionProtectedCandidates, isNot(contains(otherKey)));
-    expect(result.newCandidates, contains(
-      QazaPrayerKey(
-        userId: 'guest',
-        date: date,
-        prayerType: PrayerType.isha,
-      ),
-    ));
+    expect(
+        result.currentAdditionProtectedCandidates, isNot(contains(otherKey)));
+    expect(
+        result.newCandidates,
+        contains(
+          QazaPrayerKey(
+            userId: 'guest',
+            date: date,
+            prayerType: PrayerType.isha,
+          ),
+        ));
   });
   CurrentDayQazaPrayerTimeContext context({
     required DateTime now,
@@ -227,7 +231,8 @@ void main() {
     expect(result.newCandidates, isEmpty);
   });
 
-  test('already-recorded prayer remains existing even when its time is blocked', () {
+  test('already-recorded prayer remains existing even when its time is blocked',
+      () {
     final existing = _record(
       id: 'fajr-today',
       prayer: PrayerType.fajr,
@@ -289,5 +294,4 @@ void main() {
       QazaEligibility.timeDataUnavailable,
     );
   });
-
 }

@@ -47,8 +47,6 @@ class CalendarPicker extends ConsumerStatefulWidget {
 class _CalendarPickerState extends ConsumerState<CalendarPicker> {
   late DateTime month;
 
-
-
   DateTime get today => ref.read(calendarTodayProvider);
 
   bool _sameDay(DateTime a, DateTime b) =>
@@ -206,6 +204,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
         );
     }
   }
+
   bool _dayIsSelected(DateTime date) {
     final state = ref.read(calendarControllerProvider);
     return state.selectedDates.any((item) => _sameDay(item, date));
@@ -230,9 +229,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final scheme = Theme.of(context).colorScheme;
     final calendarState = ref.read(calendarControllerProvider);
     final rangeMode = calendarState.selectionMode == DateSelectionMode.range;
-    final predicateAllowed = rangeMode
-        ? _isDateAllowed(date)
-        : _isDateAvailable(date);
+    final predicateAllowed =
+        rangeMode ? _isDateAllowed(date) : _isDateAvailable(date);
     final selectable = predicateAllowed && isDisabled != true;
     final selected = _dayIsSelected(date) || isSelected == true;
     final colors = CalendarDayColors.resolve(
@@ -285,8 +283,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     );
 
     return Semantics(
-      label:
-          '${MaterialLocalizations.of(context).formatMediumDate(date)}, '
+      label: '${MaterialLocalizations.of(context).formatMediumDate(date)}, '
           '${_hijriLabel(date, AppLocalizations.of(context))}'
           '${selectable ? '' : ', unavailable'}',
       selected: selected,
@@ -342,9 +339,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               child: IconButton(
                 key: const Key('calendar_prev_month'),
                 tooltip: materialL10n.previousMonthTooltip,
-                onPressed: canPrevious
-                    ? () => _moveMonth(-1)
-                    : null,
+                onPressed: canPrevious ? () => _moveMonth(-1) : null,
                 icon: Icon(
                   isRtl
                       ? Icons.chevron_right_rounded
@@ -398,9 +393,7 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
               child: IconButton(
                 key: const Key('calendar_next_month'),
                 tooltip: materialL10n.nextMonthTooltip,
-                onPressed: canNext
-                    ? () => _moveMonth(1)
-                    : null,
+                onPressed: canNext ? () => _moveMonth(1) : null,
                 icon: Icon(
                   isRtl
                       ? Icons.chevron_left_rounded

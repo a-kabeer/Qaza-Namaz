@@ -140,6 +140,7 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
       ),
     );
   }
+
   Widget _buildTotal(BuildContext context, AppLocalizations l10n) {
     return Card(
       child: Padding(

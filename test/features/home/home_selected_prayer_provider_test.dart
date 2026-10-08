@@ -112,7 +112,9 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.autoSequence);
     });
 
-    test('Auto Sequence does not resolve a later prayer type from pending counts', () async {
+    test(
+        'Auto Sequence does not resolve a later prayer type from pending counts',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.zuhr,
@@ -142,7 +144,9 @@ void main() {
       expect(selected.prayer, PrayerType.fajr);
     });
 
-    test('Persisted Auto Sequence cursor is not used to choose a pending record', () async {
+    test(
+        'Persisted Auto Sequence cursor is not used to choose a pending record',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
@@ -188,7 +192,8 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.prayerTime);
     });
 
-    test('Prayer Time falls back from Isha and zero-pending Witr to Fajr', () async {
+    test('Prayer Time falls back from Isha and zero-pending Witr to Fajr',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.prayerTime,
         currentPrayer: PrayerType.isha,
@@ -203,7 +208,9 @@ void main() {
       expect(selected.prayer, PrayerType.fajr);
     });
 
-    test('Prayer Time skips multiple zero-pending prayers before a later pending prayer', () async {
+    test(
+        'Prayer Time skips multiple zero-pending prayers before a later pending prayer',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.prayerTime,
         currentPrayer: PrayerType.isha,

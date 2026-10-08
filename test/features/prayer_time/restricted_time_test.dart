@@ -137,7 +137,9 @@ void main() {
       expect(state.active?.type, RestrictedTimeType.sunset);
     });
 
-    test('derives every restricted range from the astronomical boundaries with exact durations', () {
+    test(
+        'derives every restricted range from the astronomical boundaries with exact durations',
+        () {
       const calculator = RestrictedTimeCalculator();
       final windows = calculator.forSchedule(schedule, location);
 
@@ -277,12 +279,14 @@ void main() {
       expect(sunsetWindow.displayAt, sunsetWindow.endsAt);
     });
 
-    test('hides the restricted row before Fajr even when Sunrise is upcoming', () {
+    test('hides the restricted row before Fajr even when Sunrise is upcoming',
+        () {
       final now = tz.TZDateTime.from(
         DateTime.utc(2026, 9, 26, 22, 30),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -296,7 +300,8 @@ void main() {
         DateTime.utc(2026, 9, 26, 23, 30),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -311,7 +316,8 @@ void main() {
         DateTime.utc(2026, 9, 27, 1, 41),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -326,7 +332,8 @@ void main() {
         DateTime.utc(2026, 9, 27, 7, 22),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -340,7 +347,8 @@ void main() {
         DateTime.utc(2026, 9, 27, 11, 30),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -355,7 +363,8 @@ void main() {
         DateTime.utc(2026, 9, 27, 13, 16),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -369,7 +378,8 @@ void main() {
         DateTime.utc(2026, 9, 27, 4, 0),
         location,
       );
-      final windows = const RestrictedTimeCalculator().timelineWindowsForSchedule(
+      final windows =
+          const RestrictedTimeCalculator().timelineWindowsForSchedule(
         schedule: schedule,
         location: location,
         now: now,
@@ -411,10 +421,12 @@ void main() {
       );
 
       expect(state.active?.startsAt, tz.TZDateTime.from(sunrise, location));
-      expect(state.active?.endsAt, tz.TZDateTime.from(
-        sunrise.add(const Duration(minutes: 15)),
-        location,
-      ));
+      expect(
+          state.active?.endsAt,
+          tz.TZDateTime.from(
+            sunrise.add(const Duration(minutes: 15)),
+            location,
+          ));
       expect(state.remainingAt(now), const Duration(minutes: 6));
     });
 

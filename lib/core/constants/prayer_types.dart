@@ -34,7 +34,6 @@ extension PrayerTypeX on PrayerType {
     return !witrEnabled && next == PrayerType.witr ? PrayerType.fajr : next;
   }
 
-
   String get label {
     switch (this) {
       case PrayerType.fajr:

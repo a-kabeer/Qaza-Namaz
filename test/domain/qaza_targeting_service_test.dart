@@ -36,7 +36,8 @@ void main() {
   }
 
   group('QazaTargetingService', () {
-    test('normal canonical sequence resolves the starting prayer when pending', () {
+    test('normal canonical sequence resolves the starting prayer when pending',
+        () {
       final summary = summaryFor({
         for (final prayer in PrayerTypeX.qazaSequence) prayer: 1,
       });
@@ -198,7 +199,8 @@ void main() {
       );
     });
 
-    test('re-evaluates the latest pending counts instead of caching a target', () {
+    test('re-evaluates the latest pending counts instead of caching a target',
+        () {
       final first = summaryFor({
         PrayerType.fajr: 10,
       });
@@ -224,7 +226,9 @@ void main() {
       );
     });
 
-    test('persisted Auto Sequence cursor is still dynamically resolved past zero pending', () async {
+    test(
+        'persisted Auto Sequence cursor is still dynamically resolved past zero pending',
+        () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       await database.customInsert(
@@ -320,7 +324,9 @@ void main() {
       );
     });
 
-    test('Prayer Time skips several zero-pending prayers before the next available prayer', () {
+    test(
+        'Prayer Time skips several zero-pending prayers before the next available prayer',
+        () {
       final summary = summaryFor({
         PrayerType.isha: 0,
         PrayerType.witr: 0,

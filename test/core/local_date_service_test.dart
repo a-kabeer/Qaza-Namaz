@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/time/local_date_service.dart';
 
 void main() {
-  test('calendarDayDifference counts Gregorian dates without elapsed-hour assumptions', () {
+  test(
+      'calendarDayDifference counts Gregorian dates without elapsed-hour assumptions',
+      () {
     final start = DateTime(2024, 3, 10, 0, 30);
     final end = DateTime(2024, 3, 11, 0, 15);
     expect(LocalDateService.calendarDayDifference(start, end), 1);

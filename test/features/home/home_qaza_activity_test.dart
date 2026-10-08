@@ -128,7 +128,8 @@ void main() {
   );
 
   testWidgets(
-    'dynamic weekly chart scale keeps Y-axis labels sparse', (tester) async {
+    'dynamic weekly chart scale keeps Y-axis labels sparse',
+    (tester) async {
       final period = activityPeriod(
         today: DateTime(2026, 9, 30),
         completedOnWednesday: 108,
@@ -270,9 +271,11 @@ void main() {
 
         final expectedMonth = index == 8 ? 'September 2026' : 'October 2026';
         expect(
-          tester.widget<Text>(
-            find.byKey(const Key('home_activity_selected_month_title')),
-          ).data,
+          tester
+              .widget<Text>(
+                find.byKey(const Key('home_activity_selected_month_title')),
+              )
+              .data,
           expectedMonth,
         );
         expect(
@@ -315,9 +318,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_date_header')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_date_header')),
+            )
+            .data,
         '2025',
       );
 
@@ -352,9 +357,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_selected_month_title')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_selected_month_title')),
+            )
+            .data,
         'December 2025',
       );
       expect(
@@ -366,15 +373,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_date_header')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_date_header')),
+            )
+            .data,
         '2024',
       );
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_selected_month_title')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_selected_month_title')),
+            )
+            .data,
         'December 2024',
       );
       expect(
@@ -423,9 +434,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_selected_month_title')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_selected_month_title')),
+            )
+            .data,
         'November 2026',
       );
       expect(
@@ -590,9 +603,11 @@ void main() {
       }
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_date_header')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_date_header')),
+            )
+            .data,
         'February 2026',
       );
 
@@ -610,15 +625,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_activity_date_header')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_date_header')),
+            )
+            .data,
         'March 2026',
       );
 
-      final marchHeight = tester.getRect(
-        find.byKey(const Key('home_activity_month_grid')),
-      ).height;
+      final marchHeight = tester
+          .getRect(
+            find.byKey(const Key('home_activity_month_grid')),
+          )
+          .height;
       expect(marchHeight, closeTo(februaryHeight, 0.01));
     },
   );
@@ -663,14 +682,18 @@ void main() {
       }
 
       await selectMonth(1);
-      final februaryHeight = tester.getRect(
-        find.byKey(const Key('home_activity_inline_month_detail')),
-      ).height;
+      final februaryHeight = tester
+          .getRect(
+            find.byKey(const Key('home_activity_inline_month_detail')),
+          )
+          .height;
 
       await selectMonth(2);
-      final marchHeight = tester.getRect(
-        find.byKey(const Key('home_activity_inline_month_detail')),
-      ).height;
+      final marchHeight = tester
+          .getRect(
+            find.byKey(const Key('home_activity_inline_month_detail')),
+          )
+          .height;
 
       expect(marchHeight, closeTo(februaryHeight, 0.01));
     },
@@ -693,7 +716,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.getRect(find.byKey(const Key('home_activity_month_grid'))).height,
+        tester
+            .getRect(find.byKey(const Key('home_activity_month_grid')))
+            .height,
         closeTo(before, 0.01),
       );
       expect(

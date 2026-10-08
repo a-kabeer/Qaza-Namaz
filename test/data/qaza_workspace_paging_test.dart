@@ -46,8 +46,7 @@ QazaRecord _record({
     originalDate: originalDate,
     status: status,
     completedAt: completedAt,
-    completionId:
-        status == QazaStatus.completed ? 'completion-$id' : null,
+    completionId: status == QazaStatus.completed ? 'completion-$id' : null,
     createdAt: originalDate,
     updatedAt: at,
   );
@@ -94,7 +93,8 @@ void main() {
     await database.close();
   });
 
-  test('Pending date range uses originalDate and ignores completedAt', () async {
+  test('Pending date range uses originalDate and ignores completedAt',
+      () async {
     await database.qazaRecordsDao.insertRecords([
       _row(
         id: 'pending-in-range',
@@ -124,7 +124,8 @@ void main() {
     expect(page.records.map((record) => record.id), ['pending-in-range']);
   });
 
-  test('Drift and in-memory Pending pages use canonical prayer order', () async {
+  test('Drift and in-memory Pending pages use canonical prayer order',
+      () async {
     final date = DateTime(2026, 9, 10);
     final pending = [
       _record(
@@ -292,12 +293,15 @@ void main() {
     );
 
     expect(second.records.map((record) => record.id), ['2', '1']);
-    expect(second.records.map((record) => record.id).toSet().intersection(
-          first.records.map((record) => record.id).toSet(),
-        ), isEmpty);
+    expect(
+        second.records.map((record) => record.id).toSet().intersection(
+              first.records.map((record) => record.id).toSet(),
+            ),
+        isEmpty);
   });
 
-  test('Drift and in-memory Completed pages return equivalent records', () async {
+  test('Drift and in-memory Completed pages return equivalent records',
+      () async {
     final completed = [
       _record(
         id: 'a',
@@ -378,8 +382,7 @@ void main() {
       ),
     ]);
 
-    final changed =
-        await database.qazaRecordsDao.markCompletedAsPendingBatch(
+    final changed = await database.qazaRecordsDao.markCompletedAsPendingBatch(
       userId: 'local',
       expectedCompletionIds: const {
         'valid': 'completion-valid',
@@ -440,5 +443,4 @@ void main() {
     expect(store.records['local']![0].recordVersion, 2);
     expect(store.records['local']![1].status, QazaStatus.completed);
   });
-
 }

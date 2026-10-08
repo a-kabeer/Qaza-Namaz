@@ -106,19 +106,19 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-              Text(
-                l10n.homeQazaActivity,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                l10n.homeProgressHistory,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 14),
-              SegmentedButton<_ActivityRange>(
+            Text(
+              l10n.homeQazaActivity,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.homeProgressHistory,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 14),
+            SegmentedButton<_ActivityRange>(
               key: const Key('home_activity_range_selector'),
               segments: [
                 ButtonSegment(
@@ -138,17 +138,16 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
               onSelectionChanged: (selected) {
                 if (selected.isNotEmpty) _selectRange(selected.first);
               },
-              ),
-              const SizedBox(height: 14),
+            ),
+            const SizedBox(height: 14),
             Row(
               key: const Key('home_activity_period_header'),
               children: [
                 IconButton(
                   key: const Key('home_activity_previous'),
                   tooltip: _previousTooltip(l10n),
-                  onPressed: canPrevious
-                      ? () => _goToPage(_pageIndex - 1)
-                      : null,
+                  onPressed:
+                      canPrevious ? () => _goToPage(_pageIndex - 1) : null,
                   icon: const Icon(Icons.chevron_left_rounded),
                 ),
                 Expanded(
@@ -167,9 +166,7 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                 IconButton(
                   key: const Key('home_activity_next'),
                   tooltip: _nextTooltip(l10n),
-                  onPressed: canNext
-                      ? () => _goToPage(_pageIndex + 1)
-                      : null,
+                  onPressed: canNext ? () => _goToPage(_pageIndex + 1) : null,
                   icon: const Icon(Icons.chevron_right_rounded),
                 ),
               ],
@@ -187,48 +184,49 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
                   child: SizedBox(
                     height: height,
                     child: PageView.builder(
-                key: ValueKey('home_activity_pager_${_range.name}'),
-                controller: _pageController,
-                itemCount: _maxPage + 1,
-                onPageChanged: (index) {
-                  final pageAnchor =
-                      _anchorForOffset(today, index - _basePage);
-                  setState(() {
-                    _pageIndex = index;
-                    _selectedDay = null;
-                    if (_selectedMonth != null) {
-                      _selectedMonth =
-                          DateTime(pageAnchor.year, _selectedMonth!.month);
-                    }
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final pageAnchor =
-                      _anchorForOffset(today, index - _basePage);
-                  return _ActivityPeriodPage(
-                    key: ValueKey(
-                      'home_activity_page_${_range.name}_$index',
+                      key: ValueKey('home_activity_pager_${_range.name}'),
+                      controller: _pageController,
+                      itemCount: _maxPage + 1,
+                      onPageChanged: (index) {
+                        final pageAnchor =
+                            _anchorForOffset(today, index - _basePage);
+                        setState(() {
+                          _pageIndex = index;
+                          _selectedDay = null;
+                          if (_selectedMonth != null) {
+                            _selectedMonth = DateTime(
+                                pageAnchor.year, _selectedMonth!.month);
+                          }
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final pageAnchor =
+                            _anchorForOffset(today, index - _basePage);
+                        return _ActivityPeriodPage(
+                          key: ValueKey(
+                            'home_activity_page_${_range.name}_$index',
+                          ),
+                          range: _range,
+                          anchor: pageAnchor,
+                          selectedDay:
+                              index == _pageIndex ? _selectedDay : null,
+                          onSelectedDay: index == _pageIndex
+                              ? (date) => setState(() => _selectedDay = date)
+                              : null,
+                          selectedMonth:
+                              index == _pageIndex ? _selectedMonth : null,
+                          onSelectedMonth: index == _pageIndex
+                              ? (month) => setState(() {
+                                    _selectedMonth =
+                                        DateTime(month.year, month.month);
+                                    _selectedDay = null;
+                                  })
+                              : null,
+                        );
+                      },
                     ),
-                    range: _range,
-                    anchor: pageAnchor,
-                    selectedDay: index == _pageIndex ? _selectedDay : null,
-                    onSelectedDay: index == _pageIndex
-                        ? (date) => setState(() => _selectedDay = date)
-                        : null,
-                    selectedMonth:
-                        index == _pageIndex ? _selectedMonth : null,
-                    onSelectedMonth: index == _pageIndex
-                        ? (month) => setState(() {
-                              _selectedMonth =
-                                  DateTime(month.year, month.month);
-                              _selectedDay = null;
-                            })
-                        : null,
-                  );
-                  },
-                ),
-              ),
-            );
+                  ),
+                );
               },
             ),
             if (_range == _ActivityRange.yearly && _selectedMonth != null) ...[
@@ -395,8 +393,7 @@ class _SelectedActivityDayDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final periodAsync = switch (range) {
-      _ActivityRange.weekly =>
-        ref.watch(homeQazaActivityWeekProvider(anchor)),
+      _ActivityRange.weekly => ref.watch(homeQazaActivityWeekProvider(anchor)),
       _ActivityRange.monthly =>
         ref.watch(homeQazaActivityMonthProvider(anchor)),
       _ActivityRange.yearly => const AsyncValue<QazaActivityPeriod>.loading(),
@@ -443,12 +440,10 @@ class _ActivityPeriodPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final periodAsync = switch (range) {
-      _ActivityRange.weekly =>
-        ref.watch(homeQazaActivityWeekProvider(anchor)),
+      _ActivityRange.weekly => ref.watch(homeQazaActivityWeekProvider(anchor)),
       _ActivityRange.monthly =>
         ref.watch(homeQazaActivityMonthProvider(anchor)),
-      _ActivityRange.yearly =>
-        ref.watch(homeQazaActivityYearProvider(anchor)),
+      _ActivityRange.yearly => ref.watch(homeQazaActivityYearProvider(anchor)),
     };
 
     return periodAsync.when(
@@ -468,9 +463,8 @@ class _ActivityPeriodPage extends ConsumerWidget {
         selectedDay: selectedDay,
         onSelectedDay: onSelectedDay,
         selectedMonth: selectedMonth,
-        onSelectedMonth: range == _ActivityRange.yearly
-            ? onSelectedMonth
-            : null,
+        onSelectedMonth:
+            range == _ActivityRange.yearly ? onSelectedMonth : null,
       ),
     );
   }
@@ -586,8 +580,7 @@ class _ActivityTargetSummary extends StatelessWidget {
               ? l10n.homeWeeklyTargetLabel
               : l10n.homeMonthlyTarget,
           value: DateFormatters.formatCount(period.fullTarget ?? 0),
-          secondary:
-              '${DateFormatters.formatCount(period.dailyTarget)}/day',
+          secondary: '${DateFormatters.formatCount(period.dailyTarget)}/day',
         ),
         _SummaryMetricData(
           label: l10n.homeRemaining,
@@ -848,9 +841,7 @@ class _ActivityBarChart extends StatelessWidget {
                   return;
                 }
                 final index = response?.spot?.touchedBarGroupIndex;
-                if (index == null ||
-                    index < 0 ||
-                    index >= period.days.length) {
+                if (index == null || index < 0 || index >= period.days.length) {
                   return;
                 }
                 final date = period.days[index].date;
@@ -892,11 +883,12 @@ class _ActivityBarChart extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final selectedDayValue = selectedDay;
     final selectedDayMatches = selectedDayValue != null &&
-        day.date == DateTime(
-          selectedDayValue.year,
-          selectedDayValue.month,
-          selectedDayValue.day,
-        );
+        day.date ==
+            DateTime(
+              selectedDayValue.year,
+              selectedDayValue.month,
+              selectedDayValue.day,
+            );
     final selectedMonthValue = selectedMonth;
     final selectedMonthMatches = selectedMonthValue != null &&
         day.date.year == selectedMonthValue.year &&
@@ -1032,9 +1024,7 @@ class _InlineMonthlyDetail extends ConsumerWidget {
 double _monthlyCalendarCellExtent(double width) {
   final availableWidth = math.max(width, 0.0);
   return math.max(
-    (availableWidth -
-            (_monthlyCalendarRows - 1) * _monthlyCalendarSpacing) /
-        7,
+    (availableWidth - (_monthlyCalendarRows - 1) * _monthlyCalendarSpacing) / 7,
     0.0,
   );
 }
@@ -1204,16 +1194,14 @@ class _ActivityDayDetails extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final isToday =
-        day != null && !day!.isFuture && day!.date == period.today;
+    final isToday = day != null && !day!.isFuture && day!.date == period.today;
     final enabledNow = ref.watch(enabledPrayerTypesProvider);
     final selected = day;
 
     if (selected == null) return const SizedBox.shrink();
 
-    final prayers = isToday
-        ? enabledNow
-        : PrayerType.values.toList(growable: false);
+    final prayers =
+        isToday ? enabledNow : PrayerType.values.toList(growable: false);
 
     return Card(
       key: const Key('home_activity_day_details'),

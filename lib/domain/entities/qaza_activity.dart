@@ -61,12 +61,10 @@ class QazaActivityPeriod {
   final int activeDays;
   final int activeMonths;
 
-  int get totalCompleted =>
-      days.fold(0, (total, day) => total + day.completed);
+  int get totalCompleted => days.fold(0, (total, day) => total + day.completed);
 
-  int? get fullTarget => targetAvailable && dailyTarget > 0
-      ? dailyTarget * days.length
-      : null;
+  int? get fullTarget =>
+      targetAvailable && dailyTarget > 0 ? dailyTarget * days.length : null;
 
   int? get remainingTarget {
     final target = fullTarget;

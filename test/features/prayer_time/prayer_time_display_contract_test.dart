@@ -9,9 +9,11 @@ void main() {
             .readAsStringSync();
 
     expect(source, contains("import 'prayer_timeline_row.dart';"));
-    expect(source, contains("import '../../../core/widgets/prayer_visuals.dart';"));
+    expect(source,
+        contains("import '../../../core/widgets/prayer_visuals.dart';"));
     expect(source, contains('LocationSelectorStyle.header'));
-    expect(source, contains('DateFormatters.formatGregorianWeekdayShortFull(date)'));
+    expect(source,
+        contains('DateFormatters.formatGregorianWeekdayShortFull(date)'));
     expect(source, contains('_PrayerTimeHeader('));
     expect(source, contains('_PrayerTimeFocusCard('));
     expect(source, contains('_PrayerSchedule('));
@@ -47,7 +49,9 @@ void main() {
     expect(source, isNot(contains('class _RestrictedTimesCard')));
   });
 
-  test('Prayer Time keeps restricted visibility inside the existing schedule container', () {
+  test(
+      'Prayer Time keeps restricted visibility inside the existing schedule container',
+      () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
             .readAsStringSync();
@@ -65,7 +69,8 @@ void main() {
 
     expect(source, contains('ref.watch(prayerTimeClockProvider)'));
     expect(source, contains('ref.watch(qazaCompletionRestrictedProvider)'));
-    expect(source, contains('if (!restricted) return const SizedBox.shrink();'));
+    expect(
+        source, contains('if (!restricted) return const SizedBox.shrink();'));
     expect(source, contains('ref.watch(restrictedTimeStateProvider)'));
     expect(source, contains('state.remainingAt(localNow)'));
     expect(
@@ -78,7 +83,8 @@ void main() {
     expect(source, isNot(contains('Remaining time')));
   });
 
-  test('Shared row keeps its existing card contract and adds a cohesive variant',
+  test(
+      'Shared row keeps its existing card contract and adds a cohesive variant',
       () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_timeline_row.dart')
@@ -98,9 +104,8 @@ void main() {
   });
 
   test('Home reuses the shared active restricted-time row', () {
-    final source =
-        File('lib/features/home/widgets/home_today_progress.dart')
-            .readAsStringSync();
+    final source = File('lib/features/home/widgets/home_today_progress.dart')
+        .readAsStringSync();
 
     expect(
       source,

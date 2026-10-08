@@ -80,7 +80,9 @@ void main() {
     ]);
   });
 
-  test('scattered multiple dates keep only a clear range start when entering range mode', () {
+  test(
+      'scattered multiple dates keep only a clear range start when entering range mode',
+      () {
     final container = ProviderContainer(
       overrides: [
         calendarTodayProvider.overrideWithValue(DateTime(2026, 9, 27)),

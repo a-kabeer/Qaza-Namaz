@@ -28,8 +28,7 @@ class QazaAdditionDateSummary {
     return snapshot.selectedDates.length;
   }
 
-  List<DateTime> get selectedDates =>
-      List.unmodifiable(snapshot.selectedDates);
+  List<DateTime> get selectedDates => List.unmodifiable(snapshot.selectedDates);
 
   List<DateTime> get dateScope => snapshot.mode == QazaAdditionMode.range
       ? snapshot.expandedDates

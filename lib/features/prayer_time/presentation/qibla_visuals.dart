@@ -105,7 +105,8 @@ class QiblaDialPainter extends CustomPainter {
     final length = direction.distance;
     if (length > 0) {
       final unit = direction / length;
-      final arrowTip = markerCenter - unit * (size.shortestSide >= 160 ? 11 : 7);
+      final arrowTip =
+          markerCenter - unit * (size.shortestSide >= 160 ? 11 : 7);
       final perpendicular = Offset(-unit.dy, unit.dx);
 
       final arrowPaint = Paint()

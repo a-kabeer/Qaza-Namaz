@@ -35,50 +35,50 @@ class HomePendingByPrayer extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.homePendingByPrayer,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.homePendingByPrayer,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            if (pendingPrayers.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 20,
-                      color: charts.completed,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.completeNoPendingTitle,
-                      key: const Key('home_pending_by_prayer_empty'),
-                    ),
-                  ],
-                ),
-              )
-            else
-              for (final prayer in pendingPrayers)
-                _PrayerPendingBar(
-                  prayer: prayer,
-                  progress: summary.byPrayer[prayer]!.progress,
-                  charts: charts,
-                  onTap: () => openQazaForPrayer(ref, prayer),
-                ),
-          ],
+                ],
+              ),
+              if (pendingPrayers.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline_rounded,
+                        size: 20,
+                        color: charts.completed,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.completeNoPendingTitle,
+                        key: const Key('home_pending_by_prayer_empty'),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                for (final prayer in pendingPrayers)
+                  _PrayerPendingBar(
+                    prayer: prayer,
+                    progress: summary.byPrayer[prayer]!.progress,
+                    charts: charts,
+                    onTap: () => openQazaForPrayer(ref, prayer),
+                  ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

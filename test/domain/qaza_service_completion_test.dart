@@ -16,7 +16,8 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     PrayerType? prayerType,
     QazaStatus? status,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<QazaPage> getPage({
@@ -81,7 +82,8 @@ class _FakeRepository implements QazaRepository {
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<List<QazaRecord>> getRecordsByIds({
@@ -113,7 +115,8 @@ class _FakeRepository implements QazaRepository {
   @override
   Future<QazaProgressSummary> getProgressSummary({
     required String userId,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<int> countCompletedBetween({
@@ -121,7 +124,8 @@ class _FakeRepository implements QazaRepository {
     required DateTime from,
     required DateTime to,
     Iterable<PrayerType>? prayerTypes,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<void> addRecord(QazaRecord record) => throw UnimplementedError();
@@ -138,7 +142,8 @@ class _FakeRepository implements QazaRepository {
   Future<void> deleteRecord({
     required String userId,
     required String recordId,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<QazaCompletionResult> completeRecord({
@@ -146,7 +151,8 @@ class _FakeRepository implements QazaRepository {
     required String recordId,
     required DateTime completedAt,
     String? completionId,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<List<QazaRecord>> completeRecords({
@@ -184,7 +190,8 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime updatedAt,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<void> resetUserRecords({required String userId}) =>

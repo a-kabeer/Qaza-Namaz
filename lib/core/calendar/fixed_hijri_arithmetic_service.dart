@@ -29,9 +29,7 @@ class FixedHijriArithmeticService {
         'Fixed Hijri arithmetic day must be 1-30.',
       );
     }
-    return year * daysPerYear +
-        (month - 1) * daysPerMonth +
-        (day - 1);
+    return year * daysPerYear + (month - 1) * daysPerMonth + (day - 1);
   }
 
   static int dayIndexOf(HijriDateParts date) => dayIndex(
@@ -57,8 +55,7 @@ class FixedHijriArithmeticService {
     required int pubertyAge,
     required int startPrayingAge,
   }) {
-    final duration =
-        (startPrayingAge - pubertyAge) * daysPerYear;
+    final duration = (startPrayingAge - pubertyAge) * daysPerYear;
     if (duration < 0) {
       throw ArgumentError(
         'startPrayingAge must be greater than or equal to pubertyAge.',

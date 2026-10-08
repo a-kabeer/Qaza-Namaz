@@ -248,13 +248,13 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           final end = start + batchSize < records.length
               ? start + batchSize
               : records.length;
-          final ids = await database.qazaRecordsDao
-              .insertRecordsReturningInsertedIds(
-                records
-                    .sublist(start, end)
-                    .map(_recordCompanion)
-                    .toList(growable: false),
-              );
+          final ids =
+              await database.qazaRecordsDao.insertRecordsReturningInsertedIds(
+            records
+                .sublist(start, end)
+                .map(_recordCompanion)
+                .toList(growable: false),
+          );
           insertedIds.addAll(ids);
           onProgress?.call(end, records.length, insertedIds.length);
         }
@@ -352,9 +352,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           if (isCancellationRequested?.call() ?? false) {
             throw const _CancelledTransaction();
           }
-          final end = start + 400 < removable.length
-              ? start + 400
-              : removable.length;
+          final end =
+              start + 400 < removable.length ? start + 400 : removable.length;
           final ids = removable
               .sublist(start, end)
               .map((record) => record.id)
@@ -383,13 +382,13 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           final end = start + 500 < recordsToAdd.length
               ? start + 500
               : recordsToAdd.length;
-          final ids = await database.qazaRecordsDao
-              .insertRecordsReturningInsertedIds(
-                recordsToAdd
-                    .sublist(start, end)
-                    .map(_recordCompanion)
-                    .toList(growable: false),
-              );
+          final ids =
+              await database.qazaRecordsDao.insertRecordsReturningInsertedIds(
+            recordsToAdd
+                .sublist(start, end)
+                .map(_recordCompanion)
+                .toList(growable: false),
+          );
           insertedIds.addAll(ids);
           onProgress?.call(end, recordsToAdd.length, insertedIds.length);
         }
@@ -507,9 +506,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
 
         final deletedIds = <String>[];
         for (var start = 0; start < eligible.length; start += 400) {
-          final end = start + 400 < eligible.length
-              ? start + 400
-              : eligible.length;
+          final end =
+              start + 400 < eligible.length ? start + 400 : eligible.length;
           final ids = eligible
               .sublist(start, end)
               .map((record) => record.id)
@@ -631,8 +629,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         );
       });
 
-  Future<void> _insertAddition(QazaAddition addition) =>
-      database.customInsert(
+  Future<void> _insertAddition(QazaAddition addition) => database.customInsert(
         '''INSERT INTO qaza_additions
            (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
@@ -699,7 +696,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
         userId: row.read<String>('user_id'),
         mode: QazaAdditionModeX.fromName(row.read<String>('mode')),
         currentInputSnapshot: QazaAdditionInputSnapshot.fromJson(
-          jsonDecode(row.read<String>('input_snapshot')) as Map<String, dynamic>,
+          jsonDecode(row.read<String>('input_snapshot'))
+              as Map<String, dynamic>,
         ),
         revision: row.read<int>('revision'),
         createdAt: DateTime.parse(row.read<String>('created_at')),

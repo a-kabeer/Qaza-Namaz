@@ -69,7 +69,6 @@ class CalendarSelectionState {
     final result = unique.toList()..sort();
     return result;
   }
-
 }
 
 final calendarControllerProvider =

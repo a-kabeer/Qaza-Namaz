@@ -286,5 +286,4 @@ void main() {
       expect(find.text('Undo completions'), findsNothing);
     },
   );
-
 }

@@ -105,8 +105,7 @@ void main() {
     },
   );
 
-  test('Pending keyset cursor requires the date/prayer/id triple',
-      () async {
+  test('Pending keyset cursor requires the date/prayer/id triple', () async {
     await expectLater(
       database.qazaRecordsDao.getKeysetPage(
         userId: 'local',

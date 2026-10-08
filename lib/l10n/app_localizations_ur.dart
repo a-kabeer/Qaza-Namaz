@@ -758,34 +758,6 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String dataImportRestored(int count) {
-    return 'بیک اپ کامیابی سے بحال ہو گیا۔ $count قضا ریکارڈ بحال کیے گئے۔';
-  }
-
-  @override
-  String dataImportRestoreSummary(
-    int records,
-    int accounts,
-    int revision,
-    String onboarding,
-  ) {
-    return 'اس بیک اپ میں $records قضا ریکارڈ اور $accounts مقامی اکاؤنٹ ہیں۔\n\n'
-        'بحال کرنے سے اس ڈیوائس کا موجودہ مقامی ڈیٹا منتخب بیک اپ سے بدل جائے گا۔ '
-        'آپ کی ڈیوائس شناخت اسی ڈیوائس پر برقرار رہے گی۔\n\n'
-        'بیک اپ ریویژن: $revision\nآن بورڈنگ: $onboarding';
-  }
-
-  @override
-  String get dataImportOnboardingComplete => 'مکمل';
-
-  @override
-  String get dataImportOnboardingIncomplete => 'مکمل نہیں';
-
-  @override
-  String get dataLocalOnlyNote =>
-      'صرف مقامی بیک اپ۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہتا ہے، جب تک آپ اسے واضح طور پر برآمد نہ کریں۔';
-
-  @override
   String get dataProcessing => 'ڈیٹا پر کام ہو رہا ہے…';
 
   @override
@@ -2433,4 +2405,25 @@ class AppLocalizationsUr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String dataImportRestored(int count) {
+    return 'بیک اپ کامیابی سے بحال ہو گیا۔ $count قضا ریکارڈ بحال کیے گئے۔';
+  }
+
+  @override
+  String dataImportRestoreSummary(
+      int records, int accounts, int revision, String onboarding) {
+    return 'اس بیک اپ میں $records قضا ریکارڈ اور $accounts مقامی اکاؤنٹ ہیں۔\\n\\nبحال کرنے سے اس ڈیوائس کا موجودہ مقامی ڈیٹا منتخب بیک اپ سے بدل جائے گا۔ آپ کی ڈیوائس شناخت اسی ڈیوائس پر برقرار رہے گی۔\\n\\nبیک اپ ریویژن: $revision\\nآن بورڈنگ: $onboarding';
+  }
+
+  @override
+  String get dataImportOnboardingComplete => 'مکمل';
+
+  @override
+  String get dataImportOnboardingIncomplete => 'مکمل نہیں';
+
+  @override
+  String get dataLocalOnlyNote =>
+      'صرف مقامی بیک اپ۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہتا ہے، جب تک آپ اسے واضح طور پر برآمد نہ کریں۔';
 }

@@ -88,7 +88,9 @@ void main() {
       expect(QazaActivityService.weeklyTargetFromDailyTarget(-1), 0);
     });
 
-    test('future dates remain visible but are excluded from activity and target-to-date', () {
+    test(
+        'future dates remain visible but are excluded from activity and target-to-date',
+        () {
       final period = QazaActivityService.buildPeriodFromRows(
         rows: const [],
         from: DateTime(2026, 9, 27),

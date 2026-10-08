@@ -10,6 +10,7 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
+
 Future<QazaRecord?> showQazaRecordEditor(
   BuildContext context, {
   required QazaRecord record,

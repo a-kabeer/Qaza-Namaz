@@ -43,13 +43,16 @@ void main() {
 
     test('resolved Witr helper returns the six or five supported prayers', () {
       expect(ProfileRules.prayerTypesForWitr(false), hasLength(5));
-      expect(ProfileRules.prayerTypesForWitr(false), isNot(contains(PrayerType.witr)));
+      expect(ProfileRules.prayerTypesForWitr(false),
+          isNot(contains(PrayerType.witr)));
       expect(ProfileRules.prayerTypesForWitr(true), hasLength(6));
       expect(ProfileRules.prayerTypesForWitr(true), contains(PrayerType.witr));
     });
   });
 
-  test('canonical Qaza sequence can skip Witr without removing it from the enum', () {
+  test(
+      'canonical Qaza sequence can skip Witr without removing it from the enum',
+      () {
     expect(
       PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: false),
       PrayerType.fajr,
@@ -58,6 +61,7 @@ void main() {
       PrayerType.isha.nextInQazaSequenceSkippingWitr(witrEnabled: true),
       PrayerType.witr,
     );
-    expect(PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false), PrayerType.fajr);
+    expect(PrayerType.witr.nextInQazaSequenceSkippingWitr(witrEnabled: false),
+        PrayerType.fajr);
   });
 }

@@ -117,7 +117,8 @@ class QazaPlanRevision {
       }),
       ledgerDecision: ledgerDecision,
       previousProfileSnapshot: Map.unmodifiable({
-        for (final entry in (previousProfileSnapshot ?? const <String, dynamic>{}).entries)
+        for (final entry
+            in (previousProfileSnapshot ?? const <String, dynamic>{}).entries)
           entry.key: _freeze(entry.value),
       }),
       changedFields: List.unmodifiable(changedFields),
@@ -172,19 +173,17 @@ class QazaPlanRevision {
       totalWithWitr: totalWithWitr,
       planFingerprint: json['planFingerprint'] as String,
       ledgerPlanStartDate:
-          DateTime.tryParse(json['ledgerPlanStartDate'] as String? ?? '') ?? start,
+          DateTime.tryParse(json['ledgerPlanStartDate'] as String? ?? '') ??
+              start,
       ledgerPlanEndDate:
           DateTime.tryParse(json['ledgerPlanEndDate'] as String? ?? '') ?? end,
-      ledgerTotalDays:
-          (json['ledgerTotalDays'] as num?)?.toInt() ?? totalDays,
-      ledgerIncludeWitr:
-          json['ledgerIncludeWitr'] as bool? ?? includeWitr,
+      ledgerTotalDays: (json['ledgerTotalDays'] as num?)?.toInt() ?? totalDays,
+      ledgerIncludeWitr: json['ledgerIncludeWitr'] as bool? ?? includeWitr,
       ledgerTotalPrayers:
           (json['ledgerTotalPrayers'] as num?)?.toInt() ?? totalPrayers,
       ledgerTotalWithWitr:
           (json['ledgerTotalWithWitr'] as num?)?.toInt() ?? totalWithWitr,
-      ledgerPlanFingerprint:
-          json['ledgerPlanFingerprint'] as String? ??
+      ledgerPlanFingerprint: json['ledgerPlanFingerprint'] as String? ??
           json['planFingerprint'] as String,
       profileSnapshot: rawSnapshot is Map
           ? Map.unmodifiable(Map<String, dynamic>.from(rawSnapshot))

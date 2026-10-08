@@ -37,12 +37,11 @@ class QiblaSummaryCard extends ConsumerWidget {
         sensorState.valueOrNull == true &&
         reading?.heading != null &&
         declination != null) {
-      trueHeading = ref
-          .read(qiblaDirectionServiceProvider)
-          .trueHeadingFromMagnetic(
-            magneticHeading: reading!.heading!,
-            declination: declination,
-          );
+      trueHeading =
+          ref.read(qiblaDirectionServiceProvider).trueHeadingFromMagnetic(
+                magneticHeading: reading!.heading!,
+                declination: declination,
+              );
     }
 
     final live = trueHeading != null;
@@ -98,8 +97,7 @@ class QiblaSummaryCard extends ConsumerWidget {
                                 surfaceColor: scheme.surfaceContainerLow,
                                 outlineColor: scheme.outlineVariant,
                                 onSurfaceColor: scheme.onSurface,
-                                onSurfaceVariantColor:
-                                    scheme.onSurfaceVariant,
+                                onSurfaceVariantColor: scheme.onSurfaceVariant,
                                 primaryColor: scheme.primary,
                               ),
                             ),

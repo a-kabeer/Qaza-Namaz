@@ -98,9 +98,8 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
               ),
             _ModeSelector(
               mode: state.mode,
-              onChanged: (mode) => ref
-                  .read(addQazaControllerProvider.notifier)
-                  .setMode(mode),
+              onChanged: (mode) =>
+                  ref.read(addQazaControllerProvider.notifier).setMode(mode),
             ),
             const SizedBox(height: AppSpacing.md),
             Card(
@@ -173,8 +172,7 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
         analysis: initial,
         mode: ref.read(addQazaControllerProvider).mode,
         selectedDates: ref.read(addQazaControllerProvider).selectedDates,
-        allowEditWithoutNewRecords:
-            widget.editAddition != null &&
+        allowEditWithoutNewRecords: widget.editAddition != null &&
             ref.read(addQazaControllerProvider).hasEditChanges,
         onAdd: _finalValidateAndStart,
       ),

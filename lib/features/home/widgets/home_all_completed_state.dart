@@ -18,53 +18,52 @@ class HomeAllCompletedState extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
-      key: const Key('home_all_completed_state'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: scheme.primaryContainer,
-              foregroundColor: scheme.onPrimaryContainer,
-              child: const Icon(Icons.check_rounded, size: 30),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.homeOverallQaza,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+        key: const Key('home_all_completed_state'),
+        child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: scheme.primaryContainer,
+                  foregroundColor: scheme.onPrimaryContainer,
+                  child: const Icon(Icons.check_rounded, size: 30),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.homeOverallQaza,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.homeCompleted,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      _StatRow(
+                        label: l10n.homeCompleted,
+                        value: completed.toString(),
+                      ),
+                      _StatRow(
+                        label: l10n.homeStatTotal,
+                        value: total.toString(),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.homeCompleted,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
-                  _StatRow(
-                    label: l10n.homeCompleted,
-                    value: completed.toString(),
-                  ),
-                  _StatRow(
-                    label: l10n.homeStatTotal,
-                    value: total.toString(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        )
-      )
-    );
+                ),
+              ],
+            )));
   }
 }
 

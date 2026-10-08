@@ -177,21 +177,23 @@ abstract class QazaLocalStore {
     var records = List<QazaRecord>.of(
         snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
       ..removeWhere((r) => prayerType != null && r.prayerType != prayerType)
-      ..removeWhere((r) =>
-          prayerTypes != null && !prayerTypes.contains(r.prayerType))
+      ..removeWhere(
+          (r) => prayerTypes != null && !prayerTypes.contains(r.prayerType))
       ..removeWhere((r) => status != null && r.status != status)
       ..removeWhere((r) => additionId != null && r.additionId != additionId);
 
     if (status == QazaStatus.completed) {
       records = records
           .where((record) => record.completedAt != null)
-          .where((record) => from == null || !record.completedAt!.isBefore(from))
+          .where(
+              (record) => from == null || !record.completedAt!.isBefore(from))
           .where((record) =>
               toExclusive == null || record.completedAt!.isBefore(toExclusive))
           .toList(growable: false);
     } else {
       records = records
-          .where((record) => from == null || !record.originalDate.isBefore(from))
+          .where(
+              (record) => from == null || !record.originalDate.isBefore(from))
           .where((record) => to == null || !record.originalDate.isAfter(to))
           .toList(growable: false);
     }
@@ -313,7 +315,8 @@ abstract class QazaLocalStore {
     final allowed = prayerTypes?.toSet();
     return (snapshot.recordsByUser[userId] ?? const <QazaRecord>[])
         .where((record) => record.status == QazaStatus.completed)
-        .where((record) => allowed == null || allowed.contains(record.prayerType))
+        .where(
+            (record) => allowed == null || allowed.contains(record.prayerType))
         .map((record) => record.completedAt == null
             ? null
             : QazaActivityRow(
@@ -831,10 +834,10 @@ abstract class QazaLocalStore {
     }
 
     final operationIds = mutation.operationIds.toSet();
-    final outbox = (snapshot.outboxByUser[mutation.userId] ??
-            const <PendingSyncOp>[])
-        .where((operation) => !operationIds.contains(operation.id))
-        .toList(growable: false);
+    final outbox =
+        (snapshot.outboxByUser[mutation.userId] ?? const <PendingSyncOp>[])
+            .where((operation) => !operationIds.contains(operation.id))
+            .toList(growable: false);
 
     await saveRecordsAndOutbox(
       mutation.userId,
@@ -842,5 +845,4 @@ abstract class QazaLocalStore {
       outbox,
     );
   }
-
 }

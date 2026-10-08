@@ -7,8 +7,10 @@ void main() {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
             .readAsStringSync();
-    final start = source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
-    final end = source.indexOf('class _PrayerSchedule extends StatelessWidget {', start);
+    final start =
+        source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
+    final end = source.indexOf(
+        'class _PrayerSchedule extends StatelessWidget {', start);
 
     expect(start, greaterThanOrEqualTo(0));
     expect(end, greaterThan(start));
@@ -20,7 +22,9 @@ void main() {
     expect(card, contains('softWrap: false'));
   });
 
-  test('Qibla summary replaces the large bearing value with the shared compass visualization', () {
+  test(
+      'Qibla summary replaces the large bearing value with the shared compass visualization',
+      () {
     final source =
         File('lib/features/prayer_time/presentation/qibla_summary_card.dart')
             .readAsStringSync();
@@ -35,7 +39,8 @@ void main() {
     expect(source, contains('showCardinals: live'));
   });
 
-  test('Qibla dial contains a Kaaba marker and supports static and live modes', () {
+  test('Qibla dial contains a Kaaba marker and supports static and live modes',
+      () {
     final source =
         File('lib/features/prayer_time/presentation/qibla_visuals.dart')
             .readAsStringSync();

@@ -50,8 +50,7 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
     final zone = tz.getLocation(location.timezoneId);
     final localNow = tz.TZDateTime.now(zone);
     final today = DateTime(localNow.year, localNow.month, localNow.day);
-    final tomorrow =
-        DateTime(localNow.year, localNow.month, localNow.day + 1);
+    final tomorrow = DateTime(localNow.year, localNow.month, localNow.day + 1);
 
     return PrayerTimeSnapshot(
       location: location,

@@ -23,9 +23,11 @@ void main() {
     first.read(knowledgeLanguageProvider.notifier).set(KnowledgeLanguage.urdu);
     await Future<void>.delayed(Duration.zero);
 
-    final rows = await database.customSelect(
-      "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
-    ).get();
+    final rows = await database
+        .customSelect(
+          "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
+        )
+        .get();
     expect(rows.single.read<String>('value'), 'ur');
 
     final second = ProviderContainer(

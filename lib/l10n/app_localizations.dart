@@ -1205,7 +1205,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountSignedIn.
   ///
   /// In en, this message translates to:
-  /// **'Signed in'**
+  /// **'Local'**
   String get accountSignedIn;
 
   /// No description provided for @accountRecordsRetained.
@@ -1357,21 +1357,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import complete: {added} added, {completed} completed, {unchanged} unchanged.'**
   String dataImportComplete(int added, int completed, int unchanged);
-
-  String dataImportRestored(int count);
-
-  String dataImportRestoreSummary(
-    int records,
-    int accounts,
-    int revision,
-    String onboarding,
-  );
-
-  String get dataImportOnboardingComplete;
-
-  String get dataImportOnboardingIncomplete;
-
-  String get dataLocalOnlyNote;
 
   /// No description provided for @dataProcessing.
   ///
@@ -2386,28 +2371,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloud backup'**
   String get accountCloudBackup;
-  String get accountAutomaticBackup;
-  String get accountBackupStatusChecking;
-  String get accountBackupStatusDisabled;
-  String accountBackupStatusBackedUp(String timestamp);
-  String get accountBackupStatusBackingUp;
-  String get accountBackupStatusPending;
-  String get accountBackupStatusWaitingConnection;
-  String get accountBackupStatusComplete;
-  String accountBackupStatusCompletedAt(String timestamp);
-  String get accountBackupStatusWaitingConnectionMessage;
-  String get accountBackupStatusFailedTitle;
-  String get accountBackupStatusFailedMessage;
-
-  /// No description provided for @accountBackupStatusAuthRequired.
-  String get accountBackupStatusAuthRequired;
-  String get accountBackupStatusSecurityRejected;
-  String get accountBackupStatusNetwork;
-  String get accountBackupStatusCloudStateInvalid;
-  String get accountBackupStatusFailedAutomaticRetry;
-  String get accountBackupStatusRetry;
-    String get accountBackupStatusFailed;
-
 
   /// No description provided for @accountAutomatic.
   ///
@@ -2466,7 +2429,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountGuestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Guest account'**
+  /// **'This device'**
   String get accountGuestTitle;
 
   /// No description provided for @accountGuestLocalDataSubtitle.
@@ -2496,7 +2459,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountGuestContinueMessage.
   ///
   /// In en, this message translates to:
-  /// **'You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.'**
+  /// **'Your local progress remains on this device.'**
   String get accountGuestContinueMessage;
 
   /// No description provided for @accountBackupSection.
@@ -2538,7 +2501,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccountGuestSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Guest • This device only'**
+  /// **'Local • This device only'**
   String get settingsAccountGuestSubtitle;
 
   /// No description provided for @settingsAccountGoogleSubtitle.
@@ -3710,6 +3673,529 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.'**
   String get qiblaCalibrationHint;
+
+  /// No description provided for @accountAutomaticBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup'**
+  String get accountAutomaticBackup;
+
+  /// No description provided for @accountBackupStatusChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking backup status…'**
+  String get accountBackupStatusChecking;
+
+  /// No description provided for @accountBackupStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic backup is off'**
+  String get accountBackupStatusDisabled;
+
+  /// No description provided for @accountBackupStatusBackedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Backed up · {timestamp}'**
+  String accountBackupStatusBackedUp(Object timestamp);
+
+  /// No description provided for @accountBackupStatusBackingUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up your progress…'**
+  String get accountBackupStatusBackingUp;
+
+  /// No description provided for @accountBackupStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup pending'**
+  String get accountBackupStatusPending;
+
+  /// No description provided for @accountBackupStatusWaitingConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for connection'**
+  String get accountBackupStatusWaitingConnection;
+
+  /// No description provided for @accountBackupStatusComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup complete'**
+  String get accountBackupStatusComplete;
+
+  /// No description provided for @accountBackupStatusCompletedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{timestamp}'**
+  String accountBackupStatusCompletedAt(Object timestamp);
+
+  /// No description provided for @accountBackupStatusWaitingConnectionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza data is safe on this device.'**
+  String get accountBackupStatusWaitingConnectionMessage;
+
+  /// No description provided for @accountBackupStatusFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup couldn\'t complete'**
+  String get accountBackupStatusFailedTitle;
+
+  /// No description provided for @accountBackupStatusFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza data is safe on this device.'**
+  String get accountBackupStatusFailedMessage;
+
+  /// No description provided for @accountBackupStatusAuthRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Google session needs to be restored.'**
+  String get accountBackupStatusAuthRequired;
+
+  /// No description provided for @accountBackupStatusSecurityRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud access was rejected by security verification.'**
+  String get accountBackupStatusSecurityRejected;
+
+  /// No description provided for @accountBackupStatusNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Backup will resume when a connection is available.'**
+  String get accountBackupStatusNetwork;
+
+  /// No description provided for @accountBackupStatusCloudStateInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup state changed. Try again.'**
+  String get accountBackupStatusCloudStateInvalid;
+
+  /// No description provided for @accountBackupStatusFailedAutomaticRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll try again automatically.'**
+  String get accountBackupStatusFailedAutomaticRetry;
+
+  /// No description provided for @accountBackupStatusRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get accountBackupStatusRetry;
+
+  /// No description provided for @accountBackupStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup couldn’t complete. We’ll try again automatically.'**
+  String get accountBackupStatusFailed;
+
+  /// No description provided for @startupProfileLoadErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your local profile'**
+  String get startupProfileLoadErrorTitle;
+
+  /// No description provided for @startupProfileLoadErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your local storage could not be read safely. Your existing Qaza data has not been replaced. Please try again.'**
+  String get startupProfileLoadErrorMessage;
+
+  /// No description provided for @qazaHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza History'**
+  String get qazaHistoryTitle;
+
+  /// No description provided for @qazaHistoryRecentAdditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Additions'**
+  String get qazaHistoryRecentAdditions;
+
+  /// No description provided for @qazaHistoryRecentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Deleted'**
+  String get qazaHistoryRecentlyDeleted;
+
+  /// No description provided for @qazaHistoryNoAdditions.
+  ///
+  /// In en, this message translates to:
+  /// **'No Qaza additions yet.'**
+  String get qazaHistoryNoAdditions;
+
+  /// No description provided for @qazaHistoryNoRecentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'No recently deleted Qaza.'**
+  String get qazaHistoryNoRecentlyDeleted;
+
+  /// No description provided for @qazaHistoryLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get qazaHistoryLoadMore;
+
+  /// No description provided for @qazaHistoryOriginalDateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Original date unavailable'**
+  String get qazaHistoryOriginalDateUnavailable;
+
+  /// No description provided for @qazaHistoryDeletedQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted Qaza'**
+  String get qazaHistoryDeletedQaza;
+
+  /// No description provided for @qazaHistoryDeletedQazaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza deleted'**
+  String qazaHistoryDeletedQazaCount(int count);
+
+  /// No description provided for @qazaHistoryRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get qazaHistoryRestore;
+
+  /// No description provided for @qazaHistoryRestoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza restored'**
+  String qazaHistoryRestoreSuccess(int count);
+
+  /// No description provided for @qazaHistoryRestoreConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'{restored} restored, {skipped} skipped'**
+  String qazaHistoryRestoreConflict(int restored, int skipped);
+
+  /// No description provided for @qazaAdditionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Addition'**
+  String get qazaAdditionTitle;
+
+  /// No description provided for @qazaAdditionNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This Qaza addition could not be found.'**
+  String get qazaAdditionNotFound;
+
+  /// No description provided for @qazaAdditionRecordsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Records'**
+  String qazaAdditionRecordsCount(int count);
+
+  /// No description provided for @qazaAdditionNoPrayers.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayers'**
+  String get qazaAdditionNoPrayers;
+
+  /// No description provided for @qazaAdditionViewRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'View Records'**
+  String get qazaAdditionViewRecords;
+
+  /// No description provided for @qazaAdditionMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get qazaAdditionMoreActions;
+
+  /// No description provided for @qazaAdditionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Addition'**
+  String get qazaAdditionEdit;
+
+  /// No description provided for @qazaAdditionDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Addition'**
+  String get qazaAdditionDelete;
+
+  /// No description provided for @qazaAdditionDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this Qaza addition?'**
+  String get qazaAdditionDeleteConfirmTitle;
+
+  /// No description provided for @qazaAdditionDeleteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Only unchanged pending records will be removed. Completed or modified records are protected and remain active.'**
+  String get qazaAdditionDeleteConfirmMessage;
+
+  /// No description provided for @qazaAdditionDeletedNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing eligible was deleted. Protected records remain.'**
+  String get qazaAdditionDeletedNothing;
+
+  /// No description provided for @qazaAdditionDeletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza deleted'**
+  String qazaAdditionDeletedCount(int count);
+
+  /// No description provided for @qazaAdditionRestoredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza restored'**
+  String qazaAdditionRestoredCount(int count);
+
+  /// No description provided for @qazaTrackerHistoryTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza History'**
+  String get qazaTrackerHistoryTooltip;
+
+  /// No description provided for @qazaTrackerAdditionProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Addition progress'**
+  String get qazaTrackerAdditionProgress;
+
+  /// No description provided for @qazaTrackerSelectionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select or unselect.'**
+  String get qazaTrackerSelectionHint;
+
+  /// No description provided for @qazaTrackerSwipeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe left or right to complete. Long press to select.'**
+  String get qazaTrackerSwipeHint;
+
+  /// No description provided for @qazaMarkSelectedPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark selected as Pending?'**
+  String get qazaMarkSelectedPendingTitle;
+
+  /// No description provided for @qazaMarkSelectedPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} completed Qaza records will return to Pending and will no longer count as completed.'**
+  String qazaMarkSelectedPendingMessage(int count);
+
+  /// No description provided for @qazaMarkAsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Pending'**
+  String get qazaMarkAsPending;
+
+  /// No description provided for @qazaMarkAsPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Pending ({count})'**
+  String qazaMarkAsPendingCount(int count);
+
+  /// No description provided for @qazaNoCompletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed Qaza'**
+  String get qazaNoCompletedTitle;
+
+  /// No description provided for @qazaNoCompletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Qaza will appear here.'**
+  String get qazaNoCompletedMessage;
+
+  /// No description provided for @qazaReturnedToPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza returned to Pending.'**
+  String get qazaReturnedToPending;
+
+  /// No description provided for @qazaSelectedPendingNothingChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No selected Qaza records were changed.'**
+  String get qazaSelectedPendingNothingChanged;
+
+  /// No description provided for @qazaCorrectionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This Qaza could not be corrected because it has changed.'**
+  String get qazaCorrectionChanged;
+
+  /// No description provided for @qazaFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get qazaFilter;
+
+  /// No description provided for @qazaFiltersActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters active'**
+  String get qazaFiltersActive;
+
+  /// No description provided for @qazaOriginalDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza Date'**
+  String get qazaOriginalDateLabel;
+
+  /// No description provided for @qazaCompletedDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Date'**
+  String get qazaCompletedDateLabel;
+
+  /// No description provided for @qazaFilterCompletedDateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by completion date'**
+  String get qazaFilterCompletedDateHelp;
+
+  /// No description provided for @qazaUndoCompletions.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo completions'**
+  String get qazaUndoCompletions;
+
+  /// No description provided for @qazaUndoSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo Selected'**
+  String get qazaUndoSelected;
+
+  /// No description provided for @qazaUndoAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo All'**
+  String get qazaUndoAll;
+
+  /// No description provided for @qazaUndoQazaCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza'**
+  String qazaUndoQazaCount(int count);
+
+  /// No description provided for @addQazaManageAddition.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage this addition'**
+  String get addQazaManageAddition;
+
+  /// No description provided for @qazaCompletionSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'{prayer} Qaza for {date} completed.'**
+  String qazaCompletionSingle(String prayer, String date);
+
+  /// No description provided for @qazaCompletionMultiple.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza completed.'**
+  String qazaCompletionMultiple(int count);
+
+  /// No description provided for @qazaUndoSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'{prayer} Qaza for {date} restored.'**
+  String qazaUndoSingle(String prayer, String date);
+
+  /// No description provided for @qazaUndoMultiple.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Qaza restored.'**
+  String qazaUndoMultiple(int count);
+
+  /// No description provided for @qazaUndoExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo is no longer available because the 5-second window has ended.'**
+  String get qazaUndoExpired;
+
+  /// No description provided for @qazaUndoStaleBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo is no longer available because a newer Undo action replaced it.'**
+  String get qazaUndoStaleBatch;
+
+  /// No description provided for @qazaUndoTargetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo is no longer available because the Qaza record changed or was removed.'**
+  String get qazaUndoTargetChanged;
+
+  /// No description provided for @qazaUndoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo could not be completed. Please try again.'**
+  String get qazaUndoFailed;
+
+  /// No description provided for @qazaMarkAsPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This Qaza will return to Pending and will no longer count as completed.'**
+  String get qazaMarkAsPendingMessage;
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// No description provided for @qazaRequestedSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} requested slots'**
+  String qazaRequestedSlots(int count);
+
+  /// No description provided for @qazaAdditionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza addition updated'**
+  String get qazaAdditionUpdated;
+
+  /// No description provided for @qazaSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
+  String qazaSelectedCount(int count);
+
+  /// No description provided for @dataImportRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup restored successfully. {count} Qaza records restored.'**
+  String dataImportRestored(int count);
+
+  /// No description provided for @dataImportRestoreSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup contains {records} Qaza records and {accounts} local account(s).\\n\\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\\n\\nBackup revision: {revision}\\nOnboarding: {onboarding}'**
+  String dataImportRestoreSummary(
+      int records, int accounts, int revision, String onboarding);
+
+  /// No description provided for @dataImportOnboardingComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'completed'**
+  String get dataImportOnboardingComplete;
+
+  /// No description provided for @dataImportOnboardingIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'not completed'**
+  String get dataImportOnboardingIncomplete;
+
+  /// No description provided for @dataLocalOnlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Local backup only. Your Qaza data stays on this device unless you explicitly export it.'**
+  String get dataLocalOnlyNote;
 }
 
 class _AppLocalizationsDelegate

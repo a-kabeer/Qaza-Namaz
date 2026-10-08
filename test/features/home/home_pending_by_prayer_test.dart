@@ -18,7 +18,11 @@ QazaProgressSummary _summary() {
         prayer: PrayerProgress(
           prayerType: prayer,
           progress: QazaProgress(
-            pending: prayer == PrayerType.fajr ? 2 : prayer == PrayerType.zuhr ? 1 : 0,
+            pending: prayer == PrayerType.fajr
+                ? 2
+                : prayer == PrayerType.zuhr
+                    ? 1
+                    : 0,
             completed: 0,
           ),
         ),
@@ -97,7 +101,8 @@ void main() {
     await tester.tap(find.byKey(const Key('home_pending_prayer_fajr')));
     final request = container.read(qazaTrackerFilterRequestProvider);
 
-    expect(container.read(workspaceDestinationProvider), WorkspaceDestination.qaza);
+    expect(container.read(workspaceDestinationProvider),
+        WorkspaceDestination.qaza);
     expect(request?.prayer, PrayerType.fajr);
     expect(request?.status, QazaStatusFilter.pending);
   });

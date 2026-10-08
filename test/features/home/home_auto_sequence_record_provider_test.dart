@@ -45,7 +45,8 @@ class _FakeRepository implements QazaRepository {
     }
     if (prayerTypes != null) {
       final allowed = prayerTypes.toSet();
-      filtered = filtered.where((record) => allowed.contains(record.prayerType));
+      filtered =
+          filtered.where((record) => allowed.contains(record.prayerType));
     }
     if (status != null) {
       filtered = filtered.where((record) => record.status == status);
@@ -77,19 +78,22 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     PrayerType? prayerType,
     QazaStatus? status,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<QazaRecord?> getOldestPending({
     required String userId,
     required PrayerType prayerType,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<List<QazaRecord>> getRecordsByIds({
     required String userId,
     required Iterable<String> recordIds,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<List<QazaRecord>> getPendingRecordsByIds({
@@ -115,7 +119,8 @@ class _FakeRepository implements QazaRepository {
     required DateTime from,
     required DateTime to,
     Iterable<PrayerType>? prayerTypes,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<void> addRecord(QazaRecord record) => throw UnimplementedError();
@@ -132,7 +137,8 @@ class _FakeRepository implements QazaRepository {
   Future<void> deleteRecord({
     required String userId,
     required String recordId,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<QazaCompletionResult> completeRecord({
@@ -140,7 +146,8 @@ class _FakeRepository implements QazaRepository {
     required String recordId,
     required DateTime completedAt,
     String? completionId,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<List<QazaRecord>> completeRecords({
@@ -178,7 +185,8 @@ class _FakeRepository implements QazaRepository {
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime updatedAt,
-  }) => throw UnimplementedError();
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<void> resetUserRecords({required String userId}) =>
@@ -245,8 +253,8 @@ void main() {
       completedAt: DateTime(2026, 10, 6, 12),
     );
 
-    expect((await service.oldestPendingOverall(userId: 'u1'))?.id,
-        'older-isha');
+    expect(
+        (await service.oldestPendingOverall(userId: 'u1'))?.id, 'older-isha');
 
     await service.completeRecordWithReceipt(
       userId: 'u1',
@@ -254,8 +262,8 @@ void main() {
       completedAt: DateTime(2026, 10, 6, 12),
     );
 
-    expect((await service.oldestPendingOverall(userId: 'u1'))?.id,
-        'middle-asr');
+    expect(
+        (await service.oldestPendingOverall(userId: 'u1'))?.id, 'middle-asr');
   });
 
   test('Same date and prayer use stable ID tie-breaker', () async {
