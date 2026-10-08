@@ -1,8 +1,5 @@
 package com.qaza_namaz.com
 
-import android.content.pm.PackageManager
-import android.content.pm.Signature
-import android.os.Build
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
@@ -11,11 +8,9 @@ import com.google.android.gms.common.api.ResolvableApiException
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import java.security.MessageDigest
 
 class MainActivity : FlutterFragmentActivity() {
     private companion object {
-        const val SIGNING_CHANNEL = "qaza_namaz/signing_identity"
         const val LOCATION_SETTINGS_CHANNEL = "qaza_namaz/location_settings"
         const val LOCATION_SETTINGS_REQUEST_CODE = 2047
     }
@@ -24,14 +19,6 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SIGNING_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "getSigningIdentity" -> result.success(getSigningIdentity())
-                    else -> result.notImplemented()
-                }
-            }
-
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LOCATION_SETTINGS_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
