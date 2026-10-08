@@ -35,7 +35,8 @@ void main() {
     );
     addTearDown(second.dispose);
 
-    await Future<void>.delayed(const Duration(milliseconds: 1));
+    final secondNotifier = second.read(knowledgeLanguageProvider.notifier);
+    await secondNotifier.restore();
     expect(second.read(knowledgeLanguageProvider), KnowledgeLanguage.urdu);
   });
 }
