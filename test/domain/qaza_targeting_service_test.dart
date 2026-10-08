@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/services/qaza_targeting_service.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
@@ -222,13 +225,28 @@ void main() {
     });
 
     test('persisted Auto Sequence cursor is still dynamically resolved past zero pending', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'qaza_home_completion_mode':
-            HomePrayerSelectionMode.autoSequence.name,
-        'qaza_home_auto_sequence_prayer': PrayerType.isha.name,
-      });
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await database.customInsert(
+        '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [
+          Variable.withString('qaza_home_completion_mode'),
+          Variable.withString(HomePrayerSelectionMode.autoSequence.name),
+        ],
+      );
+      await database.customInsert(
+        '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [
+          Variable.withString('qaza_home_auto_sequence_prayer'),
+          Variable.withString(PrayerType.isha.name),
+        ],
+      );
 
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       container.read(homePrayerSelectionProvider);
