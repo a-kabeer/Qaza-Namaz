@@ -130,6 +130,18 @@ void main() {
     expect(await database.readDbRevision(), 2);
   });
 
+  test('upserting an identical Qaza record is a no-op for db_revision',
+      () async {
+    final store = DriftQazaLocalStore(database: database);
+    final record = _domainRecord('guest_fajr_upsert', DateTime(2026, 1, 3));
+
+    await store.appendRecords('guest', [record]);
+    expect(await database.readDbRevision(), 2);
+
+    await store.upsertRecords('guest', [record]);
+    expect(await database.readDbRevision(), 2);
+  });
+
   test('retiring empty user data is a no-op for db_revision', () async {
     final store = DriftQazaLocalStore(database: database);
 
