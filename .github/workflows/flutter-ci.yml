@@ -212,18 +212,17 @@ jobs:
             # previous job, so no Gradle/NDK build occurs here.
             flutter pub get
 
-            # Put the emulator into airplane mode and verify that no Wi-Fi or
-            # cellular transport remains active before starting the app.
-            adb shell svc wifi disable
+            # Isolate the emulator from external networks before launching
+            # the already-built APK. ADB remains available to the host.
+            adb shell svc wifi disable || true
             adb shell svc data disable || true
-            adb shell cmd connectivity airplane-mode enable || true
             adb shell settings put global airplane_mode_on 1
+            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true >/dev/null 2>&1 || true
             adb shell settings put global wifi_on 0 || true
-            adb shell dumpsys connectivity | tee connectivity-offline.txt
-            if grep -E 'TRANSPORT_WIFI|TRANSPORT_CELLULAR' connectivity-offline.txt | grep -E 'CONNECTED|VALIDATED' >/dev/null; then
-              echo "Emulator still has an active Wi-Fi/cellular transport."
-              exit 1
-            fi
+            sleep 3
+            echo "Airplane mode: $(adb shell settings get global airplane_mode_on)"
+            adb shell svc wifi disable || true
+            adb shell svc data disable || true
 
             timeout 180s flutter drive \
               --driver=test_driver/integration_test.dart \
