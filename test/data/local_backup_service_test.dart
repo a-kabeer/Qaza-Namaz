@@ -23,9 +23,25 @@ void main() {
   late AppDatabase database;
   late LocalBackupService service;
 
-  setUp(() {
+  setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
     service = LocalBackupService(database);
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [
+        Variable.withString('guest'),
+        Variable.withInt(now),
+        Variable.withInt(now),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO app_session_state (id, active_local_account_id)
+         VALUES (1, ?)''',
+      variables: [Variable.withString('guest')],
+    );
   });
 
   tearDown(() async {
