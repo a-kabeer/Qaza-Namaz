@@ -310,8 +310,9 @@ class LocalBackupService {
     if (header['app_id'] != _appId) {
       throw const LocalBackupException('This file is not a Qaza Namaz backup.');
     }
+
     final schema = header['backup_schema_version'];
-    if (schema is! int) {
+    if (schema is! int || schema < 1) {
       throw const LocalBackupException('Backup schema version is invalid.');
     }
     if (schema > _backupSchemaVersion) {
@@ -319,9 +320,6 @@ class LocalBackupService {
         'This backup was created by a newer app version. App update required.',
       );
     }
-
-    // Version 1 is the first portable backup format. Keeping this switch
-    // explicit provides the migration boundary for future schema versions.
     if (schema < _backupSchemaVersion) {
       throw LocalBackupException(
         'Backup schema version $schema is not supported by this release.',
@@ -332,15 +330,25 @@ class LocalBackupService {
     if (revision is! int || revision < 1) {
       throw const LocalBackupException('Backup database revision is invalid.');
     }
+
     final databaseSchema = header['database_schema_version'];
     if (databaseSchema is! int || databaseSchema < 1) {
       throw const LocalBackupException(
         'Backup database schema version is invalid.',
       );
     }
+    if (databaseSchema != database.schemaVersion) {
+      throw LocalBackupException(
+        'Backup database schema $databaseSchema is not supported by this release '
+        '(current schema: ${database.schemaVersion}).',
+      );
+    }
+
     final timestamp = header['export_timestamp'];
-    if (timestamp is! String || DateTime.tryParse(timestamp) == null) {
-      throw const LocalBackupException('Backup export timestamp is invalid.');
+    if (timestamp is! String || DateTime.tryParse(timestamp)?.isUtc != true) {
+      throw const LocalBackupException(
+        'Backup export timestamp must be a valid UTC timestamp.',
+      );
     }
 
     final payload = Map<String, dynamic>.from(data);
@@ -355,27 +363,429 @@ class LocalBackupService {
       'account_profiles',
       'account_plan_revisions',
     ];
+
     for (final key in requiredLists) {
       final value = payload[key];
       if (value is! List<dynamic>) {
         throw LocalBackupException('Backup data section is missing "$key".');
       }
-      for (final row in value) {
-        if (row is! Map) {
+      for (var index = 0; index < value.length; index++) {
+        if (value[index] is! Map) {
           throw LocalBackupException(
-            'Backup data section "$key" contains an invalid row.',
+            'Backup data section "$key" row ${index + 1} is not an object.',
           );
         }
       }
     }
 
-    final rawRecords = payload['qaza_records'] as List<dynamic>;
-    for (final raw in rawRecords) {
-      try {
-        QazaRecord.fromJson(Map<String, dynamic>.from(raw as Map));
-      } catch (error) {
+    String? requiredString(
+      Map<dynamic, dynamic> row,
+      String table,
+      int index,
+      String field, {
+      bool nullable = false,
+    }) {
+      final value = row[field];
+      if (value == null && nullable) return null;
+      if (value is! String || value.trim().isEmpty) {
         throw LocalBackupException(
-          'Backup contains an invalid Qaza record: $error',
+          'Backup table "$table" row ${index + 1} has an invalid $field.',
+        );
+      }
+      return value;
+    }
+
+    int requiredInt(
+      Map<dynamic, dynamic> row,
+      String table,
+      int index,
+      String field,
+    ) {
+      final value = row[field];
+      if (value is! int) {
+        throw LocalBackupException(
+          'Backup table "$table" row ${index + 1} has an invalid $field.',
+        );
+      }
+      return value;
+    }
+
+    void validateRows(
+      String table, {
+      required List<String> strings,
+      List<String> nullableStrings = const [],
+      required List<String> ints,
+    }) {
+      final rows = payload[table] as List<dynamic>;
+      for (var index = 0; index < rows.length; index++) {
+        final row = rows[index] as Map;
+        for (final field in strings) {
+          requiredString(row, table, index, field);
+        }
+        for (final field in nullableStrings) {
+          requiredString(row, table, index, field, nullable: true);
+        }
+        for (final field in ints) {
+          requiredInt(row, table, index, field);
+        }
+      }
+    }
+
+    validateRows(
+      'qaza_additions',
+      strings: [
+        'id',
+        'user_id',
+        'mode',
+        'input_snapshot',
+        'created_at',
+        'updated_at',
+      ],
+      ints: ['revision'],
+    );
+    validateRows(
+      'qaza_deletion_actions',
+      strings: ['id', 'user_id', 'addition_id', 'created_at'],
+      nullableStrings: ['resolved_at'],
+      ints: ['entity_version'],
+    );
+    validateRows(
+      'qaza_deletion_action_record_snapshots',
+      strings: [
+        'deletion_action_id',
+        'record_id',
+        'user_id',
+        'addition_id',
+        'prayer_type',
+        'original_date',
+        'status',
+        'created_at',
+        'updated_at',
+      ],
+      nullableStrings: ['completed_at', 'completion_id'],
+      ints: ['record_version'],
+    );
+    validateRows(
+      'qaza_profile_plan_provenance',
+      strings: [
+        'record_id',
+        'user_id',
+        'plan_revision_id',
+        'plan_fingerprint',
+      ],
+      ints: const [],
+    );
+    validateRows(
+      'local_accounts',
+      strings: ['local_account_id', 'account_mode', 'lifecycle_state'],
+      ints: ['created_at', 'updated_at'],
+    );
+    validateRows(
+      'app_session_state',
+      strings: const [],
+      nullableStrings: ['active_local_account_id'],
+      ints: ['id'],
+    );
+    validateRows(
+      'account_profiles',
+      strings: [
+        'local_account_id',
+        'payload_json',
+        'writer_device_id',
+        'operation_id',
+      ],
+      ints: ['entity_version', 'updated_at'],
+    );
+    validateRows(
+      'account_plan_revisions',
+      strings: ['local_account_id', 'revision_id', 'payload_json'],
+      ints: ['created_at'],
+    );
+
+    final rawRecords = payload['qaza_records'] as List<dynamic>;
+    final recordIds = <String>{};
+    final recordKeys = <String>{};
+    for (var index = 0; index < rawRecords.length; index++) {
+      final raw = rawRecords[index] as Map;
+      try {
+        final record = QazaRecord.fromJson(Map<String, dynamic>.from(raw));
+        if (!recordIds.add(record.id)) {
+          throw LocalBackupException(
+            'Duplicate Qaza record ID in backup: ${record.id}.',
+          );
+        }
+        final key = '${record.userId}|${record.prayerType.name}|'
+            '${record.originalDate.year.toString().padLeft(4, '0')}-'
+            '${record.originalDate.month.toString().padLeft(2, '0')}-'
+            '${record.originalDate.day.toString().padLeft(2, '0')}';
+        if (!recordKeys.add(key)) {
+          throw LocalBackupException(
+            'Duplicate Qaza prayer/date combination in backup: $key.',
+          );
+        }
+        if (record.recordVersion < 1) {
+          throw LocalBackupException(
+            'Qaza record ${record.id} has an invalid recordVersion.',
+          );
+        }
+      } catch (error) {
+        if (error is LocalBackupException) rethrow;
+        throw LocalBackupException(
+          'Backup contains an invalid Qaza record at row ${index + 1}: $error',
+        );
+      }
+    }
+
+    final accountRows = payload['local_accounts'] as List<dynamic>;
+    final accountIds = <String>{};
+    for (var index = 0; index < accountRows.length; index++) {
+      final row = accountRows[index] as Map;
+      final id = requiredString(
+        row,
+        'local_accounts',
+        index,
+        'local_account_id',
+      )!;
+      if (!accountIds.add(id)) {
+        throw LocalBackupException(
+          'Duplicate local_accounts local_account_id in backup: $id.',
+        );
+      }
+    }
+
+    final additionRows = payload['qaza_additions'] as List<dynamic>;
+    final additionIds = <String>{};
+    for (var index = 0; index < additionRows.length; index++) {
+      final id = requiredString(
+        additionRows[index] as Map,
+        'qaza_additions',
+        index,
+        'id',
+      )!;
+      if (!additionIds.add(id)) {
+        throw LocalBackupException('Duplicate qaza_additions ID in backup: $id.');
+      }
+    }
+
+    final actionRows = payload['qaza_deletion_actions'] as List<dynamic>;
+    final actionIds = <String>{};
+    for (var index = 0; index < actionRows.length; index++) {
+      final row = actionRows[index] as Map;
+      final id = requiredString(row, 'qaza_deletion_actions', index, 'id')!;
+      if (!actionIds.add(id)) {
+        throw LocalBackupException(
+          'Duplicate qaza_deletion_actions ID in backup: $id.',
+        );
+      }
+    }
+
+    final provenanceRows =
+        payload['qaza_profile_plan_provenance'] as List<dynamic>;
+    final provenanceIds = <String>{};
+    for (var index = 0; index < provenanceRows.length; index++) {
+      final row = provenanceRows[index] as Map;
+      final id = requiredString(
+        row,
+        'qaza_profile_plan_provenance',
+        index,
+        'record_id',
+      )!;
+      if (!provenanceIds.add(id)) {
+        throw LocalBackupException(
+          'Duplicate qaza_profile_plan_provenance record_id in backup: $id.',
+        );
+      }
+    }
+
+    final snapshotRows =
+        payload['qaza_deletion_action_record_snapshots'] as List<dynamic>;
+    final snapshotKeys = <String>{};
+    for (var index = 0; index < snapshotRows.length; index++) {
+      final row = snapshotRows[index] as Map;
+      final actionId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'deletion_action_id',
+      )!;
+      final recordId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'record_id',
+      )!;
+      if (!snapshotKeys.add('$actionId|$recordId')) {
+        throw LocalBackupException(
+          'Duplicate deletion snapshot key in backup: $actionId|$recordId.',
+        );
+      }
+    }
+
+    final profileRows = payload['account_profiles'] as List<dynamic>;
+    final profileIds = <String>{};
+    for (var index = 0; index < profileRows.length; index++) {
+      final id = requiredString(
+        profileRows[index] as Map,
+        'account_profiles',
+        index,
+        'local_account_id',
+      )!;
+      if (!profileIds.add(id)) {
+        throw LocalBackupException(
+          'Duplicate account_profiles local_account_id in backup: $id.',
+        );
+      }
+    }
+
+    final planRows = payload['account_plan_revisions'] as List<dynamic>;
+    final planKeys = <String>{};
+    for (var index = 0; index < planRows.length; index++) {
+      final row = planRows[index] as Map;
+      final localAccountId = requiredString(
+        row,
+        'account_plan_revisions',
+        index,
+        'local_account_id',
+      )!;
+      final revisionId = requiredString(
+        row,
+        'account_plan_revisions',
+        index,
+        'revision_id',
+      )!;
+      if (!planKeys.add('$localAccountId|$revisionId')) {
+        throw LocalBackupException(
+          'Duplicate account_plan_revisions key in backup: '
+          '$localAccountId|$revisionId.',
+        );
+      }
+    }
+
+    for (final raw in rawRecords) {
+      final record = QazaRecord.fromJson(
+        Map<String, dynamic>.from(raw as Map),
+      );
+      if (!accountIds.contains(record.userId)) {
+        throw LocalBackupException(
+          'Qaza record ${record.id} references an unknown local account.',
+        );
+      }
+    }
+
+    for (var index = 0; index < additionRows.length; index++) {
+      final row = additionRows[index] as Map;
+      final userId = requiredString(row, 'qaza_additions', index, 'user_id')!;
+      if (!accountIds.contains(userId)) {
+        throw LocalBackupException(
+          'qaza_additions row ${index + 1} references an unknown local account.',
+        );
+      }
+    }
+
+    for (var index = 0; index < actionRows.length; index++) {
+      final row = actionRows[index] as Map;
+      final userId = requiredString(
+        row,
+        'qaza_deletion_actions',
+        index,
+        'user_id',
+      )!;
+      final additionId = requiredString(
+        row,
+        'qaza_deletion_actions',
+        index,
+        'addition_id',
+      )!;
+      if (!accountIds.contains(userId) || !additionIds.contains(additionId)) {
+        throw LocalBackupException(
+          'qaza_deletion_actions row ${index + 1} has an invalid account/addition reference.',
+        );
+      }
+    }
+
+    for (var index = 0; index < snapshotRows.length; index++) {
+      final row = snapshotRows[index] as Map;
+      final userId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'user_id',
+      )!;
+      final actionId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'deletion_action_id',
+      )!;
+      if (!accountIds.contains(userId) || !actionIds.contains(actionId)) {
+        throw LocalBackupException(
+          'Deletion snapshot row ${index + 1} has an invalid account/action reference.',
+        );
+      }
+    }
+
+    for (var index = 0; index < provenanceRows.length; index++) {
+      final row = provenanceRows[index] as Map;
+      final userId = requiredString(
+        row,
+        'qaza_profile_plan_provenance',
+        index,
+        'user_id',
+      )!;
+      final recordId = requiredString(
+        row,
+        'qaza_profile_plan_provenance',
+        index,
+        'record_id',
+      )!;
+      if (!accountIds.contains(userId) || !recordIds.contains(recordId)) {
+        throw LocalBackupException(
+          'Qaza provenance row ${index + 1} references an unknown account/record.',
+        );
+      }
+    }
+
+    for (var index = 0; index < profileRows.length; index++) {
+      final id = requiredString(
+        profileRows[index] as Map,
+        'account_profiles',
+        index,
+        'local_account_id',
+      )!;
+      if (!accountIds.contains(id)) {
+        throw LocalBackupException(
+          'account_profiles row ${index + 1} references an unknown local account.',
+        );
+      }
+    }
+
+    for (var index = 0; index < planRows.length; index++) {
+      final id = requiredString(
+        planRows[index] as Map,
+        'account_plan_revisions',
+        index,
+        'local_account_id',
+      )!;
+      if (!accountIds.contains(id)) {
+        throw LocalBackupException(
+          'account_plan_revisions row ${index + 1} references an unknown local account.',
+        );
+      }
+    }
+
+    final sessionRows = payload['app_session_state'] as List<dynamic>;
+    if (sessionRows.length != 1 || (sessionRows.single as Map)['id'] != 1) {
+      throw const LocalBackupException(
+        'Backup session state must contain exactly one row with id=1.',
+      );
+    }
+    final activeAccountId =
+        (sessionRows.single as Map)['active_local_account_id'];
+    if (activeAccountId != null) {
+      if (activeAccountId is! String ||
+          !accountIds.contains(activeAccountId)) {
+        throw const LocalBackupException(
+          'Backup session references an unknown active local account.',
         );
       }
     }
