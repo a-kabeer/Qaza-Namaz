@@ -51,7 +51,7 @@ class StartupGate extends ConsumerWidget {
                 return const LanguageSelectionScreen();
               }
               return ProfileSetupScreen(
-                languageCode: profile.languageCode,
+                languageCode: ref.read(localeProvider).languageCode,
                 initialProfile: profile,
               );
             }
@@ -60,23 +60,13 @@ class StartupGate extends ConsumerWidget {
               return const LanguageSelectionScreen();
             }
 
-            final locale = LocaleNotifier.resolve(profile.languageCode);
-            if (locale != null &&
-                ref.read(localeProvider).languageCode != locale.languageCode) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (context.mounted) {
-                  ref.read(localeProvider.notifier).set(locale);
-                }
-              });
-            }
-
             final validation = ProfileRules.validate(
               profile,
               today: DateTime.now(),
             );
             if (!profile.isComplete || !validation.isValid) {
               return ProfileSetupScreen(
-                languageCode: profile.languageCode,
+                languageCode: ref.read(localeProvider).languageCode,
                 initialProfile: profile,
               );
             }
