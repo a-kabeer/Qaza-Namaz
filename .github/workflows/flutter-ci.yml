@@ -207,14 +207,27 @@ jobs:
           script: |
             adb wait-for-device
 
-            # Download the already-built debug APK while the host still has
-            # network access. No Gradle/NDK build is performed in the offline
-            # execution job.
+            # Resolve the host-side test/driver dependencies before isolating
+            # the emulator network. The APK itself was already built by the
+            # previous job, so no Gradle/NDK build occurs here.
             flutter pub get
 
+            # Put the emulator into airplane mode and verify that no Wi-Fi or
+            # cellular transport remains active before starting the app.
             adb shell svc wifi disable
             adb shell svc data disable || true
+            adb shell cmd connectivity airplane-mode enable || true
             adb shell settings put global airplane_mode_on 1
-            adb shell dumpsys connectivity | grep -E 'NetworkAgentInfo|TRANSPORT_WIFI|TRANSPORT_CELLULAR' || true
+            adb shell settings put global wifi_on 0 || true
+            adb shell dumpsys connectivity | tee connectivity-offline.txt
+            if grep -E 'TRANSPORT_WIFI|TRANSPORT_CELLULAR' connectivity-offline.txt | grep -E 'CONNECTED|VALIDATED' >/dev/null; then
+              echo "Emulator still has an active Wi-Fi/cellular transport."
+              exit 1
+            fi
 
-            timeout 180s flutter test integration_test/offline_startup_test.dart               --use-application-binary=app-debug.apk
+            timeout 180s flutter drive \
+              --driver=test_driver/integration_test.dart \
+              --target=integration_test/offline_startup_test.dart \
+              --use-application-binary=app-debug.apk \
+              --device-id=emulator-5554 \
+              --no-dds
