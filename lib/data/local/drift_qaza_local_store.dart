@@ -164,7 +164,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     required List<String> recordIds,
   }) async {
     if (recordIds.isEmpty) return 0;
-    return _database.transaction(() async {
+    return _database.transactionWithRevision(() async {
       final unique = recordIds.toSet().toList(growable: false);
       var deleted = 0;
       for (var start = 0; start < unique.length; start += 400) {
@@ -182,7 +182,7 @@ class DriftQazaLocalStore extends QazaLocalStore
 
   @override
   Future<bool> updateRecord(QazaRecord record) =>
-      _database.transaction(() async {
+      _database.transactionWithRevision(() async {
         final changed = await _database.qazaRecordsDao.updateRecord(record);
         if (!changed) return false;
         await _syncProfilePlanProvenance(record);
@@ -194,7 +194,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     required String userId,
     required String recordId,
   }) async {
-    return _database.transaction(() async {
+    return _database.transactionWithRevision(() async {
       final deleted = await _database.qazaRecordsDao.deleteById(
         userId: userId,
         id: recordId,
@@ -231,7 +231,7 @@ class DriftQazaLocalStore extends QazaLocalStore
 
   @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
-    await _database.transaction(() async {
+    await _database.transactionWithRevision(() async {
       await _database.qazaRecordsDao.replaceUserRecords(
         userId: userId,
         records: records.map(_toCompanion).toList(growable: false),
@@ -267,7 +267,7 @@ class DriftQazaLocalStore extends QazaLocalStore
       );
     }
 
-    return _database.transaction(() async {
+    return _database.transactionWithRevision(() async {
       final rawCurrent = await _database.qazaRecordsDao.getByIds(
         userId: userId,
         ids: removalIds,
@@ -368,7 +368,7 @@ class DriftQazaLocalStore extends QazaLocalStore
   Future<void> rollbackProfilePlanChanges(
     QazaProfilePlanMutationResult mutation,
   ) {
-    return _database.transaction(() async {
+    return _database.transactionWithRevision(() async {
       for (final record in mutation.added) {
         final rawCurrent = await _database.qazaRecordsDao.getByIds(
           userId: mutation.userId,
@@ -483,7 +483,7 @@ class DriftQazaLocalStore extends QazaLocalStore
         throw StateError('Cannot persist a Qaza record for a different user.');
       }
     }
-    await _database.transaction(() async {
+    await _database.transactionWithRevision(() async {
       await _database.qazaRecordsDao.upsertRecords(
         records.map(_toCompanion).toList(growable: false),
       );
@@ -499,7 +499,7 @@ class DriftQazaLocalStore extends QazaLocalStore
         throw StateError('Cannot persist a Qaza record for a different user.');
       }
     }
-    await _database.transaction(() async {
+    await _database.transactionWithRevision(() async {
       final insertedIds =
           await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
         records.map(_toCompanion).toList(growable: false),
@@ -516,7 +516,7 @@ class DriftQazaLocalStore extends QazaLocalStore
 
   @override
   Future<void> retireUserData({required String userId}) async {
-    await _database.transaction(() async {
+    await _database.transactionWithRevision(() async {
       await _database.qazaRecordsDao.deleteAllForUser(userId: userId);
       await _deleteAllProfilePlanProvenance(userId);
     });
