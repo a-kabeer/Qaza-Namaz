@@ -39,7 +39,7 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
 
     expect(repository, contains('geolocator'));
-    expect(bridge, isNot(contains('geolocator')));
+    expect(bridge, contains('geolocator'));
     expect(mainActivity, isNot(contains('com.google.android.gms')));
     expect(mainActivity, isNot(contains('Google')));
     expect(pubspec, contains('geolocator:'));
