@@ -120,6 +120,7 @@ class LocalBackupService {
               'created_at',
               'updated_at',
             ],
+            integerColumns: {'created_at', 'updated_at'},
           ),
           'app_session_state': await _selectMaps(
             'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
@@ -136,11 +137,13 @@ class LocalBackupService {
               'writer_device_id',
               'operation_id',
             ],
+            integerColumns: {'updated_at'},
           ),
           'account_plan_revisions': await _selectMaps(
             'SELECT local_account_id, revision_id, payload_json, created_at '
             'FROM account_plan_revisions ORDER BY local_account_id, revision_id',
             ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
+            integerColumns: {'created_at'},
           ),
           'meta_store': {
             'is_onboarding_completed': await database.isOnboardingCompleted(),
@@ -805,17 +808,28 @@ class LocalBackupService {
 
   Future<List<Map<String, dynamic>>> _selectMaps(
     String sql,
-    List<String> columns,
-  ) async {
+    List<String> columns, {
+    Set<String> integerColumns = const <String>{},
+  }) async {
     final rows = await database.customSelect(sql).get();
     return rows.map((row) {
       return {
-        for (final column in columns) column: _readValue(row, column),
+        for (final column in columns)
+          column: _readValue(
+            row,
+            column,
+            integer: integerColumns.contains(column),
+          ),
       };
     }).toList(growable: false);
   }
 
-  Object? _readValue(QueryRow row, String column) {
+  Object? _readValue(
+    QueryRow row,
+    String column, {
+    bool integer = false,
+  }) {
+    if (integer) return row.read<int?>(column);
     return switch (column) {
       'id' ||
       'user_id' ||
