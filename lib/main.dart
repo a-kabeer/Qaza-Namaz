@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
@@ -11,8 +10,6 @@ import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
-import 'data/migration/qaza_database_bootstrap.dart';
-import 'data/migration/user_profile_migration.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -64,11 +61,6 @@ Future<void> main() async {
         onRetry: () async {
           try {
             await _initializeDatabase();
-            await _step('profile_migration', () async {
-              await const UserProfileMigration().migrateLegacyProfileData(
-                preferences: await SharedPreferences.getInstance(),
-              );
-            });
             runApp(const ProviderScope(child: QazaNamazApp()));
           } catch (retryError, retryStack) {
             diagnostics.recordFailure(
@@ -86,25 +78,14 @@ Future<void> main() async {
     return;
   }
 
-  await _step('profile_migration', () async {
-    await const UserProfileMigration().migrateLegacyProfileData(
-      preferences: await SharedPreferences.getInstance(),
-    );
-  });
-
   runApp(const ProviderScope(child: QazaNamazApp()));
 }
 
 Future<void> _initializeDatabase() async {
   final database = AppDatabase();
   try {
-    // Awaiting the bootstrap forces the LazyDatabase executor to open the
-    // sqlite3mc-backed encrypted connection, decrypt with the secure key, and
-    // complete all Drift migrations inside this explicit safety boundary.
-    await bootstrapQazaDatabase(
-      database: database,
-      preferences: await SharedPreferences.getInstance(),
-    );
+    // Force the encrypted Drift database to open and validate its schema.
+    await database.readDbRevision();
   } finally {
     await database.close();
   }
