@@ -1,15 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qaza_namaz/data/local/user_profile_repository.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
   test('new profile defaults Daily Qaza Target to 5', () {
     const profile = UserProfile();
     expect(profile.dailyQazaTarget, UserProfile.defaultDailyQazaTarget);
@@ -23,21 +15,10 @@ void main() {
     expect(profile.dailyQazaTarget, 5);
   });
 
-  test('changed Daily Qaza Target persists through UserProfile repository', () async {
-    const repository = SharedPreferencesUserProfileRepository();
-    final profile = const UserProfile().copyWith(dailyQazaTarget: 12);
+  test('business profile JSON excludes presentation language', () {
+    final json = const UserProfile(languageCode: 'ur').toJson();
 
-    await repository.save(profile);
-    final loaded = await repository.load();
-
-    expect(loaded?.dailyQazaTarget, 12);
-    expect(
-      jsonDecode(
-        (await SharedPreferences.getInstance())
-            .getString(UserProfile.storageKey)!,
-      )['dailyQazaTarget'],
-      12,
-    );
+    expect(json.containsKey('languageCode'), isFalse);
   });
 
   test('Daily Qaza Target is normalized to the supported range', () {
