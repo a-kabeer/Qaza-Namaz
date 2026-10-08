@@ -183,7 +183,6 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
           script: |
-            set -euo pipefail
             adb wait-for-device
             adb shell svc wifi disable
             adb shell svc data disable || true
