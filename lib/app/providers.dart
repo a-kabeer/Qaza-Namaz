@@ -13,6 +13,7 @@ import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../l10n/app_localizations.dart';
 import '../data/data_transfer/qaza_data_transfer_service.dart';
+import '../data/data_transfer/local_backup_service.dart';
 import '../data/local/database/app_database.dart';
 import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/account_local_store.dart';
@@ -212,6 +213,29 @@ final qazaDataTransferServiceProvider = Provider<QazaDataTransferService>(
   (ref) => QazaDataTransferService(ref.watch(qazaRepositoryProvider)),
 );
 
+final localBackupServiceProvider = Provider<LocalBackupService>(
+  (ref) => LocalBackupService(ref.watch(appDatabaseProvider)),
+);
+
+enum AppRoute { onboarding, home }
+
+class AppRouteNotifier extends AsyncNotifier<AppRoute> {
+  @override
+  Future<AppRoute> build() async {
+    final completed =
+        await ref.read(appDatabaseProvider).isOnboardingCompleted();
+    return completed ? AppRoute.home : AppRoute.onboarding;
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(build);
+  }
+}
+
+final appRouteProvider =
+    AsyncNotifierProvider<AppRouteNotifier, AppRoute>(AppRouteNotifier.new);
+
 final requiredUserIdProvider = Provider<String>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) {
@@ -289,7 +313,9 @@ class LocaleNotifier extends Notifier<Locale> {
   @override
   Locale build() {
     Future.microtask(restore);
-    return fallback;
+    final systemLocale =
+        WidgetsBinding.instance.platformDispatcher.locale;
+    return resolve(systemLocale.languageCode) ?? fallback;
   }
 
   static List<Locale> get supported => AppLocalizations.supportedLocales;
