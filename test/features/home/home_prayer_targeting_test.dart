@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/prayer_time/domain/prayer_time.dart';
@@ -124,12 +126,12 @@ void main() {
   });
 
   group('HomePrayerSelectionNotifier', () {
-    setUp(() {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-    });
-
     test('new state starts in Auto Sequence and persists mode changes', () async {
-      final container = ProviderContainer();
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(homePrayerSelectionProvider.notifier);
@@ -142,19 +144,28 @@ void main() {
       notifier.selectPrayer(PrayerType.zuhr);
       await Future<void>.delayed(Duration.zero);
 
-      final prefs = await SharedPreferences.getInstance();
+      final modeRows = await database.customSelect(
+        "SELECT value FROM meta_store WHERE key = 'qaza_home_completion_mode'",
+      ).get();
+      final selectedRows = await database.customSelect(
+        "SELECT value FROM meta_store WHERE key = 'qaza_home_selected_prayer'",
+      ).get();
       expect(
-        prefs.getString('qaza_home_completion_mode'),
+        modeRows.single.read<String>('value'),
         HomePrayerSelectionMode.prayerSelection.name,
       );
       expect(
-        prefs.getString('qaza_home_selected_prayer'),
+        selectedRows.single.read<String>('value'),
         PrayerType.zuhr.name,
       );
     });
 
     test('switching modes preserves the legacy Auto Sequence cursor', () {
-      final container = ProviderContainer();
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(homePrayerSelectionProvider.notifier);
@@ -179,7 +190,11 @@ void main() {
     });
 
     test('Undo leaves the non-authoritative Auto Sequence cursor unchanged', () {
-      final container = ProviderContainer();
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(homePrayerSelectionProvider.notifier);
@@ -204,7 +219,11 @@ void main() {
     });
 
     test('Undo does not overwrite a newer explicit target change', () {
-      final container = ProviderContainer();
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final container = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
+      );
       addTearDown(container.dispose);
 
       final notifier = container.read(homePrayerSelectionProvider.notifier);
