@@ -432,11 +432,13 @@ class DriftQazaLocalStore extends QazaLocalStore
     required DateTime completedAt,
     Map<String, String>? completionIds,
   }) =>
-      _database.qazaRecordsDao.completeByIds(
-        userId: userId,
-        ids: recordIds,
-        completedAt: completedAt,
-        completionIds: completionIds,
+      _database.transactionWithRevision(
+        () => _database.qazaRecordsDao.completeByIds(
+          userId: userId,
+          ids: recordIds,
+          completedAt: completedAt,
+          completionIds: completionIds,
+        ),
       );
 
   @override
@@ -445,10 +447,12 @@ class DriftQazaLocalStore extends QazaLocalStore
     required Map<String, String> expectedCompletionIds,
     required DateTime updatedAt,
   }) =>
-      _database.qazaRecordsDao.markCompletedAsPendingBatch(
-        userId: userId,
-        expectedCompletionIds: expectedCompletionIds,
-        updatedAt: updatedAt,
+      _database.transactionWithRevision(
+        () => _database.qazaRecordsDao.markCompletedAsPendingBatch(
+          userId: userId,
+          expectedCompletionIds: expectedCompletionIds,
+          updatedAt: updatedAt,
+        ),
       );
 
   @override
@@ -457,10 +461,12 @@ class DriftQazaLocalStore extends QazaLocalStore
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
   }) =>
-      _database.qazaRecordsDao.undoCompletions(
-        userId: userId,
-        expectedCompletionIds: expectedCompletionIds,
-        undoneAt: undoneAt,
+      _database.transactionWithRevision(
+        () => _database.qazaRecordsDao.undoCompletions(
+          userId: userId,
+          expectedCompletionIds: expectedCompletionIds,
+          undoneAt: undoneAt,
+        ),
       );
 
   @override
