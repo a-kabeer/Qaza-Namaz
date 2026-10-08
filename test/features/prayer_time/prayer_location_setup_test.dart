@@ -13,17 +13,36 @@ void main() {
       source.indexOf('Future<PrayerLocation> getCurrent()'),
     );
     final permissionCheck = source.indexOf(
-      'Geolocator.checkPermission()',
+      'checkPermission()',
       source.indexOf('Future<PrayerLocation> getCurrent()'),
     );
     final permissionRequest = source.indexOf(
-      'Geolocator.requestPermission()',
+      'requestPermission()',
       source.indexOf('Future<PrayerLocation> getCurrent()'),
     );
 
     expect(services, greaterThanOrEqualTo(0));
     expect(permissionCheck, greaterThan(services));
     expect(permissionRequest, greaterThan(permissionCheck));
+  });
+
+  test('location implementation does not depend on third-party location SDKs', () {
+    final repository = File(
+      'lib/features/prayer_time/data/prayer_location_repository.dart',
+    ).readAsStringSync();
+    final bridge = File(
+      'lib/core/platform/app_location_settings.dart',
+    ).readAsStringSync();
+    final mainActivity = File(
+      'android/app/src/main/kotlin/com/qaza_namaz/com/MainActivity.kt',
+    ).readAsStringSync();
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+
+    expect(repository, isNot(contains('geolocator')));
+    expect(bridge, isNot(contains('geolocator')));
+    expect(mainActivity, isNot(contains('com.google.android.gms')));
+    expect(mainActivity, isNot(contains('Google')));
+    expect(pubspec, isNot(contains('geolocator:')));
   });
 
   test('cancelled Location Services resolution gets an actionable recovery state', () {
