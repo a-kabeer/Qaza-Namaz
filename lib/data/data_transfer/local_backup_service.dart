@@ -528,7 +528,7 @@ class LocalBackupService {
       }
     }
     for (final row in payload['qaza_deletion_actions'] as List<dynamic>) {
-      if ((row as Map)['entity_version'] as int < 1) {
+      if (((row as Map)['entity_version'] as int) < 1) {
         throw const LocalBackupException(
           'Backup contains an invalid qaza_deletion_actions entity_version.',
         );
