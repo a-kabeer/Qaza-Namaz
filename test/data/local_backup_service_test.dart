@@ -55,6 +55,35 @@ void main() {
     );
   });
 
+  test('no-op transaction does not advance db revision', () async {
+    final beforeRevision = await database.readDbRevision();
+
+    final changed = await database.transactionWithRevision(() async => false);
+
+    expect(changed, isFalse);
+    expect(await database.readDbRevision(), beforeRevision);
+  });
+
+  test('failed transaction rolls back state and db revision', () async {
+    final beforeRevision = await database.readDbRevision();
+
+    expect(
+      () => database.transactionWithRevision(() async {
+        await database.qazaRecordsDao.insertRecord(
+          _record('guest_fajr_failed', DateTime(2025, 1, 1)),
+        );
+        throw StateError('forced transaction failure');
+      }),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(await database.readDbRevision(), beforeRevision);
+    expect(
+      await database.qazaRecordsDao.getAll(userId: 'guest'),
+      isEmpty,
+    );
+  });
+
   test('export uses the stable versioned metadata header', () async {
     await database.transactionWithRevision(() async {
       await database.qazaRecordsDao.insertRecord(
