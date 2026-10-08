@@ -254,9 +254,10 @@ class LocalBackupService {
       await database.setDbRevisionInTransaction(newRevision);
     });
 
+    final restoredRevision = await database.readDbRevision();
     final meta = data['meta_store'] as Map<String, dynamic>;
     return LocalBackupAnalysis(
-      dbRevision: newRevision,
+      dbRevision: restoredRevision,
       recordCount: (data['qaza_records'] as List<dynamic>).length,
       accountCount: (data['local_accounts'] as List<dynamic>).length,
       onboardingCompleted: meta['is_onboarding_completed'] == true,
