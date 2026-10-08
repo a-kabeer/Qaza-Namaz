@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('AppSnackbarService', () {
@@ -203,9 +201,7 @@ void main() {
       expect(batch.isExpired(expiry.add(const Duration(minutes: 1))), isTrue);
     });
 
-    test('persisted expired Undo batch is discarded', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
+    test('expired Undo batch is discarded', () async {
       final expiry = DateTime(2026, 9, 26, 10, 59, 59);
       final batch = QazaUndoBatch(
         sessionId: 'session-1',
@@ -220,19 +216,15 @@ void main() {
         ],
         expiresAt: expiry,
       );
-      await prefs.setString(
-        'qaza_undo_v3_local',
-        jsonEncode(batch.toJson()),
-      );
 
-      const store = QazaUndoStore();
+      final store = QazaUndoStore();
+      await store.save(userId: 'local', batch: batch);
       final loaded = await store.load(
         userId: 'local',
         now: DateTime(2026, 9, 26, 11, 0),
       );
 
       expect(loaded, isNull);
-      expect(prefs.getString('qaza_undo_v2_local'), isNull);
     });
   });
 
