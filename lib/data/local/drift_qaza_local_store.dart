@@ -232,11 +232,28 @@ class DriftQazaLocalStore extends QazaLocalStore
   @override
   Future<void> saveRecords(String userId, List<QazaRecord> records) async {
     await _database.transactionWithRevision(() async {
+      final current = await _withProfilePlanProvenance(
+        userId,
+        await _database.qazaRecordsDao.getAll(userId: userId),
+      );
+      final before = [...current]..sort((a, b) => a.id.compareTo(b.id));
+      final after = [...records]..sort((a, b) => a.id.compareTo(b.id));
+      final unchanged = before.length == after.length &&
+          List.generate(
+            before.length,
+            (index) => before[index].toJson(),
+          ).toString() ==
+              List.generate(
+                after.length,
+                (index) => after[index].toJson(),
+              ).toString();
+      if (unchanged) return false;
       await _database.qazaRecordsDao.replaceUserRecords(
         userId: userId,
         records: records.map(_toCompanion).toList(growable: false),
       );
       await _replaceProfilePlanProvenance(userId, records);
+      return true;
     });
   }
 
@@ -361,7 +378,7 @@ class DriftQazaLocalStore extends QazaLocalStore
         removed: List.unmodifiable(removed),
         operationIds: const <String>[],
       );
-    });
+    }, mutationPredicate: (result) => result.added.isNotEmpty || result.removed.isNotEmpty);
   }
 
   @override
@@ -369,6 +386,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     QazaProfilePlanMutationResult mutation,
   ) {
     return _database.transactionWithRevision(() async {
+      var mutated = false;
       for (final record in mutation.added) {
         final rawCurrent = await _database.qazaRecordsDao.getByIds(
           userId: mutation.userId,
@@ -384,10 +402,11 @@ class DriftQazaLocalStore extends QazaLocalStore
             existing.profilePlanFingerprint != record.profilePlanFingerprint) {
           continue;
         }
-        await _database.qazaRecordsDao.deleteById(
+        final deleted = await _database.qazaRecordsDao.deleteById(
           userId: mutation.userId,
           id: record.id,
         );
+        if (deleted > 0) mutated = true;
         await _deleteProfilePlanProvenance(
           mutation.userId,
           [record.id],
@@ -395,11 +414,13 @@ class DriftQazaLocalStore extends QazaLocalStore
       }
 
       if (mutation.removed.isNotEmpty) {
-        await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
+        final insertedIds = await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
           mutation.removed.map(_toCompanion).toList(growable: false),
         );
+        if (insertedIds.isNotEmpty) mutated = true;
         await _upsertProfilePlanProvenance(mutation.removed);
       }
+      return mutated;
     });
   }
 
@@ -523,8 +544,13 @@ class DriftQazaLocalStore extends QazaLocalStore
   @override
   Future<void> retireUserData({required String userId}) async {
     await _database.transactionWithRevision(() async {
+      final existing = await _database.qazaRecordsDao.getAll(userId: userId);
+      if (existing.isEmpty) {
+        return false;
+      }
       await _database.qazaRecordsDao.deleteAllForUser(userId: userId);
       await _deleteAllProfilePlanProvenance(userId);
+      return true;
     });
   }
 
