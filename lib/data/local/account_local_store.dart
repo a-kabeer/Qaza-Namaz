@@ -362,7 +362,7 @@ class AccountLocalStore {
       if (insertedTotal != records.length) {
         throw StateError(
           'Onboarding Qaza dataset is incomplete: inserted '
-          '${insertedTotal} of ${records.length} records.',
+          '$insertedTotal of ${records.length} records.',
         );
       }
     });
@@ -534,7 +534,7 @@ class AccountLocalStore {
     final bytes = List<int>.generate(12, (_) => random.nextInt(256));
     final hex =
         bytes.map((value) => value.toRadixString(16).padLeft(2, '0')).join();
-    return prefix + '_' + hex;
+    return '${prefix}_$hex';
   }
 
   String jsonEncode(Object value) => json.encode(value);

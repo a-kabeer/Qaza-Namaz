@@ -184,7 +184,6 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
   }
 
   Future<AddQazaAnalysis?> _finalValidateAndStart() async {
-    final l10n = AppLocalizations.of(context);
     final controller = ref.read(addQazaControllerProvider.notifier);
 
     try {

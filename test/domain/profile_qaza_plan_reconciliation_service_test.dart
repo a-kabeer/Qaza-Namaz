@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
-import 'package:qaza_namaz/data/local/qaza_local_store.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
@@ -76,18 +75,24 @@ class MemoryQazaRepository implements QazaRepository {
       DateTime? beforeCompletedAt,
       bool descending = false}) async {
     var values = records.where((r) => r.userId == userId).toList();
-    if (prayerType != null)
+    if (prayerType != null) {
       values = values.where((r) => r.prayerType == prayerType).toList();
-    if (prayerTypes != null)
+    }
+    if (prayerTypes != null) {
       values = values.where((r) => prayerTypes.contains(r.prayerType)).toList();
-    if (status != null)
+    }
+    if (status != null) {
       values = values.where((r) => r.status == status).toList();
-    if (additionId != null)
+    }
+    if (additionId != null) {
       values = values.where((r) => r.additionId == additionId).toList();
-    if (from != null)
+    }
+    if (from != null) {
       values = values.where((r) => !r.originalDate.isBefore(from)).toList();
-    if (to != null)
+    }
+    if (to != null) {
       values = values.where((r) => !r.originalDate.isAfter(to)).toList();
+    }
     values.sort((a, b) => descending
         ? b.originalDate.compareTo(a.originalDate)
         : a.originalDate.compareTo(b.originalDate));
