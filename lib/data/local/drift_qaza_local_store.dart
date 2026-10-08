@@ -555,6 +555,9 @@ class DriftQazaLocalStore extends QazaLocalStore
           .where((record) => insertedIds.contains(record.id))
           .toList(growable: false);
       await _upsertProfilePlanProvenance(inserted);
+      // Return the actual mutation result so a duplicate-only append is a
+      // true no-op for db_revision.
+      return inserted.isNotEmpty;
     });
   }
 
