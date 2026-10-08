@@ -168,24 +168,29 @@ void main() {
           );
           final backup = await LocalBackupService(source).exportJson();
 
-          await database.customInsert(
-            '''INSERT OR REPLACE INTO device_metadata
-               (id, device_instance_id) VALUES (1, ?)''',
-            variables: [Variable.withString('receiving-device')],
-          );
+          final receiving = AppDatabase(NativeDatabase.memory());
+          try {
+            await receiving.customInsert(
+              '''INSERT OR REPLACE INTO device_metadata
+                 (id, device_instance_id) VALUES (1, ?)''',
+              variables: [Variable.withString('receiving-device')],
+            );
 
-          final restored =
-              await LocalBackupService(database).importJson(backup);
-          expect(restored.recordCount, 1);
-          expect(restored.dbRevision, 2);
+            final restored =
+                await LocalBackupService(receiving).importJson(backup);
+            expect(restored.recordCount, 1);
+            expect(restored.dbRevision, 2);
 
-          final device = await database.customSelect(
-            'SELECT device_instance_id FROM device_metadata WHERE id = 1',
-          ).get();
-          expect(
-            device.single.read<String>('device_instance_id'),
-            'receiving-device',
-          );
+            final device = await receiving.customSelect(
+              'SELECT device_instance_id FROM device_metadata WHERE id = 1',
+            ).get();
+            expect(
+              device.single.read<String>('device_instance_id'),
+              'receiving-device',
+            );
+          } finally {
+            await receiving.close();
+          }
         } finally {
           await source.close();
         }
