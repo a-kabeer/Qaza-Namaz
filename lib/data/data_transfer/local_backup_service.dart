@@ -359,7 +359,7 @@ class LocalBackupService {
       'lifecycle_state' || 'active_local_account_id' || 'payload_json' ||
       'writer_device_id' || 'operation_id' =>
         row.read<String?>(column),
-      'revision' || 'entity_version' || 'record_version' || 'id' =>
+      'revision' || 'entity_version' || 'record_version' =>
         row.read<int?>(column),
       _ => throw StateError('Unsupported backup column: $column'),
     };
@@ -377,13 +377,12 @@ class LocalBackupService {
       if (raw is! Map) {
         throw const LocalBackupException('Backup contains an invalid table row.');
       }
-      final values = [
-        for (final column in columns) raw[column],
+      final values = <Variable<Object>>[
+        for (final column in columns) Variable(raw[column]),
       ];
-      await database.customStatement(
+      await database.customInsert(
         'INSERT INTO "$table" ($quotedColumns) VALUES ($placeholders)',
-        // Drift customStatement doesn't expose bind variables. Use a generated
-        // SQL literal for validated JSON values instead.
+        variables: values,
       );
     }
   }
