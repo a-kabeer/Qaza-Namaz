@@ -18,7 +18,7 @@ The audited branch contains the application under these root areas:
 - test — automated regression/unit/widget coverage
 - tools — architecture policy checks
 
-The recursive repository tree was inspected before closure work. PR #263 currently contains 162 changed files, including the offline architecture implementation and its regression suite.
+The recursive repository tree was inspected before closure work. PR #263 contains 166 changed files, including the offline architecture implementation and its regression suite.
 
 ## 2. Persistence inventory
 
