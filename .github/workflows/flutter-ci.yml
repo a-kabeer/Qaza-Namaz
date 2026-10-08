@@ -71,12 +71,7 @@ jobs:
             exit 0
           fi
 
-          dart format "${files[@]}"
-          if ! git diff --quiet -- "${files[@]}"; then
-            echo "Dart formatting changes are required:"
-            git diff -- "${files[@]}"
-            exit 1
-          fi
+          dart format --output=none --set-exit-if-changed "${files[@]}"
 
 
       - name: Test with coverage
