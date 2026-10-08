@@ -27,7 +27,7 @@ final prayerTimeTargetAvailabilityProvider =
 });
 
 final prayerTimeCacheProvider = Provider<PrayerTimeCache>(
-  (ref) => PrayerTimeCache(),
+  (ref) => PrayerTimeCache(ref.watch(appDatabaseProvider)),
 );
 
 final offlineCityResolverProvider = Provider<OfflineCityResolver>(
