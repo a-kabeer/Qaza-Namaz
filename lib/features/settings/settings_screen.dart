@@ -34,13 +34,6 @@ class SettingsScreen extends ConsumerWidget {
         return;
       }
 
-      final profile = await ref.read(userProfileProvider.future);
-      if (profile == null) return;
-
-      await ref.read(userProfileRepositoryProvider).save(
-            profile.copyWith(languageCode: resolved.languageCode),
-          );
-      ref.invalidate(userProfileProvider);
       ref.read(localeProvider.notifier).set(resolved);
     }
 

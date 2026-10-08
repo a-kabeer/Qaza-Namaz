@@ -32,6 +32,11 @@ class UserProfile {
   static int normalizeDailyQazaTarget(int value) =>
       value.clamp(minDailyQazaTarget, maxDailyQazaTarget).toInt();
 
+  /// Legacy compatibility field only.
+  ///
+  /// Presentation language is persisted by [LocaleNotifier] through
+  /// SharedPreferences and is not part of business-state persistence.
+  @Deprecated('Presentation language is not business profile state.')
   final String languageCode;
   final int dailyQazaTarget;
   final Gender? gender;

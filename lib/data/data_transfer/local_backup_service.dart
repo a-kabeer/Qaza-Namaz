@@ -55,7 +55,7 @@ class LocalBackupService {
           'database_schema_version': database.schemaVersion,
           'db_revision': dbRevision,
           'export_timestamp':
-              (exportedAt ?? DateTime.now().toUtc()).toIso8601String(),
+              (exportedAt ?? DateTime.now()).toUtc().toIso8601String(),
         },
         'data': {
           'qaza_records': records,

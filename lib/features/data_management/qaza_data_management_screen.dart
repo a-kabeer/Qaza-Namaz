@@ -64,6 +64,7 @@ class _QazaDataManagementScreenState
   }
 
   Future<void> _import() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _busy = true);
     try {
       final picked = await FilePicker.pickFile(
@@ -79,9 +80,7 @@ class _QazaDataManagementScreenState
 
       final bytes = await picked.readAsBytes();
       if (bytes.isEmpty) {
-        throw const LocalBackupException(
-          'The selected backup file is empty or unreadable.',
-        );
+        throw LocalBackupException(l10n.dataImportEmptyFile);
       }
 
       final jsonText = utf8.decode(bytes, allowMalformed: false);
@@ -104,7 +103,7 @@ class _QazaDataManagementScreenState
 
       if (mounted) {
         _showMessage(
-          'Backup restored successfully. ${restored.recordCount} Qaza records restored.',
+          l10n.dataImportRestored(restored.recordCount),
           success: true,
         );
       }
@@ -116,7 +115,12 @@ class _QazaDataManagementScreenState
             stack: stack,
           );
       if (mounted) {
-        _showMessage(error.toString(), error: true);
+        final message = error is LocalBackupException
+            ? error.message
+            : AppLocalizations.of(context).dataImportRejected(
+                error.toString(),
+              );
+        _showMessage(message, error: true);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -124,28 +128,31 @@ class _QazaDataManagementScreenState
   }
 
   Future<bool> _confirmImport(LocalBackupAnalysis analysis) async {
+    final l10n = AppLocalizations.of(context);
+    final onboardingState = analysis.onboardingCompleted
+        ? l10n.dataImportOnboardingComplete
+        : l10n.dataImportOnboardingIncomplete;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Restore local backup?'),
+        title: Text(l10n.dataImportReviewTitle),
         content: Text(
-          'This backup contains ${analysis.recordCount} Qaza records and '
-          '${analysis.accountCount} local account(s).\n\n'
-          'Restoring will replace the current local application data on this '
-          'device with the selected backup. The device identity used for local '
-          'security is preserved.\n\n'
-          'Backup revision: ${analysis.dbRevision}\n'
-          'Onboarding completed: ${analysis.onboardingCompleted ? 'Yes' : 'No'}',
+          l10n.dataImportRestoreSummary(
+            analysis.recordCount,
+            analysis.accountCount,
+            analysis.dbRevision,
+            onboardingState,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context).commonCancel),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Restore backup'),
+            child: Text(l10n.dataImportAction),
           ),
         ],
       ),
@@ -209,7 +216,7 @@ class _QazaDataManagementScreenState
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Local backup only. No cloud sync, authentication, or network service is used by this screen.',
+                  AppLocalizations.of(context).dataLocalOnlyNote,
                 ),
               ),
             ),
