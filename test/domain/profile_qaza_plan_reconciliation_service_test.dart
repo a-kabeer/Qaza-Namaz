@@ -311,41 +311,42 @@ void main() {
   test(
     'Drift removal is idempotent without sync outbox side effects',
     () async {
-    final database = AppDatabase(NativeDatabase.memory());
-    final store = DriftQazaLocalStore(database: database);
-    final record = profileRecord(
-      id: 'removable',
-      prayer: PrayerType.fajr,
-      date: DateTime(2020, 1, 1),
-      revision: 'revision',
-      fingerprint: 'qazaPlanV2Fixed360|start|end',
-    );
-    await store.appendRecords(UserProfile.localLedgerUserId, [record]);
+      final database = AppDatabase(NativeDatabase.memory());
+      final store = DriftQazaLocalStore(database: database);
+      final record = profileRecord(
+        id: 'removable',
+        prayer: PrayerType.fajr,
+        date: DateTime(2020, 1, 1),
+        revision: 'revision',
+        fingerprint: 'qazaPlanV2Fixed360|start|end',
+      );
+      await store.appendRecords(UserProfile.localLedgerUserId, [record]);
 
-    final first = await store.applyProfilePlanChanges(
-      userId: UserProfile.localLedgerUserId,
-      additions: const [],
-      removalIds: const ['removable'],
-      newPlanKeys: const {},
-      expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
-    );
-    expect(first.removed, hasLength(1));
+      final first = await store.applyProfilePlanChanges(
+        userId: UserProfile.localLedgerUserId,
+        additions: const [],
+        removalIds: const ['removable'],
+        newPlanKeys: const {},
+        expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
+      );
+      expect(first.removed, hasLength(1));
 
-    final second = await store.applyProfilePlanChanges(
-      userId: UserProfile.localLedgerUserId,
-      additions: const [],
-      removalIds: const ['removable'],
-      newPlanKeys: const {},
-      expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
-    );
-    expect(second.removed, isEmpty);
+      final second = await store.applyProfilePlanChanges(
+        userId: UserProfile.localLedgerUserId,
+        additions: const [],
+        removalIds: const ['removable'],
+        newPlanKeys: const {},
+        expectedPreviousPlanFingerprint: 'qazaPlanV2Fixed360|start|end',
+      );
+      expect(second.removed, isEmpty);
 
-    expect(
-      await store.loadOutbox(UserProfile.localLedgerUserId),
-      isEmpty,
-    );
-    await database.close();
-  });
+      expect(
+        await store.loadOutbox(UserProfile.localLedgerUserId),
+        isEmpty,
+      );
+      await database.close();
+    },
+  );
 
   test('provenance survives JSON and Drift persistence reload', () async {
     final record = profileRecord(id: 'persisted', prayer: PrayerType.fajr, date: DateTime(2020, 1, 1), revision: 'revision', fingerprint: 'qazaPlanV2Fixed360|start|end');
