@@ -379,9 +379,7 @@ class QazaUndoManager {
       final useActiveSelection = active != null &&
           (expectedBatch == null || active.matches(expectedBatch));
 
-      final batch = useActiveSelection
-          ? active
-          : await restore(userId: userId);
+      final batch = useActiveSelection ? active : await restore(userId: userId);
       if (batch == null) {
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.expired,
@@ -408,8 +406,7 @@ class QazaUndoManager {
       final changedIds = await service.undoCompletions(
         userId: userId,
         expectedCompletionIds: {
-          for (final entry in targetEntries)
-            entry.recordId: entry.completionId,
+          for (final entry in targetEntries) entry.recordId: entry.completionId,
         },
         undoneAt: _now(),
       );

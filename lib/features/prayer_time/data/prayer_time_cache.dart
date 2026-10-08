@@ -13,12 +13,10 @@ class PrayerTimeCache {
   final AppDatabase database;
 
   Future<PrayerTimeSnapshot?> load() async {
-    final rows = await database
-        .customSelect(
-          'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
-          variables: [Variable.withString(_key)],
-        )
-        .get();
+    final rows = await database.customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable.withString(_key)],
+    ).get();
 
     if (rows.isEmpty) return null;
     final raw = rows.first.read<String>('value');

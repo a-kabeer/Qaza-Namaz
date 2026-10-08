@@ -58,7 +58,8 @@ final homeDailyProgressProvider =
 final qazaActivityServiceProvider = Provider<QazaActivityService>((ref) {
   final repository = ref.watch(qazaRepositoryProvider);
   if (repository is! QazaActivityRepository) {
-    throw StateError('Local Qaza repository does not support activity history.');
+    throw StateError(
+        'Local Qaza repository does not support activity history.');
   }
   final activityRepository = repository as QazaActivityRepository;
   return QazaActivityService(
@@ -89,12 +90,10 @@ final homeDashboardActivityProvider =
 
   final currentWeek = homeCurrentWeekStartForDate(today);
   final dailyFrom = DateTime(today.year, today.month, today.day - 6);
-  final queryFrom =
-      dailyFrom.isBefore(currentWeek) ? dailyFrom : currentWeek;
+  final queryFrom = dailyFrom.isBefore(currentWeek) ? dailyFrom : currentWeek;
   final weekEnd = homeCurrentWeekEndExclusiveForDate(today);
   final tomorrow = DateTime(today.year, today.month, today.day + 1);
-  final queryToExclusive =
-      weekEnd.isAfter(tomorrow) ? weekEnd : tomorrow;
+  final queryToExclusive = weekEnd.isAfter(tomorrow) ? weekEnd : tomorrow;
 
   if (userId == null || enabled.isEmpty) {
     final emptyWeek = QazaActivityService.buildPeriodFromRows(
@@ -192,7 +191,6 @@ final homeQazaActivityCurrentWeekProvider =
       );
 });
 
-
 final homeQazaActivityDailyGoalsProvider =
     FutureProvider.autoDispose<QazaActivityPeriod>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
@@ -221,16 +219,14 @@ final homeQazaActivityDailyGoalsProvider =
       );
 });
 
-final homeQazaActivityWeekProvider =
-    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
-        (ref, selectedDate) async {
+final homeQazaActivityWeekProvider = FutureProvider.autoDispose
+    .family<QazaActivityPeriod, DateTime>((ref, selectedDate) async {
   final userId = ref.watch(activeUserIdProvider);
   final today = ref.watch(homeLocalDateProvider);
   final target = ref.watch(dailyQazaTargetProvider);
   final selectedWeek =
       QazaActivityService.calendarWeekStartForDate(selectedDate);
-  final currentWeek =
-      QazaActivityService.calendarWeekStartForDate(today);
+  final currentWeek = QazaActivityService.calendarWeekStartForDate(today);
   final targetAvailable = selectedWeek == currentWeek;
 
   if (userId == null) {
@@ -259,9 +255,8 @@ final homeQazaActivityWeekProvider =
       );
 });
 
-final homeQazaActivityMonthProvider =
-    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
-        (ref, month) async {
+final homeQazaActivityMonthProvider = FutureProvider.autoDispose
+    .family<QazaActivityPeriod, DateTime>((ref, month) async {
   final userId = ref.watch(activeUserIdProvider);
   final today = ref.watch(homeLocalDateProvider);
   final target = ref.watch(dailyQazaTargetProvider);
@@ -291,9 +286,8 @@ final homeQazaActivityMonthProvider =
       );
 });
 
-final homeQazaActivityYearProvider =
-    FutureProvider.autoDispose.family<QazaActivityPeriod, DateTime>(
-        (ref, year) async {
+final homeQazaActivityYearProvider = FutureProvider.autoDispose
+    .family<QazaActivityPeriod, DateTime>((ref, year) async {
   final userId = ref.watch(activeUserIdProvider);
   final today = ref.watch(homeLocalDateProvider);
   final normalizedYear = DateTime(year.year);
