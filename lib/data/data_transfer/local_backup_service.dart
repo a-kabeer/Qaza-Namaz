@@ -507,6 +507,57 @@ class LocalBackupService {
       strings: ['local_account_id', 'revision_id', 'payload_json'],
       ints: ['created_at'],
     );
+    for (final row in payload['qaza_additions'] as List<dynamic>) {
+      final map = row as Map;
+      if ((map['revision'] as int) < 1) {
+        throw const LocalBackupException(
+          'Backup contains an invalid qaza_additions revision.',
+        );
+      }
+      try {
+        if (jsonDecode(map['input_snapshot'] as String) is! Map) {
+          throw const LocalBackupException(
+            'A Qaza addition input_snapshot must be a JSON object.',
+          );
+        }
+      } catch (error) {
+        if (error is LocalBackupException) rethrow;
+        throw const LocalBackupException(
+          'A Qaza addition input_snapshot is not valid JSON.',
+        );
+      }
+    }
+    for (final row in payload['qaza_deletion_actions'] as List<dynamic>) {
+      if ((row as Map)['entity_version'] as int < 1) {
+        throw const LocalBackupException(
+          'Backup contains an invalid qaza_deletion_actions entity_version.',
+        );
+      }
+    }
+    for (final row in payload['qaza_deletion_action_record_snapshots']
+        as List<dynamic>) {
+      final map = row as Map;
+      if ((map['record_version'] as int) < 1) {
+        throw const LocalBackupException(
+          'Backup contains an invalid deletion snapshot record_version.',
+        );
+      }
+    }
+    for (final row in payload['local_accounts'] as List<dynamic>) {
+      final map = row as Map;
+      if (map['account_mode'] != 'local') {
+        throw const LocalBackupException(
+          'Backup contains an invalid local account mode.',
+        );
+      }
+      if (map['lifecycle_state'] != 'active' &&
+          map['lifecycle_state'] != 'archived' &&
+          map['lifecycle_state'] != 'migrating') {
+        throw const LocalBackupException(
+          'Backup contains an invalid local account lifecycle state.',
+        );
+      }
+    }
 
     final rawRecords = payload['qaza_records'] as List<dynamic>;
     final recordIds = <String>{};
@@ -723,7 +774,22 @@ class LocalBackupService {
         index,
         'deletion_action_id',
       )!;
-      if (!accountIds.contains(userId) || !actionIds.contains(actionId)) {
+      final recordId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'record_id',
+      )!;
+      final additionId = requiredString(
+        row,
+        'qaza_deletion_action_record_snapshots',
+        index,
+        'addition_id',
+      )!;
+      if (!accountIds.contains(userId) ||
+          !actionIds.contains(actionId) ||
+          !recordIds.contains(recordId) ||
+          !additionIds.contains(additionId)) {
         throw LocalBackupException(
           'Deletion snapshot row ${index + 1} has an invalid account/action reference.',
         );
@@ -744,7 +810,16 @@ class LocalBackupService {
         index,
         'record_id',
       )!;
-      if (!accountIds.contains(userId) || !recordIds.contains(recordId)) {
+      final planRevisionId = requiredString(
+        row,
+        'qaza_profile_plan_provenance',
+        index,
+        'plan_revision_id',
+      )!;
+      final planKey = '$userId|$planRevisionId';
+      if (!accountIds.contains(userId) ||
+          !recordIds.contains(recordId) ||
+          !planKeys.contains(planKey)) {
         throw LocalBackupException(
           'Qaza provenance row ${index + 1} references an unknown account/record.',
         );
