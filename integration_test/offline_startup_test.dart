@@ -10,13 +10,18 @@ void main() {
   testWidgets(
     'cold-starts successfully while Android is offline',
     (tester) async {
-      app.main();
+      await app.main();
 
+      // Do not use pumpAndSettle here. The application may intentionally show
+      // an indeterminate startup indicator while local initialization completes,
+      // and pumpAndSettle would wait forever for that ticker.
       await tester.pump(const Duration(seconds: 2));
-      await tester.pumpAndSettle(const Duration(seconds: 8));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 5));
 
       expect(find.byType(MaterialApp), findsOneWidget);
       expect(find.textContaining('Qaza'), findsWidgets);
     },
+    timeout: const Timeout(Duration(seconds: 45)),
   );
 }
