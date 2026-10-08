@@ -72,6 +72,9 @@ android {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.release
             } else {
+                // Build an unsigned release artifact when production signing
+                // credentials are unavailable. Never fall back to debug
+                // signing for a release build.
                 signingConfig = null
             }
         }
@@ -86,6 +89,9 @@ kotlin {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    // The app's native location settings bridge calls SettingsClient directly.
+    // Keep this aligned with the geolocator Android implementation.
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
 }
 
 flutter {
