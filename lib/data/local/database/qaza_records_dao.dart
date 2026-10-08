@@ -560,7 +560,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     if (ids.isEmpty) return const <QazaRecord>[];
 
-    return transaction(() async {
+    return transactionWithRevision(() async {
       final unique = ids.toSet().toList(growable: false);
       final rows = <QazaRecordRow>[];
       for (var start = 0; start < unique.length; start += 400) {
@@ -636,7 +636,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
 
-    return transaction(() async {
+    return transactionWithRevision(() async {
       final ids = expectedCompletionIds.keys.toList(growable: false);
       final rows = <QazaRecordRow>[];
       for (var start = 0; start < ids.length; start += 400) {
@@ -705,7 +705,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     if (expectedCompletionIds.isEmpty) return const <QazaRecord>[];
 
-    return transaction(() async {
+    return transactionWithRevision(() async {
       final ids = expectedCompletionIds.keys.toList(growable: false);
       final rows = <QazaRecordRow>[];
       for (var start = 0; start < ids.length; start += 400) {
@@ -861,7 +861,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   /// replaceUserRecords, which validates the namespace before replacing it.
   Future<int> insertRecords(List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return 0;
-    return transaction(() async {
+    return transactionWithRevision(() async {
       var inserted = 0;
       for (final record in records) {
         if (await _insertIfAbsent(record)) inserted++;
