@@ -10,6 +10,7 @@ import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
 import '../account/account_screen.dart';
 import 'qaza_reset_controller.dart';
+import '../data_management/qaza_data_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -94,6 +95,16 @@ class SettingsScreen extends ConsumerWidget {
                   changeLanguage(Locale(value.first));
                 },
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: SettingsNavRow(
+              key: const Key('settings_data_management'),
+              icon: Icons.backup_outlined,
+              title: l10n.dataTitle,
+              subtitle: l10n.dataExportBody,
+              onTap: () => open(const QazaDataManagementScreen()),
             ),
           ),
           const SizedBox(height: 12),
