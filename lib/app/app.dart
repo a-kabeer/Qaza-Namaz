@@ -6,7 +6,6 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../core/time/local_date_service.dart';
 import '../core/theme/app_theme.dart';
-import '../core/widgets/app_scaffold.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../features/onboarding/startup_gate.dart';
 import '../l10n/app_localizations.dart';

@@ -30,8 +30,7 @@ class HomeQazaTargetSheet extends ConsumerStatefulWidget {
       _HomeQazaTargetSheetState();
 }
 
-class _HomeQazaTargetSheetState
-    extends ConsumerState<HomeQazaTargetSheet> {
+class _HomeQazaTargetSheetState extends ConsumerState<HomeQazaTargetSheet> {
   bool _showPrayerTimeSetup = false;
 
   void _openPrayerTimeSetup(BuildContext context) {
@@ -48,8 +47,7 @@ class _HomeQazaTargetSheetState
     final notifier = ref.read(homePrayerSelectionProvider.notifier);
     final witrAllowed = ref.read(effectiveWitrProvider);
 
-    if (mode != HomePrayerSelectionMode.prayerTime &&
-        _showPrayerTimeSetup) {
+    if (mode != HomePrayerSelectionMode.prayerTime && _showPrayerTimeSetup) {
       setState(() => _showPrayerTimeSetup = false);
     }
 
@@ -104,8 +102,9 @@ class _HomeQazaTargetSheetState
                   key: const Key('home_qaza_target_mode_prayer_time'),
                   icon: Icons.schedule_outlined,
                   title: l10n.prayerTimeTitle,
-                  selected: selection.mode == HomePrayerSelectionMode.prayerTime ||
-                      _showPrayerTimeSetup,
+                  selected:
+                      selection.mode == HomePrayerSelectionMode.prayerTime ||
+                          _showPrayerTimeSetup,
                   onTap: () => _selectMode(
                     context,
                     HomePrayerSelectionMode.prayerTime,
@@ -138,7 +137,8 @@ class _HomeQazaTargetSheetState
                                   key: const Key(
                                     'home_qaza_target_setup_prayer_times',
                                   ),
-                                  onPressed: () => _openPrayerTimeSetup(context),
+                                  onPressed: () =>
+                                      _openPrayerTimeSetup(context),
                                   icon: const Icon(Icons.settings_outlined),
                                   label: Text(l10n.prayerTimeSetupTitle),
                                 ),
@@ -164,8 +164,8 @@ class _HomeQazaTargetSheetState
                   key: const Key('home_qaza_target_mode_prayer_selection'),
                   icon: Icons.touch_app_outlined,
                   title: l10n.homePrayerSelection,
-                  selected: selection.mode ==
-                      HomePrayerSelectionMode.prayerSelection,
+                  selected:
+                      selection.mode == HomePrayerSelectionMode.prayerSelection,
                   onTap: () => _selectMode(
                     context,
                     HomePrayerSelectionMode.prayerSelection,
@@ -175,28 +175,28 @@ class _HomeQazaTargetSheetState
                 AnimatedSize(
                   duration: const Duration(milliseconds: 150),
                   alignment: Alignment.topCenter,
-                  child: selection.mode ==
-                          HomePrayerSelectionMode.prayerSelection
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: PrayerSelectionGrid(
-                            key: const Key('home_qaza_target_prayer_grid'),
-                            selected: {
-                              selection.selectedPrayer ?? PrayerType.fajr,
-                            },
-                            witrAllowed: witrAllowed,
-                            disabledPrayers: disabledPrayers,
-                            onPrayerSelected: (prayer) {
-                              ref
-                                  .read(
-                                    homePrayerSelectionProvider.notifier,
-                                  )
-                                  .selectPrayer(prayer);
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+                  child:
+                      selection.mode == HomePrayerSelectionMode.prayerSelection
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: PrayerSelectionGrid(
+                                key: const Key('home_qaza_target_prayer_grid'),
+                                selected: {
+                                  selection.selectedPrayer ?? PrayerType.fajr,
+                                },
+                                witrAllowed: witrAllowed,
+                                disabledPrayers: disabledPrayers,
+                                onPrayerSelected: (prayer) {
+                                  ref
+                                      .read(
+                                        homePrayerSelectionProvider.notifier,
+                                      )
+                                      .selectPrayer(prayer);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                 ),
               ],
             ),

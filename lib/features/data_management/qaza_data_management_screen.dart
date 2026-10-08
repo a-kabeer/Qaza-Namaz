@@ -1,18 +1,19 @@
-import 'dart:typed_data';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/providers.dart';
-import '../../core/constants/app_metadata.dart';
 import '../../core/diagnostics/diagnostics.dart';
-import '../../core/errors/app_error.dart';
-import '../../core/errors/app_error_messages.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
+import '../../data/data_transfer/local_backup_service.dart';
+import '../../features/home/providers/home_providers.dart';
 import '../../l10n/app_localizations.dart';
-import '../../data/data_transfer/qaza_data_transfer_service.dart';
 
 class QazaDataManagementScreen extends ConsumerStatefulWidget {
   const QazaDataManagementScreen({super.key});
@@ -27,29 +28,30 @@ class _QazaDataManagementScreenState
   bool _busy = false;
 
   Future<void> _export() async {
-    final userId = ref.read(requiredUserIdProvider);
-    final dialogTitle = AppLocalizations.of(context).dataExportDialogTitle;
     setState(() => _busy = true);
     try {
-      final json = await ref
-          .read(qazaDataTransferServiceProvider)
-          .exportJson(userId: userId, appVersion: appVersion);
-      final bytes = Uint8List.fromList(json.codeUnits);
-      final savedUri = await FilePicker.saveFile(
-        dialogTitle: dialogTitle,
-        fileName: 'qaza_namaz_export_v1.json',
-        mimeType: 'application/json',
-        type: FileType.custom,
-        allowedExtensions: const ['json'],
-        bytes: bytes,
+      final json = await ref.read(localBackupServiceProvider).exportJson();
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/qaza_backup_latest.json');
+      await file.writeAsString(json, encoding: utf8);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/json')],
+        ),
       );
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context);
-      _showMessage(
-        savedUri == null ? l10n.dataExportCanceled : l10n.dataExportSaved,
-        success: savedUri != null,
-      );
-    } catch (error) {
+      if (mounted) {
+        _showMessage(
+          AppLocalizations.of(context).dataExportSaved,
+          success: true,
+        );
+      }
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.importData,
+            'local_backup_export_failed',
+            error,
+            stack: stack,
+          );
       if (mounted) {
         _showMessage(
           AppLocalizations.of(context).dataExportFailed(error.toString()),
@@ -62,7 +64,7 @@ class _QazaDataManagementScreenState
   }
 
   Future<void> _import() async {
-    final userId = ref.read(requiredUserIdProvider);
+    final l10n = AppLocalizations.of(context);
     setState(() => _busy = true);
     try {
       final picked = await FilePicker.pickFile(
@@ -71,77 +73,86 @@ class _QazaDataManagementScreenState
       );
       if (picked == null) {
         if (mounted) {
-          _showMessage(
-            AppLocalizations.of(context).dataImportCanceled,
-          );
+          _showMessage(AppLocalizations.of(context).dataImportCanceled);
         }
         return;
       }
 
       final bytes = await picked.readAsBytes();
       if (bytes.isEmpty) {
-        throw const FormatException(
-          'The selected file is empty or unreadable.',
-        );
+        throw LocalBackupException(l10n.dataImportEmptyFile);
       }
 
-      final analysis =
-          await ref.read(qazaDataTransferServiceProvider).analyzeImport(
-                jsonText: String.fromCharCodes(bytes),
-                userId: userId,
-              );
-      if (!mounted) return;
+      final jsonText = utf8.decode(bytes, allowMalformed: false);
+      final service = ref.read(localBackupServiceProvider);
+      final analysis = await service.analyzeImport(jsonText);
 
+      if (!mounted) return;
       final confirmed = await _confirmImport(analysis);
       if (!confirmed || !mounted) return;
 
-      final applied =
-          await ref.read(qazaDataTransferServiceProvider).applyImport(analysis);
+      final restored = await service.importJson(jsonText);
       ref.invalidate(progressSummaryProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(appRouteProvider);
+      ref.invalidate(homeDashboardActivityProvider);
+      ref.invalidate(homeDailyProgressProvider);
+      ref.invalidate(homeQazaActivityCurrentWeekProvider);
+      ref.invalidate(homeQazaActivityDailyGoalsProvider);
+      ref.invalidate(homeFallbackPendingProvider);
+
       if (mounted) {
         _showMessage(
-          AppLocalizations.of(context).dataImportComplete(
-            applied.addedCount,
-            applied.completedCount,
-            applied.unchangedCount,
-          ),
+          l10n.dataImportRestored(restored.recordCount),
           success: true,
         );
       }
     } catch (error, stack) {
       ref.read(diagnosticsProvider).recordFailure(
             DiagnosticArea.importData,
-            'import_failed',
+            'local_backup_import_failed',
             error,
             stack: stack,
           );
       if (mounted) {
-        _showMessage(
-          AppError.from(error).message(context),
-          error: true,
-        );
+        final message = error is LocalBackupException
+            ? error.message
+            : AppLocalizations.of(context).dataImportRejected(
+                error.toString(),
+              );
+        _showMessage(message, error: true);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<bool> _confirmImport(QazaImportAnalysis analysis) async {
+  Future<bool> _confirmImport(LocalBackupAnalysis analysis) async {
+    final l10n = AppLocalizations.of(context);
+    final onboardingState = analysis.onboardingCompleted
+        ? l10n.dataImportOnboardingComplete
+        : l10n.dataImportOnboardingIncomplete;
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context).dataImportReviewTitle),
+        title: Text(l10n.dataImportReviewTitle),
         content: Text(
-          '${analysis.totalCount} valid records found.\n\nNew: ${analysis.newCount}\nWill be marked completed: ${analysis.completionCount}\nAlready present/unchanged: ${analysis.unchangedCount}\n\nExisting records are never blindly overwritten.\n\nImport changes only the local Qaza ledger on this device.',
+          l10n.dataImportRestoreSummary(
+            analysis.recordCount,
+            analysis.accountCount,
+            analysis.dbRevision,
+            onboardingState,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context).commonCancel),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(AppLocalizations.of(context).dataImportAction),
+            child: Text(l10n.dataImportAction),
           ),
         ],
       ),
@@ -204,15 +215,8 @@ class _QazaDataManagementScreenState
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(AppLocalizations.of(context).dataSafetyTitle),
-                    const SizedBox(height: 8),
-                    Text(AppLocalizations.of(context).dataSafetyBody),
-                    const SizedBox(height: 8),
-                    Text(AppLocalizations.of(context).dataRemapNote),
-                  ],
+                child: Text(
+                  AppLocalizations.of(context).dataLocalOnlyNote,
                 ),
               ),
             ),

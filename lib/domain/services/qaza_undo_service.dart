@@ -1,7 +1,3 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/qaza_completion_id.dart';
 import '../entities/qaza_completion_result.dart';
@@ -172,46 +168,34 @@ class QazaUndoBatch {
 }
 
 class QazaUndoStore {
-  const QazaUndoStore();
+  QazaUndoStore();
 
   static const Duration window = Duration(seconds: 5);
-  static const String _keyPrefix = 'qaza_undo_v3_';
 
-  String _key(String userId) => '$_keyPrefix$userId';
+  final Map<String, QazaUndoBatch> _batches = <String, QazaUndoBatch>{};
 
   Future<void> save({
     required String userId,
     required QazaUndoBatch batch,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key(userId), jsonEncode(batch.toJson()));
+    _batches[userId] = batch;
   }
 
   Future<QazaUndoBatch?> load({
     required String userId,
     required DateTime now,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key(userId));
-    if (raw == null) return null;
-
-    try {
-      final batch =
-          QazaUndoBatch.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-      if (batch.isExpired(now)) {
-        await prefs.remove(_key(userId));
-        return null;
-      }
-      return batch;
-    } catch (_) {
-      await prefs.remove(_key(userId));
+    final batch = _batches[userId];
+    if (batch == null) return null;
+    if (batch.isExpired(now)) {
+      _batches.remove(userId);
       return null;
     }
+    return batch;
   }
 
   Future<void> clear({required String userId}) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key(userId));
+    _batches.remove(userId);
   }
 }
 
@@ -231,7 +215,7 @@ class QazaUndoManager {
   QazaUndoManager({
     QazaUndoStore? store,
     DateTime Function()? now,
-  })  : _store = store ?? const QazaUndoStore(),
+  })  : _store = store ?? QazaUndoStore(),
         _now = now ?? DateTime.now;
 
   final QazaUndoStore _store;
@@ -395,9 +379,7 @@ class QazaUndoManager {
       final useActiveSelection = active != null &&
           (expectedBatch == null || active.matches(expectedBatch));
 
-      final batch = useActiveSelection
-          ? active
-          : await restore(userId: userId);
+      final batch = useActiveSelection ? active : await restore(userId: userId);
       if (batch == null) {
         throw const QazaUndoException(
           reason: QazaUndoFailureReason.expired,
@@ -424,8 +406,7 @@ class QazaUndoManager {
       final changedIds = await service.undoCompletions(
         userId: userId,
         expectedCompletionIds: {
-          for (final entry in targetEntries)
-            entry.recordId: entry.completionId,
+          for (final entry in targetEntries) entry.recordId: entry.completionId,
         },
         undoneAt: _now(),
       );

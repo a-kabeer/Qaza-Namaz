@@ -89,8 +89,7 @@ void main() {
                 for (var day = 1; day <= 27; day++)
                   DateTime(2026, 9, day): {PrayerType.fajr},
               },
-              dateSelectablePredicate: (date) =>
-                  date != DateTime(2026, 9, 11),
+              dateSelectablePredicate: (date) => date != DateTime(2026, 9, 11),
             ),
           ),
         ),
@@ -119,9 +118,9 @@ void main() {
     addTearDown(container.dispose);
 
     container.read(calendarControllerProvider.notifier).restoreSelection(
-          mode: DateSelectionMode.single,
-          dates: [selected],
-        );
+      mode: DateSelectionMode.single,
+      dates: [selected],
+    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -159,9 +158,9 @@ void main() {
     addTearDown(container.dispose);
 
     container.read(calendarControllerProvider.notifier).restoreSelection(
-          mode: DateSelectionMode.range,
-          dates: [start, end],
-        );
+      mode: DateSelectionMode.range,
+      dates: [start, end],
+    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -310,5 +309,4 @@ void main() {
 
     expect(find.text('November 2025'), findsOneWidget);
   });
-
 }

@@ -71,8 +71,9 @@ class QazaAdditionInputSnapshot {
             .map(QazaDate.normalize)
             .map((date) => date.toIso8601String())
             .toList(growable: false),
-        'selectedPrayers':
-            selectedPrayers.map((prayer) => prayer.name).toList(growable: false),
+        'selectedPrayers': selectedPrayers
+            .map((prayer) => prayer.name)
+            .toList(growable: false),
       };
 
   factory QazaAdditionInputSnapshot.fromJson(Map<String, dynamic> json) {

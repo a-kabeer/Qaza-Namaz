@@ -24,8 +24,7 @@ DateTime firstGregorianDateAtOrAfterFixedAge(
   DateTime dob,
   int age,
 ) {
-  final target =
-      age * FixedHijriArithmeticService.daysPerYear;
+  final target = age * FixedHijriArithmeticService.daysPerYear;
   for (var offset = 0; offset <= 6000; offset++) {
     final candidate = dob.add(Duration(days: offset));
     if (FixedHijriArithmeticService.dayIndexForGregorian(candidate) -
@@ -38,7 +37,9 @@ DateTime firstGregorianDateAtOrAfterFixedAge(
 }
 
 void main() {
-  test('fixedMilestoneDate is a fixed Gregorian projection, not a Hijri anniversary', () {
+  test(
+      'fixedMilestoneDate is a fixed Gregorian projection, not a Hijri anniversary',
+      () {
     final dob = DateTime(2018, 11, 12);
     final projected = ProfileRules.fixedMilestoneDate(dob, 5);
 
@@ -59,7 +60,9 @@ void main() {
     );
   });
 
-  test('pubertyDate and startPrayingDate use the same fixed arithmetic projection', () {
+  test(
+      'pubertyDate and startPrayingDate use the same fixed arithmetic projection',
+      () {
     final profile = makeProfile(
       dob: DateTime(2018, 11, 12),
       pubertyAge: 5,
@@ -131,7 +134,9 @@ void main() {
     );
   });
 
-  test('30th Hijri DOB stays valid without target-month clamping changing Qaza age', () {
+  test(
+      '30th Hijri DOB stays valid without target-month clamping changing Qaza age',
+      () {
     int? sourceYear;
     for (var year = 1400; year < 1499; year++) {
       if (HijriDateService.daysInMonth(year: year, month: 9) == 30 &&
@@ -180,7 +185,9 @@ void main() {
     }
   });
 
-  test('profile validation rejects a start-praying age before fixed current age is reached', () {
+  test(
+      'profile validation rejects a start-praying age before fixed current age is reached',
+      () {
     final dob = DateTime(2018, 11, 12);
     final profile = makeProfile(
       dob: dob,
@@ -201,7 +208,8 @@ void main() {
     );
   });
 
-  test('available age controls only expose reached, materializable milestones', () {
+  test('available age controls only expose reached, materializable milestones',
+      () {
     final today = DateTime(2026, 10, 1);
     final dob = DateTime(2000, 1, 1);
     final profile = makeProfile(

@@ -19,8 +19,7 @@ class ProfileSaveResult {
   final bool keptExistingQaza;
   final QazaPlanRevision? revision;
 
-  bool get ledgerChanged =>
-      qazaRecordsAdded > 0 || qazaRecordsRemoved > 0;
+  bool get ledgerChanged => qazaRecordsAdded > 0 || qazaRecordsRemoved > 0;
 }
 
 class SaveProfileUseCase {
@@ -121,6 +120,4 @@ class SaveProfileUseCase {
       rethrow;
     }
   }
-
-
 }

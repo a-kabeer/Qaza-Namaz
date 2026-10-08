@@ -6,7 +6,8 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/features/qaza/qaza_tracker_controller.dart';
 
 void main() {
-  test('Reset clears filters while preserving the current status workspace', () {
+  test('Reset clears filters while preserving the current status workspace',
+      () {
     final state = QazaTrackerState(
       statusFilter: QazaStatusFilter.completed,
       prayerFilter: PrayerType.fajr,
@@ -135,7 +136,8 @@ void main() {
     expect(container.read(provider).sortOrder, QazaSortOrder.newestFirst);
   });
 
-  test('Same-status filter request preserves explicit sort selection', () async {
+  test('Same-status filter request preserves explicit sort selection',
+      () async {
     final container = ProviderContainer(
       overrides: [
         activeUserIdProvider.overrideWithValue(null),

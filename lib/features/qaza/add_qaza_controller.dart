@@ -90,8 +90,7 @@ class AddQazaState {
       PrayerType.maghrib,
       PrayerType.isha,
     },
-    this.selectedDateAvailability =
-        const <DateTime, Set<PrayerType>>{},
+    this.selectedDateAvailability = const <DateTime, Set<PrayerType>>{},
     this.calendarAvailability = const <DateTime, Set<PrayerType>>{},
     this.calendarLoading = true,
     this.prayerAvailabilityLoading = false,
@@ -192,8 +191,7 @@ class AddQazaState {
         addablePrayers: addablePrayers ?? this.addablePrayers,
         selectedDateAvailability:
             selectedDateAvailability ?? this.selectedDateAvailability,
-        calendarAvailability:
-            calendarAvailability ?? this.calendarAvailability,
+        calendarAvailability: calendarAvailability ?? this.calendarAvailability,
         calendarLoading: calendarLoading ?? this.calendarLoading,
         prayerAvailabilityLoading:
             prayerAvailabilityLoading ?? this.prayerAvailabilityLoading,
@@ -398,6 +396,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       _prayerTimeRefreshInFlight = false;
     }
   }
+
   void setMode(DateSelectionMode mode) {
     final current = state;
     if (mode == current.mode) return;
@@ -550,8 +549,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
       final newKeys = raw.newCandidates.toSet();
       final existingKeys = raw.existingCandidates.toSet();
-      final currentEditableKeys =
-          raw.currentAdditionEditableCandidates.toSet();
+      final currentEditableKeys = raw.currentAdditionEditableCandidates.toSet();
       final currentProtectedKeys =
           raw.currentAdditionProtectedCandidates.toSet();
 
@@ -678,11 +676,11 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     final allowed = _profileAllowedPrayers(profile).toSet();
     if (dates.isEmpty) {
       final selected = Set<PrayerType>.of(state.selectedPrayers)
-        ..retainAll({...allowed, ...state.protectedPrayers, ...state.addablePrayers});
+        ..retainAll(
+            {...allowed, ...state.protectedPrayers, ...state.addablePrayers});
       state = state.copyWith(
         addablePrayers: Set.unmodifiable(allowed),
-        selectedDateAvailability:
-            const <DateTime, Set<PrayerType>>{},
+        selectedDateAvailability: const <DateTime, Set<PrayerType>>{},
         selectedPrayers: Set.unmodifiable(selected),
         timeBlockedPrayers: const <PrayerType>{},
         prayerAvailabilityLoading: false,
@@ -694,8 +692,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
     final request = ++_prayerAvailabilityRequest;
     state = state.copyWith(
-      selectedDateAvailability:
-          const <DateTime, Set<PrayerType>>{},
+      selectedDateAvailability: const <DateTime, Set<PrayerType>>{},
       prayerAvailabilityLoading: true,
       analysis: AddQazaAnalysis.empty,
       clearError: true,
@@ -705,7 +702,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       final prayerTimeContext = await _resolvePrayerTimeContext();
       final analysisPrayers = {
         ...allowed,
-        ...(_editingAdditionId == null ? const <PrayerType>{} : state.selectedPrayers),
+        ...(_editingAdditionId == null
+            ? const <PrayerType>{}
+            : state.selectedPrayers),
       };
       final raw = await ref.read(qazaServiceProvider).analyzeAvailability(
             userId: ref.read(requiredUserIdProvider),
@@ -752,8 +751,8 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
       );
       final normalizedAvailability = <DateTime, Set<PrayerType>>{
         for (final date in normalizedDates)
-          QazaDate.normalize(date):
-              Set.unmodifiable(availableByDate[QazaDate.normalize(date)] ??
+          QazaDate.normalize(date): Set.unmodifiable(
+              availableByDate[QazaDate.normalize(date)] ??
                   const <PrayerType>{}),
       };
       final addable = {
@@ -794,9 +793,9 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
 
       final currentCalendar = ref.read(calendarControllerProvider);
       if (!_sameDates(
-        currentCalendar.datesForStorage,
-        normalizedDates,
-      ) ||
+            currentCalendar.datesForStorage,
+            normalizedDates,
+          ) ||
           currentCalendar.selectionMode != state.mode) {
         _restoreCalendarSelection(
           mode: state.mode,
@@ -862,8 +861,7 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
     if (normalized.isAfter(today)) return false;
 
     final start = ProfileRules.startPrayingDate(profile);
-    if (start != null &&
-        normalized.isBefore(QazaDate.normalize(start))) {
+    if (start != null && normalized.isBefore(QazaDate.normalize(start))) {
       return false;
     }
 
@@ -877,5 +875,4 @@ class AddQazaController extends AutoDisposeNotifier<AddQazaState> {
         DateTime(month.year, month.month, day),
     ];
   }
-
 }

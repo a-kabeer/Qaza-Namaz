@@ -69,9 +69,11 @@ class PrayerSchedule {
           for (final entry in timesUtc.entries)
             entry.key.name: entry.value.toUtc().toIso8601String(),
         },
-        'astronomicalSunriseUtc': astronomicalSunriseUtc.toUtc().toIso8601String(),
+        'astronomicalSunriseUtc':
+            astronomicalSunriseUtc.toUtc().toIso8601String(),
         'astronomicalDhuhrUtc': astronomicalDhuhrUtc.toUtc().toIso8601String(),
-        'astronomicalSunsetUtc': astronomicalSunsetUtc.toUtc().toIso8601String(),
+        'astronomicalSunsetUtc':
+            astronomicalSunsetUtc.toUtc().toIso8601String(),
       };
 
   static PrayerSchedule? fromJson(Map<String, dynamic> json) {
@@ -100,7 +102,8 @@ class PrayerSchedule {
     return PrayerSchedule(
       date: DateTime(date.year, date.month, date.day),
       timesUtc: Map.unmodifiable(times),
-      astronomicalSunriseUtc: (rawSunrise ?? times[PrayerSlot.sunrise]!).toUtc(),
+      astronomicalSunriseUtc:
+          (rawSunrise ?? times[PrayerSlot.sunrise]!).toUtc(),
       astronomicalDhuhrUtc: (rawDhuhr ?? times[PrayerSlot.dhuhr]!).toUtc(),
       astronomicalSunsetUtc: (rawSunset ?? times[PrayerSlot.maghrib]!).toUtc(),
     );
@@ -163,7 +166,9 @@ class PrayerTimeSnapshot {
     final updatedAt = DateTime.tryParse(updatedRaw);
     final calculationMadhabName = json['calculationMadhab'];
     final calculationMadhab = calculationMadhabName is String
-        ? Madhab.values.where((value) => value.name == calculationMadhabName).firstOrNull
+        ? Madhab.values
+            .where((value) => value.name == calculationMadhabName)
+            .firstOrNull
         : null;
     if (location == null ||
         today == null ||

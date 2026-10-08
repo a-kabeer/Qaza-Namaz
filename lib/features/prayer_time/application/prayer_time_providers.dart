@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../app/providers.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/constants/prayer_types.dart';
@@ -27,14 +29,15 @@ final prayerTimeTargetAvailabilityProvider =
 });
 
 final prayerTimeCacheProvider = Provider<PrayerTimeCache>(
-  (ref) => PrayerTimeCache(),
+  (ref) => PrayerTimeCache(ref.watch(appDatabaseProvider)),
 );
 
 final offlineCityResolverProvider = Provider<OfflineCityResolver>(
   (ref) => OfflineCityResolver(),
 );
 
-final offlineCityCatalogProvider = FutureProvider<OfflineCityCatalog>((ref) async {
+final offlineCityCatalogProvider =
+    FutureProvider<OfflineCityCatalog>((ref) async {
   final catalog = OfflineCityCatalog();
   await catalog.load();
   return catalog;
@@ -65,10 +68,12 @@ final prayerTimeRefreshProvider = StateProvider<bool>((ref) => false);
 final prayerTimeShowAllRestrictedTimesProvider =
     StateProvider.autoDispose<bool>((ref) => false);
 
-final prayerTimeControllerProvider = AsyncNotifierProvider<
-    PrayerTimeController, PrayerTimeSnapshot?>(PrayerTimeController.new);
+final prayerTimeControllerProvider =
+    AsyncNotifierProvider<PrayerTimeController, PrayerTimeSnapshot?>(
+        PrayerTimeController.new);
 
-final prayerTimeClockProvider = StreamProvider.autoDispose<DateTime>((ref) async* {
+final prayerTimeClockProvider =
+    StreamProvider.autoDispose<DateTime>((ref) async* {
   yield DateTime.now();
   while (true) {
     await Future<void>.delayed(const Duration(seconds: 1));
@@ -151,8 +156,8 @@ final qazaPrayerTimeEligibilitySignatureProvider =
     context.hasSchedule.toString(),
     for (final prayer in PrayerType.values)
       '${prayer.name}:'
-      '${service.evaluate(date: context.localToday, prayerType: prayer, context: context).name}:'
-      '${context.cutoffFor(prayer)?.millisecondsSinceEpoch ?? -1}',
+          '${service.evaluate(date: context.localToday, prayerType: prayer, context: context).name}:'
+          '${context.cutoffFor(prayer)?.millisecondsSinceEpoch ?? -1}',
   ].join('|');
 });
 
@@ -203,9 +208,7 @@ final currentPrayerStateProvider =
     final prayer = prayers[i];
     final time = today.localFor(prayer, location);
     if (!localNow.isBefore(time)) {
-      final next = i + 1 < prayers.length
-          ? prayers[i + 1]
-          : PrayerSlot.fajr;
+      final next = i + 1 < prayers.length ? prayers[i + 1] : PrayerSlot.fajr;
       final nextAt = i + 1 < prayers.length
           ? today.localFor(next, location)
           : tomorrow.localFor(PrayerSlot.fajr, location);

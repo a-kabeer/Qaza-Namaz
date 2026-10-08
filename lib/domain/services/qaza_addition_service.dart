@@ -270,8 +270,7 @@ class QazaAdditionService {
     if (normalizedToday != null && normalized.isAfter(normalizedToday)) {
       return false;
     }
-    if (normalizedEarliest != null &&
-        normalized.isBefore(normalizedEarliest)) {
+    if (normalizedEarliest != null && normalized.isBefore(normalizedEarliest)) {
       return false;
     }
     return true;

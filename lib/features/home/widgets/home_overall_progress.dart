@@ -29,75 +29,75 @@ class HomeOverallProgress extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: LayoutBuilder(
-          builder: (context, constraints) {
-            final stats = Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final title = Text(
-                      l10n.homeOverallQaza,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    );
-                    if (constraints.maxWidth < 300) {
-                      return title;
-                    }
-                    return Row(
-                      children: [
-                        Expanded(child: title),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                HomeStatLine(
-                  key: const Key('home_completed_value'),
-                  label: l10n.homeCompleted,
-                  value: DateFormatters.formatCount(progress.completed),
-                  color: AppChartColors.of(context).completed,
-                ),
-                HomeStatLine(
-                  key: const Key('home_pending_value'),
-                  label: l10n.homePending,
-                  value: DateFormatters.formatCount(progress.pending),
-                  color: AppChartColors.of(context).pending,
-                ),
-                HomeStatLine(
-                  key: const Key('home_total_value'),
-                  label: l10n.homeStatTotal,
-                  value: DateFormatters.formatCount(progress.total),
-                  color: AppChartColors.of(context).total,
-                ),
-              ],
-            );
-  
-            final donut = _OverviewDonut(progress: progress.percentage);
-  
-            if (constraints.maxWidth < 520) {
-              return Column(
+            builder: (context, constraints) {
+              final stats = Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      donut,
-                      const SizedBox(width: 16),
-                      Expanded(child: stats),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final title = Text(
+                        l10n.homeOverallQaza,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      );
+                      if (constraints.maxWidth < 300) {
+                        return title;
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: title),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  HomeStatLine(
+                    key: const Key('home_completed_value'),
+                    label: l10n.homeCompleted,
+                    value: DateFormatters.formatCount(progress.completed),
+                    color: AppChartColors.of(context).completed,
+                  ),
+                  HomeStatLine(
+                    key: const Key('home_pending_value'),
+                    label: l10n.homePending,
+                    value: DateFormatters.formatCount(progress.pending),
+                    color: AppChartColors.of(context).pending,
+                  ),
+                  HomeStatLine(
+                    key: const Key('home_total_value'),
+                    label: l10n.homeStatTotal,
+                    value: DateFormatters.formatCount(progress.total),
+                    color: AppChartColors.of(context).total,
                   ),
                 ],
               );
-            }
-  
-            return Row(
-              children: [
-                donut,
-                const SizedBox(width: 24),
-                Expanded(child: stats),
-              ],
-            );
+
+              final donut = _OverviewDonut(progress: progress.percentage);
+
+              if (constraints.maxWidth < 520) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        donut,
+                        const SizedBox(width: 16),
+                        Expanded(child: stats),
+                      ],
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  donut,
+                  const SizedBox(width: 24),
+                  Expanded(child: stats),
+                ],
+              );
             },
           ),
         ),

@@ -90,12 +90,14 @@ class _DailyGoalsContent extends StatelessWidget {
                 children: [
                   Text(
                     l10n.homeDailyGoalsTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     l10n.homeLastSevenDays,
-                    style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -110,19 +112,22 @@ class _DailyGoalsContent extends StatelessWidget {
               width: 56,
               child: Semantics(
                 container: true,
-                label: '${period.goalDays}/${period.days.length} ${l10n.homeGoalsAchieved}',
+                label:
+                    '${period.goalDays}/${period.days.length} ${l10n.homeGoalsAchieved}',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '${period.goalDays}/${period.days.length}',
                       key: const Key('home_daily_goals_achievement'),
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 1),
                     Text(
                       l10n.homeGoalsAchieved,
-                      style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -130,7 +135,8 @@ class _DailyGoalsContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _DailyGoalsChart(period: period, locale: locale, maxY: maxY),
+              child:
+                  _DailyGoalsChart(period: period, locale: locale, maxY: maxY),
             ),
           ],
         ),
@@ -140,7 +146,8 @@ class _DailyGoalsContent extends StatelessWidget {
 }
 
 class _DailyGoalsChart extends StatelessWidget {
-  const _DailyGoalsChart({required this.period, required this.locale, required this.maxY});
+  const _DailyGoalsChart(
+      {required this.period, required this.locale, required this.maxY});
 
   final QazaActivityPeriod period;
   final String locale;
@@ -166,9 +173,12 @@ class _DailyGoalsChart extends StatelessWidget {
             gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -179,7 +189,8 @@ class _DailyGoalsChart extends StatelessWidget {
                     if (index < 0 || index >= period.days.length) {
                       return const SizedBox.shrink();
                     }
-                    final label = DateFormat('EEEEE', locale).format(period.days[index].date);
+                    final label = DateFormat('EEEEE', locale)
+                        .format(period.days[index].date);
                     return SideTitleWidget(
                       meta: meta,
                       child: Text(

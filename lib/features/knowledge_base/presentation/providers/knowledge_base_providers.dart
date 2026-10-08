@@ -1,9 +1,8 @@
 import 'package:flutter/widgets.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../../app/providers.dart';
 import '../../data/bundled_knowledge_base_repository.dart';
 import '../../data/knowledge_base_repository.dart';
@@ -54,8 +53,13 @@ class KnowledgeLanguageNotifier extends Notifier<KnowledgeLanguage> {
 
   Future<void> restore() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final stored = KnowledgeLanguage.fromCode(prefs.getString(storageKey));
+      final rows = await ref.read(appDatabaseProvider).customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable.withString(storageKey)],
+      ).get();
+      if (rows.isEmpty) return;
+      final stored =
+          KnowledgeLanguage.fromCode(rows.first.read<String>('value'));
       if (stored == null) return;
       _chosen = stored;
       state = stored;
@@ -72,8 +76,15 @@ class KnowledgeLanguageNotifier extends Notifier<KnowledgeLanguage> {
 
   Future<void> _persist(KnowledgeLanguage language) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, language.code);
+      await ref.read(appDatabaseProvider).customUpdate(
+        '''INSERT INTO meta_store (key, value)
+           VALUES (?, ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [
+          Variable.withString(storageKey),
+          Variable.withString(language.code),
+        ],
+      );
     } catch (_) {
       // Persistence failure must not break the in-session choice.
     }

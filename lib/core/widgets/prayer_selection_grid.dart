@@ -52,9 +52,8 @@ class PrayerSelectionGrid extends StatelessWidget {
         final enabled = !disabledByAvailability;
         final isSelected = selected.contains(prayer);
         final label = prayer.localizedLabel(l10n);
-        final reason = disabledByAvailability
-            ? disabledReasonBuilder?.call(prayer)
-            : null;
+        final reason =
+            disabledByAvailability ? disabledReasonBuilder?.call(prayer) : null;
 
         return Semantics(
           button: true,

@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/home_state.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
@@ -39,15 +41,37 @@ void main() {
     PrayerType cursor = PrayerType.fajr,
     PrayerType selectedPrayer = PrayerType.fajr,
   }) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'qaza_home_completion_mode': mode.name,
-      'qaza_home_auto_sequence_prayer': cursor.name,
-      'qaza_home_selected_prayer': selectedPrayer.name,
-    });
+    final database = AppDatabase(NativeDatabase.memory());
+    await database.customInsert(
+      '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable.withString('qaza_home_completion_mode'),
+        Variable.withString(mode.name),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable.withString('qaza_home_auto_sequence_prayer'),
+        Variable.withString(cursor.name),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable.withString('qaza_home_selected_prayer'),
+        Variable.withString(selectedPrayer.name),
+      ],
+    );
+    addTearDown(database.close);
 
     final summary = summaryFor(pending);
     final container = ProviderContainer(
       overrides: [
+        appDatabaseProvider.overrideWithValue(database),
         progressSummaryProvider.overrideWith((ref) => Future.value(summary)),
         currentQazaPrayerTypeProvider.overrideWith(
           (ref) => currentPrayer,
@@ -88,7 +112,9 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.autoSequence);
     });
 
-    test('Auto Sequence does not resolve a later prayer type from pending counts', () async {
+    test(
+        'Auto Sequence does not resolve a later prayer type from pending counts',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.zuhr,
@@ -118,7 +144,9 @@ void main() {
       expect(selected.prayer, PrayerType.fajr);
     });
 
-    test('Persisted Auto Sequence cursor is not used to choose a pending record', () async {
+    test(
+        'Persisted Auto Sequence cursor is not used to choose a pending record',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.autoSequence,
         cursor: PrayerType.isha,
@@ -164,7 +192,8 @@ void main() {
       expect(selected.source, HomePrayerSelectionSource.prayerTime);
     });
 
-    test('Prayer Time falls back from Isha and zero-pending Witr to Fajr', () async {
+    test('Prayer Time falls back from Isha and zero-pending Witr to Fajr',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.prayerTime,
         currentPrayer: PrayerType.isha,
@@ -179,7 +208,9 @@ void main() {
       expect(selected.prayer, PrayerType.fajr);
     });
 
-    test('Prayer Time skips multiple zero-pending prayers before a later pending prayer', () async {
+    test(
+        'Prayer Time skips multiple zero-pending prayers before a later pending prayer',
+        () async {
       final selected = await resolve(
         mode: HomePrayerSelectionMode.prayerTime,
         currentPrayer: PrayerType.isha,

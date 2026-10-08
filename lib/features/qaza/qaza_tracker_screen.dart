@@ -62,8 +62,7 @@ class QazaTrackerScreen extends ConsumerWidget {
               icon: const Icon(Icons.close_rounded),
             ),
         ],
-        floatingActionButton:
-            state.selectionMode ? null : const AddQazaFab(),
+        floatingActionButton: state.selectionMode ? null : const AddQazaFab(),
         body: SafeArea(
           child: Column(
             children: [
@@ -488,10 +487,10 @@ class _PendingTrackerBody extends ConsumerWidget {
                             ? () => controller.toggleSelection(record.id)
                             : null)
                         : null,
-                    onLongPress: record.status == QazaStatus.pending &&
-                            !restricted
-                        ? () => controller.enterSelectionMode(record.id)
-                        : null,
+                    onLongPress:
+                        record.status == QazaStatus.pending && !restricted
+                            ? () => controller.enterSelectionMode(record.id)
+                            : null,
                     onSwipeComplete: state.selectionMode ||
                             record.status != QazaStatus.pending ||
                             !canAct ||
@@ -852,8 +851,7 @@ class _CompletedTrackerBody extends StatelessWidget {
                     selected: state.selected.contains(record.id),
                     selectionMode: selecting,
                     onTap: selecting
-                        ? () =>
-                            controller.toggleCompletedSelection(record.id)
+                        ? () => controller.toggleCompletedSelection(record.id)
                         : () => _openDetails(context, record),
                     onLongPress: () =>
                         controller.enterCompletedSelectionMode(record.id),
@@ -927,8 +925,7 @@ class _CompletedRecordRow extends StatelessWidget {
         DateFormatters.formatGregorianDatePadded(record.originalDate);
     final hijriDate = l10n.formatHijriDate(record.originalDate);
 
-    final semanticLabel =
-        '${record.prayerType.localizedLabel(l10n)}, '
+    final semanticLabel = '${record.prayerType.localizedLabel(l10n)}, '
         '$completionDate, $completionTime, '
         '$originalDate, $hijriDate';
 
@@ -1237,7 +1234,8 @@ class _FilterSheet extends ConsumerWidget {
 
   Future<void> _pickRange(BuildContext context, WidgetRef ref) async {
     final state = ref.read(qazaTrackerControllerProvider(additionId));
-    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
+    final controller =
+        ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
@@ -1257,7 +1255,8 @@ class _FilterSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(qazaTrackerControllerProvider(additionId));
-    final controller = ref.read(qazaTrackerControllerProvider(additionId).notifier);
+    final controller =
+        ref.read(qazaTrackerControllerProvider(additionId).notifier);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
     final l10n = AppLocalizations.of(context);
     return SafeArea(
@@ -1322,7 +1321,6 @@ class _FilterSheet extends ConsumerWidget {
   }
 }
 
-
 class _BulkCompletionBar extends StatelessWidget {
   const _BulkCompletionBar({
     required this.selectedCount,
@@ -1364,10 +1362,9 @@ class _BulkCompletionBar extends StatelessWidget {
               Expanded(
                 child: FilledButton(
                   key: const Key('qaza_tracker_complete_selected'),
-                  onPressed:
-                      busy || restricted || selectedCount == 0
-                          ? null
-                          : onComplete,
+                  onPressed: busy || restricted || selectedCount == 0
+                      ? null
+                      : onComplete,
                   child: Text(l10n.qazaCompleteCount(selectedCount)),
                 ),
               ),

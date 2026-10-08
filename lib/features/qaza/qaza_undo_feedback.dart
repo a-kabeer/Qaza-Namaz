@@ -78,30 +78,30 @@ Future<void> _undoFromSnack({
     }
   } on QazaUndoException catch (error, stack) {
     ref.read(diagnosticsProvider).recordFailure(
-      DiagnosticArea.qazaCompletion,
-      'batch_undo_start_failed',
-      error.cause ?? error,
-      stack: stack,
-    );
+          DiagnosticArea.qazaCompletion,
+          'batch_undo_start_failed',
+          error.cause ?? error,
+          stack: stack,
+        );
     if (!context.mounted) return;
     ref.read(appSnackbarServiceProvider).error(
-      qazaUndoFailureMessage(context, error.reason),
-    );
+          qazaUndoFailureMessage(context, error.reason),
+        );
     return;
   } catch (error, stack) {
     ref.read(diagnosticsProvider).recordFailure(
-      DiagnosticArea.qazaCompletion,
-      'batch_undo_start_failed',
-      error,
-      stack: stack,
-    );
+          DiagnosticArea.qazaCompletion,
+          'batch_undo_start_failed',
+          error,
+          stack: stack,
+        );
     if (!context.mounted) return;
     ref.read(appSnackbarServiceProvider).error(
-      qazaUndoFailureMessage(
-        context,
-        QazaUndoFailureReason.failed,
-      ),
-    );
+          qazaUndoFailureMessage(
+            context,
+            QazaUndoFailureReason.failed,
+          ),
+        );
     return;
   }
 
@@ -204,7 +204,6 @@ class _QazaUndoSelectionSheetState
   late QazaUndoBatch _batch = widget.initialBatch;
   final Set<String> _selected = <String>{};
   bool _working = false;
-
 
   String _title(BuildContext context) {
     return AppLocalizations.of(context).qazaUndoCompletions;
@@ -385,7 +384,8 @@ class _QazaUndoSelectionSheetState
                         },
                   title: Text(entry.prayerType.localizedLabel(l10n)),
                   subtitle: Text(
-                    DateFormatters.formatGregorianDatePadded(entry.originalDate),
+                    DateFormatters.formatGregorianDatePadded(
+                        entry.originalDate),
                   ),
                 );
               },
@@ -403,9 +403,8 @@ class _QazaUndoSelectionSheetState
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: _working || _selected.isEmpty
-                      ? null
-                      : _undoSelected,
+                  onPressed:
+                      _working || _selected.isEmpty ? null : _undoSelected,
                   child: Text(_undoSelectedLabel(context)),
                 ),
               ),

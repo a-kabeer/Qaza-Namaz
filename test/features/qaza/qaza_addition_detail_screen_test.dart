@@ -45,13 +45,15 @@ void main() {
     final hijri = find.text(HijriDateService.format(date, l10n));
     expect(gregorian, findsOneWidget);
     expect(hijri, findsOneWidget);
-    expect(tester.getTopLeft(gregorian).dy, lessThan(tester.getTopLeft(hijri).dy));
+    expect(
+        tester.getTopLeft(gregorian).dy, lessThan(tester.getTopLeft(hijri).dy));
     expect(find.text('Fajr'), findsOneWidget);
     expect(find.text('Isha'), findsOneWidget);
     expect(find.text('Revision'), findsNothing);
   });
 
-  testWidgets('Range mode shows both Gregorian/Hijri endpoints and inclusive days', (
+  testWidgets(
+      'Range mode shows both Gregorian/Hijri endpoints and inclusive days', (
     tester,
   ) async {
     final start = DateTime(2025, 3, 12);
@@ -77,8 +79,7 @@ void main() {
     final gregorian =
         '${MaterialLocalizations.of(context).formatMediumDate(start)} → '
         '${MaterialLocalizations.of(context).formatMediumDate(end)}';
-    final hijri =
-        '${HijriDateService.format(start, l10n)} → '
+    final hijri = '${HijriDateService.format(start, l10n)} → '
         '${HijriDateService.format(end, l10n)}';
 
     expect(find.text(gregorian), findsOneWidget);
@@ -135,7 +136,8 @@ void main() {
     expect(find.text(l10n.qazaHistoryHideDates), findsOneWidget);
   });
 
-  testWidgets('Prayer chips use canonical order and include Witr', (tester) async {
+  testWidgets('Prayer chips use canonical order and include Witr',
+      (tester) async {
     final detail = _detail(
       mode: QazaAdditionMode.single,
       selectedDates: [DateTime(2025, 3, 12)],
@@ -219,7 +221,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Edit Addition pushes Add Qaza and Back returns to the same detail route', (
+  testWidgets(
+      'Edit Addition pushes Add Qaza and Back returns to the same detail route',
+      (
     tester,
   ) async {
     final detail = _detail(
@@ -253,7 +257,8 @@ void main() {
     expect(find.text('4 Records'), findsOneWidget);
   });
 
-  testWidgets('Completed-only additions hide edit/delete while keeping view records', (
+  testWidgets(
+      'Completed-only additions hide edit/delete while keeping view records', (
     tester,
   ) async {
     final detail = _detail(
@@ -272,7 +277,8 @@ void main() {
     expect(find.text('Delete Addition'), findsNothing);
   });
 
-  testWidgets('Deleted additions show status and hide all mutation actions', (tester) async {
+  testWidgets('Deleted additions show status and hide all mutation actions',
+      (tester) async {
     final detail = _detail(
       mode: QazaAdditionMode.single,
       selectedDates: [DateTime(2025, 3, 12)],
@@ -284,7 +290,8 @@ void main() {
 
     await _pumpDetail(tester, detail);
 
-    expect(find.byKey(const Key('qaza-addition-deleted-status')), findsOneWidget);
+    expect(
+        find.byKey(const Key('qaza-addition-deleted-status')), findsOneWidget);
     expect(find.text('Deleted'), findsOneWidget);
     expect(find.text('View Records'), findsOneWidget);
     expect(find.byKey(const Key('qaza-addition-more-actions')), findsNothing);
@@ -293,7 +300,8 @@ void main() {
     expect(find.text('Restore'), findsNothing);
   });
 
-  testWidgets('Pending additions show both edit and delete actions', (tester) async {
+  testWidgets('Pending additions show both edit and delete actions',
+      (tester) async {
     final detail = _detail(
       mode: QazaAdditionMode.single,
       selectedDates: [DateTime(2025, 3, 12)],

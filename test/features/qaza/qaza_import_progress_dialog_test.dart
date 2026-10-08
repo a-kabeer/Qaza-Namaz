@@ -85,7 +85,8 @@ void main() {
     expect(find.byType(TextButton), findsNothing);
   });
 
-  testWidgets('shows preparing state without a fake percentage', (tester) async {
+  testWidgets('shows preparing state without a fake percentage',
+      (tester) async {
     final controller = _TestImportController(const QazaImportTaskState(
       phase: QazaImportTaskPhase.preparing,
     ));

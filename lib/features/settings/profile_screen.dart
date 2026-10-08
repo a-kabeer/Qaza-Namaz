@@ -105,27 +105,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       ProfileSaveResult? saveResult;
       if (preview.requiresUserDecision) {
-        final totalWork =
-            preview.pendingAdditionKeys.length + preview.removalRecordIds.length;
+        final totalWork = preview.pendingAdditionKeys.length +
+            preview.removalRecordIds.length;
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
           builder: (_) => QazaImportProgressDialog(
             title: l10n.profileQazaApplying,
             onStart: () {
-              final started = ref
-                  .read(qazaImportProvider.notifier)
-                  .startProfilePlanApply(
-                    total: totalWork,
-                    operation: (onProgress) async {
-                      saveResult = await useCase.saveSettings(
-                        newProfile: finalizedProfile,
-                        preview: preview,
-                        choice: choice,
-                        onProgress: onProgress,
+              final started =
+                  ref.read(qazaImportProvider.notifier).startProfilePlanApply(
+                        total: totalWork,
+                        operation: (onProgress) async {
+                          saveResult = await useCase.saveSettings(
+                            newProfile: finalizedProfile,
+                            preview: preview,
+                            choice: choice,
+                            onProgress: onProgress,
+                          );
+                        },
                       );
-                    },
-                  );
               if (!started) {
                 throw StateError('Could not start profile Qaza update.');
               }

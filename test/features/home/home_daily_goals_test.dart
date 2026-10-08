@@ -38,15 +38,15 @@ QazaActivityPeriod _period({
 }
 
 Widget _app({required Widget child}) => MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('en'),
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-          useMaterial3: true,
-        ),
-        home: Scaffold(body: child),
-      );
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
+      ),
+      home: Scaffold(body: child),
+    );
 
 void main() {
   final today = DateTime(2026, 9, 30);
@@ -93,8 +93,7 @@ void main() {
           homeDashboardActivityProvider.overrideWith(
             (ref) => Future.value(
               HomeDashboardActivity(
-                dailyProgress:
-                    const HomeDailyProgress(completed: 0, target: 5),
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
                 currentWeek: period,
                 dailyGoals: period,
               ),
@@ -124,8 +123,7 @@ void main() {
           homeDashboardActivityProvider.overrideWith(
             (ref) => Future.value(
               HomeDashboardActivity(
-                dailyProgress:
-                    const HomeDailyProgress(completed: 0, target: 5),
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
                 currentWeek: period,
                 dailyGoals: period,
               ),
@@ -155,8 +153,7 @@ void main() {
           homeDashboardActivityProvider.overrideWith(
             (ref) => Future.value(
               HomeDashboardActivity(
-                dailyProgress:
-                    const HomeDailyProgress(completed: 0, target: 5),
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
                 currentWeek: period,
                 dailyGoals: period,
               ),
@@ -169,8 +166,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final labels = [
-      for (final day in period.days)
-        DateFormat('EEEEE', 'en').format(day.date),
+      for (final day in period.days) DateFormat('EEEEE', 'en').format(day.date),
     ];
     final expectedCounts = <String, int>{};
     for (final label in labels) {
@@ -192,17 +188,17 @@ void main() {
         ],
         child: _app(
           child: Consumer(
-          builder: (context, ref, child) {
-            final period = ref.watch(homeQazaActivityDailyGoalsProvider);
-            return period.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, stack) => Text('error: $error'),
-              data: (value) => Text(
-                '${value.from}|${value.days.first.date}|${value.days.last.date}|${value.toExclusive}|${value.days.length}',
-              ),
-            );
-          },
-        ),
+            builder: (context, ref, child) {
+              final period = ref.watch(homeQazaActivityDailyGoalsProvider);
+              return period.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, stack) => Text('error: $error'),
+                data: (value) => Text(
+                  '${value.from}|${value.days.first.date}|${value.days.last.date}|${value.toExclusive}|${value.days.length}',
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -227,17 +223,17 @@ void main() {
         ],
         child: _app(
           child: Consumer(
-          builder: (context, ref, child) {
-            final period = ref.watch(homeQazaActivityDailyGoalsProvider);
-            return period.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, stack) => Text('error: $error'),
-              data: (value) => Text(
-                '${value.days.first.date}|${value.days.last.date}',
-              ),
-            );
-          },
-        ),
+            builder: (context, ref, child) {
+              final period = ref.watch(homeQazaActivityDailyGoalsProvider);
+              return period.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, stack) => Text('error: $error'),
+                data: (value) => Text(
+                  '${value.days.first.date}|${value.days.last.date}',
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -247,7 +243,8 @@ void main() {
     expect(find.textContaining('2026-10-01'), findsWidgets);
   });
 
-  testWidgets('loading and error states stay local to Daily Goals', (tester) async {
+  testWidgets('loading and error states stay local to Daily Goals',
+      (tester) async {
     var attempts = 0;
     final period = _period(today: today);
     await tester.pumpWidget(
@@ -269,7 +266,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Unable to load your Qaza progress. Pull to retry.'), findsOneWidget);
+    expect(find.text('Unable to load your Qaza progress. Pull to retry.'),
+        findsOneWidget);
 
     await tester.tap(find.byKey(const Key('home_daily_goals_retry')));
     await tester.pumpAndSettle();

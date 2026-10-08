@@ -51,11 +51,11 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 17 is the current local-only database schema.
+  /// Schema version 18 is the current local-only database schema.
   /// Qaza records, additions, profile data, and completion markers are stored
   /// exclusively in the local encrypted SQLite database.
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +65,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
+          await _ensureMetaStoreSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -115,8 +116,107 @@ class AppDatabase extends _$AppDatabase {
             await _ensureAccountSchema();
           }
           await _ensurePerformanceIndexes();
+          if (from < 18) {
+            await _ensureMetaStoreSchema();
+          }
         },
       );
+
+  Future<void> _ensureMetaStoreSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS meta_store (
+        key TEXT NOT NULL PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
+      "('is_onboarding_completed', '0')",
+    );
+    // Drift's schemaVersion is the sole authoritative SQLite schema version.
+    // The former meta_store schema_version key is obsolete and must not
+    // compete with Drift's generated schema metadata.
+    await customStatement(
+      "DELETE FROM meta_store WHERE key = 'schema_version'",
+    );
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
+      "('db_revision', '1')",
+    );
+  }
+
+  Future<bool> isOnboardingCompleted() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store WHERE key = 'is_onboarding_completed' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<int> readDbRevision() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store WHERE key = 'db_revision' LIMIT 1",
+    ).get();
+    if (rows.isEmpty) {
+      throw StateError('The local database revision is missing.');
+    }
+    final revision = int.tryParse(rows.first.read<String>('value'));
+    if (revision == null || revision < 1) {
+      throw StateError('The local database revision is invalid.');
+    }
+    return revision;
+  }
+
+  Future<void> setOnboardingCompletedInTransaction(bool completed) {
+    return customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('is_onboarding_completed', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [Variable(completed ? '1' : '0')],
+    );
+  }
+
+  Future<void> setDbRevisionInTransaction(int revision) {
+    if (revision < 1) {
+      throw ArgumentError.value(revision, 'revision');
+    }
+    return customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('db_revision', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [Variable(revision.toString())],
+    );
+  }
+
+  Future<int> incrementDbRevisionInTransaction() async {
+    await customUpdate(
+      '''UPDATE meta_store
+         SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)
+         WHERE key = 'db_revision' ''',
+    );
+    return readDbRevision();
+  }
+
+  /// Runs one logical local write transaction and advances db_revision once
+  /// when the operation actually mutates local state.
+  Future<T> transactionWithRevision<T>(
+    Future<T> Function() action, {
+    bool Function(T result)? mutationPredicate,
+  }) async {
+    return transaction(() async {
+      final result = await action();
+      final mutated = mutationPredicate?.call(result) ??
+          switch (result) {
+            bool value => value,
+            int value => value > 0,
+            Iterable<dynamic> value => value.isNotEmpty,
+            _ => true,
+          };
+      if (mutated) {
+        await incrementDbRevisionInTransaction();
+      }
+      return result;
+    });
+  }
 
   Future<void> _ensureAccountSchema() async {
     await customStatement('''

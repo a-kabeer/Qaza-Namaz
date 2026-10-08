@@ -11,6 +11,7 @@ void main() {
     expect(arb, contains('"prayerTimeDhuhr": "Zuhr"'));
     expect(generated, contains("String get prayerTimeDhuhr => 'Zuhr';"));
     expect(arb, isNot(contains('"prayerTimeDhuhr": "Dhuhr"')));
-    expect(generated, isNot(contains("String get prayerTimeDhuhr => 'Dhuhr';")));
+    expect(
+        generated, isNot(contains("String get prayerTimeDhuhr => 'Dhuhr';")));
   });
 }

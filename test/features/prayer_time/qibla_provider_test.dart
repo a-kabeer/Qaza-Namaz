@@ -71,6 +71,5 @@ class _NoSensorCompassService implements CompassService {
   Future<bool> hasSensors() async => false;
 
   @override
-  Stream<CompassReading> readings() =>
-      const Stream<CompassReading>.empty();
+  Stream<CompassReading> readings() => const Stream<CompassReading>.empty();
 }

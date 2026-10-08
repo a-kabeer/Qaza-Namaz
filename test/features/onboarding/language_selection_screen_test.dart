@@ -62,7 +62,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('selecting a language updates preview without navigation or persistence',
+  testWidgets(
+      'selecting a language updates preview without navigation or persistence',
       (tester) async {
     final repository = _FakeUserProfileRepository();
 

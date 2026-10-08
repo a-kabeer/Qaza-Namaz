@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
@@ -46,8 +48,7 @@ ProviderContainer _containerFor({
           );
           return Future.value(
             HomeDashboardActivity(
-              dailyProgress:
-                  const HomeDailyProgress(completed: 2, target: 5),
+              dailyProgress: const HomeDailyProgress(completed: 2, target: 5),
               currentWeek: period,
               dailyGoals: period,
             ),
@@ -83,13 +84,15 @@ void main() {
         today: DateTime(2026, 9, 30),
         days: const [],
       );
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
       final container = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
           homeDashboardActivityProvider.overrideWith((ref) async {
             reads++;
             return HomeDashboardActivity(
-              dailyProgress:
-                  const HomeDailyProgress(completed: 2, target: 5),
+              dailyProgress: const HomeDailyProgress(completed: 2, target: 5),
               currentWeek: period,
               dailyGoals: period,
             );

@@ -907,24 +907,40 @@
   "qazaCompletionSingle": "{prayer} کی قضا، {date} مکمل ہو گئی۔",
   "@qazaCompletionSingle": {
     "placeholders": {
-      "prayer": {"type": "String"},
-      "date": {"type": "String"}
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "qazaCompletionMultiple": "{count} قضا نمازیں مکمل ہو گئیں۔",
   "@qazaCompletionMultiple": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaUndoSingle": "{prayer} کی قضا، {date} دوبارہ باقی میں شامل ہو گئی۔",
   "@qazaUndoSingle": {
     "placeholders": {
-      "prayer": {"type": "String"},
-      "date": {"type": "String"}
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
     }
   },
   "qazaUndoMultiple": "{count} قضا نمازیں دوبارہ باقی میں شامل ہو گئی ہیں۔",
   "@qazaUndoMultiple": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaUndoExpired": "واپس کرنے کا 5 سیکنڈ کا وقت ختم ہو گیا۔",
   "qazaUndoStaleBatch": "واپس کرنے کا یہ اختیار اب دستیاب نہیں کیونکہ اس کے بعد ایک نیا Undo عمل ہوا ہے۔",
@@ -934,11 +950,47 @@
   "commonDelete": "حذف کریں",
   "qazaRequestedSlots": "{count} مطلوبہ جگہیں",
   "@qazaRequestedSlots": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا",
   "qazaSelectedCount": "{count, plural, =1{1 منتخب} other{{count} منتخب}}",
   "@qazaSelectedCount": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportRestored": "بیک اپ کامیابی سے بحال ہو گیا۔ {count} قضا ریکارڈ بحال کیے گئے۔",
+  "dataImportRestoreSummary": "اس بیک اپ میں {records} قضا ریکارڈ اور {accounts} مقامی اکاؤنٹ ہیں۔\\n\\nبحال کرنے سے اس ڈیوائس کا موجودہ مقامی ڈیٹا منتخب بیک اپ سے بدل جائے گا۔ آپ کی ڈیوائس شناخت اسی ڈیوائس پر برقرار رہے گی۔\\n\\nبیک اپ ریویژن: {revision}\\nآن بورڈنگ: {onboarding}",
+  "dataImportOnboardingComplete": "مکمل",
+  "dataImportOnboardingIncomplete": "مکمل نہیں",
+  "dataLocalOnlyNote": "صرف مقامی بیک اپ۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہتا ہے، جب تک آپ اسے واضح طور پر برآمد نہ کریں۔",
+  "@dataImportRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@dataImportRestoreSummary": {
+    "placeholders": {
+      "records": {
+        "type": "int"
+      },
+      "accounts": {
+        "type": "int"
+      },
+      "revision": {
+        "type": "int"
+      },
+      "onboarding": {
+        "type": "String"
+      }
+    }
   }
 }

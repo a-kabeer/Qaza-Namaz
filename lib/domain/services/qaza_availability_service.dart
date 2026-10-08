@@ -64,10 +64,8 @@ class QazaAvailabilityAnalysis {
     required this.candidates,
     required this.newCandidates,
     required this.existingCandidates,
-    this.currentAdditionEditableCandidates =
-        const <QazaPrayerKey>[],
-    this.currentAdditionProtectedCandidates =
-        const <QazaPrayerKey>[],
+    this.currentAdditionEditableCandidates = const <QazaPrayerKey>[],
+    this.currentAdditionProtectedCandidates = const <QazaPrayerKey>[],
   });
 
   final int total;
@@ -106,7 +104,10 @@ class QazaAvailabilityAnalysis {
   int get alreadyCompleted => alreadyPrayed;
 
   int get unavailableCount =>
-      alreadyRecorded + alreadyPrayed + notYetDueCount + timeDataUnavailableCount;
+      alreadyRecorded +
+      alreadyPrayed +
+      notYetDueCount +
+      timeDataUnavailableCount;
 }
 
 /// Shared domain rules for Calendar, Add Qaza and Calculator.
@@ -195,8 +196,7 @@ class QazaAvailabilityService {
     return {
       for (final record in existingRecords)
         if (record.additionId == editingAdditionId &&
-            !(record.status == QazaStatus.pending &&
-                record.recordVersion == 1))
+            !(record.status == QazaStatus.pending && record.recordVersion == 1))
           QazaPrayerKey.fromRecord(record),
     };
   }

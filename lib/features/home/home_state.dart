@@ -67,7 +67,8 @@ class HomePrayerSelectionState {
     PrayerType completedPrayer, {
     bool witrEnabled = true,
     bool targetWasAutoSequence = false,
-  }) => this;
+  }) =>
+      this;
 }
 
 class HomeSelectedPrayerState {

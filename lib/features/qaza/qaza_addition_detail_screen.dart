@@ -61,22 +61,25 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                     children: [
                       Semantics(
                         header: true,
-                        label: l10n.qazaAdditionRecordsCount(detail.activeCount),
+                        label:
+                            l10n.qazaAdditionRecordsCount(detail.activeCount),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: Text(
-                                l10n.qazaAdditionRecordsCount(detail.activeCount),
+                                l10n.qazaAdditionRecordsCount(
+                                    detail.activeCount),
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
-                            ],
+                          ],
                         ),
                       ),
-                      if (detail.pendingCount > 0 || detail.completedCount > 0) ...[
+                      if (detail.pendingCount > 0 ||
+                          detail.completedCount > 0) ...[
                         const SizedBox(height: 4),
                         Text(
                           '${detail.pendingCount} ${l10n.statusPending} · '
@@ -326,7 +329,6 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     }
   }
 }
-
 
 enum _AdditionAction { edit, delete }
 

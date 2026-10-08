@@ -362,10 +362,8 @@ class _ProfileFormState extends State<ProfileForm> {
     final selected = value != null && options.contains(value) ? value : null;
     final min = options.isEmpty ? null : options.first;
     final max = options.isEmpty ? null : options.last;
-    final canDecrease = enabled &&
-        selected != null &&
-        min != null &&
-        selected > min;
+    final canDecrease =
+        enabled && selected != null && min != null && selected > min;
     final canIncrease = enabled &&
         ((selected == null && options.isNotEmpty) ||
             (selected != null && max != null && selected < max));
@@ -409,7 +407,8 @@ class _ProfileFormState extends State<ProfileForm> {
             key: incrementKey,
             tooltip: '$labelText +',
             onPressed: canIncrease
-                ? () => onChanged(selected == null ? options.first : selected + 1)
+                ? () =>
+                    onChanged(selected == null ? options.first : selected + 1)
                 : null,
             icon: const Icon(Icons.add),
           ),

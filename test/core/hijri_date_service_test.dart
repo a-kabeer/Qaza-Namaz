@@ -66,14 +66,17 @@ void main() {
     expect(resultHijri.day, sourceHijri.day);
   });
 
-  test('Hijri year addition clamps day 30 when target month has only 29 days', () {
+  test('Hijri year addition clamps day 30 when target month has only 29 days',
+      () {
     int? sourceYear;
     int? month;
 
     for (var year = 1400; year < 1499 && sourceYear == null; year++) {
       for (var candidateMonth = 1; candidateMonth <= 12; candidateMonth++) {
-        if (HijriDateService.daysInMonth(year: year, month: candidateMonth) == 30 &&
-            HijriDateService.daysInMonth(year: year + 1, month: candidateMonth) ==
+        if (HijriDateService.daysInMonth(year: year, month: candidateMonth) ==
+                30 &&
+            HijriDateService.daysInMonth(
+                    year: year + 1, month: candidateMonth) ==
                 29) {
           sourceYear = year;
           month = candidateMonth;

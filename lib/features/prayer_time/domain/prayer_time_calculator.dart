@@ -60,12 +60,9 @@ class PrayerTimeCalculator {
         CalculationMethodParameters.muslimWorldLeague(),
       PrayerCalculationMethod.isna =>
         CalculationMethodParameters.northAmerica(),
-      PrayerCalculationMethod.makkah =>
-        CalculationMethodParameters.ummAlQura(),
-      PrayerCalculationMethod.egypt =>
-        CalculationMethodParameters.egyptian(),
-      PrayerCalculationMethod.tehran =>
-        CalculationMethodParameters.tehran(),
+      PrayerCalculationMethod.makkah => CalculationMethodParameters.ummAlQura(),
+      PrayerCalculationMethod.egypt => CalculationMethodParameters.egyptian(),
+      PrayerCalculationMethod.tehran => CalculationMethodParameters.tehran(),
       PrayerCalculationMethod.custom => CalculationParameters(
           method: CalculationMethod.other,
           fajrAngle: settings.fajrAngle,
@@ -83,8 +80,7 @@ class PrayerTimeCalculator {
         HighLatitudeRule.middleOfTheNight,
       PrayerHighLatitudeRule.seventhOfTheNight =>
         HighLatitudeRule.seventhOfTheNight,
-      PrayerHighLatitudeRule.twilightAngle =>
-        HighLatitudeRule.twilightAngle,
+      PrayerHighLatitudeRule.twilightAngle => HighLatitudeRule.twilightAngle,
     };
 
     final adjustments = <Prayer, int>{};

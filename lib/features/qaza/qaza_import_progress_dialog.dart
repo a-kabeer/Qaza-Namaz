@@ -79,8 +79,7 @@ class _QazaImportProgressDialogState
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () =>
-                    ref.read(qazaImportProvider.notifier).retry(),
+                onPressed: () => ref.read(qazaImportProvider.notifier).retry(),
                 child: Text(l10n.commonRetry),
               ),
             ),

@@ -49,8 +49,8 @@ class LocalDateService {
   /// Adds whole Gregorian calendar days without allowing DST to change the
   /// resulting calendar date.
   static DateTime addCalendarDays(DateTime date, int days) {
-    final utc = DateTime.utc(date.year, date.month, date.day)
-        .add(Duration(days: days));
+    final utc =
+        DateTime.utc(date.year, date.month, date.day).add(Duration(days: days));
     return DateTime(utc.year, utc.month, utc.day);
   }
 }

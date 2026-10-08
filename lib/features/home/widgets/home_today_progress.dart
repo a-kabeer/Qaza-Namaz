@@ -100,9 +100,9 @@ class _HomeTodayProgressState extends ConsumerState<HomeTodayProgress> {
     // failures.
     try {
       ref.read(homeControllerProvider).afterCompletion(
-        completedPrayer: prayer,
-        selectionSource: selectionSource,
-      );
+            completedPrayer: prayer,
+            selectionSource: selectionSource,
+          );
     } catch (error, stack) {
       diagnostics.recordFailure(
         DiagnosticArea.qazaCompletion,
@@ -502,9 +502,8 @@ class _HomeNextQazaRecord extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final completeEnabled = !restricted &&
-            !completionWorking &&
-            !refreshing;
+        final completeEnabled =
+            !restricted && !completionWorking && !refreshing;
 
         final complete = SizedBox(
           height: 48,

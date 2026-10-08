@@ -236,23 +236,22 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
     try {
       final fingerprint =
           ProfileQazaPlanReconciliationService.planFingerprint(plan);
-      final records = await ref
-          .read(qazaServiceProvider)
-          .buildOnboardingQazaRecords(
-            userId: userId,
-            dates: QazaPlanService.datesFor(plan),
-            prayerTypes: [
-              PrayerType.fajr,
-              PrayerType.zuhr,
-              PrayerType.asr,
-              PrayerType.maghrib,
-              PrayerType.isha,
-              if (plan.includeWitr) PrayerType.witr,
-            ],
-            profilePlanRevisionId: revisionId,
-            profilePlanFingerprint: fingerprint,
-            witrAllowed: plan.includeWitr,
-          );
+      final records =
+          await ref.read(qazaServiceProvider).buildOnboardingQazaRecords(
+                userId: userId,
+                dates: QazaPlanService.datesFor(plan),
+                prayerTypes: [
+                  PrayerType.fajr,
+                  PrayerType.zuhr,
+                  PrayerType.asr,
+                  PrayerType.maghrib,
+                  PrayerType.isha,
+                  if (plan.includeWitr) PrayerType.witr,
+                ],
+                profilePlanRevisionId: revisionId,
+                profilePlanFingerprint: fingerprint,
+                witrAllowed: plan.includeWitr,
+              );
 
       state = state.copyWith(
         phase: QazaImportTaskPhase.importing,
@@ -399,7 +398,9 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
               : processed.clamp(0, progressTotal).toInt(),
           total: progressTotal,
         );
-      };
+      }
+
+      ;
       await operation(onProgress);
       stopwatch.stop();
       if (state.phase == QazaImportTaskPhase.applyingProfile) {
@@ -531,32 +532,31 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
           );
         }
       } else {
-        final result =
-            await ref.read(qazaAdditionServiceProvider).createOrEdit(
-                  userId: request.userId,
-                  mode: request.mode!,
-                  selectedDates: request.dates,
-                  selectedPrayers: request.prayers,
-                  additionId: request.additionId,
-                  expectedRevision: request.expectedRevision,
-                  earliestDate: request.earliestDate,
-                  prayerTimeContext: request.prayerTimeContext,
-                  today: request.today,
-                  witrAllowed: request.witrAllowed,
-                  isCancellationRequested: () => _cancelRequested,
-                  onProgress: (processed, total, added) {
-                    if (!state.isActive || state.userId != request.userId) {
-                      return;
-                    }
-                    state = state.copyWith(
-                      phase: QazaImportTaskPhase.importing,
-                      processed: processed,
-                      total: total,
-                      added: added,
-                      skipped: processed - added,
-                    );
-                  },
+        final result = await ref.read(qazaAdditionServiceProvider).createOrEdit(
+              userId: request.userId,
+              mode: request.mode!,
+              selectedDates: request.dates,
+              selectedPrayers: request.prayers,
+              additionId: request.additionId,
+              expectedRevision: request.expectedRevision,
+              earliestDate: request.earliestDate,
+              prayerTimeContext: request.prayerTimeContext,
+              today: request.today,
+              witrAllowed: request.witrAllowed,
+              isCancellationRequested: () => _cancelRequested,
+              onProgress: (processed, total, added) {
+                if (!state.isActive || state.userId != request.userId) {
+                  return;
+                }
+                state = state.copyWith(
+                  phase: QazaImportTaskPhase.importing,
+                  processed: processed,
+                  total: total,
+                  added: added,
+                  skipped: processed - added,
                 );
+              },
+            );
 
         if (result.cancelled) {
           state = state.copyWith(

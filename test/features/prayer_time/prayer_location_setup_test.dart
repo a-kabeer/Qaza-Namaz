@@ -26,7 +26,9 @@ void main() {
     expect(permissionRequest, greaterThan(permissionCheck));
   });
 
-  test('location implementation does not depend on third-party location SDKs', () {
+  test(
+      'location implementation preserves the offline geolocator path with '
+      'native Google Play Services resolution', () {
     final repository = File(
       'lib/features/prayer_time/data/prayer_location_repository.dart',
     ).readAsStringSync();
@@ -38,14 +40,16 @@ void main() {
     ).readAsStringSync();
     final pubspec = File('pubspec.yaml').readAsStringSync();
 
-    expect(repository, isNot(contains('geolocator')));
-    expect(bridge, isNot(contains('geolocator')));
-    expect(mainActivity, isNot(contains('com.google.android.gms')));
-    expect(mainActivity, isNot(contains('Google')));
-    expect(pubspec, isNot(contains('geolocator:')));
+    expect(repository, contains('geolocator'));
+    expect(bridge, contains('geolocator'));
+    expect(mainActivity, contains('com.google.android.gms.location'));
+    expect(mainActivity, contains('com.google.android.gms.location'));
+    expect(pubspec, contains('geolocator:'));
   });
 
-  test('cancelled Location Services resolution gets an actionable recovery state', () {
+  test(
+      'cancelled Location Services resolution gets an actionable recovery state',
+      () {
     final source = File(
       'lib/features/prayer_time/presentation/prayer_time_page.dart',
     ).readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');

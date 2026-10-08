@@ -98,7 +98,8 @@ void main() {
     );
   });
 
-  test('Range to Single clears an unavailable endpoint without replacement', () {
+  test('Range to Single clears an unavailable endpoint without replacement',
+      () {
     final availability = <DateTime, Set<PrayerType>>{
       day(1): {PrayerType.fajr},
       day(30): <PrayerType>{},

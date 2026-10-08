@@ -75,23 +75,28 @@ void main() {
     );
   });
 
-  test('primary Qaza navigation defaults to Pending only on workspace re-entry', () {
+  test('primary Qaza navigation defaults to Pending only on workspace re-entry',
+      () {
     final source =
         File('lib/features/shell/workspace_shell.dart').readAsStringSync();
 
-    expect(source, contains('final current = ref.read(workspaceDestinationProvider);'));
+    expect(source,
+        contains('final current = ref.read(workspaceDestinationProvider);'));
     expect(source, contains('final next = _barDestinations[value];'));
     expect(source, contains('if (current == next) return;'));
     expect(source, contains('next == WorkspaceDestination.qaza'));
-    expect(source, contains('ref.read(qazaTrackerFilterRequestProvider) == null'));
+    expect(
+        source, contains('ref.read(qazaTrackerFilterRequestProvider) == null'));
     expect(source, contains('QazaStatusFilter.pending'));
   });
 
-  test('explicit Qaza navigation requests keep precedence over primary defaults', () {
+  test(
+      'explicit Qaza navigation requests keep precedence over primary defaults',
+      () {
     final navigation =
         File('lib/features/qaza/qaza_navigation.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(
       navigation,
@@ -109,11 +114,14 @@ void main() {
     expect(controller, contains('_consumeRequest(request);'));
     expect(
       controller,
-      contains('if (identical(notifier.state, request)) notifier.state = null;'),
+      contains(
+          'if (identical(notifier.state, request)) notifier.state = null;'),
     );
   });
 
-  test('Qaza restricted-time row navigates to the existing Prayer Time workspace', () {
+  test(
+      'Qaza restricted-time row navigates to the existing Prayer Time workspace',
+      () {
     final tracker =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final navigation =
@@ -133,7 +141,6 @@ void main() {
     expect(timeline, contains('this.onTap'));
     expect(timeline, contains('onTap: onTap'));
   });
-
 
   test('selection mode preserves the shared tracker header slot', () {
     final source =
@@ -161,11 +168,10 @@ void main() {
   test(
     'selection mode keeps the Qaza row footprint stable and uses trailing checkbox',
     () {
-      final source =
-          File('lib/features/qaza/qaza_tracker_screen.dart')
-              .readAsStringSync()
-              .replaceAll('\r\n', '\n')
-              .replaceAll('\r', '\n');
+      final source = File('lib/features/qaza/qaza_tracker_screen.dart')
+          .readAsStringSync()
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n');
 
       expect(source, contains('static const double _rowHeight = 68;'));
       expect(
@@ -194,8 +200,8 @@ void main() {
   );
 
   test('single swipe completion never enters user-visible selection mode', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
     final start = source.indexOf(
       'Future<QazaCompletionBatchReceipt?> completeRecordWithUndo(',
     );
@@ -235,7 +241,8 @@ void main() {
     );
   });
 
-  test('single swipe shows global Undo feedback only after completion returns', () {
+  test('single swipe shows global Undo feedback only after completion returns',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final completionIndex =
@@ -247,8 +254,9 @@ void main() {
     expect(feedbackIndex, greaterThan(completionIndex));
   });
 
-
-  test('Pending bulk completion uses the stable workspace callback for Undo feedback', () {
+  test(
+      'Pending bulk completion uses the stable workspace callback for Undo feedback',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -284,11 +292,14 @@ void main() {
     );
   });
 
-  test('Pending bulk action bar delegates completion instead of owning lifecycle context', () {
+  test(
+      'Pending bulk action bar delegates completion instead of owning lifecycle context',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-    final start = source.indexOf('class _BulkCompletionBar extends StatelessWidget {');
+    final start =
+        source.indexOf('class _BulkCompletionBar extends StatelessWidget {');
     expect(start, greaterThanOrEqualTo(0));
 
     final bar = source.substring(start);
@@ -300,13 +311,16 @@ void main() {
     expect(bar, isNot(contains('completeSelectedWithUndo(')));
   });
 
-  test('Pending bulk completion keeps shared refresh and Undo registration after selection clears', () {
+  test(
+      'Pending bulk completion keeps shared refresh and Undo registration after selection clears',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
-    expect(source, contains('onComplete: () => _completeSelected(context, ref),'));
+    expect(
+        source, contains('onComplete: () => _completeSelected(context, ref),'));
     expect(
       source,
       contains(
@@ -327,7 +341,8 @@ void main() {
     );
   });
 
-  test('Batch Undo opening remains based on the shared active Undo session', () {
+  test('Batch Undo opening remains based on the shared active Undo session',
+      () {
     final source =
         File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
     final service =
@@ -344,8 +359,8 @@ void main() {
   test('Qaza tracker has no dedicated History tab or operation subsystem', () {
     final screen =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(screen, isNot(contains('QazaHistoryScreen')));
     expect(screen, isNot(contains('TabBar(')));
@@ -355,7 +370,9 @@ void main() {
     expect(controller, isNot(contains('deleteSelectedWithRecovery')));
   });
 
-  test('Pending pagination loading rows are rendered only while load-more is active', () {
+  test(
+      'Pending pagination loading rows are rendered only while load-more is active',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -365,18 +382,18 @@ void main() {
         'itemCount: state.records.length + (state.loadingMore ? 1 : 0),',
       ),
     );
-    final itemCountLine = source
-        .split('\n')
-        .firstWhere((line) => line.contains('itemCount:'));
+    final itemCountLine =
+        source.split('\n').firstWhere((line) => line.contains('itemCount:'));
     expect(
       itemCountLine,
       contains('state.loadingMore ? 1 : 0'),
     );
   });
 
-  test('Pending pagination does not start while refresh or mutation is active', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+  test('Pending pagination does not start while refresh or mutation is active',
+      () {
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     final start = source.indexOf('Future<void> loadMore() async {');
     final end = source.indexOf(
@@ -392,11 +409,13 @@ void main() {
     expect(method, contains('state.recordMutating'));
   });
 
-  test('Batch Undo cleans the temporary selection before dismissing the sheet', () {
+  test('Batch Undo cleans the temporary selection before dismissing the sheet',
+      () {
     final source =
         File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
 
-    final selectedStart = source.indexOf('Future<void> _undoSelected() async {');
+    final selectedStart =
+        source.indexOf('Future<void> _undoSelected() async {');
     final selectedEnd = source.indexOf(
       '  Future<void> _undoAll() async {',
       selectedStart,
@@ -410,7 +429,8 @@ void main() {
       lessThan(selected.indexOf('Navigator.of(context).pop();')),
     );
 
-    final allStart = source.indexOf('Future<void> _undoAll() async {', selectedEnd);
+    final allStart =
+        source.indexOf('Future<void> _undoAll() async {', selectedEnd);
     final allEnd = source.indexOf(
       '  Future<void> _refreshAfterUndo() async {',
       allStart,
@@ -438,8 +458,8 @@ void main() {
   });
 
   test('shared completion pipeline persists before refreshing the tracker', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     final persistIndex = source.indexOf(
       'completeRecordsWithReceipt(',
@@ -453,7 +473,8 @@ void main() {
     expect(refreshIndex, greaterThan(persistIndex));
   });
 
-  test('filter sheet reads live Riverpod filter state while it remains open', () {
+  test('filter sheet reads live Riverpod filter state while it remains open',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -500,8 +521,8 @@ void main() {
   });
 
   test('refresh preserves the active prayer filter in tracker state', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
     final start = source.indexOf('Future<void> refresh() async {');
     final end = source.indexOf(
       'Future<QazaPage> _readPage({',
@@ -517,8 +538,8 @@ void main() {
   });
 
   test('prayer filter state updates synchronously before refresh', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
     final start = source.indexOf('void setPrayerFilter(PrayerType? prayer) {');
     final end = source.indexOf(
       '  void setDateRange(DateTime? from, DateTime? to) {',
@@ -552,7 +573,6 @@ void main() {
     expect(source, isNot(contains('for (final prayer in PrayerType.values)')));
   });
 
-
   test('Qaza reuses the shared active restricted-time timeline row', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
@@ -567,12 +587,11 @@ void main() {
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 
-
   test('Qaza workspace exposes shared Pending/Completed sorting', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(source, contains("key: const Key('qaza_status_switch')"));
     expect(source, contains('QazaStatusFilter.pending'));
@@ -585,10 +604,10 @@ void main() {
   });
 
   test('Completed workspace sorts by completion time in either direction', () {
-    final source =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
-    final dao =
-        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
+    final source = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
+    final dao = File('lib/data/local/database/qaza_records_dao.dart')
+        .readAsStringSync();
 
     expect(source, contains('afterCompletedAt:'));
     expect(source, contains('beforeCompletedAt:'));
@@ -602,7 +621,9 @@ void main() {
     expect(dao, contains('row.completedAt.isNotNull()'));
   });
 
-  test('Completed rows use contextual completion date and preserve two-line history', () {
+  test(
+      'Completed rows use contextual completion date and preserve two-line history',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -610,7 +631,8 @@ void main() {
     final end = source.indexOf('class _CompletedRecordDetails', start);
     final row = source.substring(start, end);
 
-    expect(source, contains("import '../../core/time/local_date_service.dart';"));
+    expect(
+        source, contains("import '../../core/time/local_date_service.dart';"));
     expect(row, contains('completedAt.toLocal()'));
     expect(row, contains('LocalDateService.today()'));
     expect(row, contains('LocalDateService.compareCalendarDates'));
@@ -619,7 +641,10 @@ void main() {
     expect(row, contains('l10n.commonYesterday'));
     expect(row, contains('DateFormatters.formatGregorianDatePadded(date)'));
     expect(row, contains('DateFormatters.formatClockTime(completedAt)'));
-    expect(row, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
+    expect(
+        row,
+        contains(
+            'DateFormatters.formatGregorianDatePadded(record.originalDate)'));
     expect(row, contains('l10n.formatHijriDate(record.originalDate)'));
     expect(row, contains('title: Text('));
     expect(row, contains('subtitle: Text('));
@@ -638,7 +663,9 @@ void main() {
     expect(row, isNot(contains('_groupLabel(')));
   });
 
-  test('Completed list no longer renders redundant completion-date group headers', () {
+  test(
+      'Completed list no longer renders redundant completion-date group headers',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -650,8 +677,7 @@ void main() {
   test('Completed date labels are localized in English and Urdu', () {
     final en = File('lib/l10n/app_en.arb').readAsStringSync();
     final ur = File('lib/l10n/app_ur.arb').readAsStringSync();
-    final base =
-        File('lib/l10n/app_localizations.dart').readAsStringSync();
+    final base = File('lib/l10n/app_localizations.dart').readAsStringSync();
     final enGenerated =
         File('lib/l10n/app_localizations_en.dart').readAsStringSync();
     final urGenerated =
@@ -674,10 +700,10 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final service =
         File('lib/domain/services/qaza_service.dart').readAsStringSync();
-    final dao =
-        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final dao = File('lib/data/local/database/qaza_records_dao.dart')
+        .readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(source, contains('l10n.qazaMarkAsPending'));
     expect(source, contains('confirmDestructive'));
@@ -688,10 +714,10 @@ void main() {
   });
 
   test('Home and tracker both depend on the shared completion controller', () {
-    final home =
-        File('lib/features/home/widgets/home_today_progress.dart').readAsStringSync();
-    final tracker =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final home = File('lib/features/home/widgets/home_today_progress.dart')
+        .readAsStringSync();
+    final tracker = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(home, contains('qazaCompletionControllerProvider.notifier'));
     expect(tracker, contains('qazaCompletionControllerProvider.notifier'));
@@ -699,7 +725,8 @@ void main() {
     expect(home, contains('QazaCompletionReceipt'));
   });
 
-  test('Batch Undo selection is not tied to the five-second Snackbar timer', () {
+  test('Batch Undo selection is not tied to the five-second Snackbar timer',
+      () {
     final source =
         File('lib/features/qaza/qaza_undo_feedback.dart').readAsStringSync();
     final service =
@@ -727,11 +754,12 @@ void main() {
     expect(service, contains('Future<QazaUndoResult> undoSelected('));
     expect(service, contains('Never clear the store here'));
   });
-  test('Completed paging uses completion timestamp and id in newest-first mode', () {
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
-    final dao =
-        File('lib/data/local/database/qaza_records_dao.dart').readAsStringSync();
+  test('Completed paging uses completion timestamp and id in newest-first mode',
+      () {
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
+    final dao = File('lib/data/local/database/qaza_records_dao.dart')
+        .readAsStringSync();
 
     expect(
       controller,
@@ -745,13 +773,14 @@ void main() {
       controller,
       contains('toExclusive: completed && state.to != null'),
     );
-    expect(dao, contains('row.completedAt.isSmallerThanValue(beforeCompletedAt)'));
+    expect(
+        dao, contains('row.completedAt.isSmallerThanValue(beforeCompletedAt)'));
     expect(dao, contains('row.id.isSmallerThanValue(beforeId!)'));
   });
 
   test('Reset clears the actual contextual addition query state', () {
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(controller, contains('clearAdditionId: true'));
     expect(controller, contains('additionId: state.additionId'));
@@ -759,21 +788,25 @@ void main() {
   });
 
   test('Completed selection is separate from Pending completion selection', () {
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
     final screen =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
-    expect(controller, contains('enum QazaSelectionScope { pending, completed }'));
+    expect(
+        controller, contains('enum QazaSelectionScope { pending, completed }'));
     expect(controller, contains('enterCompletedSelectionMode'));
     expect(controller, contains('toggleCompletedSelection'));
     expect(controller, contains('markSelectedCompletedAsPending'));
     expect(screen, contains("qaza_completed_mark_pending"));
     expect(screen, contains('l10n.qazaMarkAsPending'));
-    expect(screen, contains('key: const Key(\'qaza_completed_batch_action_bar\')'));
+    expect(screen,
+        contains('key: const Key(\'qaza_completed_batch_action_bar\')'));
   });
 
-  test('Completed selection action bar overlays the list instead of reflowing it', () {
+  test(
+      'Completed selection action bar overlays the list instead of reflowing it',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -802,13 +835,15 @@ void main() {
     expect(source, contains('l10n.qazaOriginalDateLabel'));
   });
 
-  test('Recent Addition View Records pushes the scoped tracker route without clearing the back stack', () {
-    final detail =
-        File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
+  test(
+      'Recent Addition View Records pushes the scoped tracker route without clearing the back stack',
+      () {
+    final detail = File('lib/features/qaza/qaza_addition_detail_screen.dart')
+        .readAsStringSync();
     final tracker =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
 
     expect(detail, contains('Navigator.of(context).push<void>('));
     expect(detail, contains('builder: (_) => QazaTrackerScreen('));
@@ -832,9 +867,11 @@ void main() {
     expect(controller, contains('clearAdditionId: true'));
   });
 
-  test('Addition-scoped tracker refresh invalidates the detail provider used by the progress header', () {
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
+  test(
+      'Addition-scoped tracker refresh invalidates the detail provider used by the progress header',
+      () {
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
     final start = controller.indexOf('Future<void> refresh() async {');
     final end = controller.indexOf('  /// Reads one bounded page', start);
     expect(start, greaterThanOrEqualTo(0));
@@ -849,9 +886,10 @@ void main() {
     );
   });
 
-  test('Recent Addition management actions disappear when nothing is pending', () {
-    final detail =
-        File('lib/features/qaza/qaza_addition_detail_screen.dart').readAsStringSync();
+  test('Recent Addition management actions disappear when nothing is pending',
+      () {
+    final detail = File('lib/features/qaza/qaza_addition_detail_screen.dart')
+        .readAsStringSync();
     expect(
       detail,
       contains('if (!detail.isDeleted && detail.pendingCount > 0) ...['),
@@ -861,10 +899,12 @@ void main() {
   });
 
   test('Addition filter survives Pending/Completed status switching', () {
-    final controller =
-        File('lib/features/qaza/qaza_tracker_controller.dart').readAsStringSync();
-    final start = controller.indexOf('void setStatusFilter(QazaStatusFilter filter) {');
-    final end = controller.indexOf('  void setPrayerFilter(PrayerType? prayer) {', start);
+    final controller = File('lib/features/qaza/qaza_tracker_controller.dart')
+        .readAsStringSync();
+    final start =
+        controller.indexOf('void setStatusFilter(QazaStatusFilter filter) {');
+    final end = controller.indexOf(
+        '  void setPrayerFilter(PrayerType? prayer) {', start);
     expect(start, greaterThanOrEqualTo(0));
     expect(end, greaterThan(start));
 
@@ -878,17 +918,22 @@ void main() {
   test('Filter and Sort use one shared compact horizontal row', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final contentStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
-    final contentEnd = source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', contentStart);
+    final contentStart =
+        source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final contentEnd = source.indexOf(
+        'class _PendingTrackerBody extends ConsumerWidget {', contentStart);
     final trackerContent = source.substring(contentStart, contentEnd);
 
     expect(trackerContent, contains('_FilterSortBar('));
     expect(trackerContent, isNot(contains('_SortBar(')));
     expect(trackerContent, isNot(contains('OutlinedButton.icon(')));
-    expect(trackerContent, contains('onFilterTap: () => _openFilters(context)'));
+    expect(
+        trackerContent, contains('onFilterTap: () => _openFilters(context)'));
 
-    final barStart = source.indexOf('class _FilterSortBar extends StatelessWidget {');
-    final barEnd = source.indexOf('class _FilterSheet extends ConsumerWidget {', barStart);
+    final barStart =
+        source.indexOf('class _FilterSortBar extends StatelessWidget {');
+    final barEnd =
+        source.indexOf('class _FilterSheet extends ConsumerWidget {', barStart);
     final bar = source.substring(barStart, barEnd);
 
     expect(bar, contains("Key('qaza_tracker_filter_button')"));
@@ -905,11 +950,15 @@ void main() {
     expect(bar, contains('softWrap: false'));
   });
 
-  test('Completed row keeps date and time in one right-aligned trailing metadata block', () {
+  test(
+      'Completed row keeps date and time in one right-aligned trailing metadata block',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final start = source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
-    final end = source.indexOf('class _CompletedBatchActionBar extends ConsumerWidget {', start);
+    final start =
+        source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+    final end = source.indexOf(
+        'class _CompletedBatchActionBar extends ConsumerWidget {', start);
     final row = source.substring(start, end);
 
     expect(row, contains('trailing: Row('));
@@ -926,11 +975,15 @@ void main() {
     expect(row, isNot(contains('subtitle: Row(')));
   });
 
-  test('Qaza workspace uses the shared compact row for Pending, Completed, and addition-filtered state', () {
+  test(
+      'Qaza workspace uses the shared compact row for Pending, Completed, and addition-filtered state',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final trackerStart = source.indexOf('class _TrackerContent extends StatelessWidget {');
-    final trackerEnd = source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', trackerStart);
+    final trackerStart =
+        source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final trackerEnd = source.indexOf(
+        'class _PendingTrackerBody extends ConsumerWidget {', trackerStart);
     final tracker = source.substring(trackerStart, trackerEnd);
 
     expect(tracker, contains('_FilterSortBar('));
@@ -943,9 +996,10 @@ void main() {
   test('Pending and Completed share the same progress header', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final start = source.indexOf('class _TrackerContent extends StatelessWidget {');
-    final end =
-        source.indexOf('class _PendingTrackerBody extends ConsumerWidget {', start);
+    final start =
+        source.indexOf('class _TrackerContent extends StatelessWidget {');
+    final end = source.indexOf(
+        'class _PendingTrackerBody extends ConsumerWidget {', start);
     final tracker = source.substring(start, end);
 
     expect(tracker, contains('_ProgressHeader(additionId: additionId),'));
@@ -953,10 +1007,13 @@ void main() {
     expect(source, isNot(contains('class _CompletedHeader extends')));
   });
 
-  test('shared progress header keeps one stable footprint and existing progress sources', () {
+  test(
+      'shared progress header keeps one stable footprint and existing progress sources',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final start = source.indexOf('class _ProgressHeader extends ConsumerWidget {');
+    final start =
+        source.indexOf('class _ProgressHeader extends ConsumerWidget {');
     final end = source.indexOf(
       'class _TrackerContent extends StatelessWidget {',
       start,
@@ -982,7 +1039,9 @@ void main() {
     expect(header, contains('error: (_, __) => const SizedBox.shrink()'));
   });
 
-  test('Pending rows use a neutral leading pending status icon and keep restricted lock status', () {
+  test(
+      'Pending rows use a neutral leading pending status icon and keep restricted lock status',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final start = source.indexOf('class _RecordRow extends StatelessWidget {');
@@ -1014,7 +1073,8 @@ void main() {
   test('Completed rows retain their check-circle status icon', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final start = source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+    final start =
+        source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
     final end = source.indexOf(
       'class _CompletedBatchActionBar extends ConsumerWidget {',
       start,
@@ -1024,5 +1084,4 @@ void main() {
     expect(row, contains('Icons.check_circle_rounded'));
     expect(row, contains('leading: Icon('));
   });
-
 }

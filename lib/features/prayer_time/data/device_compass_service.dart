@@ -26,8 +26,7 @@ class DeviceCompassService implements CompassService {
 
   @override
   Stream<CompassReading> readings() {
-    final source =
-        FlutterCompass.eventsFor(CompassUpdateOptions.balanced) ??
+    final source = FlutterCompass.eventsFor(CompassUpdateOptions.balanced) ??
         const Stream<CompassEvent>.empty();
 
     return source
@@ -65,9 +64,9 @@ class DeviceCompassService implements CompassService {
 
     final accuracyEqual =
         (previous.accuracy == null && next.accuracy == null) ||
-        (previous.accuracy != null &&
-            next.accuracy != null &&
-            (previous.accuracy! - next.accuracy!).abs() < .5);
+            (previous.accuracy != null &&
+                next.accuracy != null &&
+                (previous.accuracy! - next.accuracy!).abs() < .5);
 
     return circularDelta < .5 && accuracyEqual;
   }

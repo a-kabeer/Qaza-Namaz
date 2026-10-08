@@ -7,10 +7,14 @@ on:
       - 'task/**'
       - 'refactor/**'
       - 'reconcile/**'
+      - 'feat/**'
   pull_request:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
   group: flutter-ci-${{ github.ref }}
@@ -40,39 +44,33 @@ jobs:
       - name: Offline architecture policy
         run: python3 tools/offline_architecture_check.py
 
+      - name: Phase 1 to Phase 2 boundary policy
+        run: python3 tools/phase_boundary_check.py
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Format all Dart sources on branch pushes
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format lib test
+          if git diff --quiet -- lib test; then
+            echo "All Dart sources are already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib test
+          git commit -m "style: format Dart sources"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Check Dart formatting
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF"
-            diff_base="origin/$GITHUB_BASE_REF"
-            diff_head="origin/$GITHUB_HEAD_REF"
-          else
-            diff_base="${{ github.event.before }}"
-            diff_head="HEAD"
-            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
-              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
-            fi
-          fi
-
-          mapfile -t files < <(
-            git diff --name-only "$diff_base" "$diff_head" -- '*.dart' |
-            while IFS= read -r file; do
-              [ -f "$file" ] && printf '%s\n' "$file"
-            done
-          )
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No changed Dart files to format-check."
-            exit 0
-          fi
-
-          dart format --output=none --set-exit-if-changed "${files[@]}"
-
+          dart format --output=none --set-exit-if-changed lib test
 
       - name: Test with coverage
         run: flutter test --coverage
@@ -104,8 +102,14 @@ jobs:
       - name: Offline architecture policy
         run: python3 tools/offline_architecture_check.py
 
+      - name: Phase 1 to Phase 2 boundary policy
+        run: python3 tools/phase_boundary_check.py
+
       - name: Build release APK
         run: flutter build apk --release
+
+      - name: Build debug APK for offline integration test
+        run: flutter build apk --debug --target=integration_test/offline_startup_test.dart
 
       - name: Build release AAB
         run: flutter build appbundle --release
@@ -119,6 +123,12 @@ jobs:
             exit 1
           fi
 
+      - name: Upload debug APK for offline integration test
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
@@ -130,3 +140,88 @@ jobs:
         with:
           name: app-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+  android_offline_smoke:
+    name: Android offline startup smoke test
+    needs: build_android
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Download debug APK for offline integration test
+        uses: actions/download-artifact@v4
+        with:
+          name: app-debug-apk
+          path: .
+
+      - name: AVD cache
+        uses: actions/cache@v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api35-pixel5-x86_64
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          force-avd-creation: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run offline Android smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          force-avd-creation: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          script: |
+            adb wait-for-device
+
+            # Resolve the host-side test/driver dependencies before isolating
+            # the emulator network. The APK itself was already built by the
+            # previous job, so no Gradle/NDK build occurs here.
+            flutter pub get
+
+            # Isolate the emulator from external networks before launching
+            # the already-built APK. ADB remains available to the host.
+            adb shell svc wifi disable || true
+            adb shell svc data disable || true
+            adb shell settings put global airplane_mode_on 1
+            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true >/dev/null 2>&1 || true
+            adb shell settings put global wifi_on 0 || true
+            sleep 3
+            echo "Airplane mode: $(adb shell settings get global airplane_mode_on)"
+            adb shell svc wifi disable || true
+            adb shell svc data disable || true
+
+            timeout 180s flutter drive --driver=test_driver/integration_test.dart --target=integration_test/offline_startup_test.dart --use-application-binary=app-debug.apk --device-id=emulator-5554 --no-dds

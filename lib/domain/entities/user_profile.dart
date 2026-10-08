@@ -13,18 +13,30 @@ class UserProfile {
   });
 
   static const int currentSchemaVersion = 2;
-  static const String storageKey = 'qaza_user_profile_v1';
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
   static const int maxDailyQazaTarget = 50;
   static const List<int> dailyQazaTargetOptions = [
-    1, 2, 3, 5, 10, 15, 20, 30, 50,
+    1,
+    2,
+    3,
+    5,
+    10,
+    15,
+    20,
+    30,
+    50,
   ];
 
   static int normalizeDailyQazaTarget(int value) =>
       value.clamp(minDailyQazaTarget, maxDailyQazaTarget).toInt();
 
+  /// Legacy compatibility field only.
+  ///
+  /// Presentation language is persisted by [LocaleNotifier] through
+  /// SharedPreferences and is not part of business-state persistence.
+  @Deprecated('Presentation language is not business profile state.')
   final String languageCode;
   final int dailyQazaTarget;
   final Gender? gender;
@@ -81,9 +93,12 @@ class UserProfile {
         schemaVersion: schemaVersion ?? this.schemaVersion,
       );
 
+  /// Serializes business profile state only.
+  ///
+  /// Presentation language is owned by SharedPreferences and is therefore
+  /// intentionally excluded from the portable/domain profile payload.
   Map<String, dynamic> toJson() => {
         'schemaVersion': currentSchemaVersion,
-        'languageCode': languageCode,
         'dailyQazaTarget': dailyQazaTarget,
         'gender': gender?.name,
         'madhab': madhab?.name,

@@ -97,9 +97,9 @@ void main() {
       final expectedHijriRange =
           '${HijriDateService.format(oldPlan.startDate, l10n)} – '
           '${HijriDateService.format(
-            oldPlan.endDate.subtract(const Duration(days: 1)),
-            l10n,
-          )}';
+        oldPlan.endDate.subtract(const Duration(days: 1)),
+        l10n,
+      )}';
       expect(find.text(expectedHijriRange), findsOneWidget);
       expect(find.text(l10n.profileQazaNewTotal), findsOneWidget);
       expect(find.text('4,260 Qaza'), findsOneWidget);
@@ -153,7 +153,8 @@ void main() {
       completer.completeError(StateError('preview failed'));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('profile_qaza_review_skeleton')), findsNothing);
+      expect(
+          find.byKey(const Key('profile_qaza_review_skeleton')), findsNothing);
       expect(find.byKey(const Key('profile_qaza_error_close')), findsOneWidget);
     },
   );

@@ -16,6 +16,12 @@ class AccountLocalStore {
   Future<void> ensureInitialized() async {
     await _ensureDeviceId();
     await _ensureLocalAccount();
+    final profile = await loadProfile(UserProfile.localLedgerUserId);
+    await database.transaction(() async {
+      await database.setOnboardingCompletedInTransaction(
+        profile?.onboardingCompleted == true,
+      );
+    });
   }
 
   Future<bool> hasAnyQaza(String localAccountId) async {
@@ -149,7 +155,14 @@ class AccountLocalStore {
     final now = DateTime.now().microsecondsSinceEpoch;
     final device = await deviceInstanceId();
     final opId = _randomId('op');
-    await database.transaction(() async {
+    await database.transactionWithRevision(() async {
+      final existing = await loadProfile(localAccountId);
+      final onboardingCompleted = await database.isOnboardingCompleted();
+      if (existing != null &&
+          jsonEncode(existing.toJson()) == jsonEncode(profile.toJson()) &&
+          onboardingCompleted == profile.onboardingCompleted) {
+        return false;
+      }
       await _writeProfileRowInsideTransaction(
         localAccountId: localAccountId,
         profile: profile,
@@ -157,6 +170,10 @@ class AccountLocalStore {
         writerDeviceId: device,
         operationId: opId,
       );
+      await database.setOnboardingCompletedInTransaction(
+        profile.onboardingCompleted,
+      );
+      return true;
     });
   }
 
@@ -168,13 +185,16 @@ class AccountLocalStore {
     final now = DateTime.now().microsecondsSinceEpoch;
     final device = await deviceInstanceId();
     final opId = _randomId('op');
-    await database.transaction(() async {
+    await database.transactionWithRevision(() async {
       await _writeProfileRowInsideTransaction(
         localAccountId: localAccountId,
         profile: profile,
         nowMicros: now,
         writerDeviceId: device,
         operationId: opId,
+      );
+      await database.setOnboardingCompletedInTransaction(
+        profile.onboardingCompleted,
       );
     });
   }
@@ -232,7 +252,7 @@ class AccountLocalStore {
       }
     }
 
-    await database.transaction(() async {
+    await database.transactionWithRevision(() async {
       final activeRows = await database.customSelect(
         '''SELECT active_local_account_id
            FROM app_session_state
@@ -269,6 +289,7 @@ class AccountLocalStore {
         writerDeviceId: device,
         operationId: _randomId('onboarding_profile'),
       );
+      await database.setOnboardingCompletedInTransaction(true);
 
       final revisionPayload = jsonEncode(revision.toJson());
       final existingRevision = await database.customSelect(
@@ -348,10 +369,20 @@ class AccountLocalStore {
   }
 
   Future<void> clearProfile(String localAccountId) async {
-    await database.customUpdate(
-      'DELETE FROM account_profiles WHERE local_account_id = ?',
-      variables: [Variable(localAccountId)],
-    );
+    await database.transactionWithRevision(() async {
+      final rows = await database.customSelect(
+        'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(localAccountId)],
+      ).get();
+      final wasOnboardingCompleted = await database.isOnboardingCompleted();
+      if (rows.isEmpty && !wasOnboardingCompleted) return false;
+      await database.customUpdate(
+        'DELETE FROM account_profiles WHERE local_account_id = ?',
+        variables: [Variable(localAccountId)],
+      );
+      await database.setOnboardingCompletedInTransaction(false);
+      return true;
+    });
   }
 
   Future<List<QazaPlanRevision>> loadPlanRevisions(
@@ -396,7 +427,7 @@ class AccountLocalStore {
       }
       return;
     }
-    await database.transaction(() async {
+    await database.transactionWithRevision(() async {
       await database.customInsert(
         '''INSERT INTO account_plan_revisions
            (local_account_id, revision_id, payload_json, created_at)

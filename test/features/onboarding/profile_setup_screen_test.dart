@@ -303,6 +303,9 @@ void main() {
 
       final plan = const QazaPlanService().planFor(profile);
       expect(plan, isNotNull);
+      await database.transaction(() async {
+        await database.setOnboardingCompletedInTransaction(true);
+      });
       expect(plan!.totalWithWitr, 0);
 
       await tester.pumpWidget(

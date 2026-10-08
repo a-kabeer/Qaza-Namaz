@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drift/native.dart';
 
 import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/utils/qaza_date.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
+import 'package:qaza_namaz/data/local/account_scoped_qaza_plan_revision_repository.dart';
+import 'package:qaza_namaz/data/local/account_scoped_user_profile_repository.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
-import 'package:qaza_namaz/data/local/qaza_plan_revision_repository.dart';
-import 'package:qaza_namaz/data/local/user_profile_repository.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
 import 'package:qaza_namaz/domain/entities/qaza_plan_revision.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
@@ -24,7 +24,8 @@ UserProfile _profile({
   DateTime? dob,
   int pubertyAge = 12,
   int startPrayingAge = 14,
-}) => UserProfile(
+}) =>
+    UserProfile(
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.other,
@@ -52,7 +53,7 @@ class _Harness {
 
   final AppDatabase database;
   final OfflineFirstQazaRepository qaza;
-  final SharedPreferencesUserProfileRepository profiles;
+  final AccountScopedUserProfileRepository profiles;
   final SaveProfileUseCase useCase;
   final BufferedDiagnostics diagnostics;
 
@@ -63,17 +64,20 @@ Future<_Harness> _createHarness({
   required UserProfile oldProfile,
   required int missingOffset,
 }) async {
-  SharedPreferences.setMockInitialValues({});
-  final prefs = await SharedPreferences.getInstance();
-  final profiles = SharedPreferencesUserProfileRepository(preferences: prefs);
+  final database = AppDatabase(NativeDatabase.memory());
+  final accountStore = AccountLocalStore(database: database);
+  await accountStore.ensureLocalAccountActive();
+  final profiles = AccountScopedUserProfileRepository(
+    store: accountStore,
+    activeAccountId: () => _userId,
+  );
   await profiles.save(oldProfile);
 
-  final database = AppDatabase(NativeDatabase.memory());
   final store = DriftQazaLocalStore(database: database);
   final qaza = OfflineFirstQazaRepository(localStore: store);
   await qaza.setActiveUser(_userId);
 
-  final revisions = SharedPreferencesQazaPlanRevisionRepository();
+  final revisions = AccountScopedQazaPlanRevisionRepository(accountStore);
   final plan = const QazaPlanService().planFor(oldProfile)!;
   final fingerprint =
       ProfileQazaPlanReconciliationService.planFingerprint(plan);
@@ -116,9 +120,7 @@ Future<_Harness> _createHarness({
           prayerType: prayer,
           originalDate: date,
           status: isCompleted ? QazaStatus.completed : QazaStatus.pending,
-          completedAt: isCompleted
-              ? DateTime(2026, 10, 1, 12)
-              : null,
+          completedAt: isCompleted ? DateTime(2026, 10, 1, 12) : null,
           completionId: isCompleted ? 'protected-completion' : null,
           profilePlanRevisionId: isManual ? null : 'old-revision',
           profilePlanFingerprint: isManual ? null : fingerprint,
@@ -226,7 +228,8 @@ void main() {
           final savedProfile = await harness.profiles.load();
           expect(savedProfile?.dateOfBirth, testCase.newProfile.dateOfBirth);
           expect(savedProfile?.pubertyAge, testCase.newProfile.pubertyAge);
-          expect(savedProfile?.startPrayingAge, testCase.newProfile.startPrayingAge);
+          expect(savedProfile?.startPrayingAge,
+              testCase.newProfile.startPrayingAge);
 
           final oldPlan = const QazaPlanService().planFor(
             testCase.oldProfile,
@@ -265,13 +268,15 @@ void main() {
           expect(protectedRecords, hasLength(2));
           expect(
             protectedRecords
-                .firstWhere((record) => record.id == _recordId(250, PrayerType.fajr))
+                .firstWhere(
+                    (record) => record.id == _recordId(250, PrayerType.fajr))
                 .status,
             QazaStatus.completed,
           );
           expect(
             protectedRecords
-                .firstWhere((record) => record.id == _recordId(250, PrayerType.zuhr))
+                .firstWhere(
+                    (record) => record.id == _recordId(250, PrayerType.zuhr))
                 .profilePlanFingerprint,
             isNull,
           );

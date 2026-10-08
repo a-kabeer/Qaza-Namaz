@@ -104,7 +104,8 @@ class HijriDateService {
       10 => l10n.hijriMonthShawwal,
       11 => l10n.hijriMonthDhulQadah,
       12 => l10n.hijriMonthDhulHijjah,
-      _ => throw ArgumentError.value(month, 'month', 'Hijri month must be 1-12.'),
+      _ =>
+        throw ArgumentError.value(month, 'month', 'Hijri month must be 1-12.'),
     };
   }
 

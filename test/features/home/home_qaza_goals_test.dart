@@ -69,9 +69,8 @@ Widget _buildWidget(QazaActivityPeriod period) {
 }
 
 void main() {
-  testWidgets(
-    'renders current Sunday-Saturday date range and weekly progress',
-    (
+  testWidgets('renders current Sunday-Saturday date range and weekly progress',
+      (
     tester,
   ) async {
     final period = _period(completed: 29, dailyTarget: 5);
@@ -90,8 +89,7 @@ void main() {
   });
 
   testWidgets(
-    'includes all seven days in weekly target even when three are future',
-    (
+      'includes all seven days in weekly target even when three are future', (
     tester,
   ) async {
     final period = _period(completed: 20, dailyTarget: 5);
@@ -105,8 +103,7 @@ void main() {
   });
 
   testWidgets(
-    'zero daily target keeps the card stable without division by zero',
-    (
+      'zero daily target keeps the card stable without division by zero', (
     tester,
   ) async {
     final period = _period(completed: 0, dailyTarget: 0);
@@ -146,8 +143,7 @@ void main() {
           homeDashboardActivityProvider.overrideWith(
             (ref) => Future.value(
               HomeDashboardActivity(
-                dailyProgress:
-                    const HomeDailyProgress(completed: 0, target: 5),
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
                 currentWeek: period,
                 dailyGoals: period,
               ),

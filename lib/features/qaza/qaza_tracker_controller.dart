@@ -50,7 +50,8 @@ extension QazaStatusFilterX on QazaStatusFilter {
   QazaSortOrder get defaultSortOrder => switch (this) {
         QazaStatusFilter.completed => QazaSortOrder.newestFirst,
         QazaStatusFilter.all ||
-        QazaStatusFilter.pending => QazaSortOrder.oldestFirst,
+        QazaStatusFilter.pending =>
+          QazaSortOrder.oldestFirst,
       };
 }
 
@@ -111,10 +112,7 @@ class QazaTrackerState {
   /// True when the user has narrowed the ledger, which distinguishes an empty
   /// ledger from an empty filter result.
   bool get isFiltered =>
-      prayerFilter != null ||
-      from != null ||
-      to != null ||
-      additionId != null;
+      prayerFilter != null || from != null || to != null || additionId != null;
 
   bool get hasDateFilter => from != null || to != null;
 
@@ -170,8 +168,7 @@ class QazaTrackerState {
             clearPrayerFilter ? null : prayerFilter ?? this.prayerFilter,
         from: clearDates ? null : from ?? this.from,
         to: clearDates ? null : to ?? this.to,
-        additionId:
-            clearAdditionId ? null : additionId ?? this.additionId,
+        additionId: clearAdditionId ? null : additionId ?? this.additionId,
         records: records ?? this.records,
         hasMore: hasMore ?? this.hasMore,
         loading: loading ?? this.loading,
@@ -205,7 +202,8 @@ class QazaTrackerFilterRequest {
 final qazaTrackerFilterRequestProvider =
     StateProvider<QazaTrackerFilterRequest?>((ref) => null);
 
-class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, String?> {
+class QazaTrackerController
+    extends AutoDisposeFamilyNotifier<QazaTrackerState, String?> {
   static const int pageSize = 50;
 
   int _queryGeneration = 0;
@@ -226,9 +224,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       );
     }
 
-    final request = additionId == null
-        ? ref.read(qazaTrackerFilterRequestProvider)
-        : null;
+    final request =
+        additionId == null ? ref.read(qazaTrackerFilterRequestProvider) : null;
     Future.microtask(refresh);
     if (request == null) return QazaTrackerState(additionId: additionId);
     _consumeRequest(request);
@@ -361,8 +358,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
           additionId: state.additionId,
           afterOriginalDate:
               !completed && oldestFirst ? after?.originalDate : null,
-          afterPrayerType:
-              !completed && oldestFirst ? after?.prayerType : null,
+          afterPrayerType: !completed && oldestFirst ? after?.prayerType : null,
           beforeOriginalDate:
               !completed && !oldestFirst ? after?.originalDate : null,
           beforePrayerType:
@@ -491,8 +487,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     final matches = state.records.where((record) => record.id == recordId);
     if (matches.isEmpty) return;
     final record = matches.single;
-    if (record.status != QazaStatus.completed ||
-        record.completionId == null) {
+    if (record.status != QazaStatus.completed || record.completionId == null) {
       return;
     }
     state = state.copyWith(
@@ -515,7 +510,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
       return;
     }
     final matches = state.records.where((record) => record.id == recordId);
-    if (matches.isEmpty || matches.single.status != QazaStatus.completed) return;
+    if (matches.isEmpty || matches.single.status != QazaStatus.completed)
+      return;
     final record = matches.single;
     final next = Set<String>.of(state.selected);
     if (!next.remove(recordId)) {
@@ -612,9 +608,9 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
       await ref.read(qazaServiceProvider).deleteRecord(
-        userId: userId,
-        recordId: recordId,
-      );
+            userId: userId,
+            recordId: recordId,
+          );
       ref.invalidate(progressSummaryProvider);
       await refresh();
     } finally {
@@ -663,8 +659,7 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
 
       state = state.copyWith(
         completing: false,
-        selectionMode:
-            exitSelectionModeOnSuccess ? false : state.selectionMode,
+        selectionMode: exitSelectionModeOnSuccess ? false : state.selectionMode,
         selected:
             exitSelectionModeOnSuccess ? const <String>{} : state.selected,
       );
@@ -702,7 +697,8 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
 
     final expected = <String, String>{};
     for (final id in state.selected) {
-      for (final record in state.records.where((candidate) => candidate.id == id)) {
+      for (final record
+          in state.records.where((candidate) => candidate.id == id)) {
         if (record.status == QazaStatus.completed &&
             record.completionId != null) {
           expected[id] = record.completionId!;
@@ -768,10 +764,11 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
 
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
-      final changed = await ref.read(qazaServiceProvider).markCompletedAsPending(
-            userId: ref.read(requiredUserIdProvider),
-            recordId: recordId,
-          );
+      final changed =
+          await ref.read(qazaServiceProvider).markCompletedAsPending(
+                userId: ref.read(requiredUserIdProvider),
+                recordId: recordId,
+              );
       if (changed) {
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
@@ -802,9 +799,9 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     state = state.copyWith(recordMutating: true, clearError: true);
     try {
       final count = await ref.read(qazaServiceProvider).deleteRecords(
-        userId: userId,
-        recordIds: ids,
-      );
+            userId: userId,
+            recordIds: ids,
+          );
       exitSelectionMode();
       if (count > 0) {
         ref.read(homeControllerProvider).invalidateDashboard();
@@ -820,14 +817,14 @@ class QazaTrackerController extends AutoDisposeFamilyNotifier<QazaTrackerState, 
     }
   }
 
-    /// Legacy count-returning wrapper kept for older callers/tests.
+  /// Legacy count-returning wrapper kept for older callers/tests.
   Future<int> completeSelected() async {
     final batch = await completeSelectedWithUndo();
     return batch?.count ?? 0;
   }
 }
 
-final qazaTrackerControllerProvider =
-    AutoDisposeNotifierProviderFamily<QazaTrackerController, QazaTrackerState, String?>(
+final qazaTrackerControllerProvider = AutoDisposeNotifierProviderFamily<
+    QazaTrackerController, QazaTrackerState, String?>(
   QazaTrackerController.new,
 );

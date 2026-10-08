@@ -26,8 +26,8 @@ void main() {
     final settingsPage = File(
       'lib/features/settings/settings_screen.dart',
     ).readAsStringSync();
-    final barrel = File('lib/features/prayer_time/prayer_time.dart')
-        .readAsStringSync();
+    final barrel =
+        File('lib/features/prayer_time/prayer_time.dart').readAsStringSync();
 
     expect(prayerPage, isNot(contains('PrayerSettingsPage')));
     expect(prayerPage, isNot(contains('prayer_time_settings')));
@@ -139,7 +139,8 @@ void main() {
     });
 
     expect(snapshot, isNotNull);
-    expect(snapshot!.settings.calculationMethod, PrayerCalculationMethod.karachi);
+    expect(
+        snapshot!.settings.calculationMethod, PrayerCalculationMethod.karachi);
     expect(snapshot.calculationMadhab, isNull);
   });
 }

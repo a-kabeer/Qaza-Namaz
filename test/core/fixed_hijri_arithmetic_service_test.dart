@@ -42,10 +42,10 @@ void main() {
   test('fixed arithmetic uses 30-day months and 360-day years', () {
     expect(
       FixedHijriArithmeticService.dayIndex(
-        year: 1445,
-        month: 10,
-        day: 1,
-      ) -
+            year: 1445,
+            month: 10,
+            day: 1,
+          ) -
           FixedHijriArithmeticService.dayIndex(
             year: 1444,
             month: 10,
@@ -61,7 +61,9 @@ void main() {
     expect(duration.totalDays, 725);
   });
 
-  test('30-to-29 real Hijri month transition does not change fixed age or Qaza count', () {
+  test(
+      '30-to-29 real Hijri month transition does not change fixed age or Qaza count',
+      () {
     int? sourceYear;
     for (var year = 1400; year < 1499; year++) {
       if (HijriDateService.daysInMonth(year: year, month: 9) == 30 &&
@@ -85,10 +87,12 @@ void main() {
     );
 
     expect(ProfileRules.currentAge(dob, clampedBirthday), 0);
-    expect(ProfileRules.currentAge(
-      dob,
-      clampedBirthday.add(const Duration(days: 1)),
-    ), 1);
+    expect(
+        ProfileRules.currentAge(
+          dob,
+          clampedBirthday.add(const Duration(days: 1)),
+        ),
+        1);
 
     final profile = _profile(
       dob: dob,
@@ -142,7 +146,8 @@ void main() {
     );
   });
 
-  test('Qaza duration is fixed 360-day arithmetic, not Gregorian elapsed years', () {
+  test('Qaza duration is fixed 360-day arithmetic, not Gregorian elapsed years',
+      () {
     final dob = DateTime(2000, 1, 1);
     final profile = _profile(
       dob: dob,
@@ -170,13 +175,12 @@ void main() {
     final dob = DateTime(2018, 11, 12);
 
     final birthIndex = FixedHijriArithmeticService.dayIndexForGregorian(dob);
-    final oneYearBoundary = birthIndex +
-        FixedHijriArithmeticService.daysPerYear;
+    final oneYearBoundary =
+        birthIndex + FixedHijriArithmeticService.daysPerYear;
     final boundaryDifference = oneYearBoundary - birthIndex;
     expect(boundaryDifference, 360);
 
-    final beforeStart =
-        firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
+    final beforeStart = firstGregorianDateAtOrAfterFixedAge(dob, 13).subtract(
       const Duration(days: 1),
     );
     final onStart = firstGregorianDateAtOrAfterFixedAge(dob, 13);
@@ -195,7 +199,9 @@ void main() {
     expect(ProfileRules.currentAge(dob, onStart), greaterThanOrEqualTo(13));
   });
 
-  test('changing DOB, puberty age, or start-praying age recalculates consistently', () {
+  test(
+      'changing DOB, puberty age, or start-praying age recalculates consistently',
+      () {
     final base = _profile(
       dob: DateTime(1994, 12, 31),
       pubertyAge: 12,

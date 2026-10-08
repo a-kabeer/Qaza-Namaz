@@ -417,8 +417,7 @@ class QazaService {
       throw const QazaDuplicateRecordException();
     }
 
-    final identityChanged =
-        current.prayerType != record.prayerType ||
+    final identityChanged = current.prayerType != record.prayerType ||
         QazaDate.key(current.originalDate) != QazaDate.key(normalizedDate);
     var recordToUpdate = current.copyWith(
       prayerType: record.prayerType,
@@ -694,8 +693,7 @@ class QazaService {
 
     final normalizedEarliestDate =
         earliestDate == null ? null : QazaDate.normalize(earliestDate);
-    final normalizedToday =
-        today == null ? null : QazaDate.normalize(today);
+    final normalizedToday = today == null ? null : QazaDate.normalize(today);
 
     bool dateAllowed(DateTime date) {
       final normalized = QazaDate.normalize(date);

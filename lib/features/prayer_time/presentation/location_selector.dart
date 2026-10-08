@@ -63,7 +63,9 @@ class LocationSelector extends ConsumerWidget {
                       children: [
                         Text(
                           location!.primaryLabel,
-                          style: Theme.of(context).textTheme.titleMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         if (location!.secondaryLabel.isNotEmpty)
@@ -144,7 +146,8 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
           final countries = query.isEmpty
               ? codes
               : codes.where((code) {
-                  return catalog.countryName(code)
+                  return catalog
+                      .countryName(code)
                       .toLowerCase()
                       .contains(query);
                 }).toList(growable: false);

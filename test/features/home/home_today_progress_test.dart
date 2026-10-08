@@ -255,7 +255,8 @@ void main() {
     expect(find.text('2 / 5 completed • 40%'), findsOneWidget);
     expect(find.text('Zuhr'), findsWidgets);
     expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
-    expect(find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
+    expect(
+        find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
     expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
     expect(find.byKey(const Key('home_today_date')), findsNothing);
     expect(find.byKey(const Key('home_today_date_hijri')), findsNothing);
@@ -285,7 +286,8 @@ void main() {
     expect(find.byKey(const Key('home_today_donut')), findsNothing);
     expect(find.byKey(const Key('home_complete_oldest_qaza')), findsOneWidget);
     expect(find.byKey(const Key('home_oldest_qaza_date')), findsOneWidget);
-    expect(find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
+    expect(
+        find.byKey(const Key('home_oldest_qaza_date_hijri')), findsOneWidget);
     expect(find.text('2 / 5 completed • 40%'), findsOneWidget);
     expect(find.text('Asr'), findsWidgets);
     expect(find.byKey(const Key('home_today_date')), findsNothing);
@@ -367,7 +369,8 @@ void main() {
     );
   });
 
-  testWidgets('Prayer-specific Qaza refresh keeps the cached Next Qaza footprint stable',
+  testWidgets(
+      'Prayer-specific Qaza refresh keeps the cached Next Qaza footprint stable',
       (tester) async {
     final record = _pendingRecord(
       id: 'fajr',
