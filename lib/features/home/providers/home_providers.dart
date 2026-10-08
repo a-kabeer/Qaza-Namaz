@@ -520,7 +520,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   }
 
   Future<void> _removeStoredValue(String key) async {
-    await ref.read(appDatabaseProvider).customDelete(
+    await ref.read(appDatabaseProvider).customUpdate(
       'DELETE FROM meta_store WHERE key = ?',
       variables: [Variable.withString(key)],
     );
