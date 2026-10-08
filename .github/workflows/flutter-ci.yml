@@ -44,6 +44,9 @@ jobs:
       - name: Offline architecture policy
         run: python3 tools/offline_architecture_check.py
 
+      - name: Phase 1 to Phase 2 boundary policy
+        run: python3 tools/phase_boundary_check.py
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -98,6 +101,9 @@ jobs:
 
       - name: Offline architecture policy
         run: python3 tools/offline_architecture_check.py
+
+      - name: Phase 1 to Phase 2 boundary policy
+        run: python3 tools/phase_boundary_check.py
 
       - name: Build release APK
         run: flutter build apk --release
@@ -186,5 +192,8 @@ jobs:
             adb wait-for-device
             adb shell svc wifi disable
             adb shell svc data disable || true
+            adb shell settings put global airplane_mode_on 1
+            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
+            adb shell dumpsys connectivity | grep -E 'NetworkAgentInfo|TRANSPORT_WIFI|TRANSPORT_CELLULAR' || true
             flutter pub get
-            flutter test integration_test/offline_startup_test.dart
+            timeout 180s flutter test integration_test/offline_startup_test.dart
