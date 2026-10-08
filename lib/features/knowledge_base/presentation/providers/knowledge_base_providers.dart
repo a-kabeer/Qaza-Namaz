@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../../app/providers.dart';
-import '../../../../data/local/database/app_database.dart';
 import '../../data/bundled_knowledge_base_repository.dart';
 import '../../data/knowledge_base_repository.dart';
 import '../../domain/knowledge_article.dart';
