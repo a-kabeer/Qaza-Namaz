@@ -209,7 +209,7 @@ void main() {
       () => service.importJson(jsonEncode(decoded)),
       throwsA(
         predicate<LocalBackupException>(
-          (error) => error.message.contains('not supported'),
+          (error) => error.message.contains('invalid'),
         ),
       ),
     );
