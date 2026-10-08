@@ -50,8 +50,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('First'), findsOneWidget);
 
-      final firstKey =
-          tester.widget<SnackBar>(find.byType(SnackBar)).key;
+      final firstKey = tester.widget<SnackBar>(find.byType(SnackBar)).key;
 
       service.info('Second');
       await tester.pump(const Duration(milliseconds: 300));
@@ -60,8 +59,7 @@ void main() {
       expect(find.text('Second'), findsOneWidget);
       expect(find.byType(SnackBar), findsOneWidget);
 
-      final secondKey =
-          tester.widget<SnackBar>(find.byType(SnackBar)).key;
+      final secondKey = tester.widget<SnackBar>(find.byType(SnackBar)).key;
       expect(secondKey, isNot(equals(firstKey)));
     });
 
@@ -72,8 +70,7 @@ void main() {
 
       service.info('Same message');
       await tester.pump(const Duration(milliseconds: 300));
-      final firstKey =
-          tester.widget<SnackBar>(find.byType(SnackBar)).key;
+      final firstKey = tester.widget<SnackBar>(find.byType(SnackBar)).key;
 
       service.info('Same message');
       await tester.pump(const Duration(milliseconds: 300));
@@ -84,9 +81,10 @@ void main() {
         equals(firstKey),
       );
 
-      now = now.add(AppSnackBarPolicy.duplicateWindow + const Duration(
-        milliseconds: 1,
-      ));
+      now = now.add(AppSnackBarPolicy.duplicateWindow +
+          const Duration(
+            milliseconds: 1,
+          ));
       service.info('Same message');
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -196,7 +194,8 @@ void main() {
         expiresAt: expiry,
       );
 
-      expect(batch.isExpired(expiry.subtract(const Duration(milliseconds: 1))), isFalse);
+      expect(batch.isExpired(expiry.subtract(const Duration(milliseconds: 1))),
+          isFalse);
       expect(batch.isExpired(expiry), isTrue);
       expect(batch.isExpired(expiry.add(const Duration(minutes: 1))), isTrue);
     });

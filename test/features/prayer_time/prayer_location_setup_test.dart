@@ -27,9 +27,8 @@ void main() {
   });
 
   test(
-    'location implementation preserves the offline geolocator path with '
-    'native Google Play Services resolution',
-    () {
+      'location implementation preserves the offline geolocator path with '
+      'native Google Play Services resolution', () {
     final repository = File(
       'lib/features/prayer_time/data/prayer_location_repository.dart',
     ).readAsStringSync();
@@ -49,8 +48,8 @@ void main() {
   });
 
   test(
-    'cancelled Location Services resolution gets an actionable recovery state',
-    () {
+      'cancelled Location Services resolution gets an actionable recovery state',
+      () {
     final source = File(
       'lib/features/prayer_time/presentation/prayer_time_page.dart',
     ).readAsStringSync().replaceAll('\r\n', '\n').replaceAll('\r', '\n');

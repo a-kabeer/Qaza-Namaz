@@ -24,7 +24,8 @@ UserProfile _profile({
   DateTime? dob,
   int pubertyAge = 12,
   int startPrayingAge = 14,
-}) => UserProfile(
+}) =>
+    UserProfile(
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.other,
@@ -119,9 +120,7 @@ Future<_Harness> _createHarness({
           prayerType: prayer,
           originalDate: date,
           status: isCompleted ? QazaStatus.completed : QazaStatus.pending,
-          completedAt: isCompleted
-              ? DateTime(2026, 10, 1, 12)
-              : null,
+          completedAt: isCompleted ? DateTime(2026, 10, 1, 12) : null,
           completionId: isCompleted ? 'protected-completion' : null,
           profilePlanRevisionId: isManual ? null : 'old-revision',
           profilePlanFingerprint: isManual ? null : fingerprint,
@@ -229,7 +228,8 @@ void main() {
           final savedProfile = await harness.profiles.load();
           expect(savedProfile?.dateOfBirth, testCase.newProfile.dateOfBirth);
           expect(savedProfile?.pubertyAge, testCase.newProfile.pubertyAge);
-          expect(savedProfile?.startPrayingAge, testCase.newProfile.startPrayingAge);
+          expect(savedProfile?.startPrayingAge,
+              testCase.newProfile.startPrayingAge);
 
           final oldPlan = const QazaPlanService().planFor(
             testCase.oldProfile,
@@ -268,13 +268,15 @@ void main() {
           expect(protectedRecords, hasLength(2));
           expect(
             protectedRecords
-                .firstWhere((record) => record.id == _recordId(250, PrayerType.fajr))
+                .firstWhere(
+                    (record) => record.id == _recordId(250, PrayerType.fajr))
                 .status,
             QazaStatus.completed,
           );
           expect(
             protectedRecords
-                .firstWhere((record) => record.id == _recordId(250, PrayerType.zuhr))
+                .firstWhere(
+                    (record) => record.id == _recordId(250, PrayerType.zuhr))
                 .profilePlanFingerprint,
             isNull,
           );
