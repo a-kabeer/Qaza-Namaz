@@ -108,6 +108,9 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Build debug APK for offline integration test
+        run: flutter build apk --debug
+
       - name: Build release AAB
         run: flutter build appbundle --release
 
@@ -119,6 +122,12 @@ jobs:
             echo "Release merged manifest still requests INTERNET."
             exit 1
           fi
+
+      - name: Upload debug APK for offline integration test
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
@@ -134,6 +143,7 @@ jobs:
 
   android_offline_smoke:
     name: Android offline startup smoke test
+    needs: build_android
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
@@ -154,8 +164,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Download debug APK for offline integration test
+        uses: actions/download-artifact@v4
+        with:
+          name: app-debug-apk
+          path: .
 
       - name: AVD cache
         uses: actions/cache@v5
@@ -194,15 +207,14 @@ jobs:
           script: |
             adb wait-for-device
 
-            # Build the debug APK while the GitHub runner still has network
-            # access. The APK itself is then exercised with emulator networking
-            # disabled, so the runtime test does not require an online build.
+            # Download the already-built debug APK while the host still has
+            # network access. No Gradle/NDK build is performed in the offline
+            # execution job.
             flutter pub get
-            flutter build apk --debug
 
             adb shell svc wifi disable
             adb shell svc data disable || true
             adb shell settings put global airplane_mode_on 1
             adb shell dumpsys connectivity | grep -E 'NetworkAgentInfo|TRANSPORT_WIFI|TRANSPORT_CELLULAR' || true
 
-            timeout 180s flutter test integration_test/offline_startup_test.dart               --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk
+            timeout 180s flutter test integration_test/offline_startup_test.dart               --use-application-binary=app-debug.apk
