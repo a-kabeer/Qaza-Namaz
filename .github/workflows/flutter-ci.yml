@@ -193,7 +193,6 @@ jobs:
             adb shell svc wifi disable
             adb shell svc data disable || true
             adb shell settings put global airplane_mode_on 1
-            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
             adb shell dumpsys connectivity | grep -E 'NetworkAgentInfo|TRANSPORT_WIFI|TRANSPORT_CELLULAR' || true
             flutter pub get
             timeout 180s flutter test integration_test/offline_startup_test.dart
