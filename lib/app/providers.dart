@@ -20,11 +20,6 @@ import '../data/local/account_scoped_user_profile_repository.dart';
 import '../data/local/account_scoped_qaza_plan_revision_repository.dart';
 import '../data/local/onboarding_commit_repository.dart';
 import '../domain/repositories/onboarding_commit_repository.dart';
-import '../data/remote/firebase_services.dart';
-import '../data/remote/firebase_backup_service.dart';
-import '../data/remote/firebase_backup_health_service.dart';
-import '../data/remote/firebase_reconciliation_service.dart';
-import '../data/remote/firebase_backup_worker.dart';
 import '../features/account/account_session_manager.dart';
 import '../data/local/qaza_local_store.dart';
 import '../data/local/database/qaza_addition_repository.dart';
@@ -53,37 +48,7 @@ final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
   return AccountLocalStore(database: ref.watch(appDatabaseProvider));
 });
 
-final firebaseServicesProvider = Provider<FirebaseServices>((ref) {
-  return FirebaseServices(diagnostics: ref.watch(diagnosticsProvider));
-});
-
-final googleFirebaseAuthServiceProvider =
-    Provider<GoogleFirebaseAuthService>((ref) {
-  return GoogleFirebaseAuthService(ref.watch(firebaseServicesProvider));
-});
-
-final firebaseBackupServiceProvider = Provider<FirebaseBackupService>((ref) {
-  return FirebaseBackupService(
-    firebase: ref.watch(firebaseServicesProvider),
-    database: ref.watch(appDatabaseProvider),
-    accountStore: ref.watch(accountLocalStoreProvider),
-  );
-});
-
-final firebaseReconciliationServiceProvider =
-    Provider<FirebaseReconciliationService>((ref) {
-  return FirebaseReconciliationService(
-    firebase: ref.watch(firebaseServicesProvider),
-    backupService: ref.watch(firebaseBackupServiceProvider),
-    accountStore: ref.watch(accountLocalStoreProvider),
-    database: ref.watch(appDatabaseProvider),
-    diagnostics: ref.watch(diagnosticsProvider),
-  );
-});
-
-final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) {
-  return null;
-});
+final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) => null);
 
 final activeUserIdProvider = Provider<String?>((ref) {
   return ref.watch(activeLocalAccountIdStateProvider);
@@ -93,35 +58,11 @@ final accountSessionManagerProvider =
     ChangeNotifierProvider<AccountSessionManager>((ref) {
   final manager = AccountSessionManager(
     accountStore: ref.watch(accountLocalStoreProvider),
-    firebase: ref.watch(firebaseServicesProvider),
-    auth: ref.watch(googleFirebaseAuthServiceProvider),
-    backup: ref.watch(firebaseBackupServiceProvider),
-    reconciliation: ref.watch(firebaseReconciliationServiceProvider),
     onActiveLocalAccountChanged: (id) {
-      ref.read(activeLocalAccountIdStateProvider.notifier).state =
-          id;
+      ref.read(activeLocalAccountIdStateProvider.notifier).state = id;
     },
   );
   return manager;
-});
-
-final firebaseBackupHealthServiceProvider =
-    Provider<FirebaseBackupHealthService>((ref) {
-  return FirebaseBackupHealthService(
-    firebase: ref.watch(firebaseServicesProvider),
-    backupService: ref.watch(firebaseBackupServiceProvider),
-    accountStore: ref.watch(accountLocalStoreProvider),
-  );
-});
-
-final backupWorkerProvider = Provider<FirebaseBackupWorker>((ref) {
-  final worker = FirebaseBackupWorker(
-    firebase: ref.watch(firebaseServicesProvider),
-    accountStore: ref.watch(accountLocalStoreProvider),
-    backupService: ref.watch(firebaseBackupServiceProvider),
-    authService: ref.watch(googleFirebaseAuthServiceProvider),
-  );
-  return worker;
 });
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
@@ -163,8 +104,7 @@ final qazaPlanServiceProvider = Provider<QazaPlanService>(
   (ref) => const QazaPlanService(),
 );
 
-final qazaPlanRevisionRepositoryProvider =
-    Provider<QazaPlanRevisionRepository>(
+final qazaPlanRevisionRepositoryProvider = Provider<QazaPlanRevisionRepository>(
   (ref) => AccountScopedQazaPlanRevisionRepository(
     ref.watch(accountLocalStoreProvider),
   ),

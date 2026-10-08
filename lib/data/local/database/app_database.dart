@@ -6,16 +6,14 @@ import 'package:path_provider/path_provider.dart';
 
 import 'database_encryption.dart';
 import 'qaza_records_dao.dart';
-import 'sync_outbox_dao.dart';
 import 'tables/qaza_records.dart';
-import 'tables/sync_outbox.dart';
 
 part 'app_database.g.dart';
 
 /// Application-local encrypted SQLite database.
 @DriftDatabase(
-  tables: [QazaRecords, SyncOutbox],
-  daos: [QazaRecordsDao, SyncOutboxDao],
+  tables: [QazaRecords],
+  daos: [QazaRecordsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
@@ -53,12 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 13 adds per-entity backup progress markers so normal
-  /// Google backups only transmit changed Qaza entities.
-  /// Schema version 12 adds versioning to deletion actions.
-  /// Schema version 11 adds account/session and cloud-backup infrastructure.
-  /// Schema version 6 removes the legacy Qaza History operation/recovery schema.
-  /// Existing pending/completed records and completion markers are preserved.
+  /// Schema version 17 is the current local-only database schema.
+  /// Qaza records, additions, profile data, and completion markers are stored
+  /// exclusively in the local encrypted SQLite database.
   @override
   int get schemaVersion => 17;
 
@@ -70,8 +65,6 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
-          await _ensureMigrationSnapshotSchema();
-          await _ensureBackupStateSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -79,7 +72,6 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.addColumn(qazaRecords, qazaRecords.completionId);
-            await m.addColumn(syncOutbox, syncOutbox.completionId);
           }
           if (from < 6) {
             await _removeLegacyQazaHistorySchema();
@@ -119,147 +111,38 @@ class AppDatabase extends _$AppDatabase {
           if (from < 12) {
             await _ensureDeletionActionVersionColumn();
           }
-          if (from < 13) {
-            await _ensureEntityMetadataSyncColumn();
-          }
           if (from < 11) {
             await _ensureAccountSchema();
           }
-          if (from < 14) {
-            await _ensureBackupStateSchema();
-          }
-          if (from < 15) {
-            await _ensureBackupProgressColumns();
-          }
-          if (from < 16) {
-            await _ensureBackupFailureColumns();
-          }
-          if (from < 17) {
-            await _ensureAccountSessionModeColumn();
-          }
           await _ensurePerformanceIndexes();
-          await _ensureMigrationSnapshotSchema();
         },
       );
-
-
-  Future<void> _ensureMigrationSnapshotSchema() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
-        migration_id TEXT NOT NULL,
-        local_account_id TEXT NOT NULL,
-        snapshot_json TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        PRIMARY KEY (migration_id, local_account_id)
-      )
-    ''');
-    final columns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('migration_snapshot_id')) {
-      await customStatement(
-        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
-      );
-    }
-  }
-
-  Future<void> _ensureAccountSessionModeColumn() async {
-    final columns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('account_session_mode')) {
-      await customStatement(
-        "ALTER TABLE app_session_state ADD COLUMN account_session_mode TEXT NOT NULL DEFAULT 'none'",
-      );
-    }
-  }
-
-  Future<void> _ensureBackupFailureColumns() async {
-    final columns = await customSelect(
-      'PRAGMA table_info(sync_outbox)',
-    ).get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('failure_category')) {
-      await customStatement(
-        'ALTER TABLE sync_outbox ADD COLUMN failure_category TEXT',
-      );
-    }
-    if (!names.contains('last_attempt_at')) {
-      await customStatement(
-        'ALTER TABLE sync_outbox ADD COLUMN last_attempt_at INTEGER',
-      );
-    }
-  }
-
-  Future<void> _ensureBackupProgressColumns() async {
-    final columns =
-        await customSelect('PRAGMA table_info(account_backup_state)').get();
-    final names = columns.map((row) => row.read<String>('name')).toSet();
-    if (!names.contains('progress_completed')) {
-      await customStatement(
-        'ALTER TABLE account_backup_state ADD COLUMN progress_completed INTEGER',
-      );
-    }
-    if (!names.contains('progress_total')) {
-      await customStatement(
-        'ALTER TABLE account_backup_state ADD COLUMN progress_total INTEGER',
-      );
-    }
-  }
 
   Future<void> _ensureAccountSchema() async {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS local_accounts (
         local_account_id TEXT NOT NULL PRIMARY KEY,
-        account_mode TEXT NOT NULL,
-        firebase_uid TEXT,
-        google_email TEXT,
-        lifecycle_state TEXT NOT NULL,
-        cloud_backup_enabled INTEGER NOT NULL DEFAULT 0,
-        cloud_generation INTEGER NOT NULL DEFAULT 1,
+        account_mode TEXT NOT NULL DEFAULT 'local',
+        lifecycle_state TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
     ''');
-    await customStatement(
-      'CREATE UNIQUE INDEX IF NOT EXISTS local_accounts_uid_idx '
-      'ON local_accounts (firebase_uid) WHERE firebase_uid IS NOT NULL',
-    );
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS app_session_state (
         id INTEGER NOT NULL PRIMARY KEY,
-        active_local_account_id TEXT,
-        initial_choice_required INTEGER NOT NULL DEFAULT 0,
-        migration_state TEXT NOT NULL DEFAULT 'none',
-        restore_state TEXT NOT NULL DEFAULT 'none',
-        account_session_mode TEXT NOT NULL DEFAULT 'none',
-        migration_snapshot_id TEXT
+        active_local_account_id TEXT
       )
     ''');
-    final sessionColumns =
-        await customSelect('PRAGMA table_info(app_session_state)').get();
-    final sessionColumnNames =
-        sessionColumns.map((row) => row.read<String>('name')).toSet();
-    if (!sessionColumnNames.contains('migration_snapshot_id')) {
-      await customStatement(
-        'ALTER TABLE app_session_state ADD COLUMN migration_snapshot_id TEXT',
-      );
-    }
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS device_metadata (
         id INTEGER NOT NULL PRIMARY KEY,
         device_instance_id TEXT NOT NULL
       )
     ''');
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS account_migration_snapshots (
-        migration_id TEXT NOT NULL,
-        local_account_id TEXT NOT NULL,
-        snapshot_json TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        PRIMARY KEY (migration_id, local_account_id)
-      )
-    ''');
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_profiles (
         local_account_id TEXT NOT NULL PRIMARY KEY,
@@ -270,6 +153,7 @@ class AppDatabase extends _$AppDatabase {
         operation_id TEXT NOT NULL
       )
     ''');
+
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_plan_revisions (
         local_account_id TEXT NOT NULL,
@@ -279,326 +163,6 @@ class AppDatabase extends _$AppDatabase {
         PRIMARY KEY (local_account_id, revision_id)
       )
     ''');
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS entity_metadata (
-        local_account_id TEXT NOT NULL,
-        entity_type TEXT NOT NULL,
-        entity_id TEXT NOT NULL,
-        entity_version INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        writer_device_id TEXT NOT NULL,
-        operation_id TEXT NOT NULL,
-        synced_entity_version INTEGER NOT NULL DEFAULT 0,
-        PRIMARY KEY (local_account_id, entity_type, entity_id)
-      )
-    ''');
-    await _ensureEntityMetadataSyncColumn();
-    await customStatement(
-      '''INSERT OR IGNORE INTO entity_metadata
-         (local_account_id, entity_type, entity_id, entity_version,
-          updated_at, writer_device_id, operation_id, synced_entity_version)
-         SELECT r.user_id, 'qazaRecord', r.id, r.record_version,
-                r.updated_at,
-                COALESCE(
-                  (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-                  'unknown_device'
-                ),
-                'backfill_' || r.id,
-                0
-         FROM qaza_records r''',
-    );
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS qaza_record_tombstones (
-        local_account_id TEXT NOT NULL,
-        record_id TEXT NOT NULL,
-        record_version INTEGER NOT NULL,
-        deleted_at INTEGER NOT NULL,
-        writer_device_id TEXT NOT NULL,
-        operation_id TEXT NOT NULL,
-        cloud_generation INTEGER NOT NULL,
-        PRIMARY KEY (local_account_id, record_id)
-      )
-    ''');
-    await customStatement(
-      '''INSERT OR IGNORE INTO entity_metadata
-         (local_account_id, entity_type, entity_id, entity_version,
-          updated_at, writer_device_id, operation_id, synced_entity_version)
-         SELECT t.local_account_id, 'qazaRecord', t.record_id, t.record_version,
-                t.deleted_at,
-                t.writer_device_id,
-                t.operation_id,
-                0
-         FROM qaza_record_tombstones t''',
-    );
-
-    final columns = await customSelect('PRAGMA table_info(sync_outbox)').get();
-    final existing = columns.map((row) => row.read<String>('name')).toSet();
-    final extensions = <String, String>{
-      'firebase_uid': 'TEXT',
-      'cloud_generation': 'INTEGER',
-      'entity_type': 'TEXT',
-      'operation': 'TEXT',
-      'payload_json': 'TEXT',
-      'next_attempt_at': 'INTEGER',
-      'writer_device_id': 'TEXT',
-      'lease_until': 'INTEGER',
-      'worker_id': 'TEXT',
-      'failure_category': 'TEXT',
-      'last_attempt_at': 'INTEGER',
-    };
-    for (final entry in extensions.entries) {
-      if (existing.contains(entry.key)) continue;
-      await customStatement(
-        'ALTER TABLE sync_outbox ADD COLUMN ' + entry.key + ' ' + entry.value,
-      );
-    }
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS sync_outbox_modern_ready_idx '
-      'ON sync_outbox (user_id, type, next_attempt_at, queued_at)',
-    );
-    await _ensureBackupTriggers();
-  }
-
-  Future<void> _ensureBackupTriggers() async {
-    const timestamp = "(CAST(strftime('%s','now') AS INTEGER) * 1000000)";
-    const queue = '''
-      INSERT OR IGNORE INTO sync_outbox
-        (id, user_id, type, queued_at, firebase_uid, cloud_generation,
-         entity_type, operation, next_attempt_at, attempts,
-         writer_device_id, worker_id, lease_until)
-      SELECT 'account_snapshot_' || %USER%, %USER%, 'account_snapshot',
-             $timestamp, firebase_uid, cloud_generation, 'account',
-             'snapshot', $timestamp, 0,
-             (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-             NULL, NULL
-      FROM local_accounts
-      WHERE local_account_id = %USER%
-        AND account_mode = 'google'
-        AND cloud_backup_enabled = 1
-        AND firebase_uid IS NOT NULL;
-    ''';
-
-    const triggers = <String>[
-      'qaza_records_backup_insert',
-      'qaza_records_backup_update',
-      'qaza_records_backup_delete',
-      'qaza_additions_backup_insert',
-      'qaza_additions_backup_update',
-      'qaza_additions_backup_delete',
-      'qaza_deletion_actions_backup_insert',
-      'qaza_deletion_actions_backup_update',
-      'qaza_deletion_snapshots_backup_insert',
-      'qaza_plan_revisions_backup_insert',
-    ];
-    for (final name in triggers) {
-      await customStatement('DROP TRIGGER IF EXISTS $name');
-    }
-
-    await customStatement('''
-      CREATE TRIGGER qaza_records_backup_insert
-      AFTER INSERT ON qaza_records
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id, synced_entity_version)
-        SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
-               NEW.updated_at,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16))),
-               0;
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_records_backup_update
-      AFTER UPDATE ON qaza_records
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id, synced_entity_version)
-        SELECT NEW.user_id, 'qazaRecord', NEW.id, NEW.record_version,
-               NEW.updated_at,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16))),
-               0;
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_records_backup_delete
-      AFTER DELETE ON qaza_records
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = OLD.user_id AND account_mode = 'google'
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id, synced_entity_version)
-        SELECT OLD.user_id, 'qazaRecord', OLD.id, OLD.record_version + 1,
-               $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16))),
-               0;
-
-        INSERT OR REPLACE INTO qaza_record_tombstones
-          (local_account_id, record_id, record_version, deleted_at,
-           writer_device_id, operation_id, cloud_generation)
-        SELECT OLD.user_id, OLD.id, OLD.record_version + 1, $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16))),
-               COALESCE(
-                 (SELECT cloud_generation FROM local_accounts
-                  WHERE local_account_id = OLD.user_id), 1
-               );
-        $queue
-      END
-    '''.replaceAll('%USER%', 'OLD.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_additions_backup_insert
-      AFTER INSERT ON qaza_additions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
-        SELECT NEW.user_id, 'qazaAddition', NEW.id, NEW.revision, $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_additions_backup_update
-      AFTER UPDATE ON qaza_additions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
-        SELECT NEW.user_id, 'qazaAddition', NEW.id, NEW.revision, $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_additions_backup_delete
-      AFTER DELETE ON qaza_additions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = OLD.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        $queue
-      END
-    '''.replaceAll('%USER%', 'OLD.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_deletion_actions_backup_insert
-      AFTER INSERT ON qaza_deletion_actions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_deletion_actions_backup_update
-      AFTER UPDATE ON qaza_deletion_actions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        INSERT OR REPLACE INTO entity_metadata
-          (local_account_id, entity_type, entity_id, entity_version, updated_at,
-           writer_device_id, operation_id)
-        SELECT NEW.user_id, 'deletionAction', NEW.id, NEW.entity_version, $timestamp,
-               (SELECT device_instance_id FROM device_metadata WHERE id = 1),
-               lower(hex(randomblob(16)));
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER qaza_deletion_snapshots_backup_insert
-      AFTER INSERT ON qaza_deletion_action_record_snapshots
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.user_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.user_id'));
-
-    await customStatement('''
-      CREATE TRIGGER account_plan_revisions_backup_insert
-      AFTER INSERT ON account_plan_revisions
-      WHEN EXISTS (
-        SELECT 1 FROM local_accounts
-        WHERE local_account_id = NEW.local_account_id
-          AND account_mode = 'google'
-          AND cloud_backup_enabled = 1
-          AND firebase_uid IS NOT NULL
-      )
-      BEGIN
-        $queue
-      END
-    '''.replaceAll('%USER%', 'NEW.local_account_id'));
   }
 
   Future<void> _removeLegacyQazaHistorySchema() async {
@@ -618,14 +182,6 @@ class AppDatabase extends _$AppDatabase {
     // representation in the new ledger model.
     await customStatement(
       "DELETE FROM qaza_records WHERE status = 'deleted'",
-    );
-
-    // Remove queued soft-delete payloads so startup can never attempt to decode
-    // a legacy deleted QazaRecord after the enum value has been removed.
-    await customStatement(
-      '''DELETE FROM sync_outbox
-         WHERE record_json LIKE '%"status":"deleted"%'
-            OR record_json LIKE '%"status": "deleted"%' '''
     );
 
     // Rebuild the table so the obsolete operation_id column is physically
@@ -713,148 +269,6 @@ class AppDatabase extends _$AppDatabase {
     ''');
   }
 
-  Future<void> _ensureBackupStateSchema() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS account_backup_state (
-        local_account_id TEXT NOT NULL PRIMARY KEY,
-        current_dataset_revision INTEGER NOT NULL DEFAULT 0,
-        acknowledged_dataset_revision INTEGER NOT NULL DEFAULT 0,
-        acknowledged_cloud_generation INTEGER NOT NULL DEFAULT 1,
-        last_successful_backup_at INTEGER,
-        state TEXT NOT NULL DEFAULT 'pending',
-        progress_completed INTEGER,
-        progress_total INTEGER
-      )
-    ''');
-
-    await customStatement('''
-      INSERT OR IGNORE INTO account_backup_state
-        (local_account_id, current_dataset_revision,
-         acknowledged_dataset_revision, acknowledged_cloud_generation,
-         last_successful_backup_at, state)
-      SELECT
-        a.local_account_id,
-        CASE WHEN EXISTS (
-          SELECT 1 FROM qaza_records r WHERE r.user_id = a.local_account_id
-        ) OR EXISTS (
-          SELECT 1 FROM qaza_additions qa WHERE qa.user_id = a.local_account_id
-        ) OR EXISTS (
-          SELECT 1 FROM account_profiles p
-          WHERE p.local_account_id = a.local_account_id
-        ) THEN 1 ELSE 0 END,
-        0,
-        a.cloud_generation,
-        NULL,
-        CASE
-          WHEN a.account_mode = 'google' AND a.cloud_backup_enabled = 1
-            THEN 'pending'
-          ELSE 'disabled'
-        END
-      FROM local_accounts a
-    ''');
-
-    await _ensureBackupRevisionTriggers(
-      table: 'account_profiles',
-      accountColumn: 'NEW.local_account_id',
-      deleteAccountColumn: 'OLD.local_account_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'account_plan_revisions',
-      accountColumn: 'NEW.local_account_id',
-      deleteAccountColumn: 'OLD.local_account_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_records',
-      accountColumn: 'NEW.user_id',
-      deleteAccountColumn: 'OLD.user_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_additions',
-      accountColumn: 'NEW.user_id',
-      deleteAccountColumn: 'OLD.user_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_deletion_actions',
-      accountColumn: 'NEW.user_id',
-      deleteAccountColumn: 'OLD.user_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_deletion_action_record_snapshots',
-      accountColumn: 'NEW.user_id',
-      deleteAccountColumn: 'OLD.user_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_profile_plan_provenance',
-      accountColumn: 'NEW.user_id',
-      deleteAccountColumn: 'OLD.user_id',
-    );
-    await _ensureBackupRevisionTriggers(
-      table: 'qaza_record_tombstones',
-      accountColumn: 'NEW.local_account_id',
-      deleteAccountColumn: 'OLD.local_account_id',
-    );
-  }
-
-  Future<void> _ensureBackupRevisionTriggers({
-    required String table,
-    required String accountColumn,
-    required String deleteAccountColumn,
-  }) async {
-    for (final operation in ['insert', 'update', 'delete']) {
-      await customStatement(
-        'DROP TRIGGER IF EXISTS account_backup_revision_' +
-            table +
-            '_' +
-            operation,
-      );
-    }
-
-    Future<void> createTrigger(
-      String operation,
-      String accountExpression,
-      String event,
-    ) {
-      return customStatement('''
-        CREATE TRIGGER account_backup_revision_${table}_${operation}
-        AFTER $event ON $table
-        WHEN EXISTS (
-          SELECT 1 FROM local_accounts
-          WHERE local_account_id = $accountExpression
-            AND account_mode = 'google'
-        )
-        BEGIN
-          UPDATE account_backup_state
-          SET current_dataset_revision = current_dataset_revision + 1,
-              state = CASE
-                WHEN (SELECT cloud_backup_enabled FROM local_accounts
-                      WHERE local_account_id = $accountExpression) = 1
-                  THEN 'pending'
-                ELSE 'disabled'
-              END
-          WHERE local_account_id = $accountExpression;
-        END
-      ''');
-    }
-
-    await createTrigger('insert', accountColumn, 'INSERT');
-    await createTrigger('update', accountColumn, 'UPDATE');
-    await createTrigger('delete', deleteAccountColumn, 'DELETE');
-  }
-
-  Future<void> _ensureEntityMetadataSyncColumn() async {
-    final columns =
-        await customSelect('PRAGMA table_info(entity_metadata)').get();
-    final exists = columns.any(
-      (row) => row.read<String>('name') == 'synced_entity_version',
-    );
-    if (!exists) {
-      await customStatement(
-        'ALTER TABLE entity_metadata '
-        'ADD COLUMN synced_entity_version INTEGER NOT NULL DEFAULT 0',
-      );
-    }
-  }
-
   Future<void> _ensureDeletionActionVersionColumn() async {
     final columns = await customSelect(
       'PRAGMA table_info(qaza_deletion_actions)',
@@ -870,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-    Future<void> _ensurePerformanceIndexes() async {
+  Future<void> _ensurePerformanceIndexes() async {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
       'ON qaza_records (user_id, original_date)',
@@ -920,14 +334,6 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS qaza_deletion_snapshots_action_idx '
       'ON qaza_deletion_action_record_snapshots (deletion_action_id, record_id)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS sync_outbox_user_queued_idx '
-      'ON sync_outbox (user_id, queued_at, id)',
-    );
-    await customStatement(
-      'CREATE INDEX IF NOT EXISTS sync_outbox_user_type_idx '
-      'ON sync_outbox (user_id, type, queued_at)',
     );
   }
 }

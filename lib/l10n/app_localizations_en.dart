@@ -666,7 +666,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountStatus => 'Account status';
 
   @override
-  String get accountSignedIn => 'Signed in';
+  String get accountSignedIn => 'Local';
 
   @override
   String get accountRecordsRetained =>
@@ -1395,73 +1395,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountCloudBackup => 'Cloud backup';
 
   @override
-  String get accountAutomaticBackup => 'Automatic backup';
-
-  @override
-  String get accountBackupStatusChecking => 'Checking backup status…';
-
-  @override
-  String get accountBackupStatusDisabled => 'Automatic backup is off';
-
-  @override
-  String accountBackupStatusBackedUp(String timestamp) =>
-      '✓ Backed up · $timestamp';
-
-  @override
-  String get accountBackupStatusBackingUp => 'Backing up your progress…';
-
-  @override
-  String get accountBackupStatusPending => 'Backup pending';
-
-  @override
-  String get accountBackupStatusWaitingConnection => 'Waiting for connection';
-
-  @override
-  String get accountBackupStatusComplete => 'Backup complete';
-
-  @override
-  String accountBackupStatusCompletedAt(String timestamp) => timestamp;
-
-  @override
-  String get accountBackupStatusWaitingConnectionMessage =>
-      'Your Qaza data is safe on this device.';
-
-  @override
-  String get accountBackupStatusFailedTitle => 'Backup couldn\'t complete';
-
-  @override
-  String get accountBackupStatusFailedMessage =>
-      'Your Qaza data is safe on this device.';
-
-
-  @override
-  String get accountBackupStatusAuthRequired =>
-      'Google session needs to be restored.';
-
-  @override
-  String get accountBackupStatusSecurityRejected =>
-      'Cloud access was rejected by security verification.';
-
-  @override
-  String get accountBackupStatusNetwork =>
-      'No internet connection. Backup will resume when a connection is available.';
-
-  @override
-  String get accountBackupStatusCloudStateInvalid =>
-      'Cloud backup state changed. Try again.';
-  @override
-  String get accountBackupStatusFailedAutomaticRetry =>
-      'We\'ll try again automatically.';
-
-  @override
-  String get accountBackupStatusRetry => 'Try again';
-
-  @override
-  String get accountBackupStatusFailed =>
-      'Backup couldn’t complete. We’ll try again automatically.';
-
-
-  @override
   String get accountAutomatic => 'Automatic';
 
   @override
@@ -1491,7 +1424,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountContinue => 'Continue';
 
   @override
-  String get accountGuestTitle => 'Guest account';
+  String get accountGuestTitle => 'This device';
 
   @override
   String get accountGuestLocalDataSubtitle =>
@@ -1509,7 +1442,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountGuestContinueMessage =>
-      'You can continue using Qaza Namaz as a guest. Your local progress will remain on this device.';
+      'Your local progress remains on this device.';
 
   @override
   String get accountBackupSection => 'Backup';
@@ -1533,7 +1466,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDangerZone => 'Danger zone';
 
   @override
-  String get settingsAccountGuestSubtitle => 'Guest • This device only';
+  String get settingsAccountGuestSubtitle => 'Local • This device only';
 
   @override
   String get settingsAccountGoogleSubtitle => 'Signed in with Google';
@@ -2168,4 +2101,309 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get qiblaCalibrationHint =>
       'Compass accuracy is low. Move the phone in a figure-eight to recalibrate.';
+
+  @override
+  String get accountAutomaticBackup => 'Automatic backup';
+
+  @override
+  String get accountBackupStatusChecking => 'Checking backup status…';
+
+  @override
+  String get accountBackupStatusDisabled => 'Automatic backup is off';
+
+  @override
+  String accountBackupStatusBackedUp(Object timestamp) {
+    return '✓ Backed up · $timestamp';
+  }
+
+  @override
+  String get accountBackupStatusBackingUp => 'Backing up your progress…';
+
+  @override
+  String get accountBackupStatusPending => 'Backup pending';
+
+  @override
+  String get accountBackupStatusWaitingConnection => 'Waiting for connection';
+
+  @override
+  String get accountBackupStatusComplete => 'Backup complete';
+
+  @override
+  String accountBackupStatusCompletedAt(Object timestamp) {
+    return '$timestamp';
+  }
+
+  @override
+  String get accountBackupStatusWaitingConnectionMessage =>
+      'Your Qaza data is safe on this device.';
+
+  @override
+  String get accountBackupStatusFailedTitle => 'Backup couldn\'t complete';
+
+  @override
+  String get accountBackupStatusFailedMessage =>
+      'Your Qaza data is safe on this device.';
+
+  @override
+  String get accountBackupStatusAuthRequired =>
+      'Google session needs to be restored.';
+
+  @override
+  String get accountBackupStatusSecurityRejected =>
+      'Cloud access was rejected by security verification.';
+
+  @override
+  String get accountBackupStatusNetwork =>
+      'No internet connection. Backup will resume when a connection is available.';
+
+  @override
+  String get accountBackupStatusCloudStateInvalid =>
+      'Cloud backup state changed. Try again.';
+
+  @override
+  String get accountBackupStatusFailedAutomaticRetry =>
+      'We\'ll try again automatically.';
+
+  @override
+  String get accountBackupStatusRetry => 'Try again';
+
+  @override
+  String get accountBackupStatusFailed =>
+      'Backup couldn’t complete. We’ll try again automatically.';
+
+  @override
+  String get startupProfileLoadErrorTitle =>
+      'Could not load your local profile';
+
+  @override
+  String get startupProfileLoadErrorMessage =>
+      'Your local storage could not be read safely. Your existing Qaza data has not been replaced. Please try again.';
+
+  @override
+  String get qazaHistoryTitle => 'Qaza History';
+
+  @override
+  String get qazaHistoryRecentAdditions => 'Recent Additions';
+
+  @override
+  String get qazaHistoryRecentlyDeleted => 'Recently Deleted';
+
+  @override
+  String get qazaHistoryNoAdditions => 'No Qaza additions yet.';
+
+  @override
+  String get qazaHistoryNoRecentlyDeleted => 'No recently deleted Qaza.';
+
+  @override
+  String get qazaHistoryLoadMore => 'Load more';
+
+  @override
+  String get qazaHistoryOriginalDateUnavailable => 'Original date unavailable';
+
+  @override
+  String get qazaHistoryDeletedQaza => 'Deleted Qaza';
+
+  @override
+  String qazaHistoryDeletedQazaCount(int count) {
+    return '$count Qaza deleted';
+  }
+
+  @override
+  String get qazaHistoryRestore => 'Restore';
+
+  @override
+  String qazaHistoryRestoreSuccess(int count) {
+    return '$count Qaza restored';
+  }
+
+  @override
+  String qazaHistoryRestoreConflict(int restored, int skipped) {
+    return '$restored restored, $skipped skipped';
+  }
+
+  @override
+  String get qazaAdditionTitle => 'Qaza Addition';
+
+  @override
+  String get qazaAdditionNotFound => 'This Qaza addition could not be found.';
+
+  @override
+  String qazaAdditionRecordsCount(int count) {
+    return '$count Records';
+  }
+
+  @override
+  String get qazaAdditionNoPrayers => 'No prayers';
+
+  @override
+  String get qazaAdditionViewRecords => 'View Records';
+
+  @override
+  String get qazaAdditionMoreActions => 'More actions';
+
+  @override
+  String get qazaAdditionEdit => 'Edit Addition';
+
+  @override
+  String get qazaAdditionDelete => 'Delete Addition';
+
+  @override
+  String get qazaAdditionDeleteConfirmTitle => 'Delete this Qaza addition?';
+
+  @override
+  String get qazaAdditionDeleteConfirmMessage =>
+      'Only unchanged pending records will be removed. Completed or modified records are protected and remain active.';
+
+  @override
+  String get qazaAdditionDeletedNothing =>
+      'Nothing eligible was deleted. Protected records remain.';
+
+  @override
+  String qazaAdditionDeletedCount(int count) {
+    return '$count Qaza deleted';
+  }
+
+  @override
+  String qazaAdditionRestoredCount(int count) {
+    return '$count Qaza restored';
+  }
+
+  @override
+  String get qazaTrackerHistoryTooltip => 'Qaza History';
+
+  @override
+  String get qazaTrackerAdditionProgress => 'Addition progress';
+
+  @override
+  String get qazaTrackerSelectionHint => 'Tap to select or unselect.';
+
+  @override
+  String get qazaTrackerSwipeHint =>
+      'Swipe left or right to complete. Long press to select.';
+
+  @override
+  String get qazaMarkSelectedPendingTitle => 'Mark selected as Pending?';
+
+  @override
+  String qazaMarkSelectedPendingMessage(int count) {
+    return '$count completed Qaza records will return to Pending and will no longer count as completed.';
+  }
+
+  @override
+  String get qazaMarkAsPending => 'Mark as Pending';
+
+  @override
+  String qazaMarkAsPendingCount(int count) {
+    return 'Mark as Pending ($count)';
+  }
+
+  @override
+  String get qazaNoCompletedTitle => 'No completed Qaza';
+
+  @override
+  String get qazaNoCompletedMessage => 'Completed Qaza will appear here.';
+
+  @override
+  String get qazaReturnedToPending => 'Qaza returned to Pending.';
+
+  @override
+  String get qazaSelectedPendingNothingChanged =>
+      'No selected Qaza records were changed.';
+
+  @override
+  String get qazaCorrectionChanged =>
+      'This Qaza could not be corrected because it has changed.';
+
+  @override
+  String get qazaFilter => 'Filter';
+
+  @override
+  String get qazaFiltersActive => 'Filters active';
+
+  @override
+  String get qazaOriginalDateLabel => 'Qaza Date';
+
+  @override
+  String get qazaCompletedDateLabel => 'Completed Date';
+
+  @override
+  String get qazaFilterCompletedDateHelp => 'Filter by completion date';
+
+  @override
+  String get qazaUndoCompletions => 'Undo completions';
+
+  @override
+  String get qazaUndoSelected => 'Undo Selected';
+
+  @override
+  String get qazaUndoAll => 'Undo All';
+
+  @override
+  String qazaUndoQazaCount(int count) {
+    return '$count Qaza';
+  }
+
+  @override
+  String get addQazaManageAddition => 'Manage this addition';
+
+  @override
+  String qazaCompletionSingle(String prayer, String date) {
+    return '$prayer Qaza for $date completed.';
+  }
+
+  @override
+  String qazaCompletionMultiple(int count) {
+    return '$count Qaza completed.';
+  }
+
+  @override
+  String qazaUndoSingle(String prayer, String date) {
+    return '$prayer Qaza for $date restored.';
+  }
+
+  @override
+  String qazaUndoMultiple(int count) {
+    return '$count Qaza restored.';
+  }
+
+  @override
+  String get qazaUndoExpired =>
+      'Undo is no longer available because the 5-second window has ended.';
+
+  @override
+  String get qazaUndoStaleBatch =>
+      'Undo is no longer available because a newer Undo action replaced it.';
+
+  @override
+  String get qazaUndoTargetChanged =>
+      'Undo is no longer available because the Qaza record changed or was removed.';
+
+  @override
+  String get qazaUndoFailed => 'Undo could not be completed. Please try again.';
+
+  @override
+  String get qazaMarkAsPendingMessage =>
+      'This Qaza will return to Pending and will no longer count as completed.';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String qazaRequestedSlots(int count) {
+    return '$count requested slots';
+  }
+
+  @override
+  String get qazaAdditionUpdated => 'Qaza addition updated';
+
+  @override
+  String qazaSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+    );
+    return '$_temp0';
+  }
 }

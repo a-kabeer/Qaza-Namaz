@@ -6,9 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/native.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/remote/firebase_backup_service.dart';
-import 'package:qaza_namaz/data/remote/firebase_reconciliation_service.dart';
-import 'package:qaza_namaz/data/remote/firebase_services.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,34 +23,10 @@ import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
-Future<(AppDatabase, AccountSessionManager)> _readyGuestSession() async {
+Future<(AppDatabase, AccountSessionManager)> _readyLocalSession() async {
   final database = AppDatabase(NativeDatabase.memory());
   final store = AccountLocalStore(database: database);
-  await store.ensureInitialized(
-    hasLegacyProfile: false,
-    hasLegacyQaza: false,
-  );
-  await store.ensureGuestActive();
-
-  final firebase = FirebaseServices();
-  final backup = FirebaseBackupService(
-    firebase: firebase,
-    database: database,
-    accountStore: store,
-  );
-  final reconciliation = FirebaseReconciliationService(
-    firebase: firebase,
-    backupService: backup,
-    accountStore: store,
-    database: database,
-  );
-  final manager = AccountSessionManager(
-    accountStore: store,
-    firebase: firebase,
-    auth: GoogleFirebaseAuthService(firebase),
-    backup: backup,
-    reconciliation: reconciliation,
-  );
+  final manager = AccountSessionManager(accountStore: store);
   await manager.initialize();
   return (database, manager);
 }
@@ -99,8 +72,7 @@ class _OneDayQazaPlanService extends QazaPlanService {
   }
 }
 
-class _FakeQazaPlanRevisionRepository
-    implements QazaPlanRevisionRepository {
+class _FakeQazaPlanRevisionRepository implements QazaPlanRevisionRepository {
   QazaPlanRevision? stored;
 
   @override
@@ -112,14 +84,13 @@ class _FakeQazaPlanRevisionRepository
   }
 }
 
-
 void main() {
   late AppDatabase database;
   late AccountSessionManager sessionManager;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    (database, sessionManager) = await _readyGuestSession();
+    (database, sessionManager) = await _readyLocalSession();
   });
 
   tearDown(() => database.close());
@@ -220,7 +191,6 @@ void main() {
     },
   );
 
-
   testWidgets(
     'zero-Qaza onboarding completes directly from Profile Setup without review or import',
     (tester) async {
@@ -302,11 +272,14 @@ void main() {
         isTrue,
       );
       expect(
-        await database.customSelect(
-          '''SELECT COUNT(*) AS count FROM account_plan_revisions
+        await database
+            .customSelect(
+              '''SELECT COUNT(*) AS count FROM account_plan_revisions
              WHERE local_account_id = ?''',
-          variables: [Variable(UserProfile.localLedgerUserId)],
-        ).getSingle().then((row) => row.read<int>('count')),
+              variables: [Variable(UserProfile.localLedgerUserId)],
+            )
+            .getSingle()
+            .then((row) => row.read<int>('count')),
         1,
       );
     },
@@ -363,7 +336,8 @@ void main() {
 
       expect(find.byType(WorkspaceShell), findsOneWidget);
       for (var i = 0;
-          i < 20 && find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
+          i < 20 &&
+              find.byKey(const Key('home_empty_state')).evaluate().isEmpty;
           i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -404,6 +378,4 @@ void main() {
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
     },
   );
-
-
 }

@@ -1,13 +1,13 @@
 # Qaza Namaz
 
-Qaza Namaz is an offline-first Flutter Android application for tracking missed prayers (Qaza Namaz). Local persistence is authoritative for day-to-day use; optional Google/Firebase connectivity provides cloud backup and restore without making Firebase a startup dependency.
+Qaza Namaz is a completely offline Flutter Android application for tracking missed prayers (Qaza Namaz). Local encrypted SQLite persistence is authoritative and the production app does not require an account, cloud service, or internet connection.
 
 ## Architecture
 
-The app uses a dual-stack persistence model:
+The app uses a local-only persistence model:
 
-- **Local stack — authoritative/offline-first:** Flutter + Riverpod + encrypted Drift/SQLite. The database is opened through the app's sqlite3/sqlite3mc integration and the database key is stored in Android-secured storage.
-- **Cloud stack — optional:** Firebase Authentication with Google Sign-In, Firestore backup/reconciliation, and Firebase App Check. Cloud initialization is deliberately post-startup where possible so an unavailable network does not block the local workspace.
+- **Local stack:** Flutter + Riverpod + encrypted Drift/SQLite. The database is opened through the app's sqlite3/sqlite3mc integration and the database key is stored in Android-secured storage.
+- **Account model:** one local device account/session. There is no Guest/Google account choice and no cloud identity.
 - **Migration:** legacy SharedPreferences/Qaza data is migrated into Drift during startup before account-scoped repositories are exposed.
 - **Diagnostics:** failures are recorded through the internal diagnostics abstraction with redaction so identifiers, dates, tokens, and ledger values are not persisted as raw diagnostics.
 
@@ -21,30 +21,17 @@ Profile loading is a separate boundary: `AsyncData(null)` means a legitimate new
 
 `lib/domain/` contains entities and business rules.
 
-`lib/data/local/` contains the Drift database, account-scoped stores, repositories, migrations, outbox, metadata, and tombstones.
+`lib/data/local/` contains the Drift database, account-scoped stores, repositories, migrations, local metadata, and tombstones.
 
-`lib/data/remote/` contains Firebase initialization, Google authentication, cloud backup, reconciliation, and backup failure classification.
+There is no `lib/data/remote/` runtime layer in the production application.
 
 `lib/features/` contains onboarding, Qaza workspace/history, home dashboard, prayer times, account settings, analytics, and the application shell.
 
 `lib/l10n/` contains English and Urdu ARB resources. Urdu UI uses the bundled **Noto Nastaliq Urdu** typography and RTL layout rules.
 
-## Cloud data model
+## Local data model
 
-Firestore data is scoped below `users/{firebaseUid}`. Qaza records live under `qazaRecords/{recordId}` and use a versioned envelope with schema metadata plus a validated Qaza payload.
-
-Qaza payloads require:
-
-- `id`
-- `userId`
-- `prayerType`: `fajr`, `zuhr`, `asr`, `maghrib`, `isha`, `witr`
-- `status`: `pending` or `completed`
-- `originalDate`
-- `createdAt`
-- `updatedAt`
-- `recordVersion`
-
-Firestore Rules validate ownership, lifecycle/generation metadata, payload shape, required keys, dates, and enum values before writes are accepted.
+Qaza records are stored in the encrypted local SQLite database and are scoped to the single local device account. No cloud identifiers or remote synchronization are required for normal operation.
 
 ## Android build baseline
 
@@ -57,16 +44,9 @@ Firestore Rules validate ownership, lifecycle/generation metadata, payload shape
 - Java/Kotlin target: **JDK 17**
 - Release signing: production keystore only; release builds never fall back to debug signing
 
-## Firebase / App Check
+## Offline requirement
 
-Firebase uses project ID `qaza-nmz`.
-
-Google Sign-In and Firestore require Firebase initialization. App Check is activated with:
-
-- Android release: **Play Integrity**
-- Android debug/test: **Android Debug Provider**
-
-Production Firebase Console configuration must contain the official Android app package and the SHA-256 fingerprint(s) for the release keystore. Google Sign-In and App Check must be exercised on a physical release build before distribution.
+All core application features are designed to function with network access disabled. Location uses the device GPS and bundled offline GeoNames data; prayer-time and Qibla calculations run locally.
 
 ## Development
 
@@ -90,13 +70,11 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-Firestore security rules can be exercised against the Firebase Emulator Suite with the repository's Node-based emulator test harness.
-
 ## CI and release governance
 
-The workflow in `.github/workflows/flutter-ci.yml` performs formatting analysis, unit/widget tests, Firestore rules tests where configured, and release APK/AAB builds.
+The workflow in `.github/workflows/flutter-ci.yml` performs offline architecture checks, formatting analysis, unit/widget tests, and release APK/AAB builds.
 
-The protected `main` branch should require green CI and approved pull requests, with direct pushes restricted. Repository administrators must apply these settings in GitHub because they are repository-level controls rather than source-code configuration.
+The protected `main` branch should require green CI and approved pull requests, with direct pushes restricted.
 
 ## Dependency policy
 

@@ -91,7 +91,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (ref.read(qazaImportProvider).phase == QazaImportTaskPhase.completed) {
         ref.invalidate(userProfileProvider);
         ref.invalidate(progressSummaryProvider);
-        unawaited(ref.read(backupWorkerProvider).runOnce());
         _navigateHome();
       }
       return;

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 
 import '../../core/constants/prayer_types.dart';
@@ -22,32 +20,20 @@ class DriftQazaLocalStore extends QazaLocalStore
   DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
-  final Map<String, DateTime?> _lastSyncByUser = <String, DateTime?>{};
 
   @override
   Future<OfflineCacheSnapshot> load() async {
     final users = await _database.qazaRecordsDao.userIds();
-    final outboxUsers = await _database.syncOutboxDao.userIds();
-    final allUsers = {...users, ...outboxUsers};
     final recordsByUser = <String, List<QazaRecord>>{};
-    final outboxByUser = <String, List<PendingSyncOp>>{};
 
-    for (final userId in allUsers) {
+    for (final userId in users) {
       final rawRecords = await _database.qazaRecordsDao.getAll(userId: userId);
-      final records = await _withProfilePlanProvenance(userId, rawRecords);
-      final ops = await _database.syncOutboxDao.getPending(userId: userId);
-      recordsByUser[userId] = List<QazaRecord>.unmodifiable(records);
-      outboxByUser[userId] = ops.map(_toDomainOp).toList(growable: false);
+      recordsByUser[userId] = List<QazaRecord>.unmodifiable(
+        await _withProfilePlanProvenance(userId, rawRecords),
+      );
     }
 
-    return OfflineCacheSnapshot(
-      recordsByUser: recordsByUser,
-      outboxByUser: outboxByUser,
-      lastSyncByUser: {
-        for (final entry in _lastSyncByUser.entries)
-          if (entry.value != null) entry.key: entry.value!,
-      },
-    );
+    return OfflineCacheSnapshot(recordsByUser: recordsByUser);
   }
 
   @override
@@ -195,7 +181,8 @@ class DriftQazaLocalStore extends QazaLocalStore
   }
 
   @override
-  Future<bool> updateRecord(QazaRecord record) => _database.transaction(() async {
+  Future<bool> updateRecord(QazaRecord record) =>
+      _database.transaction(() async {
         final changed = await _database.qazaRecordsDao.updateRecord(record);
         if (!changed) return false;
         await _syncProfilePlanProvenance(record);
@@ -223,17 +210,11 @@ class DriftQazaLocalStore extends QazaLocalStore
     required String userId,
     required QazaRecord record,
     required PendingSyncOp operation,
-  }) async {
+  }) {
     if (record.userId != userId || operation.userId != userId) {
       throw StateError('Cannot persist data for a different user.');
     }
-    return _database.transaction(() async {
-      final changed = await _database.qazaRecordsDao.updateRecord(record);
-      if (!changed) return false;
-      await _syncProfilePlanProvenance(record);
-      await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
-      return true;
-    });
+    return updateRecord(record);
   }
 
   @override
@@ -241,20 +222,11 @@ class DriftQazaLocalStore extends QazaLocalStore
     required String userId,
     required String recordId,
     required PendingSyncOp operation,
-  }) async {
+  }) {
     if (operation.userId != userId) {
-      throw StateError('Cannot queue sync data for a different user.');
+      throw StateError('Cannot persist data for a different user.');
     }
-    return _database.transaction(() async {
-      final deleted = await _database.qazaRecordsDao.deleteById(
-        userId: userId,
-        id: recordId,
-      );
-      if (deleted == 0) return false;
-      await _deleteProfilePlanProvenance(userId, [recordId]);
-      await _database.syncOutboxDao.putAll([_toOpCompanion(operation)]);
-      return true;
-    });
+    return deleteRecord(userId: userId, recordId: recordId);
   }
 
   @override
@@ -269,33 +241,15 @@ class DriftQazaLocalStore extends QazaLocalStore
   }
 
   @override
-  Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {
-    await _database.transaction(() async {
-      await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(
-        ops.map(_toOpCompanion).toList(growable: false),
-      );
-    });
-  }
+  Future<void> saveOutbox(String userId, List<PendingSyncOp> ops) async {}
 
   @override
   Future<void> saveRecordsAndOutbox(
     String userId,
     List<QazaRecord> records,
     List<PendingSyncOp> ops,
-  ) async {
-    await _database.transaction(() async {
-      await _database.qazaRecordsDao.replaceUserRecords(
-        userId: userId,
-        records: records.map(_toCompanion).toList(growable: false),
-      );
-      await _replaceProfilePlanProvenance(userId, records);
-      await _database.syncOutboxDao.removeAll(userId: userId);
-      await _database.syncOutboxDao.putAll(
-        ops.map(_toOpCompanion).toList(growable: false),
-      );
-    });
-  }
+  ) =>
+      saveRecords(userId, records);
 
   @override
   Future<QazaProfilePlanMutationResult> applyProfilePlanChanges({
@@ -385,12 +339,11 @@ class DriftQazaLocalStore extends QazaLocalStore
 
       final inserted = <QazaRecord>[];
       for (var start = 0; start < insertable.length; start += 500) {
-        final end = start + 500 < insertable.length
-            ? start + 500
-            : insertable.length;
+        final end =
+            start + 500 < insertable.length ? start + 500 : insertable.length;
         final chunk = insertable.sublist(start, end);
-        final insertedIds = await _database.qazaRecordsDao
-            .insertRecordsReturningInsertedIds(
+        final insertedIds =
+            await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
           chunk.map(_toCompanion).toList(growable: false),
         );
         final insertedChunk = chunk
@@ -402,40 +355,11 @@ class DriftQazaLocalStore extends QazaLocalStore
         onProgress?.call(processedWork, totalWork);
       }
 
-      final now = DateTime.now();
-      final operations = <PendingSyncOp>[
-        for (final record in inserted)
-          PendingSyncOp(
-            id: 'profile_add_${record.profilePlanRevisionId}_${record.id}',
-            type: SyncOpType.add,
-            userId: userId,
-            queuedAt: now,
-            record: record,
-            targetRecordId: record.id,
-          ),
-        for (final record in removed)
-          PendingSyncOp(
-            id: 'profile_delete_${record.profilePlanRevisionId}_${record.id}',
-            type: SyncOpType.delete,
-            userId: userId,
-            queuedAt: now,
-            record: record,
-            targetRecordId: record.id,
-          ),
-      ];
-      if (operations.isNotEmpty) {
-        await _database.syncOutboxDao.putAll(
-          operations.map(_toOpCompanion).toList(growable: false),
-        );
-      }
-
       return QazaProfilePlanMutationResult(
         userId: userId,
         added: List.unmodifiable(inserted),
         removed: List.unmodifiable(removed),
-        operationIds: List.unmodifiable(
-          operations.map((operation) => operation.id),
-        ),
+        operationIds: const <String>[],
       );
     });
   }
@@ -476,149 +400,11 @@ class DriftQazaLocalStore extends QazaLocalStore
         );
         await _upsertProfilePlanProvenance(mutation.removed);
       }
-
-      await _database.syncOutboxDao.removeBatch(
-        userId: mutation.userId,
-        ids: mutation.operationIds,
-      );
     });
   }
 
   @override
-  Future<int> countPendingOutbox(String userId) =>
-      _database.syncOutboxDao.countPending(userId: userId);
-
-  @override
-  Future<List<PendingSyncOp>> loadOutboxBatch(String userId,
-      {int limit = 400}) async {
-    if (limit < 1 || limit > 500) {
-      throw ArgumentError.value(limit, 'limit');
-    }
-    final rows = await _database.syncOutboxDao.getPendingBatch(
-      userId: userId,
-      limit: limit,
-    );
-    return rows.map(_toDomainOp).toList(growable: false);
-  }
-
-  @override
-  Future<void> removeOutboxBatch(String userId, List<String> ids) =>
-      _database.syncOutboxDao.removeBatch(userId: userId, ids: ids);
-
-  @override
-  Future<void> markOutboxBatchRetry({
-    required String userId,
-    required List<String> ids,
-    required String error,
-  }) async {
-    await _database.syncOutboxDao.markBatchRetry(
-      userId: userId,
-      ids: ids,
-      error: error,
-    );
-  }
-
-  @override
-  Future<void> upsertRecordsAndOutbox({
-    required String userId,
-    required List<QazaRecord> records,
-    required List<PendingSyncOp> ops,
-  }) async {
-    for (final record in records) {
-      if (record.userId != userId) {
-        throw StateError('Cannot persist a Qaza record for a different user.');
-      }
-    }
-    for (final op in ops) {
-      if (op.userId != userId) {
-        throw StateError('Cannot queue a sync operation for a different user.');
-      }
-    }
-    await _database.transaction(() async {
-      if (records.isNotEmpty) {
-        await _database.qazaRecordsDao.upsertRecords(
-          records.map(_toCompanion).toList(growable: false),
-        );
-        await _upsertProfilePlanProvenance(records);
-      }
-      if (ops.isNotEmpty) {
-        await _database.syncOutboxDao.putAll(
-          ops.map(_toOpCompanion).toList(growable: false),
-        );
-      }
-    });
-  }
-
-  @override
-  Future<void> appendRecordsAndOutbox(
-      String userId, List<QazaRecord> records, List<PendingSyncOp> ops) async {
-    for (final record in records) {
-      if (record.userId != userId) {
-        throw StateError('Cannot persist a Qaza record for a different user.');
-      }
-    }
-    for (final op in ops) {
-      if (op.userId != userId) {
-        throw StateError('Cannot queue a sync operation for a different user.');
-      }
-    }
-    await _database.transaction(() async {
-      if (records.isNotEmpty) {
-        final insertedIds = await _database.qazaRecordsDao
-            .insertRecordsReturningInsertedIds(
-          records.map(_toCompanion).toList(growable: false),
-        );
-        await _upsertProfilePlanProvenance(
-          records.where((record) => insertedIds.contains(record.id)).toList(),
-        );
-      }
-      if (ops.isNotEmpty) {
-        await _database.syncOutboxDao.putAll(
-          ops.map(_toOpCompanion).toList(growable: false),
-        );
-      }
-    });
-  }
-
-  @override
-  Future<List<String>> appendRecordsAndOutboxReturningInsertedIds({
-    required String userId,
-    required List<QazaRecord> records,
-    required List<PendingSyncOp> ops,
-  }) async {
-    for (final record in records) {
-      if (record.userId != userId) {
-        throw StateError('Cannot persist a Qaza record for a different user.');
-      }
-    }
-    for (final op in ops) {
-      if (op.userId != userId) {
-        throw StateError('Cannot queue a sync operation for a different user.');
-      }
-    }
-
-    return _database.transaction(() async {
-      final insertedIds = records.isEmpty
-          ? const <String>[]
-          : await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
-              records.map(_toCompanion).toList(growable: false),
-            );
-      await _upsertProfilePlanProvenance(
-        records.where((record) => insertedIds.contains(record.id)).toList(),
-      );
-      final inserted = insertedIds.toSet();
-      final insertedOps = [
-        for (final op in ops)
-          if (op.record == null || inserted.contains(op.record!.id)) op,
-      ];
-      if (insertedOps.isNotEmpty) {
-        await _database.syncOutboxDao.putAll(
-          insertedOps.map(_toOpCompanion).toList(growable: false),
-        );
-      }
-      return insertedIds;
-    });
-  }
+  Future<int> countPendingOutbox(String userId) async => 0;
 
   @override
   Future<List<QazaRecord>> getRecordsByIds({
@@ -634,10 +420,8 @@ class DriftQazaLocalStore extends QazaLocalStore
   }
 
   @override
-  Future<List<PendingSyncOp>> loadOutbox(String userId) async {
-    final rows = await _database.syncOutboxDao.getPending(userId: userId);
-    return rows.map(_toDomainOp).toList(growable: false);
-  }
+  Future<List<PendingSyncOp>> loadOutbox(String userId) async =>
+      const <PendingSyncOp>[];
 
   /// One indexed UPDATE per id in a single transaction: no snapshot read and
   /// no rewrite of the user's rows.
@@ -684,37 +468,12 @@ class DriftQazaLocalStore extends QazaLocalStore
     required String userId,
     required Map<String, String> expectedCompletionIds,
     required DateTime undoneAt,
-  }) async {
-    if (expectedCompletionIds.isEmpty) {
-      return const <QazaRecord>[];
-    }
-
-    return _database.transaction(() async {
-      final changed = await _database.qazaRecordsDao.undoCompletions(
+  }) =>
+      undoCompletions(
         userId: userId,
         expectedCompletionIds: expectedCompletionIds,
         undoneAt: undoneAt,
       );
-      if (changed.isEmpty) return const <QazaRecord>[];
-
-      final operations = <PendingSyncOp>[
-        for (final record in changed)
-          PendingSyncOp(
-            id: 'undo_${record.id}_${record.updatedAt.microsecondsSinceEpoch}',
-            type: SyncOpType.update,
-            userId: userId,
-            queuedAt: record.updatedAt,
-            targetRecordId: record.id,
-            completionId: expectedCompletionIds[record.id],
-            record: record,
-          ),
-      ];
-      await _database.syncOutboxDao.putAll(
-        operations.map(_toOpCompanion).toList(growable: false),
-      );
-      return changed;
-    });
-  }
 
   @override
   Future<void> upsertRecords(String userId, List<QazaRecord> records) async {
@@ -741,8 +500,8 @@ class DriftQazaLocalStore extends QazaLocalStore
       }
     }
     await _database.transaction(() async {
-      final insertedIds = await _database.qazaRecordsDao
-          .insertRecordsReturningInsertedIds(
+      final insertedIds =
+          await _database.qazaRecordsDao.insertRecordsReturningInsertedIds(
         records.map(_toCompanion).toList(growable: false),
       );
       final inserted = records
@@ -753,22 +512,18 @@ class DriftQazaLocalStore extends QazaLocalStore
   }
 
   @override
-  Future<bool> hasPendingReset(String userId) => _database.syncOutboxDao
-      .hasPending(userId: userId, type: SyncOpType.reset.name);
+  Future<bool> hasPendingReset(String userId) async => false;
 
   @override
   Future<void> retireUserData({required String userId}) async {
     await _database.transaction(() async {
       await _database.qazaRecordsDao.deleteAllForUser(userId: userId);
       await _deleteAllProfilePlanProvenance(userId);
-      await _database.syncOutboxDao.removeAll(userId: userId);
     });
   }
 
   @override
-  Future<void> saveLastSync(String userId, DateTime? lastSync) async {
-    _lastSyncByUser[userId] = lastSync;
-  }
+  Future<void> saveLastSync(String userId, DateTime? lastSync) async {}
 
   Future<List<QazaRecord>> _withProfilePlanProvenance(
     String userId,
@@ -811,8 +566,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     ];
   }
 
-  String _sqlStringLiteral(String value) =>
-      "'${value.replaceAll("'", "''")}'";
+  String _sqlStringLiteral(String value) => "'${value.replaceAll("'", "''")}'";
 
   Future<void> _upsertProfilePlanProvenance(
     Iterable<QazaRecord> records,
@@ -825,8 +579,7 @@ class DriftQazaLocalStore extends QazaLocalStore
         )
         .toList(growable: false);
     for (var start = 0; start < eligible.length; start += 400) {
-      final end =
-          start + 400 < eligible.length ? start + 400 : eligible.length;
+      final end = start + 400 < eligible.length ? start + 400 : eligible.length;
       final chunk = eligible.sublist(start, end);
       final values = chunk
           .map(
@@ -856,8 +609,7 @@ class DriftQazaLocalStore extends QazaLocalStore
     if (ids.isEmpty) return;
     for (var start = 0; start < ids.length; start += 400) {
       final chunk = ids.skip(start).take(400).toList(growable: false);
-      final placeholders =
-          chunk.map(_sqlStringLiteral).join(', ');
+      final placeholders = chunk.map(_sqlStringLiteral).join(', ');
       await _database.customStatement(
         'DELETE FROM qaza_profile_plan_provenance '
         'WHERE user_id = ${_sqlStringLiteral(userId)} '
@@ -889,23 +641,6 @@ class DriftQazaLocalStore extends QazaLocalStore
     await _upsertProfilePlanProvenance([record]);
   }
 
-  PendingSyncOp _toDomainOp(SyncOutboxData row) => PendingSyncOp(
-        id: row.id,
-        type: SyncOpType.values.firstWhere((value) => value.name == row.type),
-        userId: row.userId,
-        queuedAt: row.queuedAt,
-        record: row.recordJson == null
-            ? null
-            : QazaRecord.fromJson(
-                jsonDecode(row.recordJson!) as Map<String, dynamic>,
-              ),
-        targetRecordId: row.targetRecordId,
-        completedAt: row.completedAt,
-        completionId: row.completionId,
-        attempts: row.attempts,
-        lastError: row.lastError,
-      );
-
   QazaRecordsCompanion _toCompanion(QazaRecord record) =>
       QazaRecordsCompanion.insert(
         id: record.id,
@@ -921,28 +656,5 @@ class DriftQazaLocalStore extends QazaLocalStore
             : Value(record.completionId),
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
-      );
-
-  SyncOutboxCompanion _toOpCompanion(PendingSyncOp op) =>
-      SyncOutboxCompanion.insert(
-        id: op.id,
-        userId: op.userId,
-        type: op.type.name,
-        queuedAt: op.queuedAt,
-        recordJson: op.record == null
-            ? const Value.absent()
-            : Value(jsonEncode(op.record!.toJson())),
-        targetRecordId: op.targetRecordId == null
-            ? const Value.absent()
-            : Value(op.targetRecordId),
-        completedAt: op.completedAt == null
-            ? const Value.absent()
-            : Value(op.completedAt),
-        completionId: op.completionId == null
-            ? const Value.absent()
-            : Value(op.completionId),
-        attempts: Value(op.attempts),
-        lastError:
-            op.lastError == null ? const Value.absent() : Value(op.lastError),
       );
 }

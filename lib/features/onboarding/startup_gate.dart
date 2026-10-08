@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../account/account_session_manager.dart';
+import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
-import '../../core/widgets/state_widgets.dart';
-import '../account/account_choice_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'language_selection_screen.dart';
@@ -20,29 +18,16 @@ class StartupGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(accountSessionManagerProvider);
 
-    // Startup initialization is owned by the app lifecycle, never by build.
-    // The static splash is shown only while required local/session state is
-    // being prepared.
     if (session.state.phase == AccountSessionPhase.loading) {
       return const SplashScreen();
     }
 
-    final activeAccount = session.activeAccount;
-    if (activeAccount == null &&
-        session.state.restoreState ==
-            AccountSessionManager.googleRestorePendingState) {
-      return const SplashScreen();
-    }
-
-    if (activeAccount == null && session.initialChoiceRequired) {
-      return const AccountChoiceScreen();
-    }
-
-    if (activeAccount == null) {
-      // An unexpected local session failure must not fabricate an account or
-      // expose account-scoped repositories. Keep the user at the safe
-      // account-selection boundary.
-      return const AccountChoiceScreen();
+    if (session.state.phase == AccountSessionPhase.error) {
+      return StartupSessionErrorBoundary(
+        message: session.state.message,
+        onRetry: () =>
+            ref.read(accountSessionManagerProvider.notifier).initialize(),
+      );
     }
 
     final profileAsync = ref.watch(userProfileProvider);
@@ -84,8 +69,32 @@ class StartupGate extends ConsumerWidget {
   }
 }
 
+class StartupSessionErrorBoundary extends StatelessWidget {
+  const StartupSessionErrorBoundary({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
 
-/// Storage/provider failures are distinct from a legitimate null profile.
+  final String? message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: ErrorState(
+          title: l10n.startupProfileLoadErrorTitle,
+          message: message ?? l10n.startupProfileLoadErrorMessage,
+          onRetry: onRetry,
+          icon: Icons.storage_rounded,
+        ),
+      ),
+    );
+  }
+}
+
 class StartupProfileLoadErrorBoundary extends StatelessWidget {
   const StartupProfileLoadErrorBoundary({
     super.key,

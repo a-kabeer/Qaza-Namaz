@@ -5,25 +5,6 @@ allprojects {
     }
 }
 
-// google_sign_in_android 7.2.11+ moved to AndroidX Credential Manager 1.6,
-// whose Android 14+ HiddenActivity flow has a confirmed picker-rendering
-// regression. Keep the AGP-9-compatible plugin while resolving the two
-// Credential Manager artifacts back to the 1.5.0 line used by the known
-// working Android implementation.
-//
-// Scope this override to the app's final dependency graph only. Applying it
-// to every Android subproject also changes firebase_auth's own AAR metadata
-// resolution, where credentials 1.5.0 requires compileSdk 35+ and the plugin
-// module still compiles against its own configured SDK.
-project(":app") {
-    configurations.configureEach {
-        resolutionStrategy.force(
-            "androidx.credentials:credentials:1.5.0",
-            "androidx.credentials:credentials-play-services-auth:1.5.0",
-        )
-    }
-}
-
 // Gradle 9 removed the buildDir setter; the build directory is configured
 // through the layout instead.
 rootProject.layout.buildDirectory = rootProject.file("../build")
