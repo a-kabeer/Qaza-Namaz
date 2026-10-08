@@ -13,6 +13,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: flutter-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -43,6 +46,32 @@ jobs:
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Auto-format changed Dart files on branch pushes
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only "${{ github.event.before }}" HEAD -- '*.dart' |
+            while IFS= read -r file; do
+              [ -f "$file" ] && printf '%s\\n' "$file"
+            done
+          )
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No changed Dart files to format."
+            exit 0
+          fi
+          dart format "${files[@]}"
+          if git diff --quiet -- "${files[@]}"; then
+            echo "Changed Dart files were already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${files[@]}"
+          git commit -m "style: format changed Dart files"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Check Dart formatting
         shell: bash
