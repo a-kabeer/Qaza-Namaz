@@ -46,7 +46,7 @@ Qaza records are stored in the encrypted local SQLite database and are scoped to
 
 ## Offline requirement
 
-All core application features are designed to function with network access disabled. Location uses the device GPS and bundled offline GeoNames data; prayer-time and Qibla calculations run locally.
+All core application features are designed to function with network access disabled. Location uses the device GPS through geolocator; Android location settings resolution uses Google Play Services Location, while reverse geocoding remains bundled/offline. Prayer-time and Qibla calculations run locally.
 
 ## Development
 
