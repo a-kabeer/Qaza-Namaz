@@ -224,9 +224,4 @@ jobs:
             adb shell svc wifi disable || true
             adb shell svc data disable || true
 
-            timeout 180s flutter drive \
-              --driver=test_driver/integration_test.dart \
-              --target=integration_test/offline_startup_test.dart \
-              --use-application-binary=app-debug.apk \
-              --device-id=emulator-5554 \
-              --no-dds
+            timeout 180s flutter drive --driver=test_driver/integration_test.dart --target=integration_test/offline_startup_test.dart --use-application-binary=app-debug.apk --device-id=emulator-5554 --no-dds
