@@ -156,6 +156,13 @@ class AccountLocalStore {
     final device = await deviceInstanceId();
     final opId = _randomId('op');
     await database.transactionWithRevision(() async {
+      final existing = await loadProfile(localAccountId);
+      final onboardingCompleted = await database.isOnboardingCompleted();
+      if (existing != null &&
+          jsonEncode(existing.toJson()) == jsonEncode(profile.toJson()) &&
+          onboardingCompleted == profile.onboardingCompleted) {
+        return false;
+      }
       await _writeProfileRowInsideTransaction(
         localAccountId: localAccountId,
         profile: profile,
@@ -166,6 +173,7 @@ class AccountLocalStore {
       await database.setOnboardingCompletedInTransaction(
         profile.onboardingCompleted,
       );
+      return true;
     });
   }
 
@@ -362,11 +370,18 @@ class AccountLocalStore {
 
   Future<void> clearProfile(String localAccountId) async {
     await database.transactionWithRevision(() async {
+      final rows = await database.customSelect(
+        'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(localAccountId)],
+      ).get();
+      final wasOnboardingCompleted = await database.isOnboardingCompleted();
+      if (rows.isEmpty && !wasOnboardingCompleted) return false;
       await database.customUpdate(
         'DELETE FROM account_profiles WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
       await database.setOnboardingCompletedInTransaction(false);
+      return true;
     });
   }
 
