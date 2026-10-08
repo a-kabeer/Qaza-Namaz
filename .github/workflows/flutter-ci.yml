@@ -47,10 +47,10 @@ jobs:
       - name: Normalize migration Dart sources (temporary)
         run: |
           set -euo pipefail
-          dart format --output=write \\
-            lib/app/providers.dart \\
-            lib/data/data_transfer/local_backup_service.dart \\
-            test/data/local_backup_service_test.dart \\
+          dart format --output=write \
+            lib/app/providers.dart \
+            lib/data/data_transfer/local_backup_service.dart \
+            test/data/local_backup_service_test.dart \
             test/features/prayer_time/prayer_location_setup_test.dart
 
       - name: Upload migration formatting snapshot (temporary)
@@ -85,40 +85,6 @@ jobs:
           mapfile -t files < <(
             git diff --name-only "$diff_base" "$diff_head" -- '*.dart' |
             while IFS= read -r file; do
-              [ -f "$file" ] && printf '%s
-' "$file"
-            done
-          )
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No changed Dart files to format-check."
-            exit 0
-          fi
-
-          dart format --output=none --set-exit-if-changed "${files[@]}"
-
-      - name: Test with coverage
-        run: flutter test --coverage
-
-- name: Check Dart formatting
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF"
-            diff_base="origin/$GITHUB_BASE_REF"
-            diff_head="origin/$GITHUB_HEAD_REF"
-          else
-            diff_base="${{ github.event.before }}"
-            diff_head="HEAD"
-            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
-              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
-            fi
-          fi
-
-          mapfile -t files < <(
-            git diff --name-only "$diff_base" "$diff_head" -- '*.dart' |
-            while IFS= read -r file; do
               [ -f "$file" ] && printf '%s\n' "$file"
             done
           )
@@ -129,7 +95,6 @@ jobs:
           fi
 
           dart format --output=none --set-exit-if-changed "${files[@]}"
-
 
       - name: Test with coverage
         run: flutter test --coverage
