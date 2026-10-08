@@ -216,7 +216,10 @@ void main() {
         )
         .get();
 
-    expect(after.single.read<String>('device_instance_id'), 'device-local-test');
+    expect(
+      after.single.read<String>('device_instance_id'),
+      'device-local-test',
+    );
 
     final decoded = jsonDecode(backup) as Map<String, dynamic>;
     expect(jsonEncode(decoded['data']).contains('device-local-test'), isFalse);
