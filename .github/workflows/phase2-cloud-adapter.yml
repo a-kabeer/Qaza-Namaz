@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: phase2-cloud-adapter-\u0024{{ github.ref }}
+  group: phase2-cloud-adapter-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +47,19 @@ jobs:
       - name: Analyze Phase 2 package
         working-directory: packages/qaza_cloud_adapter
         run: dart analyze
+
+      - name: Format Phase 2 sources for canonical extraction
+        working-directory: packages/qaza_cloud_adapter
+        run: dart format lib test
+
+      - name: Upload canonical Phase 2 source
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-canonical-source
+          path: |
+            packages/qaza_cloud_adapter/lib
+            packages/qaza_cloud_adapter/test
+          if-no-files-found: error
 
       - name: Check Phase 2 formatting
         working-directory: packages/qaza_cloud_adapter
