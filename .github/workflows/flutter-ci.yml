@@ -128,11 +128,18 @@ jobs:
 
   android_offline_smoke:
     name: Android offline startup smoke test
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -141,16 +148,44 @@ jobs:
           channel: stable
           cache: true
 
+      - name: AVD cache
+        uses: actions/cache@v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api35-pixel5-x86_64
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          force-avd-creation: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
       - name: Run offline Android smoke test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
+          target: google_apis
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_5
+          force-avd-creation: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
           script: |
+            set -euo pipefail
+            adb wait-for-device
             adb shell svc wifi disable
             adb shell svc data disable || true
-            adb shell settings put global airplane_mode_on 1
-            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
             flutter pub get
             flutter test integration_test/offline_startup_test.dart
