@@ -1,16 +1,29 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:drift/drift.dart';
 
 import '../domain/prayer_time.dart';
+import '../../../data/local/database/app_database.dart';
 
 class PrayerTimeCache {
-  static const _key = 'qaza_prayer_time_snapshot_v1';
+  const PrayerTimeCache(this.database);
+
+  static const _key = 'prayer_time_snapshot';
+
+  final AppDatabase database;
 
   Future<PrayerTimeSnapshot?> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) return null;
+    final rows = await database
+        .customSelect(
+          'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+          variables: [Variable.withString(_key)],
+        )
+        .get();
+
+    if (rows.isEmpty) return null;
+    final raw = rows.first.read<String>('value');
+    if (raw.isEmpty) return null;
+
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
@@ -23,12 +36,21 @@ class PrayerTimeCache {
   }
 
   Future<void> save(PrayerTimeSnapshot snapshot) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(snapshot.toJson()));
+    await database.customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable.withString(_key),
+        Variable.withString(jsonEncode(snapshot.toJson())),
+      ],
+    );
   }
 
   Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    await database.customDelete(
+      'DELETE FROM meta_store WHERE key = ?',
+      variables: [Variable.withString(_key)],
+    );
   }
 }
