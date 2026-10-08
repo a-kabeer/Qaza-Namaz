@@ -7,7 +7,7 @@ Qaza Namaz is a completely offline Flutter Android application for tracking miss
 The app uses a local-only persistence model:
 
 - **Local stack:** Flutter + Riverpod + encrypted Drift/SQLite. The database is opened through the app's sqlite3/sqlite3mc integration and the database key is stored in Android-secured storage.
-- **Account model:** one local device account/session. There is no Guest/Google account choice and no cloud identity.
+- **Account model:** one local device account/session. There is no account-provider sign-in and no cloud identity.
 - **Migration:** legacy SharedPreferences/Qaza data is migrated into Drift during startup before account-scoped repositories are exposed.
 - **Diagnostics:** failures are recorded through the internal diagnostics abstraction with redaction so identifiers, dates, tokens, and ledger values are not persisted as raw diagnostics.
 
