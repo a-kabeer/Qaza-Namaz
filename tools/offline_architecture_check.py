@@ -29,6 +29,10 @@ BANNED_RUNTIME = (
 RUNTIME_ROOTS = [ROOT / "lib", ROOT / "android"]
 RUNTIME_EXCLUDED_PARTS = {Path("lib/l10n")}
 
+# SharedPreferences is presentation-only in Phase 1. Keep its access centralized
+# in the app state composition root so business state cannot silently bypass Drift.
+SHARED_PREFERENCES_ALLOWED_FILES = {Path("lib/app/providers.dart")}
+
 
 def fail(message: str) -> None:
     print(f"OFFLINE POLICY ERROR: {message}")
@@ -82,5 +86,22 @@ for root in RUNTIME_ROOTS:
         for token in BANNED_RUNTIME:
             if token in file_text:
                 fail(f"{token} found in {relative}")
+
+        if "shared_preferences" in file_text:
+            if relative not in SHARED_PREFERENCES_ALLOWED_FILES:
+                fail(
+                    "SharedPreferences access must remain presentation-only; "
+                    f"found in {relative}"
+                )
+        for legacy_token in (
+            "SharedPreferencesUserProfileRepository",
+            "UserProfileMigration",
+            "SharedPreferencesToDriftMigrator",
+            "qaza_user_profile_v1",
+            "qaza_offline_cache_v1",
+            "qaza_drift_migration_v1_complete",
+        ):
+            if legacy_token in file_text:
+                fail(f"legacy SharedPreferences business-state path found in {relative}: {legacy_token}")
 
 print("Offline architecture policy: PASS")
