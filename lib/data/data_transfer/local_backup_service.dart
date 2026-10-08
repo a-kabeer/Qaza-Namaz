@@ -125,6 +125,7 @@ class LocalBackupService {
           'app_session_state': await _selectMaps(
             'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
             ['id', 'active_local_account_id'],
+            integerColumns: {'id'},
           ),
           'account_profiles': await _selectMaps(
             'SELECT local_account_id, payload_json, entity_version, updated_at, '
@@ -928,7 +929,8 @@ class LocalBackupService {
       'active_local_account_id' ||
       'payload_json' ||
       'writer_device_id' ||
-      'operation_id' =>
+      'operation_id' ||
+      'revision_id' =>
         row.read<String?>(column),
       'revision' ||
       'entity_version' ||
