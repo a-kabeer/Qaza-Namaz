@@ -27,7 +27,6 @@ dependencies:
 
   timezone: ^0.11.1
   adhan_dart: ^2.0.1
-  geolocator: ^14.1.1
   flutter_timezone: ^5.1.0
   geonames_offline: ^0.1.0
   flutter_device_compass: ^2.2.0
