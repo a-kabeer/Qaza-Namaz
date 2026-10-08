@@ -14,7 +14,7 @@ LIB = ROOT / "lib"
 PUBSPEC = ROOT / "pubspec.yaml"
 
 IMPORT_PATTERN = re.compile(
-    r"""^s*(?:import|export|part)s+['"]([^'"]+)['"]""",
+    r"""^\s*(?:import|export|part)\s+['"]([^'"]+)['"]""",
     re.MULTILINE,
 )
 
