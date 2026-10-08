@@ -133,9 +133,11 @@ class AppDatabase extends _$AppDatabase {
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('is_onboarding_completed', '0')",
     );
+    // Drift's schemaVersion is the sole authoritative SQLite schema version.
+    // The former meta_store schema_version key is obsolete and must not
+    // compete with Drift's generated schema metadata.
     await customStatement(
-      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
-      "('schema_version', '1')",
+      "DELETE FROM meta_store WHERE key = 'schema_version'",
     );
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
