@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: phase2-cloud-adapter-${{ github.ref }}
@@ -29,11 +29,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Checkout Phase 2 branch for canonical formatting
-        run: |
-          git fetch origin phase2/cloud-adapter
-          git checkout phase2/cloud-adapter
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -52,21 +47,6 @@ jobs:
       - name: Analyze Phase 2 package
         working-directory: packages/qaza_cloud_adapter
         run: dart analyze
-
-      - name: Format Phase 2 sources
-        working-directory: packages/qaza_cloud_adapter
-        run: dart format lib test
-
-      - name: Commit canonical formatting
-        run: |
-          if git diff --quiet -- packages/qaza_cloud_adapter/lib packages/qaza_cloud_adapter/test; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/qaza_cloud_adapter/lib packages/qaza_cloud_adapter/test
-          git commit -m "style: format Phase 2 package"
-          git push origin HEAD:phase2/cloud-adapter
 
       - name: Check Phase 2 formatting
         working-directory: packages/qaza_cloud_adapter
