@@ -30,40 +30,60 @@ class StartupGate extends ConsumerWidget {
       );
     }
 
-    final profileAsync = ref.watch(userProfileProvider);
-    return profileAsync.when(
+    final routeAsync = ref.watch(appRouteProvider);
+    return routeAsync.when(
       loading: () => const SplashScreen(),
       error: (_, __) => StartupProfileLoadErrorBoundary(
-        key: const Key('startup_profile_load_error'),
-        onRetry: () => ref.invalidate(userProfileProvider),
+        key: const Key('startup_route_load_error'),
+        onRetry: () => ref.invalidate(appRouteProvider),
       ),
-      data: (profile) {
-        if (profile == null) {
-          return const LanguageSelectionScreen();
-        }
-
-        final locale = LocaleNotifier.resolve(profile.languageCode);
-        if (locale != null &&
-            ref.read(localeProvider).languageCode != locale.languageCode) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              ref.read(localeProvider.notifier).set(locale);
+      data: (route) {
+        final profileAsync = ref.watch(userProfileProvider);
+        return profileAsync.when(
+          loading: () => const SplashScreen(),
+          error: (_, __) => StartupProfileLoadErrorBoundary(
+            key: const Key('startup_profile_load_error'),
+            onRetry: () => ref.invalidate(userProfileProvider),
+          ),
+          data: (profile) {
+            if (route == AppRoute.onboarding) {
+              if (profile == null) {
+                return const LanguageSelectionScreen();
+              }
+              return ProfileSetupScreen(
+                languageCode: profile.languageCode,
+                initialProfile: profile,
+              );
             }
-          });
-        }
 
-        final validation = ProfileRules.validate(
-          profile,
-          today: DateTime.now(),
+            if (profile == null) {
+              return const LanguageSelectionScreen();
+            }
+
+            final locale = LocaleNotifier.resolve(profile.languageCode);
+            if (locale != null &&
+                ref.read(localeProvider).languageCode != locale.languageCode) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  ref.read(localeProvider.notifier).set(locale);
+                }
+              });
+            }
+
+            final validation = ProfileRules.validate(
+              profile,
+              today: DateTime.now(),
+            );
+            if (!profile.isComplete || !validation.isValid) {
+              return ProfileSetupScreen(
+                languageCode: profile.languageCode,
+                initialProfile: profile,
+              );
+            }
+
+            return const WorkspaceShell();
+          },
         );
-        if (!profile.isComplete || !validation.isValid) {
-          return ProfileSetupScreen(
-            languageCode: profile.languageCode,
-            initialProfile: profile,
-          );
-        }
-
-        return const WorkspaceShell();
       },
     );
   }
