@@ -48,7 +48,8 @@ class LocalBackupService {
     final document = <String, dynamic>{
       'metadata': {
         'app_id': _appId,
-        'schema_version': _backupSchemaVersion,
+        'backup_schema_version': _backupSchemaVersion,
+        'database_schema_version': database.schemaVersion,
         'db_revision': dbRevision,
         'export_timestamp':
             (exportedAt ?? DateTime.now().toUtc()).toIso8601String(),
@@ -147,12 +148,15 @@ class LocalBackupService {
     final metadata = decoded['metadata'] as Map<String, dynamic>;
     final data = decoded['data'] as Map<String, dynamic>;
     final backupRevision = metadata['db_revision'] as int;
-    final currentRevision = await database.readDbRevision();
-    final newRevision =
-        (currentRevision > backupRevision ? currentRevision : backupRevision) +
-            1;
 
     await database.transaction(() async {
+      // Read and advance the authoritative local revision under the same
+      // transaction that replaces the database contents.
+      final currentRevision = await database.readDbRevision();
+      final newRevision =
+          (currentRevision > backupRevision ? currentRevision : backupRevision) +
+              1;
+
       await _clearBusinessState();
 
       for (final raw in data['qaza_records'] as List<dynamic>) {
@@ -283,7 +287,7 @@ class LocalBackupService {
     if (header['app_id'] != _appId) {
       throw const LocalBackupException('This file is not a Qaza Namaz backup.');
     }
-    final schema = header['schema_version'];
+    final schema = header['backup_schema_version'];
     if (schema is! int) {
       throw const LocalBackupException('Backup schema version is invalid.');
     }

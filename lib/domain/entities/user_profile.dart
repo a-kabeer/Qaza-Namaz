@@ -81,9 +81,12 @@ class UserProfile {
         schemaVersion: schemaVersion ?? this.schemaVersion,
       );
 
+  /// Serializes business profile state only.
+  ///
+  /// Presentation language is owned by SharedPreferences and is therefore
+  /// intentionally excluded from the portable/domain profile payload.
   Map<String, dynamic> toJson() => {
         'schemaVersion': currentSchemaVersion,
-        'languageCode': languageCode,
         'dailyQazaTarget': dailyQazaTarget,
         'gender': gender?.name,
         'madhab': madhab?.name,

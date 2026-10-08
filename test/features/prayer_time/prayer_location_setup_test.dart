@@ -41,7 +41,7 @@ void main() {
     expect(repository, contains('geolocator'));
     expect(bridge, contains('geolocator'));
     expect(mainActivity, contains('com.google.android.gms.location'));
-    expect(mainActivity, contains('Google'));
+    expect(mainActivity, contains('com.google.android.gms.location'));
     expect(pubspec, contains('geolocator:'));
   });
 

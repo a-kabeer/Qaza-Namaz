@@ -1,11 +1,11 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/core/constants/prayer_types.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
     QazaRecordsCompanion.insert(
@@ -54,8 +54,7 @@ void main() {
     );
   });
 
-  test('export uses the versioned metadata header and complete data envelope',
-      () async {
+  test('export uses the stable versioned metadata header', () async {
     await database.transactionWithRevision(() async {
       await database.qazaRecordsDao.insertRecord(
         _record('guest_fajr_1', DateTime(2025, 1, 1)),
@@ -64,7 +63,11 @@ void main() {
 
     final decoded = jsonDecode(await service.exportJson());
     expect(decoded['metadata']['app_id'], 'qaza_namaz_app');
-    expect(decoded['metadata']['schema_version'], 1);
+    expect(decoded['metadata']['backup_schema_version'], 1);
+    expect(
+      decoded['metadata']['database_schema_version'],
+      database.schemaVersion,
+    );
     expect(decoded['metadata']['db_revision'], 2);
     expect(decoded['metadata']['export_timestamp'], isA<String>());
     expect(decoded['data']['qaza_records'], hasLength(1));
@@ -78,6 +81,7 @@ void main() {
         _record('guest_fajr_1', DateTime(2025, 1, 1)),
       );
     });
+
     final before = await database.qazaRecordsDao.getAll(userId: 'guest');
     final beforeRevision = await database.readDbRevision();
 
@@ -95,15 +99,38 @@ void main() {
     expect(await database.readDbRevision(), beforeRevision);
   });
 
+  test('wrong app id is rejected before database mutation', () async {
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _record('guest_fajr_1', DateTime(2025, 1, 1)),
+      );
+    });
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['metadata'] as Map<String, dynamic>)['app_id'] = 'other_app';
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest')).length,
+      1,
+    );
+    expect(await database.readDbRevision(), 2);
+  });
+
   test('newer backup schema is rejected before database mutation', () async {
     await database.transactionWithRevision(() async {
       await database.qazaRecordsDao.insertRecord(
         _record('guest_fajr_1', DateTime(2025, 1, 1)),
       );
     });
-    final decoded = jsonDecode(await service.exportJson())
-        as Map<String, dynamic>;
-    (decoded['metadata'] as Map<String, dynamic>)['schema_version'] = 2;
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['metadata'] as Map<String, dynamic>)['backup_schema_version'] = 2;
 
     expect(
       () => service.importJson(jsonEncode(decoded)),
@@ -120,7 +147,35 @@ void main() {
     expect(await database.readDbRevision(), 2);
   });
 
-  test('restoring an older revision never rewinds the local revision', () async {
+  test('unsupported older backup schema is rejected without mutation',
+      () async {
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _record('guest_fajr_1', DateTime(2025, 1, 1)),
+      );
+    });
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['metadata'] as Map<String, dynamic>)['backup_schema_version'] = 0;
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(
+        predicate<LocalBackupException>(
+          (error) => error.message.contains('not supported'),
+        ),
+      ),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest')).length,
+      1,
+    );
+    expect(await database.readDbRevision(), 2);
+  });
+
+  test('restoring an older revision never rewinds the local revision',
+      () async {
     await database.transactionWithRevision(() async {
       await database.qazaRecordsDao.insertRecord(
         _record('guest_fajr_1', DateTime(2025, 1, 1)),
@@ -143,5 +198,26 @@ void main() {
       (await database.qazaRecordsDao.getAll(userId: 'guest')).map((r) => r.id),
       ['guest_fajr_1'],
     );
+  });
+
+  test('backup restore preserves the receiving device instance id', () async {
+    await database.customInsert(
+      'INSERT INTO device_metadata (id, device_instance_id) VALUES (1, ?)',
+      variables: [Variable.withString('device-local-test')],
+    );
+
+    final backup = await service.exportJson();
+    await service.importJson(backup);
+
+    final after = await database
+        .customSelect(
+          'SELECT device_instance_id FROM device_metadata WHERE id = 1',
+        )
+        .get();
+
+    expect(after.single.read<String>('device_instance_id'), 'device-local-test');
+
+    final decoded = jsonDecode(backup) as Map<String, dynamic>;
+    expect(jsonEncode(decoded['data']).contains('device-local-test'), isFalse);
   });
 }
