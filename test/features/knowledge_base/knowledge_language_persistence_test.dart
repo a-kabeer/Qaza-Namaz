@@ -8,6 +8,8 @@ import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dar
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('Knowledge Base language is persisted in Drift, not SharedPreferences',
       () async {
     final database = AppDatabase(NativeDatabase.memory());
