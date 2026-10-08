@@ -4,7 +4,6 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/local/database/tables/qaza_records.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 
@@ -87,7 +86,12 @@ void main() {
       throwsA(isA<LocalBackupException>()),
     );
 
-    expect(await database.qazaRecordsDao.getAll(userId: 'guest'), before);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest'))
+          .map((record) => record.toJson())
+          .toList(),
+      before.map((record) => record.toJson()).toList(),
+    );
     expect(await database.readDbRevision(), beforeRevision);
   });
 
