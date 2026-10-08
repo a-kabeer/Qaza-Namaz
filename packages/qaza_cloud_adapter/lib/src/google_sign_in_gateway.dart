@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:http/http.dart' as http;
 
 import 'cloud_models.dart';
 
@@ -22,8 +22,6 @@ class GoogleSignInGateway {
   bool _initialized = false;
   Future<void> _tail = Future<void>.value();
 
-  GoogleSignInAccount? get currentUser => _signIn.currentUser;
-
   Future<void> initialize() => _serialized<void>(() async {
         await _initializeUnlocked();
       });
@@ -40,16 +38,14 @@ class GoogleSignInGateway {
         },
       );
 
-  Future<auth.AuthClient?> authorizeDrive({
+  Future<http.Client?> authorizeDrive({
     required bool allowInteractive,
   }) =>
       _serialized(
         () async {
           await _initializeUnlocked();
 
-          var user = _signIn.currentUser;
-          user ??= await _signIn.attemptLightweightAuthentication();
-
+          var user = await _signIn.attemptLightweightAuthentication();
           if (user == null) {
             if (!allowInteractive) {
               throw const CloudAuthorizationUnavailable();

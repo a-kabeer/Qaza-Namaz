@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 
 import 'cloud_models.dart';
 import 'google_sign_in_gateway.dart';
@@ -21,7 +20,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
       action: (driveApi) async {
         final response = await driveApi.files.list(
           spaces: 'appDataFolder',
-          q: "name contains '$cloudBackupFilePrefix' and trashed = false",
+          q: "name contains '" + cloudBackupFilePrefix + "' and trashed = false",
           orderBy: 'modifiedTime desc,name desc',
           pageSize: 1,
           $fields:

@@ -14,8 +14,8 @@ dependencies:
   google_sign_in: ^7.2.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
   googleapis: ^17.0.0
-  googleapis_auth: ^2.3.4
   shared_preferences: ^2.2.3
+  http: ^1.6.0
   workmanager: ^0.10.10
 
 dev_dependencies:

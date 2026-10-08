@@ -42,9 +42,6 @@ void initializeQazaCloudBackgroundDispatcher() {
       );
       final result = await engine.sync(allowInteractive: false);
 
-      // No-op, conflict, and unavailable authorization do not cancel or
-      // replace periodic work. ExistingPeriodicWorkPolicy.keep preserves the
-      // registration.
       return result.isSuccessful;
     } on CloudAdapterException {
       return true;
@@ -86,7 +83,7 @@ class CloudSyncScheduler {
       frequency: normalized,
       inputData: inputData,
       constraints: Constraints(networkType: NetworkType.connected),
-      existingPeriodicWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
   }
 
