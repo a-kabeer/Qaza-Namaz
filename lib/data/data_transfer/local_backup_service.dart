@@ -4,7 +4,6 @@ import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
 import '../local/database/app_database.dart';
-import '../local/database/tables/qaza_records.dart';
 
 const _appId = 'qaza_namaz_app';
 const _backupSchemaVersion = 1;
@@ -59,12 +58,27 @@ class LocalBackupService {
         'qaza_additions': await _selectMaps(
           'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
           'FROM qaza_additions ORDER BY id',
-          ['id', 'user_id', 'mode', 'input_snapshot', 'revision', 'created_at', 'updated_at'],
+          [
+            'id',
+            'user_id',
+            'mode',
+            'input_snapshot',
+            'revision',
+            'created_at',
+            'updated_at',
+          ],
         ),
         'qaza_deletion_actions': await _selectMaps(
           'SELECT id, user_id, addition_id, created_at, resolved_at, entity_version '
           'FROM qaza_deletion_actions ORDER BY id',
-          ['id', 'user_id', 'addition_id', 'created_at', 'resolved_at', 'entity_version'],
+          [
+            'id',
+            'user_id',
+            'addition_id',
+            'created_at',
+            'resolved_at',
+            'entity_version',
+          ],
         ),
         'qaza_deletion_action_record_snapshots': await _selectMaps(
           'SELECT deletion_action_id, record_id, user_id, addition_id, prayer_type, '
@@ -95,7 +109,13 @@ class LocalBackupService {
         'local_accounts': await _selectMaps(
           'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
           'FROM local_accounts ORDER BY local_account_id',
-          ['local_account_id', 'account_mode', 'lifecycle_state', 'created_at', 'updated_at'],
+          [
+            'local_account_id',
+            'account_mode',
+            'lifecycle_state',
+            'created_at',
+            'updated_at',
+          ],
         ),
         'app_session_state': await _selectMaps(
           'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
@@ -154,8 +174,7 @@ class LocalBackupService {
       // transaction that replaces the database contents.
       final currentRevision = await database.readDbRevision();
       final newRevision =
-          (currentRevision > backupRevision ? currentRevision : backupRevision) +
-              1;
+          (currentRevision > backupRevision ? currentRevision : backupRevision) + 1;
 
       await _clearBusinessState();
 
@@ -380,7 +399,9 @@ class LocalBackupService {
     final placeholders = List.filled(columns.length, '?').join(', ');
     for (final raw in rawRows) {
       if (raw is! Map) {
-        throw const LocalBackupException('Backup contains an invalid table row.');
+        throw const LocalBackupException(
+          'Backup contains an invalid table row.',
+        );
       }
       final values = <Variable<Object>>[
         for (final column in columns) Variable(raw[column]),
