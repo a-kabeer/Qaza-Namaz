@@ -197,16 +197,18 @@ class AppDatabase extends _$AppDatabase {
   /// Runs one logical local write transaction and advances db_revision once
   /// when the operation actually mutates local state.
   Future<T> transactionWithRevision<T>(
-    Future<T> Function() action,
-  ) async {
+    Future<T> Function() action, {
+    bool Function(T result)? mutationPredicate,
+  }) async {
     return transaction(() async {
       final result = await action();
-      final mutated = switch (result) {
-        bool value => value,
-        int value => value > 0,
-        Iterable<dynamic> value => value.isNotEmpty,
-        _ => true,
-      };
+      final mutated = mutationPredicate?.call(result) ??
+          switch (result) {
+            bool value => value,
+            int value => value > 0,
+            Iterable<dynamic> value => value.isNotEmpty,
+            _ => true,
+          };
       if (mutated) {
         await incrementDbRevisionInTransaction();
       }
