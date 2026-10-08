@@ -400,7 +400,6 @@ class QazaImportController extends Notifier<QazaImportTaskState> {
         );
       }
 
-      ;
       await operation(onProgress);
       stopwatch.stop();
       if (state.phase == QazaImportTaskPhase.applyingProfile) {
