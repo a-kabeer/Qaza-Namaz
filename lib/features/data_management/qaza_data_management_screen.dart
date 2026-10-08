@@ -12,6 +12,7 @@ import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../data/data_transfer/local_backup_service.dart';
+import '../../features/home/providers/home_providers.dart';
 import '../../l10n/app_localizations.dart';
 
 class QazaDataManagementScreen extends ConsumerStatefulWidget {
@@ -95,6 +96,11 @@ class _QazaDataManagementScreenState
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(userProfileProvider);
       ref.invalidate(appRouteProvider);
+      ref.invalidate(homeDashboardActivityProvider);
+      ref.invalidate(homeDailyProgressProvider);
+      ref.invalidate(homeQazaActivityCurrentWeekProvider);
+      ref.invalidate(homeQazaActivityDailyGoalsProvider);
+      ref.invalidate(homeFallbackPendingProvider);
 
       if (mounted) {
         _showMessage(
