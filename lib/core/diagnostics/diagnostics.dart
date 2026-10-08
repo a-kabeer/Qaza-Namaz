@@ -1,9 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 /// Where a diagnostic came from.
 ///
 /// A closed set on purpose: a report can only be filed against a part of the
@@ -177,70 +173,6 @@ class BufferedDiagnostics implements DiagnosticsService {
   @override
   void recordEvent(DiagnosticArea area, String code) {
     _add(DiagnosticEvent(area: area, code: code));
-  }
-}
-
-class PersistentDiagnostics implements DiagnosticsService {
-  PersistentDiagnostics({
-    this.capacity = 50,
-    this.storageKey = 'qaza_diagnostic_events',
-  });
-
-  final int capacity;
-  final String storageKey;
-  final List<DiagnosticEvent> _events = <DiagnosticEvent>[];
-  Future<void> _writeChain = Future<void>.value();
-
-  void _persist() {
-    final snapshot = _events
-        .map((event) => <String, Object?>{
-              'area': event.area.code,
-              'code': event.code,
-              'errorType': event.errorType,
-              'message': event.message,
-              'fatal': event.fatal,
-              'stackTrace': event.stackTrace,
-            })
-        .toList(growable: false);
-
-    _writeChain = _writeChain.then((_) async {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(storageKey, jsonEncode(snapshot));
-      } catch (_) {
-        // Diagnostics must never cause a user-visible failure.
-      }
-    });
-  }
-
-  @override
-  void recordFailure(
-    DiagnosticArea area,
-    String code,
-    Object error, {
-    StackTrace? stack,
-    bool fatal = false,
-  }) {
-    _events.add(buildFailureEvent(
-      area,
-      code,
-      error,
-      stack: stack,
-      fatal: fatal,
-    ));
-    if (_events.length > capacity) {
-      _events.removeAt(0);
-    }
-    _persist();
-  }
-
-  @override
-  void recordEvent(DiagnosticArea area, String code) {
-    _events.add(DiagnosticEvent(area: area, code: code));
-    if (_events.length > capacity) {
-      _events.removeAt(0);
-    }
-    _persist();
   }
 }
 
