@@ -1,0 +1,27 @@
+name: qaza_cloud_adapter
+description: Optional Google Drive cloud adapter for Qaza Namaz. Depends on Phase 1, never the reverse.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  qaza_namaz:
+    path: ../..
+  google_sign_in: ^7.2.0
+  extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  googleapis: ^17.0.0
+  googleapis_auth: ^2.3.4
+  shared_preferences: ^2.2.3
+  workmanager: ^0.10.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
