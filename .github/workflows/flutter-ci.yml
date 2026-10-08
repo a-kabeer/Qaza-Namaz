@@ -47,62 +47,27 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Auto-format full PR Dart diff on branch pushes
+      - name: Format all Dart sources on branch pushes
         if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin main
-          mapfile -t files < <(
-            git diff --name-only origin/main HEAD -- '*.dart' |
-            while IFS= read -r file; do
-              [ -f "$file" ] && printf '%s\\n' "$file"
-            done
-          )
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No Dart files in the PR diff to format."
-            exit 0
-          fi
-          dart format "${files[@]}"
-          if git diff --quiet -- "${files[@]}"; then
-            echo "All Dart files in the PR diff are already formatted."
+          dart format lib test
+          if git diff --quiet -- lib test; then
+            echo "All Dart sources are already formatted."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${files[@]}"
-          git commit -m "style: format full Phase 1 Dart diff"
+          git add lib test
+          git commit -m "style: format Dart sources"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Check Dart formatting
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF"
-            diff_base="origin/$GITHUB_BASE_REF"
-            diff_head="origin/$GITHUB_HEAD_REF"
-          else
-            diff_base="${{ github.event.before }}"
-            diff_head="HEAD"
-            if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
-              diff_base="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
-            fi
-          fi
-
-          mapfile -t files < <(
-            git diff --name-only "$diff_base" "$diff_head" -- '*.dart' |
-            while IFS= read -r file; do
-              [ -f "$file" ] && printf '%s\n' "$file"
-            done
-          )
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No changed Dart files to format-check."
-            exit 0
-          fi
-
-          dart format --output=none --set-exit-if-changed "${files[@]}"
+          dart format --output=none --set-exit-if-changed lib test
 
       - name: Test with coverage
         run: flutter test --coverage
@@ -160,3 +125,32 @@ jobs:
         with:
           name: app-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+  android_offline_smoke:
+    name: Android offline startup smoke test
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Run offline Android smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb shell svc wifi disable
+            adb shell svc data disable || true
+            adb shell settings put global airplane_mode_on 1
+            adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
+            flutter pub get
+            flutter test integration_test/offline_startup_test.dart
