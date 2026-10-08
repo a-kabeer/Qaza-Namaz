@@ -44,7 +44,54 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Check Dart formatting
+            - name: Normalize changed Dart sources (temporary)
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF"
+            diff_base="origin/$GITHUB_BASE_REF"
+            diff_head="origin/$GITHUB_HEAD_REF"
+          else
+            diff_base="HEAD^"
+            diff_head="HEAD"
+          fi
+          mapfile -t files < <(git diff --name-only "$diff_base" "$diff_head" -- '*.dart' | while IFS= read -r file; do [ -f "$file" ] && printf '%s\\n' "$file"; done)
+          if [ "${#files[@]}" -eq 0 ]; then
+            exit 0
+          fi
+          for file in "${files[@]}"; do
+            dart format --output=write "$file"
+          done
+
+      - name: Capture canonical Dart sources
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p formatted-dart
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF" "$GITHUB_HEAD_REF" || true
+            diff_base="origin/$GITHUB_BASE_REF"
+            diff_head="origin/$GITHUB_HEAD_REF"
+          else
+            diff_base="HEAD^"
+            diff_head="HEAD"
+          fi
+          mapfile -t files < <(git diff --name-only "$diff_base" "$diff_head" -- '*.dart' | while IFS= read -r file; do [ -f "$file" ] && printf '%s\\n' "$file"; done)
+          for file in "${files[@]}"; do
+            mkdir -p "formatted-dart/$(dirname "$file")"
+            cp "$file" "formatted-dart/$file"
+          done
+
+      - name: Upload canonical Dart sources
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-dart-sources
+          path: formatted-dart/
+          if-no-files-found: ignore
+          retention-days: 1
+
+- name: Check Dart formatting
         shell: bash
         run: |
           set -euo pipefail
