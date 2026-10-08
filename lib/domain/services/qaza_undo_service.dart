@@ -215,7 +215,7 @@ class QazaUndoManager {
   QazaUndoManager({
     QazaUndoStore? store,
     DateTime Function()? now,
-  })  : _store = store ?? const QazaUndoStore(),
+  })  : _store = store ?? QazaUndoStore(),
         _now = now ?? DateTime.now;
 
   final QazaUndoStore _store;
